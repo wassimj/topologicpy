@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.TGraph module &mdash; topologicpy 0.9.64 documentation</title>
+  <title>topologicpy.TGraph module &mdash; topologicpy 0.9.65 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.9.64
+                0.9.65
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -960,7 +960,7 @@
 <td><p>Returns a Wiki-compatible string representation of the input TGraph.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.WireByPath" title="topologicpy.TGraph.TGraph.WireByPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WireByPath</span></code></a>(graph, path[, ...])</p></td>
-<td><p>Converts a path of vertex indices to a Topologic wire.</p></td>
+<td><p>Converts a TGraph path into a Topologic Wire.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.XOR" title="topologicpy.TGraph.TGraph.XOR"><code class="xref py py-obj docutils literal notranslate"><span class="pre">XOR</span></code></a>(graphA, graphB[, silent])</p></td>
 <td><p>Returns the symmetric difference of two input TGraphs.</p></td>
@@ -2809,42 +2809,39 @@ GeoSPARQL relation was found for that pair.</p>
 </dd>
 <dt><strong>directApertures</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, direct aperture relationships are included. Default is False.</p>
 </dd>
-<dt><strong>viaSharedTopologies</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, relationships through shared topologies are included. Default is
-False.</p>
+<dt><strong>viaSharedTopologies</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, relationships through shared topologies are included. Default is False.</p>
 </dd>
-<dt><strong>viaSharedApertures</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, relationships through shared apertures are included. Default is
-False.</p>
+<dt><strong>viaSharedApertures</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, relationships through shared apertures are included. Default is False.</p>
 </dd>
 <dt><strong>toExteriorTopologies</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, relationships to exterior topologies are included. Default is False.</p>
 </dd>
 <dt><strong>toExteriorApertures</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, relationships to exterior apertures are included. Default is False.</p>
 </dd>
-<dt><strong>toContents</strong><span class="classifier">bool , optional</span></dt><dd><p>The input to contents value. Default is False.</p>
+<dt><strong>toContents</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, relationships to contents are included. Default is False.</p>
 </dd>
-<dt><strong>toOutposts</strong><span class="classifier">bool , optional</span></dt><dd><p>The input to outposts value. Default is False.</p>
+<dt><strong>toOutposts</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, relationships to outposts are included. Default is False.</p>
 </dd>
-<dt><strong>idKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use. Default is ‘TOPOLOGIC_ID’.</p>
+<dt><strong>idKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key used to identify outposts. Default is “TOPOLOGIC_ID”.</p>
 </dd>
-<dt><strong>outpostsKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use. Default is ‘outposts’.</p>
+<dt><strong>outpostsKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key containing outpost identifiers. Default is “outposts”.</p>
 </dd>
-<dt><strong>vertexCategoryKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use. Default is ‘category’.</p>
+<dt><strong>vertexCategoryKey</strong><span class="classifier">str , optional</span></dt><dd><p>The vertex category dictionary key. Default is “category”.</p>
 </dd>
-<dt><strong>edgeCategoryKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use. Default is ‘category’.</p>
+<dt><strong>edgeCategoryKey</strong><span class="classifier">str , optional</span></dt><dd><p>The edge category dictionary key. Default is “category”.</p>
 </dd>
-<dt><strong>useInternalVertex</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, an internal vertex is used when deriving topology coordinates.
+<dt><strong>useInternalVertex</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, an internal vertex is used instead of the center of mass.
 Default is False.</p>
 </dd>
-<dt><strong>storeBREP</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, BREP strings are stored in dictionaries where possible. Default is
-False.</p>
+<dt><strong>storeBREP</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, BREP strings are stored in dictionaries where possible.
+Default is False.</p>
 </dd>
-<dt><strong>ontology</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, ontology metadata is added or preserved where applicable. Default is
-True.</p>
+<dt><strong>ontology</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, ontology metadata is added or preserved. Default is True.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round numeric results to. Default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round numeric values to. Default is 6.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, warning and error messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -8687,25 +8684,23 @@ Default is ‘all’.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.TGraph.TGraph.WireByPath">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">WireByPath</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#topologicpy.TGraph.TGraph" title="topologicpy.TGraph.TGraph"><span class="pre">TGraph</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transferVertexDictionaries</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transferEdgeDictionaries</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">useRepresentations</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.TGraph.TGraph.WireByPath" title="Permalink to this definition"></a></dt>
-<dd><p>Converts a path of vertex indices to a Topologic wire.</p>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">WireByPath</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#topologicpy.TGraph.TGraph" title="topologicpy.TGraph.TGraph"><span class="pre">TGraph</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transferVertexDictionaries</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transferEdgeDictionaries</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.TGraph.TGraph.WireByPath" title="Permalink to this definition"></a></dt>
+<dd><p>Converts a TGraph path into a Topologic Wire.</p>
+<p>The input path is typically the result returned by TGraph.ShortestPath
+and is expected to contain an ordered list of TGraph vertex indices.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>graph</strong><span class="classifier">‘TGraph’</span></dt><dd><p>The input TGraph.</p>
+<dt><strong>graph</strong><span class="classifier">TGraph</span></dt><dd><p>The input TGraph.</p>
 </dd>
-<dt><strong>path</strong><span class="classifier">List[Union[int, Dict[str, Any]]]</span></dt><dd><p>The ordered path of vertex indices or vertex records to convert to a wire.</p>
+<dt><strong>path</strong><span class="classifier">list</span></dt><dd><p>The ordered path of TGraph vertex indices, typically returned by
+TGraph.ShortestPath.</p>
 </dd>
-<dt><strong>transferVertexDictionaries</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, vertex dictionaries are transferred to created Topologic vertices.
-Default is True.</p>
+<dt><strong>transferVertexDictionaries</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the dictionaries of the TGraph vertices are transferred
+to the corresponding vertices of the resulting wire. Default is False.</p>
 </dd>
-<dt><strong>transferEdgeDictionaries</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, edge dictionaries are transferred to created Topologic edges.
-Default is True.</p>
-</dd>
-<dt><strong>useRepresentations</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, stored representation objects are used when possible. Default is
-True.</p>
-</dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round numeric results to. Default is 6.</p>
+<dt><strong>transferEdgeDictionaries</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the dictionaries of the TGraph edges are transferred
+to the corresponding edges of the resulting wire. Default is False.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
@@ -8715,7 +8710,7 @@ True.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Wire or None</dt><dd><p>The wire created from the input path.</p>
+<dt>topologic_core.Wire</dt><dd><p>The resulting Topologic Wire.</p>
 </dd>
 </dl>
 </dd>

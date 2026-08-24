@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Helper module &mdash; topologicpy 0.9.64 documentation</title>
+  <title>topologicpy.Helper module &mdash; topologicpy 0.9.65 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.9.64
+                0.9.65
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -166,7 +166,7 @@
 <td><p>Groups numbers within a specified tolerance into bins, calculates the average of each bin, and returns a sorted list of these averages.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.CheckVersion" title="topologicpy.Helper.Helper.CheckVersion"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CheckVersion</span></code></a>([library, version, silent])</p></td>
-<td><p>Compare an input version with the latest version of a Python library on PyPI.</p></td>
+<td><p>Compares an input version with the latest version of a Python library available on PyPI.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.ClosestMatch" title="topologicpy.Helper.Helper.ClosestMatch"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ClosestMatch</span></code></a>(item, listA)</p></td>
 <td><p>Returns the index of the closest match in the input list to the input item.</p></td>
@@ -213,6 +213,12 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.Sort" title="topologicpy.Helper.Helper.Sort"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Sort</span></code></a>(listA, *otherLists[, reverseFlags, silent])</p></td>
 <td><p>Sorts the first input list according to the values in the subsequent input lists in order.</p></td>
 </tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.TopPercentIndices" title="topologicpy.Helper.Helper.TopPercentIndices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TopPercentIndices</span></code></a>(values, percent)</p></td>
+<td><p>Returns the indices of the highest values corresponding to the specified percentage of the input list.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.TransferDictionariesByKey" title="topologicpy.Helper.Helper.TransferDictionariesByKey"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TransferDictionariesByKey</span></code></a>(topologies, ...[, ...])</p></td>
+<td><p>Transfers dictionaries from selectors to matching topologies using a shared dictionary key.</p></td>
+</tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.Transpose" title="topologicpy.Helper.Helper.Transpose"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Transpose</span></code></a>(listA)</p></td>
 <td><p>Transposes the input list (swaps rows and columns).</p></td>
 </tr>
@@ -254,20 +260,25 @@ of each bin, and returns a sorted list of these averages.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Helper.Helper.CheckVersion">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">CheckVersion</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">library</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">version</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Helper.Helper.CheckVersion" title="Permalink to this definition"></a></dt>
-<dd><p>Compare an input version with the latest version of a Python library on PyPI.</p>
+<dd><p>Compares an input version with the latest version of a Python library
+available on PyPI.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>library</strong><span class="classifier">str</span></dt><dd><p>The input software library name. Default is None.</p>
+<dt><strong>library</strong><span class="classifier">str, optional</span></dt><dd><p>The input Python library name. Default is None.</p>
 </dd>
-<dt><strong>version</strong><span class="classifier">str</span></dt><dd><p>The input software version number to compare. Default is None.</p>
+<dt><strong>version</strong><span class="classifier">str, optional</span></dt><dd><p>The input software version number to compare. Default is None.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
-</dd>
-<dt><strong>Returns:</strong></dt><dd><dl class="simple">
-<dt>str: A message indicating whether the input version is less than,</dt><dd><p>equal to, or greater than the latest version on PyPI.</p>
+<dt><strong>silent</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True, error and warning messages are suppressed.
+Default is False.</p>
 </dd>
 </dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>str</dt><dd><p>A message indicating whether the input version is older than, equal
+to, or newer than the latest version available on PyPI.
+Returns None if the version check cannot be completed.</p>
 </dd>
 </dl>
 </dd>
@@ -628,6 +639,61 @@ is None.</p>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
 <dt>list</dt><dd><p>The sorted list.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Helper.Helper.TopPercentIndices">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">TopPercentIndices</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">values</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">percent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="headerlink" href="#topologicpy.Helper.Helper.TopPercentIndices" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the indices of the highest values corresponding to the specified percentage of the input list.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>values</strong><span class="classifier">list</span></dt><dd><p>The input list of numerical values.</p>
+</dd>
+<dt><strong>percent</strong><span class="classifier">float</span></dt><dd><p>The percentage of highest values to return. This value should be between 0 and 100.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>list</dt><dd><p>The indices of the highest values in the input list, ordered from highest to lowest value.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Helper.Helper.TransferDictionariesByKey">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">TransferDictionariesByKey</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topologies</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">selectors</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Helper.Helper.TransferDictionariesByKey" title="Permalink to this definition"></a></dt>
+<dd><p>Transfers dictionaries from selectors to matching topologies using a shared dictionary key.</p>
+<p>Each topology in the input list is inspected for the specified dictionary key.
+Each selector must contain a dictionary, either as a topology dictionary or as
+the value associated with the “dictionary” key of a Python dictionary.</p>
+<p>When the value associated with the specified key in a selector matches the
+corresponding value in one or more topologies, the selector dictionary is
+assigned to those topologies.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>topologies</strong><span class="classifier">list</span></dt><dd><p>The input list of topologies.</p>
+</dd>
+<dt><strong>selectors</strong><span class="classifier">list</span></dt><dd><p>The input list of selectors. A selector can be a topology containing a
+dictionary or a Python dictionary containing a “dictionary” entry.</p>
+</dd>
+<dt><strong>key</strong><span class="classifier">str</span></dt><dd><p>The dictionary key used to match selectors to topologies.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>list</dt><dd><p>The list of topologies with transferred dictionaries.</p>
 </dd>
 </dl>
 </dd>

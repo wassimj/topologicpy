@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Topology module &mdash; topologicpy 0.9.64 documentation</title>
+  <title>topologicpy.Topology module &mdash; topologicpy 0.9.65 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.9.64
+                0.9.65
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -354,7 +354,7 @@
 <td><p>Bins a list of Topologic topologies into groups based on identical key/value pairs found in each topology's Dictionary.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.BoundingBox" title="topologicpy.Topology.Topology.BoundingBox"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BoundingBox</span></code></a>(topology[, optimize, axes, ...])</p></td>
-<td><p>Returns a cell representing a bounding box of the input topology.</p></td>
+<td><p>Returns a bounding topology for the input topology.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByBIMFile" title="topologicpy.Topology.Topology.ByBIMFile"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByBIMFile</span></code></a>(file[, guidKey, colorKey, ...])</p></td>
 <td><p>Imports topologies from the input BIM (dotbimpy.file.File) file object.</p></td>
@@ -405,13 +405,13 @@
 <td><p>Create a cluster by the input python dictionary of vertices, edges, faces, and cells.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByOBJFile" title="topologicpy.Topology.Topology.ByOBJFile"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByOBJFile</span></code></a>(objFile[, mtlFile, defaultColor, ...])</p></td>
-<td><p>Imports a topology from an OBJ file and an associated materials file.</p></td>
+<td><p>Imports topologies from an OBJ file object and an optional MTL file object.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByOBJPath" title="topologicpy.Topology.Topology.ByOBJPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByOBJPath</span></code></a>(objPath[, defaultColor, ...])</p></td>
-<td><p>Imports a topology from an OBJ file path and an associated materials file.</p></td>
+<td><p>Imports topologies from an OBJ file path and referenced MTL files.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByOBJString" title="topologicpy.Topology.Topology.ByOBJString"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByOBJString</span></code></a>(objString[, mtlString, ...])</p></td>
-<td><p>Imports a TopologicPy hierarchy from OBJ and optional MTL strings.</p></td>
+<td><p>Imports TopologicPy topologies from OBJ and optional MTL strings.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByOCCTShape" title="topologicpy.Topology.Topology.ByOCCTShape"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByOCCTShape</span></code></a>(occtShape[, ontology, silent])</p></td>
 <td><p>Creates a topology from the input OCCT shape.</p></td>
@@ -428,8 +428,8 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByXYZPath" title="topologicpy.Topology.Topology.ByXYZPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByXYZPath</span></code></a>(path[, frameIdKey, vertexIdKey])</p></td>
 <td><p>Imports the topology from an XYZ file path.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.CanonicalMatrix" title="topologicpy.Topology.Topology.CanonicalMatrix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CanonicalMatrix</span></code></a>([n, normalize, mantissa, silent])</p></td>
-<td><p>Returns the canonical matrix of the input topology.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.CanonicalMatrix" title="topologicpy.Topology.Topology.CanonicalMatrix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CanonicalMatrix</span></code></a>(topology[, n, normalize, ...])</p></td>
+<td><p>Returns the canonical transformation matrices of the input topology.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.CellComplexes" title="topologicpy.Topology.Topology.CellComplexes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CellComplexes</span></code></a>(topology[, silent])</p></td>
 <td><p>Returns the cellcomplexes of the input topology.</p></td>
@@ -543,7 +543,7 @@
 <td><p>Flattens the input topology such that the input origin is located at the world origin and the input topology is rotated such that the input vector is pointed in the Up direction (see Vector.Up()).</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Geometry" title="topologicpy.Topology.Topology.Geometry"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Geometry</span></code></a>(topology[, transferDictionaries, ...])</p></td>
-<td><p>Returns the geometry (mesh data format) of the input topology as a dictionary of vertices, edges, and faces.</p></td>
+<td><p>Returns the geometry of the input topology in mesh-data form.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.HighestType" title="topologicpy.Topology.Topology.HighestType"><code class="xref py py-obj docutils literal notranslate"><span class="pre">HighestType</span></code></a>(topology[, silent])</p></td>
 <td><p>Returns the highest topology type found in the input topology.</p></td>
@@ -597,7 +597,7 @@
 <td><p>Use gmsh to create a variable-resolution mesh of a Topologic topology and return mesh data as:</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.MeshData" title="topologicpy.Topology.Topology.MeshData"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MeshData</span></code></a>(topology[, mode, ...])</p></td>
-<td><p>Creates a mesh data python dictionary from the input topology.</p></td>
+<td><p>Creates mesh data from the input topology.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.MeshToTopologies" title="topologicpy.Topology.Topology.MeshToTopologies"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MeshToTopologies</span></code></a>(vertices[, faces, tets, ...])</p></td>
 <td><p>Converts mesh data in the form of:</p></td>
@@ -642,19 +642,19 @@
 <td><p>Places the input topology at the specified location.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.PrincipalAxes" title="topologicpy.Topology.Topology.PrincipalAxes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PrincipalAxes</span></code></a>(topology[, n, mantissa, silent])</p></td>
-<td><p>Returns the prinicipal axes (vectors) of the input topology.</p></td>
+<td><p>Returns the principal axes (vectors) of the input topology.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Proximity" title="topologicpy.Topology.Topology.Proximity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Proximity</span></code></a>(topologyA, topologyB, ...[, ...])</p></td>
 <td><p>Returns the proximity label between two input topologies.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.RemoveCollinearEdges" title="topologicpy.Topology.Topology.RemoveCollinearEdges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveCollinearEdges</span></code></a>(topology[, ...])</p></td>
-<td><p>Removes the collinear edges of the input topology</p></td>
+<td><p>Removes collinear edges from the input topology.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.RemoveContent" title="topologicpy.Topology.Topology.RemoveContent"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveContent</span></code></a>(topology, contents[, silent])</p></td>
 <td><p>Removes the input content list from the input topology</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.RemoveCoplanarFaces" title="topologicpy.Topology.Topology.RemoveCoplanarFaces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveCoplanarFaces</span></code></a>(topology[, epsilon, ...])</p></td>
-<td><p>Removes coplanar faces in the input topology</p></td>
+<td><p>Removes coplanar faces in the input topology.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.RemoveEdges" title="topologicpy.Topology.Topology.RemoveEdges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveEdges</span></code></a>(topology[, edges, tolerance, silent])</p></td>
 <td><p>Removes the input list of faces from the input topology</p></td>
@@ -1094,31 +1094,17 @@ you can inspect any representative item’s dictionary value in that group.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Topology.Topology.BoundingBox">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">BoundingBox</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'xyz'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.BoundingBox" title="Permalink to this definition"></a></dt>
-<dd><p>Returns a cell representing a bounding box of the input topology. The returned cell contains a dictionary with keys “xrot”, “yrot”, and “zrot” that represents rotations around the X, Y, and Z axes. If applied in the order of Z, Y, X, the resulting box will become axis-aligned.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
-</dd>
-<dt><strong>optimize</strong><span class="classifier">int , optional</span></dt><dd><p>If set to an integer from 1 (low optimization) to 10 (high optimization), the method will attempt to optimize the bounding box so that it reduces its surface area. Default is 0 which will result in an axis-aligned bounding box. Default is 0.</p>
-</dd>
-<dt><strong>axes</strong><span class="classifier">str , optional</span></dt><dd><p>Sets what axes are to be used for rotating the bounding box. This can be any permutation or substring of “xyz”. It is not case sensitive. Default is “xyz”.</p>
-</dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
-</dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
-</dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>topologic_core.Cell or topologic_core.Face</dt><dd><p>The bounding box of the input topology.</p>
-</dd>
-</dl>
-</dd>
-</dl>
+<dd><p>Returns a bounding topology for the input topology.</p>
+<p>The PythonOCC backend uses OCCT’s precise AABB implementation for
+<code class="docutils literal notranslate"><span class="pre">optimize</span> <span class="pre">==</span> <span class="pre">0</span></code> (through the preserved V2 path) and a native oriented
+bounding box for <code class="docutils literal notranslate"><span class="pre">optimize</span> <span class="pre">&gt;</span> <span class="pre">0</span></code> when all three rotation axes are
+enabled. Optimization levels 1-5 use OCCT’s fast OBB search and levels
+6-10 request OCCT’s optimal OBB search. Axis-constrained optimization
+retains the existing algorithm.</p>
+<p>The returned topology preserves the established dictionary contract:
+<code class="docutils literal notranslate"><span class="pre">xrot</span></code>, <code class="docutils literal notranslate"><span class="pre">yrot</span></code>, and <code class="docutils literal notranslate"><span class="pre">zrot</span></code> are the rotations which, when applied
+in Z, Y, X order about the box centre, align the oriented box with the
+world axes.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -1657,36 +1643,42 @@ but this method always returns a list.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Topology.Topology.ByOBJFile">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByOBJFile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">objFile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mtlFile</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">defaultColor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[255,</span> <span class="pre">255,</span> <span class="pre">255]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">defaultOpacity</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transposeAxes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">removeCoplanarFaces</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">selfMerge</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ontology</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.ByOBJFile" title="Permalink to this definition"></a></dt>
-<dd><p>Imports a topology from an OBJ file and an associated materials file.
-This method is basic and does not support textures and vertex normals.</p>
+<dd><p>Imports topologies from an OBJ file object and an optional MTL file object.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>objFile</strong><span class="classifier">file object</span></dt><dd><p>The OBJ file.</p>
+<dt><strong>objFile</strong><span class="classifier">file object</span></dt><dd><p>The OBJ file object.</p>
 </dd>
-<dt><strong>mtlFile</strong><span class="classifier">file object , optional</span></dt><dd><p>The MTL file. Default is None.</p>
+<dt><strong>mtlFile</strong><span class="classifier">file object , optional</span></dt><dd><p>The MTL file object. If None and objFile has a filesystem path,
+referenced MTL files are loaded automatically when possible.
+Default is None.</p>
 </dd>
-<dt><strong>defaultColor</strong><span class="classifier">list , optional</span></dt><dd><p>The default color to use if none is specified in the file. Default is [255, 255, 255] (white).</p>
+<dt><strong>defaultColor</strong><span class="classifier">list , optional</span></dt><dd><p>The default RGB color in the range 0-255. Default is [255, 255, 255].</p>
 </dd>
-<dt><strong>defaultOpacity</strong><span class="classifier">float , optional</span></dt><dd><p>The default opacity to use if none is specified in the file. Default is 1.0 (fully opaque).</p>
+<dt><strong>defaultOpacity</strong><span class="classifier">float , optional</span></dt><dd><p>The default opacity. Default is 1.0.</p>
 </dd>
-<dt><strong>transposeAxes</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the Z and Y axes are transposed. Otherwise, they are not. Default is True.</p>
+<dt><strong>transposeAxes</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, converts OBJ coordinates from (x, y, z) to (x, -z, y).
+Default is True.</p>
 </dd>
-<dt><strong>removeCoplanarFaces</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, coplanar faces are merged. Default is True.</p>
+<dt><strong>removeCoplanarFaces</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, coplanar faces are merged after the OBJ faces have been
+constructed as valid Topologic faces. Default is False.</p>
 </dd>
-<dt><strong>selfMerge</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the faces of the imported topologies will each be self-merged to create higher-dimensional objects. Otherwise, they remain a cluster of faces. Default is False.</p>
+<dt><strong>selfMerge</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, each imported group/object is self-merged to the highest
+logical topology type. Default is True.</p>
 </dd>
-<dt><strong>ontology</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, the returned topology is annotated with TopologicPy ontology metadata. Default is False.</p>
+<dt><strong>ontology</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, returned topologies are annotated with TopologicPy ontology
+metadata. Default is False.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to which OBJ vertex coordinates are
+rounded. Default is 6.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired geometric tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>list</dt><dd><p>The imported topologies.</p>
+<dt>list</dt><dd><p>The imported topologies, one per non-empty OBJ group/object.</p>
 </dd>
 </dl>
 </dd>
@@ -1696,34 +1688,38 @@ This method is basic and does not support textures and vertex normals.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Topology.Topology.ByOBJPath">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByOBJPath</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">objPath</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">defaultColor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[255,</span> <span class="pre">255,</span> <span class="pre">255]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">defaultOpacity</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transposeAxes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">removeCoplanarFaces</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">selfMerge</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ontology</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.ByOBJPath" title="Permalink to this definition"></a></dt>
-<dd><p>Imports a topology from an OBJ file path and an associated materials file.
-This method is basic and does not support textures and vertex normals.</p>
+<dd><p>Imports topologies from an OBJ file path and referenced MTL files.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>objPath</strong><span class="classifier">str</span></dt><dd><p>The path to the OBJ file.</p>
 </dd>
-<dt><strong>defaultColor</strong><span class="classifier">list , optional</span></dt><dd><p>The default color to use if none is specified in the file. Default is [255, 255, 255] (white).</p>
+<dt><strong>defaultColor</strong><span class="classifier">list , optional</span></dt><dd><p>The default RGB color in the range 0-255. Default is [255, 255, 255].</p>
 </dd>
-<dt><strong>defaultOpacity</strong><span class="classifier">float , optional</span></dt><dd><p>The default opacity to use if none is specified in the file. Default is 1.0 (fully opaque).</p>
+<dt><strong>defaultOpacity</strong><span class="classifier">float , optional</span></dt><dd><p>The default opacity. Default is 1.0.</p>
 </dd>
-<dt><strong>transposeAxes</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the Z and Y axes are transposed. Otherwise, they are not. Default is True.</p>
+<dt><strong>transposeAxes</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, converts OBJ coordinates from (x, y, z) to (x, -z, y).
+Default is True.</p>
 </dd>
-<dt><strong>removeCoplanarFaces</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, coplanar faces are merged. Default is True.</p>
+<dt><strong>removeCoplanarFaces</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, coplanar faces are merged after the OBJ faces have been
+constructed as valid Topologic faces. Default is False.</p>
 </dd>
-<dt><strong>selfMerge</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the faces of the imported topologies will each be self-merged to create higher-dimensional objects. Otherwise, they remain a cluster of faces. Default is False.</p>
+<dt><strong>selfMerge</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, each imported group/object is self-merged to the highest
+logical topology type. Default is False.</p>
 </dd>
-<dt><strong>ontology</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, the returned topology is annotated with TopologicPy ontology metadata. Default is False.</p>
+<dt><strong>ontology</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, returned topologies are annotated with TopologicPy ontology
+metadata. Default is False.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to which OBJ vertex coordinates are
+rounded. Default is 6.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired geometric tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>list</dt><dd><p>The imported topologies.</p>
+<dt>list</dt><dd><p>The imported topologies, one per non-empty OBJ group/object.</p>
 </dd>
 </dl>
 </dd>
@@ -1733,55 +1729,44 @@ This method is basic and does not support textures and vertex normals.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Topology.Topology.ByOBJString">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByOBJString</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">objString</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mtlString</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">defaultColor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">defaultOpacity</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transposeAxes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">removeCoplanarFaces</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">selfMerge</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ontology</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.ByOBJString" title="Permalink to this definition"></a></dt>
-<dd><p>Imports a TopologicPy hierarchy from OBJ and optional MTL strings.</p>
-<p>Supported OBJ primitives
-- v   : vertices
-- l   : polylines (edges-only / wire-only models)
-- f   : faces (tri/quad/ngon; may be self-merged)
-- p   : points</p>
-<p>Grouping
-- g / o : groups/objects become separate returned topologies (one per group/object)</p>
-<p>Materials
-- usemtl + MTL Kd/d/Tr are used to set:</p>
-<blockquote>
-<div><p>color   : [R,G,B] in 0..255
-opacity : 0..1</p>
-</div></blockquote>
+<dd><p>Imports TopologicPy topologies from OBJ and optional MTL strings.</p>
+<p>Supported OBJ primitives are vertices (v), faces (f), polylines (l),
+and points (p). OBJ objects/groups (o/g) are returned as separate
+topologies. Texture coordinates and vertex normals are ignored.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>objString</strong><span class="classifier">str</span></dt><dd><p>The OBJ file contents as a string.</p>
 </dd>
-<dt><strong>mtlString</strong><span class="classifier">str , optional</span></dt><dd><p>The MTL file contents as a string.</p>
+<dt><strong>mtlString</strong><span class="classifier">str , optional</span></dt><dd><p>The MTL file contents as a string. Default is None.</p>
 </dd>
-<dt><strong>defaultColor</strong><span class="classifier">list , optional</span></dt><dd><p>The default color to use if none is specified in the file.
-Default is [255, 255, 255].</p>
+<dt><strong>defaultColor</strong><span class="classifier">list , optional</span></dt><dd><p>The default RGB color in the range 0-255. Default is [255, 255, 255].</p>
 </dd>
-<dt><strong>defaultOpacity</strong><span class="classifier">float , optional</span></dt><dd><p>The default opacity to use if none is specified in the file.
-Default is 1.0.</p>
+<dt><strong>defaultOpacity</strong><span class="classifier">float , optional</span></dt><dd><p>The default opacity. Default is 1.0.</p>
 </dd>
-<dt><strong>transposeAxes</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, converts OBJ coordinates from (x, y, z) to (x, -z, y).
+<dt><strong>transposeAxes</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, converts OBJ coordinates from (x, y, z) to (x, -z, y).
 Default is True.</p>
 </dd>
-<dt><strong>removeCoplanarFaces</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, coplanar faces are merged. Default is False.</p>
+<dt><strong>removeCoplanarFaces</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, coplanar faces are merged using Topologic geometry/topology
+operations after all OBJ faces have been constructed. No boundary
+loops are inferred or reconstructed from OBJ indices. Default is False.</p>
 </dd>
-<dt><strong>selfMerge</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, imported face clusters are self-merged. Default is False.</p>
+<dt><strong>selfMerge</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, each imported group/object is self-merged to the highest
+logical topology type. Default is False.</p>
 </dd>
-<dt><strong>ontology</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, the returned topology is annotated with TopologicPy ontology metadata. Default is False.</p>
+<dt><strong>ontology</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, returned topologies are annotated with TopologicPy ontology
+metadata. Default is False.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round coordinates to. Default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to which OBJ vertex coordinates are
+rounded. Default is 6.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired geometric tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>list</dt><dd><p>One TopologicPy topology per OBJ group/object:
-- If a group has faces: returns a Cluster of faces, or a self-merged topology.
-- Else if a group has polylines/edges: returns a Cluster of Wires/Edges.
-- Else if a group has only points: returns a Cluster of Vertices.
-- If mixed: returns a Cluster containing the appropriate mix.</p>
+<dt>list</dt><dd><p>One topology per non-empty OBJ group/object.</p>
 </dd>
 </dl>
 </dd>
@@ -1986,37 +1971,12 @@ C 3.2 1.2 -12.3</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Topology.Topology.CanonicalMatrix">
-<span class="sig-name descname"><span class="pre">CanonicalMatrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.CanonicalMatrix" title="Permalink to this definition"></a></dt>
-<dd><p>Returns the canonical matrix of the input topology.
-The canonical matrix refers to a transformation matrix that maps an object’s
-coordinate system to a canonical coordinate frame, where:
-. The origin of the object aligns with the world origin
-. The principal axes of the object align with the world axes
-This transformation is computed using Principal Component Analysis (PCA),
-leveraging the eigenvectors of the covariance matrix of the object’s vertices
-and thus can give erroneous results. The transformation matrix may not yield an object oriented as expected.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
-</dd>
-<dt><strong>n</strong><span class="classifier">int , optional</span></dt><dd><p>The number of segments to use to increase the number of points on each face. Default is 10.</p>
-</dd>
-<dt><strong>normalize</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the longest edge in the input topology is scaled to become of length 1. Default is False.</p>
-</dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
-</dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>list</dt><dd><p>The 4X4 canonical matrix.</p>
-</dd>
-</dl>
-</dd>
-</dl>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">CanonicalMatrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.CanonicalMatrix" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the canonical transformation matrices of the input topology.</p>
+<p>The PythonOCC fast path reuses <code class="docutils literal notranslate"><span class="pre">Topology.PrincipalAxes</span></code> instead of
+creating an n-by-n point grid on every face and running a second PCA.
+If any native prerequisite is unavailable, the preserved legacy
+implementation is used unchanged.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -3067,48 +3027,12 @@ it will filter by topology type only.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Topology.Topology.Geometry">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Geometry</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transferDictionaries</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">triangulate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meshSize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.Geometry" title="Permalink to this definition"></a></dt>
-<dd><p>Returns the geometry (mesh data format) of the input topology as a dictionary of vertices, edges, and faces.</p>
-<dl class="field-list">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl>
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph</span></dt><dd><p>The input topology or graph.</p>
-</dd>
-<dt><strong>transferDictionaries</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, vertex, edge, and face dictionaries will be included in the output. Otherwise, they are not. Default is False.</p>
-</dd>
-<dt><strong>triangulate</strong><span class="classifier">bool , optional</span></dt><dd><dl class="simple">
-<dt>If set to True, all faces of the input geometry are triangulated. Otherwise, only faces with holes are triangulated. Default is False.</dt><dd><p>mode : int , optional</p>
-</dd>
-</dl>
-<p>The desired mode of meshing algorithm (for triangulation). Several options are available:
-0: Classic
-1: MeshAdapt
-3: Initial Mesh Only
-5: Delaunay
-6: Frontal-Delaunay
-7: BAMG
-8: Fontal-Delaunay for Quads
-9: Packing of Parallelograms
-All options other than 0 (Classic) use the gmsh library. See <a class="reference external" href="https://gmsh.info/doc/texinfo/gmsh.html#Mesh-options">https://gmsh.info/doc/texinfo/gmsh.html#Mesh-options</a>
-WARNING: The options that use gmsh can be very time consuming and can create very heavy geometry.</p>
-</dd>
-<dt><strong>meshSize</strong><span class="classifier">float , optional</span></dt><dd><p>The desired size of the mesh when using the “mesh” option. If set to None, it will be
-calculated automatically and set to 10% of the overall size of the face. Default is None.</p>
-</dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
-</dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
-</dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>dict</dt><dd><p>A dictionary containing the vertices, edges, and faces data. The keys found in the dictionary are “vertices”, “edges”, and “faces”.</p>
-</dd>
-</dl>
-</dd>
-</dl>
+<dd><p>Returns the geometry of the input topology in mesh-data form.</p>
+<p>On PythonOCC, the default dictionary-free <code class="docutils literal notranslate"><span class="pre">mode</span> <span class="pre">==</span> <span class="pre">0</span></code> path uses a
+shared native OCCT extraction engine. Faces with holes are triangulated
+natively even when <code class="docutils literal notranslate"><span class="pre">triangulate</span></code> is False, preserving the established
+Geometry contract. Dictionary-bearing and gmsh modes retain the proven
+implementation unchanged.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -3613,44 +3537,13 @@ If None, auto: 3 if Topology.Cells(topology) non-empty, else 2.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Topology.Topology.MeshData">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MeshData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transferDictionaries</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.MeshData" title="Permalink to this definition"></a></dt>
-<dd><p>Creates a mesh data python dictionary from the input topology.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
-</dd>
-<dt><strong>mode</strong><span class="classifier">int , optional</span></dt><dd><p>The desired mode of conversion:
-0: The faces list indexes into the vertices list.
-1: The faces list indexes into the edges list.
-The default is 1.</p>
-</dd>
-<dt><strong>transferDictionaries</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the python dictionaries will be transferred to the coorespoding topologies. Default is False.</p>
-</dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
-</dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
-</dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>dict</dt><dd><p>The created mesh data python dictionary of vertices, edges, faces, and cells in the form of:
-{ ‘mode’ : int (the mode of the face data)
-‘vertices’: list, (list of coordinates)
-‘edges’: list,   (list of indices into the list of vertices)
-‘faces’: list,   (list of indices into the list of edges or list of vertices based on mode)
-‘cells’: list,   (list of indices into the list of faces)
-‘vertex_dict’: list of dicts,
-‘edge_dicts’: list of dicts,
-‘face_dicts’, list of dicts,
-‘cell_dicts’, list of dicts
-}</p>
-</dd>
-</dl>
-</dd>
-</dl>
+<dd><p>Creates mesh data from the input topology.</p>
+<p>The PythonOCC dictionary-free path now reads the native OCCT
+triangulation directly and builds indexed vertices, edges, triangular
+faces, and cell-to-face connectivity without first copying,
+triangulating, rebuilding, and re-traversing a Topologic topology.
+Dictionary transfer and aggregate Graph/Cluster cases retain the V2
+implementation.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -4061,29 +3954,12 @@ world origin (0, 0, 0) is used. Default is None.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Topology.Topology.PrincipalAxes">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">PrincipalAxes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.PrincipalAxes" title="Permalink to this definition"></a></dt>
-<dd><p>Returns the prinicipal axes (vectors) of the input topology.
-Please note that this is not a perfect algorithm and it can get confused based on the geometry of the input.
-Also, please note that there is no guarantee that three returned vectors match your expectation for an x,y,z axis order.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
-</dd>
-<dt><strong>n</strong><span class="classifier">int , optional</span></dt><dd><p>The number of segments to use to increase the number of points on each face. Default is 10.</p>
-</dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
-</dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>list</dt><dd><p>The list of x, y, and z vectors representing the principal axes of the topology.</p>
-</dd>
-</dl>
-</dd>
-</dl>
+<dd><p>Returns the principal axes (vectors) of the input topology.</p>
+<p>On the PythonOCC backend, exact OCCT mass properties are used for
+non-degenerate Faces, Shells, Cells, and CellComplexes. Symmetric,
+degenerate, aggregate, or unsupported cases fall back to the preserved
+sampling/PCA implementation. The <code class="docutils literal notranslate"><span class="pre">n</span></code> parameter is retained for API
+compatibility and for the fallback path.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -4123,27 +3999,10 @@ to the computed distance, or None if no threshold is matched.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Topology.Topology.RemoveCollinearEdges">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RemoveCollinearEdges</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angTolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.RemoveCollinearEdges" title="Permalink to this definition"></a></dt>
-<dd><p>Removes the collinear edges of the input topology</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
-</dd>
-<dt><strong>angTolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired angular tolerance. Default is 0.1.</p>
-</dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
-</dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>topologic_core.Topology</dt><dd><p>The input topology with the collinear edges removed.</p>
-</dd>
-</dl>
-</dd>
-</dl>
+<dd><p>Removes collinear edges from the input topology.</p>
+<p>On the PythonOCC backend, a conservative native fast path is attempted
+for topologies whose edges are all linear. Unsupported or ambiguous
+cases fall back to the preserved legacy implementation.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -4172,24 +4031,26 @@ to the computed distance, or None if no threshold is matched.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Topology.Topology.RemoveCoplanarFaces">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RemoveCoplanarFaces</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epsilon</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.01</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.RemoveCoplanarFaces" title="Permalink to this definition"></a></dt>
-<dd><p>Removes coplanar faces in the input topology</p>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RemoveCoplanarFaces</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epsilon</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.01</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.RemoveCoplanarFaces" title="Permalink to this definition"></a></dt>
+<dd><p>Removes coplanar faces in the input topology.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
 </dd>
-<dt><strong>epsilon</strong><span class="classifier">float , optional</span></dt><dd><p>The desired epsilon (another form of tolerance) for finding if two faces are coplanar. Default is 0.01.</p>
+<dt><strong>epsilon</strong><span class="classifier">float, optional</span></dt><dd><p>The desired epsilon for determining whether neighbouring faces
+are coplanar. Default is 0.01.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float, optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True, error and warning messages are suppressed.
+Default is False.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Topology</dt><dd><p>The input topology with coplanar faces merged into one face.</p>
+<dt>topologic_core.Topology</dt><dd><p>The input topology with adjacent coplanar faces merged.</p>
 </dd>
 </dl>
 </dd>
