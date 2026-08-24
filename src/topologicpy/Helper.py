@@ -157,7 +157,7 @@ class Helper:
     @staticmethod
     def CheckVersion(library: str = None, version: str = None, silent: bool = False):
         """
-        Compare an input version with the latest version of a Python library on PyPI.
+        Compares an input version with the latest version of a Python library on PyPI.
 
         Parameters
         ----------
@@ -168,50 +168,115 @@ class Helper:
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
 
-        Returns:
-            str: A message indicating whether the input version is less than,
-                equal to, or greater than the latest version on PyPI.
+        Returns
+        -------
+        str
+            A message indicating whether the input version is older than, equal to,
+            or newer than the latest version available on PyPI.
         """
+        import json
+        import re
+        from urllib.error import HTTPError, URLError
+        from urllib.parse import quote
+        from urllib.request import Request, urlopen
+
         if not isinstance(library, str) or not library.strip():
             if not silent:
                 print("Helper.CheckVersion - Error: The input library parameter is not valid. Returning None.")
             return None
-        if version is None or str(version).strip() == "":
+
+        if version is None or not str(version).strip():
             if not silent:
                 print("Helper.CheckVersion - Error: The input version parameter is not valid. Returning None.")
             return None
 
-        try:
-            from packaging import version as ver
-        except Exception:
-            if not silent:
-                print("Helper.CheckVersion - Error: Could not import packaging.version. Returning None.")
-            return None
+        library = library.strip()
+        current_version = str(version).strip()
+
+        url = f"https://pypi.org/pypi/{quote(library)}/json"
+
+        request = Request(
+            url,
+            headers={
+                "Accept": "application/json",
+                "User-Agent": f"TopologicPy/{current_version} version-check",
+            },
+        )
 
         try:
-            import requests
-            response = requests.get(f"https://pypi.org/pypi/{library.strip()}/json", timeout=10)
-            response.raise_for_status()
-            data = response.json()
-            latest_version = data["info"]["version"]
-        except Exception:
+            with urlopen(request, timeout=10) as response:
+                data = json.load(response)
+
+            latest_version = data.get("info", {}).get("version")
+
+            if not latest_version:
+                if not silent:
+                    print("Helper.CheckVersion - Error: PyPI did not return a valid version. Returning None.")
+                return None
+
+        except HTTPError as e:
             if not silent:
-                print("Helper.CheckVersion - Error: Could not fetch data from PyPI. Returning None.")
+                if e.code == 404:
+                    print(f"Helper.CheckVersion - Error: The library '{library}' was not found on PyPI. Returning None.")
+                else:
+                    print(f"Helper.CheckVersion - Error: PyPI returned HTTP error {e.code}. Returning None.")
             return None
 
-        try:
-            current = ver.parse(str(version))
-            latest = ver.parse(str(latest_version))
-        except Exception:
+        except URLError as e:
+            if not silent:
+                print(f"Helper.CheckVersion - Error: Could not connect to PyPI ({e.reason}). Returning None.")
+            return None
+
+        except Exception as e:
+            if not silent:
+                print(f"Helper.CheckVersion - Error: Could not fetch version information from PyPI ({e}). Returning None.")
+            return None
+
+        def version_key(value):
+            """
+            Creates a comparison key for conventional Python version strings.
+            Uses packaging.version when available, with a dependency-free fallback.
+            """
+            try:
+                from packaging.version import Version
+                return Version(str(value))
+            except Exception:
+                parts = re.findall(r"\d+", str(value))
+                if not parts:
+                    return None
+
+                numbers = [int(part) for part in parts]
+
+                while len(numbers) < 3:
+                    numbers.append(0)
+
+                return tuple(numbers)
+
+        current = version_key(current_version)
+        latest = version_key(latest_version)
+
+        if current is None or latest is None:
             if not silent:
                 print("Helper.CheckVersion - Error: Could not parse version numbers. Returning None.")
             return None
 
         if current < latest:
-            return f"The version that you are using ({version}) is OLDER than the latest version ({latest_version}) from PyPI. Please consider upgrading to the latest version."
+            return (
+                f"The version that you are using ({current_version}) is OLDER than "
+                f"the latest version ({latest_version}) available on PyPI. "
+                f"Please consider upgrading to the latest version."
+            )
+
         if current == latest:
-            return f"The version that you are using ({version}) is EQUAL TO the latest version available on PyPI."
-        return f"The version that you are using ({version}) is NEWER than the latest version ({latest_version}) available from PyPI."
+            return (
+                f"The version that you are using ({current_version}) is EQUAL TO "
+                f"the latest version available on PyPI."
+            )
+
+        return (
+            f"The version that you are using ({current_version}) is NEWER than "
+            f"the latest version ({latest_version}) available on PyPI."
+        )
 
     @staticmethod
     def ClosestMatch(item, listA):
@@ -785,6 +850,53 @@ class Helper:
         order = list(range(len(listA)))
         order.sort(key=lambda idx: tuple((-rank[idx] if reverseFlags[j] else rank[idx]) for j, rank in enumerate(ranks)))
         return [listA[i] for i in order]
+
+    @staticmethod
+    def TopPercentIndices(values: list, percent: float) -> list:
+        """
+        Returns the indices of the highest values corresponding to the specified percentage of the input list.
+
+        Parameters
+        ----------
+        values : list
+            The input list of numerical values.
+        percent : float
+            The percentage of highest values to return. This value should be between 0 and 100.
+
+        Returns
+        -------
+        list
+            The indices of the highest values in the input list, ordered from highest to lowest value.
+
+        """
+        import math
+
+        if not isinstance(values, list):
+            print("Helper.TopPercentIndices - Error: The input values parameter is not a valid list. Returning None.")
+            return None
+
+        if len(values) == 0:
+            return []
+
+        if not all(isinstance(value, (int, float)) for value in values):
+            print("Helper.TopPercentIndices - Error: The input values list contains non-numerical values. Returning None.")
+            return None
+
+        if not isinstance(percent, (int, float)):
+            print("Helper.TopPercentIndices - Error: The input percent parameter is not a valid number. Returning None.")
+            return None
+
+        if percent <= 0 or percent > 100:
+            print("Helper.TopPercentIndices - Error: The input percent parameter must be greater than 0 and less than or equal to 100. Returning None.")
+            return None
+
+        count = math.ceil(len(values) * percent / 100.0)
+
+        return sorted(
+            range(len(values)),
+            key=lambda i: values[i],
+            reverse=True
+        )[:count]
 
     @staticmethod
     def Transpose(listA):

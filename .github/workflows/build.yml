@@ -118,7 +118,7 @@ jobs:
           retention-days: 60
 
   test-topologiccore:
-    name: Test TopologicCore with Python ${{ matrix.python-version }} on ${{ startsWith(matrix.os, 'macos-') && 'macOS' || startsWith(matrix.os, 'windows-') && 'Windows' || 'Linux' }}
+    name: Test TopologicCore 8.0.4 with Python ${{ matrix.python-version }} on ${{ startsWith(matrix.os, 'macos-') && 'macOS' || startsWith(matrix.os, 'windows-') && 'Windows' || 'Linux' }}
     runs-on: ${{ matrix.os }}
     env:
       TOPOLOGICPY_CORE_BACKEND: topologic_core

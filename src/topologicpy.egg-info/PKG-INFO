@@ -1,34 +1,81 @@
 Metadata-Version: 2.4
 Name: topologicpy
-Version: 0.9.59
+Version: 0.9.64
 Summary: An AI-Powered Spatial Modelling and Analysis Software Library for Architecture, Engineering, and Construction.
 Author-email: Wassim Jabi <wassim.jabi@gmail.com>
-License: AGPL v3 License
+License: GNU LESSER GENERAL PUBLIC LICENSE
+        Version 3, 29 June 2007
         
-        Copyright (c) 2024 Wassim Jabi
+        Copyright (C) 2007 Free Software Foundation, Inc. <http://fsf.org/>
         
-        This program is free software: you can redistribute it and/or modify it under
-        the terms of the GNU Affero General Public License as published by the Free Software
-        Foundation, either version 3 of the License, or (at your option) any later
-        version.
+        Everyone is permitted to copy and distribute verbatim copies of this license document, but changing it is not allowed.
         
-        This program is distributed in the hope that it will be useful, but WITHOUT
-        ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-        FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more
-        details.
+        This version of the GNU Lesser General Public License incorporates the terms and conditions of version 3 of the GNU General Public License, supplemented by the additional permissions listed below.
         
-        You should have received a copy of the GNU Affero General Public License along with
-        this program. If not, see <https://www.gnu.org/licenses/>.
+        0. Additional Definitions.
         
+        As used herein, “this License” refers to version 3 of the GNU Lesser General Public License, and the “GNU GPL” refers to version 3 of the GNU General Public License.
+        
+        “The Library” refers to a covered work governed by this License, other than an Application or a Combined Work as defined below.
+        
+        An “Application” is any work that makes use of an interface provided by the Library, but which is not otherwise based on the Library. Defining a subclass of a class defined by the Library is deemed a mode of using an interface provided by the Library.
+        
+        A “Combined Work” is a work produced by combining or linking an Application with the Library. The particular version of the Library with which the Combined Work was made is also called the “Linked Version”.
+        
+        The “Minimal Corresponding Source” for a Combined Work means the Corresponding Source for the Combined Work, excluding any source code for portions of the Combined Work that, considered in isolation, are based on the Application, and not on the Linked Version.
+        
+        The “Corresponding Application Code” for a Combined Work means the object code and/or source code for the Application, including any data and utility programs needed for reproducing the Combined Work from the Application, but excluding the System Libraries of the Combined Work.
+        
+        1. Exception to Section 3 of the GNU GPL.
+        
+        You may convey a covered work under sections 3 and 4 of this License without being bound by section 3 of the GNU GPL.
+        
+        2. Conveying Modified Versions.
+        
+        If you modify a copy of the Library, and, in your modifications, a facility refers to a function or data to be supplied by an Application that uses the facility (other than as an argument passed when the facility is invoked), then you may convey a copy of the modified version:
+        
+        a) under this License, provided that you make a good faith effort to ensure that, in the event an Application does not supply the function or data, the facility still operates, and performs whatever part of its purpose remains meaningful, or
+        b) under the GNU GPL, with none of the additional permissions of this License applicable to that copy.
+        3. Object Code Incorporating Material from Library Header Files.
+        
+        The object code form of an Application may incorporate material from a header file that is part of the Library. You may convey such object code under terms of your choice, provided that, if the incorporated material is not limited to numerical parameters, data structure layouts and accessors, or small macros, inline functions and templates (ten or fewer lines in length), you do both of the following:
+        
+        a) Give prominent notice with each copy of the object code that the Library is used in it and that the Library and its use are covered by this License.
+        b) Accompany the object code with a copy of the GNU GPL and this license document.
+        4. Combined Works.
+        
+        You may convey a Combined Work under terms of your choice that, taken together, effectively do not restrict modification of the portions of the Library contained in the Combined Work and reverse engineering for debugging such modifications, if you also do each of the following:
+        
+        a) Give prominent notice with each copy of the Combined Work that the Library is used in it and that the Library and its use are covered by this License.
+        b) Accompany the Combined Work with a copy of the GNU GPL and this license document.
+        c) For a Combined Work that displays copyright notices during execution, include the copyright notice for the Library among these notices, as well as a reference directing the user to the copies of the GNU GPL and this license document.
+        d) Do one of the following:
+        0) Convey the Minimal Corresponding Source under the terms of this License, and the Corresponding Application Code in a form suitable for, and under terms that permit, the user to recombine or relink the Application with a modified version of the Linked Version to produce a modified Combined Work, in the manner specified by section 6 of the GNU GPL for conveying Corresponding Source.
+        1) Use a suitable shared library mechanism for linking with the Library. A suitable mechanism is one that (a) uses at run time a copy of the Library already present on the user’s computer system, and (b) will operate properly with a modified version of the Library that is interface-compatible with the Linked Version.
+        e) Provide Installation Information, but only if you would otherwise be required to provide such information under section 6 of the GNU GPL, and only to the extent that such information is necessary to install and execute a modified version of the Combined Work produced by recombining or relinking the Application with a modified version of the Linked Version. (If you use option 4d0, the Installation Information must accompany the Minimal Corresponding Source and Corresponding Application Code. If you use option 4d1, you must provide the Installation Information in the manner specified by section 6 of the GNU GPL for conveying Corresponding Source.)
+        5. Combined Libraries.
+        
+        You may place library facilities that are a work based on the Library side by side in a single library together with other library facilities that are not Applications and are not covered by this License, and convey such a combined library under terms of your choice, if you do both of the following:
+        
+        a) Accompany the combined library with a copy of the same work based on the Library, uncombined with any other library facilities, conveyed under the terms of this License.
+        b) Give prominent notice with the combined library that part of it is a work based on the Library, and explaining where to find the accompanying uncombined form of the same work.
+        6. Revised Versions of the GNU Lesser General Public License.
+        
+        The Free Software Foundation may publish revised and/or new versions of the GNU Lesser General Public License from time to time. Such new versions will be similar in spirit to the present version, but may differ in detail to address new problems or concerns.
+        
+        Each version is given a distinguishing version number. If the Library as you received it specifies that a certain numbered version of the GNU Lesser General Public License “or any later version” applies to it, you have the option of following the terms and conditions either of that published version or of any later version published by the Free Software Foundation. If the Library as you received it does not specify a version number of the GNU Lesser General Public License, you may choose any version of the GNU Lesser General Public License ever published by the Free Software Foundation.
+        
+        If the Library as you received it specifies that a proxy can decide whether future versions of the GNU Lesser General Public License shall apply, that proxy’s public statement of acceptance of any version is permanent authorization for you to choose that version for the Library.
 Project-URL: Homepage, https://github.com/wassimj/TopologicPy
 Project-URL: Bug Tracker, https://github.com/wassimj/TopologicPy/issues
 Project-URL: Documentation, https://topologicpy.readthedocs.io
 Classifier: Programming Language :: Python :: 3
-Classifier: License :: OSI Approved :: GNU General Public License v3 (GPLv3)
+Classifier: License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)
 Classifier: Operating System :: OS Independent
 Requires-Python: <3.15,>=3.8
 Description-Content-Type: text/markdown
 License-File: LICENSE
+License-File: COPYING
 Requires-Dist: numpy>=1.18.0
 Requires-Dist: scipy>=1.4.1
 Requires-Dist: pandas
@@ -37,67 +84,92 @@ Requires-Dist: plotly
 Requires-Dist: lark
 Requires-Dist: webcolors
 Requires-Dist: nbformat
-Requires-Dist: topologic_core>=7.0.1
 Provides-Extra: test
 Requires-Dist: pytest-xdist>=2.4.0; extra == "test"
 Dynamic: license-file
 
-# topologicpy
+# TopologicPy
 
 <img src="https://topologic.app/wp-content/uploads/2023/02/topologicpy-logo-no-loop.gif" alt="topologicpy logo" width="250" loop="1">
 
 # An AI-Powered Spatial Modelling and Analysis Software Library for Architecture, Engineering, and Construction
 
 ## Introduction
-Welcome to topologicpy (rhymes with apple pie). topologicpy is an open-source python 3 implementation of [Topologic](https://topologic.app) which is a powerful spatial modelling and analysis software library that revolutionizes the way you design architectural spaces, buildings, and artefacts. Topologic's advanced features enable you to create hierarchical and topological information-rich 3D representations that offer unprecedented flexibility and control in your design process. With the integration of geometry, topology, information, and artificial intelligence, Topologic enriches Building Information Models with Building *Intelligence* Models.
+Welcome to **TopologicPy** (rhymes with *apple pie*). TopologicPy is a powerful, open-source Python library for spatial modelling, topology, graph analysis, and computational design in Architecture, Engineering, and Construction (AEC). It enables the creation and analysis of information-rich representations of architectural spaces, buildings, infrastructure, and other spatial systems by integrating **geometry, topology, semantics, graphs, and computation** within a coherent programming framework.
 
-Two of Topologic's main strengths are its support for *defeaturing* and *encoded meshing*. By simplifying the geometry of a model and removing small or unnecessary details not needed for analysis, defeaturing allows for faster and more accurate analysis while maintaining topological consistency. This feature enables you to transform low-quality, heavy BIM models into high-quality, lightweight representations ready for rigorous analysis effortlessly. Encoded meshing allows you to use the same base elements available in your commercial BIM platform to cleanly build 3D information-encoded models that match your exacting specifications.
+At the heart of TopologicPy is support for **non-manifold topology (NMT)**. Unlike conventional solid-modelling approaches, NMT allows entities of different dimensionalities to coexist within a single coherent model. Vertices, edges, surfaces, volumes, and their assemblies can therefore represent complex spatial and analytical systems while explicitly preserving their connectivity and adjacency relationships. This makes TopologicPy particularly well suited to applications in architectural space planning, building analysis, structural modelling, circulation and navigation, energy and environmental analysis, and other workflows in which relationships between entities are as important as their geometric form.
 
-Topologic's versatility extends to entities with mixed dimensionalities, enabling structural models, for example, to be represented coherently. Lines can represent columns and beams, surfaces can represent walls and slabs, and volumes can represent solids. Even non-building entities like structural loads can be efficiently attached to the structure. This approach creates mixed-dimensional models that are highly compatible with structural analysis simulation software.
+TopologicPy supports **mixed-dimensional models** naturally. For example, lines may represent beams, columns, circulation paths, or network connections; surfaces may represent walls, slabs, zones, or analytical boundaries; and volumes may represent rooms, buildings, or other spatial regions. These entities can coexist within the same topological structure and carry associated dictionaries and semantic information. This provides a flexible foundation for translating between geometric models, Building Information Models (BIM), analytical models, and graph-based representations.
 
-Topologic's graph-based representation makes it a natural fit for integrating with Graph Machine Learning (GML), graph databases, knowledge graphs, and GraphRAG workflows, an exciting new branch of artificial intelligence. With GML, you can process vast amounts of connected data and extract valuable insights quickly and accurately. Topologic's intelligent algorithms for graph and node classification take GML to the next level by using the extracted data to classify building typologies, predict associations, and complete missing information in building information models. This integration empowers you to leverage the historical knowledge embedded in your databases and make informed decisions about your current design projects. With Topologic and GML, you can streamline your workflow, enhance your productivity, and achieve your project goals with greater efficiency and precision.
+A major strength of TopologicPy is its ability to transform spatial and topological models into **graphs**. Buildings and other spatial systems can be represented through nodes and edges describing adjacency, accessibility, containment, visibility, connectivity, or other relationships. TopologicPy provides graph algorithms for path finding, centrality, community detection, spatial analysis, and related operations, while also supporting integration with **Graph Machine Learning (GML)** workflows. These capabilities make it possible to investigate spatial configurations computationally and to apply machine-learning techniques to problems such as classification, prediction, pattern recognition, and inference over connected spatial data.
 
-Experience Topologic's comprehensive and well-documented Application Protocol Interface (API) and enjoy the freedom and flexibility that Topologic offers in your architectural design process. Topologic uses cutting-edge C++-based non-manifold topology (NMT) core technology ([Open CASCADE](https://www.opencascade.com/)), and python bindings. Interacting with Topologic is easily accomplished through a command-Line interface and scripts, visual data flow programming (VDFP) plugins for popular BIM software, and cloud-based interfaces through [Streamlit](https://streamlit.io/). You can easily interact with Topologic in various ways to perform design and analysis tasks or even seamlessly customize and embed it in your own in-house software and workflows. Plus, Topologic includes several industry-standard methods for data transport including IFC, OBJ, BREP, HBJSON, CSV, as well serializing through cloud-based services such as [Speckle](https://speckle.systems/).
+TopologicPy also supports **semantic and knowledge-based representations**. Its graph and ontology capabilities can be used to construct knowledge graphs, represent relationships derived from BIM and IFC data, perform reasoning, and connect spatial models with broader semantic information. This provides a foundation for workflows involving knowledge graphs, rule-based reasoning, graph databases, and emerging approaches such as GraphRAG and AI-assisted spatial analysis.
 
-Topologic’s open-source philosophy and licensing ([AGPLv3](https://www.gnu.org/licenses/agpl-3.0.en.html)) enables you to achieve your design vision with minimal incremental costs, ensuring a high return on investment. You control and own your information outright, and nothing is ever trapped in an expensive subscription model. Topologic empowers you to build and share data apps with ease, giving you the flexibility to choose between local or cloud-based options and the peace of mind to focus on what matters most. 
+TopologicPy provides a comprehensive Python **Application Programming Interface (API)** designed for scripting, Jupyter notebooks, computational design workflows, research applications, and integration into larger software systems. Its geometry and topology capabilities are currently powered primarily by **PythonOCC/OpenCASCADE**, providing access to the mature Open CASCADE geometric modelling kernel through Python. TopologicPy also maintains support for alternative topology backends, allowing the Python API to remain increasingly independent of any single underlying geometry engine.
 
-Join the revolution in architectural design with Topologic. Try it today and see the difference for yourself.
+Interoperability is an important part of the library. TopologicPy supports widely used formats and workflows including **IFC, BREP, OBJ, STL, DXF, JSON, CSV, RDF/TTL, and HBJSON**, among others. Its IFC capabilities enable geometric, topological, spatial, and semantic information to be extracted from Building Information Models and transformed into structures suitable for analysis, graph generation, reasoning, and downstream computational workflows.
+
+TopologicPy is distributed as open-source software under the **[GNU Lesser General Public License (LGPL)](https://opensource.org/license/lgpl-3-0)**. This allows it to be used, extended, embedded, and integrated into both research and professional workflows without dependence on proprietary subscription-based platforms. The library is designed to provide an extensible computational foundation on which researchers, designers, engineers, educators, and software developers can build their own spatial analysis and design tools.
+
+TopologicPy can be used interactively in Python and Jupyter environments, incorporated into automated analysis pipelines, or embedded within larger applications. By bringing together **geometry, non-manifold topology, graph computation, semantics, and artificial intelligence**, TopologicPy provides a flexible platform for computationally understanding and working with the spatial relationships that underpin the built environment.
 
 ## Installation
-topologicpy can be installed using the **pip** command as such:
 
-`pip install topologicpy --upgrade`
+### Recommended: Conda
+
+TopologicPy can be installed from conda-forge:
+
+```bash
+conda create -n topologicpy -c conda-forge topologicpy
+conda activate topologicpy
+```
+
+### Pip
+
+TopologicPy can also be installed from PyPI:
+
+```bash
+pip install topologicpy --upgrade
+```
 
 ## Prerequisites
 
-topologicpy depends on the following python libraries which will be installed automatically from pip:
+TopologicPy requires Python 3.8 or newer and currently supports Python versions below 3.15.
+
+### Core Dependencies
+
+TopologicPy depends on the following Python libraries:
 
 <details>
-<summary>
-<b>Expand to view dependencies</b>
-</summary>
-* [numpy](http://numpy.org) >= 1.24.0
-* [scipy](http://scipy.org) >= 1.10.0
-* [plotly](http://plotly.com/) >= 5.11.0
-* [ifcopenshell](http://ifcopenshell.org/) >=0.7.9
-* [ipfshttpclient](https://pypi.org/project/ipfshttpclient/) >= 0.7.0
-* [web3](https://web3py.readthedocs.io/en/stable/) >=5.30.0
-* [openstudio](https://openstudio.net/) >= 3.4.0
-* [topologic_core](https://pypi.org/project/topologic_core/) >= 6.0.6
-* [lbt-ladybug](https://pypi.org/project/lbt-ladybug/) >= 0.25.161
-* [lbt-honeybee](https://pypi.org/project/lbt-honeybee/) >= 0.6.12
-* [honeybee-energy](https://pypi.org/project/honeybee-energy/) >= 1.91.49
-* [json](https://docs.python.org/3/library/json.html) >= 2.0.9
-* [py2neo](https://py2neo.org/) >= 2021.2.3
-* [pyvisgraph](https://github.com/TaipanRex/pyvisgraph) >= 0.2.1
-* [specklepy](https://github.com/specklesystems/specklepy) >= 2.7.6
-* [pandas](https://pandas.pydata.org/) >= 1.4.2
-* [scipy](https://scipy.org/) >= 1.8.1
-* [dgl](https://github.com/dmlc/dgl) >= 0.8.2
+
+<summary><b>Expand to view dependencies</b></summary>
+
+* [numpy](https://numpy.org/) >= 1.18.0
+* [scipy](https://scipy.org/) >= 1.4.1
+* [pandas](https://pandas.pydata.org/)
+* [shapely](https://shapely.readthedocs.io/)
+* [plotly](https://plotly.com/python/)
+* [lark](https://github.com/lark-parser/lark)
+* [webcolors](https://pypi.org/project/webcolors/)
+* [nbformat](https://nbformat.readthedocs.io/)
 
 </details>
 
-## How to start using Topologic
+These dependencies are installed automatically when TopologicPy is installed.
+
+### Geometry and Topology Backend
+
+TopologicPy requires a geometry and topology backend.
+
+When TopologicPy is installed from **conda-forge**, the recommended
+[pythonocc-core](https://github.com/tpaviot/pythonocc-core) backend is installed automatically:
+
+```bash
+conda create -n topologicpy -c conda-forge topologicpy
+conda activate topologicpy
+```
+
+## How to start using TopologicPy
 1. Open your favourite python editor ([jupyter notebook](https://jupyter.org/) is highly recommended)
 1. Type 'import topologicpy'
 1. Start using the API
@@ -197,6 +269,4 @@ Or you can import the following .bib formatted references into your favourite re
 }
 ```
 
-topologicpy: © 2025 Wassim Jabi
-
-Topologic: © 2025 Cardiff University and UCL
+topologicpy: © 2026 Wassim Jabi

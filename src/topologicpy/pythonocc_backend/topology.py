@@ -2496,6 +2496,252 @@ class Topology:
 
         return self
 
+    def RemoveCoplanarFaces(
+        self,
+        epsilon: float = 0.01,
+        tolerance: float = 0.0001
+    ):
+        """
+        Removes coplanar faces using OCCT's ShapeUpgrade_UnifySameDomain.
+
+        Parameters
+        ----------
+        epsilon : float, optional
+            The linear tolerance used by OCCT when determining whether
+            neighbouring faces lie on the same geometric domain.
+            Default is 0.01.
+        tolerance : float, optional
+            The sewing tolerance used when the input is a shapeless aggregate
+            of independently constructed faces. Default is 0.0001.
+
+        Returns
+        -------
+        Topology
+            The topology with adjacent coplanar faces unified.
+        """
+
+        type_name = _topology_type_name(self)
+
+        if type_name in ("Vertex", "Edge", "Wire", "Face"):
+            return self
+
+        if ShapeUpgrade_UnifySameDomain is None:
+            return self
+
+        shape = _shape_from_topology(self)
+        temporary_shape = False
+
+        # ------------------------------------------------------------------
+        # Shapeless face soup
+        #
+        # Cluster.ByTopologies intentionally stores shape=None. This is the
+        # common case for imported OBJ meshes. The individual faces therefore
+        # need to be sewn once so coincident triangle edges become genuine
+        # shared OCCT edges before same-domain unification.
+        # ------------------------------------------------------------------
+
+        if _is_null_shape(shape):
+
+            members = _safe_list(
+                getattr(self, "topologies", None)
+            )
+
+            face_soup = (
+                len(members) > 0
+                and all(
+                    _topology_type_name(member) == "Face"
+                    for member in members
+                )
+            )
+
+            if face_soup:
+                try:
+                    from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_Sewing
+
+                    sewing = BRepBuilderAPI_Sewing(
+                        max(float(tolerance), 1e-12)
+                    )
+
+                    count = 0
+
+                    for member in members:
+                        member_shape = _shape_from_topology(
+                            member
+                        )
+
+                        if _is_null_shape(member_shape):
+                            continue
+
+                        sewing.Add(
+                            member_shape
+                        )
+
+                        count += 1
+
+                    if count == 0:
+                        return self
+
+                    sewing.Perform()
+
+                    shape = sewing.SewedShape()
+
+                    if _is_null_shape(shape):
+                        return self
+
+                    temporary_shape = True
+
+                except Exception:
+                    return self
+
+            else:
+                # Preserve arbitrary heterogeneous Clusters by constructing
+                # an OCCT Compound without discarding any members.
+                shape = _ensure_compound_shape(
+                    self
+                )
+
+                if _is_null_shape(shape):
+                    return self
+
+        # ------------------------------------------------------------------
+        # Native OCCT same-domain unification.
+        #
+        # Constructor arguments:
+        #
+        #   shape
+        #   UnifyEdges=False
+        #   UnifyFaces=True
+        #   ConcatBSplines=False
+        #
+        # We specifically want face unification. Removing collinear edges or
+        # joining curves is a different operation and should not be performed
+        # implicitly by RemoveCoplanarFaces.
+        # ------------------------------------------------------------------
+
+        try:
+            unifier = ShapeUpgrade_UnifySameDomain(
+                shape,
+                False,
+                True,
+                False
+            )
+
+            if hasattr(
+                unifier,
+                "SetLinearTolerance"
+            ):
+                unifier.SetLinearTolerance(
+                    max(float(epsilon), 1e-12)
+                )
+
+            if hasattr(
+                unifier,
+                "AllowInternalEdges"
+            ):
+                unifier.AllowInternalEdges(
+                    False
+                )
+
+            # The sewn face soup is a temporary shape. OCCT is free to modify
+            # it in-place, avoiding unnecessary defensive copying.
+            if (
+                temporary_shape
+                and hasattr(
+                    unifier,
+                    "SetSafeInputMode"
+                )
+            ):
+                unifier.SetSafeInputMode(
+                    False
+                )
+
+            unifier.Build()
+
+            unified_shape = unifier.Shape()
+
+            if _is_null_shape(
+                unified_shape
+            ):
+                return self
+
+        except Exception:
+            return self
+
+        # ------------------------------------------------------------------
+        # Wrap the native result.
+        # ------------------------------------------------------------------
+
+        dictionary = Topology.GetDictionary(
+            self
+        )
+
+        contents = list(
+            getattr(
+                self,
+                "contents",
+                []
+            ) or []
+        )
+
+        contexts = list(
+            getattr(
+                self,
+                "contexts",
+                []
+            ) or []
+        )
+
+        apertures = list(
+            getattr(
+                self,
+                "apertures",
+                []
+            ) or []
+        )
+
+        result = Topology.ByOcctShape(
+            unified_shape,
+            dictionary=dictionary,
+            contents=contents,
+            contexts=contexts,
+            apertures=apertures
+        )
+
+        if result is None:
+            return self
+
+        # ------------------------------------------------------------------
+        # Simplify a one-face Shell to a Face.
+        #
+        # ShapeUpgrade_UnifySameDomain preserves the Shell container even when
+        # every constituent triangle has collapsed into one OCCT Face. Topologic
+        # semantics are cleaner if that result is returned directly as a Face.
+        # ------------------------------------------------------------------
+
+        if _topology_type_name(
+            result
+        ) == "Shell":
+
+            faces = _iter_occ_subshapes_unique(
+                unified_shape,
+                TopAbs_FACE
+            )
+
+            if len(faces) == 1:
+
+                face = Topology.ByOcctShape(
+                    faces[0],
+                    dictionary=dictionary,
+                    contents=contents,
+                    contexts=contexts,
+                    apertures=apertures
+                )
+
+                if face is not None:
+                    return face
+
+        return result
+
     def Distance(
         self,
         otherTopology: Any,

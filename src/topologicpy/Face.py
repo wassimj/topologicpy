@@ -37,6 +37,78 @@ except:
 
 class Face():
     @staticmethod
+    def _EnsurePrimitivePositiveZ(face, tolerance: float = 0.0001, silent: bool = False):
+        """
+        Ensures that a planar primitive created in the XY plane has a +Z normal.
+
+        This helper is intentionally limited to the primitive-construction path.
+        Generic Face.ByWire behaviour is left unchanged.
+        """
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(face, "Face"):
+            return None
+
+        try:
+            normal = Face.Normal(face, mantissa=12)
+            if isinstance(normal, list) and len(normal) >= 3 and normal[2] < -tolerance:
+                inverted = Face.Invert(face, tolerance=tolerance, silent=True)
+                if Topology.IsInstance(inverted, "Face"):
+                    face = inverted
+        except Exception:
+            if not silent:
+                print("Face._EnsurePrimitivePositiveZ - Warning: Could not verify the primitive face normal.")
+
+        return face
+
+    @staticmethod
+    def _PrimitiveFaceByWire(wire, origin=None, direction: list = [0, 0, 1], tolerance: float = 0.0001, silent: bool = False):
+        """
+        Builds a primitive face in canonical local XY first, then orients the
+        completed face into space. This preserves the primitive's native +X/+Y
+        parametric frame instead of asking the backend to infer a new frame after
+        the wire has already been rotated.
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(wire, "Wire"):
+            return None
+
+        if not Topology.IsInstance(origin, "Vertex"):
+            origin = Vertex.Origin()
+
+        if not isinstance(direction, (list, tuple)) or len(direction) != 3:
+            if not silent:
+                print("Face._PrimitiveFaceByWire - Error: The input direction parameter is not a valid vector. Returning None.")
+            return None
+
+        try:
+            magnitude = abs(float(direction[0])) + abs(float(direction[1])) + abs(float(direction[2]))
+        except Exception:
+            magnitude = 0.0
+
+        if magnitude <= tolerance:
+            if not silent:
+                print("Face._PrimitiveFaceByWire - Error: The input direction vector magnitude is below the tolerance value. Returning None.")
+            return None
+
+        face = Face.ByWire(wire, tolerance=tolerance, silent=silent)
+        face = Face._EnsurePrimitivePositiveZ(face, tolerance=tolerance, silent=silent)
+        if not Topology.IsInstance(face, "Face"):
+            return None
+
+        if list(direction) != [0, 0, 1]:
+            face = Topology.Orient(
+                face,
+                origin=origin,
+                dirA=[0, 0, 1],
+                dirB=list(direction),
+            )
+
+        return face
+
+    @staticmethod
     def AddInternalBoundaries(face, wires: list):
         """
         Adds internal boundaries (closed wires) to the input face. Internal boundaries are considered holes in the input face.
@@ -1194,6 +1266,7 @@ class Face():
         outer_wire = Wire.Circle(origin=Vertex.Origin(), radius=radius, sides=sides, direction=[0,0,1], placement="center", tolerance=tolerance)
         inner_wire = Wire.Circle(origin=Vertex.Origin(), radius=radius-thickness, sides=sides, direction=[0,0,1], placement="center", tolerance=tolerance)
         return_face = Face.ByWires(outer_wire, [inner_wire])
+        return_face = Face._EnsurePrimitivePositiveZ(return_face, tolerance=tolerance, silent=silent)
         if not Topology.IsInstance(return_face, "face"):
             if not silent:
                 print("Face.CHS - Error: Could not create the face for the CHS. Returning None.")
@@ -1254,10 +1327,10 @@ class Face():
         from topologicpy.Wire import Wire
         from topologicpy.Topology import Topology
 
-        wire = Wire.Circle(origin=origin, radius=radius, sides=sides, fromAngle=fromAngle, toAngle=toAngle, close=True, direction=direction, placement=placement, tolerance=tolerance)
+        wire = Wire.Circle(origin=origin, radius=radius, sides=sides, fromAngle=fromAngle, toAngle=toAngle, close=True, direction=[0, 0, 1], placement=placement, tolerance=tolerance)
         if not Topology.IsInstance(wire, "Wire"):
             return None
-        return Face.ByWire(wire, tolerance=tolerance)
+        return Face._PrimitiveFaceByWire(wire, origin=origin, direction=direction, tolerance=tolerance, silent=False)
 
     @staticmethod
     def Compactness(face, mantissa: int = 6, silent: bool = False) -> float:
@@ -2054,11 +2127,11 @@ class Face():
                                    d=d,
                                    flipHorizontal=flipHorizontal,
                                    flipVertical=flipVertical,
-                                   direction=direction,
+                                   direction=[0, 0, 1],
                                    placement=placement,
                                    tolerance=tolerance,
                                    silent=silent)
-        return Face.ByWire(cross_shape_wire, tolerance=tolerance, silent=silent)
+        return Face._PrimitiveFaceByWire(cross_shape_wire, origin=origin, direction=direction, tolerance=tolerance, silent=silent)
 
     @staticmethod
     def CShape(origin=None,
@@ -2171,11 +2244,11 @@ class Face():
                                    c=c,
                                    flipHorizontal=flipHorizontal,
                                    flipVertical=flipVertical,
-                                   direction=direction,
+                                   direction=[0, 0, 1],
                                    placement=placement,
                                    tolerance=tolerance,
                                    silent=silent)
-        return Face.ByWire(c_shape_wire, tolerance=tolerance, silent=silent)
+        return Face._PrimitiveFaceByWire(c_shape_wire, origin=origin, direction=direction, tolerance=tolerance, silent=silent)
 
     @staticmethod
     def Edges(face, silent: bool = False) -> list:
@@ -2237,13 +2310,11 @@ class Face():
         from topologicpy.Wire import Wire
         from topologicpy.Topology import Topology
 
-        wire = Wire.Einstein(origin=origin, radius=radius, direction=direction, placement=placement)
+        wire = Wire.Einstein(origin=origin, radius=radius, direction=[0, 0, 1], placement=placement, tolerance=tolerance)
         if not Topology.IsInstance(wire, "Wire"):
             print("Face.Einstein - Error: Could not create base wire for the Einstein tile. Returning None.")
             return None
-        f = Face.ByWire(wire, tolerance=tolerance)
-        f = Topology.Orient(f, dirA=Face.Normal(f), dirB=direction)
-        return f
+        return Face._PrimitiveFaceByWire(wire, origin=origin, direction=direction, tolerance=tolerance, silent=False)
     
     @staticmethod
     def Ellipse(origin= None,
@@ -2317,13 +2388,13 @@ class Face():
                          focalLength=focalLength, eccentricity=eccentricity,
                          majorAxisLength=majorAxisLength, minorAxisLength=minorAxisLength,
                          sides=sides, fromAngle=fromAngle, toAngle=toAngle,
-                         close=close, direction=direction,
+                         close=close, direction=[0, 0, 1],
                          placement=placement, tolerance=tolerance)
         if not Topology.IsInstance(w, "Wire"):
             if not silent:
                 print("Face.Ellipse - Error: Could not create an ellipse. Returning None.")
             return None
-        return Face.ByWire(w, tolerance=tolerance, silent=silent)
+        return Face._PrimitiveFaceByWire(w, origin=origin, direction=direction, tolerance=tolerance, silent=silent)
     
     @staticmethod
     def ExteriorAngles(face, includeInternalBoundaries=False, mantissa: int = 6) -> list:
@@ -3211,11 +3282,11 @@ class Face():
                                    c=c,
                                    flipHorizontal=flipHorizontal,
                                    flipVertical=flipVertical,
-                                   direction=direction,
+                                   direction=[0, 0, 1],
                                    placement=placement,
                                    tolerance=tolerance,
                                    silent=silent)
-        return Face.ByWire(i_shape_wire, tolerance=tolerance, silent=silent)
+        return Face._PrimitiveFaceByWire(i_shape_wire, origin=origin, direction=direction, tolerance=tolerance, silent=silent)
 
     # @staticmethod
     # def Isovist(face, vertex, obstacles: list = [], direction: list = [0,1,0], fov: float = 360, transferDictionaries: bool = False, metrics: bool = False, triangles: bool = False, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
@@ -5065,11 +5136,11 @@ class Face():
                                    b=b,
                                    flipHorizontal=flipHorizontal,
                                    flipVertical=flipVertical,
-                                   direction=direction,
+                                   direction=[0, 0, 1],
                                    placement=placement,
                                    tolerance=tolerance,
                                    silent=silent)
-        return Face.ByWire(l_shape_wire, tolerance=tolerance, silent=silent)
+        return Face._PrimitiveFaceByWire(l_shape_wire, origin=origin, direction=direction, tolerance=tolerance, silent=silent)
 
     @staticmethod
     def MedialAxis(face, resolution: int = 0, externalVertices: bool = False, internalVertices: bool = False, toLeavesOnly: bool = False, angTolerance: float = 0.1, tolerance: float = 0.0001, silent: bool = False):
@@ -5689,12 +5760,12 @@ class Face():
         from topologicpy.Wire import Wire
         from topologicpy.Topology import Topology
         
-        wire = Wire.Rectangle(origin=origin, width=width, length=length, direction=direction, placement=placement, tolerance=tolerance, silent=silent)
+        wire = Wire.Rectangle(origin=origin, width=width, length=length, direction=[0, 0, 1], placement=placement, tolerance=tolerance, silent=silent)
         if not Topology.IsInstance(wire, "Wire"):
             if not silent:
                 print("Face.Rectangle - Error: Could not create the base wire for the rectangle. Returning None.")
             return None
-        return Face.ByWire(wire, tolerance=tolerance)
+        return Face._PrimitiveFaceByWire(wire, origin=origin, direction=direction, tolerance=tolerance, silent=silent)
     
     @staticmethod
     def RemoveCollinearEdges(face, angTolerance: float = 0.1, tolerance: float = 0.0001, silent: bool = False):
@@ -5803,6 +5874,7 @@ class Face():
         if innerFillet > 0:
            inner_wire = Wire.Fillet(inner_wire, radius=innerFillet*thickness, sides=sides, silent=silent) 
         return_face = Face.ByWires(outer_wire, [inner_wire], silent=silent)
+        return_face = Face._EnsurePrimitivePositiveZ(return_face, tolerance=tolerance, silent=silent)
         if not Topology.IsInstance(return_face, "face"):
             if not silent:
                 print("Face.RHS - Error: Could not create the face for the RHS. Returning None.")
@@ -6065,8 +6137,8 @@ class Face():
             The created squircle.
         """
         from topologicpy.Wire import Wire
-        wire = Wire.Squircle(origin = origin, radius= radius, sides = sides, a = a, b = b, direction = direction, placement = placement, angTolerance = angTolerance, tolerance = tolerance)
-        return Face.ByWire(wire)
+        wire = Wire.Squircle(origin = origin, radius= radius, sides = sides, a = a, b = b, direction = [0, 0, 1], placement = placement, angTolerance = angTolerance, tolerance = tolerance, silent=silent)
+        return Face._PrimitiveFaceByWire(wire, origin=origin, direction=direction, tolerance=tolerance, silent=silent)
     
     @staticmethod
     def Star(origin= None, radiusA: float = 0.5, radiusB: float = 0.2, rays: int = 8, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001, silent: bool = False):
@@ -6099,11 +6171,11 @@ class Face():
         from topologicpy.Wire import Wire
         from topologicpy.Topology import Topology
 
-        wire = Wire.Star(origin=origin, radiusA=radiusA, radiusB=radiusB, rays=rays, direction=direction, placement=placement, tolerance=tolerance)
+        wire = Wire.Star(origin=origin, radiusA=radiusA, radiusB=radiusB, rays=rays, direction=[0, 0, 1], placement=placement, tolerance=tolerance)
         if not Topology.IsInstance(wire, "Wire"):
             print("Face.Rectangle - Error: Could not create the base wire for the star. Returning None.")
             return None
-        return Face.ByWire(wire, tolerance=tolerance)
+        return Face._PrimitiveFaceByWire(wire, origin=origin, direction=direction, tolerance=tolerance, silent=silent)
 
 
     @staticmethod
@@ -6195,11 +6267,11 @@ class Face():
         from topologicpy.Wire import Wire
         from topologicpy.Topology import Topology
 
-        wire = Wire.Trapezoid(origin=origin, widthA=widthA, widthB=widthB, offsetA=offsetA, offsetB=offsetB, length=length, direction=direction, placement=placement, tolerance=tolerance)
+        wire = Wire.Trapezoid(origin=origin, widthA=widthA, widthB=widthB, offsetA=offsetA, offsetB=offsetB, length=length, direction=[0, 0, 1], placement=placement, tolerance=tolerance)
         if not Topology.IsInstance(wire, "Wire"):
             print("Face.Rectangle - Error: Could not create the base wire for the trapezoid. Returning None.")
             return None
-        return Face.ByWire(wire, tolerance=tolerance)
+        return Face._PrimitiveFaceByWire(wire, origin=origin, direction=direction, tolerance=tolerance, silent=silent)
 
     @staticmethod
     def Triangulate(face, mode: int = 0, meshSize: float = None, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False) -> list:
@@ -6557,11 +6629,11 @@ class Face():
                                    b=b,
                                    flipHorizontal=flipHorizontal,
                                    flipVertical=flipVertical,
-                                   direction=direction,
+                                   direction=[0, 0, 1],
                                    placement=placement,
                                    tolerance=tolerance,
                                    silent=silent)
-        return Face.ByWire(t_shape_wire, tolerance=tolerance, silent=silent)
+        return Face._PrimitiveFaceByWire(t_shape_wire, origin=origin, direction=direction, tolerance=tolerance, silent=silent)
 
     @staticmethod
     def VertexByParameters(face, u: float = 0.5, v: float = 0.5):

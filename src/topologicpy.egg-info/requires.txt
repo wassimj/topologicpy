@@ -6,7 +6,6 @@ plotly
 lark
 webcolors
 nbformat
-topologic_core>=7.0.1
 
 [test]
 pytest-xdist>=2.4.0

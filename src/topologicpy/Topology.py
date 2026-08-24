@@ -5241,152 +5241,215 @@ class Topology():
         
         return Topology._OntologyAnnotate(Cluster.ByTopologies(top_verts+top_edges+top_faces+top_cells), ontology=ontology, generatedBy="Topology.ByMeshData", annotateSubtopologies=True, silent=True)
 
+# Drop-in replacements for Topology.ByOBJFile, Topology.ByOBJPath, and Topology.ByOBJString.
+# Paste these methods inside the existing topologicpy.Topology.Topology class.
+
     @staticmethod
-    def ByOBJFile(objFile, mtlFile = None,
-                defaultColor: list = [255,255,255],
-                defaultOpacity: float = 1.0,
-                transposeAxes: bool = True,
-                removeCoplanarFaces: bool = False,
-                selfMerge: bool = True,
-                ontology: bool = False,
-                mantissa : int = 6,
-                tolerance: float = 0.0001):
+    def ByOBJFile(objFile, mtlFile=None,
+                  defaultColor: list = [255, 255, 255],
+                  defaultOpacity: float = 1.0,
+                  transposeAxes: bool = True,
+                  removeCoplanarFaces: bool = False,
+                  selfMerge: bool = True,
+                  ontology: bool = False,
+                  mantissa: int = 6,
+                  tolerance: float = 0.0001):
         """
-        Imports a topology from an OBJ file and an associated materials file.
-        This method is basic and does not support textures and vertex normals.
+        Imports topologies from an OBJ file object and an optional MTL file object.
 
         Parameters
         ----------
         objFile : file object
-            The OBJ file.
+            The OBJ file object.
         mtlFile : file object , optional
-            The MTL file. Default is None.
+            The MTL file object. If None and objFile has a filesystem path,
+            referenced MTL files are loaded automatically when possible.
+            Default is None.
         defaultColor : list , optional
-            The default color to use if none is specified in the file. Default is [255, 255, 255] (white).
+            The default RGB color in the range 0-255. Default is [255, 255, 255].
         defaultOpacity : float , optional
-            The default opacity to use if none is specified in the file. Default is 1.0 (fully opaque).
+            The default opacity. Default is 1.0.
         transposeAxes : bool , optional
-            If set to True the Z and Y axes are transposed. Otherwise, they are not. Default is True.
+            If True, converts OBJ coordinates from (x, y, z) to (x, -z, y).
+            Default is True.
         removeCoplanarFaces : bool , optional
-            If set to True, coplanar faces are merged. Default is True.
+            If True, coplanar faces are merged after the OBJ faces have been
+            constructed as valid Topologic faces. Default is False.
         selfMerge : bool , optional
-            If set to True, the faces of the imported topologies will each be self-merged to create higher-dimensional objects. Otherwise, they remain a cluster of faces. Default is False.
+            If True, each imported group/object is self-merged to the highest
+            logical topology type. Default is True.
         ontology : bool , optional
-            If True, the returned topology is annotated with TopologicPy ontology metadata. Default is False.
+            If True, returned topologies are annotated with TopologicPy ontology
+            metadata. Default is False.
         mantissa : int , optional
-            The number of decimal places to round the result to. Default is 6.
+            The number of decimal places to which OBJ vertex coordinates are
+            rounded. Default is 6.
         tolerance : float , optional
-            The desired tolerance. Default is 0.0001
+            The desired geometric tolerance. Default is 0.0001.
 
         Returns
         -------
         list
-            The imported topologies.
-
+            The imported topologies, one per non-empty OBJ group/object.
         """
-        from os.path import dirname, join, exists
+        import os
 
-
-        def find_next_word_after_mtllib(text):
-            words = text.split()
-            for i, word in enumerate(words):
-                if word == 'mtllib' and i + 1 < len(words):
-                    return words[i + 1]
+        if objFile is None or not hasattr(objFile, "read"):
+            print("Topology.ByOBJFile - Error: the input OBJ file parameter is not a valid file object. Returning None.")
             return None
 
-        obj_string = objFile.read()
-        mtl_filename = find_next_word_after_mtllib(obj_string)
+        try:
+            obj_string = objFile.read()
+        except Exception:
+            print("Topology.ByOBJFile - Error: could not read the input OBJ file. Returning None.")
+            return None
+
+        if isinstance(obj_string, bytes):
+            obj_string = obj_string.decode("utf-8", errors="ignore")
+        if not isinstance(obj_string, str):
+            print("Topology.ByOBJFile - Error: could not decode the input OBJ file. Returning None.")
+            return None
+
         mtl_string = None
-        if mtlFile:
-            mtl_string = mtlFile.read()
-        return Topology.ByOBJString(obj_string,
-                                    mtl_string,
-                                    defaultColor = defaultColor,
-                                    defaultOpacity = defaultOpacity,
-                                    transposeAxes = transposeAxes,
-                                    removeCoplanarFaces = removeCoplanarFaces,
-                                    selfMerge = selfMerge,
-                                    ontology = ontology,
-                                    mantissa = mantissa,
-                                    tolerance = tolerance)
+        if mtlFile is not None:
+            try:
+                mtl_string = mtlFile.read()
+                if isinstance(mtl_string, bytes):
+                    mtl_string = mtl_string.decode("utf-8", errors="ignore")
+            except Exception:
+                mtl_string = None
+        else:
+            # If possible, resolve every referenced mtllib relative to the OBJ file.
+            obj_name = getattr(objFile, "name", None)
+            if isinstance(obj_name, str) and obj_name:
+                parent = os.path.dirname(os.path.abspath(obj_name))
+                chunks = []
+                seen = set()
+                for raw in obj_string.splitlines():
+                    line = raw.lstrip()
+                    if not line.startswith("mtllib") or (len(line) > 6 and not line[6].isspace()):
+                        continue
+                    for filename in line.split()[1:]:
+                        path = os.path.normpath(os.path.join(parent, filename))
+                        if path in seen:
+                            continue
+                        seen.add(path)
+                        if not os.path.isfile(path):
+                            continue
+                        try:
+                            with open(path, "r", encoding="utf-8", errors="ignore") as f:
+                                chunks.append(f.read())
+                        except Exception:
+                            pass
+                if chunks:
+                    mtl_string = "\n".join(chunks)
+
+        return Topology.ByOBJString(
+            obj_string,
+            mtl_string,
+            defaultColor=defaultColor,
+            defaultOpacity=defaultOpacity,
+            transposeAxes=transposeAxes,
+            removeCoplanarFaces=removeCoplanarFaces,
+            selfMerge=selfMerge,
+            ontology=ontology,
+            mantissa=mantissa,
+            tolerance=tolerance,
+        )
 
     @staticmethod
     def ByOBJPath(objPath,
-                  defaultColor: list = [255,255,255],
+                  defaultColor: list = [255, 255, 255],
                   defaultOpacity: float = 1.0,
                   transposeAxes: bool = True,
                   removeCoplanarFaces: bool = False,
                   selfMerge: bool = False,
                   ontology: bool = False,
-                  mantissa : int = 6,
+                  mantissa: int = 6,
                   tolerance: float = 0.0001):
         """
-        Imports a topology from an OBJ file path and an associated materials file.
-        This method is basic and does not support textures and vertex normals.
+        Imports topologies from an OBJ file path and referenced MTL files.
 
         Parameters
         ----------
         objPath : str
             The path to the OBJ file.
         defaultColor : list , optional
-            The default color to use if none is specified in the file. Default is [255, 255, 255] (white).
+            The default RGB color in the range 0-255. Default is [255, 255, 255].
         defaultOpacity : float , optional
-            The default opacity to use if none is specified in the file. Default is 1.0 (fully opaque).
+            The default opacity. Default is 1.0.
         transposeAxes : bool , optional
-            If set to True the Z and Y axes are transposed. Otherwise, they are not. Default is True.
+            If True, converts OBJ coordinates from (x, y, z) to (x, -z, y).
+            Default is True.
         removeCoplanarFaces : bool , optional
-            If set to True, coplanar faces are merged. Default is True.
+            If True, coplanar faces are merged after the OBJ faces have been
+            constructed as valid Topologic faces. Default is False.
         selfMerge : bool , optional
-            If set to True, the faces of the imported topologies will each be self-merged to create higher-dimensional objects. Otherwise, they remain a cluster of faces. Default is False.
+            If True, each imported group/object is self-merged to the highest
+            logical topology type. Default is False.
         ontology : bool , optional
-            If True, the returned topology is annotated with TopologicPy ontology metadata. Default is False.
+            If True, returned topologies are annotated with TopologicPy ontology
+            metadata. Default is False.
         mantissa : int , optional
-            The number of decimal places to round the result to. Default is 6.
+            The number of decimal places to which OBJ vertex coordinates are
+            rounded. Default is 6.
         tolerance : float , optional
-            The desired tolerance. Default is 0.0001
+            The desired geometric tolerance. Default is 0.0001.
 
         Returns
         -------
         list
-            The imported topologies.
-
+            The imported topologies, one per non-empty OBJ group/object.
         """
-        from os.path import dirname, join, exists
+        import os
 
-        if not objPath:
+        if not isinstance(objPath, str) or not objPath:
             print("Topology.ByOBJPath - Error: the input OBJ path parameter is not a valid path. Returning None.")
             return None
-        if not exists(objPath):
+        if not os.path.isfile(objPath):
             print("Topology.ByOBJPath - Error: the input OBJ path does not exist. Returning None.")
             return None
 
-        def find_next_word_after_mtllib(text):
-            words = text.split()
-            for i, word in enumerate(words):
-                if word == 'mtllib' and i + 1 < len(words):
-                    return words[i + 1]
+        try:
+            with open(objPath, "r", encoding="utf-8", errors="ignore") as obj_file:
+                obj_string = obj_file.read()
+        except Exception:
+            print("Topology.ByOBJPath - Error: could not read the input OBJ file. Returning None.")
             return None
 
-        with open(objPath, 'r') as obj_file:
-            obj_string = obj_file.read()
-            mtl_filename = find_next_word_after_mtllib(obj_string)
-            mtl_string = None
-            if mtl_filename:
-                parent_folder = dirname(objPath)
-                mtl_path = join(parent_folder, mtl_filename)
-                if exists(mtl_path):
-                    with open(mtl_path, 'r') as mtl_file:
-                        mtl_string = mtl_file.read()
-        return Topology.ByOBJString(obj_string,
-                                    mtl_string,
-                                    defaultColor=defaultColor,
-                                    defaultOpacity=defaultOpacity,
-                                    transposeAxes=transposeAxes,
-                                    removeCoplanarFaces=removeCoplanarFaces,
-                                    selfMerge = selfMerge,
-                                    ontology = ontology,
-                                    mantissa=mantissa,
-                                    tolerance=tolerance)
+        parent = os.path.dirname(os.path.abspath(objPath))
+        chunks = []
+        seen = set()
+
+        for raw in obj_string.splitlines():
+            line = raw.lstrip()
+            if not line.startswith("mtllib") or (len(line) > 6 and not line[6].isspace()):
+                continue
+            for filename in line.split()[1:]:
+                path = os.path.normpath(os.path.join(parent, filename))
+                if path in seen:
+                    continue
+                seen.add(path)
+                if not os.path.isfile(path):
+                    continue
+                try:
+                    with open(path, "r", encoding="utf-8", errors="ignore") as mtl_file:
+                        chunks.append(mtl_file.read())
+                except Exception:
+                    pass
+
+        return Topology.ByOBJString(
+            obj_string,
+            "\n".join(chunks) if chunks else None,
+            defaultColor=defaultColor,
+            defaultOpacity=defaultOpacity,
+            transposeAxes=transposeAxes,
+            removeCoplanarFaces=removeCoplanarFaces,
+            selfMerge=selfMerge,
+            ontology=ontology,
+            mantissa=mantissa,
+            tolerance=tolerance,
+        )
 
     @staticmethod
     def ByOBJString(objString: str,
@@ -5400,243 +5463,250 @@ class Topology():
                     mantissa: int = 6,
                     tolerance: float = 0.0001):
         """
-        Imports a TopologicPy hierarchy from OBJ and optional MTL strings.
+        Imports TopologicPy topologies from OBJ and optional MTL strings.
 
-        Supported OBJ primitives
-        - v   : vertices
-        - l   : polylines (edges-only / wire-only models)
-        - f   : faces (tri/quad/ngon; may be self-merged)
-        - p   : points
-
-        Grouping
-        - g / o : groups/objects become separate returned topologies (one per group/object)
-
-        Materials
-        - usemtl + MTL Kd/d/Tr are used to set:
-            color   : [R,G,B] in 0..255
-            opacity : 0..1
+        Supported OBJ primitives are vertices (v), faces (f), polylines (l),
+        and points (p). OBJ objects/groups (o/g) are returned as separate
+        topologies. Texture coordinates and vertex normals are ignored.
 
         Parameters
         ----------
         objString : str
             The OBJ file contents as a string.
         mtlString : str , optional
-            The MTL file contents as a string.
+            The MTL file contents as a string. Default is None.
         defaultColor : list , optional
-            The default color to use if none is specified in the file.
-            Default is [255, 255, 255].
+            The default RGB color in the range 0-255. Default is [255, 255, 255].
         defaultOpacity : float , optional
-            The default opacity to use if none is specified in the file.
-            Default is 1.0.
+            The default opacity. Default is 1.0.
         transposeAxes : bool , optional
-            If set to True, converts OBJ coordinates from (x, y, z) to (x, -z, y).
+            If True, converts OBJ coordinates from (x, y, z) to (x, -z, y).
             Default is True.
         removeCoplanarFaces : bool , optional
-            If set to True, coplanar faces are merged. Default is False.
+            If True, coplanar faces are merged using Topologic geometry/topology
+            operations after all OBJ faces have been constructed. No boundary
+            loops are inferred or reconstructed from OBJ indices. Default is False.
         selfMerge : bool , optional
-            If set to True, imported face clusters are self-merged. Default is False.
+            If True, each imported group/object is self-merged to the highest
+            logical topology type. Default is False.
         ontology : bool , optional
-            If True, the returned topology is annotated with TopologicPy ontology metadata. Default is False.
+            If True, returned topologies are annotated with TopologicPy ontology
+            metadata. Default is False.
         mantissa : int , optional
-            The number of decimal places to round coordinates to. Default is 6.
+            The number of decimal places to which OBJ vertex coordinates are
+            rounded. Default is 6.
         tolerance : float , optional
-            The desired tolerance. Default is 0.0001.
+            The desired geometric tolerance. Default is 0.0001.
 
         Returns
         -------
         list
-            One TopologicPy topology per OBJ group/object:
-            - If a group has faces: returns a Cluster of faces, or a self-merged topology.
-            - Else if a group has polylines/edges: returns a Cluster of Wires/Edges.
-            - Else if a group has only points: returns a Cluster of Vertices.
-            - If mixed: returns a Cluster containing the appropriate mix.
+            One topology per non-empty OBJ group/object.
         """
-        from topologicpy.Vertex import Vertex
-        from topologicpy.Edge import Edge
-        from topologicpy.Wire import Wire
         from topologicpy.Cluster import Cluster
         from topologicpy.Dictionary import Dictionary
-        from topologicpy.Topology import Topology
+        from topologicpy.Edge import Edge
+        from topologicpy.Face import Face
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Wire import Wire
+
+        if not isinstance(objString, str):
+            print("Topology.ByOBJString - Error: the input OBJ string parameter is not a valid string. Returning None.")
+            return None
 
         if defaultColor is None:
             defaultColor = [255, 255, 255]
+        else:
+            try:
+                defaultColor = list(defaultColor[:3])
+            except Exception:
+                defaultColor = [255, 255, 255]
 
-        # -------------------------------------------------------------------------
-        # Cache TopologicPy method lookups
-        # -------------------------------------------------------------------------
-        Vertex_ByCoordinates = Vertex.ByCoordinates
-        Edge_ByVertices = Edge.ByVertices
-        Wire_ByVertices = Wire.ByVertices
+        try:
+            defaultOpacity = float(defaultOpacity)
+        except Exception:
+            defaultOpacity = 1.0
+
+        try:
+            tol = abs(float(tolerance))
+        except Exception:
+            tol = 0.0001
+        if tol <= 0.0:
+            tol = 1.0e-9
+
+        # ------------------------------------------------------------------
+        # Local bindings for the hot path.
+        # ------------------------------------------------------------------
         Cluster_ByTopologies = Cluster.ByTopologies
         Dictionary_ByKeysValues = Dictionary.ByKeysValues
-        Topology_ByGeometry = Topology.ByGeometry
-        Topology_SetDictionary = Topology.SetDictionary
+        Edge_ByVertices = Edge.ByVertices
+        Face_ByWire = Face.ByWire
+        Topology_IsInstance = Topology.IsInstance
+        Topology_RemoveCoplanarFaces = Topology.RemoveCoplanarFaces
         Topology_SelfMerge = Topology.SelfMerge
+        Topology_SetDictionary = Topology.SetDictionary
+        Vertex_ByCoordinates = Vertex.ByCoordinates
+        Wire_ByVertices = Wire.ByVertices
 
-        # -------------------------------------------------------------------------
-        # MTL parsing
-        # -------------------------------------------------------------------------
-        def _clamp01(x):
-            if x < 0.0:
+        # ------------------------------------------------------------------
+        # Materials.
+        # ------------------------------------------------------------------
+        def _clamp01(value):
+            if value < 0.0:
                 return 0.0
-            if x > 1.0:
+            if value > 1.0:
                 return 1.0
-            return x
+            return value
 
-        def _load_materials(mtl_string):
-            materials = {}
-            if not mtl_string:
-                return materials
-
+        materials = {}
+        if isinstance(mtlString, str) and mtlString:
             current = None
-
-            for raw in mtl_string.splitlines():
-                if not raw:
-                    continue
-
+            for raw in mtlString.splitlines():
                 line = raw.strip()
-                if not line or line[0] == "#":
+                if not line or line.startswith("#"):
                     continue
-
                 parts = line.split()
                 if not parts:
                     continue
-
                 tag = parts[0]
 
-                if tag == "newmtl" and len(parts) > 1:
-                    current = parts[1]
-                    materials[current] = {}
+                if tag == "newmtl":
+                    current = line[len("newmtl"):].strip() or None
+                    if current:
+                        materials[current] = {}
                     continue
 
                 if current is None:
                     continue
 
-                mat = materials[current]
-
+                material = materials[current]
                 try:
-                    if tag in ("Kd", "Ka", "Ks") and len(parts) >= 4:
-                        mat[tag] = [float(parts[1]), float(parts[2]), float(parts[3])]
-
-                    elif tag == "Ns" and len(parts) >= 2:
-                        mat["Ns"] = float(parts[1])
-
+                    if tag == "Kd" and len(parts) >= 4:
+                        material["Kd"] = (
+                            float(parts[1]),
+                            float(parts[2]),
+                            float(parts[3]),
+                        )
                     elif tag == "d" and len(parts) >= 2:
-                        mat["d"] = float(parts[1])
-
+                        material["d"] = float(parts[1])
                     elif tag == "Tr" and len(parts) >= 2:
-                        mat["d"] = 1.0 - float(parts[1])
-
-                    elif tag == "map_Kd" and len(parts) >= 2:
-                        mat["map_Kd"] = " ".join(parts[1:])
-
+                        material["d"] = 1.0 - float(parts[1])
                 except Exception:
-                    continue
+                    pass
 
-            return materials
+        style_cache = {}
 
-        materials = _load_materials(mtlString)
-
-        material_cache = {}
-
-        def _material_to_color_opacity(mat_name):
-            if mat_name in material_cache:
-                return material_cache[mat_name]
+        def _style(material_name):
+            cached = style_cache.get(material_name)
+            if cached is not None:
+                return cached
 
             color = defaultColor
             opacity = defaultOpacity
-
-            if mat_name and mat_name in materials:
-                m = materials[mat_name]
-
-                kd = m.get("Kd", None)
-                if isinstance(kd, list) and len(kd) >= 3:
+            material = materials.get(material_name)
+            if material is not None:
+                kd = material.get("Kd")
+                if kd is not None:
                     color = [
-                        int(round(_clamp01(kd[0]) * 255.0, 0)),
-                        int(round(_clamp01(kd[1]) * 255.0, 0)),
-                        int(round(_clamp01(kd[2]) * 255.0, 0)),
+                        int(round(_clamp01(kd[0]) * 255.0)),
+                        int(round(_clamp01(kd[1]) * 255.0)),
+                        int(round(_clamp01(kd[2]) * 255.0)),
                     ]
-
-                if "d" in m:
-                    try:
-                        opacity = float(m["d"])
-                    except Exception:
-                        opacity = defaultOpacity
+                if "d" in material:
+                    opacity = _clamp01(float(material["d"]))
 
             result = (color, opacity)
-            material_cache[mat_name] = result
+            style_cache[material_name] = result
             return result
 
-        # -------------------------------------------------------------------------
-        # Dictionary caching
-        # -------------------------------------------------------------------------
-        dict_cache = {}
+        dictionary_cache = {}
 
-        def _dictionary_for(group_name, mat_name):
-            key = (group_name, mat_name)
-            d = dict_cache.get(key, None)
-            if d is not None:
-                return d
+        def _dictionary(group_name, material_name):
+            key = (group_name, material_name)
+            cached = dictionary_cache.get(key)
+            if cached is not None:
+                return cached
 
-            color, opacity = _material_to_color_opacity(mat_name)
-            d = Dictionary_ByKeysValues(
+            color, opacity = _style(material_name)
+            dictionary = Dictionary_ByKeysValues(
                 ["name", "group", "material", "color", "opacity"],
-                [group_name, group_name, mat_name if mat_name else "", color, opacity]
+                [
+                    group_name,
+                    group_name,
+                    material_name if material_name else "",
+                    color,
+                    opacity,
+                ],
             )
-            dict_cache[key] = d
-            return d
+            dictionary_cache[key] = dictionary
+            return dictionary
 
-        def _set_dict(topo, group_name, mat_name):
-            return Topology_SetDictionary(topo, _dictionary_for(group_name, mat_name))
+        def _set_dictionary(topology, group_name, material_name):
+            if topology is None:
+                return None
+            try:
+                return Topology_SetDictionary(
+                    topology,
+                    _dictionary(group_name, material_name),
+                    silent=True,
+                )
+            except TypeError:
+                try:
+                    return Topology_SetDictionary(
+                        topology,
+                        _dictionary(group_name, material_name),
+                    )
+                except Exception:
+                    return topology
+            except Exception:
+                return topology
 
-        # -------------------------------------------------------------------------
-        # OBJ parsing
-        # -------------------------------------------------------------------------
-        verts_xyz = []
+        # ------------------------------------------------------------------
+        # OBJ parser.
+        # Groups are created lazily so an unused default group never creates a
+        # spurious vertex cluster.
+        # ------------------------------------------------------------------
+        vertices_xyz = []
         groups = {}
-
         current_group = "default"
         current_material = None
-
-        def _new_group_record():
-            return {"faces": [], "lines": [], "points": []}
-
-        def _ensure_group(name):
-            if not name:
-                name = "default"
-            if name not in groups:
-                groups[name] = _new_group_record()
-            return name
-
-        current_group = _ensure_group(current_group)
-        current_rec = groups[current_group]
-
-        def _resolve_index(idx, n):
-            z = idx - 1 if idx > 0 else n + idx
-            if z < 0 or z >= n:
-                return None
-            return z
-
         do_round = isinstance(mantissa, int)
 
+        def _record(name):
+            if not name:
+                name = "default"
+            rec = groups.get(name)
+            if rec is None:
+                rec = {"faces": [], "lines": [], "points": []}
+                groups[name] = rec
+            return rec
+
+        def _resolve_index(token, count):
+            slash = token.find("/")
+            if slash >= 0:
+                token = token[:slash]
+            if not token:
+                return None
+            try:
+                index = int(token)
+            except Exception:
+                return None
+            index = index - 1 if index > 0 else count + index
+            if index < 0 or index >= count:
+                return None
+            return index
+
         for raw in objString.splitlines():
-            if not raw:
+            line = raw.lstrip()
+            if not line or line[0] == "#":
                 continue
 
-            c0 = raw[0]
+            c0 = line[0]
 
-            if c0 == "#":
-                continue
-
-            # ---------------------------------------------------------------------
-            # Vertex: v x y z
-            # Avoids matching vt and vn.
-            # ---------------------------------------------------------------------
-            if c0 == "v" and len(raw) > 1 and raw[1].isspace():
-                parts = raw.split()
+            if c0 == "v" and len(line) > 1 and line[1].isspace():
+                parts = line.split()
                 if len(parts) < 4:
                     continue
-
                 try:
                     x = float(parts[1])
                     y = float(parts[2])
@@ -5650,301 +5720,403 @@ class Topology():
                     z = round(z, mantissa)
 
                 if transposeAxes:
-                    verts_xyz.append([x, -z, y])
+                    vertices_xyz.append((x, -z, y))
                 else:
-                    verts_xyz.append([x, y, z])
+                    vertices_xyz.append((x, y, z))
+                continue
 
-            # ---------------------------------------------------------------------
-            # Face: f v1 v2 v3 ...
-            # Supports v, v/vt, v//vn, v/vt/vn.
-            # Stores only resolved vertex indices.
-            # ---------------------------------------------------------------------
-            elif c0 == "f" and len(raw) > 1 and raw[1].isspace():
-                parts = raw.split()
-                if len(parts) < 4:
+            if (c0 == "g" or c0 == "o") and len(line) > 1 and line[1].isspace():
+                name = line[1:].strip()
+                current_group = name if name else "default"
+                continue
+
+            if line.startswith("usemtl") and (len(line) == 6 or line[6].isspace()):
+                current_material = line[6:].strip() or None
+                continue
+
+            if c0 == "f" and len(line) > 1 and line[1].isspace():
+                tokens = line.split()[1:]
+                if len(tokens) < 3:
                     continue
-
-                n_verts = len(verts_xyz)
-                idxs = []
-                ok = True
-
-                for token in parts[1:]:
-                    slash = token.find("/")
-                    if slash >= 0:
-                        token = token[:slash]
-
-                    if not token:
-                        ok = False
+                count = len(vertices_xyz)
+                indices = []
+                valid = True
+                for token in tokens:
+                    index = _resolve_index(token, count)
+                    if index is None:
+                        valid = False
                         break
+                    # Remove only immediate duplicate indices. Do not weld or
+                    # modify geometrically close vertices.
+                    if not indices or index != indices[-1]:
+                        indices.append(index)
+                if len(indices) > 1 and indices[0] == indices[-1]:
+                    indices.pop()
+                if valid and len(indices) >= 3 and len(set(indices)) >= 3:
+                    _record(current_group)["faces"].append((indices, current_material))
+                continue
 
-                    try:
-                        vi = _resolve_index(int(token), n_verts)
-                    except Exception:
-                        ok = False
-                        break
-
-                    if vi is None:
-                        ok = False
-                        break
-
-                    idxs.append(vi)
-
-                if ok and len(idxs) >= 3:
-                    current_rec["faces"].append((idxs, current_material))
-
-            # ---------------------------------------------------------------------
-            # Line/polyline: l v1 v2 ...
-            # Supports v and v/vt.
-            # ---------------------------------------------------------------------
-            elif c0 == "l" and len(raw) > 1 and raw[1].isspace():
-                parts = raw.split()
-                if len(parts) < 3:
+            if c0 == "l" and len(line) > 1 and line[1].isspace():
+                tokens = line.split()[1:]
+                if len(tokens) < 2:
                     continue
-
-                n_verts = len(verts_xyz)
-                idxs = []
-                ok = True
-
-                for token in parts[1:]:
-                    slash = token.find("/")
-                    if slash >= 0:
-                        token = token[:slash]
-
-                    if not token:
-                        ok = False
+                count = len(vertices_xyz)
+                indices = []
+                valid = True
+                for token in tokens:
+                    index = _resolve_index(token, count)
+                    if index is None:
+                        valid = False
                         break
+                    if not indices or index != indices[-1]:
+                        indices.append(index)
+                if valid and len(indices) >= 2:
+                    _record(current_group)["lines"].append((indices, current_material))
+                continue
 
-                    try:
-                        vi = _resolve_index(int(token), n_verts)
-                    except Exception:
-                        ok = False
-                        break
-
-                    if vi is None:
-                        ok = False
-                        break
-
-                    idxs.append(vi)
-
-                if ok and len(idxs) >= 2:
-                    current_rec["lines"].append((idxs, current_material))
-
-            # ---------------------------------------------------------------------
-            # Point list: p v1 v2 ...
-            # ---------------------------------------------------------------------
-            elif c0 == "p" and len(raw) > 1 and raw[1].isspace():
-                parts = raw.split()
-                if len(parts) < 2:
+            if c0 == "p" and len(line) > 1 and line[1].isspace():
+                tokens = line.split()[1:]
+                if not tokens:
                     continue
+                count = len(vertices_xyz)
+                rec = _record(current_group)
+                for token in tokens:
+                    index = _resolve_index(token, count)
+                    if index is not None:
+                        rec["points"].append((index, current_material))
 
-                n_verts = len(verts_xyz)
-
-                for token in parts[1:]:
-                    try:
-                        vi = _resolve_index(int(token), n_verts)
-                    except Exception:
-                        vi = None
-
-                    if vi is not None:
-                        current_rec["points"].append((vi, current_material))
-
-            # ---------------------------------------------------------------------
-            # Object/group: o name / g name
-            # ---------------------------------------------------------------------
-            elif (c0 == "g" or c0 == "o") and len(raw) > 1 and raw[1].isspace():
-                parts = raw.split()
-                name = " ".join(parts[1:]).strip() if len(parts) > 1 else "default"
-                current_group = _ensure_group(name)
-                current_rec = groups[current_group]
-
-            # ---------------------------------------------------------------------
-            # Material switch: usemtl material_name
-            # ---------------------------------------------------------------------
-            elif raw.startswith("usemtl") and (len(raw) == 6 or raw[6].isspace()):
-                parts = raw.split(maxsplit=1)
-                current_material = parts[1].strip() if len(parts) > 1 else None
-
-            # ---------------------------------------------------------------------
-            # Ignore mtllib, vt, vn, s, comments with leading whitespace, etc.
-            # ---------------------------------------------------------------------
-            else:
-                stripped = raw.lstrip()
-                if not stripped or stripped[0] == "#":
-                    continue
-
+        # Bare vertex cloud.
         if not groups:
-            _ensure_group("default")
+            if not vertices_xyz:
+                return []
+            vertices = []
+            for xyz in vertices_xyz:
+                try:
+                    vertices.append(Vertex_ByCoordinates(*xyz))
+                except Exception:
+                    pass
+            if not vertices:
+                return []
+            topology = Cluster_ByTopologies(vertices)
+            topology = _set_dictionary(topology, "default", None)
+            return Topology._OntologyAnnotateList(
+                [topology],
+                ontology=ontology,
+                generatedBy="Topology.ByOBJString",
+                annotateSubtopologies=True,
+                silent=True,
+            )
 
-        # -------------------------------------------------------------------------
-        # Build Topologic hierarchy
-        # -------------------------------------------------------------------------
+        # ------------------------------------------------------------------
+        # Geometry construction.
+        # A single shared vertex cache preserves OBJ indexed connectivity and
+        # avoids repeatedly constructing the same Topologic vertices.
+        # ------------------------------------------------------------------
+        vertex_cache = [None] * len(vertices_xyz)
+
+        def _vertex(index):
+            vertex = vertex_cache[index]
+            if vertex is not None:
+                return vertex
+            try:
+                vertex = Vertex_ByCoordinates(*vertices_xyz[index])
+            except Exception:
+                return None
+            vertex_cache[index] = vertex
+            return vertex
+
+        def _face(indices):
+            vertices = []
+            for index in indices:
+                vertex = _vertex(index)
+                if vertex is None:
+                    return []
+                vertices.append(vertex)
+
+            if len(vertices) < 3:
+                return []
+
+            wire = None
+            try:
+                wire = Wire_ByVertices(
+                    vertices,
+                    close=True,
+                    tolerance=tol,
+                    silent=True,
+                )
+            except TypeError:
+                try:
+                    wire = Wire_ByVertices(vertices, close=True, tolerance=tol)
+                except Exception:
+                    wire = None
+            except Exception:
+                wire = None
+
+            if wire is None:
+                return []
+
+            # Fast native face construction first. Face.ByWire remains the
+            # correctness fallback for problematic/non-planar OBJ polygons.
+            face = None
+            try:
+                face = Core.Face.ByExternalBoundary(wire)
+            except Exception:
+                pass
+
+            if Topology_IsInstance(face, "Face"):
+                return [face]
+
+            try:
+                face = Face_ByWire(wire, tolerance=tol, silent=True)
+            except TypeError:
+                try:
+                    face = Face_ByWire(wire, tolerance=tol)
+                except Exception:
+                    face = None
+            except Exception:
+                face = None
+
+            if Topology_IsInstance(face, "Face"):
+                return [face]
+            if isinstance(face, list):
+                return [f for f in face if Topology_IsInstance(f, "Face")]
+            return []
+
+        # ------------------------------------------------------------------
+        # Build group/object topologies.
+        # ------------------------------------------------------------------
         imported = []
-        merge_faces = bool(selfMerge or removeCoplanarFaces)
 
         for group_name, rec in groups.items():
             faces_rec = rec["faces"]
             lines_rec = rec["lines"]
             points_rec = rec["points"]
+            components = []
 
-            topologies = []
-
-            # ---------------------------------------------------------------------
-            # Faces
-            #
-            # IMPORTANT SPEED CHANGE:
-            # Each face is built using only its local vertices rather than passing
-            # the full OBJ vertex list to Topology.ByGeometry for every face.
-            # ---------------------------------------------------------------------
+            # Faces ---------------------------------------------------------
             if faces_rec:
-                face_topos = []
+                face_topologies = []
+                preserve_face_dictionaries = not (selfMerge or removeCoplanarFaces)
 
-                for face_indices, mat in faces_rec:
-                    try:
-                        local_vertices = [verts_xyz[i] for i in face_indices]
-                        local_face = list(range(len(local_vertices)))
-
-                        topo_face = Topology_ByGeometry(
-                            vertices=local_vertices,
-                            edges=[],
-                            faces=[local_face]
-                        )
-                    except Exception:
-                        topo_face = None
-
-                    if topo_face is None:
+                for indices, material_name in faces_rec:
+                    faces = _face(indices)
+                    if not faces:
                         continue
+                    if preserve_face_dictionaries:
+                        faces = [
+                            _set_dictionary(face, group_name, material_name)
+                            for face in faces
+                        ]
+                    face_topologies.extend(faces)
 
-                    topo_face = _set_dict(topo_face, group_name, mat)
-                    face_topos.append(topo_face)
+                if face_topologies:
+                    hint_material = faces_rec[0][1]
 
-                if face_topos:
-                    face_cluster = Cluster_ByTopologies(face_topos)
-                    face_cluster = _set_dict(face_cluster, group_name, faces_rec[0][1])
+                    if len(face_topologies) == 1:
+                        face_topology = face_topologies[0]
+                    else:
+                        face_topology = Cluster_ByTopologies(face_topologies)
 
-                    if merge_faces:
+                    face_topology = _set_dictionary(
+                        face_topology,
+                        group_name,
+                        hint_material,
+                    )
+
+                    # IMPORTANT: removeCoplanarFaces is intentionally performed
+                    # on valid Topologic faces. It does not infer, simplify, weld,
+                    # or reconstruct boundaries from raw OBJ indices.
+                    if removeCoplanarFaces and len(face_topologies) > 1:
                         try:
-                            merged = Topology_SelfMerge(face_cluster, tolerance=tolerance)
+                            reduced = Topology_RemoveCoplanarFaces(
+                                face_topology,
+                                tolerance=tol,
+                                silent=True,
+                            )
+                        except TypeError:
+                            try:
+                                reduced = Topology_RemoveCoplanarFaces(
+                                    face_topology,
+                                    tolerance=tol,
+                                )
+                            except Exception:
+                                reduced = None
+                        except Exception:
+                            reduced = None
+
+                        if Topology_IsInstance(reduced, "Topology"):
+                            face_topology = _set_dictionary(
+                                reduced,
+                                group_name,
+                                hint_material,
+                            )
+
+                    # selfMerge is independent of coplanar-face removal.
+                    if selfMerge and Topology_IsInstance(face_topology, "Cluster"):
+                        try:
+                            merged = Topology_SelfMerge(
+                                face_topology,
+                                tolerance=tol,
+                                silent=True,
+                            )
+                        except TypeError:
+                            try:
+                                merged = Topology_SelfMerge(
+                                    face_topology,
+                                    tolerance=tol,
+                                )
+                            except Exception:
+                                merged = None
                         except Exception:
                             merged = None
 
-                        if merged is not None:
-                            face_cluster = _set_dict(merged, group_name, faces_rec[0][1])
+                        if Topology_IsInstance(merged, "Topology"):
+                            face_topology = _set_dictionary(
+                                merged,
+                                group_name,
+                                hint_material,
+                            )
 
-                    topologies.append(face_cluster)
+                    components.append(face_topology)
 
-            # ---------------------------------------------------------------------
-            # Lines / Wires / Edges
-            # ---------------------------------------------------------------------
+            # Lines ---------------------------------------------------------
             if lines_rec:
-                line_topos = []
-                vertex_cache = {}
+                line_topologies = []
+                for indices, material_name in lines_rec:
+                    vertices = []
+                    valid = True
+                    for index in indices:
+                        vertex = _vertex(index)
+                        if vertex is None:
+                            valid = False
+                            break
+                        vertices.append(vertex)
+                    if not valid or len(vertices) < 2:
+                        continue
 
-                def _vertex_at_index(i):
-                    v = vertex_cache.get(i, None)
-                    if v is not None:
-                        return v
-                    v = Vertex_ByCoordinates(*verts_xyz[i])
-                    vertex_cache[i] = v
-                    return v
-
-                for idxs, mat in lines_rec:
+                    topology = None
                     try:
-                        v_objs = [_vertex_at_index(i) for i in idxs]
-
-                        if len(v_objs) == 2:
-                            topo = Edge_ByVertices(
-                                v_objs[0],
-                                v_objs[1],
-                                tolerance=tolerance
+                        if len(vertices) == 2:
+                            topology = Edge_ByVertices(
+                                vertices[0],
+                                vertices[1],
+                                tolerance=tol,
+                                silent=True,
                             )
                         else:
-                            topo = Wire_ByVertices(
-                                v_objs,
+                            topology = Wire_ByVertices(
+                                vertices,
                                 close=False,
-                                tolerance=tolerance
+                                tolerance=tol,
+                                silent=True,
                             )
-
+                    except TypeError:
+                        try:
+                            if len(vertices) == 2:
+                                topology = Edge_ByVertices(
+                                    vertices[0],
+                                    vertices[1],
+                                    tolerance=tol,
+                                )
+                            else:
+                                topology = Wire_ByVertices(
+                                    vertices,
+                                    close=False,
+                                    tolerance=tol,
+                                )
+                        except Exception:
+                            topology = None
                     except Exception:
-                        topo = None
+                        topology = None
 
-                    if topo is None:
-                        continue
+                    if Topology_IsInstance(topology, "Topology"):
+                        topology = _set_dictionary(
+                            topology,
+                            group_name,
+                            material_name,
+                        )
+                        line_topologies.append(topology)
 
-                    topo = _set_dict(topo, group_name, mat)
-                    line_topos.append(topo)
+                if line_topologies:
+                    if len(line_topologies) == 1:
+                        line_topology = line_topologies[0]
+                    else:
+                        line_topology = Cluster_ByTopologies(line_topologies)
+                    line_topology = _set_dictionary(
+                        line_topology,
+                        group_name,
+                        lines_rec[0][1],
+                    )
+                    components.append(line_topology)
 
-                if line_topos:
-                    line_cluster = Cluster_ByTopologies(line_topos)
-                    line_cluster = _set_dict(line_cluster, group_name, lines_rec[0][1])
-                    topologies.append(line_cluster)
-
-            # ---------------------------------------------------------------------
-            # Explicit OBJ points
-            # ---------------------------------------------------------------------
+            # Explicit OBJ points ------------------------------------------
             if points_rec:
-                point_topos = []
-                vertex_cache = {}
-
-                for vi, mat in points_rec:
-                    try:
-                        v = vertex_cache.get(vi, None)
-                        if v is None:
-                            v = Vertex_ByCoordinates(*verts_xyz[vi])
-                            vertex_cache[vi] = v
-
-                        v = _set_dict(v, group_name, mat)
-                        point_topos.append(v)
-
-                    except Exception:
+                point_topologies = []
+                for index, material_name in points_rec:
+                    vertex = _vertex(index)
+                    if vertex is None:
                         continue
+                    vertex = _set_dictionary(
+                        vertex,
+                        group_name,
+                        material_name,
+                    )
+                    point_topologies.append(vertex)
 
-                if point_topos:
-                    point_cluster = Cluster_ByTopologies(point_topos)
-                    point_cluster = _set_dict(point_cluster, group_name, points_rec[0][1])
-                    topologies.append(point_cluster)
+                if point_topologies:
+                    if len(point_topologies) == 1:
+                        point_topology = point_topologies[0]
+                    else:
+                        point_topology = Cluster_ByTopologies(point_topologies)
+                    point_topology = _set_dictionary(
+                        point_topology,
+                        group_name,
+                        points_rec[0][1],
+                    )
+                    components.append(point_topology)
 
-            # ---------------------------------------------------------------------
-            # Original fallback:
-            # If this group has no faces/lines/points but the OBJ has vertices,
-            # return all vertices as a cluster.
-            # ---------------------------------------------------------------------
-            if not topologies and verts_xyz:
-                all_vs = []
-
-                for xyz in verts_xyz:
-                    try:
-                        all_vs.append(Vertex_ByCoordinates(*xyz))
-                    except Exception:
-                        continue
-
-                if all_vs:
-                    v_cluster = Cluster_ByTopologies(all_vs)
-                    v_cluster = _set_dict(v_cluster, group_name, None)
-                    topologies.append(v_cluster)
-
-            # ---------------------------------------------------------------------
-            # Decide group output
-            # ---------------------------------------------------------------------
-            if not topologies:
+            if not components:
                 continue
 
-            if len(topologies) == 1:
-                group_topo = topologies[0]
+            if len(components) == 1:
+                group_topology = components[0]
             else:
-                group_topo = Cluster_ByTopologies(topologies)
-
-                hint_mat = None
+                group_topology = Cluster_ByTopologies(components)
                 if faces_rec:
-                    hint_mat = faces_rec[0][1]
+                    hint_material = faces_rec[0][1]
                 elif lines_rec:
-                    hint_mat = lines_rec[0][1]
-                elif points_rec:
-                    hint_mat = points_rec[0][1]
+                    hint_material = lines_rec[0][1]
+                else:
+                    hint_material = points_rec[0][1] if points_rec else None
+                group_topology = _set_dictionary(
+                    group_topology,
+                    group_name,
+                    hint_material,
+                )
 
-                group_topo = _set_dict(group_topo, group_name, hint_mat)
+                # For mixed-dimensional OBJ groups, selfMerge only when the
+                # resulting cluster can logically collapse; otherwise retain it.
+                if selfMerge:
+                    try:
+                        merged = Topology_SelfMerge(
+                            group_topology,
+                            tolerance=tol,
+                            silent=True,
+                        )
+                    except Exception:
+                        merged = None
+                    if Topology_IsInstance(merged, "Topology"):
+                        group_topology = merged
 
-            imported.append(group_topo)
-        return Topology._OntologyAnnotateList(imported, ontology=ontology, generatedBy="Topology.ByOBJString", annotateSubtopologies=True, silent=True)
+            imported.append(group_topology)
+
+        return Topology._OntologyAnnotateList(
+            imported,
+            ontology=ontology,
+            generatedBy="Topology.ByOBJString",
+            annotateSubtopologies=True,
+            silent=True,
+        )
 
     @staticmethod
     def ByOCCTShape(occtShape, ontology: bool = False, silent: bool = False):
@@ -12689,28 +12861,209 @@ class Topology():
         # return topology.RemoveContents(contents) # H to Core
         return Core.InstanceCall(topology, 'RemoveContents', contents)
     
+    # @staticmethod
+    # def RemoveCoplanarFaces(topology, epsilon=0.01, tolerance=0.0001, silent: bool = False):
+    #     """
+    #     Removes coplanar faces in the input topology
+
+    #     Parameters
+    #     ----------
+    #     topology : topologic_core.Topology
+    #         The input topology.
+    #     epsilon : float , optional
+    #         The desired epsilon (another form of tolerance) for finding if two faces are coplanar. Default is 0.01.
+    #     tolerance : float , optional
+    #         The desired tolerance. Default is 0.0001.
+    #     silent : bool , optional
+    #         If set to True, error and warning messages are suppressed. Default is False.
+
+    #     Returns
+    #     -------
+    #     topologic_core.Topology
+    #         The input topology with coplanar faces merged into one face.
+
+    #     """
+    #     from topologicpy.Vertex import Vertex
+    #     from topologicpy.Face import Face
+    #     from topologicpy.Shell import Shell
+    #     from topologicpy.Cell import Cell
+    #     from topologicpy.CellComplex import CellComplex
+    #     from topologicpy.Cluster import Cluster
+
+    #     if not Topology.IsInstance(topology, "Topology"):
+    #         if not silent:
+    #             print("Topology.RemoveCoplanarFaces - Error: The input topology parameter is not a valid topologic topology. Returning None.")
+    #         return None
+    #     t = Topology.Type(topology)
+    #     if (t == Topology.TypeID("Vertex")) or (t == Topology.TypeID("Edge")) or (t == Topology.TypeID("Wire")) or (t == Topology.TypeID("Face")):
+    #         return topology
+
+    #     def faces_on_same_plane(face1, face2, epsilon=1e-6):
+    #         vertices = Topology.Vertices(face1)
+    #         distances = []
+    #         for v in vertices:
+    #             distances.append(Vertex.PerpendicularDistance(v, face=face2, mantissa=6))
+    #         d = sum(distances) / len(distances) if distances else float('inf')
+    #         return d <= epsilon
+
+    #     def cluster_faces_on_planes(faces, epsilon=1e-6):
+
+    #         # Create a dictionary to store bins based on plane equations
+    #         bins = {}
+
+    #         # Iterate through each face
+    #         for i, face in enumerate(faces):
+    #             # Check if a bin already exists for the plane equation
+    #             found_bin = False
+    #             for bin_face in bins.values():
+    #                 if faces_on_same_plane(face, bin_face[0], epsilon=epsilon):
+    #                     bin_face.append(face)
+    #                     found_bin = True
+    #                     break
+
+    #             # If no bin is found, create a new bin
+    #             if not found_bin:
+    #                 bins[i] = [face]
+
+    #         # Convert bins to a list of lists
+    #         return list(bins.values())
+
+    #     faces = Topology.Faces(topology)
+    #     face_clusters = cluster_faces_on_planes(faces, epsilon=epsilon)
+    #     final_faces = []
+    #     for face_cluster in face_clusters:
+    #         t = Topology.SelfMerge(Cluster.ByTopologies(face_cluster), tolerance=tolerance)
+    #         if Topology.IsInstance(t, "Face"):
+    #             #final_faces.append(Face.RemoveCollinearEdges(t))
+    #             final_faces.append(t)
+    #         elif Topology.IsInstance(t, "Shell"):
+    #                 f = Face.ByShell(t, silent=True)
+    #                 if Topology.IsInstance(f, "Face"):
+    #                     final_faces.append(f)
+    #                 else:
+    #                     if not silent:
+    #                         print("Topology.RemoveCoplanarFaces - Warning: Could not remove some coplanar faces. Re-adding original faces.")
+    #                     final_faces += Shell.Faces(t)
+    #         else: # It is a cluster
+    #             shells = Topology.Shells(t)
+    #             for shell in shells:
+    #                 f = Face.ByShell(shell)
+    #                 if Topology.IsInstance(f, "Face"):
+    #                     final_faces.append(f)
+    #                 else:
+    #                     if not silent:
+    #                         print("Topology.RemoveCoplanarFaces - Warning: Could not remove some coplanar faces. Re-adding original faces.")
+    #                     final_faces += Shell.Faces(shell)
+    #             if len(shells) == 0:
+    #                 faces = Topology.Faces(t)
+    #                 final_faces += faces
+    #             faces = Cluster.FreeFaces(t)
+    #             final_faces += faces
+    #     return_topology = None
+    #     if Topology.IsInstance(topology, "CellComplex"):
+    #         return_topology = CellComplex.ByFaces(final_faces, tolerance=tolerance, silent=silent)
+    #     elif Topology.IsInstance(topology, "Cell"):
+    #         return_topology = Cell.ByFaces(final_faces, tolerance=tolerance, silent=silent)
+    #     elif Topology.IsInstance(topology, "Shell"):
+    #         if len(final_faces) == 1:
+    #             return_topology = final_faces[0]
+    #         else:
+    #             return_topology = Shell.ByFaces(final_faces, tolerance=tolerance, silent=silent)
+    #     if not Topology.IsInstance(return_topology, "Topology"):
+    #         return_topology = Cluster.ByTopologies(final_faces, silent=silent)
+    #     return return_topology
+
     @staticmethod
-    def RemoveCoplanarFaces(topology, epsilon=0.01, tolerance=0.0001, silent: bool = False):
+    def RemoveCoplanarFaces(
+        topology,
+        epsilon: float = 0.01,
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
         """
-        Removes coplanar faces in the input topology
+        Removes coplanar faces in the input topology.
 
         Parameters
         ----------
         topology : topologic_core.Topology
             The input topology.
-        epsilon : float , optional
-            The desired epsilon (another form of tolerance) for finding if two faces are coplanar. Default is 0.01.
-        tolerance : float , optional
+        epsilon : float, optional
+            The desired epsilon for determining whether neighbouring faces
+            are coplanar. Default is 0.01.
+        tolerance : float, optional
             The desired tolerance. Default is 0.0001.
-        silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
+        silent : bool, optional
+            If set to True, error and warning messages are suppressed.
+            Default is False.
 
         Returns
         -------
         topologic_core.Topology
-            The input topology with coplanar faces merged into one face.
-
+            The input topology with adjacent coplanar faces merged.
         """
+
+        if not Topology.IsInstance(
+            topology,
+            "Topology"
+        ):
+            if not silent:
+                print(
+                    "Topology.RemoveCoplanarFaces - Error: "
+                    "The input topology parameter is not a valid topology. "
+                    "Returning None."
+                )
+            return None
+
+        topology_type = Topology.Type(
+            topology
+        )
+
+        if topology_type in (
+            Topology.TypeID("Vertex"),
+            Topology.TypeID("Edge"),
+            Topology.TypeID("Wire"),
+            Topology.TypeID("Face")
+        ):
+            return topology
+
+        # ------------------------------------------------------------------
+        # PythonOCC fast path
+        # ------------------------------------------------------------------
+
+        if not Topology._IsTopologicCoreBackend():
+
+            try:
+                result = Core.InstanceCall(
+                    topology,
+                    "RemoveCoplanarFaces",
+                    epsilon=epsilon,
+                    tolerance=tolerance
+                )
+
+                if Topology.IsInstance(
+                    result,
+                    "Topology"
+                ):
+                    return result
+
+            except Exception as error:
+                if not silent:
+                    print(
+                        "Topology.RemoveCoplanarFaces - Warning: "
+                        "The backend-native operation failed. "
+                        "Returning the input topology."
+                    )
+                    print(
+                        "Error:",
+                        error
+                    )
+
+            return topology
+
+        # ------------------------------------------------------------------
+        # Legacy TopologicCore implementation
+        # ------------------------------------------------------------------
+
         from topologicpy.Vertex import Vertex
         from topologicpy.Face import Face
         from topologicpy.Shell import Shell
@@ -12718,88 +13071,217 @@ class Topology():
         from topologicpy.CellComplex import CellComplex
         from topologicpy.Cluster import Cluster
 
-        if not Topology.IsInstance(topology, "Topology"):
-            if not silent:
-                print("Topology.RemoveCoplanarFaces - Error: The input topology parameter is not a valid topologic topology. Returning None.")
-            return None
-        t = Topology.Type(topology)
-        if (t == Topology.TypeID("Vertex")) or (t == Topology.TypeID("Edge")) or (t == Topology.TypeID("Wire")) or (t == Topology.TypeID("Face")):
-            return topology
+        def faces_on_same_plane(
+            face1,
+            face2,
+            epsilon=1e-6
+        ):
 
-        def faces_on_same_plane(face1, face2, epsilon=1e-6):
-            vertices = Topology.Vertices(face1)
-            distances = []
-            for v in vertices:
-                distances.append(Vertex.PerpendicularDistance(v, face=face2, mantissa=6))
-            d = sum(distances) / len(distances) if distances else float('inf')
-            return d <= epsilon
+            vertices = Topology.Vertices(
+                face1
+            )
 
-        def cluster_faces_on_planes(faces, epsilon=1e-6):
+            distances = [
+                Vertex.PerpendicularDistance(
+                    vertex,
+                    face=face2,
+                    mantissa=6
+                )
+                for vertex in vertices
+            ]
 
-            # Create a dictionary to store bins based on plane equations
-            bins = {}
+            distance = (
+                sum(distances) / len(distances)
+                if distances
+                else float("inf")
+            )
 
-            # Iterate through each face
-            for i, face in enumerate(faces):
-                # Check if a bin already exists for the plane equation
-                found_bin = False
-                for bin_face in bins.values():
-                    if faces_on_same_plane(face, bin_face[0], epsilon=epsilon):
-                        bin_face.append(face)
-                        found_bin = True
+            return distance <= epsilon
+
+        def cluster_faces_on_planes(
+            faces,
+            epsilon=1e-6
+        ):
+
+            bins = []
+
+            for face in faces:
+
+                found = False
+
+                for face_bin in bins:
+
+                    if faces_on_same_plane(
+                        face,
+                        face_bin[0],
+                        epsilon=epsilon
+                    ):
+
+                        face_bin.append(
+                            face
+                        )
+
+                        found = True
                         break
 
-                # If no bin is found, create a new bin
-                if not found_bin:
-                    bins[i] = [face]
+                if not found:
+                    bins.append(
+                        [face]
+                    )
 
-            # Convert bins to a list of lists
-            return list(bins.values())
+            return bins
 
-        faces = Topology.Faces(topology)
-        face_clusters = cluster_faces_on_planes(faces, epsilon=epsilon)
+        faces = Topology.Faces(
+            topology
+        )
+
+        face_clusters = cluster_faces_on_planes(
+            faces,
+            epsilon=epsilon
+        )
+
         final_faces = []
+
         for face_cluster in face_clusters:
-            t = Topology.SelfMerge(Cluster.ByTopologies(face_cluster), tolerance=tolerance)
-            if Topology.IsInstance(t, "Face"):
-                #final_faces.append(Face.RemoveCollinearEdges(t))
-                final_faces.append(t)
-            elif Topology.IsInstance(t, "Shell"):
-                    f = Face.ByShell(t, silent=True)
-                    if Topology.IsInstance(f, "Face"):
-                        final_faces.append(f)
-                    else:
-                        if not silent:
-                            print("Topology.RemoveCoplanarFaces - Warning: Could not remove some coplanar faces. Re-adding original faces.")
-                        final_faces += Shell.Faces(t)
-            else: # It is a cluster
-                shells = Topology.Shells(t)
-                for shell in shells:
-                    f = Face.ByShell(shell)
-                    if Topology.IsInstance(f, "Face"):
-                        final_faces.append(f)
-                    else:
-                        if not silent:
-                            print("Topology.RemoveCoplanarFaces - Warning: Could not remove some coplanar faces. Re-adding original faces.")
-                        final_faces += Shell.Faces(shell)
-                if len(shells) == 0:
-                    faces = Topology.Faces(t)
-                    final_faces += faces
-                faces = Cluster.FreeFaces(t)
-                final_faces += faces
-        return_topology = None
-        if Topology.IsInstance(topology, "CellComplex"):
-            return_topology = CellComplex.ByFaces(final_faces, tolerance=tolerance, silent=silent)
-        elif Topology.IsInstance(topology, "Cell"):
-            return_topology = Cell.ByFaces(final_faces, tolerance=tolerance, silent=silent)
-        elif Topology.IsInstance(topology, "Shell"):
-            if len(final_faces) == 1:
-                return_topology = final_faces[0]
+
+            merged = Topology.SelfMerge(
+                Cluster.ByTopologies(
+                    face_cluster
+                ),
+                tolerance=tolerance
+            )
+
+            if Topology.IsInstance(
+                merged,
+                "Face"
+            ):
+
+                final_faces.append(
+                    merged
+                )
+
+            elif Topology.IsInstance(
+                merged,
+                "Shell"
+            ):
+
+                face = Face.ByShell(
+                    merged,
+                    silent=True
+                )
+
+                if Topology.IsInstance(
+                    face,
+                    "Face"
+                ):
+                    final_faces.append(
+                        face
+                    )
+
+                else:
+                    if not silent:
+                        print(
+                            "Topology.RemoveCoplanarFaces - Warning: "
+                            "Could not remove some coplanar faces. "
+                            "Re-adding original faces."
+                        )
+
+                    final_faces += Shell.Faces(
+                        merged
+                    )
+
             else:
-                return_topology = Shell.ByFaces(final_faces, tolerance=tolerance, silent=silent)
-        if not Topology.IsInstance(return_topology, "Topology"):
-            return_topology = Cluster.ByTopologies(final_faces, silent=silent)
-        return return_topology
+
+                shells = Topology.Shells(
+                    merged
+                )
+
+                for shell in shells:
+
+                    face = Face.ByShell(
+                        shell,
+                        silent=True
+                    )
+
+                    if Topology.IsInstance(
+                        face,
+                        "Face"
+                    ):
+                        final_faces.append(
+                            face
+                        )
+
+                    else:
+                        if not silent:
+                            print(
+                                "Topology.RemoveCoplanarFaces - Warning: "
+                                "Could not remove some coplanar faces. "
+                                "Re-adding original faces."
+                            )
+
+                        final_faces += Shell.Faces(
+                            shell
+                        )
+
+                if len(shells) == 0:
+                    final_faces += Topology.Faces(
+                        merged
+                    )
+
+                final_faces += Cluster.FreeFaces(
+                    merged
+                )
+
+        result = None
+
+        if Topology.IsInstance(
+            topology,
+            "CellComplex"
+        ):
+
+            result = CellComplex.ByFaces(
+                final_faces,
+                tolerance=tolerance,
+                silent=silent
+            )
+
+        elif Topology.IsInstance(
+            topology,
+            "Cell"
+        ):
+
+            result = Cell.ByFaces(
+                final_faces,
+                tolerance=tolerance,
+                silent=silent
+            )
+
+        elif Topology.IsInstance(
+            topology,
+            "Shell"
+        ):
+
+            if len(final_faces) == 1:
+                result = final_faces[0]
+
+            else:
+                result = Shell.ByFaces(
+                    final_faces,
+                    tolerance=tolerance,
+                    silent=silent
+                )
+
+        if not Topology.IsInstance(
+            result,
+            "Topology"
+        ):
+
+            result = Cluster.ByTopologies(
+                final_faces,
+                silent=silent
+            )
+
+        return result
 
     @staticmethod
     def RemoveEdges(topology, edges: list = [], tolerance: float = 0.0001, silent: bool = False):

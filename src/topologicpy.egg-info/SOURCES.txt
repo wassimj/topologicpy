@@ -1,3 +1,4 @@
+COPYING
 LICENSE
 README.md
 pyproject.toml
@@ -34,13 +35,13 @@ src/topologicpy/Ontology.py
 src/topologicpy/Plotly.py
 src/topologicpy/Polyskel.py
 src/topologicpy/PyG.py
-src/topologicpy/PythonOCCBackend.py
 src/topologicpy/Reasoner.py
 src/topologicpy/ShapeGrammar.py
 src/topologicpy/Shell.py
 src/topologicpy/Speckle.py
 src/topologicpy/Sun.py
 src/topologicpy/TGraph.py
+src/topologicpy/TGraph_01.py
 src/topologicpy/Topology.py
 src/topologicpy/Vector.py
 src/topologicpy/Vertex.py
@@ -93,6 +94,8 @@ src/topologicpy/ifc/BIM/Types/Windows.py
 src/topologicpy/ifc/BIM/Types/__init__.py
 src/topologicpy/pythonocc_backend/__init__.py
 src/topologicpy/pythonocc_backend/aperture.py
+src/topologicpy/pythonocc_backend/attribute_manager.py
+src/topologicpy/pythonocc_backend/attribute_manager_01.py
 src/topologicpy/pythonocc_backend/attributes.py
 src/topologicpy/pythonocc_backend/backend.py
 src/topologicpy/pythonocc_backend/cell.py
@@ -109,6 +112,7 @@ src/topologicpy/pythonocc_backend/shell.py
 src/topologicpy/pythonocc_backend/topology.py
 src/topologicpy/pythonocc_backend/vertex.py
 src/topologicpy/pythonocc_backend/wire.py
+src/topologicpy/pythonocc_backend/wire_01.py
 tests/test_Aperture.py
 tests/test_BVH.py
 tests/test_Booleans.py
@@ -146,9 +150,9 @@ tests/test_Shell.py
 tests/test_TGraph.py
 tests/test_TQueries.py
 tests/test_Topology.py
+tests/test_TopologyRelationships.py
 tests/test_Transformations.py
 tests/test_Vector.py
 tests/test_Vertex.py
 tests/test_Wire.py
-tests/test_pythonocc_backend_acceptance.py
-tests/test_pythonocc_backend_coverage.py
+tests/test_aperture_relationship_persistence.py

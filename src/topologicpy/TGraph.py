@@ -5897,42 +5897,39 @@ class TGraph:
         directApertures : bool , optional
             If set to True, direct aperture relationships are included. Default is False.
         viaSharedTopologies : bool , optional
-            If set to True, relationships through shared topologies are included. Default is
-            False.
+            If set to True, relationships through shared topologies are included. Default is False.
         viaSharedApertures : bool , optional
-            If set to True, relationships through shared apertures are included. Default is
-            False.
+            If set to True, relationships through shared apertures are included. Default is False.
         toExteriorTopologies : bool , optional
             If set to True, relationships to exterior topologies are included. Default is False.
         toExteriorApertures : bool , optional
             If set to True, relationships to exterior apertures are included. Default is False.
         toContents : bool , optional
-            The input to contents value. Default is False.
+            If set to True, relationships to contents are included. Default is False.
         toOutposts : bool , optional
-            The input to outposts value. Default is False.
+            If set to True, relationships to outposts are included. Default is False.
         idKey : str , optional
-            The dictionary key to use. Default is 'TOPOLOGIC_ID'.
+            The dictionary key used to identify outposts. Default is "TOPOLOGIC_ID".
         outpostsKey : str , optional
-            The dictionary key to use. Default is 'outposts'.
+            The dictionary key containing outpost identifiers. Default is "outposts".
         vertexCategoryKey : str , optional
-            The dictionary key to use. Default is 'category'.
+            The vertex category dictionary key. Default is "category".
         edgeCategoryKey : str , optional
-            The dictionary key to use. Default is 'category'.
+            The edge category dictionary key. Default is "category".
         useInternalVertex : bool , optional
-            If set to True, an internal vertex is used when deriving topology coordinates.
+            If set to True, an internal vertex is used instead of the center of mass.
             Default is False.
         storeBREP : bool , optional
-            If set to True, BREP strings are stored in dictionaries where possible. Default is
-            False.
+            If set to True, BREP strings are stored in dictionaries where possible.
+            Default is False.
         ontology : bool , optional
-            If set to True, ontology metadata is added or preserved where applicable. Default is
-            True.
+            If set to True, ontology metadata is added or preserved. Default is True.
         mantissa : int , optional
-            The number of decimal places to round numeric results to. Default is 6.
+            The number of decimal places to round numeric values to. Default is 6.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
+            If set to True, warning and error messages are suppressed. Default is False.
 
         Returns
         -------
@@ -5942,24 +5939,68 @@ class TGraph:
 
         from topologicpy.Dictionary import Dictionary
         from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
         from topologicpy.Aperture import Aperture
 
         if not Topology.IsInstance(topology, "Topology"):
             if not silent:
-                print("TGraph.ByTopology - Error: The input topology parameter is not a valid topology. Returning None.")
+                print(
+                    "TGraph.ByTopology - Error: The input topology parameter "
+                    "is not a valid topology. Returning None."
+                )
             return None
+
+        # ------------------------------------------------------------------
+        # Constants
+        # ------------------------------------------------------------------
 
         vertexIndexKey = "index"
         edgeSrcKey = "src"
         edgeDstKey = "dst"
-
         offset = tolerance * 100.0
 
-        graph_dictionary = {}
+        # ------------------------------------------------------------------
+        # Local method bindings
+        # ------------------------------------------------------------------
+
+        T_CenterOfMass = Topology.CenterOfMass
+        T_InternalVertex = Topology.InternalVertex
+        T_Dictionary = Topology.Dictionary
+        T_Apertures = Topology.Apertures
+        T_Contents = Topology.Contents
+        T_Vertices = Topology.Vertices
+        T_Edges = Topology.Edges
+        T_Faces = Topology.Faces
+        T_Cells = Topology.Cells
+        T_Shells = Topology.Shells
+        T_Wires = Topology.Wires
+        T_CellComplexes = Topology.CellComplexes
+        T_Type = Topology.Type
+        T_TypeAsString = Topology.TypeAsString
+        T_BREPString = Topology.BREPString
+
+        E_StartVertex = Edge.StartVertex
+        E_EndVertex = Edge.EndVertex
+
+        # ------------------------------------------------------------------
+        # Input type
+        # ------------------------------------------------------------------
+
+        try:
+            input_type = str(T_TypeAsString(topology)).lower().replace(" ", "")
+        except Exception:
+            input_type = ""
+
+        # ------------------------------------------------------------------
+        # Graph
+        # ------------------------------------------------------------------
+
         try:
             graph_dictionary = TGraph._TopologyDictionaryToPython(topology)
+            if not isinstance(graph_dictionary, dict):
+                graph_dictionary = {}
         except Exception:
             graph_dictionary = {}
 
@@ -5975,245 +6016,627 @@ class TGraph:
             dictionary=graph_dictionary,
         )
 
+        # ------------------------------------------------------------------
+        # Feature flags
+        # ------------------------------------------------------------------
+
+        needs_incidence = (
+            direct
+            or directApertures
+            or viaSharedTopologies
+            or viaSharedApertures
+            or toExteriorTopologies
+            or toExteriorApertures
+        )
+
+        needs_apertures = (
+            directApertures
+            or viaSharedApertures
+            or toExteriorApertures
+        )
+
+        needs_extended_boundaries = (
+            viaSharedTopologies
+            or viaSharedApertures
+            or toExteriorTopologies
+            or toExteriorApertures
+        )
+
+        # ------------------------------------------------------------------
+        # Caches
+        # ------------------------------------------------------------------
+
+        type_cache = {}
+
         dictionary_cache = {}
-        keys_cache = {}
-        values_cache = {}
+        dictionary_python_cache = {}
+        dictionary_keys_cache = {}
+        dictionary_lower_keys_cache = {}
+
         brep_cache = {}
-        representative_cache = {}
-        apertures_cache = {}
-        contents_cache = {}
+
+        coordinate_cache = {}
+
         vertices_cache = {}
         edges_cache = {}
         faces_cache = {}
-        incidence_cache = {}
+        cells_cache = {}
+        shells_cache = {}
+        wires_cache = {}
+        cellcomplexes_cache = {}
 
-        topology_vertex_index_by_object_id = {}
-        representative_index_by_key = {}
+        apertures_cache = {}
+        contents_cache = {}
 
-        T_IsInstance = Topology.IsInstance
-        T_CenterOfMass = Topology.CenterOfMass
-        T_InternalVertex = Topology.InternalVertex
-        T_Dictionary = Topology.Dictionary
-        T_Apertures = Topology.Apertures
-        T_Contents = Topology.Contents
-        T_Vertices = Topology.Vertices
-        T_Edges = Topology.Edges
-        T_Faces = Topology.Faces
-        T_Type = Topology.Type
-        T_TypeAsString = Topology.TypeAsString
-        T_BREPString = Topology.BREPString
+        boundary_key_cache = {}
 
-        def _warn(message):
-            if not silent:
-                print(message)
+        representative_cache = {}
+        representative_index_object_cache = {}
+        representative_index_identity_cache = {}
+
+        added_edge_pairs = set()
+
+        # ------------------------------------------------------------------
+        # Basic helpers
+        # ------------------------------------------------------------------
 
         def _id(t):
             return id(t)
 
-        def _keys(d):
-            if d is None:
-                return []
-            did = id(d)
-            if did in keys_cache:
-                return keys_cache[did]
-            try:
-                ks = Dictionary.Keys(d) or []
-            except Exception:
-                ks = []
-            keys_cache[did] = ks
-            return ks
+        def _type_name(t):
+            if t is None:
+                return ""
 
-        def _values(d):
-            if d is None:
-                return []
-            did = id(d)
-            if did in values_cache:
-                return values_cache[did]
-            try:
-                vs = Dictionary.Values(d) or []
-            except Exception:
-                vs = []
-            values_cache[did] = vs
-            return vs
+            tid = _id(t)
 
-        def _value_at_key(d, key, defaultValue=None):
-            if d is None or key is None:
-                return defaultValue
-            try:
-                return Dictionary.ValueAtKey(d, key, defaultValue)
-            except TypeError:
-                try:
-                    value = Dictionary.ValueAtKey(d, key)
-                    return defaultValue if value is None else value
-                except Exception:
-                    return defaultValue
-            except Exception:
-                return defaultValue
+            value = type_cache.get(tid)
 
-        def _case_key(d, key):
-            if d is None or key is None:
-                return None
-            key_l = str(key).lower()
-            for k in _keys(d):
-                if str(k).lower() == key_l:
-                    return k
-            return None
+            if value is not None:
+                return value
+
+            try:
+                value = str(T_TypeAsString(t)).lower().replace(" ", "")
+            except Exception:
+                value = type(t).__name__.lower()
+
+            type_cache[tid] = value
+            return value
 
         def _dictionary(t):
             if t is None:
                 return None
+
             tid = _id(t)
+
             if tid in dictionary_cache:
                 return dictionary_cache[tid]
+
             try:
-                d = T_Dictionary(t)
+                d = T_Dictionary(t, silent=True)
+            except TypeError:
+                try:
+                    d = T_Dictionary(t)
+                except Exception:
+                    d = None
             except Exception:
                 d = None
+
             dictionary_cache[tid] = d
             return d
 
-        def _dictionary_to_python(d):
-            result = {}
+        def _dictionary_keys(d):
             if d is None:
-                return result
-            for k in _keys(d):
-                result[k] = _value_at_key(d, k, None)
+                return []
+
+            did = id(d)
+
+            if did in dictionary_keys_cache:
+                return dictionary_keys_cache[did]
+
+            try:
+                result = Dictionary.Keys(d) or []
+            except Exception:
+                result = []
+
+            dictionary_keys_cache[did] = result
             return result
 
-        def _topology_dictionary_to_python(t):
-            return _dictionary_to_python(_dictionary(t))
+        def _dictionary_lower_keys(d):
+            if d is None:
+                return {}
+
+            did = id(d)
+
+            if did in dictionary_lower_keys_cache:
+                return dictionary_lower_keys_cache[did]
+
+            result = {}
+
+            for key in _dictionary_keys(d):
+                result.setdefault(str(key).lower(), key)
+
+            dictionary_lower_keys_cache[did] = result
+            return result
+
+        def _value_at_key(d, key, default=None):
+            if d is None or key is None:
+                return default
+
+            try:
+                value = Dictionary.ValueAtKey(d, key, default)
+            except TypeError:
+                try:
+                    value = Dictionary.ValueAtKey(d, key)
+                except Exception:
+                    return default
+            except Exception:
+                return default
+
+            return default if value is None else value
+
+        def _case_value(t, key, default=None):
+            d = _dictionary(t)
+
+            if d is None:
+                return default
+
+            actual_key = _dictionary_lower_keys(d).get(str(key).lower())
+
+            if actual_key is None:
+                return default
+
+            return _value_at_key(d, actual_key, default)
+
+        def _dictionary_to_python(t):
+            if t is None:
+                return {}
+
+            tid = _id(t)
+
+            if tid in dictionary_python_cache:
+                return dict(dictionary_python_cache[tid])
+
+            d = _dictionary(t)
+
+            if d is None:
+                dictionary_python_cache[tid] = {}
+                return {}
+
+            result = {}
+
+            try:
+                keys = _dictionary_keys(d)
+                values = Dictionary.Values(d) or []
+
+                if len(keys) == len(values):
+                    result = dict(zip(keys, values))
+                else:
+                    for key in keys:
+                        result[key] = _value_at_key(d, key, None)
+
+            except Exception:
+                for key in _dictionary_keys(d):
+                    result[key] = _value_at_key(d, key, None)
+
+            dictionary_python_cache[tid] = result
+
+            return dict(result)
+
+        # ------------------------------------------------------------------
+        # BREP
+        # ------------------------------------------------------------------
 
         def _brep_data(t):
+            if t is None:
+                return None, None, None
+
             tid = _id(t)
+
             if tid in brep_cache:
                 return brep_cache[tid]
-            try:
-                data = [T_BREPString(t), T_Type(t), T_TypeAsString(t)]
-            except Exception:
-                data = [None, None, None]
-            brep_cache[tid] = data
-            return data
 
-        def _add_brep_to_python_dict(d, t):
-            if not storeBREP:
+            try:
+                result = (
+                    T_BREPString(t),
+                    T_Type(t),
+                    T_TypeAsString(t),
+                )
+            except Exception:
+                result = (None, None, None)
+
+            brep_cache[tid] = result
+            return result
+
+        def _add_brep(d, t):
+            if not storeBREP or t is None:
                 return d
+
             brep, brep_type, brep_type_string = _brep_data(t)
+
             if brep is not None:
                 d["brep"] = brep
+
             if brep_type is not None:
                 d["brepType"] = brep_type
+
             if brep_type_string is not None:
                 d["brepTypeString"] = brep_type_string
+
             return d
 
-        def _category_dictionary(t, category):
-            d = _topology_dictionary_to_python(t)
-            d[vertexCategoryKey] = category
-            return _add_brep_to_python_dict(d, t)
+        # ------------------------------------------------------------------
+        # Aperture normalization
+        # ------------------------------------------------------------------
 
         def _topology_from_aperture(t):
-            if T_IsInstance(t, "Aperture"):
-                try:
-                    return Aperture.Topology(t)
-                except Exception:
-                    return t
-            return t
-
-        def _coordinates(v):
-            try:
-                return [
-                    round(float(Vertex.X(v, mantissa=mantissa)), mantissa),
-                    round(float(Vertex.Y(v, mantissa=mantissa)), mantissa),
-                    round(float(Vertex.Z(v, mantissa=mantissa)), mantissa),
-                ]
-            except Exception:
+            if t is None:
                 return None
 
-        def _topology_identity_key(t, category=None, apply_offset=False):
-            """
-            Returns a stable construction key for a Topologic topology.
-
-            Topologic subtopology accessors may return new Python wrapper
-            objects for the same underlying geometric/topological entity. Using
-            id(t) alone therefore creates duplicate TGraph vertices. This key
-            is based on type and rounded vertex coordinates, with BREP fallback
-            for higher-dimensional or unusual topologies.
-            """
-            t = _topology_from_aperture(t)
-            if t is None:
-                return (None, category, bool(apply_offset))
+            if _type_name(t) != "aperture":
+                return t
 
             try:
-                type_string = T_TypeAsString(t)
+                result = Aperture.Topology(t)
+                return result if result is not None else t
             except Exception:
-                type_string = type(t).__name__
+                return t
 
-            type_l = str(type_string).lower()
+        # ------------------------------------------------------------------
+        # Coordinates
+        # ------------------------------------------------------------------
+
+        def _coordinates(v):
+            if v is None:
+                return None
+
+            vid = _id(v)
+
+            if vid in coordinate_cache:
+                return coordinate_cache[vid]
+
+            result = None
 
             try:
-                if T_IsInstance(t, "Vertex"):
-                    return ("Vertex", tuple(_coordinates(t) or []), category, bool(apply_offset))
+                c = Vertex.Coordinates(v, mantissa=mantissa)
+
+                if isinstance(c, (list, tuple)) and len(c) >= 3:
+                    result = (
+                        round(float(c[0]), mantissa),
+                        round(float(c[1]), mantissa),
+                        round(float(c[2]), mantissa),
+                    )
             except Exception:
                 pass
 
+            if result is None:
+                try:
+                    result = (
+                        round(float(Vertex.X(v, mantissa=mantissa)), mantissa),
+                        round(float(Vertex.Y(v, mantissa=mantissa)), mantissa),
+                        round(float(Vertex.Z(v, mantissa=mantissa)), mantissa),
+                    )
+                except Exception:
+                    result = None
+
+            coordinate_cache[vid] = result
+            return result
+
+        # ------------------------------------------------------------------
+        # Cached topology extraction
+        # ------------------------------------------------------------------
+
+        def _cached_topologies(t, cache, function):
+            if t is None:
+                return []
+
+            tid = _id(t)
+
+            if tid in cache:
+                return cache[tid]
+
             try:
-                vs = T_Vertices(t, silent=True) or []
+                result = function(t, silent=True) or []
             except TypeError:
                 try:
-                    vs = T_Vertices(t) or []
+                    result = function(t) or []
                 except Exception:
-                    vs = []
+                    result = []
             except Exception:
-                vs = []
+                result = []
 
-            coords = []
-            for v in vs:
-                c = _coordinates(v)
-                if c is not None:
-                    coords.append(tuple(c))
+            cache[tid] = result
+            return result
 
-            if coords:
-                coords = tuple(sorted(coords))
-                return (type_l, coords, category, bool(apply_offset))
+        def _vertices(t):
+            return _cached_topologies(t, vertices_cache, T_Vertices)
 
-            # Fallback. This is slower, but only used when vertices cannot be
-            # extracted. Hashing avoids storing very large strings in the cache key.
+        def _edges(t):
+            return _cached_topologies(t, edges_cache, T_Edges)
+
+        def _faces(t):
+            return _cached_topologies(t, faces_cache, T_Faces)
+
+        def _cells(t):
+            return _cached_topologies(t, cells_cache, T_Cells)
+
+        def _shells(t):
+            return _cached_topologies(t, shells_cache, T_Shells)
+
+        def _wires(t):
+            return _cached_topologies(t, wires_cache, T_Wires)
+
+        def _cellcomplexes(t):
+            return _cached_topologies(
+                t,
+                cellcomplexes_cache,
+                T_CellComplexes,
+            )
+
+        # ------------------------------------------------------------------
+        # Very cheap Edge endpoints
+        # ------------------------------------------------------------------
+
+        def _edge_vertices(e):
             try:
-                return (type_l, hash(T_BREPString(t)), category, bool(apply_offset))
+                a = E_StartVertex(e)
+                b = E_EndVertex(e)
+
+                if a is not None and b is not None:
+                    return a, b
             except Exception:
-                return (type_l, _id(t), category, bool(apply_offset))
+                pass
+
+            vertices = _vertices(e)
+
+            if len(vertices) >= 2:
+                return vertices[0], vertices[-1]
+
+            return None, None
+
+        # ------------------------------------------------------------------
+        # Boundary keys
+        # ------------------------------------------------------------------
+
+        def _vertex_key(v):
+            return _coordinates(v)
+
+        def _edge_key(e):
+            eid = _id(e)
+            cache_key = ("edge", eid)
+
+            if cache_key in boundary_key_cache:
+                return boundary_key_cache[cache_key]
+
+            a, b = _edge_vertices(e)
+
+            if a is None or b is None:
+                result = None
+            else:
+                ka = _coordinates(a)
+                kb = _coordinates(b)
+
+                if ka is None or kb is None:
+                    result = None
+                elif ka <= kb:
+                    result = (ka, kb)
+                else:
+                    result = (kb, ka)
+
+            boundary_key_cache[cache_key] = result
+            return result
+
+        def _face_key(f):
+            fid = _id(f)
+            cache_key = ("face", fid)
+
+            if cache_key in boundary_key_cache:
+                return boundary_key_cache[cache_key]
+
+            coordinates = []
+
+            for v in _vertices(f):
+                c = _coordinates(v)
+
+                if c is not None:
+                    coordinates.append(c)
+
+            if coordinates:
+                coordinates.sort()
+                result = tuple(coordinates)
+            else:
+                result = None
+
+            boundary_key_cache[cache_key] = result
+            return result
+
+        # ------------------------------------------------------------------
+        # Apertures / contents
+        # ------------------------------------------------------------------
+
+        def _apertures(t):
+            if t is None or not needs_apertures:
+                return []
+
+            tid = _id(t)
+
+            if tid in apertures_cache:
+                return apertures_cache[tid]
+
+            try:
+                result = T_Apertures(t) or []
+            except Exception:
+                result = []
+
+            apertures_cache[tid] = result
+            return result
+
+        def _contents(t):
+            if t is None or not toContents:
+                return []
+
+            tid = _id(t)
+
+            if tid in contents_cache:
+                return contents_cache[tid]
+
+            try:
+                result = T_Contents(t, silent=True) or []
+            except TypeError:
+                try:
+                    result = T_Contents(t) or []
+                except Exception:
+                    result = []
+            except Exception:
+                result = []
+
+            result = [
+                _topology_from_aperture(c)
+                for c in result
+                if c is not None
+            ]
+
+            contents_cache[tid] = result
+            return result
+
+        # ------------------------------------------------------------------
+        # Representative identity
+        # ------------------------------------------------------------------
+
+        def _geometric_identity(t):
+            """
+            Used only when a topology may have arrived through independently
+            generated wrappers and no already-computed incidence key is available.
+            """
+
+            t = _topology_from_aperture(t)
+
+            if t is None:
+                return None
+
+            type_name = _type_name(t)
+
+            if type_name == "vertex":
+                return (type_name, _vertex_key(t))
+
+            if type_name == "edge":
+                return (type_name, _edge_key(t))
+
+            if type_name == "face":
+                return (type_name, _face_key(t))
+
+            coordinates = []
+
+            for v in _vertices(t):
+                c = _coordinates(v)
+
+                if c is not None:
+                    coordinates.append(c)
+
+            if coordinates:
+                coordinates.sort()
+                return (type_name, tuple(coordinates))
+
+            try:
+                return (type_name, hash(T_BREPString(t)))
+            except Exception:
+                return (type_name, _id(t))
+
+        # ------------------------------------------------------------------
+        # Graph vertex creation
+        # ------------------------------------------------------------------
 
         def _add_vertex_record(representation, dictionary):
             d = dict(dictionary) if isinstance(dictionary, dict) else {}
 
-            coords = _coordinates(representation)
-            if coords is not None:
-                d.setdefault("x", coords[0])
-                d.setdefault("y", coords[1])
-                d.setdefault("z", coords[2])
+            c = _coordinates(representation)
 
-            index = graph.AddVertex(dictionary=d, representation=representation)
+            if c is not None:
+                d.setdefault("x", c[0])
+                d.setdefault("y", c[1])
+                d.setdefault("z", c[2])
+
+            index = graph.AddVertex(
+                dictionary=d,
+                representation=representation,
+            )
+
             graph._vertices[index]["dictionary"][vertexIndexKey] = index
-
-            if representation is not None:
-                topology_vertex_index_by_object_id[_id(representation)] = index
 
             return index
 
-        def _representative_vertex_index(t, category=None, apply_offset=False, source_dictionary_topology=None):
+        def _representative_vertex_index(
+            t,
+            category=None,
+            apply_offset=False,
+            identity=None,
+            canonical=False,
+            source_dictionary_topology=None,
+        ):
             t = _topology_from_aperture(t)
-            source = source_dictionary_topology if source_dictionary_topology is not None else t
-            key = _topology_identity_key(t, category=category, apply_offset=apply_offset)
 
-            if key in representative_index_by_key:
-                return representative_index_by_key[key]
+            if t is None:
+                return None
 
-            if key in representative_cache:
-                v = representative_cache[key]
+            source = (
+                source_dictionary_topology
+                if source_dictionary_topology is not None
+                else t
+            )
+
+            object_key = (
+                _id(t),
+                category,
+                bool(apply_offset),
+            )
+
+            # Fastest path: exact wrapper has already been seen.
+            if object_key in representative_index_object_cache:
+                return representative_index_object_cache[object_key]
+
+            identity_key = None
+
+            # An incidence key already calculated by the caller is much cheaper
+            # than rebuilding geometric identity.
+            if identity is not None:
+                identity_key = (
+                    identity,
+                    category,
+                    bool(apply_offset),
+                )
+
+            elif canonical:
+                geometry_identity = _geometric_identity(t)
+
+                identity_key = (
+                    geometry_identity,
+                    category,
+                    bool(apply_offset),
+                )
+
+            if (
+                identity_key is not None
+                and identity_key in representative_index_identity_cache
+            ):
+                index = representative_index_identity_cache[identity_key]
+                representative_index_object_cache[object_key] = index
+                return index
+
+            representative_key = (
+                identity_key
+                if identity_key is not None
+                else object_key
+            )
+
+            if representative_key in representative_cache:
+                v = representative_cache[representative_key]
+
             else:
                 try:
                     if useInternalVertex:
-                        v = T_InternalVertex(t, tolerance=tolerance)
+                        v = T_InternalVertex(
+                            t,
+                            tolerance=tolerance,
+                        )
                     else:
                         v = T_CenterOfMass(t)
                 except Exception:
@@ -6223,66 +6646,111 @@ class TGraph:
                     return None
 
                 if apply_offset:
-                    try:
-                        v = Vertex.ByCoordinates(
-                            Vertex.X(v, mantissa=mantissa) + offset,
-                            Vertex.Y(v, mantissa=mantissa) + offset,
-                            Vertex.Z(v, mantissa=mantissa) + offset,
-                        )
-                    except Exception:
-                        pass
+                    c = _coordinates(v)
 
-                representative_cache[key] = v
+                    if c is not None:
+                        try:
+                            v = Vertex.ByCoordinates(
+                                c[0] + offset,
+                                c[1] + offset,
+                                c[2] + offset,
+                            )
+                        except Exception:
+                            pass
+
+                representative_cache[representative_key] = v
+
+            d = _dictionary_to_python(source)
 
             if category is not None:
-                d = _category_dictionary(source, category)
-            else:
-                d = _topology_dictionary_to_python(source)
+                d[vertexCategoryKey] = category
 
-            idx = _add_vertex_record(v, d)
-            representative_index_by_key[key] = idx
-            return idx
+            d = _add_brep(d, source)
+
+            index = _add_vertex_record(v, d)
+
+            representative_index_object_cache[object_key] = index
+
+            if identity_key is not None:
+                representative_index_identity_cache[identity_key] = index
+
+            return index
 
         def _append_vertex_from_topology(t, category=None):
             if t is None:
                 return None
 
-            key = _topology_identity_key(t, category=category, apply_offset=False)
-            if key in representative_index_by_key:
-                return representative_index_by_key[key]
+            object_key = (
+                _id(t),
+                category,
+                False,
+            )
 
-            d = _topology_dictionary_to_python(t)
+            if object_key in representative_index_object_cache:
+                return representative_index_object_cache[object_key]
+
+            d = _dictionary_to_python(t)
+
             if category is not None:
                 d[vertexCategoryKey] = category
-            d = _add_brep_to_python_dict(d, t)
 
-            idx = _add_vertex_record(t, d)
-            representative_index_by_key[key] = idx
-            return idx
+            d = _add_brep(d, t)
 
-        def _edge_dictionary(relationship, category, source_topology=None):
-            source = _topology_from_aperture(source_topology)
+            index = _add_vertex_record(t, d)
+
+            representative_index_object_cache[object_key] = index
+            return index
+
+        # ------------------------------------------------------------------
+        # Graph edge creation
+        # ------------------------------------------------------------------
+
+        def _edge_dictionary(
+            relationship,
+            category,
+            source_topology=None,
+        ):
             d = {}
 
+            source = _topology_from_aperture(source_topology)
+
             if source is not None:
-                d.update(_topology_dictionary_to_python(source))
+                d.update(_dictionary_to_python(source))
 
             d["relationship"] = relationship
             d[edgeCategoryKey] = category
+
             return d
 
-        def _append_edge_by_indices(src, dst, relationship, category, source_topology=None):
-            if src is None or dst is None:
+        def _append_edge(
+            src,
+            dst,
+            relationship,
+            category,
+            source_topology=None,
+        ):
+            if src is None or dst is None or src == dst:
                 return None
 
-            if src == dst:
+            pair = (
+                (src, dst)
+                if src < dst
+                else (dst, src)
+            )
+
+            if pair in added_edge_pairs:
                 return None
 
-            d = _edge_dictionary(relationship, category, source_topology)
+            d = _edge_dictionary(
+                relationship,
+                category,
+                source_topology,
+            )
+
             d[edgeSrcKey] = src
             d[edgeDstKey] = dst
 
-            return graph.AddEdge(
+            result = graph.AddEdge(
                 src,
                 dst,
                 directed=False,
@@ -6290,605 +6758,757 @@ class TGraph:
                 representation=None,
             )
 
-        def _append_edge(v1_index, v2_index, relationship, category, source_topology=None):
-            return _append_edge_by_indices(v1_index, v2_index, relationship, category, source_topology=source_topology)
+            if result is not None:
+                added_edge_pairs.add(pair)
 
-        def _apertures(t):
-            tid = _id(t)
-            if tid in apertures_cache:
-                return apertures_cache[tid]
-            try:
-                aps = T_Apertures(t) or []
-            except Exception:
-                aps = []
-            apertures_cache[tid] = aps
-            return aps
+            return result
 
-        def _contents(t):
-            tid = _id(t)
-            if tid in contents_cache:
-                return contents_cache[tid]
+        # ------------------------------------------------------------------
+        # Contents
+        # ------------------------------------------------------------------
 
-            try:
-                cs = T_Contents(t, silent=True) or []
-            except TypeError:
-                try:
-                    cs = T_Contents(t) or []
-                except Exception:
-                    cs = []
-            except Exception:
-                cs = []
-
-            cs = [_topology_from_aperture(c) for c in cs if c is not None]
-            contents_cache[tid] = cs
-            return cs
-
-        def _vertices(t):
-            tid = _id(t)
-            if tid in vertices_cache:
-                return vertices_cache[tid]
-            try:
-                vs = T_Vertices(t, silent=True) or []
-            except TypeError:
-                try:
-                    vs = T_Vertices(t) or []
-                except Exception:
-                    vs = []
-            except Exception:
-                vs = []
-            vertices_cache[tid] = vs
-            return vs
-
-        def _edges(t):
-            tid = _id(t)
-            if tid in edges_cache:
-                return edges_cache[tid]
-            try:
-                es = T_Edges(t, silent=True) or []
-            except TypeError:
-                try:
-                    es = T_Edges(t) or []
-                except Exception:
-                    es = []
-            except Exception:
-                es = []
-            edges_cache[tid] = es
-            return es
-
-        def _faces(t):
-            tid = _id(t)
-            if tid in faces_cache:
-                return faces_cache[tid]
-            try:
-                fs = T_Faces(t, silent=True) or []
-            except TypeError:
-                try:
-                    fs = T_Faces(t) or []
-                except Exception:
-                    fs = []
-            except Exception:
-                fs = []
-            faces_cache[tid] = fs
-            return fs
-
-        def _coord_key(v):
-            return (
-                round(Vertex.X(v, mantissa=mantissa), mantissa),
-                round(Vertex.Y(v, mantissa=mantissa), mantissa),
-                round(Vertex.Z(v, mantissa=mantissa), mantissa),
-            )
-
-        def _vertex_key(v):
-            return _coord_key(v)
-
-        def _edge_key(e):
-            return tuple(sorted([_coord_key(v) for v in _vertices(e)]))
-
-        def _face_key(f):
-            return tuple(sorted([_coord_key(v) for v in _vertices(f)]))
-
-        def _boundary_key(t, boundary_type):
-            if boundary_type == "Face":
-                return _face_key(t)
-            if boundary_type == "Edge":
-                return _edge_key(t)
-            if boundary_type == "Vertex":
-                return _vertex_key(t)
-            return _id(t)
-
-        def _children(t, child_type):
-            if child_type == "Face":
-                return _faces(t)
-            if child_type == "Edge":
-                return _edges(t)
-            if child_type == "Vertex":
-                return _vertices(t)
-            return []
-
-        def _safe_list(value):
-            return value if isinstance(value, list) else ([] if value is None else list(value))
-
-        def _subtopologies(t, topology_type, free=False):
-            try:
-                if topology_type == "CellComplex":
-                    return Topology.CellComplexes(t, silent=True) or []
-                if topology_type == "Cell":
-                    return (Cluster.FreeCells(t, tolerance=tolerance) if free else Topology.Cells(t, silent=True)) or []
-                if topology_type == "Shell":
-                    return (Cluster.FreeShells(t, tolerance=tolerance) if free else Topology.Shells(t, silent=True)) or []
-                if topology_type == "Face":
-                    return (Cluster.FreeFaces(t, tolerance=tolerance) if free else Topology.Faces(t, silent=True)) or []
-                if topology_type == "Wire":
-                    return (Cluster.FreeWires(t, tolerance=tolerance) if free else Topology.Wires(t, silent=True)) or []
-                if topology_type == "Edge":
-                    return (Cluster.FreeEdges(t, tolerance=tolerance) if free else Topology.Edges(t, silent=True)) or []
-                if topology_type == "Vertex":
-                    return (Cluster.FreeVertices(t, tolerance=tolerance) if free else Topology.Vertices(t, silent=True)) or []
-            except TypeError:
-                try:
-                    if topology_type == "CellComplex":
-                        return Topology.CellComplexes(t) or []
-                    if topology_type == "Cell":
-                        return Topology.Cells(t) or []
-                    if topology_type == "Shell":
-                        return Topology.Shells(t) or []
-                    if topology_type == "Face":
-                        return Topology.Faces(t) or []
-                    if topology_type == "Wire":
-                        return Topology.Wires(t) or []
-                    if topology_type == "Edge":
-                        return Topology.Edges(t) or []
-                    if topology_type == "Vertex":
-                        return Topology.Vertices(t) or []
-                except Exception:
-                    return []
-            except Exception:
-                return []
-            return []
-
-        def _build_incidence(host, owners, child_type):
-            key = (_id(host), tuple(_id(o) for o in owners), child_type)
-            if key in incidence_cache:
-                return incidence_cache[key]
-
-            boundary_to_owners = {}
-            boundary_to_refs = {}
-            boundary_to_owner_ids = {}
-
-            for owner in owners:
-                owner_id = _id(owner)
-
-                for child in _children(owner, child_type):
-                    bk = _boundary_key(child, child_type)
-
-                    owner_ids = boundary_to_owner_ids.setdefault(bk, set())
-                    if owner_id not in owner_ids:
-                        owner_ids.add(owner_id)
-                        boundary_to_owners.setdefault(bk, []).append(owner)
-
-                    boundary_to_refs.setdefault(bk, []).append(child)
-
-            incidence_cache[key] = (boundary_to_owners, boundary_to_refs)
-            return boundary_to_owners, boundary_to_refs
-
-        def _add_related_vertices(v_from_index, related_topologies, vertex_category, relationship, edge_category, apply_offset=False):
-            if v_from_index is None:
+        def _add_contents(source_index, t):
+            if not toContents or source_index is None:
                 return
 
-            for t in related_topologies:
-                v_to_index = _representative_vertex_index(t, vertex_category, apply_offset=apply_offset)
-                if v_to_index is None:
-                    continue
-                _append_edge(v_from_index, v_to_index, relationship, edge_category, source_topology=t)
+            for content in _contents(t):
+                target_index = _representative_vertex_index(
+                    content,
+                    category=5,
+                    apply_offset=True,
+                    canonical=True,
+                )
 
-        def _add_contents(v_from_index, contents):
-            if v_from_index is None:
-                return
-
-            for content in contents:
-                content = _topology_from_aperture(content)
-                if content is None:
-                    continue
-
-                v_to_index = _representative_vertex_index(content, 5, apply_offset=True)
-                if v_to_index is None:
+                if target_index is None:
                     continue
 
                 _append_edge(
-                    v_from_index,
-                    v_to_index,
+                    source_index,
+                    target_index,
                     "To_Contents",
                     5,
                     source_topology=content,
                 )
 
+        # ------------------------------------------------------------------
+        # Outposts
+        # ------------------------------------------------------------------
+
+        id_key_lower = str(idKey).lower()
+        outposts_key_lower = str(outpostsKey).lower()
+
         def _outpost_lookup(topologies):
+            if not toOutposts:
+                return {}
+
             lookup = {}
-            id_key_l = str(idKey).lower()
 
             for t in topologies:
-                d = _dictionary(t)
-                k = None
+                value = _case_value(t, id_key_lower, None)
 
-                for key in _keys(d):
-                    if str(key).lower() == id_key_l:
-                        k = key
-                        break
-
-                if k is None:
-                    continue
-
-                value = _value_at_key(d, k, None)
                 if value is not None and value not in lookup:
                     lookup[value] = t
 
             return lookup
 
-        def _add_outposts(v_from_index, outpost_lookup):
-            if v_from_index is None:
+        def _add_outposts(source_index, outpost_lookup):
+            if (
+                not toOutposts
+                or source_index is None
+                or not outpost_lookup
+            ):
                 return
 
             try:
-                v_record = graph._vertices[v_from_index]
-                d_python = v_record.get("dictionary", {})
+                d = graph._vertices[source_index]["dictionary"]
             except Exception:
                 return
 
-            k = None
-            outposts_key_l = str(outpostsKey).lower()
+            ids = None
 
-            for key in d_python.keys():
-                if str(key).lower() == outposts_key_l:
-                    k = key
+            for key, value in d.items():
+                if str(key).lower() == outposts_key_lower:
+                    ids = value
                     break
 
-            if k is None:
-                return
-
-            ids = d_python.get(k, [])
             if ids is None:
                 return
+
             if not isinstance(ids, list):
                 ids = [ids]
 
             for an_id in ids:
-                outpost = outpost_lookup.get(an_id, None)
+                outpost = outpost_lookup.get(an_id)
+
                 if outpost is None:
                     continue
-                v_to_index = _representative_vertex_index(outpost, 6)
-                if v_to_index is None:
-                    continue
-                _append_edge(v_from_index, v_to_index, "To_Outposts", 6)
 
-        def _classify_boundaries(owner, child_type, boundary_to_owners):
-            shared_tops = []
-            exterior_tops = []
-            shared_aps = []
-            exterior_aps = []
+                target_index = _representative_vertex_index(
+                    outpost,
+                    category=6,
+                    canonical=True,
+                )
 
-            for child in _children(owner, child_type):
-                bk = _boundary_key(child, child_type)
-                aps = _apertures(child)
-
-                if len(boundary_to_owners.get(bk, [])) > 1:
-                    shared_tops.append(child)
-                    shared_aps.extend(aps)
-                else:
-                    exterior_tops.append(child)
-                    exterior_aps.extend(aps)
-
-            return shared_tops, exterior_tops, shared_aps, exterior_aps
-
-        def _add_direct_edges_from_incidence(owners, child_type, boundary_to_owners, boundary_to_refs, require_aperture=False):
-            owner_records = {}
-
-            for owner in owners:
-                owner_id = _id(owner)
-                v_owner_index = _representative_vertex_index(owner, 0)
-                if v_owner_index is None:
+                if target_index is None:
                     continue
 
-                owner_records[owner_id] = {
-                    "owner": owner,
-                    "index": v_owner_index,
-                }
+                _append_edge(
+                    source_index,
+                    target_index,
+                    "To_Outposts",
+                    6,
+                )
 
-            seen_pairs = set()
+        # ------------------------------------------------------------------
+        # Shared/exterior topology relationship
+        # ------------------------------------------------------------------
 
-            for bk, incident_owners in boundary_to_owners.items():
-                if not incident_owners:
-                    continue
+        def _add_boundary_topology(
+            owner_index,
+            child,
+            child_type,
+            boundary_key,
+            shared,
+            outpost_lookup,
+        ):
+            if shared:
+                if viaSharedTopologies:
+                    identity = (
+                        "boundary",
+                        child_type,
+                        boundary_key,
+                    )
 
-                unique_records = []
-                seen_owner_ids = set()
-                seen_indices = set()
+                    child_index = _representative_vertex_index(
+                        child,
+                        category=1,
+                        identity=identity,
+                    )
 
-                for owner in incident_owners:
-                    owner_id = _id(owner)
-                    if owner_id in seen_owner_ids:
-                        continue
-
-                    record = owner_records.get(owner_id, None)
-                    if record is None:
-                        continue
-
-                    index = record["index"]
-                    if index in seen_indices:
-                        continue
-
-                    seen_owner_ids.add(owner_id)
-                    seen_indices.add(index)
-                    unique_records.append(record)
-
-                if len(unique_records) < 2:
-                    continue
-
-                refs = boundary_to_refs.get(bk, []) or []
-
-                if require_aperture:
-                    has_aperture = False
-                    for ref in refs:
-                        if _apertures(ref):
-                            has_aperture = True
-                            break
-                    if not has_aperture:
-                        continue
-
-                relationship = "Direct_Apertures" if require_aperture else "Direct"
-                edge_category = 2 if require_aperture else 0
-                n = len(unique_records)
-
-                for i in range(n - 1):
-                    ri = unique_records[i]
-                    src_index = ri["index"]
-
-                    for j in range(i + 1, n):
-                        rj = unique_records[j]
-                        dst_index = rj["index"]
-
-                        if src_index == dst_index:
-                            continue
-
-                        pair = (src_index, dst_index) if src_index <= dst_index else (dst_index, src_index)
-                        pair = pair + (bk, "aperture" if require_aperture else "direct")
-
-                        if pair in seen_pairs:
-                            continue
-                        seen_pairs.add(pair)
-
-                        source = None
-
-                        if require_aperture:
-                            for ref in refs:
-                                aps = _apertures(ref)
-                                if aps:
-                                    source = aps[0]
-                                    break
-                        else:
-                            source = refs[0] if refs else None
-
-                        _append_edge_by_indices(
-                            src_index,
-                            dst_index,
-                            relationship,
-                            edge_category,
-                            source_topology=source,
+                    if child_index is not None:
+                        _append_edge(
+                            owner_index,
+                            child_index,
+                            "Via_Shared_Topologies",
+                            1,
+                            source_topology=child,
                         )
 
-        def _process_collection(host, main_type, child_type, outpost_lookup):
-            owners = _subtopologies(host, main_type)
-            boundary_to_owners, boundary_to_refs = _build_incidence(host, owners, child_type)
+                        if toContents:
+                            _add_contents(child_index, child)
 
-            for owner in owners:
-                _representative_vertex_index(owner, 0)
-
-            if direct:
-                _add_direct_edges_from_incidence(
-                    owners,
-                    child_type,
-                    boundary_to_owners,
-                    boundary_to_refs,
-                    require_aperture=False,
-                )
-
-            if directApertures:
-                _add_direct_edges_from_incidence(
-                    owners,
-                    child_type,
-                    boundary_to_owners,
-                    boundary_to_refs,
-                    require_aperture=True,
-                )
-
-            if not any([viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents, toOutposts]):
-                return
-
-            for owner in owners:
-                v_owner_index = _representative_vertex_index(owner, 0)
-
-                shared_tops, exterior_tops, shared_aps, exterior_aps = _classify_boundaries(
-                    owner,
-                    child_type,
-                    boundary_to_owners,
-                )
-
-                if viaSharedTopologies:
-                    _add_related_vertices(v_owner_index, shared_tops, 1, "Via_Shared_Topologies", 1)
-
-                    if toContents or toOutposts:
-                        for shared_top in shared_tops:
-                            v_shared_index = _representative_vertex_index(shared_top, 1)
-
-                            if toContents:
-                                _add_contents(v_shared_index, _contents(shared_top))
-                            if toOutposts:
-                                _add_outposts(v_shared_index, outpost_lookup)
+                        if toOutposts:
+                            _add_outposts(
+                                child_index,
+                                outpost_lookup,
+                            )
 
                 if viaSharedApertures:
-                    _add_related_vertices(v_owner_index, shared_aps, 2, "Via_Shared_Apertures", 2, apply_offset=True)
+                    for aperture in _apertures(child):
+                        aperture_index = _representative_vertex_index(
+                            aperture,
+                            category=2,
+                            apply_offset=True,
+                            canonical=True,
+                        )
 
+                        if aperture_index is not None:
+                            _append_edge(
+                                owner_index,
+                                aperture_index,
+                                "Via_Shared_Apertures",
+                                2,
+                                source_topology=aperture,
+                            )
+
+            else:
                 if toExteriorTopologies:
-                    _add_related_vertices(v_owner_index, exterior_tops, 3, "To_Exterior_Topologies", 3)
+                    identity = (
+                        "boundary",
+                        child_type,
+                        boundary_key,
+                    )
 
-                    if toContents or toOutposts:
-                        for exterior_top in exterior_tops:
-                            v_exterior_index = _representative_vertex_index(exterior_top, 3)
+                    child_index = _representative_vertex_index(
+                        child,
+                        category=3,
+                        identity=identity,
+                    )
 
-                            if toContents:
-                                _add_contents(v_exterior_index, _contents(exterior_top))
-                            if toOutposts:
-                                _add_outposts(v_exterior_index, outpost_lookup)
-
-                if toExteriorApertures:
-                    _add_related_vertices(v_owner_index, exterior_aps, 4, "To_Exterior_Apertures", 4, apply_offset=True)
-
-                if toContents:
-                    _add_contents(v_owner_index, _contents(owner))
-
-                if toOutposts:
-                    _add_outposts(v_owner_index, outpost_lookup)
-
-        def _process_single(t, child_type, outpost_lookup):
-            v_index = _representative_vertex_index(t, 0)
-
-            if not any([toExteriorTopologies, toExteriorApertures, toContents, toOutposts]):
-                return
-
-            exterior_tops = _children(t, child_type)
-            exterior_aps = []
-
-            for exterior_top in exterior_tops:
-                exterior_aps.extend(_apertures(exterior_top))
-
-            if toExteriorTopologies:
-                _add_related_vertices(v_index, exterior_tops, 3, "To_Exterior_Topologies", 3)
-
-                if toContents or toOutposts:
-                    for exterior_top in exterior_tops:
-                        v_exterior_index = _representative_vertex_index(exterior_top, 3)
+                    if child_index is not None:
+                        _append_edge(
+                            owner_index,
+                            child_index,
+                            "To_Exterior_Topologies",
+                            3,
+                            source_topology=child,
+                        )
 
                         if toContents:
-                            _add_contents(v_exterior_index, _contents(exterior_top))
-                        if toOutposts:
-                            _add_outposts(v_exterior_index, outpost_lookup)
+                            _add_contents(child_index, child)
 
-            if toExteriorApertures:
-                _add_related_vertices(v_index, exterior_aps, 4, "To_Exterior_Apertures", 4, apply_offset=True)
+                        if toOutposts:
+                            _add_outposts(
+                                child_index,
+                                outpost_lookup,
+                            )
+
+                if toExteriorApertures:
+                    for aperture in _apertures(child):
+                        aperture_index = _representative_vertex_index(
+                            aperture,
+                            category=4,
+                            apply_offset=True,
+                            canonical=True,
+                        )
+
+                        if aperture_index is not None:
+                            _append_edge(
+                                owner_index,
+                                aperture_index,
+                                "To_Exterior_Apertures",
+                                4,
+                                source_topology=aperture,
+                            )
+
+        # ------------------------------------------------------------------
+        # Optimized collection processor
+        # ------------------------------------------------------------------
+
+        def _process_collection(
+            owners,
+            child_getter,
+            boundary_key_function,
+            child_type,
+            outpost_lookup,
+        ):
+            if not owners:
+                return
+
+            owner_count = len(owners)
+
+            # --------------------------------------------------------------
+            # Owner graph vertices: exactly one pass.
+            # --------------------------------------------------------------
+
+            owner_indices = [None] * owner_count
+
+            for i in range(owner_count):
+                owner_indices[i] = _representative_vertex_index(
+                    owners[i],
+                    category=0,
+                )
+
+            # --------------------------------------------------------------
+            # Owner contents/outposts are independent of boundary incidence.
+            # --------------------------------------------------------------
+
+            if toContents or toOutposts:
+                for i in range(owner_count):
+                    owner_index = owner_indices[i]
+
+                    if owner_index is None:
+                        continue
+
+                    owner = owners[i]
+
+                    if toContents:
+                        _add_contents(owner_index, owner)
+
+                    if toOutposts:
+                        _add_outposts(
+                            owner_index,
+                            outpost_lookup,
+                        )
+
+            if not needs_incidence:
+                return
+
+            # --------------------------------------------------------------
+            # Build incidence ONCE.
+            #
+            # boundary_records:
+            #     key -> [owner_positions, child_refs]
+            #
+            # owner_boundary_records:
+            #     owner -> [(child, key), ...]
+            # --------------------------------------------------------------
+
+            boundary_records = {}
+            owner_boundary_records = (
+                [None] * owner_count
+                if needs_extended_boundaries
+                else None
+            )
+
+            for owner_position in range(owner_count):
+                owner = owners[owner_position]
+                children = child_getter(owner)
+
+                if needs_extended_boundaries:
+                    local_records = []
+                    owner_boundary_records[owner_position] = local_records
+
+                for child in children:
+                    key = boundary_key_function(child)
+
+                    if key is None:
+                        continue
+
+                    if needs_extended_boundaries:
+                        local_records.append((child, key))
+
+                    record = boundary_records.get(key)
+
+                    if record is None:
+                        boundary_records[key] = [
+                            [owner_position],
+                            [child],
+                        ]
+                    else:
+                        owner_positions = record[0]
+
+                        if (
+                            not owner_positions
+                            or owner_positions[-1] != owner_position
+                        ):
+                            owner_positions.append(owner_position)
+
+                        record[1].append(child)
+
+            # --------------------------------------------------------------
+            # Direct relationships
+            # --------------------------------------------------------------
+
+            if direct or directApertures:
+                for owner_positions, child_refs in boundary_records.values():
+
+                    if len(owner_positions) < 2:
+                        continue
+
+                    direct_source = (
+                        child_refs[0]
+                        if child_refs
+                        else None
+                    )
+
+                    aperture_source = None
+
+                    if directApertures:
+                        for child in child_refs:
+                            apertures = _apertures(child)
+
+                            if apertures:
+                                aperture_source = apertures[0]
+                                break
+
+                    n = len(owner_positions)
+
+                    for i in range(n - 1):
+                        src = owner_indices[owner_positions[i]]
+
+                        if src is None:
+                            continue
+
+                        for j in range(i + 1, n):
+                            dst = owner_indices[owner_positions[j]]
+
+                            if dst is None or src == dst:
+                                continue
+
+                            if direct:
+                                _append_edge(
+                                    src,
+                                    dst,
+                                    "Direct",
+                                    0,
+                                    source_topology=direct_source,
+                                )
+
+                            if (
+                                directApertures
+                                and aperture_source is not None
+                            ):
+                                _append_edge(
+                                    src,
+                                    dst,
+                                    "Direct_Apertures",
+                                    2,
+                                    source_topology=aperture_source,
+                                )
+
+            if not needs_extended_boundaries:
+                return
+
+            # --------------------------------------------------------------
+            # Shared / exterior processing.
+            #
+            # Critically, this does NOT re-extract children and does NOT
+            # reconstruct boundary keys.
+            # --------------------------------------------------------------
+
+            for owner_position in range(owner_count):
+                owner_index = owner_indices[owner_position]
+
+                if owner_index is None:
+                    continue
+
+                records = owner_boundary_records[owner_position]
+
+                if not records:
+                    continue
+
+                for child, key in records:
+                    incidence = boundary_records.get(key)
+
+                    if incidence is None:
+                        continue
+
+                    shared = len(incidence[0]) > 1
+
+                    _add_boundary_topology(
+                        owner_index,
+                        child,
+                        child_type,
+                        key,
+                        shared,
+                        outpost_lookup,
+                    )
+
+        # ------------------------------------------------------------------
+        # Optimized single-topology processor
+        # ------------------------------------------------------------------
+
+        def _process_single(
+            t,
+            child_getter,
+            child_type,
+            outpost_lookup,
+        ):
+            owner_index = _representative_vertex_index(
+                t,
+                category=0,
+            )
+
+            if owner_index is None:
+                return
 
             if toContents:
-                _add_contents(v_index, _contents(t))
+                _add_contents(owner_index, t)
 
             if toOutposts:
-                _add_outposts(v_index, outpost_lookup)
+                _add_outposts(
+                    owner_index,
+                    outpost_lookup,
+                )
+
+            if not (
+                toExteriorTopologies
+                or toExteriorApertures
+            ):
+                return
+
+            children = child_getter(t)
+
+            for child in children:
+
+                if toExteriorTopologies:
+                    if child_type == "Face":
+                        key = _face_key(child)
+                    elif child_type == "Edge":
+                        key = _edge_key(child)
+                    else:
+                        key = _vertex_key(child)
+
+                    identity = (
+                        "boundary",
+                        child_type,
+                        key,
+                    )
+
+                    child_index = _representative_vertex_index(
+                        child,
+                        category=3,
+                        identity=identity,
+                    )
+
+                    if child_index is not None:
+                        _append_edge(
+                            owner_index,
+                            child_index,
+                            "To_Exterior_Topologies",
+                            3,
+                            source_topology=child,
+                        )
+
+                        if toContents:
+                            _add_contents(child_index, child)
+
+                        if toOutposts:
+                            _add_outposts(
+                                child_index,
+                                outpost_lookup,
+                            )
+
+                if toExteriorApertures:
+                    for aperture in _apertures(child):
+                        aperture_index = _representative_vertex_index(
+                            aperture,
+                            category=4,
+                            apply_offset=True,
+                            canonical=True,
+                        )
+
+                        if aperture_index is not None:
+                            _append_edge(
+                                owner_index,
+                                aperture_index,
+                                "To_Exterior_Apertures",
+                                4,
+                                source_topology=aperture,
+                            )
+
+        # ------------------------------------------------------------------
+        # Vertex processor
+        # ------------------------------------------------------------------
 
         def _process_vertex(t, outpost_lookup):
-            v_index = _append_vertex_from_topology(t, 0)
+            index = _append_vertex_from_topology(
+                t,
+                category=0,
+            )
+
+            if index is None:
+                return
 
             if toContents:
-                _add_contents(v_index, _contents(t))
+                _add_contents(index, t)
 
             if toOutposts:
-                _add_outposts(v_index, outpost_lookup)
+                _add_outposts(
+                    index,
+                    outpost_lookup,
+                )
 
-        def _safe_topology_list(fn, t):
-            try:
-                return fn(t, silent=True) or []
-            except TypeError:
-                try:
-                    return fn(t) or []
-                except Exception:
-                    return []
-            except Exception:
-                return []
+        # ------------------------------------------------------------------
+        # Expensive all-subtopology traversal:
+        # ONLY executed if outposts are requested.
+        # ------------------------------------------------------------------
 
         def _all_subtopologies(t):
             return (
-                _safe_topology_list(Topology.CellComplexes, t) +
-                _safe_topology_list(Topology.Cells, t) +
-                _safe_topology_list(Topology.Shells, t) +
-                _safe_topology_list(Topology.Faces, t) +
-                _safe_topology_list(Topology.Wires, t) +
-                _safe_topology_list(Topology.Edges, t) +
-                _safe_topology_list(Topology.Vertices, t)
+                _cellcomplexes(t)
+                + _cells(t)
+                + _shells(t)
+                + _faces(t)
+                + _wires(t)
+                + _edges(t)
+                + _vertices(t)
             )
 
-        others = _all_subtopologies(topology)
-        outposts = _outpost_lookup(others)
+        # ------------------------------------------------------------------
+        # Resolve outposts lazily
+        # ------------------------------------------------------------------
 
-        if T_IsInstance(topology, "CellComplex"):
-            _process_collection(topology, "Cell", "Face", outposts)
+        if toOutposts:
+            outposts = _outpost_lookup(
+                _all_subtopologies(topology)
+            )
+        else:
+            outposts = {}
 
-        elif T_IsInstance(topology, "Cell"):
-            _process_single(topology, "Face", outposts)
+        # ------------------------------------------------------------------
+        # Dispatch
+        # ------------------------------------------------------------------
 
-        elif T_IsInstance(topology, "Shell"):
-            _process_collection(topology, "Face", "Edge", outposts)
+        if input_type == "cellcomplex":
 
-        elif T_IsInstance(topology, "Face"):
-            _process_single(topology, "Edge", outposts)
+            _process_collection(
+                _cells(topology),
+                _faces,
+                _face_key,
+                "Face",
+                outposts,
+            )
 
-        elif T_IsInstance(topology, "Wire"):
-            _process_collection(topology, "Edge", "Vertex", outposts)
+        elif input_type == "cell":
 
-        elif T_IsInstance(topology, "Edge"):
-            _process_single(topology, "Vertex", outposts)
+            _process_single(
+                topology,
+                _faces,
+                "Face",
+                outposts,
+            )
 
-        elif T_IsInstance(topology, "Vertex"):
-            _process_vertex(topology, outposts)
+        elif input_type == "shell":
 
-        elif T_IsInstance(topology, "Cluster"):
-            c_cellComplexes = _safe_topology_list(Topology.CellComplexes, topology)
+            _process_collection(
+                _faces(topology),
+                _edges,
+                _edge_key,
+                "Edge",
+                outposts,
+            )
+
+        elif input_type == "face":
+
+            _process_single(
+                topology,
+                _edges,
+                "Edge",
+                outposts,
+            )
+
+        elif input_type == "wire":
+
+            _process_collection(
+                _edges(topology),
+                _vertices,
+                _vertex_key,
+                "Vertex",
+                outposts,
+            )
+
+        elif input_type == "edge":
+
+            _process_single(
+                topology,
+                _vertices,
+                "Vertex",
+                outposts,
+            )
+
+        elif input_type == "vertex":
+
+            _process_vertex(
+                topology,
+                outposts,
+            )
+
+        elif input_type == "cluster":
+
+            # --------------------------------------------------------------
+            # Cluster decomposition remains inherently more expensive, but
+            # each Free* operation is now executed exactly once and its
+            # result is reused.
+            # --------------------------------------------------------------
+
+            c_cellcomplexes = _cellcomplexes(topology)
 
             try:
-                c_cells = Cluster.FreeCells(topology, tolerance=tolerance) or []
+                c_cells = Cluster.FreeCells(
+                    topology,
+                    tolerance=tolerance,
+                ) or []
             except Exception:
                 c_cells = []
 
             try:
-                c_shells = Cluster.FreeShells(topology, tolerance=tolerance) or []
+                c_shells = Cluster.FreeShells(
+                    topology,
+                    tolerance=tolerance,
+                ) or []
             except Exception:
                 c_shells = []
 
             try:
-                c_faces = Cluster.FreeFaces(topology, tolerance=tolerance) or []
+                c_faces = Cluster.FreeFaces(
+                    topology,
+                    tolerance=tolerance,
+                ) or []
             except Exception:
                 c_faces = []
 
             try:
-                c_wires = Cluster.FreeWires(topology, tolerance=tolerance) or []
+                c_wires = Cluster.FreeWires(
+                    topology,
+                    tolerance=tolerance,
+                ) or []
             except Exception:
                 c_wires = []
 
             try:
-                c_edges = Cluster.FreeEdges(topology, tolerance=tolerance) or []
+                c_edges = Cluster.FreeEdges(
+                    topology,
+                    tolerance=tolerance,
+                ) or []
             except Exception:
                 c_edges = []
 
             try:
-                c_vertices = Cluster.FreeVertices(topology, tolerance=tolerance) or []
+                c_vertices = Cluster.FreeVertices(
+                    topology,
+                    tolerance=tolerance,
+                ) or []
             except Exception:
                 c_vertices = []
 
-            others = others + c_cellComplexes + c_cells + c_shells + c_faces + c_wires + c_edges + c_vertices
-            outposts = _outpost_lookup(others)
+            # Existing global outpost lookup already includes the Cluster's
+            # subtopologies. Do not rebuild it from the free lists.
 
-            for t in c_cellComplexes:
-                _process_collection(t, "Cell", "Face", outposts)
+            for t in c_cellcomplexes:
+                _process_collection(
+                    _cells(t),
+                    _faces,
+                    _face_key,
+                    "Face",
+                    outposts,
+                )
+
             for t in c_cells:
-                _process_single(t, "Face", outposts)
+                _process_single(
+                    t,
+                    _faces,
+                    "Face",
+                    outposts,
+                )
+
             for t in c_shells:
-                _process_collection(t, "Face", "Edge", outposts)
+                _process_collection(
+                    _faces(t),
+                    _edges,
+                    _edge_key,
+                    "Edge",
+                    outposts,
+                )
+
             for t in c_faces:
-                _process_single(t, "Edge", outposts)
+                _process_single(
+                    t,
+                    _edges,
+                    "Edge",
+                    outposts,
+                )
+
             for t in c_wires:
-                _process_collection(t, "Edge", "Vertex", outposts)
+                _process_collection(
+                    _edges(t),
+                    _vertices,
+                    _vertex_key,
+                    "Vertex",
+                    outposts,
+                )
+
             for t in c_edges:
-                _process_single(t, "Vertex", outposts)
+                _process_single(
+                    t,
+                    _vertices,
+                    "Vertex",
+                    outposts,
+                )
+
             for t in c_vertices:
-                _process_vertex(t, outposts)
+                _process_vertex(
+                    t,
+                    outposts,
+                )
 
         else:
             return None
+
+        # ------------------------------------------------------------------
+        # Ontology
+        # ------------------------------------------------------------------
 
         if ontology:
             try:
@@ -6904,6 +7524,7 @@ class TGraph:
                     graph._dictionary["ontology_class"] = "top:SpatialGraph"
                     graph._dictionary["category"] = "graph"
                     graph._dictionary["generated_by"] = "TGraph.ByTopology"
+
             except Exception:
                 graph._dictionary["ontology_class"] = "top:SpatialGraph"
                 graph._dictionary["category"] = "graph"
@@ -29238,6 +29859,191 @@ class TGraph:
         for a,b in edges:
             g.AddEdge(a, b)
         return g
+
+    @staticmethod
+    def WireByPath(
+        graph: "TGraph",
+        path: list,
+        transferVertexDictionaries: bool = False,
+        transferEdgeDictionaries: bool = False,
+        tolerance: float = 0.0001,
+        silent: bool = False,
+    ):
+        """
+        Converts a TGraph path into a Topologic Wire.
+
+        The input path is typically the result returned by TGraph.ShortestPath
+        and is expected to contain an ordered list of TGraph vertex indices.
+
+        Parameters
+        ----------
+        graph : TGraph
+            The input TGraph.
+        path : list
+            The ordered path of TGraph vertex indices, typically returned by
+            TGraph.ShortestPath.
+        transferVertexDictionaries : bool , optional
+            If set to True, the dictionaries of the TGraph vertices are transferred
+            to the corresponding vertices of the resulting wire. Default is False.
+        transferEdgeDictionaries : bool , optional
+            If set to True, the dictionaries of the TGraph edges are transferred
+            to the corresponding edges of the resulting wire. Default is False.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        topologic_core.Wire
+            The resulting Topologic Wire.
+
+        """
+
+        if not isinstance(graph, TGraph):
+            if not silent:
+                print("TGraph.WireByPath - Error: The input graph is not a valid TGraph. Returning None.")
+            return None
+
+        if not isinstance(path, (list, tuple)) or len(path) < 2:
+            if not silent:
+                print("TGraph.WireByPath - Error: The input path must contain at least two vertices. Returning None.")
+            return None
+
+        try:
+            from topologicpy.Edge import Edge
+            from topologicpy.Wire import Wire
+        except Exception:
+            if not silent:
+                print("TGraph.WireByPath - Error: Could not import Edge or Wire. Returning None.")
+            return None
+
+        # Resolve the path to stable TGraph vertex indices.
+        indices = []
+        for vertex in path:
+            index = TGraph.VertexIndex(graph, vertex)
+            if index is None or not graph._validate_vertex_index(index):
+                if not silent:
+                    print("TGraph.WireByPath - Error: Could not resolve a path vertex. Returning None.")
+                return None
+            indices.append(index)
+
+        edges = []
+
+        for src, dst in zip(indices[:-1], indices[1:]):
+
+            # Find an active graph edge joining the two path vertices.
+            edge_record = None
+
+            for edge_index in graph._incident_edges.get(src, ()):
+                if not graph._validate_edge_index(edge_index):
+                    continue
+
+                record = graph._edges[edge_index]
+
+                a = record.get("src")
+                b = record.get("dst")
+
+                if (a == src and b == dst) or (a == dst and b == src):
+                    edge_record = record
+                    break
+
+            if edge_record is None:
+                if not silent:
+                    print(
+                        "TGraph.WireByPath - Error: "
+                        f"No graph edge exists between path vertices {src} and {dst}. "
+                        "Returning None."
+                    )
+                return None
+
+            # Use the graph edge conversion routine. This preserves a stored
+            # Topologic edge representation where available and otherwise
+            # constructs the edge from its graph vertices.
+            edge = TGraph.TopologicEdge(
+                graph,
+                edge_record,
+                transferVertexDictionaries=transferVertexDictionaries,
+                transferEdgeDictionary=transferEdgeDictionaries,
+                useRepresentation=True,
+                tolerance=tolerance,
+                silent=True,
+            )
+
+            if edge is None:
+                # Conservative fallback: construct a straight edge from the
+                # corresponding graph vertices.
+                sv = TGraph.TopologicVertex(
+                    graph,
+                    src,
+                    transferDictionary=transferVertexDictionaries,
+                    useRepresentation=True,
+                    silent=True,
+                )
+
+                ev = TGraph.TopologicVertex(
+                    graph,
+                    dst,
+                    transferDictionary=transferVertexDictionaries,
+                    useRepresentation=True,
+                    silent=True,
+                )
+
+                if sv is None or ev is None:
+                    if not silent:
+                        print(
+                            "TGraph.WireByPath - Error: "
+                            "Could not construct vertices for one of the path edges. "
+                            "Returning None."
+                        )
+                    return None
+
+                edge = Edge.ByStartVertexEndVertex(
+                    sv,
+                    ev,
+                    tolerance=tolerance,
+                )
+
+                if edge is None:
+                    if not silent:
+                        print(
+                            "TGraph.WireByPath - Error: "
+                            "Could not construct one of the path edges. Returning None."
+                        )
+                    return None
+
+                if transferEdgeDictionaries:
+                    try:
+                        from topologicpy.Topology import Topology
+
+                        d = TGraph._PythonToDictionary(
+                            edge_record.get("dictionary", {})
+                        )
+
+                        if d is not None:
+                            edge = Topology.SetDictionary(
+                                edge,
+                                d,
+                                silent=True,
+                            )
+                    except Exception:
+                        pass
+
+            edges.append(edge)
+
+        wire = Wire.ByEdges(
+            edges,
+            tolerance=tolerance,
+            silent=True,
+        )
+
+        if wire is None and not silent:
+            print(
+                "TGraph.WireByPath - Error: "
+                "Could not construct a wire from the path. Returning None."
+            )
+
+        return wire
 
     # ---------------------------------------------------------------------
     # Class-level aliases and cached kernels

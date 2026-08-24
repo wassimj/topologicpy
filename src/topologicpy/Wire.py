@@ -616,6 +616,14 @@ class Wire():
                 print("Wire.BoundingRectangle - Error: Could not compute a valid normal from the selected vertices. Returning None.")
             return None
 
+        # Canonicalize the plane-normal sign so that flattening is deterministic.
+        # The dominant world component is always positive. In particular, an XY
+        # topology always uses +Z rather than an arbitrary +Z/-Z normal. This keeps
+        # the local rectangle frame right-handed: +X = +U, +Y = +V, +Z = normal.
+        dominant_index = max(range(3), key=lambda i: abs(normal[i]))
+        if normal[dominant_index] < 0:
+            normal = [-normal[0], -normal[1], -normal[2]]
+
         f_origin = Topology.Centroid(topology)
         topology = Topology.Flatten(topology, origin=f_origin, direction=normal)
 
@@ -678,12 +686,22 @@ class Wire():
 
         local_x_min, local_y_min, local_x_max, local_y_max = best_br
 
-        vb1 = Vertex.ByCoordinates(local_x_min, local_y_min, 0)
-        vb2 = Vertex.ByCoordinates(local_x_max, local_y_min, 0)
-        vb3 = Vertex.ByCoordinates(local_x_max, local_y_max, 0)
-        vb4 = Vertex.ByCoordinates(local_x_min, local_y_max, 0)
+        local_width = abs(local_x_max - local_x_min)
+        local_length = abs(local_y_max - local_y_min)
+        local_origin = Vertex.ByCoordinates(local_x_min, local_y_min, 0)
 
-        boundingRectangle = Wire.ByVertices([vb1, vb2, vb3, vb4], close=True, tolerance=tolerance, silent=silent)
+        # Use the canonical rectangle constructor. With lowerleft placement its
+        # boundary starts at the lower-left corner and proceeds counter-clockwise:
+        # lower-left -> lower-right -> upper-right -> upper-left.
+        boundingRectangle = Wire.Rectangle(
+            origin=local_origin,
+            width=local_width,
+            length=local_length,
+            direction=[0, 0, 1],
+            placement="lowerleft",
+            tolerance=tolerance,
+            silent=silent,
+        )
         if not Topology.IsInstance(boundingRectangle, "Wire"):
             if not silent:
                 print("Wire.BoundingRectangle - Error: Could not create the bounding rectangle wire. Returning None.")
@@ -691,8 +709,8 @@ class Wire():
 
         # width and length are intentionally measured in the local flattened rectangle frame.
         # They should not be recomputed from world-space diagonal coordinates.
-        width = abs(local_x_max - local_x_min)
-        length = abs(local_y_max - local_y_min)
+        width = local_width
+        length = local_length
 
         # Rotate the rectangle back from the optimized frame to the flattened topology frame.
         if abs(best_z) > tolerance:
@@ -2166,9 +2184,9 @@ class Wire():
             baseV.append(Vertex.ByCoordinates(x, y, z))
 
         if angleRange == 360:
-            baseWire = Wire.ByVertices(baseV[::-1], close=False, tolerance=tolerance, silent=silent) #reversing the list so that the normal points up in Blender
+            baseWire = Wire.ByVertices(baseV[::-1], close=False, tolerance=tolerance, silent=silent) # Counter-clockwise in local XY; normal is +Z
         else:
-            baseWire = Wire.ByVertices(baseV[::-1], close=close, tolerance=tolerance, silent=silent) #reversing the list so that the normal points up in Blender
+            baseWire = Wire.ByVertices(baseV[::-1], close=close, tolerance=tolerance, silent=silent) # Counter-clockwise in local XY; normal is +Z
 
         if spokes == True and (angleRange == 360 or close==False):
             vertices = Topology.Vertices(baseWire)
@@ -4001,9 +4019,9 @@ class Wire():
             baseV.append(Vertex.ByCoordinates(x, y, z))
 
         if angleRange == 360:
-            baseWire = Wire.ByVertices(baseV[::-1], close=False, tolerance=tolerance) #reversing the list so that the normal points up in Blender
+            baseWire = Wire.ByVertices(baseV[::-1], close=False, tolerance=tolerance) # Counter-clockwise in local XY; normal is +Z
         else:
-            baseWire = Wire.ByVertices(baseV[::-1], close=close, tolerance=tolerance) #reversing the list so that the normal points up in Blender
+            baseWire = Wire.ByVertices(baseV[::-1], close=close, tolerance=tolerance) # Counter-clockwise in local XY; normal is +Z
 
         if placement.lower() == "lowerleft":
             baseWire = Topology.Translate(baseWire, a, b, 0)
@@ -7794,7 +7812,7 @@ class Wire():
             print("Wire.Squircle - Error: The b input parameter must be a positive number. Returning None.")
             return None
         if a == 1 and b == 1:
-            return Wire.Circle(radius=radius, sides=sides, direction=direction, placement=placement, tolerance=tolerance)
+            return Wire.Circle(origin=origin, radius=radius, sides=sides, direction=direction, placement=placement, tolerance=tolerance, silent=silent)
         x_list, y_list = get_squircle(a=a, b=b, radius=radius, sides=sides)
         vertices = []
         for i, x in enumerate(x_list):
@@ -8032,302 +8050,385 @@ class Wire():
         wire : topologic_core.Wire
             A new Wire whose vertices define the recursively straightened path.
         """
-        from topologicpy.Vertex import Vertex
+        from bisect import bisect_left, bisect_right
+
         from topologicpy.Edge import Edge
         from topologicpy.Wire import Wire
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
 
-        # Defensive defaults
+        # ----------------------------------------------------------------------
+        # Defaults
+        # ----------------------------------------------------------------------
+
         if obstacles is None:
             obstacles = []
+
         if portals is None:
             portals = []
 
         # ----------------------------------------------------------------------
-        # Basic validation
+        # Validation
         # ----------------------------------------------------------------------
+
         if not Topology.IsInstance(wire, "Wire"):
             if not silent:
-                print("Wire.Straighten - Error: The input wire parameter is not a valid Wire. Returning None.")
+                print(
+                    "Wire.Straighten - Error: "
+                    "The input wire parameter is not a valid Wire. Returning None."
+                )
             return None
 
         if not Topology.IsInstance(host, "Topology"):
             if not silent:
-                print("Wire.Straighten - Error: The input host parameter is not a valid Topology. Returning None.")
+                print(
+                    "Wire.Straighten - Error: "
+                    "The input host parameter is not a valid Topology. Returning None."
+                )
             return None
 
         if not isinstance(portals, list):
             if not silent:
-                print("Wire.Straighten - Error: The input portals parameter is not a valid list. Returning None.")
+                print(
+                    "Wire.Straighten - Error: "
+                    "The input portals parameter is not a valid list. Returning None."
+                )
             return None
 
         if not isinstance(obstacles, list):
             if not silent:
-                print("Wire.Straighten - Error: The input obstacles parameter is not a valid list. Returning None.")
+                print(
+                    "Wire.Straighten - Error: "
+                    "The input obstacles parameter is not a valid list. Returning None."
+                )
             return None
 
-        # Filter valid obstacles and portals
-        obstacle_list = [o for o in obstacles if Topology.IsInstance(o, "Topology")]
-        portal_list = [p for p in portals if Topology.IsInstance(p, "Topology")]
+        # ----------------------------------------------------------------------
+        # Bind frequently-used methods locally
+        # ----------------------------------------------------------------------
 
-        # Make a cluster of the obstacles (if any)
-        ob_cluster = Cluster.ByTopologies(obstacle_list) if obstacle_list else None
+        is_instance = Topology.IsInstance
+        is_same = Topology.IsSame
+        difference = Topology.Difference
+        intersect = Topology.Intersect
 
-        # Remove collinear edges:
-        wire = Wire.RemoveCollinearEdges(wire, angTolerance=0.1, tolerance=tolerance)
+        edge_by_vertices = Edge.ByStartVertexEndVertex
+        wire_by_vertices = Wire.ByVertices
+        parameter_at_vertex = Wire.ParameterAtVertex
 
-        # Get ordered vertices of the wire
+        # ----------------------------------------------------------------------
+        # Filter inputs once
+        # ----------------------------------------------------------------------
+
+        obstacle_list = [
+            o for o in obstacles
+            if is_instance(o, "Topology")
+        ]
+
+        portal_list = [
+            p for p in portals
+            if is_instance(p, "Topology")
+        ]
+
+        ob_cluster = (
+            Cluster.ByTopologies(obstacle_list)
+            if obstacle_list
+            else None
+        )
+
+        # ----------------------------------------------------------------------
+        # Remove unnecessary vertices before doing expensive work
+        # ----------------------------------------------------------------------
+
+        wire = Wire.RemoveCollinearEdges(
+            wire,
+            angTolerance=0.1,
+            tolerance=tolerance,
+        )
+
         vertices = Topology.Vertices(wire)
         n = len(vertices)
 
         if n <= 2:
-            # Nothing to straighten
             return wire
 
         # ----------------------------------------------------------------------
-        # Helper: check if a straight edge between two vertices is valid
+        # Candidate-edge validation
         # ----------------------------------------------------------------------
+
         def _edge_is_valid(v_start, v_end):
-            """
-            Returns True if the straight edge between v_start and v_end is
-            fully embedded in the host and does not intersect the obstacles.
-            """
-            # Avoid constructing degenerate edges
-            if Topology.IsSame(v_start, v_end):
+            if is_same(v_start, v_end):
                 return True
 
-            edge = Edge.ByStartVertexEndVertex(v_start, v_end, tolerance=tolerance)
-            if not Topology.IsInstance(edge, "Edge"):
+            edge = edge_by_vertices(
+                v_start,
+                v_end,
+                tolerance=tolerance,
+            )
+
+            if not is_instance(edge, "Edge"):
                 return False
 
-            diff = Topology.Difference(edge, host)
-            if diff is not None:
-                # Part of the edge lies outside the host
+            # Host containment is normally the most important rejection test.
+            if difference(edge, host) is not None:
                 return False
 
             if ob_cluster is not None:
-                inter = Topology.Intersect(edge, ob_cluster)
-                if inter is not None:
-                    # Edge hits an obstacle
+                if intersect(edge, ob_cluster) is not None:
                     return False
 
             return True
 
         # ----------------------------------------------------------------------
-        # Helper: for a fixed start index, find the furthest valid vertex index
+        # Find the FARTHEST valid endpoint first.
+        #
+        # This is the main optimisation. The old implementation searched:
+        #
+        #     start+1, start+2, ... end
+        #
+        # and therefore evaluated every candidate even when the longest edge was
+        # valid. Searching backwards allows immediate exit at the first success.
         # ----------------------------------------------------------------------
+
         def _find_longest_valid_index(start_idx, local_vertices):
-            """
-            Given a list of vertices local_vertices (a sub-path),
-            for a fixed start_idx, search for the largest index j >= start_idx+1
-            such that the direct edge (local_vertices[start_idx], local_vertices[j])
-            is valid.
-            """
-            m = len(local_vertices)
             v_start = local_vertices[start_idx]
-            best_j = None
 
-            for j in range(start_idx + 1, m):
-                v_end = local_vertices[j]
-                if _edge_is_valid(v_start, v_end):
-                    best_j = j
-                # Do NOT break on failure: a further vertex might still be valid.
+            for j in range(len(local_vertices) - 1, start_idx, -1):
+                if _edge_is_valid(v_start, local_vertices[j]):
+                    return j
 
-            if best_j is None:
-                # Fallback: use the immediate next vertex to avoid stalling
-                best_j = min(start_idx + 1, m - 1)
-
-            return best_j
+            # Preserve the original fallback behaviour.
+            return start_idx + 1
 
         # ----------------------------------------------------------------------
-        # Helper: straighten a list of vertices (single segment, no portals)
+        # Straighten an ordered vertex sequence
         # ----------------------------------------------------------------------
+
         def _straighten_vertices(local_vertices):
-            """
-            Straightens a simple path defined by local_vertices (no portal constraints).
-            Returns a new list of vertices.
-            """
             m = len(local_vertices)
+
             if m <= 2:
                 return local_vertices[:]
 
-            out_vertices = []
+            result = [local_vertices[0]]
             idx = 0
+
             while idx < m - 1:
-                out_vertices.append(local_vertices[idx])
-                idx = _find_longest_valid_index(idx, local_vertices)
+                idx = _find_longest_valid_index(
+                    idx,
+                    local_vertices,
+                )
+                result.append(local_vertices[idx])
 
-            # Ensure the last vertex is present
-            if not Topology.IsSame(out_vertices[-1], local_vertices[-1]):
-                out_vertices.append(local_vertices[-1])
-
-            return out_vertices
-
-        # ----------------------------------------------------------------------
-        # Portal support
-        # ----------------------------------------------------------------------
-        def _portal_cuts():
-            """
-            Returns a sorted list of (u, v_on_wire) where:
-            - u is the parameter along the wire in [0, 1]
-            - v_on_wire is a vertex on the wire at the same location
-
-            Only portals that actually intersect the original wire are considered.
-            """
-            cuts = []
-
-            if not portal_list:
-                return cuts
-
-            for portal in portal_list:
-                inter = Topology.Intersect(wire, portal)
-                if not Topology.IsInstance(inter, "Topology"):
-                    # This portal does not intersect the wire, ignore it
-                    continue
-
-                centroid = Topology.Centroid(inter)
-                if not Topology.IsInstance(centroid, "Vertex"):
-                    continue
-
-                # First try parameter at centroid directly
-                u_target = Wire.ParameterAtVertex(wire, centroid, silent=True)
-
-                if u_target is not None:
-                    v_on_wire = centroid
-                else:
-                    # Fall back to the closest point on the wire
-                    shortest_edge = Topology.ShortestEdge(centroid, wire, silent=True)
-                    if not Topology.IsInstance(shortest_edge, "Edge"):
-                        # Can't locate a good cut point for this portal
-                        continue
-                    v_on_wire = Edge.EndVertex(shortest_edge)
-                    if not Topology.IsInstance(v_on_wire, "Vertex"):
-                        continue
-                    u_target = Wire.ParameterAtVertex(wire, v_on_wire, silent=True)
-
-                # If still None, skip this portal
-                if u_target is None:
-                    continue
-
-                # Keep u in [0,1], ignoring exact endpoints
-                if 0.0 < u_target < 1.0:
-                    cuts.append((u_target, v_on_wire))
-
-            # Sort by parameter, ensure uniqueness
-            cuts = sorted(cuts, key=lambda x: x[0])
-            unique_cuts = []
-            last_u = None
-            for u, v in cuts:
-                if last_u is None or abs(u - last_u) > tolerance:
-                    unique_cuts.append((u, v))
-                    last_u = u
-
-            return unique_cuts
-
-        def _subdivide_by_portals():
-            """
-            Splits the original wire into sub-wires between portal cuts.
-            Each sub-wire is a wire segment between:
-                start -> first portal,
-                portal i -> portal i+1,
-                last portal -> end.
-            """
-            cuts = _portal_cuts()
-            if not cuts:
-                return [wire]  # No usable portal intersections
-
-            # Extract only parameters, append 0.0 and 1.0 for full coverage
-            params = [u for (u, _) in cuts]
-            params = [0.0] + params + [1.0]
-
-            verts_orig = Topology.Vertices(wire)
-            sub_wires = []
-
-            for a, b in zip(params[:-1], params[1:]):
-                if b - a <= tolerance:
-                    continue  # Degenerate segment
-
-                # Build the vertex list for this segment
-                seg_vertices = []
-
-                # Start vertex at parameter a
-                v_a = Wire.VertexByParameter(wire, a)
-                if Topology.IsInstance(v_a, "Vertex"):
-                    seg_vertices.append(v_a)
-
-                # Intermediate original vertices whose parameter lies between a and b
-                for v in verts_orig:
-                    u = Wire.ParameterAtVertex(wire, v, silent=True)
-                    if u is None:
-                        continue
-                    if a < u < b:
-                        seg_vertices.append(v)
-
-                # End vertex at parameter b
-                v_b = Wire.VertexByParameter(wire, b)
-                if Topology.IsInstance(v_b, "Vertex"):
-                    seg_vertices.append(v_b)
-
-                # Make sure we have at least two vertices
-                if len(seg_vertices) >= 2:
-                    sub_wires.append(Wire.ByVertices(seg_vertices, close=False, silent=True))
-
-            if not sub_wires:
-                # Fallback: return the original wire if subdivision failed
-                return [wire]
-
-            return sub_wires
+            return result
 
         # ----------------------------------------------------------------------
-        # Main logic
+        # No portals
         # ----------------------------------------------------------------------
-        # If there are portals, divide the wire into segments between portals,
-        # then straighten each segment independently and reassemble.
-        if portal_list:
-            result_vertices = []
-            sub_wires = _subdivide_by_portals()
 
-            for i, sub_wire in enumerate(sub_wires):
-                if not Topology.IsInstance(sub_wire, "Wire"):
-                    continue
+        if not portal_list:
+            new_vertices = _straighten_vertices(vertices)
 
-                sub_verts = Topology.Vertices(sub_wire)
-                if len(sub_verts) <= 2:
-                    straight_verts = sub_verts
-                else:
-                    # IMPORTANT: recursive call with portals=[]
-                    straight_wire = Wire.Straighten(sub_wire, host=host,
-                                                    obstacles=obstacles,
-                                                    portals=[],
-                                                    tolerance=tolerance,
-                                                    silent=silent)
-                    if not Topology.IsInstance(straight_wire, "Wire"):
-                        straight_verts = sub_verts
-                    else:
-                        straight_verts = Topology.Vertices(straight_wire)
-
-                if not straight_verts:
-                    continue
-
-                # Avoid duplicate vertices between consecutive segments
-                if not result_vertices:
-                    result_vertices.extend(straight_verts)
-                else:
-                    result_vertices.extend(straight_verts[1:])
-
-            if len(result_vertices) < 2:
-                # Fallback
+            if len(new_vertices) < 2:
                 return wire
 
-            return Wire.ByVertices(result_vertices, close=False, silent=True)
+            return wire_by_vertices(
+                new_vertices,
+                close=False,
+                silent=True,
+            )
 
-        # No portals: simple global straightening
-        new_vertices = _straighten_vertices(vertices)
-        if len(new_vertices) < 2:
+        # ----------------------------------------------------------------------
+        # Locate portal cuts
+        #
+        # This is done once. Unlike the old implementation, we do not construct
+        # sub-wires and recursively call Straighten for every interval.
+        # ----------------------------------------------------------------------
+
+        cuts = []
+
+        for portal in portal_list:
+            inter = intersect(wire, portal)
+
+            if not is_instance(inter, "Topology"):
+                continue
+
+            centroid = Topology.Centroid(inter)
+
+            if not is_instance(centroid, "Vertex"):
+                continue
+
+            u_target = parameter_at_vertex(
+                wire,
+                centroid,
+                silent=True,
+            )
+
+            if u_target is not None:
+                v_on_wire = centroid
+
+            else:
+                shortest_edge = Topology.ShortestEdge(
+                    centroid,
+                    wire,
+                    silent=True,
+                )
+
+                if not is_instance(shortest_edge, "Edge"):
+                    continue
+
+                v_on_wire = Edge.EndVertex(shortest_edge)
+
+                if not is_instance(v_on_wire, "Vertex"):
+                    continue
+
+                u_target = parameter_at_vertex(
+                    wire,
+                    v_on_wire,
+                    silent=True,
+                )
+
+            if u_target is None:
+                continue
+
+            if 0.0 < u_target < 1.0:
+                cuts.append((u_target, v_on_wire))
+
+        # ----------------------------------------------------------------------
+        # No actual portal intersections
+        # ----------------------------------------------------------------------
+
+        if not cuts:
+            new_vertices = _straighten_vertices(vertices)
+
+            if len(new_vertices) < 2:
+                return wire
+
+            return wire_by_vertices(
+                new_vertices,
+                close=False,
+                silent=True,
+            )
+
+        # ----------------------------------------------------------------------
+        # Sort and deduplicate portal cuts
+        # ----------------------------------------------------------------------
+
+        cuts.sort(key=lambda x: x[0])
+
+        unique_cuts = []
+        last_u = None
+
+        for u, v in cuts:
+            if last_u is None or abs(u - last_u) > tolerance:
+                unique_cuts.append((u, v))
+                last_u = u
+
+        cuts = unique_cuts
+
+        # ----------------------------------------------------------------------
+        # Cache the wire parameter of every original vertex ONCE.
+        #
+        # The previous implementation recalculated these values for every
+        # portal interval.
+        # ----------------------------------------------------------------------
+
+        vertex_parameters = []
+
+        for v in vertices:
+            u = parameter_at_vertex(
+                wire,
+                v,
+                silent=True,
+            )
+
+            if u is not None:
+                vertex_parameters.append((u, v))
+
+        vertex_parameters.sort(key=lambda x: x[0])
+
+        parameter_values = [
+            item[0]
+            for item in vertex_parameters
+        ]
+
+        # ----------------------------------------------------------------------
+        # Define interval boundaries.
+        #
+        # We retain the actual portal intersection vertex, avoiding repeated
+        # Wire.VertexByParameter calls.
+        # ----------------------------------------------------------------------
+
+        boundaries = [
+            (0.0, vertices[0]),
+            *cuts,
+            (1.0, vertices[-1]),
+        ]
+
+        result_vertices = []
+
+        # ----------------------------------------------------------------------
+        # Straighten each portal interval directly.
+        #
+        # No temporary wires.
+        # No recursive Straighten calls.
+        # No repeated obstacle-cluster creation.
+        # No repeated collinear-edge removal.
+        # ----------------------------------------------------------------------
+
+        for (a, v_a), (b, v_b) in zip(
+            boundaries[:-1],
+            boundaries[1:],
+        ):
+            if b - a <= tolerance:
+                continue
+
+            lo = bisect_right(parameter_values, a)
+            hi = bisect_left(parameter_values, b)
+
+            segment_vertices = [v_a]
+
+            for _, v in vertex_parameters[lo:hi]:
+                if not is_same(segment_vertices[-1], v):
+                    segment_vertices.append(v)
+
+            if not is_same(segment_vertices[-1], v_b):
+                segment_vertices.append(v_b)
+
+            if len(segment_vertices) < 2:
+                continue
+
+            straight_vertices = _straighten_vertices(
+                segment_vertices
+            )
+
+            if not straight_vertices:
+                continue
+
+            if not result_vertices:
+                result_vertices.extend(straight_vertices)
+
+            elif is_same(
+                result_vertices[-1],
+                straight_vertices[0],
+            ):
+                result_vertices.extend(
+                    straight_vertices[1:]
+                )
+
+            else:
+                result_vertices.extend(
+                    straight_vertices
+                )
+
+        if len(result_vertices) < 2:
             return wire
 
-        return Wire.ByVertices(new_vertices, close=False, silent=True)
+        return wire_by_vertices(
+            result_vertices,
+            close=False,
+            silent=True,
+        )
 
     @staticmethod
     def Trapezoid(origin= None, widthA: float = 1.0, widthB: float = 0.75, offsetA: float = 0.0, offsetB: float = 0.0, length: float = 1.0, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001, silent: bool = False):
