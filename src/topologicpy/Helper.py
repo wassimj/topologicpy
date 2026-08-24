@@ -157,125 +157,109 @@ class Helper:
     @staticmethod
     def CheckVersion(library: str = None, version: str = None, silent: bool = False):
         """
-        Compares an input version with the latest version of a Python library on PyPI.
+        Compares an input version with the latest version of a Python library
+        available on PyPI.
 
         Parameters
         ----------
-        library : str
-            The input software library name. Default is None.
-        version : str
+        library : str, optional
+            The input Python library name. Default is None.
+        version : str, optional
             The input software version number to compare. Default is None.
-        silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
+        silent : bool, optional
+            If set to True, error and warning messages are suppressed.
+            Default is False.
 
         Returns
         -------
         str
-            A message indicating whether the input version is older than, equal to,
-            or newer than the latest version available on PyPI.
+            A message indicating whether the input version is older than, equal
+            to, or newer than the latest version available on PyPI.
+            Returns None if the version check cannot be completed.
         """
-        import json
-        import re
-        from urllib.error import HTTPError, URLError
-        from urllib.parse import quote
-        from urllib.request import Request, urlopen
-
         if not isinstance(library, str) or not library.strip():
             if not silent:
-                print("Helper.CheckVersion - Error: The input library parameter is not valid. Returning None.")
+                print(
+                    "Helper.CheckVersion - Error: The input library parameter "
+                    "is not valid. Returning None."
+                )
             return None
 
         if version is None or not str(version).strip():
             if not silent:
-                print("Helper.CheckVersion - Error: The input version parameter is not valid. Returning None.")
+                print(
+                    "Helper.CheckVersion - Error: The input version parameter "
+                    "is not valid. Returning None."
+                )
+            return None
+
+        try:
+            import requests
+            from packaging import version as packaging_version
+        except Exception:
+            if not silent:
+                print(
+                    "Helper.CheckVersion - Error: Could not import the required "
+                    "libraries. Returning None."
+                )
             return None
 
         library = library.strip()
-        current_version = str(version).strip()
-
-        url = f"https://pypi.org/pypi/{quote(library)}/json"
-
-        request = Request(
-            url,
-            headers={
-                "Accept": "application/json",
-                "User-Agent": f"TopologicPy/{current_version} version-check",
-            },
-        )
+        current_version_string = str(version).strip()
 
         try:
-            with urlopen(request, timeout=10) as response:
-                data = json.load(response)
+            response = requests.get(
+                f"https://pypi.org/pypi/{library}/json",
+                timeout=10,
+            )
+            response.raise_for_status()
 
-            latest_version = data.get("info", {}).get("version")
+            data = response.json()
+            latest_version_string = data["info"]["version"]
 
-            if not latest_version:
-                if not silent:
-                    print("Helper.CheckVersion - Error: PyPI did not return a valid version. Returning None.")
-                return None
+            if not latest_version_string:
+                raise ValueError("PyPI returned an empty version.")
 
-        except HTTPError as e:
+        except Exception:
             if not silent:
-                if e.code == 404:
-                    print(f"Helper.CheckVersion - Error: The library '{library}' was not found on PyPI. Returning None.")
-                else:
-                    print(f"Helper.CheckVersion - Error: PyPI returned HTTP error {e.code}. Returning None.")
+                print(
+                    "Helper.CheckVersion - Error: Could not fetch data from "
+                    "PyPI. Returning None."
+                )
             return None
 
-        except URLError as e:
+        try:
+            current_version = packaging_version.parse(current_version_string)
+            latest_version = packaging_version.parse(
+                str(latest_version_string)
+            )
+        except Exception:
             if not silent:
-                print(f"Helper.CheckVersion - Error: Could not connect to PyPI ({e.reason}). Returning None.")
+                print(
+                    "Helper.CheckVersion - Error: Could not parse the version "
+                    "numbers. Returning None."
+                )
             return None
 
-        except Exception as e:
-            if not silent:
-                print(f"Helper.CheckVersion - Error: Could not fetch version information from PyPI ({e}). Returning None.")
-            return None
-
-        def version_key(value):
-            """
-            Creates a comparison key for conventional Python version strings.
-            Uses packaging.version when available, with a dependency-free fallback.
-            """
-            try:
-                from packaging.version import Version
-                return Version(str(value))
-            except Exception:
-                parts = re.findall(r"\d+", str(value))
-                if not parts:
-                    return None
-
-                numbers = [int(part) for part in parts]
-
-                while len(numbers) < 3:
-                    numbers.append(0)
-
-                return tuple(numbers)
-
-        current = version_key(current_version)
-        latest = version_key(latest_version)
-
-        if current is None or latest is None:
-            if not silent:
-                print("Helper.CheckVersion - Error: Could not parse version numbers. Returning None.")
-            return None
-
-        if current < latest:
+        if current_version < latest_version:
             return (
-                f"The version that you are using ({current_version}) is OLDER than "
-                f"the latest version ({latest_version}) available on PyPI. "
-                f"Please consider upgrading to the latest version."
+                f"The version that you are using ({current_version_string}) is "
+                f"OLDER than the latest version ({latest_version_string}) "
+                f"available on PyPI. Please consider upgrading to the latest "
+                f"version."
             )
 
-        if current == latest:
+        if current_version == latest_version:
             return (
-                f"The version that you are using ({current_version}) is EQUAL TO "
-                f"the latest version available on PyPI."
+                f"The version that you are using ({current_version_string}) is "
+                f"EQUAL TO the latest version ({latest_version_string}) "
+                f"available on PyPI."
             )
 
         return (
-            f"The version that you are using ({current_version}) is NEWER than "
-            f"the latest version ({latest_version}) available on PyPI."
+            f"The version that you are using ({current_version_string}) is "
+            f"NEWER than the latest version ({latest_version_string}) "
+            f"available on PyPI."
         )
 
     @staticmethod

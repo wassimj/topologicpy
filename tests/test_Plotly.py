@@ -241,32 +241,101 @@ def test_proof_graph_html_writes_file(tmp_path, fake_color_dictionary):
     assert "Plotly" in path.read_text(encoding="utf-8")
     assert Plotly.ProofGraphHTML(proofGraphData=proof, path="", silent=True) is None
 
-
-def test_figure_by_data_camera_renderer_and_show(monkeypatch, fake_color_dictionary):
+def test_figure_by_data_camera_renderer_and_show(
+    monkeypatch,
+    fake_color_dictionary,
+):
     _assert_plotly_available()
-    fig = Plotly.FigureByData([go.Scatter3d(x=[0], y=[0], z=[0])], xAxis=True, yAxis=True, zAxis=True)
+
+    fig = Plotly.FigureByData(
+        [go.Scatter3d(x=[0], y=[0], z=[0])],
+        xAxis=True,
+        yAxis=True,
+        zAxis=True,
+    )
+
     assert isinstance(fig, go.Figure)
-    assert len(fig.data) == 1  # axis import is unavailable in this lightweight test context, so no crash and no axis traces.
+
+    # One input trace + X, Y, and Z axis traces.
+    assert len(fig.data) == 4
+
+    assert fig.data[0].type == "scatter3d"
+
+    axis_names = [
+        trace.name
+        for trace in fig.data[1:]
+    ]
+
+    assert axis_names == [
+        "X-Axis",
+        "Y-Axis",
+        "Z-Axis",
+    ]
 
     assert Plotly.SetCamera("not a figure") is None
-    fig = Plotly.SetCamera(fig, camera=[1, 2, 3], center=[0.1, 0.2, 0.3], up=[0, 0, 1], projection="orthographic")
-    assert fig.layout.scene.camera.projection.type == "orthographic"
-    fig = Plotly.SetCamera(fig, projection="garbage")
-    assert fig.layout.scene.camera.projection.type == "perspective"
 
-    called = {"show": 0}
+    fig = Plotly.SetCamera(
+        fig,
+        camera=[1, 2, 3],
+        center=[0.1, 0.2, 0.3],
+        up=[0, 0, 1],
+        projection="orthographic",
+    )
 
-    def fake_show(self, renderer=None):
+    assert (
+        fig.layout.scene.camera.projection.type
+        == "orthographic"
+    )
+
+    fig = Plotly.SetCamera(
+        fig,
+        projection="garbage",
+    )
+
+    assert (
+        fig.layout.scene.camera.projection.type
+        == "perspective"
+    )
+
+    called = {
+        "show": 0
+    }
+
+    def fake_show(
+        self,
+        renderer=None,
+    ):
         called["show"] += 1
         called["renderer"] = renderer
 
-    monkeypatch.setattr(go.Figure, "show", fake_show, raising=False)
-    assert Plotly.Show(fig, renderer="json") is None
-    assert called == {"show": 1, "renderer": "json"}
-    assert Plotly.Show("not a figure", renderer="json") is None
-    assert isinstance(Plotly.Renderer(), str)
-    assert "json" in Plotly.Renderers()
+    monkeypatch.setattr(
+        go.Figure,
+        "show",
+        fake_show,
+        raising=False,
+    )
 
+    assert Plotly.Show(
+        fig,
+        renderer="json",
+    ) is None
+
+    assert called == {
+        "show": 1,
+        "renderer": "json",
+    }
+
+    assert Plotly.Show(
+        "not a figure",
+        renderer="json",
+    ) is None
+
+    assert isinstance(
+        Plotly.Renderer(),
+        str,
+    )
+
+    assert "json" in Plotly.Renderers()
 
 def test_figure_by_pie_chart_accepts_dict_list_and_dataframe(fake_color_dictionary):
     _assert_plotly_available()

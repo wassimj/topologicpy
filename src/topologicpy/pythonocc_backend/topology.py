@@ -5261,18 +5261,35 @@ class Topology:
             return 0
         return result
 
+
     def SuperTopologies(self, hostTopology: Any, typeName: str, output=None):
-        """Returns exact super-topologies using OCCT ancestry/shape identity."""
-        getter_name = Topology._SUBTOPOLOGY_GETTERS.get(str(typeName).strip().lower()) if typeName else None
+        """
+        Returns the requested super-topologies of ``self`` inside
+        ``hostTopology``.
+
+        Uses exact OCCT ancestry when possible, but preserves TopologicPy's
+        historical compatibility with independently wrapped or reconstructed
+        coincident subtopologies by falling back to vertex-key containment.
+        """
+        getter_name = (
+            Topology._SUBTOPOLOGY_GETTERS.get(
+                str(typeName).strip().lower()
+            )
+            if typeName
+            else None
+        )
+
         result = []
+
         if getter_name is None or hostTopology is None:
             if output is not None:
                 output.extend(result)
                 return 0
             return result
 
-        self_shape = _shape_from_topology(self)
-        host_shape = _shape_from_topology(hostTopology)
+        source_name = (_topology_type_name(self) or "").lower()
+        target_name = str(typeName).strip().lower()
+
         type_map = {
             "vertex": TopAbs_VERTEX,
             "edge": TopAbs_EDGE,
@@ -5283,72 +5300,103 @@ class Topology:
             "cellcomplex": TopAbs_COMPSOLID,
             "cluster": TopAbs_COMPOUND,
         }
-        source_type = type_map.get((_topology_type_name(self) or "").lower())
-        target_type = type_map.get(str(typeName).strip().lower())
 
-        if (not _is_null_shape(self_shape) and not _is_null_shape(host_shape)
-                and source_type is not None and target_type is not None):
+        source_type = type_map.get(source_name)
+        target_type = type_map.get(target_name)
+
+        self_shape = _shape_from_topology(self)
+        host_shape = _shape_from_topology(hostTopology)
+
+        # 1. Fast exact OCCT ancestry.
+        if (
+            source_type is not None
+            and target_type is not None
+            and not _is_null_shape(self_shape)
+            and not _is_null_shape(host_shape)
+        ):
             try:
                 from OCC.Core.TopExp import TopExp
-                from OCC.Core.TopTools import TopTools_IndexedDataMapOfShapeListOfShape, TopTools_ListIteratorOfListOfShape
-                amap = TopTools_IndexedDataMapOfShapeListOfShape()
-                TopExp.MapShapesAndAncestors(host_shape, source_type, target_type, amap)
-                if amap.Contains(self_shape):
-                    shape_list = amap.FindFromKey(self_shape)
-                    it = TopTools_ListIteratorOfListOfShape(shape_list)
-                    while it.More():
-                        ancestor = it.Value()
-                        if not ancestor.IsSame(self_shape):
-                            wrapped = Topology.ByOcctShape(ancestor)
+                from OCC.Core.TopTools import (
+                    TopTools_IndexedDataMapOfShapeListOfShape,
+                    TopTools_ListIteratorOfListOfShape,
+                )
+
+                ancestor_map = TopTools_IndexedDataMapOfShapeListOfShape()
+
+                TopExp.MapShapesAndAncestors(
+                    host_shape,
+                    source_type,
+                    target_type,
+                    ancestor_map,
+                )
+
+                if ancestor_map.Contains(self_shape):
+                    shape_list = ancestor_map.FindFromKey(self_shape)
+                    iterator = TopTools_ListIteratorOfListOfShape(shape_list)
+
+                    while iterator.More():
+                        ancestor_shape = iterator.Value()
+
+                        try:
+                            same_as_self = ancestor_shape.IsSame(self_shape)
+                        except Exception:
+                            same_as_self = False
+
+                        if not same_as_self:
+                            wrapped = Topology.ByOcctShape(ancestor_shape)
                             if wrapped is not None:
                                 result.append(wrapped)
-                        it.Next()
+
+                        iterator.Next()
+
                     result = _deduplicate_by_identity(result)
+
                     if output is not None:
                         output.extend(result)
                         return 0
                     return result
+
             except Exception:
                 pass
 
-            # Exact fallback when a particular pythonocc build does not expose
-            # MapShapesAndAncestors in the expected binding form.
-            try:
-                candidates = getattr(Topology, getter_name)(hostTopology) or []
-                for candidate in candidates:
-                    candidate_shape = _shape_from_topology(candidate)
-                    if _is_null_shape(candidate_shape) or candidate_shape.IsSame(self_shape):
-                        continue
-                    contained = any(
-                        subshape.IsSame(self_shape)
-                        for subshape in _iter_occ_subshapes_unique(candidate_shape, source_type)
-                    )
-                    if contained:
-                        result.append(candidate)
-                result = _deduplicate_by_identity(result)
-                if output is not None:
-                    output.extend(result)
-                    return 0
-                return result
-            except Exception:
-                pass
-
-        # Preserve the historical fallback only for shapeless aggregate wrappers.
+        # 2. Compatibility fallback.
+        #
+        # This deliberately preserves the pre-audit backend semantics.
         try:
             candidates = getattr(Topology, getter_name)(hostTopology) or []
-            self_vertices = {vertex_key(v) for v in (Topology.Vertices(self) or []) if hasattr(v, "x")}
-            for candidate in candidates:
-                if Topology.IsSame(candidate, self):
-                    continue
-                candidate_vertices = {vertex_key(v) for v in (Topology.Vertices(candidate) or []) if hasattr(v, "x")}
-                if self_vertices and self_vertices.issubset(candidate_vertices):
-                    result.append(candidate)
+
+            self_vertices = {
+                vertex_key(vertex)
+                for vertex in (Topology.Vertices(self) or [])
+                if hasattr(vertex, "x")
+            }
+
+            if self_vertices:
+                for candidate in candidates:
+                    try:
+                        if Topology.IsSame(candidate, self):
+                            continue
+                    except Exception:
+                        pass
+
+                    candidate_vertices = {
+                        vertex_key(vertex)
+                        for vertex in (Topology.Vertices(candidate) or [])
+                        if hasattr(vertex, "x")
+                    }
+
+                    if self_vertices.issubset(candidate_vertices):
+                        result.append(candidate)
+
         except Exception:
             result = []
+
         result = _deduplicate_by_identity(result)
+
         if output is not None:
             output.extend(result)
             return 0
+
         return result
 
     # -------------------------------------------------------------------
