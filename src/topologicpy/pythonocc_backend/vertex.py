@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import math
+
 from .topology import Topology, _shape_from_topology, _is_null_shape
 from .occ_utils import make_occ_vertex
 from .helpers import distance3, same_vertex, unique_by_uuid
@@ -14,7 +16,9 @@ class Vertex(Topology):
 
     @staticmethod
     def ByCoordinates(x=0.0, y=0.0, z=0.0):
-        x = float(x); y = float(y); z = float(z)
+        x = float(x)
+        y = float(y)
+        z = float(z)
         return Vertex(shape=make_occ_vertex(x, y, z), x=x, y=y, z=z)
 
     @staticmethod
@@ -79,11 +83,10 @@ class Vertex(Topology):
     @staticmethod
     def ByCoordinatesString(coordinatesString, separator=","):
         """
-        Not part of the guide's minimum checklist and not called by the
-        topologicpy algorithm layer (verified: zero call sites), but a real
-        `topologic_core.Vertex.ByCoordinatesString` exists, so provide a
-        genuine best-effort implementation for direct Core callers: parse
-        "x,y,z" (or a caller-supplied separator) into a Vertex.
+        Parses a coordinate string and returns a Vertex.
+
+        This method mirrors the legacy ``topologic_core.Vertex.ByCoordinatesString``
+        API for direct Core callers.
         """
         if not isinstance(coordinatesString, str):
             return None
@@ -100,52 +103,146 @@ class Vertex(Topology):
         return Vertex.ByCoordinates(x, y, z)
 
     @staticmethod
-    def Project(vertex, topology, direction=None):
+    def Project(vertex, topology, direction=None, tolerance: float = 0.0001):
         """
-        Not in the guide's checklist and unreferenced by the algorithm layer. Best-effort for
-        direct Core callers: project the vertex along `direction`, else nearest point on the
-        target shape (BRepExtrema_DistShapeShape closest-point).
+        Projects a Vertex onto the underlying geometry of the input topology.
+
+        For a Face and ``direction is None``, OCCT projects the point normally
+        onto the Face's supporting surface. For a planar Face and an explicit
+        direction, the intersection with the infinite supporting plane is used,
+        preserving the historical TopologicPy semantics. For non-planar Faces an
+        explicit direction uses OCCT's curve/Face intersector. For non-Face
+        topology and no explicit direction, the nearest point on the native OCCT
+        shape is returned.
         """
         if not isinstance(vertex, Vertex):
             return None
+
         target_shape = _shape_from_topology(topology)
         if _is_null_shape(target_shape):
             return None
+
+        tol = abs(float(tolerance)) if isinstance(tolerance, (int, float)) else 0.0001
+        if tol <= 0.0:
+            tol = 1.0e-12
+
         try:
-            if direction is not None:
-                from OCC.Core.gp import gp_Pnt, gp_Dir, gp_Lin
-                from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakeEdge
-                from OCC.Core.BRepExtrema import BRepExtrema_DistShapeShape
-                dx, dy, dz = float(direction[0]), float(direction[1]), float(direction[2])
-                norm = (dx ** 2 + dy ** 2 + dz ** 2) ** 0.5
-                if norm <= 0:
-                    return None
-                origin = gp_Pnt(vertex.x, vertex.y, vertex.z)
-                line = gp_Lin(origin, gp_Dir(dx, dy, dz))
-                # A very long edge along the ray approximates an infinite line
-                # for BRepExtrema_DistShapeShape purposes.
-                big = 1.0e6
-                ray_shape = BRepBuilderAPI_MakeEdge(line, -big, big).Edge()
-                dist_calc = BRepExtrema_DistShapeShape(ray_shape, target_shape)
-            else:
-                from OCC.Core.BRepExtrema import BRepExtrema_DistShapeShape
-                dist_calc = BRepExtrema_DistShapeShape(vertex.shape, target_shape)
-            if not dist_calc.IsDone() or dist_calc.NbSolution() < 1:
-                return None
-            pnt = dist_calc.PointOnShape2(1)
-            return Vertex.ByCoordinates(pnt.X(), pnt.Y(), pnt.Z())
+            from OCC.Core.gp import gp_Pnt
+            point = gp_Pnt(float(vertex.x), float(vertex.y), float(vertex.z))
         except Exception:
             return None
 
+        # Face-specific projection. This is intentionally based on the native
+        # supporting surface rather than a fitted plane.
+        if Topology.IsInstance(topology, "Face"):
+            try:
+                from OCC.Core.BRep import BRep_Tool
+                from OCC.Core.BRepAdaptor import BRepAdaptor_Surface
+                from OCC.Core.GeomAbs import GeomAbs_Plane
+                from OCC.Core.GeomAPI import GeomAPI_ProjectPointOnSurf
+                from OCC.Core.TopoDS import topods
+
+                occ_face = topods.Face(target_shape)
+                adaptor = BRepAdaptor_Surface(occ_face, True)
+
+                if direction is None:
+                    surface = BRep_Tool.Surface(occ_face)
+                    if surface is None:
+                        return None
+                    projector = GeomAPI_ProjectPointOnSurf(point, surface)
+                    if projector.NbPoints() < 1:
+                        return None
+                    pnt = projector.NearestPoint()
+                    return Vertex.ByCoordinates(pnt.X(), pnt.Y(), pnt.Z())
+
+                try:
+                    dx = float(direction[0])
+                    dy = float(direction[1])
+                    dz = float(direction[2])
+                except Exception:
+                    return None
+
+                norm = math.sqrt(dx * dx + dy * dy + dz * dz)
+                if norm <= tol:
+                    return None
+
+                # For planar faces, intersect the infinite supporting plane.
+                # This preserves the old TopologicPy behaviour even when the
+                # projected point falls outside the trimmed Face.
+                if adaptor.GetType() == GeomAbs_Plane:
+                    plane = adaptor.Plane()
+                    location = plane.Location()
+                    normal = plane.Axis().Direction()
+                    nx, ny, nz = normal.X(), normal.Y(), normal.Z()
+                    denom = dx * nx + dy * ny + dz * nz
+                    if abs(denom) <= tol:
+                        return None
+                    signed = (
+                        (point.X() - location.X()) * nx
+                        + (point.Y() - location.Y()) * ny
+                        + (point.Z() - location.Z()) * nz
+                    )
+                    parameter = -signed / denom
+                    return Vertex.ByCoordinates(
+                        point.X() + parameter * dx,
+                        point.Y() + parameter * dy,
+                        point.Z() + parameter * dz,
+                    )
+            except Exception:
+                # Fall through to the native Face-intersection path below.
+                pass
+
+            # Directional projection onto a non-planar trimmed Face.
+            if direction is not None:
+                try:
+                    from OCC.Core.gp import gp_Dir, gp_Lin
+                    from OCC.Core.IntCurvesFace import IntCurvesFace_ShapeIntersector
+
+                    dx = float(direction[0])
+                    dy = float(direction[1])
+                    dz = float(direction[2])
+                    norm = math.sqrt(dx * dx + dy * dy + dz * dz)
+                    if norm <= tol:
+                        return None
+
+                    line = gp_Lin(point, gp_Dir(dx, dy, dz))
+                    intersector = IntCurvesFace_ShapeIntersector()
+                    intersector.Load(target_shape, tol)
+                    intersector.Perform(line, -1.0e100, 1.0e100)
+                    count = intersector.NbPnt()
+                    if count < 1:
+                        return None
+
+                    best_index = 1
+                    best_parameter = abs(float(intersector.WParameter(1)))
+                    for i in range(2, count + 1):
+                        value = abs(float(intersector.WParameter(i)))
+                        if value < best_parameter:
+                            best_parameter = value
+                            best_index = i
+                    pnt = intersector.Pnt(best_index)
+                    return Vertex.ByCoordinates(pnt.X(), pnt.Y(), pnt.Z())
+                except Exception:
+                    return None
+
+        # Nearest point on a generic native shape.
+        if direction is None:
+            try:
+                from OCC.Core.BRepExtrema import BRepExtrema_DistShapeShape
+                dist_calc = BRepExtrema_DistShapeShape(vertex.shape, target_shape)
+                dist_calc.Perform()
+                if not dist_calc.IsDone() or dist_calc.NbSolution() < 1:
+                    return None
+                pnt = dist_calc.PointOnShape2(1)
+                return Vertex.ByCoordinates(pnt.X(), pnt.Y(), pnt.Z())
+            except Exception:
+                return None
+
+        return None
+
     def Fuse(self, otherTopology):
         """
-        Not part of the guide's minimum checklist and not called by the
-        topologicpy algorithm layer (topologicpy.Vertex.Fuse is an unrelated,
-        self-contained list-dedup helper that never reaches Core). Instance
-        method (not @staticmethod) so both calling conventions work. Mirrors
-        real topologic_core.Vertex.Fuse: a boolean union of two vertices,
-        which is the coincident vertex itself if they are the same point,
-        otherwise a Cluster of both.
+        Mirrors the legacy Core Vertex fuse operation for direct backend callers.
         """
         if not isinstance(otherTopology, Vertex):
             return None
@@ -158,19 +255,144 @@ class Vertex(Topology):
 class VertexUtility:
     @staticmethod
     def Distance(vertexA, vertexB):
-        if isinstance(vertexA, Vertex) and isinstance(vertexB, Vertex):
-            return distance3(vertexA, vertexB)
-        return None
+        """Returns the exact distance between two Vertices."""
+        if not isinstance(vertexA, Vertex) or not isinstance(vertexB, Vertex):
+            return None
+        try:
+            distance = Topology.Distance(vertexA, vertexB)
+            if distance is not None:
+                return float(distance)
+        except Exception:
+            pass
+        return distance3(vertexA, vertexB)
+
+    @staticmethod
+    def DistanceToTopology(vertex, topology, tolerance: float = 0.0001):
+        """Returns the native OCCT minimum distance from a Vertex to a topology."""
+        if not isinstance(vertex, Vertex) or not isinstance(topology, Topology):
+            return None
+        try:
+            value = Topology.Distance(vertex, topology, tolerance=tolerance)
+            return None if value is None else float(value)
+        except Exception:
+            return None
+
+    @staticmethod
+    def IsCoincident(vertexA, vertexB, tolerance: float = 0.0001):
+        """Returns True when two Vertices are coincident within tolerance."""
+        if not isinstance(vertexA, Vertex) or not isinstance(vertexB, Vertex):
+            return False
+        try:
+            d = VertexUtility.Distance(vertexA, vertexB)
+            return d is not None and d <= abs(float(tolerance))
+        except Exception:
+            return False
+
+    @staticmethod
+    def IsInternal(vertex, topology, tolerance: float = 0.0001):
+        """
+        Classifies a Vertex against a primitive or aggregate backend topology.
+
+        Face and Cell classification use OCCT's native classifiers. Boundary-only
+        topology types use exact OCCT shape distance.
+        """
+        if not isinstance(vertex, Vertex) or not isinstance(topology, Topology):
+            return False
+
+        tol = abs(float(tolerance)) if isinstance(tolerance, (int, float)) else 0.0001
+
+        if Topology.IsInstance(topology, "Vertex"):
+            return VertexUtility.IsCoincident(vertex, topology, tolerance=tol)
+
+        if Topology.IsInstance(topology, "Face"):
+            try:
+                from .face import FaceUtility
+                return bool(FaceUtility.IsInside(topology, vertex, tol))
+            except Exception:
+                return False
+
+        if Topology.IsInstance(topology, "Cell"):
+            try:
+                from .cell import CellUtility
+                return CellUtility.Contains(topology, vertex, tol) == 0
+            except Exception:
+                return False
+
+        if Topology.IsInstance(topology, "CellComplex"):
+            try:
+                cells = Topology.Cells(topology) or []
+                return any(VertexUtility.IsInternal(vertex, cell, tol) for cell in cells)
+            except Exception:
+                return False
+
+        if Topology.IsInstance(topology, "Cluster"):
+            try:
+                cells = Topology.Cells(topology) or []
+                if any(VertexUtility.IsInternal(vertex, cell, tol) for cell in cells):
+                    return True
+                faces = Topology.Faces(topology) or []
+                if any(VertexUtility.IsInternal(vertex, face, tol) for face in faces):
+                    return True
+                edges = Topology.Edges(topology) or []
+                if any(VertexUtility.IsInternal(vertex, edge, tol) for edge in edges):
+                    return True
+                vertices = Topology.Vertices(topology) or []
+                return any(VertexUtility.IsCoincident(vertex, v, tol) for v in vertices)
+            except Exception:
+                return False
+
+        if (
+            Topology.IsInstance(topology, "Edge")
+            or Topology.IsInstance(topology, "Wire")
+            or Topology.IsInstance(topology, "Shell")
+        ):
+            distance = VertexUtility.DistanceToTopology(vertex, topology, tol)
+            return distance is not None and distance <= tol
+
+        return False
+
+    @staticmethod
+    def SignedDistanceToFace(vertex, face, tolerance: float = 0.0001):
+        """
+        Returns the signed distance from a Vertex to a planar Face's infinite
+        supporting plane. Returns None for a non-planar Face.
+        """
+        if not isinstance(vertex, Vertex) or not Topology.IsInstance(face, "Face"):
+            return None
+        try:
+            from OCC.Core.BRepAdaptor import BRepAdaptor_Surface
+            from OCC.Core.GeomAbs import GeomAbs_Plane
+            from OCC.Core.TopoDS import topods
+
+            shape = _shape_from_topology(face)
+            if _is_null_shape(shape):
+                return None
+            adaptor = BRepAdaptor_Surface(topods.Face(shape), True)
+            if adaptor.GetType() != GeomAbs_Plane:
+                return None
+            plane = adaptor.Plane()
+            location = plane.Location()
+            normal = plane.Axis().Direction()
+            return float(
+                (float(vertex.x) - location.X()) * normal.X()
+                + (float(vertex.y) - location.Y()) * normal.Y()
+                + (float(vertex.z) - location.Z()) * normal.Z()
+            )
+        except Exception:
+            return None
+
+    @staticmethod
+    def PerpendicularDistance(vertex, face, tolerance: float = 0.0001):
+        """Returns the absolute distance to a planar Face's infinite supporting plane."""
+        value = VertexUtility.SignedDistanceToFace(vertex, face, tolerance=tolerance)
+        return None if value is None else abs(float(value))
 
     @staticmethod
     def NearestVertex(vertex, topology, useKDTree=True):
         """
-        Not part of the guide's minimum checklist and not called by the
-        topologicpy algorithm layer (topologicpy.Vertex.NearestVertex is a
-        self-contained implementation that never reaches Core). Best-effort
-        real implementation for direct Core callers: linear-scan the target
-        topology's vertices for the closest one (useKDTree is accepted for
-        API compatibility but not needed at this scale).
+        Returns the discrete Vertex in ``topology`` nearest to ``vertex``.
+
+        ``useKDTree`` is accepted for compatibility with the legacy Core API.
         """
         if not isinstance(vertex, Vertex) or not isinstance(topology, Topology):
             return None
@@ -183,14 +405,7 @@ class VertexUtility:
 
     @staticmethod
     def ParameterAtVertex(edge, vertex):
-        """
-        Not part of the guide's minimum checklist and not called by the
-        topologicpy algorithm layer (Edge.ParameterAtPoint / EdgeUtility.
-        ParameterAtPoint already cover this via a different namespace).
-        Best-effort real implementation for direct Core callers: delegates to
-        EdgeUtility.ParameterAtPoint, matching legacy topologic_core naming
-        (VertexUtility.ParameterAtVertex is an alias for the same concept).
-        """
+        """Returns the edge parameter corresponding to the input Vertex."""
         from .edge import EdgeUtility
         return EdgeUtility.ParameterAtPoint(edge, vertex)
 
@@ -306,6 +521,7 @@ class VertexUtility:
         cellComplexes.extend(unique_by_uuid(result))
         return 0
 
+
 # ---------------------------------------------------------------------------
 # Explicit unsupported Vertex API
 # ---------------------------------------------------------------------------
@@ -326,6 +542,4 @@ def _vertex_utility_not_implemented(name, return_value=None):
 
 Vertex.Origin = staticmethod(lambda: Vertex.ByCoordinates(0.0, 0.0, 0.0))
 # Vertex.ByCoordinatesString, Vertex.Project, Vertex.Fuse, VertexUtility.NearestVertex,
-# and VertexUtility.ParameterAtVertex now have real implementations defined on the
-# classes above -- do not re-clobber them here (see gotcha about stub assignments
-# silently overriding real implementations added earlier in the file).
+# and VertexUtility.ParameterAtVertex have concrete implementations above.

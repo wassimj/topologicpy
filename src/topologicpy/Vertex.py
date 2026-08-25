@@ -13,7 +13,6 @@
 #
 # You should have received a copy of the GNU Lesser General Public License along with
 # this program. If not, see <https://www.gnu.org/licenses/>.
-
 from __future__ import annotations
 
 from topologicpy.Core import Core
@@ -50,7 +49,6 @@ class Vertex():
         """
         Aligns the coordinates of the input vertex with the closest values in the
         supplied x, y, and z coordinate lists.
-
         Any coordinate list may be omitted. If a list is omitted, empty, or contains
         no valid numeric values, the corresponding coordinate is left unchanged.
 
@@ -84,7 +82,6 @@ class Vertex():
             The created vertex aligned to the input coordinate lists.
 
         """
-
         from topologicpy.Topology import Topology
         from topologicpy.Helper import Helper
         import math
@@ -105,15 +102,12 @@ class Vertex():
             values = _clean_numeric_list(values)
             if len(values) < 1:
                 return value
-
             try:
                 closest_value = round(values[Helper.ClosestMatch(value, values)], mantissa)
             except Exception:
                 return value
-
             if abs(value - closest_value) <= epsilon:
                 return closest_value
-
             return value
 
         if not Topology.IsInstance(vertex, "vertex"):
@@ -122,13 +116,11 @@ class Vertex():
             return None
 
         x, y, z = Vertex.Coordinates(vertex, mantissa=mantissa)
-
         x = _aligned_coordinate(x, xList, xEpsilon)
         y = _aligned_coordinate(y, yList, yEpsilon)
         z = _aligned_coordinate(z, zList, zEpsilon)
 
         return_vertex = Vertex.ByCoordinates(x, y, z)
-
         if not Topology.IsInstance(return_vertex, "vertex"):
             if not silent:
                 print("Vertex.AlignCoordinates - Error: Could not create the aligned vertex. Returning None.")
@@ -140,291 +132,303 @@ class Vertex():
                 Topology.Dictionary(vertex),
                 silent=silent
             )
-
         return return_vertex
 
     @staticmethod
-    def AreCollinear(vertices: list, mantissa: int = 6, tolerance: float = 0.0001):
+    def AreCollinear(vertices: list, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False) -> bool:
         """
-        Returns True if the input list of vertices form a straight line.
-        Returns False otherwise.
+        Returns True if the input list of vertices is collinear. Returns False otherwise.
 
         Parameters
         ----------
         vertices : list
             The input list of vertices.
         mantissa : int , optional
-            The number of decimal places to round the result to. Default is 6.
-        tolerance : float, optional
-            The desired tolerance. Default is 0.0001.
-
-        Returns
-        -------
-        bool
-            True if the input vertices are collinear. False otherwise.
-        """
-        from topologicpy.Topology import Topology
-        import math
-
-        def distance(p1, p2):
-            dx = p2[0] - p1[0]
-            dy = p2[1] - p1[1]
-            dz = p2[2] - p1[2]
-            return math.sqrt(dx*dx + dy*dy + dz*dz)
-
-        def vector(p1, p2):
-            return [p2[0] - p1[0], p2[1] - p1[1], p2[2] - p1[2]]
-
-        def cross(u, v):
-            return [
-                u[1]*v[2] - u[2]*v[1],
-                u[2]*v[0] - u[0]*v[2],
-                u[0]*v[1] - u[1]*v[0]
-            ]
-
-        def magnitude(v):
-            return math.sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2])
-
-        if not isinstance(vertices, list):
-            print("Vertex.AreCollinear - Error: The input vertices parameter is not a valid list. Returning None.")
-            return None
-
-        vertexList = [x for x in vertices if Topology.IsInstance(x, "Vertex")]
-        if len(vertexList) < 2:
-            print("Vertex.AreCollinear - Error: The input list of vertices does not contain sufficient valid vertices. Returning None.")
-            return None
-
-        if len(vertexList) < 3:
-            return True  # Any two vertices define a line.
-
-        # Extract coordinates without premature geometric interpretation.
-        points = []
-        for v in vertexList:
-            coords = Vertex.Coordinates(v, mantissa=mantissa)
-            if not isinstance(coords, (list, tuple)) or len(coords) < 3:
-                continue
-            points.append([float(coords[0]), float(coords[1]), float(coords[2])])
-
-        if len(points) < 2:
-            print("Vertex.AreCollinear - Error: Could not extract sufficient valid coordinates from the input vertices. Returning None.")
-            return None
-
-        if len(points) < 3:
-            return True
-
-        # Remove duplicate / near-duplicate points deterministically.
-        unique_points = []
-        for p in points:
-            is_duplicate = False
-            for q in unique_points:
-                if distance(p, q) <= tolerance:
-                    is_duplicate = True
-                    break
-            if not is_duplicate:
-                unique_points.append(p)
-
-        if len(unique_points) < 3:
-            return True
-
-        # Find the first pair of sufficiently distinct points to define the line.
-        p0 = unique_points[0]
-        p1 = None
-        for i in range(1, len(unique_points)):
-            if distance(p0, unique_points[i]) > tolerance:
-                p1 = unique_points[i]
-                break
-
-        if p1 is None:
-            return True
-
-        base_vec = vector(p0, p1)
-        base_len = magnitude(base_vec)
-        if base_len <= tolerance:
-            return True
-
-        # Check every remaining point against the line through p0-p1.
-        # The magnitude of the cross product equals |base_vec| * perpendicular_distance.
-        # So compare the perpendicular distance to tolerance.
-        for i in range(2, len(unique_points)):
-            pi = unique_points[i]
-            test_vec = vector(p0, pi)
-            cross_vec = cross(base_vec, test_vec)
-            perp_dist = magnitude(cross_vec) / base_len
-            if perp_dist > tolerance:
-                return False
-
-        return True
-    
-    @staticmethod
-    def AreCoplanar(vertices: list, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False) -> bool:
-        """
-        Returns True if the input list of vertices are coplanar. Returns False otherwise.
-
-        Parameters
-        ----------
-        vertices : list
-            The input list of vertices.
-        mantissa : int , optional
-            The number of decimal places to round the result to. Default is 6.
+            The number of decimal places used for compatibility with the TopologicPy API. The geometric test itself is performed at full coordinate precision. Default is 6.
         tolerance : float , optional
-            The desired tolerance. Default is 0.0001
+            The desired geometric tolerance. Default is 0.0001.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
         bool
-            True if the input vertices are coplanar.
-
+            True if the valid input vertices are collinear. False otherwise.
         """
         from topologicpy.Topology import Topology
-        from numpy.linalg import svd
+        import math
 
         if not isinstance(vertices, list):
             if not silent:
-                print("Vertex.Normal - Error: The vertices input parameter is not a valid list. Returning None.")
+                print("Vertex.AreCollinear - Error: The input vertices parameter is not a valid list. Returning None.")
             return None
-        
-        verts = [v for v in vertices if Topology.IsInstance(v, "vertex")]
 
-        if len(verts) < 3:
-            if not silent:
-                print("Vertex.AreCoplanar - Error: The list of vertices contains less than 3 valid topologic vertices. Returning None.")
-            return None  # At least 3 vertices are needed
-        
-        coords = np.array([Vertex.Coordinates(v, mantissa=mantissa) for v in vertices])
-
-        # Check if points are coplanar using SVD
-        _, s, vh = svd(coords - coords.mean(axis=0))
-        rank = (s > tolerance).sum()
-        return (rank <= 2)
-    
-    @staticmethod
-    def AreIpsilateral(vertices: list, face) -> bool:
-        """
-        Returns True if the input list of vertices are on one side of a face. Returns False otherwise. If at least one of the vertices is on the face, this method return True.
-
-        Parameters
-        ----------
-        vertices : list
-            The input list of vertices.
-        face : topologic_core.Face
-            The input face
-
-        Returns
-        -------
-        bool
-            True if the input vertices are on the same side of the face. False otherwise. If at least one of the vertices is on the face, this method return True.
-
-        """
-        def check(dot_productA, pointB, pointC, normal):
-            # Calculate the dot products of the vectors from the surface point to each of the input points.
-            dot_productB = (pointB[0] - pointC[0]) * normal[0] + \
-                        (pointB[1] - pointC[1]) * normal[1] + \
-                        (pointB[2] - pointC[2]) * normal[2]
-
-            # Check if both points are on the same side of the surface.
-            if dot_productA * dot_productB > 0:
-                return True
-
-            # Check if both points are on opposite sides of the surface.
-            elif dot_productA * dot_productB < 0:
-                return False
-
-            # Otherwise, at least one point is on the surface.
-            else:
-                return True
-    
-        from topologicpy.Vertex import Vertex
-        from topologicpy.Face import Face
-        from topologicpy.Topology import Topology
-
-        if not Topology.IsInstance(face, "Face"):
-            return None
-        vertexList = [x for x in vertices if Topology.IsInstance(x, "Vertex")]
+        vertexList = [v for v in vertices if Topology.IsInstance(v, "Vertex")]
         if len(vertexList) < 2:
+            if not silent:
+                print("Vertex.AreCollinear - Error: The input list of vertices does not contain sufficient valid vertices. Returning None.")
             return None
-        pointA = Vertex.Coordinates(vertexList[0])
-        pointC = Vertex.Coordinates(Face.VertexByParameters(face, 0.5, 0.5))
-        normal = Face.Normal(face)
-        dot_productA = (pointA[0] - pointC[0]) * normal[0] + \
-                        (pointA[1] - pointC[1]) * normal[1] + \
-                        (pointA[2] - pointC[2]) * normal[2]
-        for i in range(1, len(vertexList)):
-            pointB = Vertex.Coordinates(vertexList[i])
-            if not check(dot_productA, pointB, pointC, normal):
+        if len(vertexList) < 3:
+            return True
+
+        tol = abs(float(tolerance))
+        points = [Vertex.Coordinates(v, mantissa=None) for v in vertexList]
+        points = [p for p in points if isinstance(p, (list, tuple)) and len(p) >= 3]
+        if len(points) < 2:
+            if not silent:
+                print("Vertex.AreCollinear - Error: Could not extract sufficient valid coordinates. Returning None.")
+            return None
+        if len(points) < 3:
+            return True
+
+        def _distance(a, b):
+            return math.sqrt(sum((float(b[i]) - float(a[i])) ** 2 for i in range(3)))
+
+        unique_points = []
+        for p in points:
+            p = [float(p[0]), float(p[1]), float(p[2])]
+            if not any(_distance(p, q) <= tol for q in unique_points):
+                unique_points.append(p)
+
+        if len(unique_points) < 3:
+            return True
+
+        p0 = unique_points[0]
+        p1 = next((p for p in unique_points[1:] if _distance(p0, p) > tol), None)
+        if p1 is None:
+            return True
+
+        bx, by, bz = p1[0]-p0[0], p1[1]-p0[1], p1[2]-p0[2]
+        base_length = math.sqrt(bx*bx + by*by + bz*bz)
+        if base_length <= tol:
+            return True
+
+        for p in unique_points[1:]:
+            tx, ty, tz = p[0]-p0[0], p[1]-p0[1], p[2]-p0[2]
+            cx = by*tz - bz*ty
+            cy = bz*tx - bx*tz
+            cz = bx*ty - by*tx
+            perpendicular_distance = math.sqrt(cx*cx + cy*cy + cz*cz) / base_length
+            if perpendicular_distance > tol:
                 return False
         return True
     
     @staticmethod
-    def AreIpsilateralCluster(cluster, face) -> bool:
+    def AreCoplanar(vertices: list, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False) -> bool:
         """
-        Returns True if the two input vertices are on the same side of the input face. Returns False otherwise. If at least one of the vertices is on the face, this method return True.
+        Returns True if the input list of vertices is coplanar. Returns False otherwise.
 
         Parameters
         ----------
-        cluster : topologic_core.Cluster
+        vertices : list
             The input list of vertices.
-        face : topologic_core.Face
-            The input face
+        mantissa : int , optional
+            The number of decimal places used for compatibility with the TopologicPy API. The geometric test itself is performed at full coordinate precision. Default is 6.
+        tolerance : float , optional
+            The desired geometric tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
         bool
-            True if the input vertices are on the same side of the face. False otherwise. If at least one of the vertices is on the face, this method return True.
-
+            True if the valid input vertices are coplanar. False otherwise.
         """
         from topologicpy.Topology import Topology
 
-        if not Topology.IsInstance(cluster, "Topology"):
+        if not isinstance(vertices, list):
+            if not silent:
+                print("Vertex.AreCoplanar - Error: The vertices input parameter is not a valid list. Returning None.")
             return None
-        vertices = Topology.SubTopologies(cluster, subTopologyType="vertex")
-        return Vertex.AreIpsilateral(vertices, face)
+
+        verts = [v for v in vertices if Topology.IsInstance(v, "Vertex")]
+        if len(verts) < 3:
+            if not silent:
+                print("Vertex.AreCoplanar - Error: The list of vertices contains less than 3 valid topologic vertices. Returning None.")
+            return None
+
+        try:
+            coords = np.asarray([Vertex.Coordinates(v, mantissa=None) for v in verts], dtype=float)
+            centroid = coords.mean(axis=0)
+            centered = coords - centroid
+            _, _, vh = np.linalg.svd(centered, full_matrices=False)
+            normal = vh[-1]
+            norm = float(np.linalg.norm(normal))
+            if norm <= max(abs(float(tolerance)), 1.0e-15):
+                return True
+            normal = normal / norm
+            distances = np.abs(centered @ normal)
+            return bool(float(np.max(distances)) <= abs(float(tolerance)))
+        except Exception:
+            if not silent:
+                print("Vertex.AreCoplanar - Error: Could not determine coplanarity. Returning None.")
+            return None
     
     @staticmethod
-    def AreOnSameSide(vertices: list, face) -> bool:
+    def AreIpsilateral(vertices: list, face, tolerance: float = 0.0001, silent: bool = False) -> bool:
         """
-        Returns True if the two input vertices are on the same side of the input face. Returns False otherwise. If at least one of the vertices is on the face, this method return True.
+        Returns True if the input vertices lie on the same side of a planar face.
+        If at least one vertex lies on the face's supporting plane within tolerance,
+        this method returns True, preserving the historical TopologicPy behaviour.
 
         Parameters
         ----------
         vertices : list
             The input list of vertices.
         face : topologic_core.Face
-            The input face
+            The input planar face.
+        tolerance : float , optional
+            The desired geometric tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
         bool
-            True if the input vertices are on the same side of the face. False otherwise. If at least one of the vertices is on the face, this method return True.
-
+            True if the vertices are on the same side of the face. False otherwise.
+            Returns None if the inputs are invalid or the face cannot define one
+            global supporting plane.
         """
-        return Vertex.AreIpsilateral(vertices, face)
+        from topologicpy.Face import Face
+        from topologicpy.Topology import Topology
 
+        if not isinstance(vertices, list):
+            if not silent:
+                print("Vertex.AreIpsilateral - Error: The input vertices parameter is not a valid list. Returning None.")
+            return None
+        if not Topology.IsInstance(face, "Face"):
+            if not silent:
+                print("Vertex.AreIpsilateral - Error: The input face parameter is not a valid face. Returning None.")
+            return None
+
+        vertexList = [v for v in vertices if Topology.IsInstance(v, "Vertex")]
+        if len(vertexList) < 2:
+            if not silent:
+                print("Vertex.AreIpsilateral - Error: The input vertices parameter contains less than two valid vertices. Returning None.")
+            return None
+
+        tol = abs(float(tolerance))
+        signed_distances = None
+
+        if Core.HasAttribute("VertexUtility", "SignedDistanceToFace"):
+            try:
+                signed_distances = [
+                    Core.VertexUtility.SignedDistanceToFace(v, face, tol)
+                    for v in vertexList
+                ]
+                if any(value is None for value in signed_distances):
+                    if not silent:
+                        print("Vertex.AreIpsilateral - Error: The input face does not define a single planar supporting surface. Returning None.")
+                    return None
+            except Exception:
+                signed_distances = None
+
+        if signed_distances is None:
+            # Legacy TopologicCore compatibility path.
+            try:
+                reference_vertex = Face.VertexByParameters(face, 0.5, 0.5)
+                reference = Vertex.Coordinates(reference_vertex, mantissa=None)
+                try:
+                    normal = Face.Normal(face, mantissa=12)
+                except TypeError:
+                    normal = Face.Normal(face)
+                if reference is None or normal is None:
+                    return None
+                signed_distances = []
+                for v in vertexList:
+                    point = Vertex.Coordinates(v, mantissa=None)
+                    signed_distances.append(
+                        (point[0] - reference[0]) * normal[0]
+                        + (point[1] - reference[1]) * normal[1]
+                        + (point[2] - reference[2]) * normal[2]
+                    )
+            except Exception:
+                if not silent:
+                    print("Vertex.AreIpsilateral - Error: Could not determine the side of the input face. Returning None.")
+                return None
+
+        signs = []
+        for value in signed_distances:
+            value = float(value)
+            if abs(value) <= tol:
+                continue
+            signs.append(1 if value > 0.0 else -1)
+        return len(set(signs)) <= 1
+    
     @staticmethod
-    def AreOnSameSideCluster(cluster, face) -> bool:
+    def AreIpsilateralCluster(cluster, face, tolerance: float = 0.0001, silent: bool = False) -> bool:
         """
-        Returns True if the two input vertices are on the same side of the input face. Returns False otherwise. If at least one of the vertices is on the face, this method return True.
+        Returns True if the vertices of the input cluster lie on the same side of a planar face.
 
         Parameters
         ----------
         cluster : topologic_core.Cluster
-            The input list of vertices.
+            The input cluster containing vertices.
         face : topologic_core.Face
-            The input face
+            The input planar face.
+        tolerance : float , optional
+            The desired geometric tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
         bool
-            True if the input vertices are on the same side of the face. False otherwise. If at least one of the vertices is on the face, this method return True.
-
+            True if the cluster vertices are on the same side of the face. False otherwise.
         """
         from topologicpy.Topology import Topology
-
         if not Topology.IsInstance(cluster, "Topology"):
+            if not silent:
+                print("Vertex.AreIpsilateralCluster - Error: The input cluster parameter is not a valid topology. Returning None.")
             return None
         vertices = Topology.SubTopologies(cluster, subTopologyType="vertex")
-        return Vertex.AreIpsilateral(vertices, face)
+        return Vertex.AreIpsilateral(vertices, face, tolerance=tolerance, silent=silent)
+    
+    @staticmethod
+    def AreOnSameSide(vertices: list, face, tolerance: float = 0.0001, silent: bool = False) -> bool:
+        """
+        Returns True if the input vertices lie on the same side of a planar face.
+
+        Parameters
+        ----------
+        vertices : list
+            The input list of vertices.
+        face : topologic_core.Face
+            The input planar face.
+        tolerance : float , optional
+            The desired geometric tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        bool
+            True if the vertices lie on the same side of the face. False otherwise.
+        """
+        return Vertex.AreIpsilateral(vertices, face, tolerance=tolerance, silent=silent)
+
+    @staticmethod
+    def AreOnSameSideCluster(cluster, face, tolerance: float = 0.0001, silent: bool = False) -> bool:
+        """
+        Returns True if the vertices of the input cluster lie on the same side of a planar face.
+
+        Parameters
+        ----------
+        cluster : topologic_core.Cluster
+            The input cluster containing vertices.
+        face : topologic_core.Face
+            The input planar face.
+        tolerance : float , optional
+            The desired geometric tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        bool
+            True if the cluster vertices lie on the same side of the face. False otherwise.
+        """
+        return Vertex.AreIpsilateralCluster(cluster, face, tolerance=tolerance, silent=silent)
 
     @staticmethod
     def ByCoordinates(*args, **kwargs):
@@ -522,66 +526,66 @@ class Vertex():
         return vertex
 
     @staticmethod
-    def ByOffset2DRelativeToEdge(vertex, edge, offset: float = 1.0, tolerance: float = 0.0001):
+    def ByOffset2DRelativeToEdge(vertex, edge, offset: float = 1.0, tolerance: float = 0.0001, silent: bool = False):
         """
-        Creates a new vertex offset from the input vertex in the XY plane,
-        using the 2D left-hand normal direction of the input edge.
+        Creates a new vertex offset from the input vertex in the XY plane using
+        the left-hand normal of the chord from the input edge's start vertex to
+        its end vertex.
 
         Parameters
         ----------
         vertex : topologic_core.Vertex
             The vertex to offset.
         edge : topologic_core.Edge
-            The reference edge used to compute the perpendicular direction.
+            The reference edge. For a curved edge, its start-to-end chord defines
+            the 2D reference direction.
         offset : float , optional
             The offset distance. Default is 1.0.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
         topologic_core.Vertex
             The offset vertex.
         """
-
-        from topologicpy.Topology import Topology
-        from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
+        from topologicpy.Topology import Topology
 
-        # Validate input
         if not Topology.IsInstance(vertex, "Vertex"):
+            if not silent:
+                print("Vertex.ByOffset2DRelativeToEdge - Error: The input vertex parameter is not a valid vertex. Returning None.")
             return None
         if not Topology.IsInstance(edge, "Edge"):
+            if not silent:
+                print("Vertex.ByOffset2DRelativeToEdge - Error: The input edge parameter is not a valid edge. Returning None.")
             return None
 
-        # Get edge vertices
-        sv = Edge.StartVertex(edge)
-        ev = Edge.EndVertex(edge)
-
-        x1, y1, _ = Vertex.Coordinates(sv)
-        x2, y2, _ = Vertex.Coordinates(ev)
-
-        # Edge direction vector
-        dx = x2 - x1
-        dy = y2 - y1
-
-        length = (dx**2 + dy**2)**0.5
-        if length < tolerance:
+        sv = Edge.StartVertex(edge, silent=True)
+        ev = Edge.EndVertex(edge, silent=True)
+        p1 = Vertex.Coordinates(sv, mantissa=None)
+        p2 = Vertex.Coordinates(ev, mantissa=None)
+        point = Vertex.Coordinates(vertex, mantissa=None)
+        if p1 is None or p2 is None or point is None:
             return None
 
-        # Left-hand perpendicular unit vector
+        dx = p2[0] - p1[0]
+        dy = p2[1] - p1[1]
+        length = (dx * dx + dy * dy) ** 0.5
+        if length <= abs(float(tolerance)):
+            if not silent:
+                print("Vertex.ByOffset2DRelativeToEdge - Error: The input edge has no usable XY chord direction. Returning None.")
+            return None
+
         nx = -dy / length
         ny = dx / length
-
-        # Offset components
-        ox = nx * offset
-        oy = ny * offset
-
-        # Original vertex coordinates
-        vx, vy, vz = Vertex.Coordinates(vertex)
-
-        # Create offset vertex (preserve original Z)
-        return Vertex.ByCoordinates(vx + ox, vy + oy, vz)
+        return Vertex.ByCoordinates(
+            point[0] + nx * float(offset),
+            point[1] + ny * float(offset),
+            point[2],
+        )
     
     @staticmethod
     def Centroid(vertices: list, mantissa: int = 6):
@@ -751,9 +755,12 @@ class Vertex():
         return len(superTopologies)
 
     @staticmethod
-    def Distance(vertex, topology, includeCentroid: bool =True, mantissa: int = 6) -> float:
+    def Distance(vertex, topology, includeCentroid: bool = True, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False) -> float:
         """
-        Returns the distance between the input vertex and the input topology. This method returns the distance to the closest sub-topology in the input topology, optionally including its centroid.
+        Returns the shortest distance between the input vertex and the input topology.
+        The distance is measured to the topology's geometric boundary and constituent
+        subtopologies, optionally including its centroid. On the PythonOCC backend,
+        primitive geometric distances are delegated to OCCT.
 
         Parameters
         ----------
@@ -761,142 +768,217 @@ class Vertex():
             The input vertex.
         topology : topologic_core.Topology
             The input topology.
-        includeCentroid : bool
-            If set to True, the centroid of the input topology will be considered in finding the nearest subTopology to the input vertex. Default is True.
+        includeCentroid : bool , optional
+            If set to True, the centroid of the input topology is also considered.
+            Default is True.
         mantissa : int , optional
-            The number of decimal places to round the result to. Default is 6.
-        
+            The number of decimal places to round the returned distance to. Default is 6.
+        tolerance : float , optional
+            The desired geometric tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
         Returns
         -------
         float
-            The distance between the input vertex and the input topology.
-
+            The shortest distance between the input vertex and the considered
+            geometry of the input topology.
         """
         from topologicpy.Edge import Edge
         from topologicpy.Face import Face
         from topologicpy.Topology import Topology
         import math
 
-        def distance_point_to_point(point1, point2):
-            # Convert input points to NumPy arrays
-            point1 = np.array(point1)
-            point2 = np.array(point2)
-            
-            # Calculate the Euclidean distance
-            distance = np.linalg.norm(point1 - point2)
-            
-            return float(distance)
+        if not Topology.IsInstance(vertex, "Vertex"):
+            if not silent:
+                print("Vertex.Distance - Error: The input vertex parameter is not a valid vertex. Returning None.")
+            return None
+        if not Topology.IsInstance(topology, "Topology"):
+            if not silent:
+                print("Vertex.Distance - Error: The input topology parameter is not a valid topology. Returning None.")
+            return None
 
-        def distance_point_to_line(point, line_start, line_end):
-            # Convert input points to NumPy arrays for vector operations
-            point = np.array(point)
-            line_start = np.array(line_start)
-            line_end = np.array(line_end)
-            
-            # Calculate the direction vector of the edge
-            line_direction = line_end - line_start
-            
-            # Vector from the edge's starting point to the point
-            point_to_start = point - line_start
-            
-            # Calculate the parameter 't' where the projection of the point onto the edge occurs
-            if np.dot(line_direction, line_direction) == 0:
-                t = 0
-            else:
-                t = np.dot(point_to_start, line_direction) / np.dot(line_direction, line_direction)
-            
-            # Check if 't' is outside the range [0, 1], and if so, calculate distance to closest endpoint
-            if t < 0:
-                return np.linalg.norm(point - line_start)
-            elif t > 1:
-                return np.linalg.norm(point - line_end)
-            
-            # Calculate the closest point on the edge to the given point
-            closest_point = line_start + t * line_direction
-            
-            # Calculate the distance between the closest point and the given point
-            distance = np.linalg.norm(point - closest_point)
-            
-            return distance
-        
-        def distance_to_vertex(vertexA, vertexB):
-            a = (Vertex.X(vertexA, mantissa=mantissa), Vertex.Y(vertexA, mantissa=mantissa), Vertex.Z(vertexA, mantissa=mantissa))
-            b = (Vertex.X(vertexB, mantissa=mantissa), Vertex.Y(vertexB, mantissa=mantissa), Vertex.Z(vertexB, mantissa=mantissa))
-            return distance_point_to_point(a, b)
-        
-        def distance_to_edge(vertex, edge):
-            a = (Vertex.X(vertex, mantissa=mantissa), Vertex.Y(vertex, mantissa=mantissa), Vertex.Z(vertex, mantissa=mantissa))
-            sv = Edge.StartVertex(edge)
-            ev = Edge.EndVertex(edge)
-            svp = (Vertex.X(sv, mantissa=mantissa), Vertex.Y(sv, mantissa=mantissa), Vertex.Z(sv, mantissa=mantissa))
-            evp = (Vertex.X(ev, mantissa=mantissa), Vertex.Y(ev, mantissa=mantissa), Vertex.Z(ev, mantissa=mantissa))
-            return distance_point_to_line(a,svp, evp)
-        
-        def distance_to_face(vertex, face, includeCentroid):
-            v_proj = Vertex.Project(vertex, face, mantissa=mantissa)
-            if v_proj is None or not Vertex.IsInternal(v_proj, face):
-                vertices = Topology.Vertices(face)
-                distances = [distance_to_vertex(vertex, v) for v in vertices]
-                edges = Topology.Edges(face)
-                distances += [distance_to_edge(vertex, e) for e in edges]
-                if includeCentroid:
-                    distances.append(distance_to_vertex(vertex, Topology.Centroid(face)))
-                return min(distances)
-            dic = Face.PlaneEquation(face)
-            if dic is None:
-                vertices = Topology.Vertices(face)
-                distances = [distance_to_vertex(vertex, v) for v in vertices]
-                edges = Topology.Edges(face)
-                distances += [distance_to_edge(vertex, e) for e in edges]
-                if includeCentroid:
-                    distances.append(distance_to_vertex(vertex, Topology.Centroid(face)))
-                return min(distances)
-            a = dic["a"]
-            b = dic["b"]
-            c = dic["c"]
-            d = dic["d"]
-            x1, y1, z1 = Vertex.Coordinates(vertex, mantissa=mantissa)
-            d = abs((a * x1 + b * y1 + c * z1 + d))
-            e = (math.sqrt(a * a + b * b + c * c))
-            if e == 0:
-                return 0
-            return d/e
-        if not Topology.IsInstance(vertex, "Vertex") or not Topology.IsInstance(topology, "Topology"):
-            return None
+        tol = abs(float(tolerance))
+
+        def _round(value):
+            if value is None:
+                return None
+            return round(float(value), mantissa) if mantissa is not None else float(value)
+
+        def _native_distance(target):
+            if not Core.HasAttribute("VertexUtility", "DistanceToTopology"):
+                return None
+            try:
+                value = Core.VertexUtility.DistanceToTopology(vertex, target, tol)
+                return None if value is None else float(value)
+            except Exception:
+                return None
+
+        def _point_distance(a, b):
+            pa = Vertex.Coordinates(a, mantissa=None)
+            pb = Vertex.Coordinates(b, mantissa=None)
+            if pa is None or pb is None:
+                return None
+            return math.sqrt(
+                (pa[0] - pb[0]) ** 2
+                + (pa[1] - pb[1]) ** 2
+                + (pa[2] - pb[2]) ** 2
+            )
+
+        def _vertex_distance(target):
+            value = _native_distance(target)
+            if value is not None:
+                return value
+            try:
+                if Core.HasAttribute("VertexUtility", "Distance"):
+                    value = Core.VertexUtility.Distance(vertex, target)
+                    if value is not None:
+                        return float(value)
+            except Exception:
+                pass
+            return _point_distance(vertex, target)
+
+        def _edge_distance(edge):
+            value = _native_distance(edge)
+            if value is not None:
+                return value
+
+            # Legacy TopologicCore compatibility fallback. This is used only when
+            # the active backend does not expose a native Vertex-to-topology distance.
+            sv = Edge.StartVertex(edge, silent=True)
+            ev = Edge.EndVertex(edge, silent=True)
+            p = Vertex.Coordinates(vertex, mantissa=None)
+            a = Vertex.Coordinates(sv, mantissa=None)
+            b = Vertex.Coordinates(ev, mantissa=None)
+            if p is None or a is None or b is None:
+                return None
+            ab = [b[i] - a[i] for i in range(3)]
+            ap = [p[i] - a[i] for i in range(3)]
+            denominator = sum(v * v for v in ab)
+            if denominator <= tol * tol:
+                return math.sqrt(sum((p[i] - a[i]) ** 2 for i in range(3)))
+            parameter = sum(ap[i] * ab[i] for i in range(3)) / denominator
+            parameter = max(0.0, min(1.0, parameter))
+            q = [a[i] + parameter * ab[i] for i in range(3)]
+            return math.sqrt(sum((p[i] - q[i]) ** 2 for i in range(3)))
+
+        def _face_distance(face):
+            value = _native_distance(face)
+            if value is not None:
+                return value
+
+            # Legacy TopologicCore compatibility fallback.
+            projected = Vertex.Project(vertex, face, mantissa=None, tolerance=tol, silent=True)
+            if projected is not None and Vertex.IsInternal(projected, face, tolerance=tol, silent=True):
+                value = Vertex.PerpendicularDistance(vertex, face, mantissa=None, tolerance=tol, silent=True)
+                if value is not None:
+                    return float(value)
+
+            distances = []
+            for edge in Topology.Edges(face, silent=True) or []:
+                value = _edge_distance(edge)
+                if value is not None:
+                    distances.append(value)
+            for v in Topology.Vertices(face, silent=True) or []:
+                value = _vertex_distance(v)
+                if value is not None:
+                    distances.append(value)
+            return min(distances) if distances else None
+
+        def _centroid_distance(target):
+            if not includeCentroid:
+                return None
+            try:
+                centroid = Topology.Centroid(target, silent=True)
+            except TypeError:
+                try:
+                    centroid = Topology.Centroid(target)
+                except Exception:
+                    centroid = None
+            except Exception:
+                centroid = None
+            if not Topology.IsInstance(centroid, "Vertex"):
+                return None
+            return _vertex_distance(centroid)
+
         if Topology.IsInstance(topology, "Vertex"):
-            return round(distance_to_vertex(vertex,topology), mantissa)
-        elif Topology.IsInstance(topology, "Edge"):
-            return round(distance_to_edge(vertex,topology), mantissa)
-        elif Topology.IsInstance(topology, "Wire"):
-            vertices = Topology.Vertices(topology)
-            distances = [distance_to_vertex(vertex, v) for v in vertices]
-            edges = Topology.Edges(topology)
-            distances += [distance_to_edge(vertex, e) for e in edges]
-            if includeCentroid:
-                distances.append(distance_to_vertex(vertex, Topology.Centroid(topology)))
-            return round(min(distances), mantissa)
-        elif Topology.IsInstance(topology, "Face"):
-            vertices = Topology.Vertices(topology)
-            distances = [distance_to_vertex(vertex, v) for v in vertices]
-            edges = Topology.Edges(topology)
-            distances += [distance_to_edge(vertex, e) for e in edges]
-            distances.append(distance_to_face(vertex,topology, includeCentroid))
-            if includeCentroid:
-                distances.append(distance_to_vertex(vertex, Topology.Centroid(topology)))
-            return round(min(distances), mantissa)
-        elif Topology.IsInstance(topology, "Shell") or Topology.IsInstance(topology, "Cell") or Topology.IsInstance(topology, "CellComplex") or Topology.IsInstance(topology, "Cluster"):
-            vertices = Topology.Vertices(topology)
-            distances = [distance_to_vertex(vertex, v) for v in vertices]
-            edges = Topology.Edges(topology)
-            distances += [distance_to_edge(vertex, e) for e in edges]
-            faces = Topology.Faces(topology)
-            distances += [distance_to_face(vertex, f, includeCentroid) for f in faces]
-            if includeCentroid:
-                distances.append(distance_to_vertex(vertex, Topology.Centroid(topology)))
-            return round(min(distances), mantissa)
-        else:
+            return _round(_vertex_distance(topology))
+
+        if Topology.IsInstance(topology, "Edge"):
+            return _round(_edge_distance(topology))
+
+        if Topology.IsInstance(topology, "Wire"):
+            distances = []
+            native = _native_distance(topology)
+            if native is not None:
+                distances.append(native)
+            else:
+                for edge in Topology.Edges(topology, silent=True) or []:
+                    value = _edge_distance(edge)
+                    if value is not None:
+                        distances.append(value)
+            centroid_distance = _centroid_distance(topology)
+            if centroid_distance is not None:
+                distances.append(centroid_distance)
+            return _round(min(distances)) if distances else None
+
+        if Topology.IsInstance(topology, "Face"):
+            distances = []
+            value = _face_distance(topology)
+            if value is not None:
+                distances.append(value)
+            centroid_distance = _centroid_distance(topology)
+            if centroid_distance is not None:
+                distances.append(centroid_distance)
+            return _round(min(distances)) if distances else None
+
+        if (
+            Topology.IsInstance(topology, "Shell")
+            or Topology.IsInstance(topology, "Cell")
+            or Topology.IsInstance(topology, "CellComplex")
+            or Topology.IsInstance(topology, "Cluster")
+        ):
+            distances = []
+            is_cluster = Topology.IsInstance(topology, "Cluster")
+
+            # A Shell is itself a boundary, so its native shape distance is valid.
+            # For Cells and CellComplexes we deliberately measure to constituent
+            # boundary geometry rather than to the solid, preserving historical
+            # Vertex.Distance semantics for points inside a volume. Heterogeneous
+            # Clusters must consider every represented dimensionality.
+            if Topology.IsInstance(topology, "Shell"):
+                native = _native_distance(topology)
+                if native is not None:
+                    distances.append(native)
+
+            faces = Topology.Faces(topology, silent=True) or []
+            for face in faces:
+                value = _face_distance(face)
+                if value is not None:
+                    distances.append(value)
+
+            if is_cluster or not faces:
+                edges = Topology.Edges(topology, silent=True) or []
+                for edge in edges:
+                    value = _edge_distance(edge)
+                    if value is not None:
+                        distances.append(value)
+
+                if is_cluster or not edges:
+                    for v in Topology.Vertices(topology, silent=True) or []:
+                        value = _vertex_distance(v)
+                        if value is not None:
+                            distances.append(value)
+
+            centroid_distance = _centroid_distance(topology)
+            if centroid_distance is not None:
+                distances.append(centroid_distance)
+
+            return _round(min(distances)) if distances else None
+
+        if not silent:
             print("Vertex.Distance - Error: Could not recognize the input topology. Returning None.")
-            return None
+        return None
     
     @staticmethod
     def EnclosingCells(vertex, topology, exclusive: bool = True, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False) -> list:
@@ -1177,10 +1259,10 @@ class Vertex():
         return return_vertices
 
     @staticmethod
-    def IncomingEdges(vertex, hostTopology, tolerance: float = 0.0001) -> list:
+    def IncomingEdges(vertex, hostTopology, tolerance: float = 0.0001, silent: bool = False) -> list:
         """
-        Returns the incoming edges connected to a vertex. An edge is considered incoming if its end vertex is
-        coincident with the input vertex.
+        Returns the incoming edges connected to a vertex. An edge is incoming if
+        its end vertex is coincident with the input vertex.
 
         Parameters
         ----------
@@ -1190,30 +1272,31 @@ class Vertex():
             The input host topology to which the vertex belongs.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
         list
-            The list of incoming edges
-
+            The list of incoming edges.
         """
         from topologicpy.Edge import Edge
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(vertex, "Vertex"):
-            print("Vertex.IncomingEdges - Error: The input vertex parameter is not a valid vertex. Returning None.")
+            if not silent:
+                print("Vertex.IncomingEdges - Error: The input vertex parameter is not a valid vertex. Returning None.")
             return None
         if not Topology.IsInstance(hostTopology, "Topology"):
-            print("Vertex.IncomingEdges - Error: The input graph parameter is not a valid graph. Returning None.")
+            if not silent:
+                print("Vertex.IncomingEdges - Error: The input hostTopology parameter is not a valid topology. Returning None.")
             return None
-        
-        edges = Topology.SuperTopologies(vertex, hostTopology=hostTopology, topologyType="Edge")
-        incoming_edges = []
-        for edge in edges:
-            ev = Edge.EndVertex(edge)
-            if Vertex.Distance(vertex, ev) <= tolerance:
-                incoming_edges.append(edge)
-        return incoming_edges
+
+        edges = Topology.SuperTopologies(vertex, hostTopology=hostTopology, topologyType="Edge") or []
+        return [
+            edge for edge in edges
+            if Vertex.IsCoincident(vertex, Edge.EndVertex(edge, silent=True), tolerance=tolerance, silent=True)
+        ]
     
     @staticmethod
     def Index(vertex, vertices: list, strict: bool = False, tolerance: float = 0.0001) -> int:
@@ -1222,7 +1305,7 @@ class Vertex():
 
         This implementation avoids rebuilding the input list and uses a fast
         coordinate pre-check before falling back to Topology.IsSame or
-        Vertex.Distance.
+        Vertex.IsCoincident.
 
         Parameters
         ----------
@@ -1296,7 +1379,7 @@ class Vertex():
                         if Topology.IsSame(vertex, v):
                             return i
                     else:
-                        if Vertex.Distance(vertex, v) <= tol:
+                        if Vertex.IsCoincident(vertex, v, tolerance=tol, silent=True):
                             return i
                 except Exception:
                     continue
@@ -1545,7 +1628,7 @@ class Vertex():
     @staticmethod
     def IsCoincident(vertexA, vertexB, tolerance: float = 0.0001, silent: bool = False) -> bool:
         """
-        Returns True if the input vertexA is coincident with the input vertexB. Returns False otherwise.
+        Returns True if the two input vertices are coincident within tolerance.
 
         Parameters
         ----------
@@ -1554,15 +1637,17 @@ class Vertex():
         vertexB : topologic_core.Vertex
             The second input vertex.
         tolerance : float , optional
-            The tolerance for computing if the input vertexA is coincident with the input vertexB. Default is 0.0001.
+            The desired coincidence tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
         bool
-            True if the input vertexA is coincident with the input vertexB. False otherwise.
-
+            True if the input vertices are coincident. False otherwise.
         """
         from topologicpy.Topology import Topology
+        import math
 
         if not Topology.IsInstance(vertexA, "Vertex"):
             if not silent:
@@ -1570,9 +1655,30 @@ class Vertex():
             return None
         if not Topology.IsInstance(vertexB, "Vertex"):
             if not silent:
-                print("Vertex.IsICoincident - Error: The input vertexB parameter is not a valid vertex. Returning None.")
+                print("Vertex.IsCoincident - Error: The input vertexB parameter is not a valid vertex. Returning None.")
             return None
-        return Vertex.IsInternal(vertexA, vertexB, tolerance=tolerance, silent=silent)
+
+        tol = abs(float(tolerance))
+        if Core.HasAttribute("VertexUtility", "IsCoincident"):
+            try:
+                return bool(Core.VertexUtility.IsCoincident(vertexA, vertexB, tol))
+            except Exception:
+                pass
+
+        try:
+            if Core.HasAttribute("VertexUtility", "Distance"):
+                distance = Core.VertexUtility.Distance(vertexA, vertexB)
+                if distance is not None:
+                    return float(distance) <= tol
+        except Exception:
+            pass
+
+        a = Vertex.Coordinates(vertexA, mantissa=None)
+        b = Vertex.Coordinates(vertexB, mantissa=None)
+        if a is None or b is None:
+            return False
+        distance = math.sqrt(sum((a[i] - b[i]) ** 2 for i in range(3)))
+        return distance <= tol
 
     @staticmethod
     def IsExternal(vertex, topology, tolerance: float = 0.0001, silent: bool = False) -> bool:
@@ -1621,7 +1727,195 @@ class Vertex():
         silent: bool = False,
     ):
         """
-        Returns True if the input vertex lies inside the input topology.
+        Returns True if the input vertex lies inside or on the represented
+        geometry of the input topology according to TopologicPy containment
+        semantics. Primitive geometric classification is delegated to the active
+        backend whenever an appropriate native operation is available.
+
+        Parameters
+        ----------
+        vertex : topologic_core.Vertex
+            The input vertex.
+        topology : topologic_core.Topology
+            The input topology.
+        maxLeafSize : int , optional
+            Retained for backward compatibility. No temporary BVH is constructed
+            for a single-vertex query. Default is 4.
+        identify : bool , optional
+            If set to True, returns ``(status, subTopology)`` and identifies the
+            lowest-dimensional matching constituent when applicable. Default is False.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        bool or tuple
+            True/False, or ``(True/False, topology)`` when ``identify`` is True.
+        """
+        from topologicpy.Cell import Cell
+        from topologicpy.Topology import Topology
+
+        def _return(status, item=None):
+            return (bool(status), item) if identify else bool(status)
+
+        if not Topology.IsInstance(vertex, "Vertex"):
+            if not silent:
+                print("Vertex.IsInternal - Error: The input vertex parameter is not a valid vertex. Returning False.")
+            return _return(False, None)
+        if not Topology.IsInstance(topology, "Topology"):
+            if not silent:
+                print("Vertex.IsInternal - Error: The input topology parameter is not a valid topology. Returning False.")
+            return _return(False, None)
+
+        tol = abs(float(tolerance))
+
+        # Preserve the established TopologicCore pathway exactly. The native
+        # classification below is enabled only for non-TopologicCore backends.
+        try:
+            if Topology._IsTopologicCoreBackend():
+                return Vertex._IsInternalTopologicCore(
+                    vertex,
+                    topology,
+                    maxLeafSize=maxLeafSize,
+                    identify=identify,
+                    tolerance=tol,
+                    silent=silent,
+                )
+        except Exception:
+            pass
+
+        def _backend_internal(candidate):
+            if not Core.HasAttribute("VertexUtility", "DistanceToTopology"):
+                return None
+            if not Core.HasAttribute("VertexUtility", "IsInternal"):
+                return None
+            try:
+                return bool(Core.VertexUtility.IsInternal(vertex, candidate, tol))
+            except Exception:
+                return None
+
+        def _point_in_vertex(candidate):
+            return bool(Vertex.IsCoincident(vertex, candidate, tolerance=tol, silent=True))
+
+        def _point_in_edge(candidate):
+            status = _backend_internal(candidate)
+            if status is not None:
+                return status
+            distance = Vertex.Distance(vertex, candidate, includeCentroid=False, mantissa=None, tolerance=tol, silent=True)
+            return distance is not None and distance <= tol
+
+        def _point_in_face(candidate):
+            status = _backend_internal(candidate)
+            if status is not None:
+                return status
+            try:
+                if Core.HasAttribute("FaceUtility", "IsInside"):
+                    return bool(Core.FaceUtility.IsInside(candidate, vertex, tol))
+            except Exception:
+                pass
+            distance = Vertex.Distance(vertex, candidate, includeCentroid=False, mantissa=None, tolerance=tol, silent=True)
+            return distance is not None and distance <= tol
+
+        def _point_in_cell(candidate):
+            # Keep the established Cell.ContainmentStatus policy because it
+            # provides the TopologicCore tolerance workaround and preserves
+            # cross-backend behaviour.
+            try:
+                return Cell.ContainmentStatus(candidate, vertex, tolerance=tol) == 0
+            except TypeError:
+                try:
+                    return Cell.ContainmentStatus(candidate, vertex) == 0
+                except Exception:
+                    return False
+            except Exception:
+                return False
+
+        # Fast primitive paths.
+        if Topology.IsInstance(topology, "Vertex"):
+            status = _point_in_vertex(topology)
+            return _return(status, topology if status else None)
+        if Topology.IsInstance(topology, "Edge"):
+            status = _point_in_edge(topology)
+            return _return(status, topology if status else None)
+        if Topology.IsInstance(topology, "Face"):
+            status = _point_in_face(topology)
+            return _return(status, topology if status else None)
+        if Topology.IsInstance(topology, "Cell"):
+            status = _point_in_cell(topology)
+            return _return(status, topology if status else None)
+        if Topology.IsInstance(topology, "Wire") or Topology.IsInstance(topology, "Shell"):
+            status = _backend_internal(topology)
+            if status is None:
+                status = Vertex.Distance(vertex, topology, includeCentroid=False, mantissa=None, tolerance=tol, silent=True)
+                status = status is not None and status <= tol
+            return _return(status, topology if status else None)
+
+        def _subtopologies(kind):
+            try:
+                method = getattr(Topology, kind)
+                return method(topology, silent=True) or []
+            except TypeError:
+                try:
+                    return method(topology) or []
+                except Exception:
+                    return []
+            except Exception:
+                return []
+
+        # Cluster semantics consider all represented dimensionalities. Other
+        # aggregate topology types consider their highest-dimensional direct
+        # geometric constituents, preserving the current TopologicPy policy.
+        if Topology.IsInstance(topology, "Cluster"):
+            vertices = _subtopologies("Vertices")
+            edges = _subtopologies("Edges")
+            faces = _subtopologies("Faces")
+            cells = _subtopologies("Cells")
+        else:
+            cells = _subtopologies("Cells")
+            if cells:
+                vertices, edges, faces = [], [], []
+            else:
+                faces = _subtopologies("Faces")
+                if faces:
+                    vertices, edges = [], []
+                else:
+                    edges = _subtopologies("Edges")
+                    vertices = [] if edges else _subtopologies("Vertices")
+
+        # Lower-dimensional matches have priority when identify=True.
+        for candidate in vertices:
+            if _point_in_vertex(candidate):
+                return _return(True, candidate)
+        for candidate in edges:
+            if _point_in_edge(candidate):
+                return _return(True, candidate)
+        for candidate in faces:
+            if _point_in_face(candidate):
+                return _return(True, candidate)
+        for candidate in cells:
+            if _point_in_cell(candidate):
+                return _return(True, candidate)
+
+        return _return(False, None)
+
+
+
+
+
+
+    @staticmethod
+    def _IsInternalTopologicCore(
+        vertex,
+        topology,
+        maxLeafSize: int = 4,
+        identify: bool = False,
+        tolerance: float = 0.0001,
+        silent: bool = False,
+    ):
+        """
+        Preserves the current TopologicCore-specific Vertex.IsInternal implementation.
 
         Parameters
         ----------
@@ -2110,11 +2404,6 @@ class Vertex():
                 return _return(True, candidate)
 
         return _return(False, None)
-
-
-
-
-
 
     @staticmethod
     def IsInternal_old(
@@ -2889,53 +3178,59 @@ class Vertex():
     @staticmethod
     def Normal(vertices, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
         """
-        Computes the normal vector of a list of co-planar Topologic vertices.
-        Depending on the order of the vertices, the normal can be flipped 180 degrees.
+        Computes the unit normal vector of the best-fit plane through a list of vertices.
+        Depending on the order and numerical configuration of the vertices, the normal
+        can be flipped by 180 degrees.
 
         Parameters
         ----------
         vertices : list
-            A list of Topologic Vertex objects that are assumed to be co-planar.
-        mantissa : int, optional
-            The number of decimal places to round the result to. Default is 6.
-        tolerance : float, optional
-           The desired tolerance. Default is 0.0001.
+            A list of topologic vertices.
+        mantissa : int , optional
+            The number of decimal places to round the returned normal to. Default is 6.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
         list
-            A unit normal vector [x, y, z] of the plane defined by the vertices, or None if invalid.
+            A unit normal vector ``[x, y, z]``, or None if a normal cannot be determined.
         """
-        from topologicpy.Vertex import Vertex
         from topologicpy.Topology import Topology
-        import numpy as np
 
         if not isinstance(vertices, list):
             if not silent:
                 print("Vertex.Normal - Error: The vertices input parameter is not a valid list. Returning None.")
             return None
-        
-        verts = [v for v in vertices if Topology.IsInstance(v, "vertex")]
 
+        verts = [v for v in vertices if Topology.IsInstance(v, "Vertex")]
         if len(verts) < 3:
             if not silent:
                 print("Vertex.Normal - Error: The list of vertices contains less than 3 valid topologic vertices. Returning None.")
-            return None  # At least 3 vertices are needed
+            return None
 
-        coords = np.array([Vertex.Coordinates(v, mantissa=mantissa) for v in verts])
-        centroid = np.mean(coords, axis=0)
-        centered = coords - centroid
-
-        # Use SVD to find the normal as the vector corresponding to the smallest singular value
-        _, _, vh = np.linalg.svd(centered)
-        normal = vh[-1]  # The last row is the normal of the best-fit plane
-
-        norm = np.linalg.norm(normal)
-        if norm < tolerance:
-            return None  # Degenerate normal
-        return list(np.round(normal / norm, mantissa))
+        try:
+            coords = np.asarray([Vertex.Coordinates(v, mantissa=None) for v in verts], dtype=float)
+            centered = coords - coords.mean(axis=0)
+            _, singular_values, vh = np.linalg.svd(centered, full_matrices=False)
+            tol = max(abs(float(tolerance)), 1.0e-15)
+            if len(singular_values) < 2 or float(singular_values[1]) <= tol:
+                if not silent:
+                    print("Vertex.Normal - Error: The input vertices do not define a unique plane. Returning None.")
+                return None
+            normal = vh[-1]
+            norm = float(np.linalg.norm(normal))
+            if norm <= 1.0e-15:
+                return None
+            normal = normal / norm
+            values = normal.tolist()
+            return [round(float(value), mantissa) for value in values] if mantissa is not None else [float(value) for value in values]
+        except Exception:
+            if not silent:
+                print("Vertex.Normal - Error: Could not compute a normal. Returning None.")
+            return None
     
     @staticmethod
     def Origin():
@@ -2952,10 +3247,10 @@ class Vertex():
         return Vertex.ByCoordinates(0, 0, 0)
     
     @staticmethod
-    def OutgoingEdges(vertex, hostTopology, tolerance: float = 0.0001) -> list:
+    def OutgoingEdges(vertex, hostTopology, tolerance: float = 0.0001, silent: bool = False) -> list:
         """
-        Returns the outgoing edges connected to a vertex. An edge is considered incoming if its start vertex is
-        coincident with the input vertex.
+        Returns the outgoing edges connected to a vertex. An edge is outgoing if
+        its start vertex is coincident with the input vertex.
 
         Parameters
         ----------
@@ -2965,160 +3260,172 @@ class Vertex():
             The input host topology to which the vertex belongs.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
         list
-            The list of outgoing edges
-
+            The list of outgoing edges.
         """
         from topologicpy.Edge import Edge
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(vertex, "Vertex"):
-            print("Vertex.OutgoingEdges - Error: The input vertex parameter is not a valid vertex. Returning None.")
+            if not silent:
+                print("Vertex.OutgoingEdges - Error: The input vertex parameter is not a valid vertex. Returning None.")
             return None
         if not Topology.IsInstance(hostTopology, "Topology"):
-            print("Vertex.OutgoingEdges - Error: The input graph parameter is not a valid graph. Returning None.")
+            if not silent:
+                print("Vertex.OutgoingEdges - Error: The input hostTopology parameter is not a valid topology. Returning None.")
             return None
-        
-        edges = Topology.SuperTopologies(vertex, hostTopology=hostTopology, topologyType="Edge")
-        outgoing_edges = []
-        for edge in edges:
-            sv = Edge.StartVertex(edge)
-            if Vertex.Distance(vertex, sv) <= tolerance:
-                outgoing_edges.append(edge)
-        return outgoing_edges
+
+        edges = Topology.SuperTopologies(vertex, hostTopology=hostTopology, topologyType="Edge") or []
+        return [
+            edge for edge in edges
+            if Vertex.IsCoincident(vertex, Edge.StartVertex(edge, silent=True), tolerance=tolerance, silent=True)
+        ]
     
     @staticmethod
-    def PerpendicularDistance(vertex, face, mantissa: int = 6):
+    def PerpendicularDistance(vertex, face, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
         """
-        Returns the perpendicular distance between the input vertex and the input face. The face is considered to be infinite.
+        Returns the perpendicular distance from the input vertex to the infinite
+        supporting plane of the input planar face.
 
         Parameters
         ----------
         vertex : topologic_core.Vertex
             The input vertex.
         face : topologic_core.Face
-            The input face.
-        mantissa: int , optional
+            The input planar face.
+        mantissa : int , optional
             The number of decimal places to round the result to. Default is 6.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
         float
-            The distance between the input vertex and the input topology.
-
+            The perpendicular distance to the supporting plane, or None if the
+            face does not define a single planar supporting surface.
         """
         from topologicpy.Face import Face
         from topologicpy.Topology import Topology
         import math
 
-        def distance_point_to_line(point, line_start, line_end):
-            # Convert input points to NumPy arrays for vector operations
-            point = np.array(point)
-            line_start = np.array(line_start)
-            line_end = np.array(line_end)
-            
-            # Calculate the direction vector of the edge
-            line_direction = line_end - line_start
-            
-            # Vector from the edge's starting point to the point
-            point_to_start = point - line_start
-            
-            # Calculate the parameter 't' where the projection of the point onto the edge occurs
-            if np.dot(line_direction, line_direction) == 0:
-                t = 0
-            else:
-                t = np.dot(point_to_start, line_direction) / np.dot(line_direction, line_direction)
-            
-            # Check if 't' is outside the range [0, 1], and if so, calculate distance to closest endpoint
-            if t < 0:
-                return np.linalg.norm(point - line_start)
-            elif t > 1:
-                return np.linalg.norm(point - line_end)
-            
-            # Calculate the closest point on the edge to the given point
-            closest_point = line_start + t * line_direction
-            
-            # Calculate the distance between the closest point and the given point
-            distance = np.linalg.norm(point - closest_point)
-            return float(distance)
-        
         if not Topology.IsInstance(vertex, "Vertex"):
-            print("Vertex.PerpendicularDistance - Error: The input vertex is not a valid topologic vertex. Returning None.")
+            if not silent:
+                print("Vertex.PerpendicularDistance - Error: The input vertex parameter is not a valid vertex. Returning None.")
             return None
         if not Topology.IsInstance(face, "Face"):
-            print("Vertex.PerpendicularDistance - Error: The input face is not a valid topologic face. Returning None.")
+            if not silent:
+                print("Vertex.PerpendicularDistance - Error: The input face parameter is not a valid face. Returning None.")
             return None
-        dic = Face.PlaneEquation(face)
-        if dic == None: # The face is degenerate. Try to treat as an edge.
-            point = Vertex.Coordinates(vertex)
-            face_vertices = Topology.Vertices(face)
-            line_start = Vertex.Coordinates(face_vertices[0])
-            line_end = Vertex.Coordinates(face_vertices[1])
-            return round(distance_point_to_line(point, line_start, line_end), mantissa)
-        a = dic["a"]
-        b = dic["b"]
-        c = dic["c"]
-        d = dic["d"]
-        x1, y1, z1 = Vertex.Coordinates(vertex)
-        d = abs((a * x1 + b * y1 + c * z1 + d))
-        e = (math.sqrt(a * a + b * b + c * c))
-        if e == 0:
-            return 0
-        return round(d/e, mantissa)
+
+        tol = abs(float(tolerance))
+        if (
+            Core.HasAttribute("VertexUtility", "SignedDistanceToFace")
+            and Core.HasAttribute("VertexUtility", "PerpendicularDistance")
+        ):
+            try:
+                value = Core.VertexUtility.PerpendicularDistance(vertex, face, tol)
+                if value is not None:
+                    return round(float(value), mantissa) if mantissa is not None else float(value)
+                # A native backend returning None means the Face is not planar.
+                if Core.HasAttribute("VertexUtility", "SignedDistanceToFace"):
+                    if not silent:
+                        print("Vertex.PerpendicularDistance - Error: The input face is not planar. Returning None.")
+                    return None
+            except Exception:
+                pass
+
+        # Legacy TopologicCore compatibility path.
+        try:
+            precision = max(12, int(mantissa) if mantissa is not None else 12)
+            equation = Face.PlaneEquation(face, mantissa=precision)
+        except Exception:
+            equation = None
+        if not isinstance(equation, dict):
+            if not silent:
+                print("Vertex.PerpendicularDistance - Error: Could not determine the supporting plane of the input face. Returning None.")
+            return None
+
+        try:
+            a = float(equation["a"])
+            b = float(equation["b"])
+            c = float(equation["c"])
+            d = float(equation["d"])
+            x, y, z = Vertex.Coordinates(vertex, mantissa=None)
+            denominator = math.sqrt(a*a + b*b + c*c)
+            if denominator <= max(tol, 1.0e-15):
+                return None
+            value = abs(a*x + b*y + c*z + d) / denominator
+            return round(float(value), mantissa) if mantissa is not None else float(value)
+        except Exception:
+            if not silent:
+                print("Vertex.PerpendicularDistance - Error: Could not compute the perpendicular distance. Returning None.")
+            return None
     
     @staticmethod
-    def PlaneEquation(vertices, mantissa: int = 6):
+    def PlaneEquation(vertices, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
         """
-        Returns the equation of the average plane passing through a list of vertices.
+        Returns the equation of the best-fit plane passing through a list of vertices.
 
         Parameters
         ----------
         vertices : list
-            The input list of vertices
+            The input list of vertices.
         mantissa : int , optional
-            The number of decimal places to round the result to. Default is 6.
+            The number of decimal places to round the returned coefficients to. Default is 6.
+        tolerance : float , optional
+            The desired tolerance used to reject a degenerate normal. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
         dict
-            The dictionary containing the values of a, b, c, d for the plane equation in the form of ax+by+cz+d=0.
-            The keys in the dictionary are ["a", "b", "c". "d"]
+            A dictionary containing ``a``, ``b``, ``c`` and ``d`` for the plane
+            equation ``ax + by + cz + d = 0``.
         """
+        from topologicpy.Topology import Topology
 
-        vertices = [Vertex.Coordinates(v) for v in vertices]
-        # Convert vertices to a NumPy array for easier calculations
-        vertices = np.array(vertices)
+        if not isinstance(vertices, list):
+            if not silent:
+                print("Vertex.PlaneEquation - Error: The input vertices parameter is not a valid list. Returning None.")
+            return None
+        verts = [v for v in vertices if Topology.IsInstance(v, "Vertex")]
+        if len(verts) < 3:
+            if not silent:
+                print("Vertex.PlaneEquation - Error: The input list contains less than 3 valid vertices. Returning None.")
+            return None
 
-        # Calculate the centroid of the vertices
-        centroid = np.mean(vertices, axis=0)
-
-        # Center the vertices by subtracting the centroid
-        centered_vertices = vertices - centroid
-
-        # Calculate the covariance matrix
-        covariance_matrix = np.dot(centered_vertices.T, centered_vertices)
-
-        # Find the normal vector by computing the eigenvector of the smallest eigenvalue
-        _, eigen_vectors = np.linalg.eigh(covariance_matrix)
-        normal_vector = eigen_vectors[:, 0]
-
-        # Normalize the normal vector
-        normal_vector /= np.linalg.norm(normal_vector)
-
-        # Calculate the constant D using the centroid and the normal vector
-        d = -np.dot(normal_vector, centroid)
-        d = round(d, mantissa)
-
-        # Create the plane equation in the form Ax + By + Cz + D = 0
-        a, b, c = normal_vector
-        a = round(a, mantissa)
-        b = round(b, mantissa)
-        c = round(c, mantissa)
-
-        return {"a":a, "b":b, "c":c, "d":d}
+        try:
+            coords = np.asarray([Vertex.Coordinates(v, mantissa=None) for v in verts], dtype=float)
+            centroid = coords.mean(axis=0)
+            centered = coords - centroid
+            _, singular_values, vh = np.linalg.svd(centered, full_matrices=False)
+            tol = max(abs(float(tolerance)), 1.0e-15)
+            if len(singular_values) < 2 or float(singular_values[1]) <= tol:
+                if not silent:
+                    print("Vertex.PlaneEquation - Error: The input vertices do not define a unique plane. Returning None.")
+                return None
+            normal = vh[-1]
+            norm = float(np.linalg.norm(normal))
+            if norm <= 1.0e-15:
+                return None
+            normal = normal / norm
+            d = -float(np.dot(normal, centroid))
+            values = [float(normal[0]), float(normal[1]), float(normal[2]), d]
+            if mantissa is not None:
+                values = [round(value, mantissa) for value in values]
+            return {"a": values[0], "b": values[1], "c": values[2], "d": values[3]}
+        except Exception:
+            if not silent:
+                print("Vertex.PlaneEquation - Error: Could not determine the best-fit plane. Returning None.")
+            return None
     
     @staticmethod
     def Point(x=0, y=0, z=0):
@@ -3142,87 +3449,135 @@ class Vertex():
         return Vertex.ByCoordinates(x, y, z)
 
     @staticmethod
-    def Project(vertex, face, direction: bool = None, mantissa: int = 6):
+    def Project(vertex, face, direction: list = None, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
         """
-        Returns a vertex that is the projection of the input vertex unto the input face.
+        Returns the projection of the input vertex onto the supporting geometry of
+        the input face. On the PythonOCC backend this operation is delegated to OCCT.
 
         Parameters
         ----------
         vertex : topologic_core.Vertex
-            The input vertex to project unto the input face.
+            The input vertex to project.
         face : topologic_core.Face
-            The input face that receives the projection of the input vertex.
-        direction : vector, optional
-            The direction in which to project the input vertex unto the input face. If not specified, the direction of the projection is the normal of the input face. Default is None.
+            The input face receiving the projection.
+        direction : list , optional
+            The projection direction. If None, normal/nearest-surface projection is
+            used. For a planar face an explicit direction intersects the infinite
+            supporting plane. Default is None.
         mantissa : int , optional
-            The length of the desired mantissa. Default is 6.
+            The number of decimal places to round the returned coordinates to. Default is 6.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
         topologic_core.Vertex
-            The projected vertex.
-
+            The projected vertex, or None if the projection cannot be computed.
         """
         from topologicpy.Face import Face
         from topologicpy.Topology import Topology
-        
-        def project_point_onto_plane(point, plane_coeffs, direction_vector):
-            """
-            Project a 3D point onto a plane defined by its coefficients and using a direction vector.
-
-            Parameters:
-                point (tuple or list): The 3D point coordinates (x, y, z).
-                plane_coeffs (tuple or list): The coefficients of the plane equation (a, b, c, d).
-                direction_vector (tuple or list): The direction vector (vx, vy, vz).
-
-            Returns:
-                tuple: The projected point coordinates (x_proj, y_proj, z_proj).
-            """
-            # Unpack point coordinates
-            x, y, z = point
-
-            # Unpack plane coefficients
-            a, b, c, d = plane_coeffs
-
-            # Unpack direction vector
-            vx, vy, vz = direction_vector
-
-            # Calculate the distance from the point to the plane
-            distance = (a * x + b * y + c * z + d) / (a * vx + b * vy + c * vz)
-
-            # Calculate the projected point coordinates
-            x_proj = x - distance * vx
-            y_proj = y - distance * vy
-            z_proj = z - distance * vz
-
-            return [x_proj, y_proj, z_proj]
+        import math
 
         if not Topology.IsInstance(vertex, "Vertex"):
+            if not silent:
+                print("Vertex.Project - Error: The input vertex parameter is not a valid vertex. Returning None.")
             return None
         if not Topology.IsInstance(face, "Face"):
+            if not silent:
+                print("Vertex.Project - Error: The input face parameter is not a valid face. Returning None.")
             return None
-        eq = Face.PlaneEquation(face, mantissa= mantissa)
-        if eq is None:
+
+        tol = abs(float(tolerance))
+        if direction is not None:
+            if not isinstance(direction, (list, tuple)) or len(direction) != 3:
+                if not silent:
+                    print("Vertex.Project - Error: The input direction parameter is not a valid 3D vector. Returning None.")
+                return None
+            try:
+                direction = [float(direction[0]), float(direction[1]), float(direction[2])]
+                if math.sqrt(sum(value * value for value in direction)) <= tol:
+                    if not silent:
+                        print("Vertex.Project - Error: The input direction vector has zero magnitude. Returning None.")
+                    return None
+            except Exception:
+                if not silent:
+                    print("Vertex.Project - Error: The input direction parameter is not a valid numerical vector. Returning None.")
+                return None
+
+        native_projection = Core.HasAttribute("VertexUtility", "DistanceToTopology")
+        if native_projection and Core.HasAttribute("Vertex", "Project"):
+            try:
+                projected = Core.Vertex.Project(vertex, face, direction, tol)
+            except TypeError:
+                try:
+                    projected = Core.Vertex.Project(vertex, face, direction)
+                except Exception:
+                    projected = None
+            except Exception:
+                projected = None
+
+            if Topology.IsInstance(projected, "Vertex"):
+                coords = Vertex.Coordinates(projected, mantissa=mantissa)
+                return Vertex.ByCoordinates(coords) if coords is not None else projected
+
+            # If the active backend exposes the native Project implementation,
+            # failure is authoritative; do not substitute a different numerical
+            # geometry model.
+            if Core.HasAttribute("VertexUtility", "DistanceToTopology"):
+                if not silent:
+                    print("Vertex.Project - Warning: The native backend could not project the vertex. Returning None.")
+                return None
+
+        # Legacy TopologicCore compatibility path.
+        if direction is None:
+            try:
+                direction = Face.Normal(face)
+            except Exception:
+                direction = None
+        if direction is None or len(direction) != 3:
+            if not silent:
+                print("Vertex.Project - Error: Could not determine a valid projection direction. Returning None.")
             return None
-        if direction == None or direction == []:
-            direction = Face.Normal(face)
-        pt = project_point_onto_plane(Vertex.Coordinates(vertex), [eq["a"], eq["b"], eq["c"], eq["d"]], direction)
-        return Vertex.ByCoordinates(pt[0], pt[1], pt[2])
+
+        try:
+            equation = Face.PlaneEquation(face, mantissa=max(12, mantissa if mantissa is not None else 12))
+        except Exception:
+            equation = None
+        if not isinstance(equation, dict):
+            if not silent:
+                print("Vertex.Project - Error: Could not determine the supporting plane of the input face. Returning None.")
+            return None
+
+        try:
+            a = float(equation["a"])
+            b = float(equation["b"])
+            c = float(equation["c"])
+            d = float(equation["d"])
+            dx, dy, dz = float(direction[0]), float(direction[1]), float(direction[2])
+            denominator = a*dx + b*dy + c*dz
+            if abs(denominator) <= tol:
+                if not silent:
+                    print("Vertex.Project - Warning: The projection direction is parallel to the face. Returning None.")
+                return None
+            x, y, z = Vertex.Coordinates(vertex, mantissa=None)
+            parameter = -(a*x + b*y + c*z + d) / denominator
+            coords = [x + parameter*dx, y + parameter*dy, z + parameter*dz]
+            if mantissa is not None:
+                coords = [round(float(value), mantissa) for value in coords]
+            return Vertex.ByCoordinates(coords)
+        except Exception:
+            if not silent:
+                print("Vertex.Project - Error: Could not project the input vertex. Returning None.")
+            return None
 
 
     @staticmethod
-    def Quadrance(vertex, topology, includeCentroid: bool = True, mantissa: int = 6) -> float:
+    def Quadrance(vertex, topology, includeCentroid: bool = True, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False) -> float:
         """
         Returns the quadrance between the input vertex and the input topology.
-
-        Quadrance is the squared Euclidean distance. This method returns the quadrance
-        to the closest sub-topology in the input topology, optionally including its centroid.
-
-        Notes
-        -----
-        - For Vertex/Edge/Wire, this is purely "squared distance" in Euclidean 3D.
-        - For Face distance to plane (when projection is internal), this returns the
-        squared orthogonal distance to the face's plane: (|ax+by+cz+d|^2)/(a^2+b^2+c^2).
+        Quadrance is the squared Euclidean distance.
 
         Parameters
         ----------
@@ -3230,137 +3585,33 @@ class Vertex():
             The input vertex.
         topology : topologic_core.Topology
             The input topology.
-        includeCentroid : bool
-            If set to True, the centroid of the input topology will be considered in finding
-            the nearest subTopology to the input vertex. Default is True.
+        includeCentroid : bool , optional
+            If set to True, the centroid of the input topology is also considered.
+            Default is True.
         mantissa : int , optional
             The number of decimal places to round the result to. Default is 6.
+        tolerance : float , optional
+            The desired geometric tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
         float
-            The quadrance between the input vertex and the input topology.
+            The squared distance between the input vertex and topology.
         """
-        from topologicpy.Vertex import Vertex
-        from topologicpy.Edge import Edge
-        from topologicpy.Face import Face
-        from topologicpy.Topology import Topology
-
-        def quad_point_to_point(p1, p2) -> float:
-            dx = p2[0] - p1[0]
-            dy = p2[1] - p1[1]
-            dz = p2[2] - p1[2]
-            return float(dx*dx + dy*dy + dz*dz)
-
-        def quad_point_to_segment(point, a, b) -> float:
-            # Squared distance from point to segment AB in 3D.
-            px, py, pz = point
-            ax, ay, az = a
-            bx, by, bz = b
-
-            abx, aby, abz = bx-ax, by-ay, bz-az
-            apx, apy, apz = px-ax, py-ay, pz-az
-
-            ab2 = abx*abx + aby*aby + abz*abz
-            if ab2 == 0.0:
-                return quad_point_to_point(point, a)
-
-            t = (apx*abx + apy*aby + apz*abz) / ab2
-            if t <= 0.0:
-                return quad_point_to_point(point, a)
-            if t >= 1.0:
-                return quad_point_to_point(point, b)
-
-            cx = ax + t*abx
-            cy = ay + t*aby
-            cz = az + t*abz
-            dx = px - cx
-            dy = py - cy
-            dz = pz - cz
-            return float(dx*dx + dy*dy + dz*dz)
-
-        def quad_to_vertex(vA, vB) -> float:
-            a = (Vertex.X(vA, mantissa=mantissa), Vertex.Y(vA, mantissa=mantissa), Vertex.Z(vA, mantissa=mantissa))
-            b = (Vertex.X(vB, mantissa=mantissa), Vertex.Y(vB, mantissa=mantissa), Vertex.Z(vB, mantissa=mantissa))
-            return quad_point_to_point(a, b)
-
-        def quad_to_edge(v, edge) -> float:
-            p = (Vertex.X(v, mantissa=mantissa), Vertex.Y(v, mantissa=mantissa), Vertex.Z(v, mantissa=mantissa))
-            sv = Edge.StartVertex(edge)
-            ev = Edge.EndVertex(edge)
-            a = (Vertex.X(sv, mantissa=mantissa), Vertex.Y(sv, mantissa=mantissa), Vertex.Z(sv, mantissa=mantissa))
-            b = (Vertex.X(ev, mantissa=mantissa), Vertex.Y(ev, mantissa=mantissa), Vertex.Z(ev, mantissa=mantissa))
-            return quad_point_to_segment(p, a, b)
-
-        def quad_to_face(v, face, includeCentroid_flag: bool) -> float:
-            # If projection is outside, fall back to vertices/edges/centroid of the *face*.
-            v_proj = Vertex.Project(v, face, mantissa=mantissa)
-            if not Vertex.IsInternal(v_proj, face):
-                verts = Topology.Vertices(face)
-                quads = [quad_to_vertex(v, vv) for vv in verts]
-                eds = Topology.Edges(face)
-                quads += [quad_to_edge(v, ee) for ee in eds]
-                if includeCentroid_flag:
-                    quads.append(quad_to_vertex(v, Topology.Centroid(face)))
-                return min(quads) if quads else 0.0
-
-            # Squared orthogonal distance to plane of the face.
-            eq = Face.PlaneEquation(face)  # expects keys: a,b,c,d
-            a = float(eq.get("a", 0.0))
-            b = float(eq.get("b", 0.0))
-            c = float(eq.get("c", 0.0))
-            d0 = float(eq.get("d", 0.0))
-
-            x1, y1, z1 = Vertex.Coordinates(v, mantissa=mantissa)
-            num = (a*x1 + b*y1 + c*z1 + d0)
-            den = (a*a + b*b + c*c)
-            if den == 0.0:
-                return 0.0
-            return float((num*num) / den)
-
-        if (not Topology.IsInstance(vertex, "Vertex")) or (not Topology.IsInstance(topology, "Topology")):
+        distance = Vertex.Distance(
+            vertex,
+            topology,
+            includeCentroid=includeCentroid,
+            mantissa=None,
+            tolerance=tolerance,
+            silent=silent,
+        )
+        if distance is None:
             return None
-
-        if Topology.IsInstance(topology, "Vertex"):
-            return round(quad_to_vertex(vertex, topology), mantissa)
-
-        elif Topology.IsInstance(topology, "Edge"):
-            return round(quad_to_edge(vertex, topology), mantissa)
-
-        elif Topology.IsInstance(topology, "Wire"):
-            verts = Topology.Vertices(topology)
-            quads = [quad_to_vertex(vertex, v) for v in verts]
-            eds = Topology.Edges(topology)
-            quads += [quad_to_edge(vertex, e) for e in eds]
-            if includeCentroid:
-                quads.append(quad_to_vertex(vertex, Topology.Centroid(topology)))
-            return round(min(quads), mantissa) if quads else 0.0
-
-        elif Topology.IsInstance(topology, "Face"):
-            verts = Topology.Vertices(topology)
-            quads = [quad_to_vertex(vertex, v) for v in verts]
-            eds = Topology.Edges(topology)
-            quads += [quad_to_edge(vertex, e) for e in eds]
-            quads.append(quad_to_face(vertex, topology, includeCentroid))
-            if includeCentroid:
-                quads.append(quad_to_vertex(vertex, Topology.Centroid(topology)))
-            return round(min(quads), mantissa) if quads else 0.0
-
-        elif (Topology.IsInstance(topology, "Shell") or Topology.IsInstance(topology, "Cell") or
-            Topology.IsInstance(topology, "CellComplex") or Topology.IsInstance(topology, "Cluster")):
-            verts = Topology.Vertices(topology)
-            quads = [quad_to_vertex(vertex, v) for v in verts]
-            eds = Topology.Edges(topology)
-            quads += [quad_to_edge(vertex, e) for e in eds]
-            faces = Topology.Faces(topology)
-            quads += [quad_to_face(vertex, f, includeCentroid) for f in faces]
-            if includeCentroid:
-                quads.append(quad_to_vertex(vertex, Topology.Centroid(topology)))
-            return round(min(quads), mantissa) if quads else 0.0
-
-        else:
-            print("Vertex.Quadrance - Error: Could not recognize the input topology. Returning None.")
-            return None
+        value = float(distance) * float(distance)
+        return round(value, mantissa) if mantissa is not None else value
 
 
     @staticmethod
@@ -3561,20 +3812,25 @@ class Vertex():
 
 
     @staticmethod
-    def Transform(vertex, matrix, mantissa: int = 6, silent: bool = False):
+    def Transform(vertex, matrix, mantissa: int = 6, silent: bool = False, tolerance: float = 0.0001):
         """
-        Transforms a 3D vertex using a 4x4 transformation matrix.
+        Transforms a 3D vertex using a 4x4 affine transformation matrix.
+        The affine transformation is delegated to ``Topology.Transform``, which
+        uses the active backend's native transform implementation and preserves
+        the legacy TopologicCore fallback.
 
         Parameters
         ----------
         vertex : topologic_core.Vertex
-            The input vertex
+            The input vertex.
         matrix : list
-            The 4x4 transformation matrix.
+            The 4x4 affine transformation matrix.
         mantissa : int , optional
-            The number of decimal places to round the result to. Default is 6.
+            The number of decimal places to round the returned coordinates to. Default is 6.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
+        tolerance : float , optional
+            The desired tolerance for validating the affine matrix. Default is 0.0001.
 
         Returns
         -------
@@ -3583,39 +3839,37 @@ class Vertex():
         """
         from topologicpy.Topology import Topology
 
-        if not Topology.IsInstance(vertex, "vertex"):
+        if not Topology.IsInstance(vertex, "Vertex"):
             if not silent:
                 print("Vertex.Transform - Error: The input vertex parameter is not a valid vertex. Returning None.")
             return None
-        
-        if not isinstance(matrix, list):
-            if not silent:
-                print("Vertex.Transform - Error: The input matrix parameter is not a valid 4X4 matrix. Returning None.")
+
+        transformed = Topology.Transform(
+            vertex,
+            matrix,
+            transferDictionaries=True,
+            tolerance=tolerance,
+            silent=silent,
+        )
+        if not Topology.IsInstance(transformed, "Vertex"):
             return None
-        
-        matrix = np.array(matrix)  # Convert list to numpy array if necessary
-    
-        # Check if the shape of the matrix is (4, 4)
-        if not matrix.shape == (4, 4):
-            if not silent:
-                print("Vertex.Transform - Error: The input matrix parameter is not a valid 4X4 matrix. Returning None.")
-            return None
-        
-        # Convert the vertex to a 4D homogeneous coordinate
-        coords = Vertex.Coordinates(vertex, mantissa=mantissa)
-        homogeneous_coords= np.array([coords[0], coords[1], coords[2], 1.0])
-        
-        # Perform matrix multiplication
-        transformed_coords = np.dot(matrix, homogeneous_coords)
-        
-        # Convert back to 3D by dividing by w
-        if not np.isclose(transformed_coords[3], 0):  # Avoid division by zero
-            transformed_coords /= transformed_coords[3]
-        
-        # Return the transformed (x', y', z') as a list
-        coords = transformed_coords[:3].tolist()
-        coords = [round(v, mantissa) for v in coords]
-        return Vertex.ByCoordinates(coords)
+
+        if mantissa is None:
+            return transformed
+
+        coords = Vertex.Coordinates(transformed, mantissa=mantissa)
+        if coords is None:
+            return transformed
+        rounded_vertex = Vertex.ByCoordinates(coords)
+        if not Topology.IsInstance(rounded_vertex, "Vertex"):
+            return transformed
+        try:
+            dictionary = Topology.Dictionary(transformed)
+            if dictionary is not None:
+                rounded_vertex = Topology.SetDictionary(rounded_vertex, dictionary, silent=True)
+        except Exception:
+            pass
+        return rounded_vertex
     
     @staticmethod
     def Weld(vertices: list, mantissa: int = 6, tolerance: float = 0.0001):
