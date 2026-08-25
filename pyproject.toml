@@ -24,7 +24,9 @@ dependencies = [
     "plotly",
     "lark",
     "webcolors",
-    "nbformat"
+    "nbformat",
+    "requests",
+    "packaging"
 ]
 
 # Removed "topologic_core>=7.0.1"
