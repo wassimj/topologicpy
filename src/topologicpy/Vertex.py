@@ -3490,21 +3490,33 @@ class Vertex():
             return None
 
         tol = abs(float(tolerance))
-        if direction is not None:
-            if not isinstance(direction, (list, tuple)) or len(direction) != 3:
-                if not silent:
-                    print("Vertex.Project - Error: The input direction parameter is not a valid 3D vector. Returning None.")
-                return None
+        
+        if direction is None or (isinstance(direction, (list, tuple)) and len(direction) == 0):
             try:
-                direction = [float(direction[0]), float(direction[1]), float(direction[2])]
-                if math.sqrt(sum(value * value for value in direction)) <= tol:
-                    if not silent:
-                        print("Vertex.Project - Error: The input direction vector has zero magnitude. Returning None.")
-                    return None
+                direction = Face.Normal(face, outputType="xyz", mantissa=mantissa)
             except Exception:
+                direction = None
+
+        if direction is None:
+            if not silent:
+                print("Vertex.Project - Error: Could not determine a valid projection direction. Returning None.")
+            return None
+
+        if not isinstance(direction, (list, tuple)) or len(direction) != 3:
+            if not silent:
+                print("Vertex.Project - Error: The input direction parameter is not a valid 3D vector. Returning None.")
+            return None
+
+        try:
+            direction = [float(direction[0]), float(direction[1]), float(direction[2])]
+            if math.sqrt(sum(value * value for value in direction)) <= tol:
                 if not silent:
-                    print("Vertex.Project - Error: The input direction parameter is not a valid numerical vector. Returning None.")
+                    print("Vertex.Project - Error: The input direction vector has zero magnitude. Returning None.")
                 return None
+        except Exception:
+            if not silent:
+                print("Vertex.Project - Error: The input direction parameter is not a valid numerical vector. Returning None.")
+            return None
 
         native_projection = Core.HasAttribute("VertexUtility", "DistanceToTopology")
         if native_projection and Core.HasAttribute("Vertex", "Project"):

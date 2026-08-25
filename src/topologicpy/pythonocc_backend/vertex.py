@@ -126,6 +126,11 @@ class Vertex(Topology):
         if tol <= 0.0:
             tol = 1.0e-12
 
+        # Treat an empty direction as unspecified for compatibility with the
+        # historical TopologicPy projection API.
+        if isinstance(direction, (list, tuple)) and len(direction) == 0:
+            direction = None
+
         try:
             from OCC.Core.gp import gp_Pnt
             point = gp_Pnt(float(vertex.x), float(vertex.y), float(vertex.z))
