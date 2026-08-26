@@ -253,117 +253,39 @@ class Edge(Topology):
         return Edge(shape=shape, start=startVertex, end=endVertex)
 
     @staticmethod
-    def ByNurbsParameters(controlPoints, weights, knots, isRational: bool = False, isPeriodic: bool = False, degree: int = 3):
-        """Create an OCCT B-spline/NURBS Edge from exact NURBS parameters.
-
-        ``knots`` uses the Topologic convention: the knot vector is expanded,
-        so repeated knot values are repeated in the list rather than supplied
-        separately as multiplicities.
-        """
-        vertices = [vertex for vertex in (controlPoints or []) if isinstance(vertex, Vertex)]
-        if len(vertices) < 2:
-            return None
-        try:
-            degree = int(degree)
-            if degree < 1 or degree >= len(vertices):
-                return None
-            knot_values = [float(value) for value in knots]
-            weight_values = [float(value) for value in weights]
-        except Exception:
-            return None
-        if len(weight_values) != len(vertices) or not knot_values:
-            return None
-        if any(value <= 0.0 or not math.isfinite(value) for value in weight_values):
-            return None
-        if any(not math.isfinite(value) for value in knot_values):
-            return None
-        if any(knot_values[i] > knot_values[i + 1] for i in range(len(knot_values) - 1)):
-            return None
-
-        # Convert expanded Topologic knots to OCCT's unique knot + multiplicity form.
-        unique_knots = []
-        multiplicities = []
-        for value in knot_values:
-            if unique_knots and abs(value - unique_knots[-1]) <= 1.0e-14:
-                multiplicities[-1] += 1
-            else:
-                unique_knots.append(value)
-                multiplicities.append(1)
-        if len(unique_knots) < 2:
-            return None
-
+    def ByCurve(points, degree: int = 3, periodic: bool = False, tolerance: float = 0.0001):
+        """Create a B-spline Edge through a sequence of backend Vertex objects."""
         try:
             from OCC.Core.gp import gp_Pnt
             from OCC.Core.TColgp import TColgp_Array1OfPnt
-            from OCC.Core.TColStd import TColStd_Array1OfReal, TColStd_Array1OfInteger
-            from OCC.Core.Geom import Geom_BSplineCurve
+            from OCC.Core.GeomAPI import GeomAPI_PointsToBSpline
+            from OCC.Core.GeomAbs import GeomAbs_C2
             from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakeEdge
-
-            poles = TColgp_Array1OfPnt(1, len(vertices))
-            for index, vertex in enumerate(vertices, start=1):
-                poles.SetValue(index, gp_Pnt(float(vertex.x), float(vertex.y), float(vertex.z)))
-
-            occ_knots = TColStd_Array1OfReal(1, len(unique_knots))
-            occ_mults = TColStd_Array1OfInteger(1, len(multiplicities))
-            for index, (knot, mult) in enumerate(zip(unique_knots, multiplicities), start=1):
-                occ_knots.SetValue(index, float(knot))
-                occ_mults.SetValue(index, int(mult))
-
-            if bool(isRational):
-                occ_weights = TColStd_Array1OfReal(1, len(weight_values))
-                for index, weight in enumerate(weight_values, start=1):
-                    occ_weights.SetValue(index, float(weight))
-                curve = Geom_BSplineCurve(
-                    poles, occ_weights, occ_knots, occ_mults,
-                    degree, bool(isPeriodic), True,
-                )
-            else:
-                curve = Geom_BSplineCurve(
-                    poles, occ_knots, occ_mults,
-                    degree, bool(isPeriodic),
-                )
-
-            maker = BRepBuilderAPI_MakeEdge(curve)
-            if not maker.IsDone():
-                return None
-            return Edge.ByOcctShape(maker.Edge())
         except Exception:
             return None
-
-    @staticmethod
-    def ByCurve(points, degree: int = 3, periodic: bool = False, tolerance: float = 0.0001):
-        """Create a non-rational B-spline Edge using the input Vertices as control points."""
-        vertices = [vertex for vertex in (points or []) if isinstance(vertex, Vertex)]
+        vertices = [p for p in (points or []) if isinstance(p, Vertex)]
         if len(vertices) < 2:
             return None
         try:
-            degree = max(1, min(int(degree), len(vertices) - 1))
+            occ_points = TColgp_Array1OfPnt(1, len(vertices))
+            for index, vertex in enumerate(vertices, start=1):
+                occ_points.SetValue(index, gp_Pnt(vertex.x, vertex.y, vertex.z))
+            degree_max = max(1, min(int(degree), len(vertices) - 1))
+            builder = GeomAPI_PointsToBSpline(
+                occ_points,
+                1,
+                degree_max,
+                GeomAbs_C2,
+                abs(float(tolerance)),
+            )
+            curve = builder.Curve()
+            maker = BRepBuilderAPI_MakeEdge(curve)
+            if not maker.IsDone():
+                return None
+            shape = maker.Edge()
         except Exception:
             return None
-
-        # Expanded clamped-uniform knot vector. For periodic curves an open
-        # uniform vector is supplied and OCCT validates whether the requested
-        # control polygon admits the periodic construction.
-        knot_count = len(vertices) + degree + 1
-        if periodic:
-            if knot_count <= 1:
-                return None
-            knots = [float(i) / float(knot_count - 1) for i in range(knot_count)]
-        else:
-            interior = len(vertices) - degree - 1
-            knots = [0.0] * (degree + 1)
-            if interior > 0:
-                knots.extend(float(i) / float(interior + 1) for i in range(1, interior + 1))
-            knots.extend([1.0] * (degree + 1))
-
-        return Edge.ByNurbsParameters(
-            vertices,
-            [1.0] * len(vertices),
-            knots,
-            False,
-            bool(periodic),
-            degree,
-        )
+        return Edge(shape=shape, start=vertices[0], end=vertices[-1])
 
     @staticmethod
     def ByOcctShape(shape, dictionary=None, contents=None, contexts=None, apertures=None):
@@ -686,45 +608,25 @@ class EdgeUtility:
         return math.degrees(math.acos(dot))
 
     @staticmethod
-    def NormalAtParameter(edge, parameter: float = 0.5):
-        """Return a unit normal at normalized parameter u on the actual OCCT curve."""
-        if not isinstance(edge, Edge):
-            return None
-        raw = _raw_parameter(edge, parameter)
-        if raw is None:
-            return None
-        curve, parameter_value = raw
+    def NormalAtParameter(edge, parameter):
+        """Return a deterministic unit normal to the local curve tangent."""
         tangent = EdgeUtility.TangentAtParameter(edge, parameter)
         if tangent is None:
             return None
         tx, ty, tz = tangent
         eps = 1.0e-12
-
-        # Use the principal normal when curvature is defined.
-        try:
-            from OCC.Core.gp import gp_Pnt, gp_Vec
-            p = gp_Pnt(); d1 = gp_Vec(); d2 = gp_Vec()
-            curve.D2(float(parameter_value), p, d1, d2)
-            ax, ay, az = float(d2.X()), float(d2.Y()), float(d2.Z())
-            dot = ax * tx + ay * ty + az * tz
-            nx, ny, nz = ax - dot * tx, ay - dot * ty, az - dot * tz
-            magnitude = math.sqrt(nx * nx + ny * ny + nz * nz)
-            if magnitude > eps:
-                return [nx / magnitude, ny / magnitude, nz / magnitude]
-        except Exception:
-            pass
-
-        # A straight line has no unique Frenet normal. Return a stable unit
-        # transverse direction so downstream APIs remain deterministic.
-        helper = [0.0, 0.0, 1.0] if abs(tz) < 0.9 else [1.0, 0.0, 0.0]
-        dot = tx * helper[0] + ty * helper[1] + tz * helper[2]
-        nx = helper[0] - dot * tx
-        ny = helper[1] - dot * ty
-        nz = helper[2] - dot * tz
-        magnitude = math.sqrt(nx * nx + ny * ny + nz * nz)
+        if abs(tx) <= eps and abs(ty) <= eps:
+            normal = [1.0, 0.0, 0.0]
+        elif abs(tz) <= eps:
+            normal = [-ty, tx, 0.0]
+        else:
+            # Preserve the historical TopologicPy convention for a non-XY
+            # direction: tangent cross global Z.
+            normal = [ty, -tx, 0.0]
+        magnitude = math.sqrt(sum(value * value for value in normal))
         if magnitude <= eps:
             return None
-        return [nx / magnitude, ny / magnitude, nz / magnitude]
+        return [value / magnitude for value in normal]
 
     @staticmethod
     def Trim(edge, parameterA: float = 0.0, parameterB: float = 1.0):
@@ -758,12 +660,6 @@ class EdgeUtility:
             return _wrap_shape_like(edge, shape)
         except Exception:
             return None
-
-
-# Frozen TopologicCore EdgeUtility naming aliases.
-EdgeUtility.VertexAtParameter = staticmethod(EdgeUtility.PointAtParameter)
-EdgeUtility.ParameterAtVertex = staticmethod(EdgeUtility.ParameterAtPoint)
-EdgeUtility.VertexAtDistance = staticmethod(EdgeUtility.PointAtDistance)
 
 
 # Edge -> Wire: find Wires in hostTopology containing this Edge.

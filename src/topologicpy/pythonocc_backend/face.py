@@ -237,78 +237,6 @@ class Face(Topology):
     """PythonOCC backend wrapper for an OCCT face."""
 
     @staticmethod
-    def AdjacentFaces(self, hostTopology, output=None):
-        """
-        Return or populate Faces in the host topology that share an Edge with this Face.
-
-        Parameters
-        ----------
-        hostTopology : Topology
-            The host topology in which adjacency is evaluated.
-        output : list , optional
-            If supplied, the adjacent faces are appended to this list. Default is None.
-
-        Returns
-        -------
-        list or int
-            The adjacent Faces when output is None; otherwise 0 after populating
-            the supplied output list.
-        """
-        occ_face = _as_occ_face(self)
-        host_shape = _shape_from_topology(hostTopology)
-        result = []
-
-        if occ_face is None or _is_null_shape(host_shape):
-            if output is not None:
-                return 0
-            return result
-
-        try:
-            from OCC.Core.TopAbs import TopAbs_EDGE, TopAbs_FACE
-            from OCC.Core.TopoDS import topods
-
-            source_edges = _explore_shapes(occ_face, TopAbs_EDGE)
-
-            if not source_edges:
-                if output is not None:
-                    return 0
-                return result
-
-            for candidate_shape in _explore_shapes(host_shape, TopAbs_FACE):
-                candidate_shape = topods.Face(candidate_shape)
-
-                if _same_shape(candidate_shape, occ_face):
-                    continue
-
-                candidate_edges = _explore_shapes(
-                    candidate_shape,
-                    TopAbs_EDGE,
-                )
-
-                shares_edge = any(
-                    _same_shape(source_edge, candidate_edge)
-                    for source_edge in source_edges
-                    for candidate_edge in candidate_edges
-                )
-
-                if not shares_edge:
-                    continue
-
-                candidate = Topology.ByOcctShape(candidate_shape)
-
-                if isinstance(candidate, Face):
-                    result.append(candidate)
-
-        except Exception:
-            result = []
-
-        if output is not None:
-            output.extend(result)
-            return 0
-
-        return result
-
-    @staticmethod
     def ByExternalBoundary(externalBoundary, tolerance: float = 0.0001):
         """Create a Face from one closed external-boundary Wire."""
         occ_wire = _as_occ_wire(externalBoundary)
@@ -464,6 +392,45 @@ class Face(Topology):
                         result.append(vertex)
             except Exception:
                 result = []
+        if output is not None:
+            output.extend(result)
+            return 0
+        return result
+
+    def AdjacentFaces(self, hostTopology, output=None):
+        """Return or populate Faces in a host topology that share an OCCT Edge.
+
+        Adjacency is topological rather than merely geometric: a candidate Face is
+        adjacent only when it contains an Edge that is ``IsSame`` as one of this
+        Face's Edges.
+        """
+        occ_face = _as_occ_face(self)
+        host_shape = _shape_from_topology(hostTopology)
+        result = []
+        if occ_face is None or _is_null_shape(host_shape):
+            if output is not None:
+                return 1
+            return result
+
+        try:
+            from OCC.Core.TopAbs import TopAbs_EDGE, TopAbs_FACE
+            source_edges = _explore_shapes(occ_face, TopAbs_EDGE)
+            candidate_faces = _explore_shapes(host_shape, TopAbs_FACE)
+            for candidate_shape in candidate_faces:
+                if _same_shape(candidate_shape, occ_face):
+                    continue
+                candidate_edges = _explore_shapes(candidate_shape, TopAbs_EDGE)
+                if any(
+                    _same_shape(source_edge, candidate_edge)
+                    for source_edge in source_edges
+                    for candidate_edge in candidate_edges
+                ):
+                    candidate = Topology.ByOcctShape(candidate_shape)
+                    if isinstance(candidate, Face):
+                        result.append(candidate)
+        except Exception:
+            result = []
+
         if output is not None:
             output.extend(result)
             return 0
