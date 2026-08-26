@@ -9362,11 +9362,17 @@ class Wire():
 
 
     @staticmethod
-    def VertexByDistance(wire, distance: float = 0.0, origin=None, tolerance: float = 0.0001, silent: bool = False):
+    def VertexByDistance(
+        wire,
+        distance: float = 0.0,
+        origin=None,
+        tolerance: float = 0.0001,
+        silent: bool = False,
+    ):
         """
         Creates a vertex along the input wire offset by the input distance from the input origin.
 
-        On the PythonOCC backend, the offset is evaluated by exact curvilinear
+        On the PythonOCC backend, the offset is evaluated using exact curvilinear
         distance across the ordered OCCT edges.
 
         Parameters
@@ -9376,7 +9382,8 @@ class Wire():
         distance : float , optional
             The offset distance. Default is 0.
         origin : topologic_core.Vertex , optional
-            The origin of the offset distance. If set to None, the start vertex of the input wire is used. Default is None.
+            The origin of the offset distance. If set to None, the start vertex of
+            the input wire is used. Default is None.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
@@ -9389,10 +9396,18 @@ class Wire():
 
         """
         from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(wire, "Wire"):
             if not silent:
                 print("Wire.VertexByDistance - Error: The input wire parameter is not a valid topologic wire. Returning None.")
+            return None
+
+        try:
+            distance = float(distance)
+        except Exception:
+            if not silent:
+                print("Wire.VertexByDistance - Error: The input distance parameter is not a valid number. Returning None.")
             return None
 
         wire_length = Wire.Length(
@@ -9405,10 +9420,65 @@ class Wire():
             if not silent:
                 print("Wire.VertexByDistance - Error: The input wire parameter is degenerate. Returning None.")
             return None
-        if not Wire.IsManifold(wire, silent=True, tolerance=tolerance):
+
+        if not Wire.IsManifold(
+            wire,
+            silent=True,
+            tolerance=tolerance,
+        ):
             if not silent:
                 print("Wire.VertexByDistance - Error: The input wire parameter is non-manifold. Returning None.")
             return None
+
+        # VertexByDistance requires a meaningful start/end direction.
+        # A closed wire has no unique start or end vertex.
+        if Wire.IsClosed(
+            wire,
+            silent=True,
+            tolerance=tolerance,
+        ):
+            if not silent:
+                print("Wire.VertexByDistance - Error: The input wire parameter is closed. Returning None.")
+            return None
+
+        start = Wire.StartVertex(
+            wire,
+            silent=True,
+            tolerance=tolerance,
+        )
+        end = Wire.EndVertex(
+            wire,
+            silent=True,
+            tolerance=tolerance,
+        )
+
+        if not Topology.IsInstance(start, "Vertex") or not Topology.IsInstance(end, "Vertex"):
+            if not silent:
+                print("Wire.VertexByDistance - Error: Could not determine the start and end vertices of the input wire. Returning None.")
+            return None
+
+        if abs(distance) <= tolerance:
+            return start
+
+        if abs(distance - wire_length) <= tolerance:
+            return end
+
+        if not Topology.IsInstance(origin, "Vertex"):
+            origin = start
+
+        if not Vertex.IsInternal(
+            origin,
+            wire,
+            tolerance=tolerance,
+            silent=True,
+        ):
+            if not silent:
+                print("Wire.VertexByDistance - Error: The input origin parameter is not internal to the input wire. Returning None.")
+            return None
+
+        # ------------------------------------------------------------------
+        # PythonOCC native path
+        # ------------------------------------------------------------------
 
         if Wire._UseNativeWireBackend():
             try:
@@ -9420,42 +9490,44 @@ class Wire():
                 )
             except Exception:
                 result = None
-            if not Topology.IsInstance(result, "Vertex") and not silent:
-                print("Wire.VertexByDistance - Error: Could not evaluate the requested distance on the input wire. Returning None.")
+
+            if not Topology.IsInstance(result, "Vertex"):
+                if not silent:
+                    print("Wire.VertexByDistance - Error: Could not evaluate the requested distance on the input wire. Returning None.")
+                return None
+
             return result
 
-        # Legacy TopologicCore path.
+        # ------------------------------------------------------------------
+        # Legacy TopologicCore path
+        # ------------------------------------------------------------------
+
         def _compute_u(u):
             try:
                 text = str(u)
                 decimal_places = len(text.split(".")[1]) if "." in text else 0
             except Exception:
                 decimal_places = 12
+
             u = -(int(u) - u)
             return round(u, decimal_places)
 
-        if abs(distance) <= tolerance:
-            return Wire.StartVertex(wire, silent=silent, tolerance=tolerance)
-        if abs(distance - wire_length) <= tolerance:
-            return Wire.EndVertex(wire, silent=silent, tolerance=tolerance)
+        if Vertex.IsCoincident(
+            start,
+            origin,
+            tolerance=tolerance,
+            silent=True,
+        ):
+            u = distance / wire_length
 
-        if not Topology.IsInstance(origin, "Vertex"):
-            origin = Wire.StartVertex(wire, silent=True, tolerance=tolerance)
-        if not Topology.IsInstance(origin, "Vertex"):
-            if not silent:
-                print("Wire.VertexByDistance - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
-            return None
-        if not Vertex.IsInternal(origin, wire, tolerance=tolerance, silent=True):
-            if not silent:
-                print("Wire.VertexByDistance - Error: The input origin parameter is not internal to the input wire. Returning None.")
-            return None
+        elif Vertex.IsCoincident(
+            end,
+            origin,
+            tolerance=tolerance,
+            silent=True,
+        ):
+            u = 1.0 - distance / wire_length
 
-        start = Wire.StartVertex(wire, silent=True, tolerance=tolerance)
-        end = Wire.EndVertex(wire, silent=True, tolerance=tolerance)
-        if Vertex.IsCoincident(start, origin, tolerance=tolerance, silent=True):
-            u = float(distance) / float(wire_length)
-        elif Vertex.IsCoincident(end, origin, tolerance=tolerance, silent=True):
-            u = 1.0 - float(distance) / float(wire_length)
         else:
             origin_distance = Wire.VertexDistance(
                 wire,
@@ -9464,9 +9536,11 @@ class Wire():
                 tolerance=tolerance,
                 silent=True,
             )
+
             if origin_distance is None:
                 return None
-            u = (float(origin_distance) + float(distance)) / float(wire_length)
+
+            u = (origin_distance + distance) / wire_length
 
         return Wire.VertexByParameter(
             wire,
