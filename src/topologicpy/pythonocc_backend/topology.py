@@ -1932,6 +1932,43 @@ class Topology:
         return _shape_to_brep_text(shape)
 
     @staticmethod
+    def ByBREPString(string: Any):
+        """
+        Creates a topology from a raw Open CASCADE BREP string.
+
+        This method reads only raw OCCT BREP geometry. Unlike ByString, it does
+        not interpret the TopologicPy JSON serialization envelope and does not
+        restore TopologicPy dictionaries or other metadata.
+
+        Parameters
+        ----------
+        string : str
+            The input raw Open CASCADE BREP string.
+
+        Returns
+        -------
+        Topology
+            The reconstructed backend topology, or None if the input BREP string
+            is invalid.
+
+        """
+        if not isinstance(string, str) or not string.strip():
+            return None
+
+        try:
+            shape = _shape_from_brep_text(string)
+        except Exception:
+            shape = None
+
+        if shape is None:
+            return None
+
+        try:
+            return Topology.ByOcctShape(shape)
+        except Exception:
+            return None
+
+    @staticmethod
     def String(topology: Any, version: int = 0) -> Optional[str]:
         """
         Returns a textual serialization of the topology.

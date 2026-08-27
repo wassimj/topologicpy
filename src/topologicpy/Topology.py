@@ -3889,36 +3889,61 @@ class Topology():
     @staticmethod
     def BREPString(topology, version: int = 3, silent: bool = False):
         """
-        Returns the BRep string of the input topology.
+        Returns the raw Open CASCADE BREP string of the input topology.
 
         Parameters
         ----------
         topology : topologic_core.Topology
             The input topology.
         version : int , optional
-            The desired BRep version number. Default is 3.
+            The desired BREP version number. Default is 3.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
+            If set to True, error and warning messages are suppressed.
+            Default is False.
 
         Returns
         -------
         str
-            The BREP string.
+            The raw Open CASCADE BREP string.
 
         """
         if not Topology.IsInstance(topology, "Topology"):
             if not silent:
-                print("Topology.BREPString - Error: the input topology parameter is not a valid topology. Returning None.")
+                print("Topology.BREPString - Error: The input topology parameter is not a valid topology. Returning None.")
             return None
-        st = None
+
         try:
-            st = Core.Topology.String(topology, version)
-        except:
+            version = int(version)
+        except Exception:
+            if not silent:
+                print("Topology.BREPString - Error: The input version parameter is not a valid integer. Returning None.")
+            return None
+
+        if version not in [1, 2, 3]:
+            if not silent:
+                print("Topology.BREPString - Error: The input version parameter must be 1, 2, or 3. Returning None.")
+            return None
+
+        # The explicit BREPString backend operation is the canonical raw-BREP
+        # serializer.
+        try:
+            string = Core.Topology.BREPString(topology, version)
+        except Exception:
+            string = None
+
+        # Legacy TopologicCore exposes its raw BREP serializer through String.
+        if not isinstance(string, str) or not string.strip():
             try:
-                st = Core.Topology.BREPString(topology, version)
-            except:
-                st = None
-        return st
+                string = Core.Topology.String(topology, version)
+            except Exception:
+                string = None
+
+        if not isinstance(string, str) or not string.strip():
+            if not silent:
+                print("Topology.BREPString - Error: Could not generate a BREP string from the input topology. Returning None.")
+            return None
+
+        return string
     
     @staticmethod
     def ByGeometry(vertices=[], edges=[], faces=[], topologyType: str = None, tolerance: float = 0.0001, ontology: bool = False, silent: bool = False):
@@ -6881,16 +6906,18 @@ class Topology():
     @staticmethod
     def ByBREPString(string, ontology: bool = False, silent: bool = False):
         """
-        Creates a topology from the input brep string
+        Creates a topology from a raw Open CASCADE BREP string.
 
         Parameters
         ----------
         string : str
-            The input brep string.
+            The input raw Open CASCADE BREP string.
         ontology : bool , optional
-            If True, the returned topology is annotated with TopologicPy ontology metadata. Default is False.
+            If set to True, ontology information is added to the resulting
+            topology. Default is False.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
+            If set to True, error and warning messages are suppressed.
+            Default is False.
 
         Returns
         -------
@@ -6898,23 +6925,38 @@ class Topology():
             The created topology.
 
         """
-
-        import inspect
-        if not isinstance(string, str):
+        if not isinstance(string, str) or not string.strip():
             if not silent:
-                print("Topology.ByBREPString - Error: the input string parameter is not a valid string. Returning None.")
-                curframe = inspect.currentframe()
-                calframe = inspect.getouterframes(curframe, 2)
-                print('caller name:', calframe[1][3])
+                print("Topology.ByBREPString - Error: The input string parameter is not a valid string. Returning None.")
             return None
-        returnTopology = None
+
+        topology = None
+
+        # Prefer the explicit raw-BREP backend reader.
         try:
-            returnTopology = Core.Topology.ByString(string)
-        except:
+            topology = Core.Topology.ByBREPString(string)
+        except Exception:
+            topology = None
+
+        # Legacy TopologicCore reads raw BREP through ByString.
+        if not Topology.IsInstance(topology, "Topology"):
+            try:
+                topology = Core.Topology.ByString(string)
+            except Exception:
+                topology = None
+
+        if not Topology.IsInstance(topology, "Topology"):
             if not silent:
-                print("Topology.ByBREPString - Error: the input string parameter is not a valid string. Returning None.")
-            returnTopology = None
-        return Topology._OntologyAnnotate(returnTopology, ontology=ontology, generatedBy="Topology.ByBREPString", annotateSubtopologies=True, silent=True)
+                print("Topology.ByBREPString - Error: Could not create a topology from the input BREP string. Returning None.")
+            return None
+
+        return Topology._OntologyAnnotate(
+            topology,
+            ontology=ontology,
+            generatedBy="Topology.ByBREPString",
+            annotateSubtopologies=True,
+            silent=True,
+        )
     
     @staticmethod
     def ByXYZFile(file, frameIdKey="id", vertexIdKey="id"):
