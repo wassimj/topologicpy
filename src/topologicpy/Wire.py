@@ -4255,80 +4255,98 @@ class Wire():
             return None
         return ellipse_all["ellipse"]
 
-
-
     @staticmethod
-    def EllipseAll(origin=None,
-                   nputMode: int = 1,
-                   width: float = 2.0,
-                   length: float = 1.0,
-                   focalLength: float = 0.866025,
-                   eccentricity: float = 0.866025,
-                   majorAxisLength: float = 1.0,
-                   minorAxisLength: float = 0.5,
-                   sides: int = 32,
-                   fromAngle: float = 0.0,
-                   toAngle: float = 360.0,
-                   close: bool = True,
-                   direction: list = [0, 0, 1],
-                   placement: str = "center",
-                   polyline: bool = True,
-                   tolerance: float = 0.0001,
-                   silent: bool = False):
+    def EllipseAll(
+        origin=None,
+        inputMode: int = 1,
+        width: float = 2.0,
+        length: float = 1.0,
+        focalLength: float = 0.866025,
+        eccentricity: float = 0.866025,
+        majorAxisLength: float = 1.0,
+        minorAxisLength: float = 0.5,
+        sides: int = 32,
+        fromAngle: float = 0.0,
+        toAngle: float = 360.0,
+        close: bool = True,
+        direction: list = [0, 0, 1],
+        placement: str = "center",
+        polyline: bool = True,
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
         """
         Creates an ellipse and returns its geometry and derived parameters.
 
-        Curved mode uses exact rational quadratic NURBS conic Edges. ``sides``
-        controls topological segmentation, not geometric accuracy. Polyline mode
-        reproduces the historical straight-edge construction.
+        When polyline is True, the ellipse is constructed using straight edges,
+        preserving the historical TopologicPy behaviour. When polyline is False,
+        the ellipse is constructed from exact rational quadratic conic edges.
 
         Parameters
         ----------
         origin : topologic_core.Vertex , optional
-            Placement origin. Default is the global origin.
+            The location of the origin of the ellipse. Default is None, which
+            places the ellipse at (0, 0, 0).
         inputMode : int , optional
-            Ellipse definition mode: 1 width/length, 2 focalLength/eccentricity,
-            3 focalLength/minorAxisLength, or 4 majorAxisLength/minorAxisLength.
+            The method by which the ellipse is defined. Default is 1.
+            The options are:
+            1. Width and Length.
+            2. Focal Length and Eccentricity.
+            3. Focal Length and Minor Axis Length.
+            4. Major Axis Length and Minor Axis Length.
         width : float , optional
-            Width for mode 1. Default is 2.0.
+            The width of the ellipse. Used when inputMode is 1. Default is 2.0.
         length : float , optional
-            Length for mode 1. Default is 1.0.
+            The length of the ellipse. Used when inputMode is 1. Default is 1.0.
         focalLength : float , optional
-            Focal length for modes 2 and 3. Default is 0.866025.
+            The focal length. Used when inputMode is 2 or 3. Default is 0.866025.
         eccentricity : float , optional
-            Eccentricity for mode 2. Default is 0.866025.
+            The eccentricity. Used when inputMode is 2. Default is 0.866025.
         majorAxisLength : float , optional
-            Historical semi-major-axis input for mode 4. Default is 1.0.
+            The semi-major axis length. Used when inputMode is 4. Default is 1.0.
         minorAxisLength : float , optional
-            Semi-minor-axis input for modes 3 and 4. Default is 0.5.
+            The semi-minor axis length. Used when inputMode is 3 or 4.
+            Default is 0.5.
         sides : int , optional
-            Number of exact conic Edges, or straight segments in polyline mode.
-            Default is 32.
+            If polyline is True, the number of straight edges. If polyline is
+            False, the number of exact conic edge segments. Default is 32.
         fromAngle : float , optional
-            Beginning angular value in degrees. Default is 0.
+            The starting angle in degrees. Default is 0.
         toAngle : float , optional
-            Ending angular value in degrees. Default is 360.
+            The ending angle in degrees. Default is 360.
         close : bool , optional
-            For a partial ellipse, if True add a straight closing chord. Default is True.
-        direction : list , optional
-            Ellipse-plane normal. Default is [0, 0, 1].
-        placement : str , optional
-            "center" or "lowerleft". Default is "center".
-        polyline : bool , optional
-            If True, create straight segments instead of exact conic Edges.
+            If True, a partial ellipse is closed with a straight chord.
             Default is True.
+        direction : list , optional
+            The normal direction of the ellipse. Default is [0, 0, 1].
+        placement : str , optional
+            The placement of the origin. Valid options are "center" and
+            "lowerleft". Default is "center".
+        polyline : bool , optional
+            If True, creates the historical straight-edge approximation.
+            If False, creates exact conic edges. Default is True.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
+            If set to True, error and warning messages are suppressed.
+            Default is False.
 
         Returns
         -------
         dict
-            Dictionary with keys ``ellipse``, ``foci``, ``a``, ``b``, ``c``,
-            ``e``, ``w`` and ``l``.
+            A dictionary containing:
+            - "ellipse": The created ellipse.
+            - "foci": The two focal vertices.
+            - "a": The semi-major axis length.
+            - "b": The semi-minor axis length.
+            - "c": The focal length.
+            - "e": The eccentricity.
+            - "w": The width.
+            - "l": The length.
+
         """
         import math
+
         from topologicpy.Edge import Edge
         from topologicpy.Vertex import Vertex
         from topologicpy.Cluster import Cluster
@@ -4336,135 +4354,320 @@ class Wire():
 
         if not Topology.IsInstance(origin, "Vertex"):
             origin = Vertex.ByCoordinates(0, 0, 0)
+
         if not Topology.IsInstance(origin, "Vertex"):
+            if not silent:
+                print("Wire.EllipseAll - Error: Could not create a valid origin vertex. Returning None.")
             return None
-        if inputMode not in [1, 2, 3, 4]:
-            return None
-        placement = str(placement).lower()
-        if placement not in ["center", "lowerleft"]:
-            return None
-        if not isinstance(direction, (list, tuple)) or len(direction) != 3:
-            return None
+
         try:
-            direction = [float(value) for value in direction]
+            inputMode = int(inputMode)
+        except Exception:
+            if not silent:
+                print("Wire.EllipseAll - Error: The input inputMode parameter is not a valid integer. Returning None.")
+            return None
+
+        if inputMode not in [1, 2, 3, 4]:
+            if not silent:
+                print("Wire.EllipseAll - Error: The input inputMode parameter must be 1, 2, 3, or 4. Returning None.")
+            return None
+
+        if not isinstance(placement, str):
+            if not silent:
+                print("Wire.EllipseAll - Error: The input placement parameter is not a valid string. Returning None.")
+            return None
+
+        placement = placement.lower()
+
+        if placement not in ["center", "lowerleft"]:
+            if not silent:
+                print("Wire.EllipseAll - Error: The input placement parameter is not recognized. Returning None.")
+            return None
+
+        if not isinstance(direction, (list, tuple)) or len(direction) != 3:
+            if not silent:
+                print("Wire.EllipseAll - Error: The input direction parameter is not a valid 3D vector. Returning None.")
+            return None
+
+        try:
+            direction = [
+                float(direction[0]),
+                float(direction[1]),
+                float(direction[2]),
+            ]
+
             width = abs(float(width))
             length = abs(float(length))
             focalLength = abs(float(focalLength))
             eccentricity = abs(float(eccentricity))
             majorAxisLength = abs(float(majorAxisLength))
             minorAxisLength = abs(float(minorAxisLength))
+
             sides = int(math.floor(abs(float(sides))))
+
             fromAngle = float(fromAngle)
             toAngle = float(toAngle)
             tolerance = float(tolerance)
+
         except Exception:
+            if not silent:
+                print("Wire.EllipseAll - Error: One or more input parameters are invalid. Returning None.")
             return None
-        if tolerance <= 0.0 or math.sqrt(sum(value * value for value in direction)) <= tolerance:
+
+        if tolerance <= 0:
+            if not silent:
+                print("Wire.EllipseAll - Error: The input tolerance parameter must be greater than zero. Returning None.")
             return None
+
+        if math.sqrt(sum(value * value for value in direction)) <= tolerance:
+            if not silent:
+                print("Wire.EllipseAll - Error: The input direction vector has zero magnitude. Returning None.")
+            return None
+
         minimum_sides = 3 if polyline else 1
+
         if sides < minimum_sides:
+            if not silent:
+                print(
+                    "Wire.EllipseAll - Error: The input sides parameter is too small. "
+                    "Returning None."
+                )
             return None
+
+        # ------------------------------------------------------------------
+        # Derive ellipse parameters.
+        # ------------------------------------------------------------------
+
         if inputMode == 1:
             if width <= tolerance or length <= tolerance:
                 return None
+
             w = width
             l = length
-            a = width / 2.0
-            b = length / 2.0
-            c = math.sqrt(abs(b*b - a*a))
-            e = c / a if a > tolerance else 0.0
+            a = width * 0.5
+            b = length * 0.5
+
+            c = math.sqrt(abs(a * a - b * b))
+            e = c / max(a, b)
+
         elif inputMode == 2:
             if focalLength <= tolerance or eccentricity <= tolerance:
                 return None
+
+            if eccentricity >= 1.0:
+                return None
+
             c = focalLength
             e = eccentricity
+
             a = c / e
-            b2 = a*a - c*c
-            if b2 <= tolerance * tolerance:
+            b_squared = a * a - c * c
+
+            if b_squared <= tolerance * tolerance:
                 return None
-            b = math.sqrt(b2)
+
+            b = math.sqrt(b_squared)
+
             w = 2.0 * a
             l = 2.0 * b
+
         elif inputMode == 3:
             if focalLength <= tolerance or minorAxisLength <= tolerance:
                 return None
+
             c = focalLength
             b = minorAxisLength
-            a = math.sqrt(b*b + c*c)
+            a = math.sqrt(b * b + c * c)
+
             e = c / a
+
             w = 2.0 * a
             l = 2.0 * b
+
         else:
             if majorAxisLength <= tolerance or minorAxisLength <= tolerance:
                 return None
+
             a = majorAxisLength
             b = minorAxisLength
-            c = math.sqrt(abs(b*b - a*a))
-            e = c / a if a > tolerance else 0.0
+
+            c = math.sqrt(abs(a * a - b * b))
+            e = c / max(a, b)
+
             w = 2.0 * a
             l = 2.0 * b
 
+        # ------------------------------------------------------------------
+        # Angular range.
+        # ------------------------------------------------------------------
+
         while toAngle < fromAngle:
             toAngle += 360.0
+
         angle_range = toAngle - fromAngle
-        if angle_range <= tolerance or angle_range > 360.0 + tolerance:
+
+        if angle_range <= tolerance:
             return None
+
+        if angle_range > 360.0 + tolerance:
+            return None
+
         full_ellipse = abs(angle_range - 360.0) <= tolerance
+
+        # ------------------------------------------------------------------
+        # Historical polyline construction.
+        # ------------------------------------------------------------------
 
         if polyline:
             vertices = []
+
             for i in range(sides + 1):
-                angle = math.radians(fromAngle + angle_range * float(i) / float(sides))
-                vertices.append(Vertex.ByCoordinates(
-                    math.sin(angle) * a + Vertex.X(origin),
-                    math.cos(angle) * b + Vertex.Y(origin),
-                    Vertex.Z(origin),
-                ))
-            base_wire = Wire.ByVertices(vertices[::-1], close=False if full_ellipse else close, tolerance=tolerance, silent=True)
+                angle = math.radians(
+                    fromAngle
+                    + angle_range * float(i) / float(sides)
+                )
+
+                vertices.append(
+                    Vertex.ByCoordinates(
+                        math.sin(angle) * a + Vertex.X(origin),
+                        math.cos(angle) * b + Vertex.Y(origin),
+                        Vertex.Z(origin),
+                    )
+                )
+
+            base_wire = Wire.ByVertices(
+                vertices[::-1],
+                close=False if full_ellipse else close,
+                tolerance=tolerance,
+                silent=True,
+            )
+
+        # ------------------------------------------------------------------
+        # Exact rational conic construction.
+        # ------------------------------------------------------------------
+
         else:
+            # Historical ellipse convention starts at +Y and proceeds
+            # counter-clockwise. _ConicEdge uses conventional +X angular
+            # coordinates, so convert the parameterization.
             phi_start = 90.0 - toAngle
+
             edges = []
+
             for i in range(sides):
-                a0 = phi_start + angle_range * float(i) / float(sides)
-                a1 = phi_start + angle_range * float(i + 1) / float(sides)
+                angle_a = (
+                    phi_start
+                    + angle_range * float(i) / float(sides)
+                )
+
+                angle_b = (
+                    phi_start
+                    + angle_range * float(i + 1) / float(sides)
+                )
+
                 edge = Wire._ConicEdge(
                     origin,
                     [a, 0.0, 0.0],
                     [0.0, b, 0.0],
-                    a0,
-                    a1,
+                    angle_a,
+                    angle_b,
                     tolerance=tolerance,
                     silent=True,
                 )
+
                 if not Topology.IsInstance(edge, "Edge"):
+                    if not silent:
+                        print("Wire.EllipseAll - Error: Could not create an exact conic edge. Returning None.")
                     return None
+
                 edges.append(edge)
+
             if not full_ellipse and close:
                 chord = Edge.ByStartVertexEndVertex(
-                    Edge.EndVertex(edges[-1], silent=True),
-                    Edge.StartVertex(edges[0], silent=True),
+                    Edge.EndVertex(
+                        edges[-1],
+                        silent=True,
+                    ),
+                    Edge.StartVertex(
+                        edges[0],
+                        silent=True,
+                    ),
                     tolerance=tolerance,
                     silent=True,
                 )
+
                 if Topology.IsInstance(chord, "Edge"):
                     edges.append(chord)
-            base_wire = Wire.ByEdges(edges, orient=True, tolerance=tolerance, silent=True)
+
+            base_wire = Wire.ByEdges(
+                edges,
+                orient=True,
+                tolerance=tolerance,
+                silent=True,
+            )
 
         if not Topology.IsInstance(base_wire, "Wire"):
+            if not silent:
+                print("Wire.EllipseAll - Error: Could not create the ellipse. Returning None.")
             return None
-        if placement == "lowerleft":
-            base_wire = Topology.Translate(base_wire, a, b, 0)
-        if direction != [0, 0, 1]:
-            base_wire = Topology.Orient(base_wire, origin=origin, dirA=[0, 0, 1], dirB=direction)
 
-        # Preserve the historical focus-axis convention.
-        focus1 = Vertex.ByCoordinates(c + Vertex.X(origin), Vertex.Y(origin), Vertex.Z(origin))
-        focus2 = Vertex.ByCoordinates(-c + Vertex.X(origin), Vertex.Y(origin), Vertex.Z(origin))
-        foci = Cluster.ByTopologies([focus1, focus2])
+        # ------------------------------------------------------------------
+        # Placement.
+        # ------------------------------------------------------------------
+
         if placement == "lowerleft":
-            foci = Topology.Translate(foci, a, b, 0)
+            base_wire = Topology.Translate(
+                base_wire,
+                a,
+                b,
+                0,
+            )
+
         if direction != [0, 0, 1]:
-            foci = Topology.Orient(foci, origin=origin, dirA=[0, 0, 1], dirB=direction)
+            base_wire = Topology.Orient(
+                base_wire,
+                origin=origin,
+                dirA=[0, 0, 1],
+                dirB=direction,
+            )
+
+        # ------------------------------------------------------------------
+        # Foci.
+        # ------------------------------------------------------------------
+
+        # Preserve the historical TopologicPy convention of placing the foci
+        # on the local X axis.
+        focus1 = Vertex.ByCoordinates(
+            c + Vertex.X(origin),
+            Vertex.Y(origin),
+            Vertex.Z(origin),
+        )
+
+        focus2 = Vertex.ByCoordinates(
+            -c + Vertex.X(origin),
+            Vertex.Y(origin),
+            Vertex.Z(origin),
+        )
+
+        foci = Cluster.ByTopologies(
+            [focus1, focus2]
+        )
+
+        if placement == "lowerleft":
+            foci = Topology.Translate(
+                foci,
+                a,
+                b,
+                0,
+            )
+
+        if direction != [0, 0, 1]:
+            foci = Topology.Orient(
+                foci,
+                origin=origin,
+                dirA=[0, 0, 1],
+                dirB=direction,
+            )
 
         return {
             "ellipse": base_wire,
@@ -4476,8 +4679,6 @@ class Wire():
             "w": w,
             "l": l,
         }
-
-
 
     @staticmethod
     def EndVertex(wire, silent: bool = False, tolerance: float = 0.0001):
