@@ -6896,7 +6896,7 @@ class Wire():
             angle = Edge.Angle(
                 edgeA,
                 edgeB,
-                mantissa=None,
+                mantissa=15,
                 bracket=True,
                 tolerance=tolerance,
                 silent=True,
