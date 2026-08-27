@@ -6712,101 +6712,286 @@ class Wire():
         return baseWire
 
     @staticmethod
-    def RemoveCollinearEdges(wire, angTolerance: float = 0.1, tolerance: float = 0.0001, silent: bool = False):
+    def RemoveCollinearEdges(
+        wire,
+        angTolerance: float = 0.1,
+        tolerance: float = 0.0001,
+        silent: bool = False,
+    ):
         """
-        Removes redundant junctions between adjacent geometrically linear, near-collinear edges.
+        Removes redundant junctions between adjacent geometrically linear collinear edges.
 
-        Curved edges are always retained unchanged. Only consecutive edges for which
-        :meth:`Edge.IsLinear` is True may be merged, and the replacement is then an exact
-        straight edge spanning the merged run.
+        Curved edges are always preserved unchanged. Only adjacent edges whose
+        actual geometries are linear and whose directions are collinear within the
+        specified angular tolerance may be merged.
+
+        If all edges of an open wire collapse into one geometrically linear edge,
+        that Edge is returned directly rather than wrapping it in a one-edge Wire.
+        This preserves the established TopologicPy dimensional simplification
+        behaviour.
 
         Parameters
         ----------
-        wire : topologic_core.Wire
+        wire : topologic_core.Wire or topologic_core.Cluster
             The input wire, or a cluster containing wires.
         angTolerance : float , optional
-            Maximum bracketed angle in degrees for merging adjacent linear edges. Default is 0.1.
+            The angular tolerance in degrees used to determine whether adjacent
+            linear edges are collinear. Default is 0.1.
         tolerance : float , optional
             The desired geometric tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
+            If set to True, error and warning messages are suppressed.
+            Default is False.
 
         Returns
         -------
         topologic_core.Topology
-            The simplified wire/aggregate while preserving all curved edge geometry.
+            The simplified Wire, Edge, or aggregate topology. Curved constituent
+            edges are preserved exactly.
+
         """
+        import math
+
         from topologicpy.Edge import Edge
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
 
+        try:
+            tolerance = float(tolerance)
+            angTolerance = abs(float(angTolerance))
+        except Exception:
+            if not silent:
+                print("Wire.RemoveCollinearEdges - Error: The input tolerance or angTolerance parameter is not numerical. Returning None.")
+            return None
+
+        if (
+            not math.isfinite(tolerance)
+            or not math.isfinite(angTolerance)
+            or tolerance <= 0.0
+        ):
+            if not silent:
+                print("Wire.RemoveCollinearEdges - Error: The input tolerance must be greater than zero and all tolerance values must be finite. Returning None.")
+            return None
+
+        # Handle aggregates recursively.
         if Topology.IsInstance(wire, "Cluster"):
-            wires = Topology.Wires(wire, silent=True) or []
-            results = [Wire.RemoveCollinearEdges(w, angTolerance=angTolerance, tolerance=tolerance, silent=True) for w in wires]
-            results = [result for result in results if result is not None]
-            if not results:
+            wires = Topology.Wires(
+                wire,
+                silent=True,
+            ) or []
+
+            processed = [
+                Wire.RemoveCollinearEdges(
+                    candidate,
+                    angTolerance=angTolerance,
+                    tolerance=tolerance,
+                    silent=True,
+                )
+                for candidate in wires
+            ]
+
+            processed = [
+                candidate
+                for candidate in processed
+                if candidate is not None
+            ]
+
+            if len(processed) == 0:
+                if not silent:
+                    print("Wire.RemoveCollinearEdges - Error: No valid wires were produced. Returning None.")
                 return None
-            return Topology.SelfMerge(Cluster.ByTopologies(results), tolerance=tolerance)
+
+            if len(processed) == 1:
+                return processed[0]
+
+            return Topology.SelfMerge(
+                Cluster.ByTopologies(
+                    processed,
+                    silent=True,
+                ),
+                tolerance=tolerance,
+            )
+
         if not Topology.IsInstance(wire, "Wire"):
             if not silent:
                 print("Wire.RemoveCollinearEdges - Error: The input topology is not a valid wire. Returning None.")
             return None
-        if not Wire.IsManifold(wire, silent=True, tolerance=tolerance):
-            pieces = Wire.Split(wire, tolerance=tolerance, silent=True) or []
+
+        # Split branching wires into maximal simple runs and process each run
+        # independently.
+        if not Wire.IsManifold(
+            wire,
+            tolerance=tolerance,
+            silent=True,
+        ):
+            pieces = Wire.Split(
+                wire,
+                tolerance=tolerance,
+                silent=True,
+            ) or []
+
             processed = []
+
             for piece in pieces:
                 if Topology.IsInstance(piece, "Wire"):
-                    processed.append(Wire.RemoveCollinearEdges(piece, angTolerance=angTolerance, tolerance=tolerance, silent=True))
+                    result = Wire.RemoveCollinearEdges(
+                        piece,
+                        angTolerance=angTolerance,
+                        tolerance=tolerance,
+                        silent=True,
+                    )
+                    if result is not None:
+                        processed.append(result)
+
                 elif Topology.IsInstance(piece, "Edge"):
                     processed.append(piece)
-            processed = [piece for piece in processed if piece is not None]
-            return Topology.SelfMerge(Cluster.ByTopologies(processed), tolerance=tolerance) if processed else wire
 
-        edges = Wire._OrderedEdges(wire, tolerance=tolerance, silent=True)
-        if not isinstance(edges, list) or len(edges) < 2:
+            if len(processed) == 0:
+                return wire
+
+            if len(processed) == 1:
+                return processed[0]
+
+            return Topology.SelfMerge(
+                Cluster.ByTopologies(
+                    processed,
+                    silent=True,
+                ),
+                tolerance=tolerance,
+            )
+
+        edges = Wire._OrderedEdges(
+            wire,
+            tolerance=tolerance,
+            silent=True,
+        )
+
+        if not isinstance(edges, list) or len(edges) == 0:
             return wire
-        closed = Wire.IsClosed(wire, tolerance=tolerance, silent=True)
 
-        def can_merge(a, b):
-            if not Edge.IsLinear(a, tolerance=tolerance, silent=True) or not Edge.IsLinear(b, tolerance=tolerance, silent=True):
+        if len(edges) == 1:
+            return wire
+
+        closed = Wire.IsClosed(
+            wire,
+            tolerance=tolerance,
+            silent=True,
+        )
+
+        def can_merge(edgeA, edgeB):
+            if not Edge.IsLinear(
+                edgeA,
+                tolerance=tolerance,
+                silent=True,
+            ):
                 return False
-            angle = Edge.Angle(a, b, mantissa=None, bracket=True, tolerance=tolerance, silent=True)
-            return angle is not None and abs(float(angle)) <= abs(float(angTolerance))
 
+            if not Edge.IsLinear(
+                edgeB,
+                tolerance=tolerance,
+                silent=True,
+            ):
+                return False
+
+            angle = Edge.Angle(
+                edgeA,
+                edgeB,
+                mantissa=None,
+                bracket=True,
+                tolerance=tolerance,
+                silent=True,
+            )
+
+            if angle is None:
+                return False
+
+            return abs(float(angle)) <= angTolerance
+
+        # For a closed wire, choose a starting point immediately after a genuine
+        # corner. This prevents the first and last members of a mergeable linear
+        # run from being artificially separated by the list seam.
         if closed:
             break_index = None
+
             for i in range(len(edges)):
                 if not can_merge(edges[i - 1], edges[i]):
                     break_index = i
                     break
+
             if break_index is not None:
                 edges = edges[break_index:] + edges[:break_index]
 
-        merged = []
+        merged_edges = []
         current = edges[0]
+
         for next_edge in edges[1:]:
             if can_merge(current, next_edge):
                 candidate = Edge.ByStartVertexEndVertex(
-                    Edge.StartVertex(current, silent=True),
-                    Edge.EndVertex(next_edge, silent=True),
+                    Edge.StartVertex(
+                        current,
+                        silent=True,
+                    ),
+                    Edge.EndVertex(
+                        next_edge,
+                        silent=True,
+                    ),
                     tolerance=tolerance,
                     silent=True,
                 )
+
                 if Topology.IsInstance(candidate, "Edge"):
                     current = candidate
                     continue
-            merged.append(current)
-            current = next_edge
-        merged.append(current)
 
-        result = Wire.ByEdges(merged, orient=True, tolerance=tolerance, silent=True)
+            merged_edges.append(current)
+            current = next_edge
+
+        merged_edges.append(current)
+
+        # This dimensional downgrade is important. For example, the union of
+        # overlapping collinear Edges may initially produce several contiguous
+        # fragments. Once those fragments have been merged, the correct result is
+        # an Edge, not a one-edge Wire.
+        if len(merged_edges) == 1:
+            result = merged_edges[0]
+
+            dictionary = Topology.Dictionary(
+                wire,
+                silent=True,
+            )
+
+            if dictionary:
+                result = Topology.SetDictionary(
+                    result,
+                    dictionary,
+                    silent=True,
+                )
+
+            return result
+
+        result = Wire.ByEdges(
+            merged_edges,
+            orient=True,
+            tolerance=tolerance,
+            silent=True,
+        )
+
         if not Topology.IsInstance(result, "Wire"):
             return wire
-        dictionary = Topology.Dictionary(wire, silent=True)
-        if dictionary:
-            result = Topology.SetDictionary(result, dictionary, silent=True)
-        return result
 
+        dictionary = Topology.Dictionary(
+            wire,
+            silent=True,
+        )
+
+        if dictionary:
+            result = Topology.SetDictionary(
+                result,
+                dictionary,
+                silent=True,
+            )
+
+        return result
 
     @staticmethod
     def Representation(wire, normalize: bool = True, rotate: bool = True, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
@@ -8686,81 +8871,195 @@ class Wire():
         return value if mantissa is None else round(value, mantissa)
 
 
-    @staticmethod
-    def VertexByDistance(wire, distance: float = 0.0, origin=None, tolerance: float = 0.0001, silent: bool = False):
-        """
-        Creates a vertex at signed curvilinear distance from an origin along a simple wire.
+@staticmethod
+def VertexByDistance(
+    wire,
+    distance: float = 0.0,
+    origin=None,
+    tolerance: float = 0.0001,
+    silent: bool = False,
+):
+    """
+    Creates a vertex at a signed curvilinear distance from an origin along an open manifold wire.
 
-        Positive distance follows traversal direction except when the origin is the end
-        of an open wire, where positive distance moves backward into the wire for historical
-        compatibility. Closed wires wrap modulo their total length. Actual curved edge
-        lengths are used throughout.
+    The distance is evaluated using the actual geometric lengths of the
+    constituent edges. Curved edges are therefore traversed by arc length and
+    are never replaced by their endpoint chords.
 
-        Parameters
-        ----------
-        wire : topologic_core.Wire
-            The input wire.
-        distance : float , optional
-            Signed curvilinear distance. Default is 0.
-        origin : topologic_core.Vertex , optional
-            Origin on the wire. If None, the traversal start/seam is used. Default is None.
-        tolerance : float , optional
-            The desired tolerance. Default is 0.0001.
-        silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
+    The input wire must be open and manifold because this method relies on a
+    unique start-to-end traversal direction. Closed wires have no unique start
+    or end vertex and therefore cause the method to return None.
 
-        Returns
-        -------
-        topologic_core.Vertex
-            The evaluated vertex, or None if the requested open-wire distance lies outside the wire.
-        """
-        from topologicpy.Edge import Edge
-        from topologicpy.Vertex import Vertex
-        from topologicpy.Topology import Topology
+    If origin is None, the start vertex of the wire is used. When the origin is
+    the end vertex, a positive distance proceeds backward into the wire,
+    preserving the historical TopologicPy behaviour.
 
-        if not Topology.IsInstance(wire, "Wire"):
-            if not silent:
-                print("Wire.VertexByDistance - Error: The input wire parameter is not a valid wire. Returning None.")
-            return None
-        try:
-            distance = float(distance)
-        except Exception:
-            if not silent:
-                print("Wire.VertexByDistance - Error: The input distance parameter is not numerical. Returning None.")
-            return None
-        ordered = Wire._OrderedEdges(wire, tolerance=tolerance, silent=True)
-        if not isinstance(ordered, list) or not ordered:
-            return None
-        total = Wire.Length(wire, mantissa=None, tolerance=tolerance, silent=True)
-        if total is None or float(total) <= tolerance:
-            return None
-        total = float(total)
-        start = Edge.StartVertex(ordered[0], silent=True)
-        end = Edge.EndVertex(ordered[-1], silent=True)
-        closed = Vertex.IsCoincident(start, end, tolerance=tolerance, silent=True)
-        if not Topology.IsInstance(origin, "Vertex"):
-            origin = start
-        origin_distance = Wire._DistanceFromStart(wire, origin, tolerance=tolerance, silent=True)
-        if origin_distance is None:
-            if not silent:
-                print("Wire.VertexByDistance - Error: The input origin does not lie on the wire. Returning None.")
-            return None
-        if not closed and Vertex.IsCoincident(origin, end, tolerance=tolerance, silent=True):
-            target = total - distance
-        else:
-            target = float(origin_distance) + distance
-        if closed:
-            target %= total
-        else:
-            if target < -tolerance or target > total + tolerance:
-                if not silent:
-                    print("Wire.VertexByDistance - Error: The requested distance lies outside the open wire. Returning None.")
-                return None
-            target = max(0.0, min(total, target))
-        return Wire._VertexAtDistanceFromStart(wire, target, tolerance=tolerance, silent=silent)
-    
+    Parameters
+    ----------
+    wire : topologic_core.Wire
+        The input open manifold wire.
+    distance : float , optional
+        The signed curvilinear distance from the input origin. Default is 0.
+    origin : topologic_core.Vertex , optional
+        The origin from which the distance is measured. If None, the start
+        vertex of the wire is used. Default is None.
+    tolerance : float , optional
+        The desired geometric tolerance. Default is 0.0001.
+    silent : bool , optional
+        If set to True, error and warning messages are suppressed.
+        Default is False.
 
+    Returns
+    -------
+    topologic_core.Vertex
+        The vertex at the requested curvilinear distance, or None if the input
+        is invalid or the requested position lies outside the wire.
 
+    """
+    import math
+
+    from topologicpy.Edge import Edge
+    from topologicpy.Vertex import Vertex
+    from topologicpy.Topology import Topology
+
+    if not Topology.IsInstance(wire, "Wire"):
+        if not silent:
+            print("Wire.VertexByDistance - Error: The input wire parameter is not a valid topologic wire. Returning None.")
+        return None
+
+    try:
+        distance = float(distance)
+        tolerance = float(tolerance)
+    except Exception:
+        if not silent:
+            print("Wire.VertexByDistance - Error: The input distance or tolerance parameter is not a valid number. Returning None.")
+        return None
+
+    if not math.isfinite(distance) or not math.isfinite(tolerance) or tolerance <= 0.0:
+        if not silent:
+            print("Wire.VertexByDistance - Error: The input distance and tolerance parameters must be finite and tolerance must be greater than zero. Returning None.")
+        return None
+
+    if not Wire.IsManifold(
+        wire,
+        tolerance=tolerance,
+        silent=True,
+    ):
+        if not silent:
+            print("Wire.VertexByDistance - Error: The input wire parameter is non-manifold. Returning None.")
+        return None
+
+    # Preserve the established public API contract. A closed Wire has no
+    # unique start/end traversal direction for this method.
+    if Wire.IsClosed(
+        wire,
+        tolerance=tolerance,
+        silent=True,
+    ):
+        if not silent:
+            print("Wire.VertexByDistance - Error: The input wire parameter is closed. Returning None.")
+        return None
+
+    ordered_edges = Wire._OrderedEdges(
+        wire,
+        tolerance=tolerance,
+        silent=True,
+    )
+
+    if not isinstance(ordered_edges, list) or len(ordered_edges) == 0:
+        if not silent:
+            print("Wire.VertexByDistance - Error: Could not determine an ordered edge traversal. Returning None.")
+        return None
+
+    wire_length = Wire.Length(
+        wire,
+        mantissa=None,
+        tolerance=tolerance,
+        silent=True,
+    )
+
+    if wire_length is None:
+        if not silent:
+            print("Wire.VertexByDistance - Error: Could not determine the wire length. Returning None.")
+        return None
+
+    try:
+        wire_length = float(wire_length)
+    except Exception:
+        return None
+
+    if not math.isfinite(wire_length) or wire_length <= tolerance:
+        if not silent:
+            print("Wire.VertexByDistance - Error: The input wire parameter is degenerate. Returning None.")
+        return None
+
+    start = Edge.StartVertex(
+        ordered_edges[0],
+        silent=True,
+    )
+
+    end = Edge.EndVertex(
+        ordered_edges[-1],
+        silent=True,
+    )
+
+    if not Topology.IsInstance(start, "Vertex") or not Topology.IsInstance(end, "Vertex"):
+        if not silent:
+            print("Wire.VertexByDistance - Error: Could not determine the start and end vertices of the input wire. Returning None.")
+        return None
+
+    # Preserve historical behaviour.
+    if abs(distance) <= tolerance:
+        return start
+
+    if abs(distance - wire_length) <= tolerance:
+        return end
+
+    if not Topology.IsInstance(origin, "Vertex"):
+        origin = start
+
+    origin_distance = Wire._DistanceFromStart(
+        wire,
+        origin,
+        tolerance=tolerance,
+        silent=True,
+    )
+
+    if origin_distance is None:
+        if not silent:
+            print("Wire.VertexByDistance - Error: The input origin parameter does not lie on the input wire. Returning None.")
+        return None
+
+    origin_distance = float(origin_distance)
+
+    # Preserve historical end-origin semantics: positive distance from the end
+    # proceeds backward toward the wire start.
+    if Vertex.IsCoincident(
+        origin,
+        end,
+        tolerance=tolerance,
+        silent=True,
+    ):
+        target_distance = wire_length - distance
+    else:
+        target_distance = origin_distance + distance
+
+    if target_distance < -tolerance or target_distance > wire_length + tolerance:
+        if not silent:
+            print("Wire.VertexByDistance - Error: The requested distance lies outside the input wire. Returning None.")
+        return None
+
+    target_distance = max(
+        0.0,
+        min(wire_length, target_distance),
+    )
+
+    return Wire._VertexAtDistanceFromStart(
+        wire,
+        target_distance,
+        tolerance=tolerance,
+        silent=silent,
+    )
 
     @staticmethod
     def ParameterAtVertex(wire, vertex, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
