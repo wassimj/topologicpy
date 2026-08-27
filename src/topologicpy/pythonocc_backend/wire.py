@@ -120,9 +120,13 @@ def _path_vertices(wire, tolerance=0.0001):
 
 
 def _edge_distance_at_parameter(edge, parameter, tolerance=0.0001):
-    """Return exact curvilinear distance from an Edge start to normalized u."""
-    from .edge import EdgeUtility, _oriented_parameter_bounds
+    """
+    Return exact curvilinear distance from an Edge start to normalized parameter u.
 
+    No parameter-proportional approximation is used: if OCCT cannot construct the
+    required trimmed sub-edge, None is returned.
+    """
+    from .edge import EdgeUtility, _oriented_parameter_bounds
     if not isinstance(edge, Edge):
         return None
     try:
@@ -132,38 +136,34 @@ def _edge_distance_at_parameter(edge, parameter, tolerance=0.0001):
     u = max(0.0, min(1.0, u))
     if u <= 0.0:
         return 0.0
-
     edge_length = EdgeUtility.Length(edge, tolerance=tolerance)
     if edge_length is None:
         return None
     if u >= 1.0:
         return float(edge_length)
-
     bounds = _oriented_parameter_bounds(edge)
     if bounds is None:
         return None
     curve, start_parameter, end_parameter = bounds
     raw_parameter = start_parameter + u * (end_parameter - start_parameter)
-
     try:
         from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakeEdge
         from OCC.Core.GProp import GProp_GProps
         from OCC.Core.BRepGProp import brepgprop
-
         lower = min(start_parameter, raw_parameter)
         upper = max(start_parameter, raw_parameter)
         maker = BRepBuilderAPI_MakeEdge(curve, lower, upper)
         if not maker.IsDone():
             return None
+        shape = maker.Edge()
+        if raw_parameter < start_parameter:
+            shape = shape.Reversed()
         properties = GProp_GProps()
-        brepgprop.LinearProperties(maker.Edge(), properties)
+        brepgprop.LinearProperties(shape, properties)
         value = float(properties.Mass())
         return value if math.isfinite(value) else None
     except Exception:
-        # This fallback is parameter-proportional and therefore only exact for
-        # constant-speed parameterisations. It is retained solely as a last
-        # resort if OCCT cannot build the trimmed sub-edge.
-        return float(edge_length) * u
+        return None
 
 
 def _distance_from_wire_start(wire, vertex, tolerance=0.0001):
@@ -534,45 +534,36 @@ class Wire(Topology):
 
     @staticmethod
     def _order_edges(edges, tolerance=0.0001):
-        """Return a complete head-to-tail Edge ordering, or None if branching/disconnected."""
+        """
+        Return a complete oriented head-to-tail Edge ordering.
+
+        Edge reversal uses the native curve-preserving :meth:`Edge.Reverse` operation.
+        If an edge cannot be reversed without preserving its geometry, None is returned.
+        """
         if not edges:
             return []
-        unused = list(edges)
+        tol = _wire_tolerance(tolerance)
+        unused = [edge for edge in edges if isinstance(edge, Edge)]
+        if not unused:
+            return None
         ordered = [unused.pop(0)]
         while unused:
             last = ordered[-1].end
             found_index = None
             found_edge = None
             for i, edge in enumerate(unused):
-                if same_vertex(edge.start, last, tolerance):
+                if same_vertex(edge.start, last, tol):
                     found_index = i
                     found_edge = edge
                     break
-                if same_vertex(edge.end, last, tolerance):
+                if same_vertex(edge.end, last, tol):
                     found_index = i
-                    # Reuse the original edge's shape (just orientation-
-                    # flipped via .Reversed(), which OCCT keeps IsSame/hash-
-                    # equal to the original) instead of fabricating a brand
-                    # new edge shape -- Edge.ByStartVertexEndVertex would
-                    # sever this edge's identity from any other reference to
-                    # it elsewhere in the same result, silently duplicating
-                    # its vertices when the two are later merged/deduped.
-                    found_edge = None
-                    try:
-                        found_edge = Edge.ByOcctShape(edge.shape.Reversed())
-                    except Exception:
-                        found_edge = None
-                    if found_edge is None:
-                        found_edge = Edge.ByStartVertexEndVertex(edge.end, edge.start)
-                    if found_edge is not None:
-                        found_edge.dictionary = edge.dictionary
+                    found_edge = Edge.Reverse(edge, tolerance=tol, silent=True)
                     break
-            if found_index is None:
+            if found_index is None or not isinstance(found_edge, Edge):
                 return None
             ordered.append(found_edge)
             unused.pop(found_index)
-            if len(ordered) > len(edges) + 1:
-                return None
         return ordered
 
     def Edges(self, hostTopology=None, edges=None):
@@ -1074,198 +1065,218 @@ class WireUtility:
     @staticmethod
     def Cycles(wire, tolerance: float = 0.0001):
         """
-        Not part of the guide's minimum checklist and not called by the
-        topologicpy algorithm layer (verified: zero call sites). Real
-        best-effort implementation for direct Core callers: finds the
-        elementary cycles in the wire's edge/vertex graph (relevant for
-        non-manifold wires with branches; a simple open or closed wire -- the
-        only kind this backend's Wire.ByEdges/.ByVertices ever build -- has
-        at most one cycle, itself, when closed).
+        Return all simple elementary cycles found in a backend Wire edge graph.
+
+        Returned cycles reuse the actual OCCT edge shapes and reverse orientation only
+        through :meth:`Edge.Reverse`; endpoint-chord reconstruction is never used.
         """
         if not isinstance(wire, Wire):
             return []
-        edges = getattr(wire, "edges", []) or []
+        edges = _all_occ_wire_edges(wire) or [e for e in (getattr(wire, "edges", []) or []) if isinstance(e, Edge)]
         if not edges:
             return []
-
         tol = _wire_tolerance(tolerance)
-
-        def vkey(v):
-            return (round(v.x / tol), round(v.y / tol), round(v.z / tol))
-
-        # Build an undirected adjacency list keyed by rounded vertex position.
+        representatives = []
+        endpoints = []
         adjacency = {}
-        for e in edges:
-            ka, kb = vkey(e.start), vkey(e.end)
-            adjacency.setdefault(ka, []).append((kb, e))
-            adjacency.setdefault(kb, []).append((ka, e))
-
-        visited_edges = set()
-        cycles = []
-        for e in edges:
-            eid = id(e)
-            if eid in visited_edges:
-                continue
-            # Walk forward from e.start through e until we either return to
-            # the start (a cycle) or run out of unvisited connections (not a
-            # cycle from this edge).
-            path_edges = [e]
-            visited_edges.add(eid)
-            start_key = vkey(e.start)
-            current_key = vkey(e.end)
-            found_cycle = same_vertex(e.start, e.end, tolerance)
-            while not found_cycle:
-                next_edge = None
-                for (other_key, cand) in adjacency.get(current_key, []):
-                    if id(cand) in visited_edges:
-                        continue
-                    next_edge = cand
-                    next_key = other_key
+        def node_index(vertex):
+            for i, representative in enumerate(representatives):
+                if same_vertex(vertex, representative, tolerance=tol):
+                    return i
+            representatives.append(vertex)
+            return len(representatives) - 1
+        for index, edge in enumerate(edges):
+            a = node_index(edge.start)
+            b = node_index(edge.end)
+            endpoints.append((a, b))
+            adjacency.setdefault(a, []).append(index)
+            adjacency.setdefault(b, []).append(index)
+        found = {}
+        def record(path):
+            key = tuple(sorted(step[0] for step in path))
+            found.setdefault(key, list(path))
+        def walk(start, current, path_nodes, path_edges, used_edges):
+            for edge_index in adjacency.get(current, []):
+                if edge_index in used_edges:
+                    continue
+                a, b = endpoints[edge_index]
+                nxt = b if a == current else a
+                step = (edge_index, current, nxt)
+                if nxt == start:
+                    if path_edges or a == b:
+                        record(path_edges + [step])
+                    continue
+                if nxt in path_nodes:
+                    continue
+                walk(start, nxt, path_nodes + [nxt], path_edges + [step], used_edges | {edge_index})
+        for start in range(len(representatives)):
+            walk(start, start, [start], [], set())
+        result = []
+        for path in found.values():
+            oriented = []
+            valid = True
+            for edge_index, from_node, to_node in path:
+                source = edges[edge_index]
+                a, b = endpoints[edge_index]
+                if a == from_node and b == to_node:
+                    edge = source
+                elif b == from_node and a == to_node:
+                    edge = Edge.Reverse(source, tolerance=tol, silent=True)
+                else:
+                    valid = False
                     break
-                if next_edge is None:
+                if not isinstance(edge, Edge):
+                    valid = False
                     break
-                path_edges.append(next_edge)
-                visited_edges.add(id(next_edge))
-                current_key = next_key
-                if current_key == start_key:
-                    found_cycle = True
-            if found_cycle and len(path_edges) > 1:
-                cycle_wire = Wire.ByEdges(path_edges, tolerance=tolerance)
-                if cycle_wire is not None:
-                    cycles.append(cycle_wire)
-        return cycles
+                oriented.append(edge)
+            if valid:
+                cycle = Wire.ByEdges(oriented, tolerance=tol)
+                if isinstance(cycle, Wire) and cycle.IsClosed(tolerance=tol):
+                    result.append(cycle)
+        return result
 
     @staticmethod
     def Split(wire, tolerance: float = 0.0001):
         """
-        Not in the guide's checklist; unreferenced by the algorithm layer.
-        Best-effort for direct Core callers: split a (possibly branching) wire at
-        every vertex of degree != 2 into its maximal simple edge runs.
+        Split a branching backend Wire at vertices of degree greater than two.
+
+        Maximal runs reuse actual OCCT edge shapes. Any required orientation reversal
+        uses :meth:`Edge.Reverse`; no endpoint-chord fallback is permitted.
         """
         if not isinstance(wire, Wire):
             return None
-        edges = getattr(wire, "edges", []) or []
+        edges = _all_occ_wire_edges(wire) or [e for e in (getattr(wire, "edges", []) or []) if isinstance(e, Edge)]
         if not edges:
             return None
-
         tol = _wire_tolerance(tolerance)
-
-        def vkey(v):
-            return (round(v.x / tol), round(v.y / tol), round(v.z / tol))
-
-        degree = {}
-        for e in edges:
-            for k in (vkey(e.start), vkey(e.end)):
-                degree[k] = degree.get(k, 0) + 1
-
-        branch_points = {k for k, d in degree.items() if d != 2}
-
-        remaining = list(edges)
+        representatives = []
+        endpoints = []
+        adjacency = {}
+        def node_index(vertex):
+            for i, representative in enumerate(representatives):
+                if same_vertex(vertex, representative, tolerance=tol):
+                    return i
+            representatives.append(vertex)
+            return len(representatives) - 1
+        for index, edge in enumerate(edges):
+            a = node_index(edge.start)
+            b = node_index(edge.end)
+            endpoints.append((a, b))
+            adjacency.setdefault(a, []).append(index)
+            adjacency.setdefault(b, []).append(index)
+        if all(len(indices) <= 2 for indices in adjacency.values()):
+            return [wire]
+        used = set()
         runs = []
-        while remaining:
-            run = [remaining.pop(0)]
-            # Extend forward and backward while the joining vertex is not a
-            # branch point (degree != 2), matching how a "simple run" between
-            # branch points is conventionally defined.
-            extended = True
-            while extended:
-                extended = False
-                # forward extension
-                last_key = vkey(run[-1].end)
-                if last_key not in branch_points:
-                    for e in list(remaining):
-                        if same_vertex(e.start, run[-1].end, tol):
-                            run.append(e)
-                            remaining.remove(e)
-                            extended = True
-                            break
-                        if same_vertex(e.end, run[-1].end, tol):
-                            flipped = None
-                            try:
-                                flipped = Edge.ByOcctShape(e.shape.Reversed())
-                            except Exception:
-                                flipped = None
-                            if flipped is None:
-                                flipped = Edge.ByStartVertexEndVertex(e.end, e.start)
-                            if flipped is not None:
-                                run.append(flipped)
-                                remaining.remove(e)
-                                extended = True
-                                break
-                if extended:
-                    continue
-                # backward extension
-                first_key = vkey(run[0].start)
-                if first_key not in branch_points:
-                    for e in list(remaining):
-                        if same_vertex(e.end, run[0].start, tol):
-                            run.insert(0, e)
-                            remaining.remove(e)
-                            extended = True
-                            break
-                        if same_vertex(e.start, run[0].start, tol):
-                            flipped = None
-                            try:
-                                flipped = Edge.ByOcctShape(e.shape.Reversed())
-                            except Exception:
-                                flipped = None
-                            if flipped is None:
-                                flipped = Edge.ByStartVertexEndVertex(e.end, e.start)
-                            if flipped is not None:
-                                run.insert(0, flipped)
-                                remaining.remove(e)
-                                extended = True
-                                break
-            runs.append(run)
-
-        result = [w for w in (Wire.ByEdges(run, tolerance=tolerance) for run in runs) if w is not None]
-        return result if result else None
+        for seed in range(len(edges)):
+            if seed in used:
+                continue
+            a, b = endpoints[seed]
+            current = a if len(adjacency[a]) != 2 else (b if len(adjacency[b]) != 2 else a)
+            edge_index = seed
+            run = []
+            while edge_index is not None and edge_index not in used:
+                source = edges[edge_index]
+                a, b = endpoints[edge_index]
+                if a == current:
+                    oriented = source
+                    nxt = b
+                elif b == current:
+                    oriented = Edge.Reverse(source, tolerance=tol, silent=True)
+                    nxt = a
+                else:
+                    break
+                if not isinstance(oriented, Edge):
+                    return None
+                run.append(oriented)
+                used.add(edge_index)
+                if len(adjacency.get(nxt, [])) != 2:
+                    break
+                candidates = [idx for idx in adjacency[nxt] if idx not in used]
+                if not candidates:
+                    break
+                current = nxt
+                edge_index = candidates[0]
+            if run:
+                runs.append(run)
+        result = []
+        for run in runs:
+            if len(run) == 1:
+                result.append(run[0])
+            else:
+                item = Wire.ByEdges(run, tolerance=tol)
+                if item is not None:
+                    result.append(item)
+        return result if result else [wire]
 
 # Wire -> Shell: find Shells in hostTopology containing this Wire.
 def _adjacent_shells(wire, hostTopology, output):
+    """Populate Shells whose boundary contains the same OCCT Wire edges."""
     from .topology import Topology
-    from .helpers import same_vertex
     if not isinstance(wire, Wire) or hostTopology is None:
         return 1
-    result, we_src, candidates = [], (getattr(wire, "edges", []) or []), []
+    source_edges = _all_occ_wire_edges(wire) or list(getattr(wire, "edges", []) or [])
+    candidates = []
     Topology.Shells(hostTopology, None, candidates)
-    for s in candidates:
-        for sf_face in (getattr(s, "faces", []) or []):
-            wf = [sf_face.external] if getattr(sf_face, "external", None) else []
-            for wf_wire in wf:
-                we = getattr(wf_wire, "edges", []) or []
-                if len(we) == len(we_src) and all(
-                    any(same_vertex(a.start, b.start) and same_vertex(a.end, b.end) for b in we_src)
-                    or any(same_vertex(a.start, b.end) and same_vertex(a.end, b.start) for b in we_src)
-                    for a in we
-                ):
-                    result.append(s); break
-            if result and result[-1] is s: break
-    if output is not None: output.extend(result)
+    result = []
+    def same_occ_edge(a, b):
+        try:
+            return bool(a.shape.IsSame(b.shape))
+        except Exception:
+            return False
+    for shell in candidates:
+        matched = False
+        for face in (getattr(shell, "faces", []) or []):
+            boundary = getattr(face, "external", None)
+            if not isinstance(boundary, Wire):
+                continue
+            candidate_edges = _all_occ_wire_edges(boundary) or list(getattr(boundary, "edges", []) or [])
+            if len(candidate_edges) == len(source_edges) and all(
+                any(same_occ_edge(candidate, source) for source in source_edges)
+                for candidate in candidate_edges
+            ):
+                matched = True
+                break
+        if matched:
+            result.append(shell)
+    if output is not None:
+        output.extend(result)
     return 0
 
 def _adjacent_cells(wire, hostTopology, output):
+    """Populate Cells whose shell boundaries contain the same OCCT Wire edges."""
     from .topology import Topology
-    from .helpers import same_vertex
     if not isinstance(wire, Wire) or hostTopology is None:
         return 1
-    result, we_src, candidates = [], (getattr(wire, "edges", []) or []), []
+    source_edges = _all_occ_wire_edges(wire) or list(getattr(wire, "edges", []) or [])
+    candidates = []
     Topology.Cells(hostTopology, None, candidates)
-    for c in candidates:
-        for cs in (getattr(c, "shells", []) or []):
-            for cs_face in (getattr(cs, "faces", []) or []):
-                wf = [cs_face.external] if getattr(cs_face, "external", None) else []
-                for wf_wire in wf:
-                    we = getattr(wf_wire, "edges", []) or []
-                    if len(we) == len(we_src) and all(
-                        any(same_vertex(a.start, b.start) and same_vertex(a.end, b.end) for b in we_src)
-                        or any(same_vertex(a.start, b.end) and same_vertex(a.end, b.start) for b in we_src)
-                        for a in we
-                    ):
-                        result.append(c); break
-                if result and result[-1] is c: break
-            if result and result[-1] is c: break
-    if output is not None: output.extend(result)
+    result = []
+    def same_occ_edge(a, b):
+        try:
+            return bool(a.shape.IsSame(b.shape))
+        except Exception:
+            return False
+    for cell in candidates:
+        matched = False
+        for shell in (getattr(cell, "shells", []) or []):
+            for face in (getattr(shell, "faces", []) or []):
+                boundary = getattr(face, "external", None)
+                if not isinstance(boundary, Wire):
+                    continue
+                candidate_edges = _all_occ_wire_edges(boundary) or list(getattr(boundary, "edges", []) or [])
+                if len(candidate_edges) == len(source_edges) and all(
+                    any(same_occ_edge(candidate, source) for source in source_edges)
+                    for candidate in candidate_edges
+                ):
+                    matched = True
+                    break
+            if matched:
+                break
+        if matched:
+            result.append(cell)
+    if output is not None:
+        output.extend(result)
     return 0
 
 
