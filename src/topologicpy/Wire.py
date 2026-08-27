@@ -5748,7 +5748,6 @@ class Wire():
             tolerance=tolerance,
         )
 
-
     @staticmethod
     def IsClosed(wire, tolerance: float = 0.0001, silent: bool = False) -> bool:
         """
@@ -5829,6 +5828,67 @@ class Wire():
                 return False
         return True
 
+    @staticmethod
+    def IsPolyline(wire, tolerance: float = 0.0001, silent: bool = False) -> bool:
+        """
+        Returns True if the input wire is composed entirely of geometrically linear edges.
+        Returns False otherwise.
+
+        A wire is considered a polyline if every edge in the wire is geometrically
+        linear within the specified tolerance. The method examines the actual geometry
+        of each edge using `Edge.IsLinear`, rather than assuming that an edge is linear
+        simply because it has a start and end vertex.
+
+        Parameters
+        ----------
+        wire : topologic_core.Wire
+            The input wire.
+        tolerance : float , optional
+            The desired tolerance used to determine if the constituent edges are
+            geometrically linear. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        bool
+            True if all edges of the input wire are geometrically linear.
+            False if one or more edges are curved.
+
+        """
+        from topologicpy.Edge import Edge
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(wire, "Wire"):
+            if not silent:
+                print("Wire.IsPolyline - Error: The input wire parameter is not a valid topologic wire. Returning None.")
+            return None
+
+        try:
+            tolerance = float(tolerance)
+        except Exception:
+            if not silent:
+                print("Wire.IsPolyline - Error: The input tolerance parameter is not a valid number. Returning None.")
+            return None
+
+        if tolerance <= 0:
+            if not silent:
+                print("Wire.IsPolyline - Error: The input tolerance parameter must be greater than zero. Returning None.")
+            return None
+
+        edges = Topology.Edges(wire)
+
+        if not isinstance(edges, list) or len(edges) < 1:
+            if not silent:
+                print("Wire.IsPolyline - Error: Could not retrieve any edges from the input wire. Returning None.")
+            return None
+
+        for edge in edges:
+            if not Edge.IsLinear(edge, tolerance=tolerance, silent=True):
+                return False
+
+        return True
+    
     @staticmethod
     def IsSimilar(wireA, wireB, angTolerance: float = 0.1, tolerance: float = 0.0001) -> bool:
         """

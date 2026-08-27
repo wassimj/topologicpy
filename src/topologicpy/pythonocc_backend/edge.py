@@ -12,7 +12,7 @@ from .topology import (
 )
 from .vertex import Vertex
 from .occ_utils import make_occ_edge
-from .helpers import distance3, same_vertex
+from .helpers import same_vertex
 
 
 def _curve_data(edge):
@@ -36,23 +36,38 @@ def _oriented_parameter_bounds(edge):
     if data is None:
         return None
     curve, first, last = data
+
+    # OCCT stores the geometric parameter interval independently of topological
+    # edge orientation. Use the actual TopAbs orientation first. This is essential
+    # for closed periodic edges, whose first and last geometric points coincide.
+    try:
+        from OCC.Core.TopAbs import TopAbs_FORWARD, TopAbs_REVERSED
+        orientation = edge.shape.Orientation()
+        if orientation == TopAbs_REVERSED:
+            return curve, last, first
+        if orientation == TopAbs_FORWARD:
+            return curve, first, last
+    except Exception:
+        pass
+
+    # Conservative fallback for unusual INTERNAL/EXTERNAL orientations.
     start = edge.start
     if not isinstance(start, Vertex):
         return None
     try:
         p_first = curve.Value(first)
         p_last = curve.Value(last)
-        dx = float(start.x) - float(p_first.X())
-        dy = float(start.y) - float(p_first.Y())
-        dz = float(start.z) - float(p_first.Z())
-        d_first2 = dx * dx + dy * dy + dz * dz
-        dx = float(start.x) - float(p_last.X())
-        dy = float(start.y) - float(p_last.Y())
-        dz = float(start.z) - float(p_last.Z())
-        d_last2 = dx * dx + dy * dy + dz * dz
-        if d_first2 <= d_last2:
-            return curve, first, last
-        return curve, last, first
+        d_first2 = (
+            (float(start.x) - float(p_first.X())) ** 2
+            + (float(start.y) - float(p_first.Y())) ** 2
+            + (float(start.z) - float(p_first.Z())) ** 2
+        )
+        d_last2 = (
+            (float(start.x) - float(p_last.X())) ** 2
+            + (float(start.y) - float(p_last.Y())) ** 2
+            + (float(start.z) - float(p_last.Z())) ** 2
+        )
+        return (curve, first, last) if d_first2 <= d_last2 else (curve, last, first)
     except Exception:
         return None
 
@@ -114,6 +129,43 @@ def _wrap_shape_like(source, shape):
         contexts=getattr(source, "contexts", None),
         apertures=getattr(source, "apertures", None),
     )
+
+def _same_edge_topology(edge_a, edge_b):
+    """Return True when two backend Edge wrappers reference the same OCCT TShape."""
+    if not isinstance(edge_a, Edge) or not isinstance(edge_b, Edge):
+        return False
+    if _is_null_shape(getattr(edge_a, "shape", None)) or _is_null_shape(getattr(edge_b, "shape", None)):
+        return False
+    try:
+        return bool(edge_a.shape.IsSame(edge_b.shape))
+    except Exception:
+        return edge_a is edge_b
+
+
+def _normal_at_raw_parameter(edge, curve, parameter):
+    """Return the unit principal normal at an OCCT curve parameter, or None at zero curvature."""
+    if not isinstance(edge, Edge):
+        return None
+    try:
+        from OCC.Core.gp import gp_Pnt, gp_Vec
+        point = gp_Pnt()
+        d1 = gp_Vec()
+        d2 = gp_Vec()
+        curve.D2(float(parameter), point, d1, d2)
+        tx, ty, tz = float(d1.X()), float(d1.Y()), float(d1.Z())
+        tmag = math.sqrt(tx*tx + ty*ty + tz*tz)
+        if tmag <= 1.0e-15:
+            return None
+        tx, ty, tz = tx/tmag, ty/tmag, tz/tmag
+        ax, ay, az = float(d2.X()), float(d2.Y()), float(d2.Z())
+        projection = ax*tx + ay*ty + az*tz
+        nx, ny, nz = ax - projection*tx, ay - projection*ty, az - projection*tz
+        nmag = math.sqrt(nx*nx + ny*ny + nz*nz)
+        if nmag <= 1.0e-15:
+            return None
+        return [nx/nmag, ny/nmag, nz/nmag]
+    except Exception:
+        return None
 
 
 @dataclass(eq=False, init=False)
@@ -215,6 +267,7 @@ class Edge(Topology):
         self._end = value if isinstance(value, Vertex) else None
         self._end_loaded = True
 
+
     @staticmethod
     def ByStartVertexEndVertex(startVertex, endVertex):
         """Create a straight Edge between two backend Vertex objects."""
@@ -251,41 +304,53 @@ class Edge(Topology):
         if _is_null_shape(shape):
             return None
         return Edge(shape=shape, start=startVertex, end=endVertex)
-
     @staticmethod
-    def ByCurve(points, degree: int = 3, periodic: bool = False, tolerance: float = 0.0001):
-        """Create a B-spline Edge through a sequence of backend Vertex objects."""
-        try:
-            from OCC.Core.gp import gp_Pnt
-            from OCC.Core.TColgp import TColgp_Array1OfPnt
-            from OCC.Core.GeomAPI import GeomAPI_PointsToBSpline
-            from OCC.Core.GeomAbs import GeomAbs_C2
-            from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakeEdge
-        except Exception:
-            return None
-        vertices = [p for p in (points or []) if isinstance(p, Vertex)]
+    def ByNurbsParameters(controlPoints, weights=None, knots=None, isRational: bool = False, isPeriodic: bool = False, degree: int = 3):
+        """Create an Edge from expanded NURBS/B-spline parameters."""
+        vertices = [v for v in (controlPoints or []) if isinstance(v, Vertex)]
         if len(vertices) < 2:
             return None
         try:
-            occ_points = TColgp_Array1OfPnt(1, len(vertices))
-            for index, vertex in enumerate(vertices, start=1):
-                occ_points.SetValue(index, gp_Pnt(vertex.x, vertex.y, vertex.z))
-            degree_max = max(1, min(int(degree), len(vertices) - 1))
-            builder = GeomAPI_PointsToBSpline(
-                occ_points,
-                1,
-                degree_max,
-                GeomAbs_C2,
-                abs(float(tolerance)),
-            )
-            curve = builder.Curve()
-            maker = BRepBuilderAPI_MakeEdge(curve)
-            if not maker.IsDone():
-                return None
-            shape = maker.Edge()
+            degree = int(degree)
         except Exception:
             return None
-        return Edge(shape=shape, start=vertices[0], end=vertices[-1])
+        if degree < 1 or degree >= len(vertices):
+            return None
+        if weights is None:
+            weights = [1.0] * len(vertices)
+        try:
+            weights = [float(v) for v in weights]
+        except Exception:
+            return None
+        if len(weights) != len(vertices) or any(not math.isfinite(v) or v <= 0.0 for v in weights):
+            return None
+        if not bool(isRational):
+            weights = [1.0] * len(vertices)
+        if knots is None:
+            if bool(isPeriodic):
+                knots = [float(i) for i in range(len(vertices) + 1)]
+            else:
+                interior = len(vertices) - degree - 1
+                knots = [0.0] * (degree + 1)
+                if interior > 0:
+                    knots += [float(i) / float(interior + 1) for i in range(1, interior + 1)]
+                knots += [1.0] * (degree + 1)
+        return EdgeUtility.ByNurbsCurve(vertices, knots, weights, degree, bool(isPeriodic), bool(isRational))
+
+    @staticmethod
+    def ByCurve(points, degree: int = 3, periodic: bool = False, tolerance: float = 0.0001):
+        """Create one non-rational B-spline Edge using the input vertices as control points."""
+        vertices = [p for p in (points or []) if isinstance(p, Vertex)]
+        if len(vertices) < 2:
+            return None
+        return Edge.ByNurbsParameters(
+            vertices,
+            weights=[1.0] * len(vertices),
+            knots=None,
+            isRational=False,
+            isPeriodic=bool(periodic),
+            degree=degree,
+        )
 
     @staticmethod
     def ByOcctShape(shape, dictionary=None, contents=None, contexts=None, apertures=None):
@@ -317,8 +382,20 @@ class Edge(Topology):
         return self.end
 
     def Vertices(self, hostTopology=None, vertices=None):
-        """Return or append the two endpoint Vertex objects."""
-        result = [v for v in [self.start, self.end] if isinstance(v, Vertex)]
+        """Return or append the unique topological Vertex objects of this Edge."""
+        start = self.start
+        end = self.end
+        result = []
+        if isinstance(start, Vertex):
+            result.append(start)
+        if isinstance(end, Vertex):
+            closed = False
+            try:
+                closed = bool(EdgeUtility.IsClosed(self))
+            except Exception:
+                closed = same_vertex(start, end) if isinstance(start, Vertex) else False
+            if not closed:
+                result.append(end)
         if vertices is not None:
             vertices.extend(result)
             return 0
@@ -340,14 +417,7 @@ class Edge(Topology):
         if hostTopology is not None:
             candidates = Topology.Edges(hostTopology) or []
             for other in candidates:
-                if not isinstance(other, Edge) or other is self:
-                    continue
-                same_geometry = (
-                    same_vertex(other.start, self.start) and same_vertex(other.end, self.end)
-                ) or (
-                    same_vertex(other.start, self.end) and same_vertex(other.end, self.start)
-                )
-                if same_geometry:
+                if not isinstance(other, Edge) or _same_edge_topology(other, self):
                     continue
                 if (
                     same_vertex(self.start, other.start)
@@ -364,16 +434,51 @@ class Edge(Topology):
 
     @staticmethod
     def Reverse(edge, tolerance: float = 0.0001, silent: bool = False):
-        """Return the same OCCT curve with its topological orientation reversed."""
+        """
+        Returns an Edge with the reverse topological orientation of the input Edge.
+
+        The underlying OCCT curve geometry is preserved exactly. No reconstruction
+        from the Edge endpoints is performed.
+
+        Parameters
+        ----------
+        edge : Edge
+            The input Edge.
+        tolerance : float , optional
+            The desired tolerance. This parameter is accepted for API compatibility.
+            Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed.
+            Default is False.
+
+        Returns
+        -------
+        Edge
+            The reversed Edge, or None if the Edge cannot be reversed while
+            preserving its geometry.
+
+        """
         if not isinstance(edge, Edge):
             return None
+
+        if _is_null_shape(getattr(edge, "shape", None)):
+            return None
+
         try:
-            result = _wrap_shape_like(edge, edge.shape.Reversed())
+            shape = edge.shape.Reversed()
+
+            if _is_null_shape(shape):
+                return None
+
+            result = _wrap_shape_like(edge, shape)
+
             if isinstance(result, Edge):
                 return result
+
         except Exception:
             pass
-        return Edge.ByStartVertexEndVertex(edge.end, edge.start)
+
+        return None
 
     def Direction(self, mantissa: int = 6):
         """Return the unit chord direction from the oriented start to end Vertex."""
@@ -384,12 +489,11 @@ class Edge(Topology):
         dz = float(self.end.z) - float(self.start.z)
         magnitude = math.sqrt(dx * dx + dy * dy + dz * dz)
         if magnitude <= 0.0:
-            return [0, 0, 0]
-        return [
-            round(dx / magnitude, mantissa),
-            round(dy / magnitude, mantissa),
-            round(dz / magnitude, mantissa),
-        ]
+            return None
+        result = [dx / magnitude, dy / magnitude, dz / magnitude]
+        if mantissa is None:
+            return result
+        return [round(value, int(mantissa)) for value in result]
 
     def VertexByParameter(self, u: float = 0.0):
         """Return a Vertex at normalized parameter u along the OCCT curve."""
@@ -452,6 +556,489 @@ class Edge(Topology):
 class EdgeUtility:
     """OCCT-native utility operations for backend Edge objects."""
 
+
+    @staticmethod
+    def Arc(
+        radius: float = 0.5,
+        fromAngle: float = 0.0,
+        toAngle: float = 180.0,
+        tolerance: float = 0.0001
+    ):
+        """
+        Creates an exact open circular arc centred at the global origin in the XY plane.
+
+        The arc is created from the native OCCT circular-curve geometry. Angles are
+        measured in degrees counter-clockwise from the positive X-axis when viewed
+        from the positive Z-axis.
+
+        This backend method creates only the canonical geometry. Placement and
+        orientation are handled by the public `Edge.Arc` method.
+
+        Parameters
+        ----------
+        radius : float , optional
+            The radius of the arc. Default is 0.5.
+        fromAngle : float , optional
+            The start angle of the arc in degrees. Default is 0.0.
+        toAngle : float , optional
+            The end angle of the arc in degrees. Default is 180.0.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+
+        Returns
+        -------
+        Edge
+            The created open circular arc, or None if the arc cannot be created.
+
+        """
+        try:
+            radius = abs(float(radius))
+            fromAngle = float(fromAngle)
+            toAngle = float(toAngle)
+            tolerance = abs(float(tolerance))
+        except Exception:
+            return None
+
+        if not all(math.isfinite(value) for value in [radius, fromAngle, toAngle, tolerance]):
+            return None
+
+        if tolerance <= 0.0 or radius <= tolerance:
+            return None
+
+        while toAngle < fromAngle:
+            toAngle += 360.0
+
+        sweep = toAngle - fromAngle
+
+        if sweep <= 1.0e-12 or sweep >= 360.0 - 1.0e-12:
+            return None
+
+        chord_length = 2.0 * radius * abs(math.sin(math.radians(sweep) * 0.5))
+        if chord_length <= tolerance:
+            return None
+
+        try:
+            from OCC.Core.gp import gp_Ax2, gp_Dir, gp_Pnt
+            from OCC.Core.Geom import Geom_Circle
+            from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakeEdge
+
+            axis = gp_Ax2(
+                gp_Pnt(0.0, 0.0, 0.0),
+                gp_Dir(0.0, 0.0, 1.0),
+                gp_Dir(1.0, 0.0, 0.0),
+            )
+
+            circle = Geom_Circle(axis, radius)
+
+            start_parameter = math.radians(fromAngle)
+            end_parameter = math.radians(toAngle)
+
+            maker = BRepBuilderAPI_MakeEdge(
+                circle,
+                start_parameter,
+                end_parameter,
+            )
+
+            if not maker.IsDone():
+                return None
+
+            shape = maker.Edge()
+
+            if _is_null_shape(shape):
+                return None
+
+            return Edge.ByOcctShape(shape)
+
+        except Exception:
+            return None
+
+    @staticmethod
+    def ByCircle(
+        centerPoint,
+        radius,
+        xAxisX,
+        xAxisY,
+        xAxisZ,
+        normalX,
+        normalY,
+        normalZ
+    ):
+        """
+        Creates a single closed circular Edge.
+
+        The circle is created using native OCCT circular geometry. The input
+        centerPoint defines the centre of the circle, the X-axis vector defines
+        the zero-parameter direction of the circle, and the normal vector defines
+        the normal to the plane containing the circle.
+
+        This method mirrors the signature and behaviour of
+        `topologic_core.EdgeUtility.ByCircle`.
+
+        Parameters
+        ----------
+        centerPoint : Vertex
+            The centre vertex of the circle.
+        radius : float
+            The radius of the circle.
+        xAxisX : float
+            The X component of the circle's local X-axis.
+        xAxisY : float
+            The Y component of the circle's local X-axis.
+        xAxisZ : float
+            The Z component of the circle's local X-axis.
+        normalX : float
+            The X component of the circle plane normal.
+        normalY : float
+            The Y component of the circle plane normal.
+        normalZ : float
+            The Z component of the circle plane normal.
+
+        Returns
+        -------
+        Edge
+            The created closed circular Edge, or None if the circle cannot be
+            created.
+
+        """
+        if not isinstance(centerPoint, Vertex):
+            return None
+
+        try:
+            radius = abs(float(radius))
+            xAxisX = float(xAxisX)
+            xAxisY = float(xAxisY)
+            xAxisZ = float(xAxisZ)
+            normalX = float(normalX)
+            normalY = float(normalY)
+            normalZ = float(normalZ)
+        except Exception:
+            return None
+
+        values = [
+            radius,
+            xAxisX, xAxisY, xAxisZ,
+            normalX, normalY, normalZ,
+        ]
+
+        if not all(math.isfinite(value) for value in values):
+            return None
+
+        if radius <= 0.0:
+            return None
+
+        x_magnitude = math.sqrt(
+            xAxisX * xAxisX +
+            xAxisY * xAxisY +
+            xAxisZ * xAxisZ
+        )
+
+        normal_magnitude = math.sqrt(
+            normalX * normalX +
+            normalY * normalY +
+            normalZ * normalZ
+        )
+
+        if x_magnitude <= 0.0 or normal_magnitude <= 0.0:
+            return None
+
+        # The local X-axis must not be parallel to the circle normal.
+        cx = xAxisY * normalZ - xAxisZ * normalY
+        cy = xAxisZ * normalX - xAxisX * normalZ
+        cz = xAxisX * normalY - xAxisY * normalX
+
+        cross_magnitude = math.sqrt(cx * cx + cy * cy + cz * cz)
+
+        if cross_magnitude <= 1.0e-12:
+            return None
+
+        try:
+            from OCC.Core.gp import gp_Ax2, gp_Dir, gp_Pnt
+            from OCC.Core.Geom import Geom_Circle
+            from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakeEdge
+
+            axis = gp_Ax2(
+                gp_Pnt(
+                    float(centerPoint.x),
+                    float(centerPoint.y),
+                    float(centerPoint.z),
+                ),
+                gp_Dir(
+                    normalX,
+                    normalY,
+                    normalZ,
+                ),
+                gp_Dir(
+                    xAxisX,
+                    xAxisY,
+                    xAxisZ,
+                ),
+            )
+
+            curve = Geom_Circle(axis, radius)
+
+            maker = BRepBuilderAPI_MakeEdge(curve)
+
+            if not maker.IsDone():
+                return None
+
+            shape = maker.Edge()
+
+            if _is_null_shape(shape):
+                return None
+
+            return Edge.ByOcctShape(shape)
+
+        except Exception:
+            return None
+    @staticmethod
+    def ByNurbsCurve(controlPoints, knots, weights, degree: int = 3, isPeriodic: bool = False, isRational: bool = False):
+        """Create one exact OCCT B-spline/NURBS Edge from an expanded knot vector."""
+        vertices = [v for v in (controlPoints or []) if isinstance(v, Vertex)]
+        if len(vertices) < 2:
+            return None
+        try:
+            degree = int(degree)
+            expanded_knots = [float(v) for v in knots]
+            weights = [float(v) for v in weights]
+        except Exception:
+            return None
+        if degree < 1 or degree >= len(vertices):
+            return None
+        if len(weights) != len(vertices) or any(not math.isfinite(v) or v <= 0.0 for v in weights):
+            return None
+        if not bool(isRational):
+            weights = [1.0] * len(vertices)
+        if any(not math.isfinite(v) for v in expanded_knots):
+            return None
+        if any(expanded_knots[i] > expanded_knots[i+1] for i in range(len(expanded_knots)-1)):
+            return None
+
+        unique_knots = []
+        multiplicities = []
+        for value in expanded_knots:
+            if unique_knots and value == unique_knots[-1]:
+                multiplicities[-1] += 1
+            else:
+                unique_knots.append(value)
+                multiplicities.append(1)
+        if len(unique_knots) < 2:
+            return None
+        if bool(isPeriodic):
+            if multiplicities[0] != multiplicities[-1]:
+                return None
+            if any(m < 1 or m > degree for m in multiplicities):
+                return None
+            if sum(multiplicities) - multiplicities[0] != len(vertices):
+                return None
+        else:
+            if sum(multiplicities) != len(vertices) + degree + 1:
+                return None
+            if any(m < 1 or m > degree for m in multiplicities[1:-1]):
+                return None
+            if not (1 <= multiplicities[0] <= degree + 1 and 1 <= multiplicities[-1] <= degree + 1):
+                return None
+
+        try:
+            from OCC.Core.gp import gp_Pnt
+            from OCC.Core.TColgp import TColgp_Array1OfPnt
+            from OCC.Core.TColStd import TColStd_Array1OfReal, TColStd_Array1OfInteger
+            from OCC.Core.Geom import Geom_BSplineCurve
+            from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakeEdge
+
+            poles = TColgp_Array1OfPnt(1, len(vertices))
+            weight_array = TColStd_Array1OfReal(1, len(vertices))
+            for i, (vertex, weight) in enumerate(zip(vertices, weights), start=1):
+                poles.SetValue(i, gp_Pnt(float(vertex.x), float(vertex.y), float(vertex.z)))
+                weight_array.SetValue(i, float(weight))
+
+            knot_array = TColStd_Array1OfReal(1, len(unique_knots))
+            mult_array = TColStd_Array1OfInteger(1, len(unique_knots))
+            for i, (knot, mult) in enumerate(zip(unique_knots, multiplicities), start=1):
+                knot_array.SetValue(i, float(knot))
+                mult_array.SetValue(i, int(mult))
+
+            curve = Geom_BSplineCurve(
+                poles,
+                weight_array,
+                knot_array,
+                mult_array,
+                degree,
+                bool(isPeriodic),
+                True,
+            )
+            maker = BRepBuilderAPI_MakeEdge(curve)
+            if not maker.IsDone():
+                return None
+            shape = maker.Edge()
+            return None if _is_null_shape(shape) else Edge.ByOcctShape(shape)
+        except Exception:
+            return None
+
+    @staticmethod
+    def Connection(edgeA, edgeB, tolerance: float = 0.0001):
+        """
+        Returns the shortest straight Edge connecting two input Edges.
+
+        The closest points are computed from the complete OCCT edge geometries,
+        not merely from their endpoint vertices.
+
+        Parameters
+        ----------
+        edgeA : Edge
+            The first input Edge.
+        edgeB : Edge
+            The second input Edge.
+        tolerance : float , optional
+            The desired tolerance. If the minimum distance is less than or equal
+            to this value, None is returned because no non-degenerate connecting
+            Edge can be created. Default is 0.0001.
+
+        Returns
+        -------
+        Edge
+            The shortest straight connecting Edge, or None if the input Edges
+            intersect, touch, overlap, or the operation fails.
+
+        """
+        if not isinstance(edgeA, Edge) or not isinstance(edgeB, Edge):
+            return None
+
+        if _is_null_shape(getattr(edgeA, "shape", None)):
+            return None
+
+        if _is_null_shape(getattr(edgeB, "shape", None)):
+            return None
+
+        try:
+            tolerance = abs(float(tolerance))
+        except Exception:
+            return None
+
+        try:
+            from OCC.Core.BRepExtrema import BRepExtrema_DistShapeShape
+
+            extrema = BRepExtrema_DistShapeShape(
+                edgeA.shape,
+                edgeB.shape,
+            )
+
+            extrema.Perform()
+
+            if not extrema.IsDone() or extrema.NbSolution() < 1:
+                return None
+
+            distance = float(extrema.Value())
+
+            if not math.isfinite(distance) or distance <= tolerance:
+                return None
+
+            pointA = extrema.PointOnShape1(1)
+            pointB = extrema.PointOnShape2(1)
+
+            vertexA = Vertex.ByCoordinates(
+                float(pointA.X()),
+                float(pointA.Y()),
+                float(pointA.Z()),
+            )
+
+            vertexB = Vertex.ByCoordinates(
+                float(pointB.X()),
+                float(pointB.Y()),
+                float(pointB.Z()),
+            )
+
+            if not isinstance(vertexA, Vertex) or not isinstance(vertexB, Vertex):
+                return None
+
+            return Edge.ByStartVertexEndVertex(
+                vertexA,
+                vertexB,
+                tolerance=tolerance,
+            )
+
+        except Exception:
+            return None
+    
+    @staticmethod
+    def IsClosed(edge, tolerance: float = 0.0001):
+        """
+        Returns True if the input Edge is topologically closed. Returns False otherwise.
+
+        Parameters
+        ----------
+        edge : Edge
+            The input Edge.
+        tolerance : float , optional
+            The desired tolerance. This parameter is accepted for backend API
+            compatibility. Native OCCT topological closure is evaluated exactly.
+            Default is 0.0001.
+
+        Returns
+        -------
+        bool
+            True if the input Edge is topologically closed. False otherwise.
+
+        """
+        if not isinstance(edge, Edge):
+            return False
+
+        if _is_null_shape(getattr(edge, "shape", None)):
+            return False
+
+        try:
+            from OCC.Core.BRep import BRep_Tool
+            return bool(BRep_Tool.IsClosed(edge.shape))
+        except Exception:
+            return False
+    @staticmethod
+    def IsLinear(edge, tolerance: float = 0.0001):
+        """Return True only when the actual OCCT edge geometry is geometrically linear."""
+        if not isinstance(edge, Edge) or _is_null_shape(getattr(edge, "shape", None)):
+            return False
+        try:
+            tolerance = max(abs(float(tolerance)), 1.0e-12)
+        except Exception:
+            tolerance = 0.0001
+        try:
+            from OCC.Core.BRepAdaptor import BRepAdaptor_Curve
+            from OCC.Core.GeomAbs import GeomAbs_Line, GeomAbs_BSplineCurve, GeomAbs_BezierCurve
+            adaptor = BRepAdaptor_Curve(edge.shape)
+            curve_type = adaptor.GetType()
+            if curve_type == GeomAbs_Line:
+                return True
+            if curve_type == GeomAbs_BSplineCurve:
+                curve = adaptor.BSpline()
+            elif curve_type == GeomAbs_BezierCurve:
+                curve = adaptor.Bezier()
+            else:
+                return False
+            count = int(curve.NbPoles())
+            if count < 2:
+                return False
+            first = curve.Pole(1)
+            last = curve.Pole(count)
+            ax, ay, az = float(first.X()), float(first.Y()), float(first.Z())
+            dx = float(last.X()) - ax
+            dy = float(last.Y()) - ay
+            dz = float(last.Z()) - az
+            chord = math.sqrt(dx*dx + dy*dy + dz*dz)
+            if chord <= tolerance:
+                return False
+            for i in range(2, count):
+                p = curve.Pole(i)
+                px, py, pz = float(p.X())-ax, float(p.Y())-ay, float(p.Z())-az
+                cx = py*dz - pz*dy
+                cy = pz*dx - px*dz
+                cz = px*dy - py*dx
+                if math.sqrt(cx*cx + cy*cy + cz*cz) / chord > tolerance:
+                    return False
+            # Collinear poles are not sufficient if the curve doubles back along
+            # the same line. Require actual curve length to equal the endpoint chord.
+            curve_length = EdgeUtility.Length(edge, tolerance=tolerance)
+            return bool(curve_length is not None and abs(float(curve_length) - chord) <= tolerance)
+        except Exception:
+            return False
+    
     @staticmethod
     def Length(edge, tolerance: float = 0.0001):
         """Return the exact geometric length of an Edge."""
@@ -460,14 +1047,11 @@ class EdgeUtility:
         try:
             from OCC.Core.GProp import GProp_GProps
             from OCC.Core.BRepGProp import brepgprop
-
             properties = GProp_GProps()
             brepgprop.LinearProperties(edge.shape, properties)
             value = float(properties.Mass())
             return value if math.isfinite(value) else None
         except Exception:
-            if isinstance(edge.start, Vertex) and isinstance(edge.end, Vertex):
-                return distance3(edge.start, edge.end)
             return None
 
     @staticmethod
@@ -528,7 +1112,11 @@ class EdgeUtility:
 
     @staticmethod
     def PointAtDistance(edge, distance: float = 0.0, origin=None, tolerance: float = 0.0001):
-        """Return a Vertex at curvilinear distance from an origin on the Edge."""
+        """Return a Vertex at signed curvilinear distance from an origin on the Edge.
+
+        Closed edges wrap around their periodic path. Open curved edges are never
+        extrapolated beyond their finite domain; open linear edges may be extended.
+        """
         if not isinstance(edge, Edge):
             return None
         if not isinstance(origin, Vertex):
@@ -542,6 +1130,7 @@ class EdgeUtility:
             return None
         if abs(requested_distance) <= tol:
             return origin
+
         normalized_origin = EdgeUtility.ParameterAtPoint(edge, origin, tolerance=tol)
         if normalized_origin is None:
             return None
@@ -549,31 +1138,50 @@ class EdgeUtility:
         if bounds is None:
             return None
         curve, start_parameter, end_parameter = bounds
-        raw_origin = start_parameter + normalized_origin * (end_parameter - start_parameter)
-        parameter_orientation = 1.0 if end_parameter >= start_parameter else -1.0
+        denominator = end_parameter - start_parameter
+        if abs(denominator) <= 1.0e-15:
+            return None
+        raw_origin = start_parameter + normalized_origin * denominator
+        parameter_orientation = 1.0 if denominator >= 0.0 else -1.0
+        closed = EdgeUtility.IsClosed(edge, tolerance=tol)
+
+        # On a closed edge reduce arbitrarily large travel distances to one period.
+        effective_distance = requested_distance
+        if closed:
+            total_length = EdgeUtility.Length(edge, tolerance=tol)
+            if total_length is None or total_length <= tol:
+                return None
+            effective_distance = math.fmod(requested_distance, total_length)
+            if abs(effective_distance) <= tol:
+                return origin
 
         try:
             from OCC.Core.GeomAdaptor import GeomAdaptor_Curve
             from OCC.Core.GCPnts import GCPnts_AbscissaPoint
-
             adaptor = GeomAdaptor_Curve(curve)
             solver = GCPnts_AbscissaPoint(
                 tol,
                 adaptor,
-                requested_distance * parameter_orientation,
+                effective_distance * parameter_orientation,
                 raw_origin,
             )
             if solver.IsDone():
                 parameter_value = float(solver.Parameter())
-                result = _point_at_raw_parameter(curve, parameter_value)
-                if result is not None:
-                    return result
+                normalized = (parameter_value - start_parameter) / denominator
+                if closed:
+                    normalized = normalized % 1.0
+                    parameter_value = start_parameter + normalized * denominator
+                    return _point_at_raw_parameter(curve, parameter_value)
+                if -tol <= normalized <= 1.0 + tol:
+                    return _point_at_raw_parameter(curve, parameter_value)
         except Exception:
             pass
 
-        # Conservative fallback: extend from the origin along the local OCCT
-        # tangent. This remains exact for lines and avoids an endpoint-chord
-        # assumption when an unbounded curve cannot be evaluated by GCPnts.
+        if closed:
+            return None
+        # Extrapolation beyond a finite edge is exact only for linear geometry.
+        if not EdgeUtility.IsLinear(edge, tolerance=tol):
+            return None
         tangent = _tangent_at_raw_parameter(edge, curve, raw_origin)
         if tangent is None:
             return None
@@ -582,6 +1190,7 @@ class EdgeUtility:
             float(origin.y) + tangent[1] * requested_distance,
             float(origin.z) + tangent[2] * requested_distance,
         )
+
 
     @staticmethod
     def TangentAtParameter(edge, parameter: float = 0.5):
@@ -596,11 +1205,11 @@ class EdgeUtility:
 
     @staticmethod
     def Angle(edgeA, edgeB):
-        """Return the angle in degrees between the endpoint chord directions."""
-        if not isinstance(edgeA, Edge) or not isinstance(edgeB, Edge):
+        """Return the angle in degrees between two geometrically linear Edges."""
+        if not EdgeUtility.IsLinear(edgeA) or not EdgeUtility.IsLinear(edgeB):
             return None
-        direction_a = edgeA.Direction(mantissa=15)
-        direction_b = edgeB.Direction(mantissa=15)
+        direction_a = edgeA.Direction(mantissa=None)
+        direction_b = edgeB.Direction(mantissa=None)
         if direction_a is None or direction_b is None:
             return None
         dot = sum(a * b for a, b in zip(direction_a, direction_b))
@@ -609,24 +1218,14 @@ class EdgeUtility:
 
     @staticmethod
     def NormalAtParameter(edge, parameter):
-        """Return a deterministic unit normal to the local curve tangent."""
-        tangent = EdgeUtility.TangentAtParameter(edge, parameter)
-        if tangent is None:
+        """Return the principal unit normal of the actual OCCT curve, or None at zero curvature."""
+        if not isinstance(edge, Edge):
             return None
-        tx, ty, tz = tangent
-        eps = 1.0e-12
-        if abs(tx) <= eps and abs(ty) <= eps:
-            normal = [1.0, 0.0, 0.0]
-        elif abs(tz) <= eps:
-            normal = [-ty, tx, 0.0]
-        else:
-            # Preserve the historical TopologicPy convention for a non-XY
-            # direction: tangent cross global Z.
-            normal = [ty, -tx, 0.0]
-        magnitude = math.sqrt(sum(value * value for value in normal))
-        if magnitude <= eps:
+        raw = _raw_parameter(edge, parameter)
+        if raw is None:
             return None
-        return [value / magnitude for value in normal]
+        curve, parameter_value = raw
+        return _normal_at_raw_parameter(edge, curve, parameter_value)
 
     @staticmethod
     def Trim(edge, parameterA: float = 0.0, parameterB: float = 1.0):
@@ -664,9 +1263,8 @@ class EdgeUtility:
 
 # Edge -> Wire: find Wires in hostTopology containing this Edge.
 def _adjacent_wires(edge, hostTopology, output):
-    """Populate Wires in hostTopology that contain the input Edge."""
+    """Populate Wires in hostTopology that contain the actual input Edge topology."""
     from .topology import Topology
-    from .helpers import same_vertex
 
     if not isinstance(edge, Edge) or hostTopology is None:
         return 1
@@ -675,16 +1273,8 @@ def _adjacent_wires(edge, hostTopology, output):
     for wire in candidates:
         wire_edges = []
         Topology.Edges(wire, None, wire_edges)
-        for candidate in wire_edges:
-            if (
-                same_vertex(edge.start, candidate.start)
-                and same_vertex(edge.end, candidate.end)
-            ) or (
-                same_vertex(edge.start, candidate.end)
-                and same_vertex(edge.end, candidate.start)
-            ):
-                result.append(wire)
-                break
+        if any(_same_edge_topology(edge, candidate) for candidate in wire_edges if isinstance(candidate, Edge)):
+            result.append(wire)
     if output is not None:
         output.extend(result)
     return 0
@@ -692,9 +1282,8 @@ def _adjacent_wires(edge, hostTopology, output):
 
 # Edge -> Face: find Faces in hostTopology containing this Edge.
 def _adjacent_faces(edge, hostTopology, output):
-    """Populate Faces in hostTopology that contain the input Edge."""
+    """Populate Faces in hostTopology that contain the actual input Edge topology."""
     from .topology import Topology
-    from .helpers import same_vertex
 
     if not isinstance(edge, Edge) or hostTopology is None:
         return 1
@@ -703,16 +1292,8 @@ def _adjacent_faces(edge, hostTopology, output):
     for face in candidates:
         face_edges = []
         Topology.Edges(face, None, face_edges)
-        for candidate in face_edges:
-            if (
-                same_vertex(edge.start, candidate.start)
-                and same_vertex(edge.end, candidate.end)
-            ) or (
-                same_vertex(edge.start, candidate.end)
-                and same_vertex(edge.end, candidate.start)
-            ):
-                result.append(face)
-                break
+        if any(_same_edge_topology(edge, candidate) for candidate in face_edges if isinstance(candidate, Edge)):
+            result.append(face)
     if output is not None:
         output.extend(result)
     return 0
