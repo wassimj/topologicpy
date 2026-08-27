@@ -452,7 +452,14 @@ class Wire():
 
 
     @staticmethod
-    def Arc(startVertex, middleVertex, endVertex, sides: int = 16, close: bool = True, polyline: bool = False, tolerance: float = 0.0001, silent: bool = False):
+    def Arc(startVertex,
+            middleVertex,
+            endVertex,
+            sides: int = 16,
+            close: bool = True,
+            polyline: bool = True,
+            tolerance: float = 0.0001,
+            silent: bool = False):
         """
         Creates a circular arc Wire through three input vertices.
 
@@ -477,7 +484,7 @@ class Wire():
             Default is True.
         polyline : bool , optional
             If True, create the historical straight-edge approximation. If False,
-            create exact circular curve Edges. Default is False.
+            create exact circular curve Edges. Default is True.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
@@ -710,7 +717,14 @@ class Wire():
     
 
     @staticmethod
-    def ArcByEdge(edge, sagitta: float = 1, absolute: bool = True, sides: int = 16, close: bool = True, polyline: bool = False, tolerance: float = 0.0001, silent: bool = False):
+    def ArcByEdge(edge,
+                  sagitta: float = 1,
+                  absolute: bool = True,
+                  sides: int = 16,
+                  close: bool = True,
+                  polyline: bool = True,
+                  tolerance: float = 0.0001,
+                  silent: bool = False):
         """
         Creates an arc using a geometrically linear input edge as its base chord.
 
@@ -733,7 +747,7 @@ class Wire():
         close : bool , optional
             If True, add the straight base chord to close the arc. Default is True.
         polyline : bool , optional
-            If True, create the historical straight-edge approximation. Default is False.
+            If True, create the historical straight-edge approximation. Default is True.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
@@ -2740,7 +2754,18 @@ class Wire():
 
 
     @staticmethod
-    def Circle(origin=None, radius: float = 0.5, sides: int = 16, spokes: bool = False, fromAngle: float = 0.0, toAngle: float = 360.0, close: bool = True, direction: list = [0, 0, 1], placement: str = "center", polyline: bool = False, tolerance: float = 0.0001, silent: bool = False):
+    def Circle(origin=None,
+               radius: float = 0.5,
+               sides: int = 16,
+               spokes: bool = False,
+               fromAngle: float = 0.0,
+               toAngle: float = 360.0,
+               close: bool = True,
+               direction: list = [0, 0, 1],
+               placement: str = "center",
+               polyline: bool = True,
+               tolerance: float = 0.0001,
+               silent: bool = False):
         """
         Creates a circular Wire.
 
@@ -2775,7 +2800,7 @@ class Wire():
             "upperright". Default is "center".
         polyline : bool , optional
             If True, create the historical straight-edge approximation.
-            Default is False.
+            Default is True.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
@@ -4149,7 +4174,7 @@ class Wire():
                 close: bool = True,
                 direction: list = [0, 0, 1],
                 placement: str = "center",
-                polyline: bool = False,
+                polyline: bool = True,
                 tolerance: float = 0.0001,
                 silent: bool = False):
         """
@@ -4194,7 +4219,7 @@ class Wire():
         placement : str , optional
             "center" or "lowerleft". Default is "center".
         polyline : bool , optional
-            If True, create the historical straight-edge approximation. Default is False.
+            If True, create the historical straight-edge approximation. Default is True.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
@@ -4233,7 +4258,23 @@ class Wire():
 
 
     @staticmethod
-    def EllipseAll(origin=None, inputMode: int = 1, width: float = 2.0, length: float = 1.0, focalLength: float = 0.866025, eccentricity: float = 0.866025, majorAxisLength: float = 1.0, minorAxisLength: float = 0.5, sides: int = 32, fromAngle: float = 0.0, toAngle: float = 360.0, close: bool = True, direction: list = [0, 0, 1], placement: str = "center", polyline: bool = False, tolerance: float = 0.0001, silent: bool = False):
+    def EllipseAll(origin=None,
+                   nputMode: int = 1,
+                   width: float = 2.0,
+                   length: float = 1.0,
+                   focalLength: float = 0.866025,
+                   eccentricity: float = 0.866025,
+                   majorAxisLength: float = 1.0,
+                   minorAxisLength: float = 0.5,
+                   sides: int = 32,
+                   fromAngle: float = 0.0,
+                   toAngle: float = 360.0,
+                   close: bool = True,
+                   direction: list = [0, 0, 1],
+                   placement: str = "center",
+                   polyline: bool = True,
+                   tolerance: float = 0.0001,
+                   silent: bool = False):
         """
         Creates an ellipse and returns its geometry and derived parameters.
 
@@ -4275,7 +4316,7 @@ class Wire():
             "center" or "lowerleft". Default is "center".
         polyline : bool , optional
             If True, create straight segments instead of exact conic Edges.
-            Default is False.
+            Default is True.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
@@ -5202,7 +5243,7 @@ class Wire():
                      placement: str = "center",
                      direction: list = [0, 0, 1],
                      mantissa: int = 6,
-                     polyline: bool = False,
+                     polyline: bool = True,
                      tolerance: float = 0.0001,
                      silent: bool = False):
         """
@@ -5238,7 +5279,7 @@ class Wire():
             Default is 6.
         polyline : bool , optional
             If True, create the historical straight-edge approximation.
-            Default is False.
+            Default is True.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
@@ -7905,7 +7946,19 @@ class Wire():
     
 
     @staticmethod
-    def Spiral(origin=None, radiusA: float = 0.05, radiusB: float = 0.5, height: float = 1, turns: int = 10, sides: int = 36, clockwise: bool = False, reverse: bool = False, direction: list = [0, 0, 1], placement: str = "center", polyline: bool = False, tolerance: float = 0.0001, silent: bool = False):
+    def Spiral(origin=None,
+               radiusA: float = 0.05,
+               radiusB: float = 0.5,
+               height: float = 1,
+               turns: int = 10,
+               sides: int = 36,
+               clockwise: bool = False,
+               reverse: bool = False,
+               direction: list = [0, 0, 1],
+               placement: str = "center",
+               polyline: bool = True,
+               tolerance: float = 0.0001,
+               silent: bool = False):
         """
         Creates an Archimedean spatial spiral between two radii.
 
@@ -7941,7 +7994,7 @@ class Wire():
             One of "center", "lowerleft", "upperleft", "lowerright", or
             "upperright". Default is "center".
         polyline : bool , optional
-            If True, create straight segments. Default is False.
+            If True, create straight segments. Default is True.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
@@ -8215,7 +8268,17 @@ class Wire():
     
 
     @staticmethod
-    def Squircle(origin=None, radius: float = 0.5, sides: int = 121, a: float = 2.0, b: float = 2.0, direction: list = [0, 0, 1], placement: str = "center", angTolerance: float = 0.1, polyline: bool = False, tolerance: float = 0.0001, silent: bool = False):
+    def Squircle(origin=None,
+                 radius: float = 0.5,
+                 sides: int = 121,
+                 a: float = 2.0,
+                 b: float = 2.0,
+                 direction: list = [0, 0, 1],
+                 placement: str = "center",
+                 angTolerance: float = 0.1,
+                 polyline: bool = True,
+                 tolerance: float = 0.0001,
+                 silent: bool = False):
         """
         Creates a squircle/superellipse Wire.
 
@@ -8246,7 +8309,7 @@ class Wire():
         angTolerance : float , optional
             Angular cleanup tolerance used only in polyline mode. Default is 0.1.
         polyline : bool , optional
-            If True, create the historical straight-edge approximation. Default is False.
+            If True, create the historical straight-edge approximation. Default is True.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
