@@ -4364,6 +4364,11 @@ class Edge():
         start of edgeA is used when reverse is False. If reverse is True, the
         intersection closest to the end of edgeA is used.
 
+        If reverse is False, the returned edge is oriented from the original start
+        vertex of edgeA toward the selected intersection. If reverse is True, the
+        returned edge is oriented from the original end vertex of edgeA toward the
+        selected intersection.
+
         The second input edge may be linear or curved. The first input edge may also
         be linear or curved. No curved edge is reconstructed from its endpoints.
 
@@ -4377,8 +4382,10 @@ class Edge():
             The second input edge. This edge will be used to trim edgeA.
         reverse : bool , optional
             If set to False, the segment adjacent to the start vertex of edgeA is
-            preserved. If set to True, the segment adjacent to the end vertex of
-            edgeA is preserved. Default is False.
+            preserved and retains the orientation from the start vertex toward the
+            intersection. If set to True, the segment adjacent to the end vertex is
+            preserved and is oriented from the end vertex toward the intersection.
+            Default is False.
         mantissa : int , optional
             The number of decimal places to use when comparing parameter values.
             Default is 6.
@@ -4432,13 +4439,12 @@ class Edge():
                 print("Edge.TrimByEdge - Error: The input mantissa parameter must be zero or greater. Returning None.")
             return None
 
-        # Compute the actual topological/geometric intersection. There is no need
-        # to classify the edges as parallel, collinear, or even coplanar first.
+        # Compute the actual geometric/topological intersection.
         try:
             intersection = Topology.Intersect(
                 edgeA,
                 edgeB,
-                tolerance=tolerance
+                tolerance=tolerance,
             )
         except Exception:
             intersection = None
@@ -4446,10 +4452,8 @@ class Edge():
         if intersection is None:
             return edgeA
 
-        # Extract all intersection vertices. This handles:
-        #   Vertex  -> ordinary single intersection
-        #   Edge    -> overlapping portion
-        #   Cluster -> multiple intersections
+        # Extract intersection vertices. This also handles overlapping results
+        # whose boundary vertices can provide usable trim parameters.
         if Topology.IsInstance(intersection, "Vertex"):
             vertices = [intersection]
         else:
@@ -4461,8 +4465,8 @@ class Edge():
         if not isinstance(vertices, list) or len(vertices) == 0:
             return edgeA
 
-        # Convert intersection vertices to normalized parameters on edgeA.
-        # Only strictly internal parameters are useful for trimming.
+        # Convert valid internal intersection vertices to normalized parameters
+        # on the actual geometry of edgeA.
         parameters = []
 
         for vertex in vertices:
@@ -4488,15 +4492,16 @@ class Edge():
             if not math.isfinite(u):
                 continue
 
-            # Ignore intersections at the existing endpoints.
+            # Intersections at existing endpoints do not trim the edge.
             if u <= tolerance or u >= 1.0 - tolerance:
                 continue
 
-            # Avoid duplicate parameters produced by coincident intersection
-            # vertices or overlapping topology.
             rounded_u = round(u, mantissa)
 
-            if not any(round(existing, mantissa) == rounded_u for existing in parameters):
+            if not any(
+                round(existing, mantissa) == rounded_u
+                for existing in parameters
+            ):
                 parameters.append(u)
 
         if len(parameters) == 0:
@@ -4504,12 +4509,15 @@ class Edge():
 
         parameters.sort()
 
-        # Preserve the segment adjacent to the requested end.
         if reverse:
+            # Select the intersection nearest the original end and orient the
+            # result FROM the original end TOWARD the intersection.
             u = parameters[-1]
-            uA = u
-            uB = 1.0
+            uA = 1.0
+            uB = u
         else:
+            # Select the intersection nearest the original start and orient the
+            # result FROM the original start TOWARD the intersection.
             u = parameters[0]
             uA = 0.0
             uB = u
