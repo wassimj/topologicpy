@@ -8910,66 +8910,165 @@ class Topology():
             return False
 
     @staticmethod
-    def ExportToBREP(topology, path, overwrite=False, version=3, silent: bool = False):
+    def ExportToBREP(
+        topology,
+        path,
+        overwrite: bool = False,
+        version: int = 3,
+        silent: bool = False,
+    ):
         """
-        Exports the input topology to a BREP file. See https://dev.opencascade.org/doc/occt-6.7.0/overview/html/occt_brep_format.html.
+        Exports the input topology to a standard Open CASCADE BREP file.
+
+        The output file contains raw OCCT ASCII BREP data and can therefore be
+        opened by external BREP-compatible applications such as FreeCAD and other
+        Open CASCADE-based viewers.
+
+        Some TopologicPy backends may return an internal JSON serialization
+        envelope from Topology.BREPString. If such an envelope is detected, this
+        method extracts and writes only its raw BREP payload.
 
         Parameters
         ----------
         topology : topologic_core.Topology
             The input topology.
         path : str
-            The input file path.
+            The output file path.
         overwrite : bool , optional
-            If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won't. Default is False.
+            If set to True, an existing file at the specified path will be
+            overwritten. Otherwise, the method will return None if the file
+            already exists. Default is False.
         version : int , optional
-            The desired version number for the BREP file. Default is 3.
+            The desired BREP format version. Valid values are 1, 2, and 3.
+            Default is 3.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
+            If set to True, error and information messages are suppressed.
+            Default is False.
 
         Returns
         -------
         bool
-            True if the export operation is successful. False otherwise.
+            True if the BREP file was successfully exported. Otherwise, None.
 
         """
-        from os.path import exists
+        import json
+        import os
+
         if not Topology.IsInstance(topology, "Topology"):
             if not silent:
-                print("Topology.ExportToBREP - Error: the input topology parameter is not a valid topology. Returning None.")
+                print(
+                    "Topology.ExportToBREP - Error: The input topology parameter "
+                    "is not a valid topology. Returning None."
+                )
             return None
-        if not isinstance(path, str):
+
+        if not isinstance(path, str) or not path.strip():
             if not silent:
-                print("Topology.ExportToBREP - Error: the input path parameter is not a valid string. Returning None.")
+                print(
+                    "Topology.ExportToBREP - Error: The input path parameter "
+                    "is not a valid string. Returning None."
+                )
             return None
-        # Make sure the file extension is .brep
-        ext = path[len(path)-5:len(path)]
-        if ext.lower() != ".brep":
-            path = path+".brep"
-        if not overwrite and exists(path):
-            if not silent:
-                print("Topology.ExportToBREP - Error: a file already exists at the specified path and overwrite is set to False. Returning None.")
-            return None
-        f = None
+
         try:
-            if overwrite == True:
-                f = open(path, "w")
-            else:
-                f = open(path, "x") # Try to create a new File
-        except:
+            version = int(version)
+        except Exception:
             if not silent:
-                print(f"Topology.ExportToBREP - Error: Could not create a new file at the following location: {path}. Returning None.")
+                print(
+                    "Topology.ExportToBREP - Error: The input version parameter "
+                    "is not a valid integer. Returning None."
+                )
             return None
-        if (f):
-            s = Topology.BREPString(topology, version)
-            f.write(s)
-            f.close()    
+
+        if version not in [1, 2, 3]:
             if not silent:
-                print(f"Topology.ExportToBREP - Information: File save successfully. Returning True.")
-            return True
+                print(
+                    "Topology.ExportToBREP - Error: The input version parameter "
+                    "must be 1, 2, or 3. Returning None."
+                )
+            return None
+
+        path = os.path.expanduser(path)
+
+        root, ext = os.path.splitext(path)
+        if ext.lower() != ".brep":
+            path = path + ".brep"
+
+        if not overwrite and os.path.exists(path):
+            if not silent:
+                print(
+                    "Topology.ExportToBREP - Error: A file already exists at the "
+                    "specified path and overwrite is set to False. Returning None."
+                )
+            return None
+
+        brep_string = Topology.BREPString(
+            topology,
+            version=version,
+            silent=True,
+        )
+
+        if not isinstance(brep_string, str) or not brep_string.strip():
+            if not silent:
+                print(
+                    "Topology.ExportToBREP - Error: Could not generate BREP data "
+                    "from the input topology. Returning None."
+                )
+            return None
+
+        # PythonOCC may use a TopologicPy serialization envelope internally.
+        # External .brep files must contain only the raw OCCT BREP payload.
+        stripped = brep_string.lstrip()
+
+        if stripped.startswith("{"):
+            try:
+                payload = json.loads(brep_string)
+
+                if (
+                    isinstance(payload, dict)
+                    and isinstance(payload.get("brep"), str)
+                    and payload["brep"].strip()
+                ):
+                    brep_string = payload["brep"]
+
+            except Exception:
+                # The string merely happened to begin with "{". Leave it intact;
+                # the validation below will reject it if it is not OCCT BREP data.
+                pass
+
+        # Guard against accidentally writing another proprietary/internal
+        # serialization under the .brep extension.
+        stripped = brep_string.lstrip()
+
+        if not (
+            stripped.startswith("DBRep_DrawableShape")
+            or stripped.startswith("CASCADE Topology")
+        ):
+            if not silent:
+                print(
+                    "Topology.ExportToBREP - Error: The generated data is not a "
+                    "valid Open CASCADE ASCII BREP stream. Returning None."
+                )
+            return None
+
+        try:
+            with open(path, "w", encoding="utf-8", newline="\n") as file:
+                file.write(brep_string)
+        except Exception:
+            if not silent:
+                print(
+                    f"Topology.ExportToBREP - Error: Could not save the file at "
+                    f"the following location: {path}. Returning None."
+                )
+            return None
+
         if not silent:
-            print(f"Topology.ExportToBREP - Error: Could not save the file at the following location: {path}. Returning None.")
-        return None
+            print(
+                f"Topology.ExportToBREP - Information: File saved successfully "
+                f"to {path}. Returning True."
+            )
+
+        return True
 
     def ExportToDXF(topologies, path: str,  overwrite: bool = False, mantissa: int = 6, silent: bool = False):
         """
