@@ -8871,195 +8871,195 @@ class Wire():
         return value if mantissa is None else round(value, mantissa)
 
 
-@staticmethod
-def VertexByDistance(
-    wire,
-    distance: float = 0.0,
-    origin=None,
-    tolerance: float = 0.0001,
-    silent: bool = False,
-):
-    """
-    Creates a vertex at a signed curvilinear distance from an origin along an open manifold wire.
-
-    The distance is evaluated using the actual geometric lengths of the
-    constituent edges. Curved edges are therefore traversed by arc length and
-    are never replaced by their endpoint chords.
-
-    The input wire must be open and manifold because this method relies on a
-    unique start-to-end traversal direction. Closed wires have no unique start
-    or end vertex and therefore cause the method to return None.
-
-    If origin is None, the start vertex of the wire is used. When the origin is
-    the end vertex, a positive distance proceeds backward into the wire,
-    preserving the historical TopologicPy behaviour.
-
-    Parameters
-    ----------
-    wire : topologic_core.Wire
-        The input open manifold wire.
-    distance : float , optional
-        The signed curvilinear distance from the input origin. Default is 0.
-    origin : topologic_core.Vertex , optional
-        The origin from which the distance is measured. If None, the start
-        vertex of the wire is used. Default is None.
-    tolerance : float , optional
-        The desired geometric tolerance. Default is 0.0001.
-    silent : bool , optional
-        If set to True, error and warning messages are suppressed.
-        Default is False.
-
-    Returns
-    -------
-    topologic_core.Vertex
-        The vertex at the requested curvilinear distance, or None if the input
-        is invalid or the requested position lies outside the wire.
-
-    """
-    import math
-
-    from topologicpy.Edge import Edge
-    from topologicpy.Vertex import Vertex
-    from topologicpy.Topology import Topology
-
-    if not Topology.IsInstance(wire, "Wire"):
-        if not silent:
-            print("Wire.VertexByDistance - Error: The input wire parameter is not a valid topologic wire. Returning None.")
-        return None
-
-    try:
-        distance = float(distance)
-        tolerance = float(tolerance)
-    except Exception:
-        if not silent:
-            print("Wire.VertexByDistance - Error: The input distance or tolerance parameter is not a valid number. Returning None.")
-        return None
-
-    if not math.isfinite(distance) or not math.isfinite(tolerance) or tolerance <= 0.0:
-        if not silent:
-            print("Wire.VertexByDistance - Error: The input distance and tolerance parameters must be finite and tolerance must be greater than zero. Returning None.")
-        return None
-
-    if not Wire.IsManifold(
+    @staticmethod
+    def VertexByDistance(
         wire,
-        tolerance=tolerance,
-        silent=True,
+        distance: float = 0.0,
+        origin=None,
+        tolerance: float = 0.0001,
+        silent: bool = False,
     ):
-        if not silent:
-            print("Wire.VertexByDistance - Error: The input wire parameter is non-manifold. Returning None.")
-        return None
+        """
+        Creates a vertex at a signed curvilinear distance from an origin along an open manifold wire.
 
-    # Preserve the established public API contract. A closed Wire has no
-    # unique start/end traversal direction for this method.
-    if Wire.IsClosed(
-        wire,
-        tolerance=tolerance,
-        silent=True,
-    ):
-        if not silent:
-            print("Wire.VertexByDistance - Error: The input wire parameter is closed. Returning None.")
-        return None
+        The distance is evaluated using the actual geometric lengths of the
+        constituent edges. Curved edges are therefore traversed by arc length and
+        are never replaced by their endpoint chords.
 
-    ordered_edges = Wire._OrderedEdges(
-        wire,
-        tolerance=tolerance,
-        silent=True,
-    )
+        The input wire must be open and manifold because this method relies on a
+        unique start-to-end traversal direction. Closed wires have no unique start
+        or end vertex and therefore cause the method to return None.
 
-    if not isinstance(ordered_edges, list) or len(ordered_edges) == 0:
-        if not silent:
-            print("Wire.VertexByDistance - Error: Could not determine an ordered edge traversal. Returning None.")
-        return None
+        If origin is None, the start vertex of the wire is used. When the origin is
+        the end vertex, a positive distance proceeds backward into the wire,
+        preserving the historical TopologicPy behaviour.
 
-    wire_length = Wire.Length(
-        wire,
-        mantissa=None,
-        tolerance=tolerance,
-        silent=True,
-    )
+        Parameters
+        ----------
+        wire : topologic_core.Wire
+            The input open manifold wire.
+        distance : float , optional
+            The signed curvilinear distance from the input origin. Default is 0.
+        origin : topologic_core.Vertex , optional
+            The origin from which the distance is measured. If None, the start
+            vertex of the wire is used. Default is None.
+        tolerance : float , optional
+            The desired geometric tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed.
+            Default is False.
 
-    if wire_length is None:
-        if not silent:
-            print("Wire.VertexByDistance - Error: Could not determine the wire length. Returning None.")
-        return None
+        Returns
+        -------
+        topologic_core.Vertex
+            The vertex at the requested curvilinear distance, or None if the input
+            is invalid or the requested position lies outside the wire.
 
-    try:
-        wire_length = float(wire_length)
-    except Exception:
-        return None
+        """
+        import math
 
-    if not math.isfinite(wire_length) or wire_length <= tolerance:
-        if not silent:
-            print("Wire.VertexByDistance - Error: The input wire parameter is degenerate. Returning None.")
-        return None
+        from topologicpy.Edge import Edge
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
 
-    start = Edge.StartVertex(
-        ordered_edges[0],
-        silent=True,
-    )
+        if not Topology.IsInstance(wire, "Wire"):
+            if not silent:
+                print("Wire.VertexByDistance - Error: The input wire parameter is not a valid topologic wire. Returning None.")
+            return None
 
-    end = Edge.EndVertex(
-        ordered_edges[-1],
-        silent=True,
-    )
+        try:
+            distance = float(distance)
+            tolerance = float(tolerance)
+        except Exception:
+            if not silent:
+                print("Wire.VertexByDistance - Error: The input distance or tolerance parameter is not a valid number. Returning None.")
+            return None
 
-    if not Topology.IsInstance(start, "Vertex") or not Topology.IsInstance(end, "Vertex"):
-        if not silent:
-            print("Wire.VertexByDistance - Error: Could not determine the start and end vertices of the input wire. Returning None.")
-        return None
+        if not math.isfinite(distance) or not math.isfinite(tolerance) or tolerance <= 0.0:
+            if not silent:
+                print("Wire.VertexByDistance - Error: The input distance and tolerance parameters must be finite and tolerance must be greater than zero. Returning None.")
+            return None
 
-    # Preserve historical behaviour.
-    if abs(distance) <= tolerance:
-        return start
+        if not Wire.IsManifold(
+            wire,
+            tolerance=tolerance,
+            silent=True,
+        ):
+            if not silent:
+                print("Wire.VertexByDistance - Error: The input wire parameter is non-manifold. Returning None.")
+            return None
 
-    if abs(distance - wire_length) <= tolerance:
-        return end
+        # Preserve the established public API contract. A closed Wire has no
+        # unique start/end traversal direction for this method.
+        if Wire.IsClosed(
+            wire,
+            tolerance=tolerance,
+            silent=True,
+        ):
+            if not silent:
+                print("Wire.VertexByDistance - Error: The input wire parameter is closed. Returning None.")
+            return None
 
-    if not Topology.IsInstance(origin, "Vertex"):
-        origin = start
+        ordered_edges = Wire._OrderedEdges(
+            wire,
+            tolerance=tolerance,
+            silent=True,
+        )
 
-    origin_distance = Wire._DistanceFromStart(
-        wire,
-        origin,
-        tolerance=tolerance,
-        silent=True,
-    )
+        if not isinstance(ordered_edges, list) or len(ordered_edges) == 0:
+            if not silent:
+                print("Wire.VertexByDistance - Error: Could not determine an ordered edge traversal. Returning None.")
+            return None
 
-    if origin_distance is None:
-        if not silent:
-            print("Wire.VertexByDistance - Error: The input origin parameter does not lie on the input wire. Returning None.")
-        return None
+        wire_length = Wire.Length(
+            wire,
+            mantissa=None,
+            tolerance=tolerance,
+            silent=True,
+        )
 
-    origin_distance = float(origin_distance)
+        if wire_length is None:
+            if not silent:
+                print("Wire.VertexByDistance - Error: Could not determine the wire length. Returning None.")
+            return None
 
-    # Preserve historical end-origin semantics: positive distance from the end
-    # proceeds backward toward the wire start.
-    if Vertex.IsCoincident(
-        origin,
-        end,
-        tolerance=tolerance,
-        silent=True,
-    ):
-        target_distance = wire_length - distance
-    else:
-        target_distance = origin_distance + distance
+        try:
+            wire_length = float(wire_length)
+        except Exception:
+            return None
 
-    if target_distance < -tolerance or target_distance > wire_length + tolerance:
-        if not silent:
-            print("Wire.VertexByDistance - Error: The requested distance lies outside the input wire. Returning None.")
-        return None
+        if not math.isfinite(wire_length) or wire_length <= tolerance:
+            if not silent:
+                print("Wire.VertexByDistance - Error: The input wire parameter is degenerate. Returning None.")
+            return None
 
-    target_distance = max(
-        0.0,
-        min(wire_length, target_distance),
-    )
+        start = Edge.StartVertex(
+            ordered_edges[0],
+            silent=True,
+        )
 
-    return Wire._VertexAtDistanceFromStart(
-        wire,
-        target_distance,
-        tolerance=tolerance,
-        silent=silent,
-    )
+        end = Edge.EndVertex(
+            ordered_edges[-1],
+            silent=True,
+        )
+
+        if not Topology.IsInstance(start, "Vertex") or not Topology.IsInstance(end, "Vertex"):
+            if not silent:
+                print("Wire.VertexByDistance - Error: Could not determine the start and end vertices of the input wire. Returning None.")
+            return None
+
+        # Preserve historical behaviour.
+        if abs(distance) <= tolerance:
+            return start
+
+        if abs(distance - wire_length) <= tolerance:
+            return end
+
+        if not Topology.IsInstance(origin, "Vertex"):
+            origin = start
+
+        origin_distance = Wire._DistanceFromStart(
+            wire,
+            origin,
+            tolerance=tolerance,
+            silent=True,
+        )
+
+        if origin_distance is None:
+            if not silent:
+                print("Wire.VertexByDistance - Error: The input origin parameter does not lie on the input wire. Returning None.")
+            return None
+
+        origin_distance = float(origin_distance)
+
+        # Preserve historical end-origin semantics: positive distance from the end
+        # proceeds backward toward the wire start.
+        if Vertex.IsCoincident(
+            origin,
+            end,
+            tolerance=tolerance,
+            silent=True,
+        ):
+            target_distance = wire_length - distance
+        else:
+            target_distance = origin_distance + distance
+
+        if target_distance < -tolerance or target_distance > wire_length + tolerance:
+            if not silent:
+                print("Wire.VertexByDistance - Error: The requested distance lies outside the input wire. Returning None.")
+            return None
+
+        target_distance = max(
+            0.0,
+            min(wire_length, target_distance),
+        )
+
+        return Wire._VertexAtDistanceFromStart(
+            wire,
+            target_distance,
+            tolerance=tolerance,
+            silent=silent,
+        )
 
     @staticmethod
     def ParameterAtVertex(wire, vertex, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
