@@ -551,6 +551,16 @@ class Face():
 
         from topologicpy.Topology import Topology
 
+        # TopologicCore's current Python bindings do not expose
+        # Face.ByNurbsParameters.
+        if not Face._UseNativeFaceBackend():
+            if not silent:
+                print(
+                    "Face.ByNurbsParameters - Error: The TopologicCore backend "
+                    "does not support NURBS surface construction. Returning None."
+                )
+            return None
+
         # ------------------------------------------------------------------
         # Tolerance.
         # ------------------------------------------------------------------
@@ -757,10 +767,7 @@ class Face():
             multiplicities = []
 
             for value in knots:
-                if (
-                    unique_knots
-                    and value == unique_knots[-1]
-                ):
+                if unique_knots and value == unique_knots[-1]:
                     multiplicities[-1] += 1
                 else:
                     unique_knots.append(value)
@@ -839,7 +846,7 @@ class Face():
             return None
 
         # ------------------------------------------------------------------
-        # Delegate actual surface construction to the active backend.
+        # Delegate construction to the active backend.
         # ------------------------------------------------------------------
 
         face = None
@@ -857,8 +864,6 @@ class Face():
                 vDegree,
                 tolerance,
             )
-
-        # TopologicCore exposes the historical nine-argument signature.
         except TypeError:
             try:
                 face = Core.Face.ByNurbsParameters(
@@ -874,7 +879,6 @@ class Face():
                 )
             except Exception:
                 face = None
-
         except Exception:
             face = None
 

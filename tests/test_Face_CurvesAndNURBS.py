@@ -2,6 +2,7 @@ import math
 
 import pytest
 
+from topologicpy.Core import Core
 from topologicpy.Face import Face
 from topologicpy.Topology import Topology
 from topologicpy.Vertex import Vertex
@@ -23,7 +24,23 @@ def _dot(a, b):
     return sum(x * y for x, y in zip(a, b))
 
 
+def _require_nurbs_surface_support():
+    """Skip when the active backend cannot construct native NURBS Faces."""
+    try:
+        supported = Core.HasAttribute("Face", "ByNurbsParameters")
+    except Exception:
+        supported = False
+
+    if not supported:
+        pytest.skip(
+            "The active backend does not expose native Face.ByNurbsParameters "
+            "NURBS surface construction."
+        )
+
+
 def _make_curved_nurbs_face():
+    _require_nurbs_surface_support()
+
     z_values = [
         [0.0, 0.0, 0.0, 0.0],
         [0.0, 1.0, 1.0, 0.0],
@@ -55,6 +72,8 @@ def _make_curved_nurbs_face():
 
 
 def _make_planar_nurbs_face():
+    _require_nurbs_surface_support()
+
     control_points = []
 
     for i in range(4):
@@ -76,6 +95,28 @@ def _make_planar_nurbs_face():
         tolerance=TOL,
         silent=True,
     )
+
+
+
+def test_planar_rectangle_is_recognized_as_planar():
+    face = Face.Rectangle(
+        width=3.0,
+        length=2.0,
+        tolerance=TOL,
+        silent=True,
+    )
+
+    assert Topology.IsInstance(face, "Face")
+    assert Face.IsPlanar(face, tolerance=TOL, silent=True) is True
+
+    equation = Face.PlaneEquation(
+        face,
+        mantissa=None,
+        tolerance=TOL,
+        silent=True,
+    )
+
+    assert isinstance(equation, dict)
 
 
 def test_nurbs_face_is_one_true_curved_face():
@@ -247,6 +288,8 @@ def test_planar_nurbs_surface_is_recognized_as_planar():
 
 def test_plane_equation_and_global_angle_reject_curved_faces():
     curved = _make_curved_nurbs_face()
+    assert Topology.IsInstance(curved, "Face")
+
     planar = Face.Rectangle(
         width=3.0,
         length=3.0,
