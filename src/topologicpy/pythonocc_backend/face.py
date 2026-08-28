@@ -770,6 +770,157 @@ class Face(Topology):
         face.apertures = list(apertures) if apertures else []
         return face
 
+    @staticmethod
+    def CurvatureAtParameters(
+        face,
+        u=0.5,
+        v=0.5,
+        tolerance: float = 0.0001
+    ):
+        """
+        Returns native OCCT surface-curvature properties at normalized parameters.
+
+        Signed principal and mean curvatures respect the topological orientation
+        of the Face. Gaussian curvature is orientation-independent.
+        """
+        mapped = _normalized_to_raw(
+            face,
+            u,
+            v,
+        )
+
+        if mapped is None:
+            return None
+
+        surface, raw_u, raw_v, _, _, _, _ = mapped
+
+        tol = _face_tolerance(
+            tolerance
+        )
+
+        try:
+            from OCC.Core.GeomLProp import GeomLProp_SLProps
+            from OCC.Core.TopAbs import TopAbs_REVERSED
+            from OCC.Core.gp import gp_Dir
+
+            properties = GeomLProp_SLProps(
+                surface,
+                raw_u,
+                raw_v,
+                2,
+                tol,
+            )
+
+            if not properties.IsCurvatureDefined():
+                return None
+
+            maximum = float(
+                properties.MaxCurvature()
+            )
+
+            minimum = float(
+                properties.MinCurvature()
+            )
+
+            mean = float(
+                properties.MeanCurvature()
+            )
+
+            gaussian = float(
+                properties.GaussianCurvature()
+            )
+
+            is_umbilic = bool(
+                properties.IsUmbilic()
+            )
+
+            maximum_direction = None
+            minimum_direction = None
+
+            try:
+                max_dir = gp_Dir(
+                    1.0,
+                    0.0,
+                    0.0,
+                )
+
+                min_dir = gp_Dir(
+                    0.0,
+                    1.0,
+                    0.0,
+                )
+
+                properties.CurvatureDirections(
+                    max_dir,
+                    min_dir,
+                )
+
+                maximum_direction = [
+                    float(max_dir.X()),
+                    float(max_dir.Y()),
+                    float(max_dir.Z()),
+                ]
+
+                minimum_direction = [
+                    float(min_dir.X()),
+                    float(min_dir.Y()),
+                    float(min_dir.Z()),
+                ]
+
+            except Exception:
+                maximum_direction = None
+                minimum_direction = None
+
+            occ_face = _as_occ_face(
+                face
+            )
+
+            # Changing Face orientation reverses the normal. Principal and mean
+            # curvature signs therefore reverse. Since kmax >= kmin, negation
+            # also swaps which principal curvature is the maximum.
+            if (
+                occ_face is not None
+                and occ_face.Orientation() == TopAbs_REVERSED
+            ):
+                old_maximum = maximum
+                old_minimum = minimum
+
+                maximum = -old_minimum
+                minimum = -old_maximum
+
+                mean = -mean
+
+                maximum_direction, minimum_direction = (
+                    minimum_direction,
+                    maximum_direction,
+                )
+
+            values = [
+                maximum,
+                minimum,
+                mean,
+                gaussian,
+            ]
+
+            if not all(
+                math.isfinite(value)
+                for value in values
+            ):
+                return None
+
+            return {
+                "maximum": maximum,
+                "minimum": minimum,
+                "mean": mean,
+                "gaussian": gaussian,
+                "maximumDirection": maximum_direction,
+                "minimumDirection": minimum_direction,
+                "isUmbilic": is_umbilic,
+            }
+
+        except Exception:
+            return None
+
     def ExternalBoundary(self):
         """Return the external boundary Wire of this Face."""
         outer = _outer_wire_shape(self)
@@ -995,6 +1146,50 @@ class FaceUtility:
             return False
 
     @staticmethod
+    def IsPlanar(
+        face,
+        tolerance: float = 0.0001
+    ):
+        """
+        Returns True when the actual supporting surface of the input Face is
+        geometrically planar.
+
+        This test recognizes planar B-spline and Bezier surfaces as planar; it
+        does not rely only on the OCCT surface type.
+        """
+        occ_face = _as_occ_face(face)
+
+        if occ_face is None:
+            return None
+
+        tol = _face_tolerance(
+            tolerance
+        )
+
+        try:
+            from OCC.Core.BRep import BRep_Tool
+            from OCC.Core.GeomLib import GeomLib_IsPlanarSurface
+
+            surface = BRep_Tool.Surface(
+                occ_face
+            )
+
+            if surface is None:
+                return None
+
+            checker = GeomLib_IsPlanarSurface(
+                surface,
+                tol,
+            )
+
+            return bool(
+                checker.IsPlanar()
+            )
+
+        except Exception:
+            return None
+    
+    @staticmethod
     def InternalVertex(face, tolerance: float = 0.0001):
         """Return a deterministic Vertex strictly inside the trimmed Face."""
         occ_face = _as_occ_face(face)
@@ -1087,6 +1282,96 @@ class FaceUtility:
         except Exception:
             return None
 
+    @staticmethod
+    def TangentsAtParameters(
+        face,
+        u=0.5,
+        v=0.5,
+        tolerance: float = 0.0001
+    ):
+        """
+        Returns the normalized U and V parametric tangent directions at normalized
+        surface parameters.
+        """
+        mapped = _normalized_to_raw(
+            face,
+            u,
+            v,
+        )
+
+        if mapped is None:
+            return None
+
+        surface, raw_u, raw_v, _, _, _, _ = mapped
+
+        tol = _face_tolerance(
+            tolerance
+        )
+
+        try:
+            from OCC.Core.GeomLProp import GeomLProp_SLProps
+
+            properties = GeomLProp_SLProps(
+                surface,
+                raw_u,
+                raw_v,
+                1,
+                tol,
+            )
+
+            derivative_u = properties.D1U()
+            derivative_v = properties.D1V()
+
+            tangent_u = [
+                float(derivative_u.X()),
+                float(derivative_u.Y()),
+                float(derivative_u.Z()),
+            ]
+
+            tangent_v = [
+                float(derivative_v.X()),
+                float(derivative_v.Y()),
+                float(derivative_v.Z()),
+            ]
+
+            magnitude_u = math.sqrt(
+                sum(
+                    value * value
+                    for value in tangent_u
+                )
+            )
+
+            magnitude_v = math.sqrt(
+                sum(
+                    value * value
+                    for value in tangent_v
+                )
+            )
+
+            if (
+                magnitude_u <= tol
+                or magnitude_v <= tol
+            ):
+                return None
+
+            tangent_u = [
+                value / magnitude_u
+                for value in tangent_u
+            ]
+
+            tangent_v = [
+                value / magnitude_v
+                for value in tangent_v
+            ]
+
+            return [
+                tangent_u,
+                tangent_v,
+            ]
+
+        except Exception:
+            return None
+        
     @staticmethod
     def Triangulate(face, deflection=0.1, output=None):
         """Triangulate a Face natively with OCCT and return/populate triangle Faces."""

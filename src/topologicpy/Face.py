@@ -204,50 +204,113 @@ class Face():
         return Face.AddInternalBoundaries(face, wires, tolerance=tolerance, silent=silent)
     
     @staticmethod
-    def Angle(faceA, faceB, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False) -> float:
+    def Angle(
+        faceA,
+        faceB,
+        mantissa: int = 6,
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ) -> float:
         """
-        Returns the angle in degrees between the two input faces.
+        Returns the angle in degrees between two planar Faces.
+
+        A curved Face does not have one global normal direction and therefore
+        cannot have one global angle relative to another Face. For local angular
+        relationships on curved surfaces, use Face.NormalAtParameters and compare
+        the resulting local normals.
 
         Parameters
         ----------
         faceA : topologic_core.Face
-            The first input face.
+            The first input planar face.
         faceB : topologic_core.Face
-            The second input face.
+            The second input planar face.
         mantissa : int , optional
-            The number of decimal places to round the result to. Default is 6.
+            The number of decimal places to round the result to. If None, no
+            rounding is applied. Default is 6.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
+            If set to True, error and warning messages are suppressed.
+            Default is False.
 
         Returns
         -------
         float
-            The angle in degrees between the two input faces.
+            The angle in degrees between the two planar Faces, or None if either
+            Face is non-planar.
+
         """
         from topologicpy.Vector import Vector
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(faceA, "Face"):
             if not silent:
-                print("Face.Angle - Error: The input faceA parameter is not a valid topologic face. Returning None.")
-            return None
-        if not Topology.IsInstance(faceB, "Face"):
-            if not silent:
-                print("Face.Angle - Error: The input faceB parameter is not a valid topologic face. Returning None.")
+                print("Face.Angle - Error: The input faceA parameter is not a valid face. Returning None.")
             return None
 
-        normal_a = Face.Normal(faceA, outputType="xyz", mantissa=None, tolerance=tolerance, silent=True)
-        normal_b = Face.Normal(faceB, outputType="xyz", mantissa=None, tolerance=tolerance, silent=True)
+        if not Topology.IsInstance(faceB, "Face"):
+            if not silent:
+                print("Face.Angle - Error: The input faceB parameter is not a valid face. Returning None.")
+            return None
+
+        planar_a = Face.IsPlanar(
+            faceA,
+            tolerance=tolerance,
+            silent=True,
+        )
+
+        planar_b = Face.IsPlanar(
+            faceB,
+            tolerance=tolerance,
+            silent=True,
+        )
+
+        if planar_a is not True or planar_b is not True:
+            if not silent:
+                print("Face.Angle - Error: One or both input faces are non-planar. A single global face angle is undefined. Returning None.")
+            return None
+
+        normal_a = Face.NormalAtParameters(
+            faceA,
+            u=0.5,
+            v=0.5,
+            outputType="xyz",
+            mantissa=None,
+            tolerance=tolerance,
+            silent=True,
+        )
+
+        normal_b = Face.NormalAtParameters(
+            faceB,
+            u=0.5,
+            v=0.5,
+            outputType="xyz",
+            mantissa=None,
+            tolerance=tolerance,
+            silent=True,
+        )
+
         if normal_a is None or normal_b is None:
             if not silent:
-                print("Face.Angle - Error: Could not compute the angle between the two input faces. Returning None.")
+                print("Face.Angle - Error: Could not determine the face normals. Returning None.")
             return None
-        angle = Vector.Angle(normal_a, normal_b)
+
+        angle = Vector.Angle(
+            normal_a,
+            normal_b,
+        )
+
         if angle is None:
             return None
-        return round(float(angle), mantissa) if mantissa is not None else float(angle)
+
+        angle = float(angle)
+
+        return (
+            round(angle, int(mantissa))
+            if mantissa is not None
+            else angle
+        )
 
     @staticmethod
     def Area(face, mantissa: int = 6, silent: bool = False) -> float:
@@ -2729,6 +2792,428 @@ class Face():
         return Face._PrimitiveFaceByWire(c_shape_wire, origin=origin, direction=direction, tolerance=tolerance, silent=silent)
 
     @staticmethod
+    def CurvatureAtParameters(
+        face,
+        u: float = 0.5,
+        v: float = 0.5,
+        mantissa: int = 6,
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ) -> dict:
+        """
+        Returns the local surface curvature properties of the input Face at the
+        specified normalized U and V parameters.
+
+        Principal curvatures are signed relative to the oriented normal of the
+        Face. Reversing the Face therefore reverses the signs of the principal and
+        mean curvatures while leaving Gaussian curvature unchanged.
+
+        Parameters
+        ----------
+        face : topologic_core.Face
+            The input face.
+        u : float , optional
+            The normalized U parameter. Default is 0.5.
+        v : float , optional
+            The normalized V parameter. Default is 0.5.
+        mantissa : int , optional
+            The number of decimal places to round numerical results to. If None,
+            no rounding is applied. Default is 6.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed.
+            Default is False.
+
+        Returns
+        -------
+        dict
+            A dictionary containing:
+
+            - ``maximum``: maximum principal curvature.
+            - ``minimum``: minimum principal curvature.
+            - ``mean``: mean curvature.
+            - ``gaussian``: Gaussian curvature.
+            - ``maximumDirection``: maximum principal-curvature direction.
+            - ``minimumDirection``: minimum principal-curvature direction.
+            - ``isUmbilic``: True when the two principal curvatures coincide.
+
+        """
+        import math
+
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(face, "Face"):
+            if not silent:
+                print("Face.CurvatureAtParameters - Error: The input face parameter is not a valid face. Returning None.")
+            return None
+
+        try:
+            u = float(u)
+            v = float(v)
+            tolerance = abs(float(tolerance))
+        except Exception:
+            if not silent:
+                print("Face.CurvatureAtParameters - Error: One or more numerical parameters are invalid. Returning None.")
+            return None
+
+        if not all(
+            math.isfinite(value)
+            for value in [u, v, tolerance]
+        ):
+            return None
+
+        if tolerance <= 0.0:
+            return None
+
+        if not 0.0 <= u <= 1.0 or not 0.0 <= v <= 1.0:
+            if not silent:
+                print("Face.CurvatureAtParameters - Error: The u and v parameters must be between 0 and 1. Returning None.")
+            return None
+
+        # ------------------------------------------------------------------
+        # Native backend implementation.
+        # ------------------------------------------------------------------
+
+        result = None
+
+        try:
+            result = Core.FaceUtility.CurvatureAtParameters(
+                face,
+                u,
+                v,
+                tolerance,
+            )
+        except Exception:
+            result = None
+
+        # ------------------------------------------------------------------
+        # TopologicCore fallback.
+        # ------------------------------------------------------------------
+
+        if not isinstance(result, dict):
+
+            try:
+                import numpy as np
+            except Exception:
+                if not silent:
+                    print("Face.CurvatureAtParameters - Error: NumPy is required for the legacy curvature fallback. Returning None.")
+                return None
+
+            h = min(
+                1.0e-2,
+                max(
+                    1.0e-4,
+                    math.sqrt(tolerance) * 0.1,
+                ),
+            )
+
+            def offsets(parameter):
+                if (
+                    parameter - h >= 0.0
+                    and parameter + h <= 1.0
+                ):
+                    return [-h, 0.0, h]
+
+                if parameter + 2.0 * h <= 1.0:
+                    return [0.0, h, 2.0 * h]
+
+                if parameter - 2.0 * h >= 0.0:
+                    return [-2.0 * h, -h, 0.0]
+
+                return None
+
+            u_offsets = offsets(u)
+            v_offsets = offsets(v)
+
+            if u_offsets is None or v_offsets is None:
+                return None
+
+            matrix = []
+            coordinates = []
+
+            for du in u_offsets:
+                for dv in v_offsets:
+                    vertex = Face.VertexByParameters(
+                        face,
+                        u=u + du,
+                        v=v + dv,
+                        tolerance=tolerance,
+                        silent=True,
+                    )
+
+                    if not Topology.IsInstance(vertex, "Vertex"):
+                        continue
+
+                    xyz = Vertex.Coordinates(
+                        vertex,
+                        mantissa=None,
+                    )
+
+                    matrix.append([
+                        1.0,
+                        du,
+                        dv,
+                        0.5 * du * du,
+                        du * dv,
+                        0.5 * dv * dv,
+                    ])
+
+                    coordinates.append(xyz)
+
+            if len(matrix) < 6:
+                if not silent:
+                    print("Face.CurvatureAtParameters - Error: Could not obtain enough surface samples. Returning None.")
+                return None
+
+            try:
+                A = np.asarray(
+                    matrix,
+                    dtype=float,
+                )
+
+                P = np.asarray(
+                    coordinates,
+                    dtype=float,
+                )
+
+                coefficients, _, _, _ = np.linalg.lstsq(
+                    A,
+                    P,
+                    rcond=None,
+                )
+
+                Su = coefficients[1]
+                Sv = coefficients[2]
+                Suu = coefficients[3]
+                Suv = coefficients[4]
+                Svv = coefficients[5]
+
+            except Exception:
+                return None
+
+            normal = Face.NormalAtParameters(
+                face,
+                u=u,
+                v=v,
+                outputType="xyz",
+                mantissa=None,
+                tolerance=tolerance,
+                silent=True,
+            )
+
+            if (
+                not isinstance(normal, (list, tuple))
+                or len(normal) != 3
+            ):
+                return None
+
+            N = np.asarray(
+                normal,
+                dtype=float,
+            )
+
+            normal_length = float(
+                np.linalg.norm(N)
+            )
+
+            if normal_length <= tolerance:
+                return None
+
+            N /= normal_length
+
+            # First fundamental form.
+            E = float(np.dot(Su, Su))
+            F = float(np.dot(Su, Sv))
+            G = float(np.dot(Sv, Sv))
+
+            determinant = E * G - F * F
+
+            if determinant <= 1.0e-20:
+                if not silent:
+                    print("Face.CurvatureAtParameters - Error: The surface is singular at the requested parameters. Returning None.")
+                return None
+
+            # Second fundamental form.
+            e = float(np.dot(N, Suu))
+            f = float(np.dot(N, Suv))
+            g = float(np.dot(N, Svv))
+
+            gaussian = (
+                e * g - f * f
+            ) / determinant
+
+            mean = (
+                E * g
+                - 2.0 * F * f
+                + G * e
+            ) / (
+                2.0 * determinant
+            )
+
+            discriminant = max(
+                0.0,
+                mean * mean - gaussian,
+            )
+
+            root = math.sqrt(discriminant)
+
+            maximum = mean + root
+            minimum = mean - root
+
+            scale = max(
+                1.0,
+                abs(maximum),
+                abs(minimum),
+            )
+
+            is_umbilic = (
+                abs(maximum - minimum)
+                <= 1.0e-7 * scale
+            )
+
+            maximum_direction = None
+            minimum_direction = None
+
+            if not is_umbilic:
+                try:
+                    first_form = np.array(
+                        [
+                            [E, F],
+                            [F, G],
+                        ],
+                        dtype=float,
+                    )
+
+                    second_form = np.array(
+                        [
+                            [e, f],
+                            [f, g],
+                        ],
+                        dtype=float,
+                    )
+
+                    shape_operator = np.linalg.solve(
+                        first_form,
+                        second_form,
+                    )
+
+                    eigenvalues, eigenvectors = np.linalg.eig(
+                        shape_operator
+                    )
+
+                    pairs = []
+
+                    for index in range(2):
+                        value = float(
+                            np.real(eigenvalues[index])
+                        )
+
+                        coefficients_2d = np.real(
+                            eigenvectors[:, index]
+                        )
+
+                        direction = (
+                            coefficients_2d[0] * Su
+                            + coefficients_2d[1] * Sv
+                        )
+
+                        direction_length = float(
+                            np.linalg.norm(direction)
+                        )
+
+                        if direction_length <= tolerance:
+                            continue
+
+                        direction /= direction_length
+
+                        pairs.append(
+                            (
+                                value,
+                                [
+                                    float(direction[0]),
+                                    float(direction[1]),
+                                    float(direction[2]),
+                                ],
+                            )
+                        )
+
+                    pairs.sort(
+                        key=lambda item: item[0],
+                        reverse=True,
+                    )
+
+                    if len(pairs) == 2:
+                        maximum_direction = pairs[0][1]
+                        minimum_direction = pairs[1][1]
+
+                except Exception:
+                    pass
+
+            result = {
+                "maximum": float(maximum),
+                "minimum": float(minimum),
+                "mean": float(mean),
+                "gaussian": float(gaussian),
+                "maximumDirection": maximum_direction,
+                "minimumDirection": minimum_direction,
+                "isUmbilic": bool(is_umbilic),
+            }
+
+        # ------------------------------------------------------------------
+        # Normalize and round output.
+        # ------------------------------------------------------------------
+
+        required_keys = [
+            "maximum",
+            "minimum",
+            "mean",
+            "gaussian",
+        ]
+
+        if any(
+            key not in result
+            for key in required_keys
+        ):
+            if not silent:
+                print("Face.CurvatureAtParameters - Error: Could not determine the surface curvature. Returning None.")
+            return None
+
+        for key in required_keys:
+            try:
+                result[key] = float(result[key])
+            except Exception:
+                return None
+
+        if mantissa is not None:
+            mantissa = int(mantissa)
+
+            for key in required_keys:
+                result[key] = round(
+                    result[key],
+                    mantissa,
+                )
+
+            for key in [
+                "maximumDirection",
+                "minimumDirection",
+            ]:
+                direction = result.get(key)
+
+                if isinstance(direction, (list, tuple)):
+                    result[key] = [
+                        round(float(value), mantissa)
+                        for value in direction
+                    ]
+
+        result["isUmbilic"] = bool(
+            result.get("isUmbilic", False)
+        )
+
+        return result
+
+    @staticmethod
     def Edges(face, silent: bool = False) -> list:
         """
         Returns the edges of the input face.
@@ -3179,13 +3664,6 @@ class Face():
                 print("Face.InternalBoundaries - Error: Could not retrieve internal boundaries. Returning None.")
             return None
         return wires
-
-
-
-
-
-
-
 
     @staticmethod
     def InternalVertex(face, tolerance: float = 0.0001, silent: bool = False):
@@ -3681,6 +4159,185 @@ class Face():
         opposite = max(abs(p[i] + q[i]) for i in range(4)) <= tolerance
         return bool(same or opposite)
 
+    @staticmethod
+    def IsPlanar(
+        face,
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ) -> bool:
+        """
+        Returns True if the input Face lies on a plane. Returns False otherwise.
+
+        The active backend is queried first for an exact/native planarity test.
+        If one is not available, the underlying surface is sampled in normalized
+        UV space and tested against the tangent plane at its parametric centre.
+
+        This method tests the actual supporting surface rather than merely testing
+        whether the boundary vertices happen to be coplanar.
+
+        Parameters
+        ----------
+        face : topologic_core.Face
+            The input face.
+        tolerance : float , optional
+            The desired geometric tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed.
+            Default is False.
+
+        Returns
+        -------
+        bool
+            True if the Face is planar. False if it is non-planar. None if
+            planarity cannot be determined.
+
+        """
+        import math
+
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(face, "Face"):
+            if not silent:
+                print("Face.IsPlanar - Error: The input face parameter is not a valid face. Returning None.")
+            return None
+
+        try:
+            tolerance = abs(float(tolerance))
+        except Exception:
+            if not silent:
+                print("Face.IsPlanar - Error: The input tolerance parameter is not a valid number. Returning None.")
+            return None
+
+        if not math.isfinite(tolerance) or tolerance <= 0.0:
+            if not silent:
+                print("Face.IsPlanar - Error: The input tolerance parameter must be greater than zero. Returning None.")
+            return None
+
+        # ------------------------------------------------------------------
+        # Prefer a native backend test.
+        # ------------------------------------------------------------------
+
+        try:
+            result = Core.FaceUtility.IsPlanar(
+                face,
+                tolerance,
+            )
+        except Exception:
+            result = None
+
+        if result is not None:
+            return bool(result)
+
+        # ------------------------------------------------------------------
+        # Backend-neutral fallback.
+        #
+        # Test points on the actual underlying parametric surface against the
+        # tangent plane at its parametric centre. Testing only boundary vertices
+        # would incorrectly classify a bulging NURBS patch with planar boundary
+        # vertices as planar.
+        # ------------------------------------------------------------------
+
+        center = Face.VertexByParameters(
+            face,
+            u=0.5,
+            v=0.5,
+            tolerance=tolerance,
+            silent=True,
+        )
+
+        normal = Face.NormalAtParameters(
+            face,
+            u=0.5,
+            v=0.5,
+            outputType="xyz",
+            mantissa=None,
+            tolerance=tolerance,
+            silent=True,
+        )
+
+        if (
+            not Topology.IsInstance(center, "Vertex")
+            or not isinstance(normal, (list, tuple))
+            or len(normal) != 3
+        ):
+            if not silent:
+                print("Face.IsPlanar - Error: Could not determine a reference tangent plane. Returning None.")
+            return None
+
+        center_xyz = Vertex.Coordinates(
+            center,
+            mantissa=None,
+        )
+
+        try:
+            normal = [
+                float(normal[0]),
+                float(normal[1]),
+                float(normal[2]),
+            ]
+
+            magnitude = math.sqrt(
+                sum(value * value for value in normal)
+            )
+
+            if magnitude <= tolerance:
+                return None
+
+            normal = [
+                value / magnitude
+                for value in normal
+            ]
+
+        except Exception:
+            return None
+
+        parameters = [
+            0.0,
+            0.25,
+            0.5,
+            0.75,
+            1.0,
+        ]
+
+        valid_samples = 0
+
+        for u in parameters:
+            for v in parameters:
+                vertex = Face.VertexByParameters(
+                    face,
+                    u=u,
+                    v=v,
+                    tolerance=tolerance,
+                    silent=True,
+                )
+
+                if not Topology.IsInstance(vertex, "Vertex"):
+                    continue
+
+                xyz = Vertex.Coordinates(
+                    vertex,
+                    mantissa=None,
+                )
+
+                distance = abs(
+                    (xyz[0] - center_xyz[0]) * normal[0]
+                    + (xyz[1] - center_xyz[1]) * normal[1]
+                    + (xyz[2] - center_xyz[2]) * normal[2]
+                )
+
+                valid_samples += 1
+
+                if distance > tolerance:
+                    return False
+
+        if valid_samples < 3:
+            if not silent:
+                print("Face.IsPlanar - Error: Could not obtain enough surface samples to determine planarity. Returning None.")
+            return None
+
+        return True
+    
     @staticmethod
     def IShape(origin=None,
             width=1,
@@ -6381,48 +7038,126 @@ class Face():
         return arrow
     
     @staticmethod
-    def PlaneEquation(face, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False) -> dict:
+    def PlaneEquation(
+        face,
+        mantissa: int = 6,
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ) -> dict:
         """
-        Returns the coefficients of the plane equation of the input planar face.
+        Returns the coefficients of the plane equation of the input planar Face.
+
+        The returned equation has the form:
+
+            a*x + b*y + c*z + d = 0
+
+        Non-planar Faces do not have a single plane equation and therefore cause
+        this method to return None.
 
         Parameters
         ----------
         face : topologic_core.Face
             The input planar face.
         mantissa : int , optional
-            The number of decimal places to round the result to. If None, no rounding is applied. Default is 6.
+            The number of decimal places to round the result to. If None, no
+            rounding is applied. Default is 6.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
+            If set to True, error and warning messages are suppressed.
+            Default is False.
 
         Returns
         -------
         dict
-            A dictionary with keys ``a``, ``b``, ``c``, and ``d``.
+            A dictionary with keys ``a``, ``b``, ``c``, and ``d``, or None if
+            the input Face is non-planar.
+
         """
         from topologicpy.Vertex import Vertex
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(face, "Face"):
             if not silent:
-                print("Face.PlaneEquation - Error: The input face is not a valid topologic face. Returning None.")
+                print("Face.PlaneEquation - Error: The input face parameter is not a valid face. Returning None.")
             return None
-        normal = Face.Normal(face, mantissa=None, tolerance=tolerance, silent=True)
-        if normal is None:
+
+        planar = Face.IsPlanar(
+            face,
+            tolerance=tolerance,
+            silent=True,
+        )
+
+        if planar is not True:
+            if not silent:
+                print("Face.PlaneEquation - Error: The input face is not planar. Returning None.")
             return None
-        point = Face.VertexByParameters(face, 0.5, 0.5, tolerance=tolerance, silent=True)
+
+        normal = Face.NormalAtParameters(
+            face,
+            u=0.5,
+            v=0.5,
+            outputType="xyz",
+            mantissa=None,
+            tolerance=tolerance,
+            silent=True,
+        )
+
+        if not isinstance(normal, (list, tuple)) or len(normal) != 3:
+            if not silent:
+                print("Face.PlaneEquation - Error: Could not determine the face normal. Returning None.")
+            return None
+
+        point = Face.VertexByParameters(
+            face,
+            u=0.5,
+            v=0.5,
+            tolerance=tolerance,
+            silent=True,
+        )
+
         if not Topology.IsInstance(point, "Vertex"):
-            vertices = Topology.Vertices(face, silent=True) or []
-            point = vertices[0] if vertices else None
+            point = Face.InternalVertex(
+                face,
+                tolerance=tolerance,
+                silent=True,
+            )
+
         if not Topology.IsInstance(point, "Vertex"):
+            if not silent:
+                print("Face.PlaneEquation - Error: Could not determine a point on the face. Returning None.")
             return None
-        xyz = Vertex.Coordinates(point, mantissa=None)
-        a, b, c = [float(value) for value in normal]
-        d = -(a * xyz[0] + b * xyz[1] + c * xyz[2])
-        result = {"a": a, "b": b, "c": c, "d": d}
+
+        xyz = Vertex.Coordinates(
+            point,
+            mantissa=None,
+        )
+
+        a = float(normal[0])
+        b = float(normal[1])
+        c = float(normal[2])
+
+        d = -(
+            a * xyz[0]
+            + b * xyz[1]
+            + c * xyz[2]
+        )
+
+        result = {
+            "a": a,
+            "b": b,
+            "c": c,
+            "d": d,
+        }
+
         if mantissa is not None:
-            result = {key: round(value, mantissa) for key, value in result.items()}
+            mantissa = int(mantissa)
+
+            result = {
+                key: round(value, mantissa)
+                for key, value in result.items()
+            }
+
         return result
     
     @staticmethod
@@ -7028,6 +7763,361 @@ class Face():
             return None
         return Face._PrimitiveFaceByWire(wire, origin=origin, direction=direction, tolerance=tolerance, silent=silent)
 
+    @staticmethod
+    def TangentAtParameters(
+        face,
+        u: float = 0.5,
+        v: float = 0.5,
+        axis: str = "u",
+        outputType: str = "xyz",
+        mantissa: int = 6,
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ) -> list:
+        """
+        Returns one parametric tangent direction of the input Face at the specified
+        normalized parameters.
+
+        Parameters
+        ----------
+        face : topologic_core.Face
+            The input face.
+        u : float , optional
+            The normalized U parameter. Default is 0.5.
+        v : float , optional
+            The normalized V parameter. Default is 0.5.
+        axis : str , optional
+            The requested parametric direction. Valid values are "u" and "v".
+            Default is "u".
+        outputType : str , optional
+            Any subset or permutation of "xyz". Default is "xyz".
+        mantissa : int , optional
+            The number of decimal places to round the result to. If None, no
+            rounding is applied. Default is 6.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed.
+            Default is False.
+
+        Returns
+        -------
+        list
+            The requested unit tangent direction.
+
+        """
+        if not isinstance(axis, str):
+            if not silent:
+                print("Face.TangentAtParameters - Error: The input axis parameter is not a valid string. Returning None.")
+            return None
+
+        axis = axis.lower()
+
+        if axis not in ["u", "v"]:
+            if not silent:
+                print("Face.TangentAtParameters - Error: The input axis parameter must be either 'u' or 'v'. Returning None.")
+            return None
+
+        tangents = Face.TangentsAtParameters(
+            face,
+            u=u,
+            v=v,
+            outputType=outputType,
+            mantissa=mantissa,
+            tolerance=tolerance,
+            silent=silent,
+        )
+
+        if not isinstance(tangents, dict):
+            return None
+
+        return tangents.get(axis)
+
+    @staticmethod
+    def TangentsAtParameters(
+        face,
+        u: float = 0.5,
+        v: float = 0.5,
+        outputType: str = "xyz",
+        mantissa: int = 6,
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ) -> dict:
+        """
+        Returns the U and V parametric tangent directions of the input Face at the
+        specified normalized parameters.
+
+        The U tangent points in the direction of increasing U and the V tangent
+        points in the direction of increasing V. The two tangent directions are
+        not necessarily orthogonal on a general parametric surface.
+
+        These are parametric surface directions. Reversing the topological
+        orientation of a Face does not reverse its U or V parameter directions.
+
+        Parameters
+        ----------
+        face : topologic_core.Face
+            The input face.
+        u : float , optional
+            The normalized U parameter. Default is 0.5.
+        v : float , optional
+            The normalized V parameter. Default is 0.5.
+        outputType : str , optional
+            Any subset or permutation of "xyz". Default is "xyz".
+        mantissa : int , optional
+            The number of decimal places to round the result to. If None, no
+            rounding is applied. Default is 6.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed.
+            Default is False.
+
+        Returns
+        -------
+        dict
+            A dictionary with keys ``u`` and ``v`` containing the corresponding
+            unit tangent directions.
+
+        """
+        import math
+
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(face, "Face"):
+            if not silent:
+                print("Face.TangentsAtParameters - Error: The input face parameter is not a valid face. Returning None.")
+            return None
+
+        try:
+            u = float(u)
+            v = float(v)
+            tolerance = abs(float(tolerance))
+        except Exception:
+            if not silent:
+                print("Face.TangentsAtParameters - Error: One or more numerical parameters are invalid. Returning None.")
+            return None
+
+        if not all(
+            math.isfinite(value)
+            for value in [u, v, tolerance]
+        ):
+            return None
+
+        if tolerance <= 0.0:
+            return None
+
+        if not 0.0 <= u <= 1.0 or not 0.0 <= v <= 1.0:
+            if not silent:
+                print("Face.TangentsAtParameters - Error: The u and v parameters must be between 0 and 1. Returning None.")
+            return None
+
+        tangents = None
+
+        # ------------------------------------------------------------------
+        # Native differential-geometry path.
+        # ------------------------------------------------------------------
+
+        try:
+            tangents = Core.FaceUtility.TangentsAtParameters(
+                face,
+                u,
+                v,
+                tolerance,
+            )
+        except Exception:
+            tangents = None
+
+        if isinstance(tangents, dict):
+            tangent_u = tangents.get("u")
+            tangent_v = tangents.get("v")
+
+        elif (
+            isinstance(tangents, (list, tuple))
+            and len(tangents) >= 2
+        ):
+            tangent_u = tangents[0]
+            tangent_v = tangents[1]
+
+        else:
+            tangent_u = None
+            tangent_v = None
+
+        # ------------------------------------------------------------------
+        # TopologicCore fallback: numerically differentiate the actual surface.
+        # ------------------------------------------------------------------
+
+        if tangent_u is None or tangent_v is None:
+
+            h = min(
+                1.0e-3,
+                max(
+                    1.0e-7,
+                    tolerance * 0.1,
+                ),
+            )
+
+            def coordinates(uu, vv):
+                vertex = Face.VertexByParameters(
+                    face,
+                    u=uu,
+                    v=vv,
+                    tolerance=tolerance,
+                    silent=True,
+                )
+
+                if not Topology.IsInstance(vertex, "Vertex"):
+                    return None
+
+                return Vertex.Coordinates(
+                    vertex,
+                    mantissa=None,
+                )
+
+            def subtract(a, b):
+                return [
+                    a[i] - b[i]
+                    for i in range(3)
+                ]
+
+            def derivative(parameter, axis):
+                if parameter - h >= 0.0 and parameter + h <= 1.0:
+                    if axis == "u":
+                        p0 = coordinates(u - h, v)
+                        p1 = coordinates(u + h, v)
+                    else:
+                        p0 = coordinates(u, v - h)
+                        p1 = coordinates(u, v + h)
+
+                    if p0 is None or p1 is None:
+                        return None
+
+                    return subtract(p1, p0)
+
+                if parameter + 2.0 * h <= 1.0:
+                    if axis == "u":
+                        p0 = coordinates(u, v)
+                        p1 = coordinates(u + h, v)
+                        p2 = coordinates(u + 2.0 * h, v)
+                    else:
+                        p0 = coordinates(u, v)
+                        p1 = coordinates(u, v + h)
+                        p2 = coordinates(u, v + 2.0 * h)
+
+                    if p0 is None or p1 is None or p2 is None:
+                        return None
+
+                    return [
+                        -3.0 * p0[i]
+                        + 4.0 * p1[i]
+                        - p2[i]
+                        for i in range(3)
+                    ]
+
+                if parameter - 2.0 * h >= 0.0:
+                    if axis == "u":
+                        p0 = coordinates(u, v)
+                        p1 = coordinates(u - h, v)
+                        p2 = coordinates(u - 2.0 * h, v)
+                    else:
+                        p0 = coordinates(u, v)
+                        p1 = coordinates(u, v - h)
+                        p2 = coordinates(u, v - 2.0 * h)
+
+                    if p0 is None or p1 is None or p2 is None:
+                        return None
+
+                    return [
+                        3.0 * p0[i]
+                        - 4.0 * p1[i]
+                        + p2[i]
+                        for i in range(3)
+                    ]
+
+                return None
+
+            tangent_u = derivative(
+                u,
+                "u",
+            )
+
+            tangent_v = derivative(
+                v,
+                "v",
+            )
+
+        def normalize(vector):
+            if (
+                not isinstance(vector, (list, tuple))
+                or len(vector) < 3
+            ):
+                return None
+
+            try:
+                vector = [
+                    float(vector[0]),
+                    float(vector[1]),
+                    float(vector[2]),
+                ]
+            except Exception:
+                return None
+
+            magnitude = math.sqrt(
+                sum(value * value for value in vector)
+            )
+
+            if not math.isfinite(magnitude) or magnitude <= tolerance:
+                return None
+
+            return [
+                value / magnitude
+                for value in vector
+            ]
+
+        tangent_u = normalize(tangent_u)
+        tangent_v = normalize(tangent_v)
+
+        if tangent_u is None or tangent_v is None:
+            if not silent:
+                print("Face.TangentsAtParameters - Error: Could not determine the surface tangents. Returning None.")
+            return None
+
+        output = str(outputType).lower()
+
+        def filter_vector(vector):
+            mapping = {
+                "x": vector[0],
+                "y": vector[1],
+                "z": vector[2],
+            }
+
+            result = [
+                mapping[axis]
+                for axis in output
+                if axis in mapping
+            ]
+
+            if mantissa is not None:
+                result = [
+                    round(value, int(mantissa))
+                    for value in result
+                ]
+
+            return result
+
+        tangent_u = filter_vector(tangent_u)
+        tangent_v = filter_vector(tangent_v)
+
+        if not tangent_u or not tangent_v:
+            if not silent:
+                print("Face.TangentsAtParameters - Error: The input outputType parameter is invalid. Returning None.")
+            return None
+
+        return {
+            "u": tangent_u,
+            "v": tangent_v,
+        }
 
     @staticmethod
     def ThirdVertex(face, tolerance: float = 0.0001, silent: bool = False):
