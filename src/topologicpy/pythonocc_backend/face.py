@@ -309,6 +309,449 @@ class Face(Topology):
             return None
 
     @staticmethod
+    def ByNurbsParameters(
+        controlPoints,
+        weights,
+        uKnots,
+        vKnots,
+        isRational,
+        isUPeriodic,
+        isVPeriodic,
+        uDegree,
+        vDegree,
+        tolerance: float = 0.0001,
+    ):
+        """
+        Creates a Face from exact OCCT B-spline/NURBS surface parameters.
+
+        The control-point and weight grids use the convention:
+
+            controlPoints[u][v]
+            weights[u][v]
+
+        The knot vectors are supplied in expanded form. Repeated knot values
+        therefore appear repeatedly in the input lists and are converted here
+        to OCCT's unique-knot plus multiplicity representation.
+
+        Parameters
+        ----------
+        controlPoints : list
+            Rectangular two-dimensional grid of backend Vertex objects.
+        weights : list
+            Rectangular two-dimensional grid of positive weights.
+        uKnots : list
+            Expanded knot vector in the U direction.
+        vKnots : list
+            Expanded knot vector in the V direction.
+        isRational : bool
+            If True, construct a rational NURBS surface.
+        isUPeriodic : bool
+            If True, the surface is periodic in U.
+        isVPeriodic : bool
+            If True, the surface is periodic in V.
+        uDegree : int
+            Degree in the U direction.
+        vDegree : int
+            Degree in the V direction.
+        tolerance : float , optional
+            Geometric tolerance used when creating the OCCT Face.
+            Default is 0.0001.
+
+        Returns
+        -------
+        Face
+            The created backend Face, or None on failure.
+
+        """
+        try:
+            tolerance = _face_tolerance(tolerance)
+
+            uDegree = int(uDegree)
+            vDegree = int(vDegree)
+
+            isRational = bool(isRational)
+            isUPeriodic = bool(isUPeriodic)
+            isVPeriodic = bool(isVPeriodic)
+
+        except Exception:
+            return None
+
+        if not isinstance(controlPoints, (list, tuple)):
+            return None
+
+        controlPoints = [
+            list(row)
+            for row in controlPoints
+            if isinstance(row, (list, tuple))
+        ]
+
+        if len(controlPoints) < 2:
+            return None
+
+        nU = len(controlPoints)
+        nV = len(controlPoints[0])
+
+        if nV < 2:
+            return None
+
+        if any(
+            len(row) != nV
+            for row in controlPoints
+        ):
+            return None
+
+        if any(
+            not isinstance(vertex, Vertex)
+            for row in controlPoints
+            for vertex in row
+        ):
+            return None
+
+        if (
+            uDegree < 1
+            or uDegree >= nU
+            or vDegree < 1
+            or vDegree >= nV
+        ):
+            return None
+
+        if not isinstance(weights, (list, tuple)):
+            return None
+
+        if len(weights) != nU:
+            return None
+
+        try:
+            weight_values = [
+                [
+                    float(value)
+                    for value in row
+                ]
+                for row in weights
+            ]
+        except Exception:
+            return None
+
+        if any(
+            len(row) != nV
+            for row in weight_values
+        ):
+            return None
+
+        if any(
+            not math.isfinite(value)
+            or value <= 0.0
+            for row in weight_values
+            for value in row
+        ):
+            return None
+
+        if not isRational:
+            weight_values = [
+                [1.0] * nV
+                for _ in range(nU)
+            ]
+
+        # ------------------------------------------------------------------
+        # Expanded knot vector -> unique OCCT knots + multiplicities.
+        # ------------------------------------------------------------------
+
+        def knot_data(values):
+            try:
+                values = [
+                    float(value)
+                    for value in values
+                ]
+            except Exception:
+                return None
+
+            if len(values) < 2:
+                return None
+
+            if any(
+                not math.isfinite(value)
+                for value in values
+            ):
+                return None
+
+            if any(
+                values[i] > values[i + 1]
+                for i in range(len(values) - 1)
+            ):
+                return None
+
+            unique = []
+            multiplicities = []
+
+            for value in values:
+                if unique and value == unique[-1]:
+                    multiplicities[-1] += 1
+                else:
+                    unique.append(value)
+                    multiplicities.append(1)
+
+            if len(unique) < 2:
+                return None
+
+            return unique, multiplicities
+
+        u_data = knot_data(uKnots)
+        v_data = knot_data(vKnots)
+
+        if u_data is None or v_data is None:
+            return None
+
+        unique_u_knots, u_multiplicities = u_data
+        unique_v_knots, v_multiplicities = v_data
+
+        # ------------------------------------------------------------------
+        # Validate OCCT pole/knot relationships.
+        # ------------------------------------------------------------------
+
+        if isUPeriodic:
+            valid_u = (
+                u_multiplicities[0] == u_multiplicities[-1]
+                and all(
+                    1 <= multiplicity <= uDegree
+                    for multiplicity in u_multiplicities
+                )
+                and (
+                    sum(u_multiplicities)
+                    - u_multiplicities[0]
+                    == nU
+                )
+            )
+        else:
+            valid_u = (
+                sum(u_multiplicities)
+                == nU + uDegree + 1
+                and all(
+                    1 <= multiplicity <= uDegree
+                    for multiplicity in u_multiplicities[1:-1]
+                )
+                and 1 <= u_multiplicities[0] <= uDegree + 1
+                and 1 <= u_multiplicities[-1] <= uDegree + 1
+            )
+
+        if isVPeriodic:
+            valid_v = (
+                v_multiplicities[0] == v_multiplicities[-1]
+                and all(
+                    1 <= multiplicity <= vDegree
+                    for multiplicity in v_multiplicities
+                )
+                and (
+                    sum(v_multiplicities)
+                    - v_multiplicities[0]
+                    == nV
+                )
+            )
+        else:
+            valid_v = (
+                sum(v_multiplicities)
+                == nV + vDegree + 1
+                and all(
+                    1 <= multiplicity <= vDegree
+                    for multiplicity in v_multiplicities[1:-1]
+                )
+                and 1 <= v_multiplicities[0] <= vDegree + 1
+                and 1 <= v_multiplicities[-1] <= vDegree + 1
+            )
+
+        if not valid_u or not valid_v:
+            return None
+
+        try:
+            from OCC.Core.gp import gp_Pnt
+
+            from OCC.Core.TColgp import (
+                TColgp_Array2OfPnt,
+            )
+
+            from OCC.Core.TColStd import (
+                TColStd_Array1OfInteger,
+                TColStd_Array1OfReal,
+                TColStd_Array2OfReal,
+            )
+
+            from OCC.Core.Geom import (
+                Geom_BSplineSurface,
+            )
+
+            from OCC.Core.BRepBuilderAPI import (
+                BRepBuilderAPI_MakeFace,
+            )
+
+        except Exception:
+            return None
+
+        # ------------------------------------------------------------------
+        # Poles.
+        # ------------------------------------------------------------------
+
+        try:
+            poles = TColgp_Array2OfPnt(
+                1,
+                nU,
+                1,
+                nV,
+            )
+
+            for u_index in range(nU):
+                for v_index in range(nV):
+                    vertex = controlPoints[u_index][v_index]
+
+                    poles.SetValue(
+                        u_index + 1,
+                        v_index + 1,
+                        gp_Pnt(
+                            float(vertex.x),
+                            float(vertex.y),
+                            float(vertex.z),
+                        ),
+                    )
+
+        except Exception:
+            return None
+
+        # ------------------------------------------------------------------
+        # Unique knot arrays and multiplicities.
+        # ------------------------------------------------------------------
+
+        try:
+            occ_u_knots = TColStd_Array1OfReal(
+                1,
+                len(unique_u_knots),
+            )
+
+            occ_u_mults = TColStd_Array1OfInteger(
+                1,
+                len(u_multiplicities),
+            )
+
+            for index, value in enumerate(
+                unique_u_knots,
+                start=1,
+            ):
+                occ_u_knots.SetValue(
+                    index,
+                    value,
+                )
+
+            for index, value in enumerate(
+                u_multiplicities,
+                start=1,
+            ):
+                occ_u_mults.SetValue(
+                    index,
+                    int(value),
+                )
+
+            occ_v_knots = TColStd_Array1OfReal(
+                1,
+                len(unique_v_knots),
+            )
+
+            occ_v_mults = TColStd_Array1OfInteger(
+                1,
+                len(v_multiplicities),
+            )
+
+            for index, value in enumerate(
+                unique_v_knots,
+                start=1,
+            ):
+                occ_v_knots.SetValue(
+                    index,
+                    value,
+                )
+
+            for index, value in enumerate(
+                v_multiplicities,
+                start=1,
+            ):
+                occ_v_mults.SetValue(
+                    index,
+                    int(value),
+                )
+
+        except Exception:
+            return None
+
+        # ------------------------------------------------------------------
+        # Construct the exact native surface.
+        # ------------------------------------------------------------------
+
+        try:
+            if isRational:
+                occ_weights = TColStd_Array2OfReal(
+                    1,
+                    nU,
+                    1,
+                    nV,
+                )
+
+                for u_index in range(nU):
+                    for v_index in range(nV):
+                        occ_weights.SetValue(
+                            u_index + 1,
+                            v_index + 1,
+                            weight_values[u_index][v_index],
+                        )
+
+                surface = Geom_BSplineSurface(
+                    poles,
+                    occ_weights,
+                    occ_u_knots,
+                    occ_v_knots,
+                    occ_u_mults,
+                    occ_v_mults,
+                    uDegree,
+                    vDegree,
+                    isUPeriodic,
+                    isVPeriodic,
+                )
+
+            else:
+                surface = Geom_BSplineSurface(
+                    poles,
+                    occ_u_knots,
+                    occ_v_knots,
+                    occ_u_mults,
+                    occ_v_mults,
+                    uDegree,
+                    vDegree,
+                    isUPeriodic,
+                    isVPeriodic,
+                )
+
+        except Exception:
+            return None
+
+        # Build a Face using the natural finite UV bounds of the B-spline
+        # surface. No tessellation is introduced.
+        try:
+            maker = BRepBuilderAPI_MakeFace(
+                surface,
+                tolerance,
+            )
+
+            if not maker.IsDone():
+                return None
+
+            occ_face = maker.Face()
+
+            if occ_face is None or occ_face.IsNull():
+                return None
+
+            return Face.ByOcctShape(
+                occ_face
+            )
+
+        except Exception:
+            return None
+
+    @staticmethod
     def ByOcctShape(shape, dictionary=None, contents=None, contexts=None, apertures=None):
         """Wrap an existing OCCT face without rebuilding its geometry."""
         if _is_null_shape(shape):
