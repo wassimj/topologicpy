@@ -737,6 +737,136 @@ class Edge():
         return result
 
     @staticmethod
+    def Bezier(
+        controlPoints,
+        weights=None,
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
+        """
+        Creates a single Bezier curve Edge.
+
+        The curve is represented exactly as a clamped B-spline/NURBS curve.
+        If weights are supplied, a rational Bezier curve is created. Otherwise,
+        a non-rational Bezier curve is created.
+
+        The degree of the Bezier curve is one less than the number of control
+        points.
+
+        Parameters
+        ----------
+        controlPoints : list
+            The control vertices of the Bezier curve. At least two valid vertices
+            must be supplied.
+        weights : list , optional
+            One positive weight per control point. If supplied, a rational Bezier
+            curve is created. If None, a non-rational Bezier curve is created.
+            Default is None.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed.
+            Default is False.
+
+        Returns
+        -------
+        topologic_core.Edge
+            The created Bezier Edge, or None if the curve cannot be created.
+
+        """
+        import math
+
+        from topologicpy.Topology import Topology
+
+        try:
+            tolerance = float(tolerance)
+        except Exception:
+            if not silent:
+                print("Edge.Bezier - Error: The input tolerance parameter is not a valid number. Returning None.")
+            return None
+
+        if not math.isfinite(tolerance) or tolerance <= 0.0:
+            if not silent:
+                print("Edge.Bezier - Error: The input tolerance parameter must be greater than zero. Returning None.")
+            return None
+
+        if not isinstance(controlPoints, (list, tuple)):
+            if not silent:
+                print("Edge.Bezier - Error: The input controlPoints parameter is not a valid list. Returning None.")
+            return None
+
+        controlPoints = list(controlPoints)
+
+        if len(controlPoints) < 2:
+            if not silent:
+                print("Edge.Bezier - Error: At least two control points are required. Returning None.")
+            return None
+
+        if not all(
+            Topology.IsInstance(vertex, "Vertex")
+            for vertex in controlPoints
+        ):
+            if not silent:
+                print("Edge.Bezier - Error: One or more control points are not valid vertices. Returning None.")
+            return None
+
+        degree = len(controlPoints) - 1
+        rational = weights is not None
+
+        if weights is None:
+            weights = [1.0] * len(controlPoints)
+        else:
+            if not isinstance(weights, (list, tuple)):
+                if not silent:
+                    print("Edge.Bezier - Error: The input weights parameter is not a valid list. Returning None.")
+                return None
+
+            try:
+                weights = [float(value) for value in weights]
+            except Exception:
+                if not silent:
+                    print("Edge.Bezier - Error: One or more weights are not numerical. Returning None.")
+                return None
+
+            if len(weights) != len(controlPoints):
+                if not silent:
+                    print("Edge.Bezier - Error: The number of weights must equal the number of control points. Returning None.")
+                return None
+
+            if any(
+                not math.isfinite(value) or value <= 0.0
+                for value in weights
+            ):
+                if not silent:
+                    print("Edge.Bezier - Error: All weights must be finite positive numbers. Returning None.")
+                return None
+
+        # A Bezier curve is a clamped B-spline having only the two end knots,
+        # each with multiplicity degree + 1.
+        knots = (
+            [0.0] * (degree + 1)
+            + [1.0] * (degree + 1)
+        )
+
+        edge = Edge.ByNurbsParameters(
+            controlPoints=controlPoints,
+            weights=weights,
+            knots=knots,
+            isRational=rational,
+            isPeriodic=False,
+            degree=degree,
+            tolerance=tolerance,
+            silent=True,
+        )
+
+        if not Topology.IsInstance(edge, "Edge"):
+            if not silent:
+                print("Edge.Bezier - Error: Could not create the Bezier edge. Returning None.")
+            return None
+
+        return edge
+
+    @staticmethod
     def Bisect(edgeA, edgeB, length: float = 1.0, placement: int = 0, tolerance: float = 0.0001, silent: bool = False):
         """
         Creates a straight edge that bisects the local angle between two input
@@ -1210,7 +1340,14 @@ class Edge():
         return edge
     
     @staticmethod
-    def ByNurbsParameters(controlPoints, weights=None, knots=None, isRational: bool = False, isPeriodic: bool = False, degree: int = 3, tolerance: float = 0.0001, silent: bool = False):
+    def ByNurbsParameters(controlPoints,
+                          weights=None,
+                          knots=None,
+                          isRational: bool = False,
+                          isPeriodic: bool = False,
+                          degree: int = 3,
+                          tolerance: float = 0.0001,
+                          silent: bool = False):
         """
         Creates an edge from exact NURBS/B-spline parameters.
 
@@ -1385,7 +1522,11 @@ class Edge():
         return edge
 
     @staticmethod
-    def ByCurve(controlPoints, degree: int = 3, isPeriodic: bool = False, tolerance: float = 0.0001, silent: bool = False):
+    def ByCurve(controlPoints,
+                degree: int = 3,
+                isPeriodic: bool = False,
+                tolerance: float = 0.0001,
+                silent: bool = False):
         """Creates a non-rational B-spline edge using the input vertices as control points.
 
         This is a convenience wrapper around :meth:`Edge.ByNurbsParameters`.
@@ -1404,7 +1545,11 @@ class Edge():
         )
 
     @staticmethod
-    def ByOriginDirectionLength(origin=None, direction=[0, 0, 1], length: float = 1.0, tolerance: float = 0.0001, silent: bool = False):
+    def ByOriginDirectionLength(origin=None,
+                                direction=[0, 0, 1],
+                                length: float = 1.0,
+                                tolerance: float = 0.0001,
+                                silent: bool = False):
         """
         Creates a straight edge from an origin, direction, and length.
 
@@ -2501,7 +2646,632 @@ class Edge():
             return None
 
         return boundary
-    
+
+    @staticmethod
+    def Helix(
+        origin=None,
+        radius: float = 0.5,
+        height: float = 1.0,
+        turns: float = 1.0,
+        sides: int = 16,
+        clockwise: bool = False,
+        direction: list = [0, 0, 1],
+        placement: str = "center",
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
+        """
+        Creates a single smooth helical Edge.
+
+        The helix is represented as one cubic B-spline Edge composed internally
+        of tangent-matched cubic Bezier spans. The curve closely approximates the
+        analytic circular helix while remaining one topological Edge.
+
+        Unlike circles, ellipses, parabolas, and hyperbolas, a circular helix does
+        not have an exact finite NURBS representation.
+
+        In its canonical orientation, the helix has its axis along the positive
+        Z-axis and starts at (radius, 0, 0).
+
+        Parameters
+        ----------
+        origin : topologic_core.Vertex , optional
+            The placement origin. If None, the global origin is used.
+            Default is None.
+        radius : float , optional
+            The radius of the helix. Default is 0.5.
+        height : float , optional
+            The total height of the helix measured along its axis.
+            Default is 1.0.
+        turns : float , optional
+            The number of complete turns. Fractional turns are permitted.
+            Default is 1.0.
+        sides : int , optional
+            The number of cubic curve spans per complete turn. Increasing this
+            value improves geometric accuracy without increasing the number of
+            topological Edges. Default is 16.
+        clockwise : bool , optional
+            If set to True, the helix rotates clockwise when viewed along its
+            positive axis. Otherwise, it rotates counter-clockwise.
+            Default is False.
+        direction : list , optional
+            The direction of the helix axis. Default is [0, 0, 1].
+        placement : str , optional
+            Specifies which canonical location is placed at the input origin.
+            Valid options are "center", "base", "bottom", "start", and "end".
+            "base" and "bottom" refer to the centre of the base circle.
+            Default is "center".
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed.
+            Default is False.
+
+        Returns
+        -------
+        topologic_core.Edge
+            The created helical Edge, or None if it cannot be created.
+
+        """
+        import math
+
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
+
+        if origin is None:
+            origin = Vertex.Origin()
+
+        if not Topology.IsInstance(origin, "Vertex"):
+            if not silent:
+                print("Edge.Helix - Error: The input origin parameter is not a valid vertex. Returning None.")
+            return None
+
+        try:
+            radius = abs(float(radius))
+            height = abs(float(height))
+            turns = abs(float(turns))
+            sides = int(math.floor(abs(float(sides))))
+            tolerance = float(tolerance)
+        except Exception:
+            if not silent:
+                print("Edge.Helix - Error: One or more numerical parameters are invalid. Returning None.")
+            return None
+
+        if not all(
+            math.isfinite(value)
+            for value in [
+                radius,
+                height,
+                turns,
+                tolerance,
+            ]
+        ):
+            if not silent:
+                print("Edge.Helix - Error: One or more numerical parameters are not finite. Returning None.")
+            return None
+
+        if tolerance <= 0.0:
+            if not silent:
+                print("Edge.Helix - Error: The input tolerance parameter must be greater than zero. Returning None.")
+            return None
+
+        if radius <= tolerance:
+            if not silent:
+                print("Edge.Helix - Error: The radius must be greater than the input tolerance. Returning None.")
+            return None
+
+        if height <= tolerance:
+            if not silent:
+                print("Edge.Helix - Error: The height must be greater than the input tolerance. Returning None.")
+            return None
+
+        if turns <= 0.0:
+            if not silent:
+                print("Edge.Helix - Error: The number of turns must be greater than zero. Returning None.")
+            return None
+
+        if sides < 4:
+            if not silent:
+                print("Edge.Helix - Error: The sides parameter must be at least 4. Returning None.")
+            return None
+
+        if not isinstance(direction, (list, tuple)) or len(direction) != 3:
+            if not silent:
+                print("Edge.Helix - Error: The input direction parameter is not a valid 3D vector. Returning None.")
+            return None
+
+        try:
+            direction = [
+                float(direction[0]),
+                float(direction[1]),
+                float(direction[2]),
+            ]
+        except Exception:
+            if not silent:
+                print("Edge.Helix - Error: The input direction parameter is not numerical. Returning None.")
+            return None
+
+        magnitude = math.sqrt(
+            sum(value * value for value in direction)
+        )
+
+        if not math.isfinite(magnitude) or magnitude <= tolerance:
+            if not silent:
+                print("Edge.Helix - Error: The input direction vector has zero magnitude. Returning None.")
+            return None
+
+        direction = [
+            value / magnitude
+            for value in direction
+        ]
+
+        if not isinstance(placement, str):
+            if not silent:
+                print("Edge.Helix - Error: The input placement parameter is not a valid string. Returning None.")
+            return None
+
+        placement = placement.lower()
+
+        if placement == "bottom":
+            placement = "base"
+
+        if placement not in [
+            "center",
+            "base",
+            "start",
+            "end",
+        ]:
+            if not silent:
+                print("Edge.Helix - Error: The placement must be center, base, bottom, start, or end. Returning None.")
+            return None
+
+        orientation = -1.0 if bool(clockwise) else 1.0
+
+        theta_total = (
+            orientation
+            * 2.0
+            * math.pi
+            * turns
+        )
+
+        # Number of cubic spans. "sides" controls approximation resolution,
+        # not topological segmentation.
+        span_count = max(
+            1,
+            int(
+                math.ceil(
+                    turns * sides
+                )
+            ),
+        )
+
+        dz_dtheta = height / theta_total
+
+        control_points = []
+
+        for i in range(span_count):
+            theta0 = (
+                theta_total
+                * float(i)
+                / float(span_count)
+            )
+
+            theta1 = (
+                theta_total
+                * float(i + 1)
+                / float(span_count)
+            )
+
+            delta = theta1 - theta0
+
+            z0 = (
+                height
+                * float(i)
+                / float(span_count)
+            )
+
+            z1 = (
+                height
+                * float(i + 1)
+                / float(span_count)
+            )
+
+            p0 = [
+                radius * math.cos(theta0),
+                radius * math.sin(theta0),
+                z0,
+            ]
+
+            p3 = [
+                radius * math.cos(theta1),
+                radius * math.sin(theta1),
+                z1,
+            ]
+
+            tangent0 = [
+                -radius * math.sin(theta0),
+                radius * math.cos(theta0),
+                dz_dtheta,
+            ]
+
+            tangent1 = [
+                -radius * math.sin(theta1),
+                radius * math.cos(theta1),
+                dz_dtheta,
+            ]
+
+            p1 = [
+                p0[j] + delta * tangent0[j] / 3.0
+                for j in range(3)
+            ]
+
+            p2 = [
+                p3[j] - delta * tangent1[j] / 3.0
+                for j in range(3)
+            ]
+
+            if i == 0:
+                control_points.append(
+                    Vertex.ByCoordinates(*p0)
+                )
+
+            control_points.append(
+                Vertex.ByCoordinates(*p1)
+            )
+
+            control_points.append(
+                Vertex.ByCoordinates(*p2)
+            )
+
+            control_points.append(
+                Vertex.ByCoordinates(*p3)
+            )
+
+        # Piecewise cubic Bezier representation as one B-spline Edge.
+        #
+        # Each internal knot has multiplicity 3, producing independent cubic
+        # Bezier spans while preserving the single topological Edge.
+        knots = [0.0] * 4
+
+        for i in range(1, span_count):
+            knot = (
+                float(i)
+                / float(span_count)
+            )
+
+            knots.extend([
+                knot,
+                knot,
+                knot,
+            ])
+
+        knots.extend([1.0] * 4)
+
+        edge = Edge.ByNurbsParameters(
+            controlPoints=control_points,
+            weights=None,
+            knots=knots,
+            isRational=False,
+            isPeriodic=False,
+            degree=3,
+            tolerance=tolerance,
+            silent=True,
+        )
+
+        if not Topology.IsInstance(edge, "Edge"):
+            if not silent:
+                print("Edge.Helix - Error: Could not create the helical edge. Returning None.")
+            return None
+
+        if placement == "center":
+            source_origin = Vertex.ByCoordinates(
+                0.0,
+                0.0,
+                height * 0.5,
+            )
+
+        elif placement == "base":
+            source_origin = Vertex.Origin()
+
+        elif placement == "start":
+            source_origin = Edge.StartVertex(
+                edge,
+                silent=True,
+            )
+
+        else:
+            source_origin = Edge.EndVertex(
+                edge,
+                silent=True,
+            )
+
+        edge = Topology.OrientAndPlace(
+            edge,
+            originA=source_origin,
+            originB=origin,
+            dirA=[0, 0, 1],
+            dirB=direction,
+            tolerance=tolerance,
+            silent=True,
+        )
+
+        if not Topology.IsInstance(edge, "Edge"):
+            if not silent:
+                print("Edge.Helix - Error: Could not orient and place the helix. Returning None.")
+            return None
+
+        return edge
+
+    @staticmethod
+    def Hyperbola(
+        origin=None,
+        a: float = 1.0,
+        b: float = 0.5,
+        fromParameter: float = -1.0,
+        toParameter: float = 1.0,
+        branch: str = "right",
+        direction: list = [0, 0, 1],
+        placement: str = "center",
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
+        """
+        Creates a single exact hyperbolic Edge.
+
+        In its canonical orientation, the hyperbola lies in the XY plane and is
+        defined by:
+
+            x^2 / a^2 - y^2 / b^2 = 1
+
+        The right branch is parametrically defined by:
+
+            x = a*cosh(u)
+            y = b*sinh(u)
+
+        and the left branch is its reflection across the Y-axis.
+
+        The resulting curve is represented exactly as a rational quadratic
+        Bezier/NURBS curve.
+
+        Parameters
+        ----------
+        origin : topologic_core.Vertex , optional
+            The placement origin. If None, the global origin is used.
+            Default is None.
+        a : float , optional
+            The semi-transverse axis length. Default is 1.0.
+        b : float , optional
+            The semi-conjugate axis length. Default is 0.5.
+        fromParameter : float , optional
+            The starting hyperbolic parameter. Default is -1.0.
+        toParameter : float , optional
+            The ending hyperbolic parameter. Default is 1.0.
+        branch : str , optional
+            The branch of the hyperbola. Valid options are "right" and "left".
+            Default is "right".
+        direction : list , optional
+            The normal vector of the plane containing the hyperbola.
+            Default is [0, 0, 1].
+        placement : str , optional
+            Specifies which canonical location is placed at the input origin.
+            Valid options are "center", "vertex", "start", and "end".
+            Default is "center".
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed.
+            Default is False.
+
+        Returns
+        -------
+        topologic_core.Edge
+            The created exact hyperbolic Edge, or None if it cannot be created.
+
+        """
+        import math
+
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
+
+        if origin is None:
+            origin = Vertex.Origin()
+
+        if not Topology.IsInstance(origin, "Vertex"):
+            if not silent:
+                print("Edge.Hyperbola - Error: The input origin parameter is not a valid vertex. Returning None.")
+            return None
+
+        try:
+            a = abs(float(a))
+            b = abs(float(b))
+            fromParameter = float(fromParameter)
+            toParameter = float(toParameter)
+            tolerance = float(tolerance)
+        except Exception:
+            if not silent:
+                print("Edge.Hyperbola - Error: One or more numerical parameters are invalid. Returning None.")
+            return None
+
+        if not all(
+            math.isfinite(value)
+            for value in [
+                a,
+                b,
+                fromParameter,
+                toParameter,
+                tolerance,
+            ]
+        ):
+            if not silent:
+                print("Edge.Hyperbola - Error: One or more numerical parameters are not finite. Returning None.")
+            return None
+
+        if tolerance <= 0.0:
+            if not silent:
+                print("Edge.Hyperbola - Error: The input tolerance parameter must be greater than zero. Returning None.")
+            return None
+
+        if a <= tolerance or b <= tolerance:
+            if not silent:
+                print("Edge.Hyperbola - Error: The a and b parameters must be greater than the input tolerance. Returning None.")
+            return None
+
+        if abs(toParameter - fromParameter) <= 1.0e-12:
+            if not silent:
+                print("Edge.Hyperbola - Error: The fromParameter and toParameter values must be different. Returning None.")
+            return None
+
+        if not isinstance(branch, str):
+            if not silent:
+                print("Edge.Hyperbola - Error: The input branch parameter is not a valid string. Returning None.")
+            return None
+
+        branch = branch.lower()
+
+        if branch not in ["right", "left"]:
+            if not silent:
+                print("Edge.Hyperbola - Error: The branch must be right or left. Returning None.")
+            return None
+
+        if not isinstance(direction, (list, tuple)) or len(direction) != 3:
+            if not silent:
+                print("Edge.Hyperbola - Error: The input direction parameter is not a valid 3D vector. Returning None.")
+            return None
+
+        try:
+            direction = [
+                float(direction[0]),
+                float(direction[1]),
+                float(direction[2]),
+            ]
+        except Exception:
+            if not silent:
+                print("Edge.Hyperbola - Error: The input direction parameter is not numerical. Returning None.")
+            return None
+
+        magnitude = math.sqrt(
+            sum(value * value for value in direction)
+        )
+
+        if not math.isfinite(magnitude) or magnitude <= tolerance:
+            if not silent:
+                print("Edge.Hyperbola - Error: The input direction vector has zero magnitude. Returning None.")
+            return None
+
+        direction = [
+            value / magnitude
+            for value in direction
+        ]
+
+        if not isinstance(placement, str):
+            if not silent:
+                print("Edge.Hyperbola - Error: The input placement parameter is not a valid string. Returning None.")
+            return None
+
+        placement = placement.lower()
+
+        if placement not in [
+            "center",
+            "vertex",
+            "start",
+            "end",
+        ]:
+            if not silent:
+                print("Edge.Hyperbola - Error: The placement must be center, vertex, start, or end. Returning None.")
+            return None
+
+        sign = 1.0 if branch == "right" else -1.0
+
+        # Convert the natural hyperbolic parameter u to the rational conic
+        # parameter t = tanh(u / 2).
+        t0 = math.tanh(0.5 * fromParameter)
+        t1 = math.tanh(0.5 * toParameter)
+
+        w0 = 1.0 - t0 * t0
+        w1 = 1.0 - t0 * t1
+        w2 = 1.0 - t1 * t1
+
+        if min(w0, w1, w2) <= 1.0e-14:
+            if not silent:
+                print("Edge.Hyperbola - Error: The requested parameter range is too large for a numerically stable finite hyperbola segment. Returning None.")
+            return None
+
+        # Homogeneous quadratic Bezier control points for the rational
+        # parameterization:
+        #
+        # x = a * (1 + t^2) / (1 - t^2)
+        # y = 2*b*t / (1 - t^2)
+        #
+        # reflected in X for the left branch.
+        p0 = Vertex.ByCoordinates(
+            sign * a * (1.0 + t0 * t0) / w0,
+            2.0 * b * t0 / w0,
+            0.0,
+        )
+
+        p1 = Vertex.ByCoordinates(
+            sign * a * (1.0 + t0 * t1) / w1,
+            b * (t0 + t1) / w1,
+            0.0,
+        )
+
+        p2 = Vertex.ByCoordinates(
+            sign * a * (1.0 + t1 * t1) / w2,
+            2.0 * b * t1 / w2,
+            0.0,
+        )
+
+        edge = Edge.Bezier(
+            [p0, p1, p2],
+            weights=[w0, w1, w2],
+            tolerance=tolerance,
+            silent=True,
+        )
+
+        if not Topology.IsInstance(edge, "Edge"):
+            if not silent:
+                print("Edge.Hyperbola - Error: Could not create the hyperbolic edge. Returning None.")
+            return None
+
+        if placement == "center":
+            source_origin = Vertex.Origin()
+
+        elif placement == "vertex":
+            source_origin = Vertex.ByCoordinates(
+                sign * a,
+                0.0,
+                0.0,
+            )
+
+        elif placement == "start":
+            source_origin = Edge.StartVertex(
+                edge,
+                silent=True,
+            )
+
+        else:
+            source_origin = Edge.EndVertex(
+                edge,
+                silent=True,
+            )
+
+        edge = Topology.OrientAndPlace(
+            edge,
+            originA=source_origin,
+            originB=origin,
+            dirA=[0, 0, 1],
+            dirB=direction,
+            tolerance=tolerance,
+            silent=True,
+        )
+
+        if not Topology.IsInstance(edge, "Edge"):
+            if not silent:
+                print("Edge.Hyperbola - Error: Could not orient and place the hyperbola. Returning None.")
+            return None
+
+        return edge
+
     @staticmethod
     def Index(edge, edges: list, strict: bool = False, tolerance: float = 0.0001, silent: bool = False) -> int:
         """
@@ -3773,6 +4543,222 @@ class Edge():
             tolerance=tolerance,
             silent=silent,
         )
+
+    @staticmethod
+    def Parabola(
+        origin=None,
+        focalLength: float = 0.5,
+        fromParameter: float = -1.0,
+        toParameter: float = 1.0,
+        direction: list = [0, 0, 1],
+        placement: str = "vertex",
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
+        """
+        Creates a single exact parabolic Edge.
+
+        In its canonical orientation, the parabola lies in the XY plane, has its
+        vertex at the global origin, opens in the positive Y direction, and is
+        defined parametrically by:
+
+            x = 2*f*t
+            y = f*t^2
+
+        where f is the focal length and t is the curve parameter.
+
+        The resulting parabola is represented exactly as a quadratic Bezier curve.
+
+        Parameters
+        ----------
+        origin : topologic_core.Vertex , optional
+            The placement origin of the parabola. If None, the global origin is
+            used. Default is None.
+        focalLength : float , optional
+            The focal length of the parabola. Default is 0.5.
+        fromParameter : float , optional
+            The starting parametric value. Default is -1.0.
+        toParameter : float , optional
+            The ending parametric value. Default is 1.0.
+        direction : list , optional
+            The normal vector of the plane containing the parabola.
+            Default is [0, 0, 1].
+        placement : str , optional
+            Specifies which canonical point is placed at the input origin.
+            The options are "vertex", "start", and "end". Default is "vertex".
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed.
+            Default is False.
+
+        Returns
+        -------
+        topologic_core.Edge
+            The created exact parabolic Edge, or None if it cannot be created.
+
+        """
+        import math
+
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
+
+        if origin is None:
+            origin = Vertex.Origin()
+
+        if not Topology.IsInstance(origin, "Vertex"):
+            if not silent:
+                print("Edge.Parabola - Error: The input origin parameter is not a valid vertex. Returning None.")
+            return None
+
+        try:
+            focalLength = abs(float(focalLength))
+            fromParameter = float(fromParameter)
+            toParameter = float(toParameter)
+            tolerance = float(tolerance)
+        except Exception:
+            if not silent:
+                print("Edge.Parabola - Error: One or more numerical parameters are invalid. Returning None.")
+            return None
+
+        if not all(
+            math.isfinite(value)
+            for value in [
+                focalLength,
+                fromParameter,
+                toParameter,
+                tolerance,
+            ]
+        ):
+            if not silent:
+                print("Edge.Parabola - Error: One or more numerical parameters are not finite. Returning None.")
+            return None
+
+        if tolerance <= 0.0:
+            if not silent:
+                print("Edge.Parabola - Error: The input tolerance parameter must be greater than zero. Returning None.")
+            return None
+
+        if focalLength <= tolerance:
+            if not silent:
+                print("Edge.Parabola - Error: The focal length must be greater than the input tolerance. Returning None.")
+            return None
+
+        if abs(toParameter - fromParameter) <= 1.0e-12:
+            if not silent:
+                print("Edge.Parabola - Error: The fromParameter and toParameter values must be different. Returning None.")
+            return None
+
+        if not isinstance(direction, (list, tuple)) or len(direction) != 3:
+            if not silent:
+                print("Edge.Parabola - Error: The input direction parameter is not a valid 3D vector. Returning None.")
+            return None
+
+        try:
+            direction = [
+                float(direction[0]),
+                float(direction[1]),
+                float(direction[2]),
+            ]
+        except Exception:
+            if not silent:
+                print("Edge.Parabola - Error: The input direction parameter is not numerical. Returning None.")
+            return None
+
+        magnitude = math.sqrt(
+            sum(value * value for value in direction)
+        )
+
+        if not math.isfinite(magnitude) or magnitude <= tolerance:
+            if not silent:
+                print("Edge.Parabola - Error: The input direction vector has zero magnitude. Returning None.")
+            return None
+
+        direction = [
+            value / magnitude
+            for value in direction
+        ]
+
+        if not isinstance(placement, str):
+            if not silent:
+                print("Edge.Parabola - Error: The input placement parameter is not a valid string. Returning None.")
+            return None
+
+        placement = placement.lower()
+
+        if placement not in ["vertex", "start", "end"]:
+            if not silent:
+                print("Edge.Parabola - Error: The placement must be vertex, start, or end. Returning None.")
+            return None
+
+        t0 = fromParameter
+        t1 = toParameter
+        f = focalLength
+
+        # Exact quadratic Bezier representation of:
+        #
+        # x = 2*f*t
+        # y = f*t^2
+        #
+        # over t0 <= t <= t1.
+        p0 = Vertex.ByCoordinates(
+            2.0 * f * t0,
+            f * t0 * t0,
+            0.0,
+        )
+
+        p1 = Vertex.ByCoordinates(
+            f * (t0 + t1),
+            f * t0 * t1,
+            0.0,
+        )
+
+        p2 = Vertex.ByCoordinates(
+            2.0 * f * t1,
+            f * t1 * t1,
+            0.0,
+        )
+
+        edge = Edge.Bezier(
+            [p0, p1, p2],
+            tolerance=tolerance,
+            silent=True,
+        )
+
+        if not Topology.IsInstance(edge, "Edge"):
+            if not silent:
+                print("Edge.Parabola - Error: Could not create the parabolic edge. Returning None.")
+            return None
+
+        if placement == "vertex":
+            source_origin = Vertex.Origin()
+        elif placement == "start":
+            source_origin = Edge.StartVertex(
+                edge,
+                silent=True,
+            )
+        else:
+            source_origin = Edge.EndVertex(
+                edge,
+                silent=True,
+            )
+
+        edge = Topology.OrientAndPlace(
+            edge,
+            originA=source_origin,
+            originB=origin,
+            dirA=[0, 0, 1],
+            dirB=direction,
+            tolerance=tolerance,
+            silent=True,
+        )
+
+        if not Topology.IsInstance(edge, "Edge"):
+            if not silent:
+                print("Edge.Parabola - Error: Could not orient and place the parabola. Returning None.")
+            return None
+
+        return edge
 
     @staticmethod
     def ParameterAtVertex(edge, vertex, mantissa: int = 6, silent: bool = False, tolerance: float = 0.0001) -> float:
