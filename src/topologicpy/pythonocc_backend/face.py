@@ -1447,30 +1447,417 @@ class FaceUtility:
         return triangles
 
     @staticmethod
-    def TrimByWire(face, wire, reverse: bool = False, tolerance: float = 0.0001):
-        """Trim a Face by a closed Wire using native OCCT face booleans."""
+    def TrimByWire(
+        face,
+        wire,
+        reverse: bool = False,
+        tolerance: float = 0.0001
+    ):
+        """
+        Trims a Face by a closed Wire on the Face's supporting surface.
+
+        If the input Wire already carries valid p-curves on the Face, it is used
+        directly. Otherwise, the Wire is projected normally onto the Face using
+        OCCT's native BRepOffsetAPI_NormalProjection.
+
+        The resulting surface Wire is then used to split the original Face with
+        BRepFeat_SplitShape. This preserves the original supporting surface,
+        including B-spline and NURBS surfaces.
+
+        Parameters
+        ----------
+        face : Face
+            The input Face.
+        wire : Wire
+            The closed trimming Wire.
+        reverse : bool , optional
+            If False, returns the portion inside the trimming Wire. If True,
+            returns the complementary portion. Default is False.
+        tolerance : float , optional
+            The desired geometric tolerance. Default is 0.0001.
+
+        Returns
+        -------
+        Face
+            The trimmed Face, or None if the operation fails.
+
+        """
         occ_face = _as_occ_face(face)
         occ_wire = _as_occ_wire(wire)
+
         if occ_face is None or occ_wire is None:
             return None
-        try:
-            from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakeFace
-            from OCC.Core.BRepAlgoAPI import BRepAlgoAPI_Common, BRepAlgoAPI_Cut
-            from OCC.Core.TopAbs import TopAbs_FACE
-            from OCC.Core.TopoDS import topods
 
-            tool_maker = BRepBuilderAPI_MakeFace(occ_wire, True)
-            if not tool_maker.IsDone():
-                return None
-            tool_face = tool_maker.Face()
-            operation = BRepAlgoAPI_Cut(occ_face, tool_face) if reverse else BRepAlgoAPI_Common(occ_face, tool_face)
-            operation.Build()
-            if not operation.IsDone():
-                return None
-            shape = operation.Shape()
-            faces = _explore_shapes(shape, TopAbs_FACE)
-            if len(faces) != 1:
-                return None
-            return Face.ByOcctShape(topods.Face(faces[0]))
+        tol = _face_tolerance(tolerance)
+
+        try:
+            from OCC.Core.BRep import BRep_Tool
+
+            from OCC.Core.BRepBuilderAPI import (
+                BRepBuilderAPI_MakeFace,
+                BRepBuilderAPI_MakeWire,
+            )
+
+            from OCC.Core.BRepFeat import (
+                BRepFeat_SplitShape,
+            )
+
+            from OCC.Core.BRepOffsetAPI import (
+                BRepOffsetAPI_NormalProjection,
+            )
+
+            from OCC.Core.BRepCheck import (
+                BRepCheck_Analyzer,
+            )
+
+            from OCC.Core.ShapeAnalysis import (
+                ShapeAnalysis_Edge,
+            )
+
+            from OCC.Core.TopAbs import (
+                TopAbs_EDGE,
+                TopAbs_FACE,
+                TopAbs_WIRE,
+            )
+
+            from OCC.Core.TopoDS import (
+                topods,
+            )
+
         except Exception:
             return None
+
+        # ------------------------------------------------------------------
+        # Retrieve the original supporting surface.
+        # ------------------------------------------------------------------
+
+        try:
+            surface = BRep_Tool.Surface(occ_face)
+        except Exception:
+            surface = None
+
+        if surface is None:
+            return None
+
+        # ------------------------------------------------------------------
+        # Determine whether the supplied Wire already belongs parametrically
+        # to this Face.
+        # ------------------------------------------------------------------
+
+        def wire_has_pcurves(test_wire):
+            try:
+                analysis = ShapeAnalysis_Edge()
+
+                edge_shapes = _explore_shapes(
+                    test_wire,
+                    TopAbs_EDGE,
+                )
+
+                if len(edge_shapes) < 1:
+                    return False
+
+                for edge_shape in edge_shapes:
+                    edge = topods.Edge(edge_shape)
+
+                    try:
+                        if not analysis.HasPCurve(
+                            edge,
+                            occ_face,
+                        ):
+                            return False
+                    except Exception:
+                        return False
+
+                return True
+
+            except Exception:
+                return False
+
+        # ------------------------------------------------------------------
+        # If necessary, project the trimming Wire onto the actual Face.
+        #
+        # BRepOffsetAPI_NormalProjection returns edges/wires that genuinely
+        # belong to the target Face and have the required surface geometry.
+        # ------------------------------------------------------------------
+
+        if wire_has_pcurves(occ_wire):
+
+            surface_wire = occ_wire
+
+        else:
+
+            try:
+                projector = BRepOffsetAPI_NormalProjection(
+                    occ_face
+                )
+
+                # Restrict the projection to the bounds of the target Face.
+                try:
+                    projector.SetLimit(True)
+                except Exception:
+                    pass
+
+                # Request actual 3D curves as well as their p-curves.
+                try:
+                    projector.Compute3d(True)
+                except Exception:
+                    pass
+
+                projector.Add(
+                    occ_wire
+                )
+
+                projector.Build()
+
+                if not projector.IsDone():
+                    return None
+
+                projected_shape = projector.Projection()
+
+            except Exception:
+                return None
+
+            if (
+                projected_shape is None
+                or projected_shape.IsNull()
+            ):
+                return None
+
+            # NormalProjection normally returns a compound containing one or
+            # more oriented Wires.
+            try:
+                wire_shapes = _explore_shapes(
+                    projected_shape,
+                    TopAbs_WIRE,
+                )
+            except Exception:
+                wire_shapes = []
+
+            if len(wire_shapes) == 1:
+
+                try:
+                    surface_wire = topods.Wire(
+                        wire_shapes[0]
+                    )
+                except Exception:
+                    return None
+
+            elif len(wire_shapes) > 1:
+
+                # More than one projection means the projection is ambiguous or
+                # fragmented. TrimByWire cannot choose one silently.
+                return None
+
+            else:
+
+                # Defensive fallback for PythonOCC builds that expose projected
+                # edges without the enclosing Wire.
+                try:
+                    edge_shapes = _explore_shapes(
+                        projected_shape,
+                        TopAbs_EDGE,
+                    )
+
+                    if len(edge_shapes) < 1:
+                        return None
+
+                    wire_maker = BRepBuilderAPI_MakeWire()
+
+                    for edge_shape in edge_shapes:
+                        wire_maker.Add(
+                            topods.Edge(edge_shape)
+                        )
+
+                    if not wire_maker.IsDone():
+                        return None
+
+                    surface_wire = wire_maker.Wire()
+
+                except Exception:
+                    return None
+
+        if (
+            surface_wire is None
+            or surface_wire.IsNull()
+        ):
+            return None
+
+        # ------------------------------------------------------------------
+        # Verify that every Edge now has a p-curve on the original Face.
+        # ------------------------------------------------------------------
+
+        if not wire_has_pcurves(surface_wire):
+            return None
+
+        # ------------------------------------------------------------------
+        # Build the trimming region ON THE SAME SUPPORTING SURFACE.
+        #
+        # This is used only for classifying the resulting split pieces.
+        # It is not used as a boolean tool.
+        # ------------------------------------------------------------------
+
+        try:
+            region_maker = BRepBuilderAPI_MakeFace(
+                surface,
+                surface_wire,
+                True,
+            )
+
+            if not region_maker.IsDone():
+                return None
+
+            occ_region_face = region_maker.Face()
+
+            if (
+                occ_region_face is None
+                or occ_region_face.IsNull()
+            ):
+                return None
+
+            region_face = Face.ByOcctShape(
+                occ_region_face
+            )
+
+        except Exception:
+            return None
+
+        if not isinstance(region_face, Face):
+            return None
+
+        # ------------------------------------------------------------------
+        # Check that the trimming region itself is valid.
+        # ------------------------------------------------------------------
+
+        try:
+            analyzer = BRepCheck_Analyzer(
+                occ_region_face
+            )
+
+            if not analyzer.IsValid():
+                return None
+
+        except Exception:
+            pass
+
+        # ------------------------------------------------------------------
+        # Split the ORIGINAL Face.
+        #
+        # BRepFeat_SplitShape operates locally on the supplied Face and preserves
+        # its supporting surface.
+        # ------------------------------------------------------------------
+
+        try:
+            splitter = BRepFeat_SplitShape(
+                occ_face
+            )
+
+            splitter.Add(
+                surface_wire,
+                occ_face,
+            )
+
+            splitter.Build()
+
+            if not splitter.IsDone():
+                return None
+
+            split_shape = splitter.Shape()
+
+        except Exception:
+            return None
+
+        if (
+            split_shape is None
+            or split_shape.IsNull()
+        ):
+            return None
+
+        # ------------------------------------------------------------------
+        # Retrieve the resulting pieces.
+        # ------------------------------------------------------------------
+
+        try:
+            candidate_shapes = _explore_shapes(
+                split_shape,
+                TopAbs_FACE,
+            )
+        except Exception:
+            candidate_shapes = []
+
+        # A successful closed trim should actually split the Face.
+        if len(candidate_shapes) < 2:
+            return None
+
+        selected = []
+
+        # ------------------------------------------------------------------
+        # Select the inside or outside part geometrically.
+        #
+        # Do not depend on trimming-wire orientation or SplitShape's "left"
+        # convention. Instead classify a strict internal point from every
+        # resulting Face against the trimming-region Face.
+        # ------------------------------------------------------------------
+
+        for candidate_shape in candidate_shapes:
+
+            try:
+                occ_candidate = topods.Face(
+                    candidate_shape
+                )
+            except Exception:
+                continue
+
+            try:
+                analyzer = BRepCheck_Analyzer(
+                    occ_candidate
+                )
+
+                if not analyzer.IsValid():
+                    continue
+
+            except Exception:
+                pass
+
+            candidate = Face.ByOcctShape(
+                occ_candidate
+            )
+
+            if not isinstance(candidate, Face):
+                continue
+
+            representative = FaceUtility.InternalVertex(
+                candidate,
+                tol,
+            )
+
+            if not isinstance(representative, Vertex):
+                continue
+
+            inside_trim = FaceUtility.IsInside(
+                region_face,
+                representative,
+                tol,
+            )
+
+            if reverse:
+                keep = not inside_trim
+            else:
+                keep = inside_trim
+
+            if keep:
+                selected.append(candidate)
+
+        # ------------------------------------------------------------------
+        # Face.TrimByWire returns one Face.
+        #
+        # A simple closed trimming loop should produce exactly one requested
+        # result. Do not silently choose between disconnected regions.
+        # ------------------------------------------------------------------
+
+        if len(selected) != 1:
+            return None
+
+        return _wrap_metadata(
+            face,
+            selected[0],
+        )
