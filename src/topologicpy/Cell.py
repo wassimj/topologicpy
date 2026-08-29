@@ -756,446 +756,321 @@ class Cell():
         return Cell.ByFaces(cellFaces, planarize=planarize, tolerance=tolerance)
     
     @staticmethod
-    def ByWires(wires: list,
-                close: bool = False,
-                triangulate: bool = True,
-                planarize: bool = False,
-                mantissa: int = 6,
-                tolerance: float = 0.0001,
-                silent: bool = False):
+    def ByWires(
+        wires: list,
+        polyhedron: bool = True,
+        triangulate: bool = True,
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
         """
-        Creates a cell by lofting through the input list of wires.
+        Creates a Cell by lofting through the input Wires.
 
-        Unlike the older implementation, this version does NOT require
-        corresponding wires to have the same number of edges. Each pair of
-        wires is re-parameterized by normalized perimeter length and resampled
-        at a common set of breakpoints before side faces are created.
+        If polyhedron is True, a faceted Cell is constructed from planar Faces.
+
+        If polyhedron is False, the section curves are preserved and a genuine
+        curve-preserving ruled Cell is constructed by the PythonOCC backend.
+
+        All input Wires must be closed and corresponding Wires must contain the
+        same number of Edges.
 
         Parameters
         ----------
         wires : list
-            The input list of wires.
-        close : bool , optional
-            If set to True, the last wire is also connected to the first wire.
-            Default is False.
+            The ordered list of closed section Wires.
+        polyhedron : bool , optional
+            If True, constructs a faceted Cell made of planar Faces. If False,
+            constructs a curve-preserving ruled Cell. Default is True.
         triangulate : bool , optional
-            If set to True, side and cap faces are triangulated where needed.
+            If polyhedron is True, specifies whether side and cap Faces are
+            triangulated. This parameter is ignored when polyhedron is False.
             Default is True.
-        planarize : bool, optional
-            If set to True, the created faces are planarized before building
-            the cell. Otherwise, they are not. Default is False.
-        mantissa : int , optional
-            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
+            If set to True, error and warning messages are suppressed.
+            Default is False.
 
         Returns
         -------
         topologic_core.Cell
-            The created cell.
+            The created Cell.
+
         """
-        from topologicpy.Vertex import Vertex
-        from topologicpy.Edge import Edge
+        import math
+
         from topologicpy.Wire import Wire
         from topologicpy.Face import Face
         from topologicpy.Shell import Shell
         from topologicpy.Topology import Topology
 
-        def _coords(v):
-            return [Vertex.X(v), Vertex.Y(v), Vertex.Z(v)]
-
-        def _distance(v1, v2):
-            x1, y1, z1 = _coords(v1)
-            x2, y2, z2 = _coords(v2)
-            dx = x2 - x1
-            dy = y2 - y1
-            dz = z2 - z1
-            return (dx*dx + dy*dy + dz*dz) ** 0.5
-
-        def _lerp(v1, v2, t):
-            x1, y1, z1 = _coords(v1)
-            x2, y2, z2 = _coords(v2)
-            return Vertex.ByCoordinates(
-                x1 + (x2 - x1) * t,
-                y1 + (y2 - y1) * t,
-                z1 + (z2 - z1) * t
-            )
-
-        def _ordered_vertices_from_edges(wire):
-            """
-            Attempts to reconstruct the ordered vertices of a wire from its edges.
-            Returns a closed loop as unique vertices without repeating the first
-            vertex at the end.
-            """
-            edges = Topology.Edges(wire)
-            if not edges or len(edges) < 1:
-                return None
-
-            unused = edges[:]
-            first_edge = unused.pop(0)
-
-            sv = Edge.StartVertex(first_edge)
-            ev = Edge.EndVertex(first_edge)
-            ordered = [sv, ev]
-
-            while unused:
-                current = ordered[-1]
-                found = False
-                for i, e in enumerate(unused):
-                    es = Edge.StartVertex(e)
-                    ee = Edge.EndVertex(e)
-                    if Topology.IsSame(es, current):
-                        ordered.append(ee)
-                        unused.pop(i)
-                        found = True
-                        break
-                    elif Topology.IsSame(ee, current):
-                        ordered.append(es)
-                        unused.pop(i)
-                        found = True
-                        break
-                if not found:
-                    break
-
-            if len(ordered) < 3:
-                return None
-
-            # Remove repeated closure vertex if present
-            if Topology.IsSame(ordered[0], ordered[-1]):
-                ordered = ordered[:-1]
-
-            return ordered
-
-        def _ordered_vertices(wire):
-            """
-            Tries to get ordered vertices from Wire.Vertices if available,
-            otherwise reconstructs from edges.
-            """
-            verts = None
-            try:
-                verts = Wire.Vertices(wire)
-            except:
-                verts = None
-
-            if isinstance(verts, list) and len(verts) >= 3:
-                # Remove repeated closure vertex if present
-                if Topology.IsSame(verts[0], verts[-1]):
-                    verts = verts[:-1]
-                return verts
-
-            return _ordered_vertices_from_edges(wire)
-
-        def _wire_parameters(verts):
-            """
-            Returns:
-                seg_lengths: list of segment lengths
-                cum_lengths: cumulative lengths starting at 0
-                total_length: total perimeter length
-                params: normalized parameter values at each vertex in [0,1)
-            """
-            n = len(verts)
-            seg_lengths = []
-            cum_lengths = [0.0]
-            total = 0.0
-            for i in range(n):
-                v1 = verts[i]
-                v2 = verts[(i + 1) % n]
-                d = _distance(v1, v2)
-                seg_lengths.append(d)
-                total += d
-                cum_lengths.append(total)
-
-            if total <= tolerance:
-                return None, None, None, None
-
-            params = [cum_lengths[i] / total for i in range(n)]
-            return seg_lengths, cum_lengths, total, params
-
-        def _vertex_at_parameter(verts, seg_lengths, cum_lengths, total_length, u):
-            """
-            Returns a vertex sampled on the closed polyline at normalized
-            parameter u in [0,1).
-            """
-            if u >= 1.0:
-                u = 0.0
-            if u < 0.0:
-                u = u % 1.0
-
-            target = u * total_length
-            n = len(seg_lengths)
-
-            for i in range(n):
-                a = cum_lengths[i]
-                b = cum_lengths[i + 1]
-                if target <= b or i == n - 1:
-                    seg_len = seg_lengths[i]
-                    if seg_len <= tolerance:
-                        return verts[i]
-                    t = (target - a) / seg_len
-                    t = max(0.0, min(1.0, t))
-                    return _lerp(verts[i], verts[(i + 1) % len(verts)], t)
-
-            return verts[0]
-
-        def _rotate_list(values, k):
-            k = k % len(values)
-            return values[k:] + values[:k]
-
-        def _best_rotated_vertices(verts_a, verts_b):
-            """
-            Rotate verts_b so its seam/start best aligns with verts_a.
-            This helps when wires are equivalent loops but start at different
-            vertices. It does not solve all correspondence issues, but it
-            improves many practical cases.
-            """
-            if len(verts_b) < 2:
-                return verts_b
-
-            a0 = verts_a[0]
-            best_i = 0
-            best_d = None
-            for i, vb in enumerate(verts_b):
-                d = _distance(a0, vb)
-                if best_d is None or d < best_d:
-                    best_d = d
-                    best_i = i
-            return _rotate_list(verts_b, best_i)
-
-        def _face_by_vertices(vertices):
-            """
-            Creates a face from the supplied vertices by explicitly building a
-            closed edge loop. Returns None on failure.
-            """
-            if not isinstance(vertices, list) or len(vertices) < 3:
-                return None
-
-            # Remove consecutive duplicate vertices
-            cleaned = []
-            for v in vertices:
-                if len(cleaned) == 0:
-                    cleaned.append(v)
-                else:
-                    if _distance(cleaned[-1], v) > tolerance:
-                        cleaned.append(v)
-
-            if len(cleaned) < 3:
-                return None
-
-            # Remove repeated closure vertex if present
-            if _distance(cleaned[0], cleaned[-1]) <= tolerance:
-                cleaned = cleaned[:-1]
-
-            if len(cleaned) < 3:
-                return None
-
-            edges = []
-            n = len(cleaned)
-            for i in range(n):
-                v1 = cleaned[i]
-                v2 = cleaned[(i + 1) % n]
-                if _distance(v1, v2) > tolerance:
-                    e = Edge.ByVertices([v1, v2], tolerance=tolerance, silent=True)
-                    if e:
-                        edges.append(e)
-
-            if len(edges) < 3:
-                return None
-
-            try:
-                # IMPORTANT: do NOT use orient=True for a closed loop
-                w = Wire.ByEdges(edges, orient=False, tolerance=tolerance, silent=True)
-                if not Topology.IsInstance(w, "Wire"):
-                    return None
-                return Face.ByWire(w, tolerance=tolerance)
-            except:
-                return None
-
-        def _triangulated_faces_from_loop_pair(verts1, verts2):
-            """
-            Creates side faces between two resampled closed loops.
-            """
-            local_faces = []
-            n = len(verts1)
-            for i in range(n):
-                a0 = verts1[i]
-                a1 = verts1[(i + 1) % n]
-                b1 = verts2[(i + 1) % n]
-                b0 = verts2[i]
-
-                # Skip fully collapsed strips
-                if (_distance(a0, a1) <= tolerance and
-                    _distance(b0, b1) <= tolerance):
-                    continue
-
-                if triangulate:
-                    f1 = _face_by_vertices([a0, a1, b1])
-                    f2 = _face_by_vertices([a0, b1, b0])
-                    if f1:
-                        local_faces.append(f1)
-                    if f2:
-                        local_faces.append(f2)
-                else:
-                    f = _face_by_vertices([a0, a1, b1, b0])
-                    if f:
-                        local_faces.append(f)
-                    else:
-                        # fallback to triangles
-                        f1 = _face_by_vertices([a0, a1, b1])
-                        f2 = _face_by_vertices([a0, b1, b0])
-                        if f1:
-                            local_faces.append(f1)
-                        if f2:
-                            local_faces.append(f2)
-            return local_faces
-
-        def _loft_faces_between_wires(wire1, wire2):
-            """
-            Resamples two wires at a shared set of normalized perimeter parameters
-            and returns the side faces between them.
-            """
-            verts1 = _ordered_vertices(wire1)
-            verts2 = _ordered_vertices(wire2)
-
-            if not isinstance(verts1, list) or len(verts1) < 3:
-                return []
-            if not isinstance(verts2, list) or len(verts2) < 3:
-                return []
-
-            verts2 = _best_rotated_vertices(verts1, verts2)
-
-            seg1, cum1, total1, params1 = _wire_parameters(verts1)
-            seg2, cum2, total2, params2 = _wire_parameters(verts2)
-
-            if total1 is None or total2 is None:
-                return []
-
-            # Shared sampling parameters from both loops
-            merged = sorted(set(
-                [round(p, mantissa) for p in params1] +
-                [round(p, mantissa) for p in params2]
-            ))
-
-            # Ensure 0 exists
-            if len(merged) == 0 or abs(merged[0]) > (10 ** (-mantissa)):
-                merged = [0.0] + merged
-
-            # Remove 1.0 if it appears due to rounding; closed loops use [0,1)
-            cleaned = []
-            for u in merged:
-                if abs(u - 1.0) <= (10 ** (-mantissa)):
-                    continue
-                if len(cleaned) == 0 or abs(cleaned[-1] - u) > (10 ** (-mantissa)):
-                    cleaned.append(u)
-            merged = cleaned
-
-            if len(merged) < 3:
-                return []
-
-            sample1 = [_vertex_at_parameter(verts1, seg1, cum1, total1, u) for u in merged]
-            sample2 = [_vertex_at_parameter(verts2, seg2, cum2, total2, u) for u in merged]
-
-            return _triangulated_faces_from_loop_pair(sample1, sample2)
-
-        if not isinstance(wires, list):
+        if not isinstance(wires, (list, tuple)):
             if not silent:
                 print("Cell.ByWires - Error: The input wires parameter is not a valid list. Returning None.")
             return None
 
-        wires = [w for w in wires if Topology.IsInstance(w, "Wire")]
+        wires = [
+            wire
+            for wire in wires
+            if Topology.IsInstance(wire, "Wire")
+        ]
+
         if len(wires) < 2:
             if not silent:
-                print("Cell.ByWires - Error: The input wires parameter contains less than two valid topologic wires. Returning None.")
+                print("Cell.ByWires - Error: At least two valid Wires are required. Returning None.")
             return None
 
-        faces = []
-
-        # End caps
-        cap1 = Face.ByWire(wires[0], tolerance=tolerance)
-        cap2 = Face.ByWire(wires[-1], tolerance=tolerance)
-        if cap1:
-            faces.append(cap1)
-        if cap2:
-            faces.append(cap2)
-
-        if triangulate:
-            triangulated_caps = []
-            for face in faces:
-                try:
-                    if len(Topology.Vertices(face)) > 3:
-                        triangulated_caps += Face.Triangulate(face, tolerance=tolerance)
-                    else:
-                        triangulated_caps.append(face)
-                except:
-                    triangulated_caps.append(face)
-            faces = triangulated_caps
-
-        # Consecutive lofting
-        pair_count = len(wires) - 1
-        for i in range(pair_count):
-            loft_faces = _loft_faces_between_wires(wires[i], wires[i + 1])
-            faces += [f for f in loft_faces if f]
-
-        # If close=True, also connect last wire back to first
-        if close:
-            loft_faces = _loft_faces_between_wires(wires[-1], wires[0])
-            faces += [f for f in loft_faces if f]
-
-        faces = [f for f in faces if Topology.IsInstance(f, "Face")]
-        if len(faces) < 4:
+        try:
+            tolerance = abs(float(tolerance))
+        except Exception:
             if not silent:
-                print("Cell.ByWires - Error: Could not create sufficient faces for a valid cell. Returning None.")
+                print("Cell.ByWires - Error: The input tolerance parameter is not a valid number. Returning None.")
             return None
 
-        cell = Cell.ByFaces(faces, planarize=planarize, tolerance=tolerance, silent=silent)
-        if not cell:
-            shell = Shell.ByFaces(faces, tolerance=tolerance)
-            if Topology.IsInstance(shell, "Shell"):
-                geom = Topology.Geometry(shell, mantissa=mantissa)
-                cell = Topology.ByGeometry(geom['vertices'], geom['edges'], geom['faces'])
+        if not math.isfinite(tolerance) or tolerance <= 0.0:
+            if not silent:
+                print("Cell.ByWires - Error: The input tolerance parameter must be greater than zero. Returning None.")
+            return None
+
+        # Every section of a Cell loft must be closed.
+        for wire in wires:
+            if not Wire.IsClosed(
+                wire,
+                tolerance=tolerance,
+                silent=True,
+            ):
+                if not silent:
+                    print(
+                        "Cell.ByWires - Error: All input Wires must be closed. "
+                        "Returning None."
+                    )
+                return None
+
+        # Require explicit section topology instead of silently resampling or
+        # rebuilding the supplied geometry.
+        edge_counts = [
+            len(Topology.Edges(wire) or [])
+            for wire in wires
+        ]
+
+        if (
+            len(edge_counts) != len(wires)
+            or min(edge_counts) < 1
+            or len(set(edge_counts)) != 1
+        ):
+            if not silent:
+                print(
+                    "Cell.ByWires - Error: All input Wires must contain the same "
+                    "number of Edges. Returning None."
+                )
+            return None
+
+        # ------------------------------------------------------------------
+        # Curve-preserving native loft.
+        # ------------------------------------------------------------------
+
+        if not polyhedron:
+
+            try:
+                is_topologic_core = bool(
+                    Topology._IsTopologicCoreBackend()
+                )
+            except Exception:
+                is_topologic_core = True
+
+            if is_topologic_core:
+                if not silent:
+                    print(
+                        "Cell.ByWires - Error: The TopologicCore backend does "
+                        "not support curve-preserving Cell loft construction. "
+                        "Returning None."
+                    )
+                return None
+
+            try:
+                cell = Core.Cell.ByWires(
+                    wires,
+                    tolerance,
+                )
+            except Exception:
+                cell = None
 
             if not Topology.IsInstance(cell, "Cell"):
                 if not silent:
-                    print("Cell.ByWires - Error: Could not create a cell. Returning None.")
+                    print(
+                        "Cell.ByWires - Error: Could not construct the "
+                        "curve-preserving Cell. Returning None."
+                    )
                 return None
+
+            return cell
+
+        # ------------------------------------------------------------------
+        # Polyhedral loft.
+        #
+        # Delegate the side construction to Shell.ByWires so there is only one
+        # implementation of the faceted lofting logic.
+        # ------------------------------------------------------------------
+
+        side_shell = Shell.ByWires(
+            wires,
+            polyhedron=True,
+            triangulate=triangulate,
+            tolerance=tolerance,
+            silent=True,
+        )
+
+        if not Topology.IsInstance(side_shell, "Shell"):
+            if not silent:
+                print(
+                    "Cell.ByWires - Error: Could not construct the side Shell. "
+                    "Returning None."
+                )
+            return None
+
+        faces = Topology.Faces(
+            side_shell
+        ) or []
+
+        # ------------------------------------------------------------------
+        # End caps.
+        # ------------------------------------------------------------------
+
+        cap_a = Face.ByWire(
+            wires[0],
+            tolerance=tolerance,
+            silent=True,
+        )
+
+        cap_b = Face.ByWire(
+            wires[-1],
+            tolerance=tolerance,
+            silent=True,
+        )
+
+        if (
+            not Topology.IsInstance(cap_a, "Face")
+            or not Topology.IsInstance(cap_b, "Face")
+        ):
+            if not silent:
+                print(
+                    "Cell.ByWires - Error: Could not construct one or both "
+                    "end-cap Faces. Returning None."
+                )
+            return None
+
+        if triangulate:
+
+            for cap in [cap_a, cap_b]:
+
+                triangles = Face.Triangulate(
+                    cap,
+                    tolerance=tolerance,
+                    silent=True,
+                )
+
+                triangles = [
+                    face
+                    for face in (triangles or [])
+                    if Topology.IsInstance(face, "Face")
+                ]
+
+                if len(triangles) < 1:
+                    if not silent:
+                        print(
+                            "Cell.ByWires - Error: Could not triangulate an "
+                            "end-cap Face. Returning None."
+                        )
+                    return None
+
+                faces.extend(
+                    triangles
+                )
+
+        else:
+            faces.extend(
+                [cap_a, cap_b]
+            )
+
+        cell = Cell.ByFaces(
+            faces,
+            tolerance=tolerance,
+            silent=True,
+        )
+
+        if not Topology.IsInstance(cell, "Cell"):
+            if not silent:
+                print(
+                    "Cell.ByWires - Error: Could not construct a Cell from the "
+                    "generated Faces. Returning None."
+                )
+            return None
 
         return cell
 
     @staticmethod
-    def ByWiresCluster(cluster, close: bool = False, triangulate: bool = True, planarize: bool = False, tolerance: float = 0.0001):
+    def ByWiresCluster(
+        cluster,
+        polyhedron: bool = True,
+        triangulate: bool = True,
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
         """
-        Creates a cell by lofting through the input cluster of wires.
+        Creates a Cell by lofting through the Wires contained in the input Cluster.
 
         Parameters
         ----------
-        cluster : Cluster
-            The input Cluster of wires.
-        close : bool , optional
-            If set to True, the last wire in the cluster of input wires will be connected to the first wire in the cluster of input wires. Default is False.
+        cluster : topologic_core.Cluster
+            The input Cluster containing the section Wires.
+        polyhedron : bool , optional
+            If True, constructs a faceted Cell made of planar Faces. If False,
+            constructs a curve-preserving ruled Cell. Default is True.
         triangulate : bool , optional
-            If set to True, the faces will be triangulated. Default is True.
+            If polyhedron is True, specifies whether side and cap Faces are
+            triangulated. This parameter is ignored when polyhedron is False.
+            Default is True.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
-
-        Raises
-        ------
-        Exception
-            Raises an exception if the two wires in the list do not have the same number of edges.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed.
+            Default is False.
 
         Returns
         -------
         topologic_core.Cell
-            The created cell.
+            The created Cell.
 
         """
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(cluster, "Cluster"):
-            print("Cell.ByWiresCluster - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
+            if not silent:
+                print(
+                    "Cell.ByWiresCluster - Error: The input cluster parameter "
+                    "is not a valid Cluster. Returning None."
+                )
             return None
-        wires = Topology.Wires(cluster)
-        return Cell.ByWires(wires, close=close, triangulate=triangulate, planarize=planarize, tolerance=tolerance)
+
+        wires = Topology.Wires(
+            cluster
+        )
+
+        if not isinstance(wires, list) or len(wires) < 2:
+            if not silent:
+                print(
+                    "Cell.ByWiresCluster - Error: The input Cluster must contain "
+                    "at least two valid Wires. Returning None."
+                )
+            return None
+
+        return Cell.ByWires(
+            wires,
+            polyhedron=polyhedron,
+            triangulate=triangulate,
+            tolerance=tolerance,
+            silent=silent,
+        )
 
     @staticmethod
     def Capsule(origin = None,
