@@ -18,36 +18,6 @@ from __future__ import annotations
 
 from topologicpy.Core import Core
 import math
-import os
-import warnings
-
-try:
-    import numpy as np
-except:
-    print("CellComplex - Installing required numpy library.")
-    try:
-        os.system("pip install numpy")
-    except:
-        os.system("pip install numpy --user")
-    try:
-        import numpy as np
-        print("CellComplex - numpy library installed correctly.")
-    except:
-        warnings.warn("CellComplex - Error: Could not import numpy.")
-try:
-    from scipy.spatial import Delaunay
-    from scipy.spatial import Voronoi
-except:
-    print("CellComplex - Install required scipy library.")
-    try:
-        os.system("pip install scipy")
-    except:
-        os.system("pip install scipy --user")
-    try:
-        from scipy.spatial import Delaunay
-        from scipy.spatial import Voronoi
-    except:
-        warnings.warn("CellComplex - Error: Could not import scipy.")
 
 class CellComplex():
     @staticmethod
@@ -93,72 +63,118 @@ class CellComplex():
                                  direction=direction, placement=placement, tolerance=tolerance)
     
     @staticmethod
-    def ByCells(cells: list, transferDictionaries = False, tolerance: float = 0.0001, silent: bool = False):
+    def ByCells(cells: list, transferDictionaries: bool = False, tolerance: float = 0.0001, silent: bool = False):
         """
-        Creates a cellcomplex by merging the input cells.
+        Creates a CellComplex by assembling the input Cells.
+
+        The active backend is asked to construct the CellComplex directly from
+        the input Cells. The input Cells are converted to Faces only as a
+        compatibility fallback for backends that do not expose a native
+        ``CellComplex.ByCells`` constructor.
 
         Parameters
         ----------
         cells : list
-            The list of input cells.
-        transferDictionaries : bool , optional
-            If set to True, any dictionaries in the cells are transferred to the CellComplex. Otherwise, they are not. Default is False.
-        tolerance : float , optional
+            The input list of Cells.
+        transferDictionaries : bool, optional
+            If True, dictionaries from the source Cells are transferred to the
+            corresponding Cells in the result. Default is False.
+        tolerance : float, optional
             The desired tolerance. Default is 0.0001.
-        silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
+        silent : bool, optional
+            If True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
         topologic_core.CellComplex
-            The created cellcomplex.
-
+            The created CellComplex, or None on failure.
         """
         from topologicpy.Vertex import Vertex
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
-        from topologicpy.Helper import Helper
         from topologicpy.Dictionary import Dictionary
 
         if not isinstance(cells, list):
             if not silent:
                 print("CellComplex.ByCells - Error: The input cells parameter is not a valid list. Returning None.")
             return None
-        cells = [x for x in cells if Topology.IsInstance(x, "Cell")]
+
+        cells = [cell for cell in cells if Topology.IsInstance(cell, "Cell")]
         if len(cells) < 1:
             if not silent:
-                print("CellComplex.ByCells - Error: The input cells parameter does not contain any valid cells. Returning None.")
+                print("CellComplex.ByCells - Error: The input cells parameter does not contain any valid Cells. Returning None.")
             return None
-        cluster = Cluster.ByTopologies(cells)
-        faces = Helper.Flatten([Topology.Faces(c) for c in cells])
-        cellComplex = CellComplex.ByFaces(faces)        
-        if not Topology.IsInstance(cellComplex, "CellComplex"):
-            if not silent:
-                print("CellComplex.ByCells - Warning: Could not create a CellComplex. Returning object of type topologic_core.Cluster instead of topologic_core.CellComplex.")
-            return Cluster.ByTopologies(cells)
-        else:
-            temp_cells = CellComplex.Cells(cellComplex)
-            if not isinstance(temp_cells, list):
-                if not silent:
-                    print("CellComplex.ByCells - Error: The resulting object does not contain any cells. Returning None.")
-                return None
-            elif len(temp_cells) < 1:
-                if silent:
-                    print("CellComplex.ByCells - Error: Could not create a CellComplex. Returning None.")
-                return None
-            elif len(temp_cells) == 1:
-                if not silent:
-                    print("CellComplex.ByCells - Warning: Resulting object contains only one cell. Returning object of type topologic_core.Cell instead of topologic_core.CellComplex.")
-                return(temp_cells[0])
-            if transferDictionaries == True:
-                for temp_cell in temp_cells:
-                    v = Topology.InternalVertex(temp_cell, tolerance=tolerance)
-                    enclosing_cells = Vertex.EnclosingCells(v, cluster)
-                    dictionaries = [Topology.Dictionary(ec) for ec in enclosing_cells]
-                    d = Dictionary.ByMergedDictionaries(dictionaries, silent=silent)
-                    temp_cell = Topology.SetDictionary(temp_cell, d)
 
-        return cellComplex
+        try:
+            tolerance = abs(float(tolerance))
+        except Exception:
+            if not silent:
+                print("CellComplex.ByCells - Error: The input tolerance parameter is not a valid number. Returning None.")
+            return None
+        if tolerance <= 0.0:
+            if not silent:
+                print("CellComplex.ByCells - Error: The input tolerance parameter must be greater than zero. Returning None.")
+            return None
+
+        cell_complex = None
+        method = getattr(Core.CellComplex, "ByCells", None)
+        if callable(method):
+            attempts = (
+                lambda: method(cells, tolerance=tolerance),
+                lambda: method(cells, tolerance),
+                lambda: method(cells, tolerance, False),
+            )
+            for attempt in attempts:
+                try:
+                    cell_complex = attempt()
+                except (TypeError, AttributeError):
+                    continue
+                except Exception:
+                    cell_complex = None
+                    break
+                if Topology.IsInstance(cell_complex, "CellComplex"):
+                    break
+
+        # Compatibility fallback: preserve the exact source Faces and ask the
+        # backend to assemble those. This does not polygonise curved geometry.
+        if not Topology.IsInstance(cell_complex, "CellComplex"):
+            faces = []
+            for cell in cells:
+                cell_faces = Topology.Faces(cell)
+                if isinstance(cell_faces, list):
+                    faces.extend(cell_faces)
+            cell_complex = CellComplex._ByFaces(faces, tolerance=tolerance, silent=True)
+
+        if not Topology.IsInstance(cell_complex, "CellComplex"):
+            if not silent:
+                print("CellComplex.ByCells - Error: Could not create a CellComplex from the input Cells. Returning None.")
+            return None
+
+        if transferDictionaries:
+            try:
+                source_cluster = Cluster.ByTopologies(cells)
+                result_cells = CellComplex.Cells(cell_complex, silent=True)
+                if isinstance(result_cells, list):
+                    for result_cell in result_cells:
+                        selector = Topology.InternalVertex(result_cell, tolerance=tolerance)
+                        if not Topology.IsInstance(selector, "Vertex"):
+                            continue
+                        enclosing_cells = Vertex.EnclosingCells(
+                            selector,
+                            source_cluster,
+                            tolerance=tolerance,
+                        )
+                        if not isinstance(enclosing_cells, list) or len(enclosing_cells) == 0:
+                            continue
+                        dictionaries = [Topology.Dictionary(cell) for cell in enclosing_cells]
+                        dictionary = Dictionary.ByMergedDictionaries(dictionaries, silent=True)
+                        if dictionary is not None:
+                            Topology.SetDictionary(result_cell, dictionary, silent=True)
+            except Exception:
+                if not silent:
+                    print("CellComplex.ByCells - Warning: The CellComplex was created, but one or more dictionaries could not be transferred.")
+
+        return cell_complex
     
     @staticmethod
     def ByCellsCluster(cluster, transferDictionaries: bool = False, tolerance: float = 0.0001, silent: bool = False):
@@ -195,171 +211,182 @@ class CellComplex():
 
     @staticmethod
     def ByDisjointedFaces(faces: list,
-                        minOffset: float = 0,
-                        maxOffset: float = 1.0,
-                        minCells: float = 2,
-                        maxCells: float = 10,
-                        maxAttempts: int = 100,
-                        patience: int = 5,
-                        transferDictionaries: bool = False,
-                        exclusive: bool = True,
-                        tolerance: float = 0.0001,
-                        silent: bool = False):
+                           minOffset: float = 0,
+                           maxOffset: float = 1.0,
+                           minCells: int = 2,
+                           maxCells: int = 10,
+                           maxAttempts: int = 100,
+                           patience: int = 5,
+                           transferDictionaries: bool = False,
+                           exclusive: bool = True,
+                           tolerance: float = 0.0001,
+                           silent: bool = False):
         """
-        Creates a CellComplex from a list of disjointed faces. The algorithm expands the faces by an offset to find intersections before building cells.
+        Creates a CellComplex from a list of disjoint Faces by progressively
+        offsetting the Faces until a valid volumetric partition can be built.
 
         Parameters
         ----------
         faces : list of topologic_core.Face
-            The linput ist of faces.
-        minOffset : float , optional
-            The minimum initial face offset to try. Default is 0.
-        maxOffset : float , optional
-            The final maximum face offset to try. Default is 1.0.
-        minCells : int , optional
-            The minimum number of cells to create. A CellComplex cannot have less than 2 cells. Default is 2.
-        maxCells : int , optional
-            The maximum number of cells to create. Default is 10.
-        maxAttempts : int , optional
-            The desired maximum number of attempts. Default is 100.
-        patience : int , optional
-            The desired number of attempts to wait with no change in the created number of cells. Default is 5.
-        transferDictionaries : bool , optional
-            If set to True, face dictionaries are inhertied. Default is False.
-        exclusive : bool , optional
-            Applies only if transferDictionaries is set to True. If set to True, only one source face contributes its dictionary to a target face. Default is True.
-        tolerance : float , optional
+            The input Faces.
+        minOffset : float, optional
+            The minimum initial Face offset to try. Default is 0.
+        maxOffset : float, optional
+            The maximum Face offset to try. Default is 1.0.
+        minCells : int, optional
+            The minimum number of Cells to create. Default is 2.
+        maxCells : int, optional
+            The maximum number of Cells to retain. Default is 10.
+        maxAttempts : int, optional
+            Maximum number of offset attempts. Default is 100.
+        patience : int, optional
+            Number of consecutive attempts with the same non-zero Cell count
+            after which the search stops. Set to 0 to disable this early stop.
+            Default is 5.
+        transferDictionaries : bool, optional
+            If True, Face dictionaries are inherited by result Faces.
+            Default is False.
+        exclusive : bool, optional
+            Used only when transferDictionaries is True. If True, only one
+            source Face contributes its dictionary to a target Face.
+            Default is True.
+        tolerance : float, optional
             The desired tolerance. Default is 0.0001.
-        silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
-        
+        silent : bool, optional
+            If True, error and warning messages are suppressed. Default is False.
+
         Returns
         -------
         topologic_core.CellComplex
-            The created CellComplex
-
+            The best CellComplex found, or None on failure.
         """
-
         from topologicpy.Face import Face
         from topologicpy.Cell import Cell
         from topologicpy.Topology import Topology
         from topologicpy.Helper import Helper
 
-        def trim(cells, n):
-            volumes = [Cell.Volume(c) for c in cells]
-            return_cc = Helper.Sort(cells, volumes)
-            return_cc.reverse()
-            return return_cc[:n]
-
-        faces = [f for f in faces if Topology.IsInstance(f, "Face")]
-        if len(faces) == 0:
+        if not isinstance(faces, list):
             if not silent:
-                print("CellComplex.ByDisjointedFaces - Error: The input list of faces does not contain any valid topologic faces. Returning None.")
+                print("CellComplex.ByDisjointedFaces - Error: The input faces parameter is not a valid list. Returning None.")
             return None
+
+        faces = [face for face in faces if Topology.IsInstance(face, "Face")]
         if len(faces) < 3:
             if not silent:
-                print("CellComplex.ByDisjointedFaces - Error: The input list of faces contains less than three topologic faces. Returning None.")
+                print("CellComplex.ByDisjointedFaces - Error: The input list must contain at least three valid Faces. Returning None.")
             return None
-        if minOffset < 0:
+
+        try:
+            minOffset = float(minOffset)
+            maxOffset = float(maxOffset)
+            minCells = int(minCells)
+            maxCells = int(maxCells)
+            maxAttempts = int(maxAttempts)
+            patience = int(patience)
+            tolerance = abs(float(tolerance))
+        except Exception:
             if not silent:
-                print("CellComplex.ByDisjointedFaces - Error: The input minOffset parameter is less than 0. Returning None.")
+                print("CellComplex.ByDisjointedFaces - Error: One or more numerical parameters are invalid. Returning None.")
             return None
-        if minOffset > maxOffset:
+
+        if tolerance <= 0.0 or minOffset < 0.0 or minOffset > maxOffset:
             if not silent:
-                print("CellComplex.ByDisjointedFaces - Error: The input minOffset parameter is greater than the input maxOffset parameter. Returning None.")
+                print("CellComplex.ByDisjointedFaces - Error: Invalid offset or tolerance range. Returning None.")
             return None
-        if minCells < 2:
+        if minCells < 2 or minCells > maxCells:
             if not silent:
-                print("CellComplex.ByDisjointedFaces - Error: The input minCells parameter is less than 2. Returning None.")
+                print("CellComplex.ByDisjointedFaces - Error: minCells must be at least 2 and no greater than maxCells. Returning None.")
             return None
-        if minCells > maxCells:
+        if maxAttempts < 1 or patience < 0 or patience > maxAttempts:
             if not silent:
-                print("CellComplex.ByDisjointedFaces - Error: The input minCells parameter is greater than the input maxCells parameter. Returning None.")
+                print("CellComplex.ByDisjointedFaces - Error: Invalid maxAttempts or patience parameter. Returning None.")
             return None
-        if maxAttempts <= 0:
-            if not silent:
-                print("CellComplex.ByDisjointedFaces - Error: The input maxAttempts parameter is not greater than 0. Returning None.")
-            return None
-        if patience < 0:
-            if not silent:
-                print("CellComplex.ByDisjointedFaces - Error: The input patience parameter is not greater than or equal to 0. Returning None.")
-            return None
-        if patience > maxAttempts:
-            if not silent:
-                print("CellComplex.ByDisjointedFaces - Error: The input patience parameter is greater than the input maxAttempts parameter. Returning None.")
-            return None
-        cc = None
-        attempts = 0
-        increment = float(maxOffset) / float(maxAttempts)
-        cellComplexes = [] # List of all possible cellComplexes
-        patience_list = []
-        offset = minOffset
-        
-        while attempts < maxAttempts:
-            expanded_faces = [Face.ByOffset(f, offset=-offset, silent=silent) for f in faces]
-            try:
-                cc = CellComplex.ByFaces(expanded_faces, silent=True)
-                if Topology.IsInstance(cc, "cellComplex"):
-                    cells = Topology.Cells(cc)
-                    n_cells = len(cells)
+
+        def _trim(cells, count):
+            ranked = []
+            for cell in cells:
+                volume = Cell.Volume(cell, mantissa=12)
+                if volume is not None:
+                    ranked.append((float(volume), cell))
+            ranked.sort(key=lambda item: item[0], reverse=True)
+            return [item[1] for item in ranked[:count]]
+
+        if maxAttempts == 1:
+            offsets = [minOffset]
+        else:
+            step = (maxOffset - minOffset) / float(maxAttempts - 1)
+            offsets = [minOffset + step * i for i in range(maxAttempts)]
+
+        candidates = []
+        recent_counts = []
+
+        for offset in offsets:
+            expanded_faces = []
+            for face in faces:
+                try:
+                    expanded = Face.ByOffset(face, offset=-offset, tolerance=tolerance, silent=True)
+                except Exception:
+                    expanded = None
+                if Topology.IsInstance(expanded, "Face"):
+                    expanded_faces.append(expanded)
+
+            if len(expanded_faces) < 3:
+                recent_counts.append(0)
+            else:
+                cc = CellComplex.ByFaces(expanded_faces, tolerance=tolerance, silent=True)
+                if Topology.IsInstance(cc, "CellComplex"):
+                    cells = CellComplex.Cells(cc, silent=True)
+                    n_cells = len(cells) if isinstance(cells, list) else 0
+                    recent_counts.append(n_cells)
+
                     if minCells <= n_cells <= maxCells:
-                        cellComplexes.append(cc)
+                        candidates.append((n_cells, cc))
                     elif n_cells > maxCells:
-                        cells = trim(cells, maxCells)
-                        try:
-                            new_cc = CellComplex.ByCells(cells)
-                            if Topology.IsInstance(new_cc, "CellComplex"):
-                                cellComplexes.append(new_cc)
-                        except:
-                            pass
-                    patience_list.append(n_cells)
-            except:
-                patience_list.append(0)
-            
-            if len(patience_list) >= patience:
-                if len(set(patience_list)) == 1 and not patience_list[0] == 0:
+                        trimmed = _trim(cells, maxCells)
+                        if len(trimmed) >= minCells:
+                            trimmed_cc = CellComplex.ByCells(trimmed, tolerance=tolerance, silent=True)
+                            if Topology.IsInstance(trimmed_cc, "CellComplex"):
+                                candidates.append((len(trimmed), trimmed_cc))
+                else:
+                    recent_counts.append(0)
+
+            if patience > 0 and len(recent_counts) >= patience:
+                window = recent_counts[-patience:]
+                if len(set(window)) == 1 and window[0] > 0:
                     if not silent:
                         print("CellComplex.ByDisjointedFaces - Warning: Ran out of patience.")
                     break
-                else:
-                    patience_list = []
-            attempts += 1
-            offset += increment
 
-        if len(cellComplexes) == 0:
+        if len(candidates) == 0:
             if not silent:
                 print("CellComplex.ByDisjointedFaces - Error: Could not create a CellComplex. Consider revising the input parameters. Returning None.")
             return None
-        n_cells = [len(Topology.Cells(c)) for c in cellComplexes] # Get the number of cells in each cellComplex
-        cellComplexes = Helper.Sort(cellComplexes, n_cells) # Sort the cellComplexes by their number of cells
-        for cc in cellComplexes:
-            cells = Topology.Cells(cc)
-        cc = cellComplexes[-1] # Choose the last cellComplex (the one with the most number of cells)
-        if transferDictionaries == True:
-            cc_faces = Topology.Faces(cc)
-            cc_faces = Topology.Inherit(targets=cc_faces, sources=faces, exclusive=exclusive, tolerance=tolerance, silent=silent)
-        return cc
+
+        candidates.sort(key=lambda item: item[0])
+        cell_complex = candidates[-1][1]
+
+        if transferDictionaries:
+            try:
+                result_faces = CellComplex.Faces(cell_complex, silent=True)
+                Topology.Inherit(
+                    targets=result_faces,
+                    sources=faces,
+                    exclusive=exclusive,
+                    tolerance=tolerance,
+                    silent=True,
+                )
+            except Exception:
+                if not silent:
+                    print("CellComplex.ByDisjointedFaces - Warning: The CellComplex was created, but dictionaries could not be transferred.")
+
+        return cell_complex
 
     
     @staticmethod
     def _ByFaces(faces: list, tolerance: float = 0.0001, silent: bool = False):
         """
-        Creates a cellcomplex by merging the input faces.
-
-        Parameters
-        ----------
-        faces : list
-            The input faces.
-        tolerance : float , optional
-            The desired tolerance. Default is 0.0001.
-        silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
-
-        Returns
-        -------
-        topologic_core.CellComplex
-            The created cellcomplex.
-
+        Creates a CellComplex directly from the input Faces using the active
+        backend. No polygonisation or external geometry library is used.
         """
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
@@ -368,47 +395,69 @@ class CellComplex():
             if not silent:
                 print("CellComplex.ByFaces - Error: The input faces parameter is not a valid list. Returning None.")
             return None
-        faces = [x for x in faces if Topology.IsInstance(x, "Face")]
+
+        faces = [face for face in faces if Topology.IsInstance(face, "Face")]
         if len(faces) < 1:
             if not silent:
-                print("CellComplex.ByFaces - Error: The input faces parameter does not contain any valid faces. Returning None.")
+                print("CellComplex.ByFaces - Error: The input faces parameter does not contain any valid Faces. Returning None.")
             return None
-        try:
-            cellComplex = Core.CellComplex.ByFaces(faces, tolerance, False)
-        except:
-            cellComplex = None
-        if not cellComplex:
-            if not silent:
-                print("CellComplex.ByFaces - Warning: The default method failed. Attempting a workaround.")
-            cellComplex = faces[0]
-            for i in range(1,len(faces)):
-                newCellComplex = None
-                try:
-                    # newCellComplex = cellComplex.Merge(faces[i], False, tolerance) # H to Core
-                    newCellComplex = Core.InstanceCall(cellComplex, "Merge", faces[i], False, tolerance)
-                except:
-                    if not silent:
-                        print("CellComplex.ByFaces - Warning: Failed to merge face #"+str(i)+". Skipping.")
-                if newCellComplex:
-                    cellComplex = newCellComplex
-            if not Topology.Type(cellComplex) == Topology.TypeID("CellComplex"):
-                if not silent:
-                    print("CellComplex.ByFaces - Warning: The input faces do not form a cellcomplex")
-                if Topology.Type(cellComplex) == Topology.TypeID("Cluster"):
-                    returnCellComplexes = Cluster.CellComplexes(cellComplex)
-                    if len(returnCellComplexes) > 0:
-                        return returnCellComplexes[0]
-                    else:
-                        if not silent:
-                            print("CellComplex.ByFaces - Error: Could not create a cellcomplex. Returning None.")
-                        return None
-                else:
-                    if not silent:
-                        print("CellComplex.ByFaces - Error: Could not create a cellcomplex. Returning None.")
-                    return None
-        else:
-            return cellComplex
 
+        try:
+            tolerance = abs(float(tolerance))
+        except Exception:
+            if not silent:
+                print("CellComplex.ByFaces - Error: The input tolerance parameter is not a valid number. Returning None.")
+            return None
+        if tolerance <= 0.0:
+            return None
+
+        method = getattr(Core.CellComplex, "ByFaces", None)
+        cell_complex = None
+        if callable(method):
+            attempts = (
+                lambda: method(faces, tolerance=tolerance, copyAttributes=False),
+                lambda: method(faces, tolerance, False),
+                lambda: method(faces, tolerance),
+            )
+            for attempt in attempts:
+                try:
+                    cell_complex = attempt()
+                except (TypeError, AttributeError):
+                    continue
+                except Exception:
+                    cell_complex = None
+                    break
+                if Topology.IsInstance(cell_complex, "CellComplex"):
+                    return cell_complex
+
+        # Legacy compatibility fallback. Merge the original Faces directly;
+        # this preserves their actual Edge/Surface geometry.
+        topology = faces[0]
+        for i, face in enumerate(faces[1:], start=1):
+            try:
+                merged = Core.InstanceCall(topology, "Merge", face, False, tolerance)
+            except Exception:
+                merged = None
+            if merged is not None:
+                topology = merged
+            elif not silent:
+                print(f"CellComplex.ByFaces - Warning: Failed to merge Face #{i}. Skipping it.")
+
+        if Topology.IsInstance(topology, "CellComplex"):
+            return topology
+        if Topology.IsInstance(topology, "Cluster"):
+            try:
+                complexes = Cluster.CellComplexes(topology)
+            except Exception:
+                complexes = []
+            if isinstance(complexes, list) and len(complexes) > 0:
+                return complexes[0]
+
+        if not silent:
+            print("CellComplex.ByFaces - Error: The input Faces do not form a CellComplex. Returning None.")
+        return None
+
+    @staticmethod
     def ByFacesTopologic(faces, tolerance: float = 0.0001, silent: bool = False):
         """
         Creates a CellComplex from the input faces after removing coplanar overlaps
@@ -435,7 +484,6 @@ class CellComplex():
 
         import math
 
-        from topologicpy.CellComplex import CellComplex
         from topologicpy.Topology import Topology
         from topologicpy.Face import Face
         from topologicpy.Vertex import Vertex
@@ -709,12 +757,79 @@ class CellComplex():
     @staticmethod
     def ByFaces(faces, transferDictionaries: bool = False, tolerance: float = 0.0001, silent: bool = False):
         """
-        Creates a CellComplex from the input faces after using Shapely to remove
+        Creates a CellComplex directly from the input Faces while preserving
+        their native geometry, including curved Edges and Surfaces.
+
+        This is the default Face-based constructor. It does not project Faces to
+        2D and does not require Shapely. For difficult coplanar-overlap cases,
+        ``ByFacesTopologic`` and ``ByFacesShapely`` remain available explicitly.
+
+        Parameters
+        ----------
+        faces : list
+            The input Faces.
+        transferDictionaries : bool, optional
+            If True, source Face dictionaries are inherited by result Faces.
+            Default is False.
+        tolerance : float, optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool, optional
+            If True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        topologic_core.CellComplex
+            The created CellComplex, or None on failure.
+        """
+        from topologicpy.Topology import Topology
+
+        if not isinstance(faces, list):
+            if not silent:
+                print("CellComplex.ByFaces - Error: The input faces parameter is not a valid list. Returning None.")
+            return None
+
+        source_faces = [face for face in faces if Topology.IsInstance(face, "Face")]
+        if len(source_faces) < 1:
+            if not silent:
+                print("CellComplex.ByFaces - Error: The input faces parameter does not contain any valid Faces. Returning None.")
+            return None
+
+        cell_complex = CellComplex._ByFaces(source_faces, tolerance=tolerance, silent=True)
+        if not Topology.IsInstance(cell_complex, "CellComplex"):
+            if not silent:
+                print(
+                    "CellComplex.ByFaces - Error: Could not create a CellComplex directly from the input Faces. "
+                    "For coplanar-overlap repair, try CellComplex.ByFacesTopologic or CellComplex.ByFacesShapely. Returning None."
+                )
+            return None
+
+        if transferDictionaries:
+            try:
+                result_faces = CellComplex.Faces(cell_complex, silent=True)
+                Topology.Inherit(
+                    targets=result_faces,
+                    sources=source_faces,
+                    exclusive=False,
+                    tolerance=tolerance,
+                    silent=True,
+                )
+            except Exception:
+                if not silent:
+                    print("CellComplex.ByFaces - Warning: The CellComplex was created, but dictionaries could not be transferred.")
+
+        return cell_complex
+
+    @staticmethod
+    def ByFacesShapely(faces, transferDictionaries: bool = False, tolerance: float = 0.0001, silent: bool = False):
+        """
+        Creates a CellComplex from the input Faces after using Shapely to remove
         coplanar face overlaps.
 
         This method is intended as a faster pre-processing pathway for cases where
-        CellComplex.ByFaces is slow because the input contains overlapping coplanar
-        faces. Non-coplanar faces are passed through unchanged.
+        native CellComplex.ByFaces is unsuitable because the input contains overlapping coplanar
+        faces. Non-coplanar faces are passed through unchanged. Curved planar
+        boundaries are reconstructed from projected polygon coordinates and may
+        therefore become straight-edged approximations.
 
         Parameters
         ----------
@@ -748,7 +863,6 @@ class CellComplex():
                 print("CellComplex.ByFacesShapely - Error: Shapely is not installed. Please install it using: pip install shapely")
             return None
 
-        from topologicpy.CellComplex import CellComplex
         from topologicpy.Topology import Topology
         from topologicpy.Vertex import Vertex
         from topologicpy.Wire import Wire
@@ -1165,7 +1279,7 @@ class CellComplex():
         cc = CellComplex._ByFaces(cleaned_faces, tolerance=tolerance, silent=silent)
         if not Topology.IsInstance(cc, "cellcomplex"):
             if not silent:
-                print("CellComplex.ByFaces - Error: Could not create the CellComplex. Returning None.")
+                print("CellComplex.ByFacesShapely - Error: Could not create the CellComplex. Returning None.")
             return None
         
         if transferDictionaries:
@@ -1178,7 +1292,6 @@ class CellComplex():
                                                         source_cluster,
                                                         exclusive=False,
                                                         tolerance=tolerance)
-                print("Enclosing Faces:", len(enclosing_faces))
                 if isinstance(enclosing_faces, list) and len(enclosing_faces) > 0:
                     dictionaries = [Topology.Dictionary(face) for face in enclosing_faces]
                     merged_dictionary = Dictionary.ByMergedDictionaries(dictionaries, silent=True)
@@ -1218,23 +1331,45 @@ class CellComplex():
         return CellComplex.ByFaces(faces, transferDictionaries=transferDictionaries, tolerance=tolerance, silent=silent)
 
     @staticmethod
-    def ByWires(wires: list, triangulate: bool = True, tolerance: float = 0.0001):
+    def ByWires(
+        wires: list,
+        polyhedron: bool = True,
+        triangulate: bool = True,
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
         """
-        Creates a cellcomplex by lofting through the input wires.
+        Creates a CellComplex by lofting through the input Wires.
+
+        Each consecutive pair of Wires defines one Cell. Intermediate Wires
+        therefore become the shared non-manifold Faces between adjacent Cells.
+
+        If polyhedron is True, the existing faceted construction is used.
+        If polyhedron is False, the section curves are preserved and each Cell
+        interval is constructed natively by the PythonOCC backend.
 
         Parameters
         ----------
         wires : list
-            The input list of wires. The list should contain a minimum of two wires. All wires must have the same number of edges.
+            The ordered list of section Wires. At least two valid Wires are
+            required. Corresponding Wires must contain the same number of Edges.
+        polyhedron : bool , optional
+            If True, constructs a faceted CellComplex. If False, constructs a
+            curve-preserving CellComplex using the PythonOCC backend.
+            Default is True.
         triangulate : bool , optional
-            If set to True, the faces will be triangulated. Default is True.
+            If polyhedron is True, specifies whether generated Faces are
+            triangulated. Ignored when polyhedron is False. Default is True.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed.
+            Default is False.
 
         Returns
         -------
         topologic_core.CellComplex
-            The created cellcomplex.
+            The created CellComplex.
 
         """
         from topologicpy.Edge import Edge
@@ -1243,135 +1378,246 @@ class CellComplex():
         from topologicpy.Topology import Topology
 
         if not isinstance(wires, list):
-            print("CellComplex.ByFaces - Error: The input wires parameter is not a valid list. Returning None.")
+            if not silent:
+                print("CellComplex.ByWires - Error: The input wires parameter is not a valid list. Returning None.")
             return None
-        wires = [x for x in wires if Topology.IsInstance(x, "Wire")]
+
+        wires = [wire for wire in wires if Topology.IsInstance(wire, "Wire")]
+
         if len(wires) < 2:
-            print("CellComplex.ByWires - Error: The input wires parameter contains less than two valid wires. Returning None.")
+            if not silent:
+                print("CellComplex.ByWires - Error: The input wires parameter contains fewer than two valid Wires. Returning None.")
             return None
-        faces = [Face.ByWire(wires[0], tolerance=tolerance), Face.ByWire(wires[-1], tolerance=tolerance)]
-        if triangulate == True:
-            triangles = []
-            for face in faces:
-                if len(Topology.Vertices(face)) > 3:
-                    triangles += Face.Triangulate(face, tolerance=tolerance)
-                else:
-                    triangles += [face]
-            faces = triangles
-        for i in range(len(wires)-1):
-            wire1 = wires[i]
-            wire2 = wires[i+1]
-            f = Face.ByWire(wire2, tolerance=tolerance)
-            if triangulate == True:
-                if len(Topology.Vertices(face)) > 3:
-                    triangles = Face.Triangulate(face, tolerance=tolerance)
-                else:
-                    triangles = [face]
-                faces += triangles
-            else:
-                faces.append(f)
-            w1_edges = Topology.Edges(wire1)
-            w2_edges = Topology.Edges(wire2)
-            if len(w1_edges) != len(w2_edges):
-                print("CellComplex.ByWires - Error: The input wires parameter contains wires with different number of edges. Returning None.")
+
+        # All sections must have the same edge count.
+        edge_lists = [Topology.Edges(wire) for wire in wires]
+        edge_count = len(edge_lists[0])
+
+        if edge_count < 1:
+            if not silent:
+                print("CellComplex.ByWires - Error: The input Wires do not contain any valid Edges. Returning None.")
+            return None
+
+        if any(len(edges) != edge_count for edges in edge_lists[1:]):
+            if not silent:
+                print("CellComplex.ByWires - Error: The input Wires contain different numbers of Edges. Returning None.")
+            return None
+
+        # ------------------------------------------------------------------
+        # Curve-preserving native CellComplex.
+        # ------------------------------------------------------------------
+        if not polyhedron:
+            try:
+                if Topology._IsTopologicCoreBackend():
+                    if not silent:
+                        print("CellComplex.ByWires - Error: polyhedron=False requires the PythonOCC backend. Returning None.")
+                    return None
+            except Exception:
                 return None
 
-            def _bridge(v_a, v_b):
-                # One bridge edge between the two rings. The edge builders in
-                # different backends are inconsistent about whether they raise
-                # or return None on failure, so treat BOTH identically -- this
-                # is what prevents the old try/except fallbacks from appending
-                # TWO faces for a single ring-edge pair (which over-built the
-                # loft soup and made BOPAlgo_MakerVolume emit a spurious extra
-                # open shell on closed lofts like CellComplex.Torus).
-                try:
-                    be = Edge.ByStartVertexEndVertex(v_a, v_b, tolerance=tolerance, silent=True)
-                except Exception:
-                    be = None
-                return be
+            method = getattr(Core.CellComplex, "ByWires", None)
+            if not callable(method):
+                if not silent:
+                    print("CellComplex.ByWires - Error: Native backend constructor is unavailable. Returning None.")
+                return None
 
-            for j in range(len(w1_edges)):
-                e1 = w1_edges[j]
-                e2 = w2_edges[j]
-                e3 = _bridge(Edge.StartVertex(e1), Edge.StartVertex(e2))
-                e4 = _bridge(Edge.EndVertex(e1), Edge.EndVertex(e2))
+            try:
+                cell_complex = method(wires, tolerance=tolerance)
+            except Exception:
+                cell_complex = None
 
-                f = None
-                if e3 is not None and e4 is not None:
-                    f = Face.ByWire(Wire.ByEdges([e1, e4, e2, e3], tolerance=tolerance), tolerance=tolerance)
-                    if f is None:
-                        f = Face.ByWire(Wire.ByEdges([e1, e3, e2, e4], tolerance=tolerance), tolerance=tolerance)
-                elif e3 is not None:
-                    f = Face.ByWire(Wire.ByEdges([e1, e3, e2], tolerance=tolerance), tolerance=tolerance)
-                elif e4 is not None:
-                    f = Face.ByWire(Wire.ByEdges([e1, e4, e2], tolerance=tolerance), tolerance=tolerance)
-                if f is None:
-                    continue
-                if triangulate == True:
-                    if len(Topology.Vertices(f)) > 3:
-                        faces.extend(Face.Triangulate(f, tolerance=tolerance))
-                    else:
-                        faces.append(f)
+            if not Topology.IsInstance(cell_complex, "CellComplex"):
+                if not silent:
+                    print("CellComplex.ByWires - Error: Could not create a curve-preserving CellComplex. Returning None.")
+                return None
+
+            return cell_complex
+
+        # ------------------------------------------------------------------
+        # Existing faceted construction.
+        # ------------------------------------------------------------------
+        faces = []
+
+        first_face = Face.ByWire(wires[0], tolerance=tolerance, silent=silent)
+        last_face = Face.ByWire(wires[-1], tolerance=tolerance, silent=silent)
+
+        if not Topology.IsInstance(first_face, "Face") or not Topology.IsInstance(last_face, "Face"):
+            if not silent:
+                print("CellComplex.ByWires - Error: Could not create the end Faces. Returning None.")
+            return None
+
+        end_faces = [first_face, last_face]
+
+        if triangulate:
+            for face in end_faces:
+                if len(Topology.Vertices(face)) > 3:
+                    triangles = Face.Triangulate(face, tolerance=tolerance)
+                    if isinstance(triangles, list):
+                        faces.extend(triangles)
                 else:
-                    faces.append(f)
-        return CellComplex.ByFaces(faces, tolerance=tolerance)
+                    faces.append(face)
+        else:
+            faces.extend(end_faces)
+
+        def _bridge(vertex_a, vertex_b):
+            try:
+                return Edge.ByStartVertexEndVertex(
+                    vertex_a,
+                    vertex_b,
+                    tolerance=tolerance,
+                    silent=True
+                )
+            except Exception:
+                return None
+
+        for i in range(len(wires) - 1):
+            wire1 = wires[i]
+            wire2 = wires[i + 1]
+
+            # Every intermediate section is an internal CellComplex boundary.
+            if i < len(wires) - 2:
+                section_face = Face.ByWire(wire2, tolerance=tolerance, silent=silent)
+                if Topology.IsInstance(section_face, "Face"):
+                    if triangulate and len(Topology.Vertices(section_face)) > 3:
+                        triangles = Face.Triangulate(section_face, tolerance=tolerance)
+                        if isinstance(triangles, list):
+                            faces.extend(triangles)
+                    else:
+                        faces.append(section_face)
+
+            w1_edges = edge_lists[i]
+            w2_edges = edge_lists[i + 1]
+
+            for j in range(edge_count):
+                edge1 = w1_edges[j]
+                edge2 = w2_edges[j]
+
+                bridge1 = _bridge(Edge.StartVertex(edge1), Edge.StartVertex(edge2))
+                bridge2 = _bridge(Edge.EndVertex(edge1), Edge.EndVertex(edge2))
+
+                face = None
+
+                if bridge1 is not None and bridge2 is not None:
+                    wire = Wire.ByEdges(
+                        [edge1, bridge2, edge2, bridge1],
+                        tolerance=tolerance,
+                        silent=True
+                    )
+                    if Topology.IsInstance(wire, "Wire"):
+                        face = Face.ByWire(wire, tolerance=tolerance, silent=True)
+
+                    if not Topology.IsInstance(face, "Face"):
+                        wire = Wire.ByEdges(
+                            [edge1, bridge1, edge2, bridge2],
+                            tolerance=tolerance,
+                            silent=True
+                        )
+                        if Topology.IsInstance(wire, "Wire"):
+                            face = Face.ByWire(wire, tolerance=tolerance, silent=True)
+
+                elif bridge1 is not None:
+                    wire = Wire.ByEdges(
+                        [edge1, bridge1, edge2],
+                        tolerance=tolerance,
+                        silent=True
+                    )
+                    if Topology.IsInstance(wire, "Wire"):
+                        face = Face.ByWire(wire, tolerance=tolerance, silent=True)
+
+                elif bridge2 is not None:
+                    wire = Wire.ByEdges(
+                        [edge1, bridge2, edge2],
+                        tolerance=tolerance,
+                        silent=True
+                    )
+                    if Topology.IsInstance(wire, "Wire"):
+                        face = Face.ByWire(wire, tolerance=tolerance, silent=True)
+
+                if not Topology.IsInstance(face, "Face"):
+                    continue
+
+                if triangulate and len(Topology.Vertices(face)) > 3:
+                    triangles = Face.Triangulate(face, tolerance=tolerance)
+                    if isinstance(triangles, list):
+                        faces.extend(triangles)
+                else:
+                    faces.append(face)
+
+        return CellComplex.ByFaces(
+            faces,
+            tolerance=tolerance,
+            silent=silent
+        )
 
     @staticmethod
-    def ByWiresCluster(cluster, triangulate: bool = True, tolerance: float = 0.0001):
+    def ByWiresCluster(
+        cluster,
+        polyhedron: bool = True,
+        triangulate: bool = True,
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
         """
-        Creates a cellcomplex by lofting through the wires in the input cluster.
+        Creates a CellComplex by lofting through the Wires in the input Cluster.
 
         Parameters
         ----------
         cluster : topologic_core.Cluster
-            The input cluster of wires.
+            The input Cluster containing the section Wires.
+        polyhedron : bool , optional
+            If True, constructs a faceted CellComplex. If False, constructs a
+            curve-preserving CellComplex using the PythonOCC backend.
+            Default is True.
         triangulate : bool , optional
-            If set to True, the faces will be triangulated. Default is True.
+            If polyhedron is True, specifies whether generated Faces are
+            triangulated. Ignored when polyhedron is False. Default is True.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed.
+            Default is False.
 
         Returns
         -------
         topologic_core.CellComplex
-            The created cellcomplex.
+            The created CellComplex.
 
         """
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(cluster, "Cluster"):
-            print("CellComplex.ByWiresCluster - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
+            if not silent:
+                print("CellComplex.ByWiresCluster - Error: The input cluster parameter is not a valid topologic Cluster. Returning None.")
             return None
+
         wires = Topology.Wires(cluster)
-        return CellComplex.ByWires(wires, triangulate=triangulate, tolerance=tolerance)
+
+        return CellComplex.ByWires(
+            wires,
+            polyhedron=polyhedron,
+            triangulate=triangulate,
+            tolerance=tolerance,
+            silent=silent
+        )
 
     @staticmethod
-    def Cells(cellComplex) -> list:
-        """
-        Returns the cells of the input cellComplex.
-
-        Parameters
-        ----------
-        cellComplex : topologic_core.CellComplex
-            The input cellComplex.
-
-        Returns
-        -------
-        list
-            The list of cells.
-
-        """
+    def Cells(cellComplex, silent: bool = False) -> list:
+        """Returns the cells of the input CellComplex."""
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(cellComplex, "CellComplex"):
-            print("CellComplex.Cells - Error: The input cellcomplex parameter is not a valid topologic cellcomplex. Returning None.")
+            if not silent:
+                print("CellComplex.Cells - Error: The input cellComplex parameter is not a valid CellComplex. Returning None.")
             return None
-        cells = []
-        # _ = cellComplex.Cells(None, cells) # H to Core
+
+        result = []
         try:
-            _ = Core.InstanceCall(cellComplex, "Cells", None, cells)
+            Core.InstanceCall(cellComplex, "Cells", None, result)
         except Exception:
-            cells = None
-        return cells
+            if not silent:
+                print("CellComplex.Cells - Error: Could not retrieve the cells. Returning None.")
+            return None
+        return result
 
     @staticmethod
     def Cube(origin= None,
@@ -1456,318 +1702,333 @@ class CellComplex():
         return Topology.Decompose(topology=cellComplex, tiltAngle = tiltAngle, tolerance = tolerance, silent = silent)
     
     @staticmethod
-    def Delaunay(vertices: list = None, tolerance: float = 0.0001):
+    def Delaunay(vertices: list = None, tolerance: float = 0.0001, silent: bool = False):
         """
-        Triangulates the input vertices based on the Delaunay method. See https://en.wikipedia.org/wiki/Delaunay_triangulation.
+        Creates a 3D Delaunay tetrahedralisation of the input Vertices.
 
         Parameters
         ----------
-        vertices: list , optional 
-            The input list of vertices to use for delaunay triangulation. If set to None, the algorithm uses the vertices of the input cell parameter.
-            if both are set to none, a unit cube centered around the origin is used.
-        tolerance : float , optional
-            the desired tolerance. Default is 0.0001.
-        
+        vertices : list, optional
+            Input Vertices. If None, the vertices of a unit prism are used.
+        tolerance : float, optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool, optional
+            If True, error and warning messages are suppressed. Default is False.
+
         Returns
         -------
         topologic_core.CellComplex
-            The created delaunay cellComplex.
-
+            The Delaunay CellComplex, or None on failure.
         """
         from topologicpy.Vertex import Vertex
         from topologicpy.Face import Face
         from topologicpy.Cell import Cell
-        from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
-        from scipy.spatial import Delaunay as SCIDelaunay
-        import numpy as np
+
+        try:
+            import numpy as np
+            from scipy.spatial import Delaunay as SCIDelaunay
+            from scipy.spatial import QhullError
+        except Exception:
+            if not silent:
+                print("CellComplex.Delaunay - Error: scipy and numpy are required. Returning None.")
+            return None
+
+        try:
+            tolerance = abs(float(tolerance))
+        except Exception:
+            return None
+        if tolerance <= 0.0:
+            return None
 
         if not isinstance(vertices, list):
-            cell = Cell.Prism()
-            vertices = Topology.Vertices(cell)
-        
-        vertices = [v for v in vertices if Topology.IsInstance(v, "Vertex")]
-        if len(vertices) < 3:
-            print("CellComplex/Delaunay - Error: The input vertices parameter does not contain enough valid vertices. Returning None.")
-            return None
-        # Get the vertices of the input cell
-        points = np.array([Vertex.Coordinates(v) for v in vertices])
-        # Compute Delaunay triangulation
-        triangulation = SCIDelaunay(points, furthest_site=False)
+            seed = Cell.Prism(silent=True)
+            vertices = Topology.Vertices(seed) if Topology.IsInstance(seed, "Cell") else []
 
-        faces = []
+        vertices = [vertex for vertex in vertices if Topology.IsInstance(vertex, "Vertex")]
+        if len(vertices) < 4:
+            if not silent:
+                print("CellComplex.Delaunay - Error: At least four valid Vertices are required. Returning None.")
+            return None
+
+        # Remove coincident points within the requested tolerance while retaining
+        # the original Vertex wrappers for topology construction.
+        unique_vertices = []
+        unique_points = []
+        quant = max(tolerance, 1e-12)
+        keys = set()
+        for vertex in vertices:
+            coords = Vertex.Coordinates(vertex, mantissa=15)
+            if not isinstance(coords, list) or len(coords) < 3:
+                continue
+            point = [float(coords[0]), float(coords[1]), float(coords[2])]
+            key = tuple(round(value / quant) for value in point)
+            if key in keys:
+                continue
+            keys.add(key)
+            unique_vertices.append(vertex)
+            unique_points.append(point)
+
+        if len(unique_vertices) < 4:
+            if not silent:
+                print("CellComplex.Delaunay - Error: Fewer than four unique Vertices remain after tolerance filtering. Returning None.")
+            return None
+
+        points = np.asarray(unique_points, dtype=float)
+        if np.linalg.matrix_rank(points - points.mean(axis=0)) < 3:
+            if not silent:
+                print("CellComplex.Delaunay - Error: The input Vertices are coplanar or otherwise do not span 3D space. Returning None.")
+            return None
+
+        try:
+            triangulation = SCIDelaunay(points, furthest_site=False)
+        except (QhullError, ValueError, RuntimeError):
+            if not silent:
+                print("CellComplex.Delaunay - Error: SciPy could not compute a 3D Delaunay tetrahedralisation. Returning None.")
+            return None
+
+        def _cell_by_indices(indices):
+            v0, v1, v2, v3 = [unique_vertices[int(index)] for index in indices]
+            faces = [
+                Face.ByVertices([v0, v1, v2], tolerance=tolerance, silent=True),
+                Face.ByVertices([v0, v3, v1], tolerance=tolerance, silent=True),
+                Face.ByVertices([v1, v3, v2], tolerance=tolerance, silent=True),
+                Face.ByVertices([v2, v3, v0], tolerance=tolerance, silent=True),
+            ]
+            if not all(Topology.IsInstance(face, "Face") for face in faces):
+                return None
+            return Cell.ByFaces(faces, tolerance=tolerance, silent=True)
+
+        cells = []
         for simplex in triangulation.simplices:
-            tetrahedron_vertices = points[simplex]
-            verts = [Vertex.ByCoordinates(list(coord)) for coord in tetrahedron_vertices]
-            tri1 = [verts[0], verts[1], verts[2], verts[0]]
-            tri2 = [verts[0], verts[2], verts[3], verts[0]]
-            tri3 = [verts[0], verts[1], verts[3], verts[0]]
-            tri4 = [verts[1], verts[2], verts[3], verts[1]]
-            f1 = Face.ByVertices(tri1)
-            f2 = Face.ByVertices(tri2)
-            f3 = Face.ByVertices(tri3)
-            f4 = Face.ByVertices(tri4)
-            faces.append(f1)
-            faces.append(f2)
-            faces.append(f3)
-            faces.append(f4)
-        cc = Topology.RemoveCoplanarFaces(CellComplex.ByFaces(faces, tolerance=tolerance))
-        faces = [Topology.RemoveCollinearEdges(f) for f in Topology.Faces(cc)]
-        cc = CellComplex.ByFaces(faces)
-        return cc
+            cell = _cell_by_indices(simplex)
+            if not Topology.IsInstance(cell, "Cell"):
+                if not silent:
+                    print("CellComplex.Delaunay - Error: Could not construct one of the Delaunay tetrahedra. Returning None.")
+                return None
+            cells.append(cell)
+
+        return CellComplex.ByCells(cells, tolerance=tolerance, silent=silent)
     
     @staticmethod
     def Edges(cellComplex, silent: bool = False) -> list:
-        """
-        Returns the edges of the input cellComplex.
-
-        Parameters
-        ----------
-        cellComplex : topologic_core.CellComplex
-            The input cellComplex.
-        silent: bool , optional
-            if set to True, no error or warning messages are printed. Default is False.
-
-        Returns
-        -------
-        list
-            The list of edges.
-
-        """
+        """Returns the edges of the input CellComplex."""
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(cellComplex, "CellComplex"):
-            print("CellComplex.Edges - Error: The input cellcomplex parameter is not a valid topologic cellcomplex. Returning None.")
+            if not silent:
+                print("CellComplex.Edges - Error: The input cellComplex parameter is not a valid CellComplex. Returning None.")
             return None
-        edges = []
-        # _ = cellComplex.Edges(None, edges) # H to Core
+
+        result = []
         try:
-            _ = Core.InstanceCall(cellComplex, "Edges", None, edges)
+            Core.InstanceCall(cellComplex, "Edges", None, result)
         except Exception:
             if not silent:
-                Topology.Show(cellComplex, renderer="browser")
-                print(f"CellComplex.Edges - Error: Could not fetch edges. Returning None.")
-            edges = None
-        return edges
+                print("CellComplex.Edges - Error: Could not retrieve the edges. Returning None.")
+            return None
+        return result
 
     @staticmethod
     def ExternalBoundary(cellComplex, silent: bool = False):
         """
-        Returns the external boundary (shell) of the input cellComplex.
-
-        Parameters
-        ----------
-        cellComplex : topologic_core.CellComplex
-            The input cellComplex.
-        silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
-
-        Returns
-        -------
-        topologic_core.Cell
-            The external boundary of the input cellComplex.
-
+        Returns the outer Shell of the input CellComplex.
         """
-        import inspect
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(cellComplex, "CellComplex"):
             if not silent:
-                print("CellComplex.ExternalBoundary - Error: The input cellComplex parameter is not a valid cellComplex. Returning None.")
-                print("Incoming Topology:", cellComplex)
-                curframe = inspect.currentframe()
-                calframe = inspect.getouterframes(curframe, 2)
-                print('caller name:', calframe[1][3])
+                print("CellComplex.ExternalBoundary - Error: The input cellComplex parameter is not a valid CellComplex. Returning None.")
             return None
-        #cell = cellComplex.ExternalBoundary() # H to Core
+
         try:
-            cell = Core.InstanceCall(cellComplex,"ExternalBoundary")
+            boundary = Core.InstanceCall(cellComplex, "ExternalBoundary")
         except Exception:
-            cell = None
-        if cell is not None:
-            shells = Topology.Shells(cell)
-            if isinstance(shells, list):
-                if len(shells) > 0:
-                    return shells[0]
+            boundary = None
+
+        if Topology.IsInstance(boundary, "Shell"):
+            return boundary
+
+        # TopologicCore may return the fused external Cell. Normalise the public
+        # CellComplex API to an outer Shell on both backends.
+        if Topology.IsInstance(boundary, "Topology"):
+            try:
+                shells = Topology.Shells(boundary)
+            except Exception:
+                shells = []
+            if isinstance(shells, list) and len(shells) > 0:
+                return shells[0]
+
+        if not silent:
+            print("CellComplex.ExternalBoundary - Error: Could not retrieve the external Shell. Returning None.")
         return None
     
     @staticmethod
-    def ExternalFaces(cellComplex) -> list:
-        """
-        Returns the external faces of the input cellComplex.
-
-        Parameters
-        ----------
-        cellComplex : topologic_core.CellComplex
-            The input cellComplex.
-
-        Returns
-        -------
-        list
-            The list of external faces.
-
-        """
+    def ExternalFaces(cellComplex, silent: bool = False) -> list:
+        """Returns the external Faces of the input CellComplex."""
         from topologicpy.Topology import Topology
-        shell = CellComplex.ExternalBoundary(cellComplex)
-        return Topology.Faces(shell)
+
+        shell = CellComplex.ExternalBoundary(cellComplex, silent=silent)
+        if not Topology.IsInstance(shell, "Shell"):
+            return None
+        try:
+            faces = Topology.Faces(shell)
+        except Exception:
+            faces = None
+        return faces if isinstance(faces, list) else None
 
     @staticmethod
-    def Faces(cellComplex) -> list:
-        """
-        Returns the faces of the input cellComplex.
-
-        Parameters
-        ----------
-        cellComplex : topologic_core.CellComplex
-            The input cellComplex.
-
-        Returns
-        -------
-        list
-            The list of faces.
-
-        """
+    def Faces(cellComplex, silent: bool = False) -> list:
+        """Returns the faces of the input CellComplex."""
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(cellComplex, "CellComplex"):
-            print("CellComplex.Faces - Error: The input cellcomplex parameter is not a valid topologic cellcomplex. Returning None.")
+            if not silent:
+                print("CellComplex.Faces - Error: The input cellComplex parameter is not a valid CellComplex. Returning None.")
+            return None
+
+        result = []
+        try:
+            Core.InstanceCall(cellComplex, "Faces", None, result)
+        except Exception:
+            if not silent:
+                print("CellComplex.Faces - Error: Could not retrieve the faces. Returning None.")
+            return None
+        return result
+
+    @staticmethod
+    def InternalFaces(cellComplex, silent: bool = False) -> list:
+        """Returns the internal/non-manifold Faces of the input CellComplex."""
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(cellComplex, "CellComplex"):
+            if not silent:
+                print("CellComplex.InternalFaces - Error: The input cellComplex parameter is not a valid CellComplex. Returning None.")
             return None
         faces = []
-        # _ = cellComplex.Faces(None, faces) # H to Core
         try:
-            _ = Core.InstanceCall(cellComplex, "Faces", None, faces)
+            Core.InstanceCall(cellComplex, "InternalBoundaries", faces)
         except Exception:
-            faces = None
-        return faces
-
-    @staticmethod
-    def InternalFaces(cellComplex) -> list:
-        """
-        Returns the internal boundaries (faces) of the input cellComplex.
-
-        Parameters
-        ----------
-        cellComplex : topologic_core.CellComplex
-            The input cellComplex.
-
-        Returns
-        -------
-        list
-            The list of internal faces of the input cellComplex.
-
-        """
-        faces = []
-        # _ = cellComplex.InternalBoundaries(faces) # H to Core
-        try:
-            _ = Core.InstanceCall(cellComplex, "InternalBoundaries", faces)
-        except Exception:
-            faces = []
+            if not silent:
+                print("CellComplex.InternalFaces - Error: Could not retrieve the internal Faces. Returning None.")
+            return None
         return faces
     
     @staticmethod
-    def NonManifoldFaces(cellComplex) -> list:
-        """
-        Returns the non-manifold faces of the input cellComplex.
+    def NonManifoldFaces(cellComplex, silent: bool = False) -> list:
+        """Returns the non-manifold Faces of the input CellComplex."""
+        from topologicpy.Topology import Topology
 
-        Parameters
-        ----------
-        cellComplex : topologic_core.CellComplex
-            The input cellComplex.
-
-        Returns
-        -------
-        list
-            The list of non-manifold faces of the input cellComplex.
-
-        """
+        if not Topology.IsInstance(cellComplex, "CellComplex"):
+            if not silent:
+                print("CellComplex.NonManifoldFaces - Error: The input cellComplex parameter is not a valid CellComplex. Returning None.")
+            return None
         faces = []
-        # _ = cellComplex.NonManifoldFaces(faces) # H to Core
         try:
-            _ = Core.InstanceCall(cellComplex, "NonManifoldFaces", faces)
+            Core.InstanceCall(cellComplex, "NonManifoldFaces", faces)
         except Exception:
-            faces = None
+            if not silent:
+                print("CellComplex.NonManifoldFaces - Error: Could not retrieve the non-manifold Faces. Returning None.")
+            return None
         return faces
     
     @staticmethod
-    def Octahedron(origin= None,
+    def Octahedron(origin=None,
                    radius: float = 0.5,
                    direction: list = [0, 0, 1],
-                   placement: str ="center",
+                   placement: str = "center",
                    tolerance: float = 0.0001,
                    silent: bool = False):
         """
-        Creates an octahedron. See https://en.wikipedia.org/wiki/Octahedron.
-
-        Parameters
-        ----------
-        origin : topologic_core.Vertex , optional
-            The origin location of the octahedron. Default is None which results in the octahedron being placed at (0, 0, 0).
-        radius : float , optional
-            The radius of the octahedron's circumscribed sphere. Default is 0.5.
-        direction : list , optional
-            The vector representing the up direction of the octahedron. Default is [0, 0, 1].
-        placement : str , optional
-            The description of the placement of the origin of the octahedron. This can be "bottom", "center", or "lowerleft". It is case insensitive. Default is "center".
-        tolerance : float , optional
-            The desired tolerance. Default is 0.0001.
-        silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
-        
-        Returns
-        -------
-        topologic_core.CellComplex
-            The created octahedron.
-
+        Creates an octahedral CellComplex consisting of two Cells separated by
+        the equatorial Face.
         """
-        
         from topologicpy.Vertex import Vertex
         from topologicpy.Face import Face
         from topologicpy.Topology import Topology
 
-        if not Topology.IsInstance(origin, "Vertex"):
-            origin = Vertex.ByCoordinates(0, 0, 0)
-        if not Topology.IsInstance(origin, "Vertex"):
-            print("CellComplex.Octahedron - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
+        try:
+            radius = abs(float(radius))
+            tolerance = abs(float(tolerance))
+        except Exception:
+            if not silent:
+                print("CellComplex.Octahedron - Error: Invalid numerical input. Returning None.")
             return None
-        
-        vb1 = Vertex.ByCoordinates(-0.5,0,0)
-        vb2 = Vertex.ByCoordinates(0,-0.5,0)
-        vb3 = Vertex.ByCoordinates(0.5,0,0)
-        vb4 = Vertex.ByCoordinates(0,0.5,0)
-        top = Vertex.ByCoordinates(0, 0, 0.5)
-        bottom = Vertex.ByCoordinates(0, 0, -0.5)
-        f1 = Face.ByVertices([top,vb1,vb2])
-        f2 = Face.ByVertices([top,vb2,vb3])
-        f3 = Face.ByVertices([top,vb3,vb4])
-        f4 = Face.ByVertices([top,vb4,vb1])
-        f5 = Face.ByVertices([bottom,vb1,vb2])
-        f6 = Face.ByVertices([bottom,vb2,vb3])
-        f7 = Face.ByVertices([bottom,vb3,vb4])
-        f8 = Face.ByVertices([bottom,vb4,vb1])
-        f9 = Face.ByVertices([vb1,vb2,vb3,vb4])
+        if radius <= tolerance or tolerance <= 0.0:
+            if not silent:
+                print("CellComplex.Octahedron - Error: radius must be greater than tolerance. Returning None.")
+            return None
 
-        octahedron = CellComplex._ByFaces([f1,f2,f3,f4,f5,f6,f7,f8,f9], tolerance=tolerance)
-        octahedron = Topology.Scale(octahedron, origin=Vertex.Origin(), x=radius/0.5, y=radius/0.5, z=radius/0.5)
-        xOffset = 0
-        yOffset = 0
-        zOffset = 0
+        if not isinstance(direction, (list, tuple)) or len(direction) != 3:
+            if not silent:
+                print("CellComplex.Octahedron - Error: The input direction parameter is not a valid 3D vector. Returning None.")
+            return None
+        try:
+            direction = [float(value) for value in direction]
+        except Exception:
+            return None
+        if sum(value * value for value in direction) ** 0.5 <= tolerance:
+            if not silent:
+                print("CellComplex.Octahedron - Error: The input direction vector has zero magnitude. Returning None.")
+            return None
+
+        if not Topology.IsInstance(origin, "Vertex"):
+            origin = Vertex.Origin()
+
+        placement = str(placement).lower().strip()
+        if placement not in ["center", "bottom", "lowerleft"]:
+            if not silent:
+                print('CellComplex.Octahedron - Error: placement must be "center", "bottom", or "lowerleft". Returning None.')
+            return None
+
+        left = Vertex.ByCoordinates(-radius, 0, 0)
+        front = Vertex.ByCoordinates(0, -radius, 0)
+        right = Vertex.ByCoordinates(radius, 0, 0)
+        back = Vertex.ByCoordinates(0, radius, 0)
+        top = Vertex.ByCoordinates(0, 0, radius)
+        bottom = Vertex.ByCoordinates(0, 0, -radius)
+
+        faces = [
+            Face.ByVertices([top, left, front], tolerance=tolerance, silent=True),
+            Face.ByVertices([top, front, right], tolerance=tolerance, silent=True),
+            Face.ByVertices([top, right, back], tolerance=tolerance, silent=True),
+            Face.ByVertices([top, back, left], tolerance=tolerance, silent=True),
+            Face.ByVertices([bottom, front, left], tolerance=tolerance, silent=True),
+            Face.ByVertices([bottom, right, front], tolerance=tolerance, silent=True),
+            Face.ByVertices([bottom, back, right], tolerance=tolerance, silent=True),
+            Face.ByVertices([bottom, left, back], tolerance=tolerance, silent=True),
+            Face.ByVertices([left, front, right, back], tolerance=tolerance, silent=True),
+        ]
+        if not all(Topology.IsInstance(face, "Face") for face in faces):
+            if not silent:
+                print("CellComplex.Octahedron - Error: Could not create the required Faces. Returning None.")
+            return None
+
+        octahedron = CellComplex._ByFaces(faces, tolerance=tolerance, silent=True)
+        if not Topology.IsInstance(octahedron, "CellComplex"):
+            if not silent:
+                print("CellComplex.Octahedron - Error: Could not create the CellComplex. Returning None.")
+            return None
+
+        source = [0.0, 0.0, 0.0]
         if placement == "bottom":
-            zOffset = radius
+            source = [0.0, 0.0, -radius]
         elif placement == "lowerleft":
-            xOffset = yOffset = zoffset = radius
+            source = [-radius, -radius, -radius]
 
-        octahedron = Topology.OrientAndPlace(octahedron,
-                                             originA=Vertex.ByCoordinates(xOffset, yOffset, zOffset),
-                                             originB=origin,
-                                             dirA=[0, 0, 1],
-                                             dirB=direction,
-                                             transferDictionaries = False,
-                                             tolerance = tolerance,
-                                             silent = silent)
-        return octahedron
+        return Topology.OrientAndPlace(
+            octahedron,
+            originA=Vertex.ByCoordinates(source),
+            originB=origin,
+            dirA=[0, 0, 1],
+            dirB=direction,
+            transferDictionaries=False,
+            tolerance=tolerance,
+            silent=silent,
+        )
     
     @staticmethod
-    def Prism(origin= None,
+    def Prism(origin=None,
               width: float = 1.0,
               length: float = 1.0,
               height: float = 1.0,
@@ -1780,202 +2041,164 @@ class CellComplex():
               tolerance: float = 0.0001,
               silent: bool = False):
         """
-        Creates a prismatic cellComplex with internal cells.
-
-        Parameters
-        ----------
-        origin : topologic_core.Vertex , optional
-            The origin location of the prism. Default is None which results in the prism being placed at (0, 0, 0).
-        width : float , optional
-            The width of the prism. Default is 1.
-        length : float , optional
-            The length of the prism. Default is 1.
-        height : float , optional
-            The height of the prism.
-        uSides : int , optional
-            The number of sides along the width. Default is 1.
-        vSides : int , optional
-            The number of sides along the length. Default is 1.
-        wSides : int , optional
-            The number of sides along the height. Default is 1.
-        direction : list , optional
-            The vector representing the up direction of the prism. Default is [0, 0, 1].
-        placement : str , optional
-            The description of the placement of the origin of the prism. This can be "bottom", "center", or "lowerleft". It is case insensitive. Default is "center".
-        mantissa : int , optional
-            The number of decimal places to round the result to. Default is 6.
-        tolerance : float , optional
-            The desired tolerance. Default is 0.0001.
-        silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
-        
-        Returns
-        -------
-        topologic_core.CellComplex
-            The created prism.
-
+        Creates a prismatic CellComplex subdivided into a regular ``uSides`` by
+        ``vSides`` by ``wSides`` grid of Cells.
         """
         from topologicpy.Vertex import Vertex
-        from topologicpy.Face import Face
         from topologicpy.Cell import Cell
-        from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
-        
-        def bb(topology):
-            vertices = Topology.Vertices(topology)
-            x = []
-            y = []
-            z = []
-            for aVertex in vertices:
-                x.append(Vertex.X(aVertex, mantissa=mantissa))
-                y.append(Vertex.Y(aVertex, mantissa=mantissa))
-                z.append(Vertex.Z(aVertex, mantissa=mantissa))
-            x_min = min(x)
-            y_min = min(y)
-            z_min = min(z)
-            maxX = max(x)
-            maxY = max(y)
-            maxZ = max(z)
-            return [x_min, y_min, z_min, maxX, maxY, maxZ]
-        
-        def slice(topology, uSides, vSides, wSides):
-            x_min, y_min, z_min, maxX, maxY, maxZ = bb(topology)
-            centroid = Vertex.ByCoordinates(x_min+(maxX-x_min)*0.5, y_min+(maxY-y_min)*0.5, z_min+(maxZ-z_min)*0.5)
-            wOrigin = Vertex.ByCoordinates(Vertex.X(centroid, mantissa=mantissa), Vertex.Y(centroid, mantissa=mantissa), z_min)
-            wFace = Face.Rectangle(origin=wOrigin, width=(maxX-x_min)*1.1, length=(maxY-y_min)*1.1)
-            wFaces = []
-            wOffset = (maxZ-z_min)/wSides
-            for i in range(wSides-1):
-                wFaces.append(Topology.Translate(wFace, 0,0,wOffset*(i+1)))
-            uOrigin = Vertex.ByCoordinates(x_min, Vertex.Y(centroid, mantissa=mantissa), Vertex.Z(centroid, mantissa=mantissa))
-            uFace = Face.Rectangle(origin=uOrigin, width=(maxZ-z_min)*1.1, length=(maxY-y_min)*1.1, direction=[1,0,0])
-            uFaces = []
-            uOffset = (maxX-x_min)/uSides
-            for i in range(uSides-1):
-                uFaces.append(Topology.Translate(uFace, uOffset*(i+1),0,0))
-            vOrigin = Vertex.ByCoordinates(Vertex.X(centroid, mantissa=mantissa), y_min, Vertex.Z(centroid, mantissa=mantissa))
-            vFace = Face.Rectangle(origin=vOrigin, width=(maxX-x_min)*1.1, length=(maxZ-z_min)*1.1, direction=[0,1,0])
-            vFaces = []
-            vOffset = (maxY-y_min)/vSides
-            for i in range(vSides-1):
-                vFaces.append(Topology.Translate(vFace, 0,vOffset*(i+1),0))
-            all_faces = uFaces+vFaces+wFaces
-            if len(all_faces) > 0:
-                f_clus = Cluster.ByTopologies(uFaces+vFaces+wFaces)
-                return Topology.Slice(topology, f_clus, tolerance=tolerance, silent=silent)
-            else:
-                return CellComplex.ByCells([topology])
-        if not Topology.IsInstance(origin, "Vertex"):
-            origin = Vertex.ByCoordinates(0, 0, 0)
 
-        c = Cell.Prism(origin=origin, width=width, length=length, height=height, uSides=1, vSides=1, wSides=1, placement=placement, mantissa=mantissa, tolerance=tolerance, silent=silent)
-        prism = slice(c, uSides=uSides, vSides=vSides, wSides=wSides)
-        if prism:
-            prism = Topology.Orient(prism, origin=origin, dirA=[0, 0, 1], dirB=direction)
-            return prism
-        else:
-            print("CellComplex.Prism - Error: Could not create a prism. Returning None.")
+        try:
+            width = abs(float(width))
+            length = abs(float(length))
+            height = abs(float(height))
+            uSides = int(uSides)
+            vSides = int(vSides)
+            wSides = int(wSides)
+            mantissa = int(mantissa)
+            tolerance = abs(float(tolerance))
+        except Exception:
+            if not silent:
+                print("CellComplex.Prism - Error: One or more numerical parameters are invalid. Returning None.")
             return None
+
+        if min(width, length, height) <= tolerance or tolerance <= 0.0:
+            if not silent:
+                print("CellComplex.Prism - Error: width, length, and height must be greater than tolerance. Returning None.")
+            return None
+        if uSides < 1 or vSides < 1 or wSides < 1:
+            if not silent:
+                print("CellComplex.Prism - Error: uSides, vSides, and wSides must each be at least 1. Returning None.")
+            return None
+
+        if not isinstance(direction, (list, tuple)) or len(direction) != 3:
+            if not silent:
+                print("CellComplex.Prism - Error: The input direction parameter is not a valid 3D vector. Returning None.")
+            return None
+        try:
+            direction = [float(value) for value in direction]
+        except Exception:
+            return None
+        if sum(value * value for value in direction) ** 0.5 <= tolerance:
+            if not silent:
+                print("CellComplex.Prism - Error: The input direction vector has zero magnitude. Returning None.")
+            return None
+
+        if not Topology.IsInstance(origin, "Vertex"):
+            origin = Vertex.Origin()
+
+        placement = str(placement).lower().strip()
+        if placement not in ["center", "bottom", "lowerleft"]:
+            if not silent:
+                print('CellComplex.Prism - Error: placement must be "center", "bottom", or "lowerleft". Returning None.')
+            return None
+
+        dx = width / float(uSides)
+        dy = length / float(vSides)
+        dz = height / float(wSides)
+        cells = []
+
+        for i in range(uSides):
+            for j in range(vSides):
+                for k in range(wSides):
+                    cell_origin = Vertex.ByCoordinates(i * dx, j * dy, k * dz)
+                    cell = Cell.Prism(
+                        origin=cell_origin,
+                        width=dx,
+                        length=dy,
+                        height=dz,
+                        uSides=1,
+                        vSides=1,
+                        wSides=1,
+                        direction=[0, 0, 1],
+                        placement="lowerleft",
+                        mantissa=mantissa,
+                        tolerance=tolerance,
+                        silent=True,
+                    )
+                    if not Topology.IsInstance(cell, "Cell"):
+                        if not silent:
+                            print("CellComplex.Prism - Error: Could not create one of the constituent Cells. Returning None.")
+                        return None
+                    cells.append(cell)
+
+        prism = CellComplex.ByCells(cells, tolerance=tolerance, silent=True)
+        if not Topology.IsInstance(prism, "CellComplex"):
+            if not silent:
+                print("CellComplex.Prism - Error: Could not assemble the constituent Cells. Returning None.")
+            return None
+
+        source = [0.0, 0.0, 0.0]
+        if placement == "center":
+            source = [0.5 * width, 0.5 * length, 0.5 * height]
+        elif placement == "bottom":
+            source = [0.5 * width, 0.5 * length, 0.0]
+
+        return Topology.OrientAndPlace(
+            prism,
+            originA=Vertex.ByCoordinates(source),
+            originB=origin,
+            dirA=[0, 0, 1],
+            dirB=direction,
+            transferDictionaries=False,
+            tolerance=tolerance,
+            silent=silent,
+        )
 
 
     @staticmethod
     def RemoveCollinearEdges(cellComplex, angTolerance: float = 0.1, tolerance: float = 0.0001, silent: bool = True):
-        """
-        Removes any collinear edges in the input cellComplex.
-
-        Parameters
-        ----------
-        cellComplex : topologic_core.CellComplex
-            The input cellComplex.
-        angTolerance : float , optional
-            The desired angular tolerance. Default is 0.1.
-        tolerance : float , optional
-            The desired tolerance. Default is 0.0001.
-        silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is True.
-
-        Returns
-        -------
-        topologic_core.CellComplex
-            The created cellComplex without any collinear edges.
-
-        """
-
+        """Removes geometrically collinear straight Edges from a CellComplex."""
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(cellComplex, "CellComplex"):
             if not silent:
-                import inspect
-                print("CellComplex.RemoveCollinearEdges - Error: The input cellComplex parameter is not a valid cellComplex. Returning None.")
-                print("CellComplex.RemoveCollinearEdges - Inspection:")
-                curframe = inspect.currentframe()
-                calframe = inspect.getouterframes(curframe, 2)
-                print("caller name:", calframe[1][3])
+                print("CellComplex.RemoveCollinearEdges - Error: The input cellComplex parameter is not a valid CellComplex. Returning None.")
             return None
 
-        faces = CellComplex.Faces(cellComplex)
-
+        faces = CellComplex.Faces(cellComplex, silent=True)
         if not isinstance(faces, list) or len(faces) == 0:
             if not silent:
-                print("CellComplex.RemoveCollinearEdges - Error: Could not retrieve any faces from the input cellComplex. Returning None.")
+                print("CellComplex.RemoveCollinearEdges - Error: Could not retrieve any Faces. Returning None.")
             return None
 
         clean_faces = []
-
         for face in faces:
             try:
                 clean_face = Topology.RemoveCollinearEdges(
                     face,
                     angTolerance=angTolerance,
                     tolerance=tolerance,
-                    silent=silent
+                    silent=True,
                 )
-            except TypeError:
-                try:
-                    clean_face = Topology.RemoveCollinearEdges(
-                        face,
-                        angTolerance=angTolerance,
-                        tolerance=tolerance
-                    )
-                except:
-                    clean_face = None
-            except:
+            except Exception:
                 clean_face = None
+            clean_faces.append(clean_face if Topology.IsInstance(clean_face, "Face") else face)
 
-            if Topology.IsInstance(clean_face, "Face"):
-                clean_faces.append(clean_face)
-            elif Topology.IsInstance(face, "Face"):
-                clean_faces.append(face)
-
-        if len(clean_faces) == 0:
+        result = CellComplex._ByFaces(clean_faces, tolerance=tolerance, silent=True)
+        if not Topology.IsInstance(result, "CellComplex"):
             if not silent:
-                print("CellComplex.RemoveCollinearEdges - Error: No valid faces remained after removing collinear edges. Returning None.")
+                print("CellComplex.RemoveCollinearEdges - Error: Could not rebuild the CellComplex. Returning None.")
             return None
-
-        return CellComplex.ByFaces(clean_faces, tolerance=tolerance, silent=silent)
+        return result
     
     @staticmethod
-    def Shells(cellComplex) -> list:
-        """
-        Returns the shells of the input cellComplex.
-
-        Parameters
-        ----------
-        cellComplex : topologic_core.CellComplex
-            The input cellComplex.
-
-        Returns
-        -------
-        list
-            The list of shells.
-
-        """
+    def Shells(cellComplex, silent: bool = False) -> list:
+        """Returns the Shells of the input CellComplex."""
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(cellComplex, "CellComplex"):
-            print("CellComplex.Shells - Error: The input cellcomplex parameter is not a valid topologic cellcomplex. Returning None.")
+            if not silent:
+                print("CellComplex.Shells - Error: The input cellComplex parameter is not a valid CellComplex. Returning None.")
             return None
-        shells = Topology.Shells(cellComplex)
+        try:
+            shells = Topology.Shells(cellComplex)
+        except Exception:
+            shells = None
+        if not isinstance(shells, list):
+            if not silent:
+                print("CellComplex.Shells - Error: Could not retrieve the Shells. Returning None.")
+            return None
         return shells
 
     @staticmethod
@@ -2006,421 +2229,657 @@ class CellComplex():
         return group if len(group) == group_size else None
 
     @staticmethod
-    def Tetrahedron(origin = None, length: float = 1, depth: int = 1, direction=[0,0,1], placement="center", mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
+    def Tetrahedron(origin=None,
+                    length: float = 1,
+                    depth: int = 1,
+                    direction: list = [0, 0, 1],
+                    placement: str = "center",
+                    mantissa: int = 6,
+                    tolerance: float = 0.0001,
+                    silent: bool = False):
         """
-        Creates a recursive tetrahedron cellComplex with internal cells.
+        Creates a recursively subdivided regular tetrahedral CellComplex.
+
+        Each subdivision level partitions every tetrahedron into eight smaller
+        tetrahedra. The four corner tetrahedra and the four tetrahedra obtained
+        by splitting the central midpoint octahedron exactly fill the parent
+        tetrahedron without overlaps or voids.
+        """
+        from math import sqrt
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Face import Face
+        from topologicpy.Cell import Cell
+        from topologicpy.Topology import Topology
+
+        try:
+            length = abs(float(length))
+            depth = max(0, int(depth))
+            mantissa = int(mantissa)
+            tolerance = abs(float(tolerance))
+        except Exception:
+            if not silent:
+                print("CellComplex.Tetrahedron - Error: One or more numerical parameters are invalid. Returning None.")
+            return None
+        if length <= tolerance or tolerance <= 0.0:
+            if not silent:
+                print("CellComplex.Tetrahedron - Error: length must be greater than tolerance. Returning None.")
+            return None
+
+        if not isinstance(direction, (list, tuple)) or len(direction) != 3:
+            if not silent:
+                print("CellComplex.Tetrahedron - Error: The input direction parameter is not a valid 3D vector. Returning None.")
+            return None
+        try:
+            direction = [float(value) for value in direction]
+        except Exception:
+            return None
+        if sum(value * value for value in direction) ** 0.5 <= tolerance:
+            if not silent:
+                print("CellComplex.Tetrahedron - Error: The input direction vector has zero magnitude. Returning None.")
+            return None
+
+        if not Topology.IsInstance(origin, "Vertex"):
+            origin = Vertex.Origin()
+
+        placement = str(placement).lower().strip()
+        if placement not in ["center", "bottom", "lowerleft"]:
+            if not silent:
+                print('CellComplex.Tetrahedron - Error: placement must be "center", "bottom", or "lowerleft". Returning None.')
+            return None
+
+        h = sqrt(2.0 / 3.0) * length
+        root = (
+            (0.0, 0.0, 0.0),
+            (length, 0.0, 0.0),
+            (0.5 * length, 0.5 * sqrt(3.0) * length, 0.0),
+            (0.5 * length, sqrt(3.0) * length / 6.0, h),
+        )
+
+        def _mid(a, b):
+            return tuple((a[i] + b[i]) * 0.5 for i in range(3))
+
+        def _subdivide(tetra):
+            a, b, c, d = tetra
+            ab = _mid(a, b)
+            ac = _mid(a, c)
+            ad = _mid(a, d)
+            bc = _mid(b, c)
+            bd = _mid(b, d)
+            cd = _mid(c, d)
+
+            # Four corner tetrahedra plus four tetrahedra filling the central
+            # octahedron, split along the opposite-vertex diagonal ab--cd.
+            return [
+                (a, ab, ac, ad),
+                (ab, b, bc, bd),
+                (ac, bc, c, cd),
+                (ad, bd, cd, d),
+                (ab, cd, ac, ad),
+                (ab, cd, ad, bd),
+                (ab, cd, bd, bc),
+                (ab, cd, bc, ac),
+            ]
+
+        tetrahedra = [root]
+        for _ in range(depth):
+            next_level = []
+            for tetra in tetrahedra:
+                next_level.extend(_subdivide(tetra))
+            tetrahedra = next_level
+
+        vertex_cache = {}
+
+        def _vertex(point):
+            key = tuple(round(float(value), max(mantissa, 12)) for value in point)
+            vertex = vertex_cache.get(key)
+            if vertex is None:
+                vertex = Vertex.ByCoordinates(point[0], point[1], point[2])
+                vertex_cache[key] = vertex
+            return vertex
+
+        def _cell(tetra):
+            a, b, c, d = [_vertex(point) for point in tetra]
+            faces = [
+                Face.ByVertices([a, b, c], tolerance=tolerance, silent=True),
+                Face.ByVertices([a, d, b], tolerance=tolerance, silent=True),
+                Face.ByVertices([b, d, c], tolerance=tolerance, silent=True),
+                Face.ByVertices([c, d, a], tolerance=tolerance, silent=True),
+            ]
+            if not all(Topology.IsInstance(face, "Face") for face in faces):
+                return None
+            return Cell.ByFaces(faces, tolerance=tolerance, silent=True)
+
+        cells = []
+        for tetra in tetrahedra:
+            cell = _cell(tetra)
+            if not Topology.IsInstance(cell, "Cell"):
+                if not silent:
+                    print("CellComplex.Tetrahedron - Error: Could not construct one of the tetrahedral Cells. Returning None.")
+                return None
+            cells.append(cell)
+
+        cell_complex = CellComplex.ByCells(cells, tolerance=tolerance, silent=True)
+        if not Topology.IsInstance(cell_complex, "CellComplex"):
+            if not silent:
+                print("CellComplex.Tetrahedron - Error: Could not assemble the tetrahedral Cells. Returning None.")
+            return None
+
+        centroid = [0.5 * length, sqrt(3.0) * length / 6.0, 0.25 * h]
+        source = [0.0, 0.0, 0.0]
+        if placement == "center":
+            source = centroid
+        elif placement == "bottom":
+            source = [centroid[0], centroid[1], 0.0]
+
+        return Topology.OrientAndPlace(
+            cell_complex,
+            originA=Vertex.ByCoordinates(source),
+            originB=origin,
+            dirA=[0, 0, 1],
+            dirB=direction,
+            transferDictionaries=False,
+            tolerance=tolerance,
+            silent=silent,
+        )
+    
+    @staticmethod
+    def Torus(
+        origin=None,
+        majorRadius: float = 0.5,
+        minorRadius: float = 0.125,
+        uSides: int = 16,
+        vSides: int = 8,
+        direction: list = [0, 0, 1],
+        placement: str = "center",
+        tolerance: float = 0.0001,
+        silent: bool = False,
+        polyhedron: bool = True
+    ):
+        """
+        Creates a toroidal CellComplex.
+
+        The torus is subdivided into ``uSides`` Cells around its major circle.
+        When ``polyhedron`` is True, the historical faceted construction is
+        retained. When ``polyhedron`` is False, exact OCCT toroidal sectors are
+        constructed by the PythonOCC backend and assembled into a non-manifold
+        CellComplex.
 
         Parameters
         ----------
         origin : topologic_core.Vertex , optional
-            The origin location of the tetrahedron. Default is None which results in the tetrahedron being placed at (0, 0, 0).
-        length : float , optional
-            The length of the edge of the tetrahedron. Default is 1.
-        depth : int , optional
-            The desired maximum number of recrusive subdivision levels.
+            The placement origin of the torus. Default is None, which uses the
+            global origin.
+        majorRadius : float , optional
+            The major radius measured from the torus centre to the centreline of
+            the tube. Default is 0.5.
+        minorRadius : float , optional
+            The minor radius of the tube. Default is 0.125.
+        uSides : int , optional
+            The number of Cells around the major circle. Default is 16.
+        vSides : int , optional
+            The number of sides used to approximate the tube cross-section when
+            ``polyhedron`` is True. Ignored when ``polyhedron`` is False.
+            Default is 8.
         direction : list , optional
-            The vector representing the up direction of the tetrahedron. Default is [0, 0, 1].
+            The vector representing the up direction of the torus.
+            Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the tetrahedron. This can be "bottom", "center", or "lowerleft". It is case insensitive. Default is "center".
-        mantissa : int , optional
-            The number of decimal places to round the result to. Default is 6.
+            The placement of the input origin relative to the torus. This can be
+            "center", "bottom", or "lowerleft". It is case insensitive.
+            Default is "center".
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
-        
+            If set to True, error and warning messages are suppressed.
+            Default is False.
+        polyhedron : bool , optional
+            If True, creates the historical faceted toroidal CellComplex. If
+            False, creates exact smooth toroidal sectors using the PythonOCC
+            backend. Default is True.
+
         Returns
         -------
         topologic_core.CellComplex
-            The created tetrahedron.
+            The created toroidal CellComplex.
 
         """
-        from topologicpy.Vertex import Vertex
-        from topologicpy.Face import Face
-        from topologicpy.Cell import Cell
-        from topologicpy.Topology import Topology
-        from topologicpy.Dictionary import Dictionary
-
-        from math import sqrt
-
-        def subdivide_tetrahedron(tetrahedron, depth):
-            """
-            Recursively subdivides a tetrahedron into smaller tetrahedra.
-
-            Parameters:
-                tetrahedron (Cell): The tetrahedron to subdivide.
-                depth (int): Recursion depth for the subdivision.
-
-            Returns:
-                list: List of smaller tetrahedral cells.
-            """
-            if depth == 0:
-                return [tetrahedron]
-
-            # Extract the vertices of the tetrahedron
-            vertices = Topology.Vertices(tetrahedron)
-            v0, v1, v2, v3 = vertices
-
-            # Calculate midpoints of the edges
-            m01 = Vertex.ByCoordinates((Vertex.X(v0) + Vertex.X(v1)) / 2, (Vertex.Y(v0) + Vertex.Y(v1)) / 2, (Vertex.Z(v0) + Vertex.Z(v1)) / 2)
-            m02 = Vertex.ByCoordinates((Vertex.X(v0) + Vertex.X(v2)) / 2, (Vertex.Y(v0) + Vertex.Y(v2)) / 2, (Vertex.Z(v0) + Vertex.Z(v2)) / 2)
-            m03 = Vertex.ByCoordinates((Vertex.X(v0) + Vertex.X(v3)) / 2, (Vertex.Y(v0) + Vertex.Y(v3)) / 2, (Vertex.Z(v0) + Vertex.Z(v3)) / 2)
-            m12 = Vertex.ByCoordinates((Vertex.X(v1) + Vertex.X(v2)) / 2, (Vertex.Y(v1) + Vertex.Y(v2)) / 2, (Vertex.Z(v1) + Vertex.Z(v2)) / 2)
-            m13 = Vertex.ByCoordinates((Vertex.X(v1) + Vertex.X(v3)) / 2, (Vertex.Y(v1) + Vertex.Y(v3)) / 2, (Vertex.Z(v1) + Vertex.Z(v3)) / 2)
-            m23 = Vertex.ByCoordinates((Vertex.X(v2) + Vertex.X(v3)) / 2, (Vertex.Y(v2) + Vertex.Y(v3)) / 2, (Vertex.Z(v2) + Vertex.Z(v3)) / 2)
-
-            # Create smaller tetrahedra
-            tetrahedra = [
-                Cell.ByFaces([
-                    Face.ByVertices([v0, m01, m02]),
-                    Face.ByVertices([v0, m01, m03]),
-                    Face.ByVertices([v0, m02, m03]),
-                    Face.ByVertices([m01, m02, m03])
-                ]),
-                Cell.ByFaces([
-                    Face.ByVertices([m01, v1, m12]),
-                    Face.ByVertices([m01, v1, m13]),
-                    Face.ByVertices([m01, m12, m13]),
-                    Face.ByVertices([v1, m12, m13])
-                ]),
-                Cell.ByFaces([
-                    Face.ByVertices([m02, m12, v2]),
-                    Face.ByVertices([m02, m12, m23]),
-                    Face.ByVertices([m02, v2, m23]),
-                    Face.ByVertices([m12, v2, m23])
-                ]),
-                Cell.ByFaces([
-                    Face.ByVertices([m03, m13, m23]),
-                    Face.ByVertices([m03, v3, m13]),
-                    Face.ByVertices([m03, v3, m23]),
-                    Face.ByVertices([m13, v3, m23])
-                ])
-            ]
-
-            # Recursively subdivide the smaller tetrahedra
-            result = []
-            for t in tetrahedra:
-                result.extend(subdivide_tetrahedron(t, depth - 1))
-            return result
-
-        if not Topology.IsInstance(origin, "vertex"):
-            origin = Vertex.Origin()
-        
-        # Define the four vertices of the tetrahedron
-        v0 = Vertex.ByCoordinates(0, 0, 0)
-        v1 = Vertex.ByCoordinates(length, 0, 0)
-        v2 = Vertex.ByCoordinates(length/2, sqrt(3)/2*length, 0)
-        v3 = Vertex.ByCoordinates(length/2, sqrt(3)/2*length/3, sqrt(2/3)*length)
-
-        # Create the initial tetrahedron
-        tetrahedron = Cell.ByFaces([
-            Face.ByVertices([v0, v1, v2]),
-            Face.ByVertices([v0, v1, v3]),
-            Face.ByVertices([v1, v2, v3]),
-            Face.ByVertices([v2, v0, v3]),
-        ])
-
-        bbox = Topology.BoundingBox(tetrahedron)
-        d = Topology.Dictionary(bbox)
-        bb_width = Dictionary.ValueAtKey(d, "width")
-        bb_length = Dictionary.ValueAtKey(d, "length")
-        bb_height = Dictionary.ValueAtKey(d, "height")
-        
-        centroid = Topology.Centroid(tetrahedron)
-        c_x, c_y, c_z = Vertex.Coordinates(centroid, mantissa=mantissa)
-
-        xOffset = 0
-        yOffset = 0
-        zOffset = 0
-
-        if placement.lower() == "center":
-            xOffset = -c_x
-            yOffset = -c_y
-            zOffset = -c_z
-        elif placement.lower() == "bottom":
-            xOffset = -c_x
-            yOffset = -c_y
-        elif placement.lower() == "upperleft":
-            zOffset = -bb_height
-        elif placement.lower() == "upperright":
-            xOffset = -bb_width
-            yOffset = -bb_length
-            zOffset = -bb_height
-        elif placement.lower() == "bottomright":
-            xOffset = -bb_width
-            yOffset = -bb_length
-        elif placement.lower() == "top":
-            xOffset = -c_x
-            yOffset = -c_y
-            zOffset = -bb_height
-        
-        tetrahedron = Topology.OrientAndPlace(tetrahedron,
-                                              originA=Vertex.ByCoordinates(xOffset, yOffset, zOffset),
-                                              originB=origin,
-                                              dirA=[0, 0, 1],
-                                              dirB=direction,
-                                              transferDictionaries = False,
-                                              tolerance = tolerance,
-                                              silent = silent)
-
-        depth = max(depth, 1)
-        # Recursively subdivide the tetrahedron
-        subdivided_tetrahedra = subdivide_tetrahedron(tetrahedron, depth)
-        # Create a cell complex from the subdivided tetrahedra
-        return CellComplex.ByCells([tetrahedron]+subdivided_tetrahedra)
-    
-    @staticmethod
-    def Torus(origin= None,
-              majorRadius: float = 0.5,
-              minorRadius: float = 0.125,
-              uSides: int = 16,
-              vSides: int = 8,
-              direction: list = [0, 0, 1],
-              placement: str = "center",
-              tolerance: float = 0.0001,
-              silent: bool = False):
-        """
-        Creates a torus.
-
-        Parameters
-        ----------
-        origin : topologic_core.Vertex , optional
-            The origin location of the torus. Default is None which results in the torus being placed at (0, 0, 0).
-        majorRadius : float , optional
-            The major radius of the torus. Default is 0.5.
-        minorRadius : float , optional
-            The minor radius of the torus. Default is 0.1.
-        uSides : int , optional
-            The number of sides along the longitude of the torus. Default is 16.
-        vSides : int , optional
-            The number of sides along the latitude of the torus. Default is 8.
-        direction : list , optional
-            The vector representing the up direction of the torus. Default is [0, 0, 1].
-        placement : str , optional
-            The description of the placement of the origin of the torus. This can be "bottom", "center", or "lowerleft". It is case insensitive. Default is "center".
-        tolerance : float , optional
-            The desired tolerance. Default is 0.0001.
-        silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
-
-        Returns
-        -------
-        topologic_core.Cell
-            The created torus.
-
-        """
-        
         from topologicpy.Vertex import Vertex
         from topologicpy.Wire import Wire
         from topologicpy.Face import Face
-        from topologicpy.Cell import Cell
         from topologicpy.Topology import Topology
-        
-        if not Topology.IsInstance(origin, "Vertex"):
-            origin = Vertex.ByCoordinates(0, 0, 0)
-        if not Topology.IsInstance(origin, "Vertex"):
-            print("Cell.Torus - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
-            return None
-        c = Wire.Circle(origin=Vertex.Origin(), radius=minorRadius, sides=vSides, fromAngle=0, toAngle=360, close=False, direction=[0, 1, 0], placement="center")
-        c = Face.ByWire(c)
-        c = Topology.Translate(c, abs(majorRadius-minorRadius), 0, 0)
-        torus = Topology.Spin(c, origin=Vertex.Origin(), triangulate=False, direction=[0, 0, 1], angle=360, sides=uSides, tolerance=tolerance)
-        if Topology.Type(torus) == Topology.TypeID("Shell"):
-            faces = Topology.Faces(torus)
-            torus = CellComplex.ByFaces(faces)
-        
-        xOffset = 0
-        yOffset = 0
-        zOffset = 0
-        if placement.lower() == "bottom":
-            zOffset = minorRadius
-        elif placement.lower() == "lowerleft":
-            xOffset = majorRadius
-            yOffset = majorRadius
-            zOffset = minorRadius
 
-        torus = Topology.Orient(torus, origin=Vertex.Origin(), dirA=[0, 0, 1], dirB=direction)
-        torus = Topology.Place(torus, originA=Vertex.Origin(), originB=origin)
-        torus = Topology.OrientAndPlace(torus,
-                                        originA=Vertex.ByCoordinates(xOffset, yOffset, zOffset),
-                                        originB=origin,
-                                        dirA=[0, 0, 1],
-                                        dirB=direction,
-                                        transferDictionaries = False,
-                                        tolerance = tolerance,
-                                        silent = silent)
-        return torus
+        # ------------------------------------------------------------------
+        # Validate common inputs.
+        # ------------------------------------------------------------------
+        try:
+            majorRadius = float(majorRadius)
+            minorRadius = float(minorRadius)
+            uSides = int(uSides)
+            tolerance = float(tolerance)
+        except Exception:
+            if not silent:
+                print("CellComplex.Torus - Error: Invalid numerical input. Returning None.")
+            return None
+
+        if majorRadius <= tolerance or minorRadius <= tolerance:
+            if not silent:
+                print("CellComplex.Torus - Error: majorRadius and minorRadius must be greater than tolerance. Returning None.")
+            return None
+
+        if minorRadius >= majorRadius:
+            if not silent:
+                print("CellComplex.Torus - Error: minorRadius must be smaller than majorRadius. Returning None.")
+            return None
+
+        if uSides < 3:
+            if not silent:
+                print("CellComplex.Torus - Error: uSides must be at least 3. Returning None.")
+            return None
+
+        if not isinstance(direction, (list, tuple)) or len(direction) != 3:
+            if not silent:
+                print("CellComplex.Torus - Error: The input direction parameter is not a valid 3D vector. Returning None.")
+            return None
+
+        try:
+            direction = [float(direction[0]), float(direction[1]), float(direction[2])]
+            if sum(value * value for value in direction) ** 0.5 <= tolerance:
+                if not silent:
+                    print("CellComplex.Torus - Error: The input direction vector has zero magnitude. Returning None.")
+                return None
+        except Exception:
+            if not silent:
+                print("CellComplex.Torus - Error: The input direction parameter is not a valid numerical vector. Returning None.")
+            return None
+
+        if not Topology.IsInstance(origin, "Vertex"):
+            origin = Vertex.Origin()
+
+        placement = str(placement).lower().strip()
+        if placement not in ["center", "bottom", "lowerleft"]:
+            if not silent:
+                print('CellComplex.Torus - Error: placement must be "center", "bottom", or "lowerleft". Returning None.')
+            return None
+
+        # ------------------------------------------------------------------
+        # Exact smooth toroidal CellComplex.
+        # ------------------------------------------------------------------
+        if not polyhedron:
+            try:
+                if Topology._IsTopologicCoreBackend():
+                    if not silent:
+                        print("CellComplex.Torus - Error: polyhedron=False requires the PythonOCC backend. Returning None.")
+                    return None
+            except Exception:
+                return None
+
+            method = getattr(Core.CellComplex, "ByTorus", None)
+            if not callable(method):
+                if not silent:
+                    print("CellComplex.Torus - Error: Native backend constructor is unavailable. Returning None.")
+                return None
+
+            try:
+                torus = method(
+                    majorRadius=majorRadius,
+                    minorRadius=minorRadius,
+                    uSides=uSides,
+                    tolerance=tolerance,
+                    silent=silent,
+                )
+            except Exception:
+                torus = None
+
+            if not Topology.IsInstance(torus, "CellComplex"):
+                if not silent:
+                    print("CellComplex.Torus - Error: Could not create the smooth toroidal CellComplex. Returning None.")
+                return None
+
+            source = [0.0, 0.0, 0.0]
+            if placement == "bottom":
+                source = [0.0, 0.0, -minorRadius]
+            elif placement == "lowerleft":
+                extent = majorRadius + minorRadius
+                source = [-extent, -extent, -minorRadius]
+
+            source_vertex = Vertex.ByCoordinates(source[0], source[1], source[2])
+
+            return Topology.OrientAndPlace(
+                torus,
+                originA=source_vertex,
+                originB=origin,
+                dirA=[0, 0, 1],
+                dirB=direction,
+                transferDictionaries=False,
+                tolerance=tolerance,
+                silent=silent,
+            )
+
+        # ------------------------------------------------------------------
+        # Historical faceted torus.
+        # ------------------------------------------------------------------
+        try:
+            vSides = int(vSides)
+        except Exception:
+            if not silent:
+                print("CellComplex.Torus - Error: vSides must be a valid integer. Returning None.")
+            return None
+
+        if vSides < 3:
+            if not silent:
+                print("CellComplex.Torus - Error: vSides must be at least 3. Returning None.")
+            return None
+
+        c = Wire.Circle(
+            origin=Vertex.Origin(),
+            radius=minorRadius,
+            sides=vSides,
+            fromAngle=0,
+            toAngle=360,
+            close=False,
+            direction=[0, 1, 0],
+            placement="center",
+            tolerance=tolerance,
+            silent=silent,
+        )
+
+        if not Topology.IsInstance(c, "Wire"):
+            if not silent:
+                print("CellComplex.Torus - Error: Could not create the torus section Wire. Returning None.")
+            return None
+
+        c = Face.ByWire(c, tolerance=tolerance, silent=silent)
+        if not Topology.IsInstance(c, "Face"):
+            if not silent:
+                print("CellComplex.Torus - Error: Could not create the torus section Face. Returning None.")
+            return None
+
+        # Place the tube cross-section centre on the standard torus major radius.
+        c = Topology.Translate(c, majorRadius, 0, 0)
+        torus = Topology.Spin(
+            c,
+            origin=Vertex.Origin(),
+            triangulate=False,
+            direction=[0, 0, 1],
+            angle=360,
+            sides=uSides,
+            tolerance=tolerance,
+            silent=silent,
+        )
+
+        if Topology.IsInstance(torus, "Shell"):
+            torus = CellComplex.ByFaces(
+                Topology.Faces(torus),
+                tolerance=tolerance,
+                silent=silent,
+            )
+
+        if not Topology.IsInstance(torus, "CellComplex"):
+            if not silent:
+                print("CellComplex.Torus - Error: Could not create the faceted toroidal CellComplex. Returning None.")
+            return None
+
+        source = [0.0, 0.0, 0.0]
+        if placement == "bottom":
+            source = [0.0, 0.0, -minorRadius]
+        elif placement == "lowerleft":
+            extent = majorRadius + minorRadius
+            source = [-extent, -extent, -minorRadius]
+
+        return Topology.OrientAndPlace(
+            torus,
+            originA=Vertex.ByCoordinates(source[0], source[1], source[2]),
+            originB=origin,
+            dirA=[0, 0, 1],
+            dirB=direction,
+            transferDictionaries=False,
+            tolerance=tolerance,
+            silent=silent,
+        )
 
     @staticmethod
-    def Vertices(cellComplex) -> list:
-        """
-        Returns the vertices of the input cellComplex.
-
-        Parameters
-        ----------
-        cellComplex : topologic_core.CellComplex
-            The input cellComplex.
-
-        Returns
-        -------
-        list
-            The list of vertices.
-
-        """
+    def Vertices(cellComplex, silent: bool = False) -> list:
+        """Returns the vertices of the input CellComplex."""
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(cellComplex, "CellComplex"):
-            print("CellComplex.Vertices - Error: The input cellcomplex parameter is not a valid topologic cellcomplex. Returning None.")
+            if not silent:
+                print("CellComplex.Vertices - Error: The input cellComplex parameter is not a valid CellComplex. Returning None.")
             return None
-        vertices = []
-        # _ = cellComplex.Vertices(None, vertices) # H to Core
+
+        result = []
         try:
-            _ = Core.InstanceCall(cellComplex, "Vertices", None, vertices)
+            Core.InstanceCall(cellComplex, "Vertices", None, result)
         except Exception:
-            vertices = None
-        return vertices
+            if not silent:
+                print("CellComplex.Vertices - Error: Could not retrieve the vertices. Returning None.")
+            return None
+        return result
 
     @staticmethod
-    def Volume(cellComplex, mantissa: int = 6) -> float:
+    def Volume(cellComplex, mantissa: int = 6, silent: bool = False) -> float:
         """
-        Returns the volume of the input cellComplex.
+        Returns the volume of the input CellComplex.
 
         Parameters
         ----------
         cellComplex : topologic_core.CellComplex
-            The input cellComplex.
-        manitssa: int , optional
+            The input CellComplex.
+        mantissa : int, optional
             The number of decimal places to round the result to. Default is 6.
+        silent : bool, optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
         float
-            The volume of the input cellComplex.
+            The volume of the input CellComplex.
 
         """
-        from topologicpy.Cell import Cell
         from topologicpy.Topology import Topology
-        
+
         if not Topology.IsInstance(cellComplex, "CellComplex"):
-            print("CellComplex.Volume - Error: The input cellcomplex parameter is not a valid topologic cellcomplex. Returning None.")
+            if not silent:
+                print(
+                    "CellComplex.Volume - Error: The input cellComplex parameter "
+                    "is not a valid CellComplex. Returning None."
+                )
             return None
+
+        try:
+            mantissa = int(mantissa)
+        except Exception:
+            if not silent:
+                print(
+                    "CellComplex.Volume - Error: The input mantissa parameter "
+                    "is not a valid integer. Returning None."
+                )
+            return None
+
         cells = CellComplex.Cells(cellComplex)
-        volume = 0
+
+        if not isinstance(cells, list) or len(cells) == 0:
+            if not silent:
+                print(
+                    "CellComplex.Volume - Error: Could not retrieve any Cells "
+                    "from the input CellComplex. Returning None."
+                )
+            return None
+
+        volume = 0.0
+
         for cell in cells:
-            volume = Cell.Volume(cell)
-            if not volume == None:
-                volume += Cell.Volume(cell)
+            try:
+                cell_volume = Core.CellUtility.Volume(cell)
+            except Exception:
+                if not silent:
+                    print(
+                        "CellComplex.Volume - Error: Could not compute the volume "
+                        "of one or more Cells. Returning None."
+                    )
+                return None
+
+            try:
+                cell_volume = float(cell_volume)
+            except Exception:
+                if not silent:
+                    print(
+                        "CellComplex.Volume - Error: The backend returned an invalid "
+                        "Cell volume. Returning None."
+                    )
+                return None
+
+            volume += cell_volume
+
         return round(volume, mantissa)
     
     @staticmethod
-    def Voronoi(vertices: list = None, cell= None, tolerance: float = 0.0001):
-        """
-        Partitions the input cell based on the Voronoi method. See https://en.wikipedia.org/wiki/Voronoi_diagram.
-
-        Parameters
-        ----------
-        vertices: list , optional 
-            The input list of vertices to use for voronoi partitioning. If set to None, the algorithm uses the vertices of the input cell parameter.
-            if both are set to none, a unit cube centered around the origin is used.
-        cell : topologic_core.Cell , optional
-            The input bounding cell. If set to None, an axes-aligned bounding cell is created from the list of vertices. Default is None.
-        tolerance : float , optional
-            the desired tolerance. Default is 0.0001.
-        
-
-        Returns
-        -------
-        topologic_core.CellComplex
-            The created voronoi cellComplex.
-
-        """
+    def Voronoi(vertices: list = None, cell=None, tolerance: float = 0.0001, silent: bool = False):
+        """Partitions a Cell using a 3D Voronoi diagram of the input Vertices."""
         from topologicpy.Vertex import Vertex
         from topologicpy.Face import Face
         from topologicpy.Cell import Cell
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
-        from scipy.spatial import Voronoi as SCIVoronoi
-        import numpy as np
 
-        def fracture_with_voronoi(points):
-            # Compute Voronoi tessellation
-            vor = SCIVoronoi(points)
-            verts = []
-            faces = []
-            for v in vor.vertices:
-                verts.append(Vertex.ByCoordinates(list(v)))
-            for region in vor.ridge_vertices:
-                temp_list = []
-                if -1 not in region and len(region) > 0:
-                    for item in region:
-                        temp_list.append(verts[item])
-                    f = Face.ByVertices(temp_list)
-                    if Topology.IsInstance(f, "Face"):
-                        faces.append(f)
-            if len(faces) < 1:
-                return None
-            return Cluster.ByTopologies(faces)
-        
-        if cell == None:
-            if not isinstance(vertices, list):
-                cell = Cell.Prism(uSides=2, vSides=2, wSides=2)
-                vertices = Topology.Vertices(cell)
-                vertices.append(Vertex.Origin())
-            else:
-                vertices = [v for v in vertices if Topology.IsInstance(v, "Vertex")]
-                if len(vertices) < 1:
-                    print("CellComplex.Voronoi - Error: The input vertices parameter does not contain any valid vertices. Returning None.")
+        try:
+            import numpy as np
+            from scipy.spatial import Voronoi as SCIVoronoi
+            from scipy.spatial import QhullError
+        except Exception:
+            if not silent:
+                print("CellComplex.Voronoi - Error: scipy and numpy are required. Returning None.")
+            return None
+
+        try:
+            tolerance = abs(float(tolerance))
+        except Exception:
+            return None
+        if tolerance <= 0.0:
+            return None
+
+        if not Topology.IsInstance(cell, "Cell"):
+            if isinstance(vertices, list):
+                seed_vertices = [vertex for vertex in vertices if Topology.IsInstance(vertex, "Vertex")]
+                if len(seed_vertices) == 0:
+                    if not silent:
+                        print("CellComplex.Voronoi - Error: The input vertices parameter does not contain any valid Vertices. Returning None.")
                     return None
-                cell = Topology.BoundingBox(Cluster.ByTopologies(vertices))
-        if not isinstance(vertices, list):
-            if not Topology.IsInstance(cell, "Cell"):
-                cell = Cell.Prism()
-                vertices = Topology.Vertices(cell)
+                try:
+                    cell = Topology.BoundingBox(Cluster.ByTopologies(seed_vertices))
+                except Exception:
+                    cell = None
             else:
-                vertices = Topology.Vertices(cell)
-        else:
-            vertices += Topology.Vertices(cell)
-        vertices = [v for v in vertices if (Vertex.IsInternal(v, cell) or not Vertex.Index(v, Topology.Vertices(cell), tolerance=tolerance) == None)]
-        if len(vertices) < 1:
-            print("CellComplex.Voronoi - Error: The input vertices parameter does not contain any vertices that are inside the input cell parameter. Returning None.")
+                cell = Cell.Prism(uSides=1, vSides=1, wSides=1, silent=True)
+
+        if not Topology.IsInstance(cell, "Cell"):
+            if not silent:
+                print("CellComplex.Voronoi - Error: Could not determine a valid bounding Cell. Returning None.")
             return None
-        voronoi_points = np.array([Vertex.Coordinates(v) for v in vertices])
-        cluster = fracture_with_voronoi(voronoi_points)
-        if cluster == None:
-            print("CellComplex.Voronoi - Error: the operation failed. Returning None.")
+
+        if not isinstance(vertices, list):
+            vertices = []
+        vertices = [vertex for vertex in vertices if Topology.IsInstance(vertex, "Vertex")]
+
+        boundary_vertices = Topology.Vertices(cell)
+        if isinstance(boundary_vertices, list):
+            vertices = vertices + boundary_vertices
+
+        # Keep only points inside or on the bounding Cell and remove coincident
+        # points before calling Qhull.
+        accepted = []
+        points = []
+        keys = set()
+        quant = max(tolerance, 1e-12)
+        cell_vertices = Topology.Vertices(cell)
+
+        for vertex in vertices:
+            try:
+                on_boundary = Vertex.Index(vertex, cell_vertices, tolerance=tolerance) is not None
+                inside = Vertex.IsInternal(vertex, cell, tolerance=tolerance, silent=True)
+            except TypeError:
+                inside = Vertex.IsInternal(vertex, cell, tolerance=tolerance)
+                on_boundary = Vertex.Index(vertex, cell_vertices, tolerance=tolerance) is not None
+            except Exception:
+                continue
+            if not inside and not on_boundary:
+                continue
+
+            coords = Vertex.Coordinates(vertex, mantissa=15)
+            if not isinstance(coords, list) or len(coords) < 3:
+                continue
+            point = [float(coords[0]), float(coords[1]), float(coords[2])]
+            key = tuple(round(value / quant) for value in point)
+            if key in keys:
+                continue
+            keys.add(key)
+            accepted.append(vertex)
+            points.append(point)
+
+        if len(points) < 5:
+            if not silent:
+                print("CellComplex.Voronoi - Error: At least five unique 3D points inside/on the bounding Cell are required. Returning None.")
             return None
-        cellComplex = Topology.Slice(cell, cluster)
-        if not Topology.IsInstance(cellComplex, "CellComplex"):
-            print("CellComplex.Voronoi - Error: the operation failed. Returning None.")
+
+        point_array = np.asarray(points, dtype=float)
+        if np.linalg.matrix_rank(point_array - point_array.mean(axis=0)) < 3:
+            if not silent:
+                print("CellComplex.Voronoi - Error: The input points do not span 3D space. Returning None.")
             return None
-        return cellComplex
+
+        try:
+            voronoi = SCIVoronoi(point_array)
+        except (QhullError, ValueError, RuntimeError):
+            if not silent:
+                print("CellComplex.Voronoi - Error: SciPy could not compute the Voronoi diagram. Returning None.")
+            return None
+
+        voronoi_vertices = [Vertex.ByCoordinates(list(point)) for point in voronoi.vertices]
+        ridge_faces = []
+        for region in voronoi.ridge_vertices:
+            if -1 in region or len(region) < 3:
+                continue
+            try:
+                ridge_vertices = [voronoi_vertices[index] for index in region]
+            except Exception:
+                continue
+            face = Face.ByVertices(ridge_vertices, tolerance=tolerance, silent=True)
+            if Topology.IsInstance(face, "Face"):
+                ridge_faces.append(face)
+
+        if len(ridge_faces) == 0:
+            if not silent:
+                print("CellComplex.Voronoi - Error: The Voronoi diagram produced no finite ridge Faces. Returning None.")
+            return None
+
+        cutters = Cluster.ByTopologies(ridge_faces)
+        try:
+            result = Topology.Slice(cell, cutters, tolerance=tolerance, silent=True)
+        except Exception:
+            result = None
+
+        if not Topology.IsInstance(result, "CellComplex"):
+            if not silent:
+                print("CellComplex.Voronoi - Error: Could not partition the bounding Cell. Returning None.")
+            return None
+        return result
     
     @staticmethod
-    def Wires(cellComplex) -> list:
-        """
-        Returns the wires of the input cellComplex.
-
-        Parameters
-        ----------
-        cellComplex : topologic_core.CellComplex
-            The input cellComplex.
-
-        Returns
-        -------
-        list
-            The list of wires.
-
-        """
+    def Wires(cellComplex, silent: bool = False) -> list:
+        """Returns the wires of the input CellComplex."""
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(cellComplex, "CellComplex"):
-            print("CellComplex.Wires - Error: The input cellcomplex parameter is not a valid topologic cellcomplex. Returning None.")
+            if not silent:
+                print("CellComplex.Wires - Error: The input cellComplex parameter is not a valid CellComplex. Returning None.")
             return None
-        wires = []
-        # _ = cellComplex.Wires(None, wires) # H to Core
+
+        result = []
         try:
-            _ = Core.InstanceCall(cellComplex, "Wires", None, wires)
+            Core.InstanceCall(cellComplex, "Wires", None, result)
         except Exception:
-            wires = None
-        return wires
+            if not silent:
+                print("CellComplex.Wires - Error: Could not retrieve the wires. Returning None.")
+            return None
+        return result
 

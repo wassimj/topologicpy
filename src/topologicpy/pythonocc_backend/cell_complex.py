@@ -1,14 +1,19 @@
 from __future__ import annotations
 
+import math
+
 from dataclasses import dataclass, field
 from .topology import Topology, _downward_wrappers
 from .cell import Cell
+from .wire import Wire
 from .cluster import Cluster
-from .helpers import unique_by_uuid
 
 try:
-    from OCC.Core.BOPAlgo import BOPAlgo_CellsBuilder, BOPAlgo_MakerVolume
+    from OCC.Core.BOPAlgo import BOPAlgo_MakerVolume
     from OCC.Core.BRepAlgoAPI import BRepAlgoAPI_Fuse
+    from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_Transform
+    from OCC.Core.BRepPrimAPI import BRepPrimAPI_MakeTorus
+    from OCC.Core.gp import gp_Ax1, gp_Dir, gp_Pnt, gp_Trsf
     from OCC.Core.TopAbs import (
         TopAbs_VERTEX,
         TopAbs_EDGE,
@@ -22,9 +27,14 @@ try:
     from OCC.Core.TopoDS import TopoDS_CompSolid, topods
 
 except Exception:  # pragma: no cover - allows import without PythonOCC
-    BOPAlgo_CellsBuilder = None
     BOPAlgo_MakerVolume = None
     BRepAlgoAPI_Fuse = None
+    BRepBuilderAPI_Transform = None
+    BRepPrimAPI_MakeTorus = None
+    gp_Ax1 = None
+    gp_Dir = None
+    gp_Pnt = None
+    gp_Trsf = None
 
     TopAbs_VERTEX = None
     TopAbs_EDGE = None
@@ -52,7 +62,7 @@ def _iter_subshapes(shape, shape_type):
 
 def _as_compsolid(shape):
     """
-    BOPAlgo_CellsBuilder.MakeContainers() may yield a plain COMPOUND
+    OCCT volume builders may yield a plain COMPOUND
     containing the resulting Solids rather than a COMPSOLID, even when every
     Solid shares faces with its neighbours. topologic_core's CellComplex is
     specifically a COMPSOLID, so rebuild one explicitly from the Solid
@@ -108,7 +118,7 @@ def _is_null_shape(shape):
 def _drop_open_shells(shape):
     """
     Rebuild a single SOLID dropping open (zero-enclosed-volume) shells: closed
-    lofts (e.g. CellComplex.Torus) can carry a degenerate open shell that
+    lofts can carry a degenerate open shell that
     inflates the Shell count (2 vs core's 1). A genuine cavity shell encloses
     non-zero volume and is kept; compsolids are untouched.
     """
@@ -173,7 +183,6 @@ class CellComplex(Topology):
         """
         True non-manifold CellComplex construction: BOPAlgo_MakerVolume partitions the
         Face/Shell/Solid boundary soup into every resulting Solid with shared internal faces
-        (BOPAlgo_CellsBuilder wrong here: fed pure Faces it builds 2D face-cells).
         """
         shapes = [s for s in (shapes or []) if not _is_null_shape(s)]
         if not shapes or BOPAlgo_MakerVolume is None:
@@ -208,7 +217,7 @@ class CellComplex(Topology):
                 result_shape = compsolid
         else:
             # A single-solid loft/partition can carry an open, zero-volume
-            # shell (e.g. CellComplex.Torus' made-by-Spin solid). topologic_core
+            # shell. topologic_core
             # builds a single clean shell; our BOPAlgo_MakerVolume emits a
             # spurious extra shell on such closed lofts, inflating the Shell
             # count (2 vs 1). Drop zero-volume shells -- a genuine void
@@ -226,35 +235,192 @@ class CellComplex(Topology):
 
     @staticmethod
     def ByCells(cells, tolerance=0.0001):
-        cells = [c for c in (cells or []) if isinstance(c, Cell)]
-        shapes = [c.shape for c in cells if not _is_null_shape(getattr(c, "shape", None))]
-        if len(shapes) < 1:
+        cells = [cell for cell in (cells or []) if isinstance(cell, Cell)]
+        if len(cells) < 1:
             return None
+
+        try:
+            tolerance = abs(float(tolerance))
+        except Exception:
+            return None
+        if tolerance <= 0.0:
+            return None
+
+        shapes = []
+        for cell in cells:
+            shape = getattr(cell, "shape", None)
+            if _is_null_shape(shape):
+                return None
+            shapes.append(shape)
+
+        # A single Cell is still a valid single-cell CellComplex wrapper.
         if len(shapes) == 1:
-            return CellComplex(shape=shapes[0], cells=cells)
+            return CellComplex(shape=shapes[0], cells=[cells[0]])
+
         result = CellComplex._build_from_shapes(shapes, tolerance)
-        if result is None:
-            return CellComplex(shape=None, cells=cells)
+        if not isinstance(result, CellComplex):
+            # Do not return a shapeless pseudo-CellComplex. A failed OCCT
+            # construction must remain visible to the algorithm layer.
+            return None
         return result
 
     @staticmethod
     def ByFaces(faces, tolerance=0.0001, copyAttributes=False):
         from .face import Face
-        faces = [f for f in (faces or []) if isinstance(f, Face)]
-        shapes = [f.shape for f in faces if not _is_null_shape(getattr(f, "shape", None))]
-        if len(shapes) < 1:
+
+        faces = [face for face in (faces or []) if isinstance(face, Face)]
+        if len(faces) < 1:
             return None
+
+        try:
+            tolerance = abs(float(tolerance))
+        except Exception:
+            return None
+        if tolerance <= 0.0:
+            return None
+
+        shapes = []
+        for face in faces:
+            shape = getattr(face, "shape", None)
+            if _is_null_shape(shape):
+                return None
+            shapes.append(shape)
+
         result = CellComplex._build_from_shapes(shapes, tolerance)
-        if result is not None:
+        if isinstance(result, CellComplex):
             return result
-        # BOPAlgo_MakerVolume found no fallback volume (e.g. it errored on a
-        # face soup that a simpler single-cell sewing pass would tolerate).
-        # Fall back to the single-cell path, same as ByCells does when its
-        # own _build_from_shapes call fails.
+
+        # A closed Face set may describe exactly one Cell. Preserve its exact
+        # Faces/curves and wrap that Cell as a single-cell CellComplex.
         cell = Cell.ByFaces(faces, tolerance=tolerance)
-        if cell is None:
+        if not isinstance(cell, Cell):
             return None
-        return CellComplex.ByCells([cell], tolerance)
+        return CellComplex.ByCells([cell], tolerance=tolerance)
+
+    @staticmethod
+    def ByWires(wires, tolerance: float = 0.0001):
+        """
+        Create a curve-preserving CellComplex by lofting between consecutive
+        closed section Wires.
+
+        Each consecutive pair of Wires creates one native OCCT Cell using
+        Cell.ByWires. The resulting Cells are then assembled into a true
+        non-manifold CellComplex so intermediate sections become shared Faces.
+
+        Parameters
+        ----------
+        wires : list
+            Ordered closed section Wires. At least two valid Wires are required.
+            Corresponding Wires must contain the same number of Edges.
+        tolerance : float , optional
+            Geometric tolerance. Default is 0.0001.
+
+        Returns
+        -------
+        CellComplex
+            The resulting curve-preserving CellComplex, or None on failure.
+        """
+        if not isinstance(wires, (list, tuple)):
+            return None
+
+        wire_list = [wire for wire in wires if isinstance(wire, Wire)]
+        if len(wire_list) < 2:
+            return None
+
+        try:
+            tolerance = abs(float(tolerance))
+        except Exception:
+            return None
+
+        if tolerance <= 0.0:
+            return None
+
+        cells = []
+
+        for i in range(len(wire_list) - 1):
+            cell = Cell.ByWires(
+                [wire_list[i], wire_list[i + 1]],
+                tolerance=tolerance
+            )
+            if not isinstance(cell, Cell):
+                return None
+            cells.append(cell)
+
+        return CellComplex.ByCells(cells, tolerance=tolerance)
+
+    @staticmethod
+    def ByTorus(
+        majorRadius=0.5,
+        minorRadius=0.125,
+        uSides=16,
+        tolerance=0.0001,
+        silent=False,
+    ):
+        """Build an exact toroidal CellComplex subdivided around its major circle."""
+        try:
+            majorRadius = float(majorRadius)
+            minorRadius = float(minorRadius)
+            uSides = int(uSides)
+            tolerance = float(tolerance)
+        except Exception:
+            return None
+
+        if majorRadius <= tolerance or minorRadius <= tolerance:
+            return None
+        if minorRadius >= majorRadius or uSides < 3:
+            return None
+        if (
+            BRepPrimAPI_MakeTorus is None
+            or BRepBuilderAPI_Transform is None
+            or gp_Ax1 is None
+            or gp_Pnt is None
+            or gp_Dir is None
+            or gp_Trsf is None
+        ):
+            return None
+
+        step = 2.0 * math.pi / float(uSides)
+
+        try:
+            # OCCT's torus u-parameter is rotation around +Z. Supplying the
+            # angular overload creates one exact toroidal sector bounded by
+            # planar circular end Faces.
+            maker = BRepPrimAPI_MakeTorus(majorRadius, minorRadius, step)
+            sector_shape = maker.Shape()
+        except Exception:
+            return None
+
+        if _is_null_shape(sector_shape):
+            return None
+
+        axis = gp_Ax1(gp_Pnt(0.0, 0.0, 0.0), gp_Dir(0.0, 0.0, 1.0))
+        cells = []
+
+        for i in range(uSides):
+            try:
+                if i == 0:
+                    shape = sector_shape
+                else:
+                    trsf = gp_Trsf()
+                    trsf.SetRotation(axis, step * float(i))
+                    shape = BRepBuilderAPI_Transform(sector_shape, trsf, True).Shape()
+            except Exception:
+                return None
+
+            if _is_null_shape(shape):
+                return None
+
+            cell = Topology.ByOcctShape(shape)
+            if not isinstance(cell, Cell):
+                return None
+
+            cells.append(cell)
+
+        result = CellComplex.ByCells(cells, tolerance=tolerance)
+        if not isinstance(result, CellComplex):
+            return None
+
+        return result
 
     def Cells(self, hostTopology=None, cells=None):
         result = []
