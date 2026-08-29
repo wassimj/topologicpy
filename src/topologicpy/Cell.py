@@ -5508,30 +5508,50 @@ class Cell():
                         silent = silent)
     
     @staticmethod
-    def Sphere(origin= None, radius: float = 0.5, uSides: int = 16, vSides: int = 8, direction: list = [0, 0, 1],
-                   placement: str = "center", tolerance: float = 0.0001, silent: bool = False, polyhedron: bool = True):
+    def Sphere(
+        origin=None,
+        radius: float = 0.5,
+        uSides: int = 16,
+        vSides: int = 8,
+        direction: list = [0, 0, 1],
+        placement: str = "center",
+        tolerance: float = 0.0001,
+        silent: bool = False,
+        polyhedron: bool = True
+    ):
         """
         Creates a sphere.
 
         Parameters
         ----------
-        origin : topologic_core.Vertex , optional
-            The origin location of the sphere. Default is None which results in the sphere being placed at (0, 0, 0).
-        radius : float , optional
+        origin : topologic_core.Vertex, optional
+            The origin location of the sphere. Default is None which results in
+            the sphere being placed at (0, 0, 0).
+        radius : float, optional
             The radius of the sphere. Default is 0.5.
-        uSides : int , optional
-            The number of sides along the longitude of the sphere. Default is 16.
-        vSides : int , optional
-            The number of sides along the latitude of the sphere. Default is 8.
-        direction : list , optional
-            The vector representing the up direction of the sphere. Default is [0, 0, 1].
-        placement : str , optional
-            The description of the placement of the origin of the sphere. This can be "bottom", "center", or "lowerleft". It is case insensitive. Default is "center".
-        tolerance : float , optional
+        uSides : int, optional
+            The number of sides along the longitude of the sphere when
+            polyhedron is True. This parameter is ignored when polyhedron is
+            False. Default is 16.
+        vSides : int, optional
+            The number of sides along the latitude of the sphere when
+            polyhedron is True. This parameter is ignored when polyhedron is
+            False. Default is 8.
+        direction : list, optional
+            The vector representing the up direction of the sphere.
+            Default is [0, 0, 1].
+        placement : str, optional
+            The placement of the origin. This can be "bottom", "center",
+            or "lowerleft". It is case insensitive. Default is "center".
+        tolerance : float, optional
             The desired tolerance. Default is 0.0001.
         silent : bool, optional
-            If set to True, suppresses warning and error messages. Default is False.
-        
+            If set to True, error and warning messages are suppressed.
+            Default is False.
+        polyhedron : bool, optional
+            If True, creates a faceted approximation of a sphere. If False,
+            creates an exact smooth sphere using the native PythonOCC backend.
+            Default is True.
 
         Returns
         -------
@@ -5539,106 +5559,198 @@ class Cell():
             The created sphere.
 
         """
-        if not polyhedron:
-            from topologicpy.Vertex import Vertex
-            from topologicpy.Topology import Topology
-            if not Topology.IsInstance(origin,"Vertex"): origin=Vertex.Origin()
-            sphere=Cell._NativeCell("BySphere",radius=radius,tolerance=tolerance,silent=silent)
-            if not Topology.IsInstance(sphere,"Cell"): return None
-            p=str(placement).lower(); source=[0,0,0]
-            if p=="bottom": source=[0,0,-radius]
-            elif p=="lowerleft": source=[-radius,-radius,-radius]
-            return Cell._PlaceNativeCell(sphere,origin,direction,source,tolerance,silent)
-    
         import math
+
         from topologicpy.Vertex import Vertex
         from topologicpy.Face import Face
-        from topologicpy.Cell import Cell
         from topologicpy.Topology import Topology
 
-        # Validate inputs
-        if radius <= 0 or uSides < 3 or vSides < 2:
+        # Validate radius.
+        try:
+            radius = float(radius)
+        except Exception:
             if not silent:
-                print("Cell.Sphere - Error: radius must be > 0, uSides >= 3, vSides >= 2. Returning None.")
+                print("Cell.Sphere - Error: The input radius parameter is not a valid number. Returning None.")
             return None
 
-        # Center
-        if origin is None:
-            origin = Vertex.ByCoordinates(0, 0, 0)
+        if radius <= 0:
+            if not silent:
+                print("Cell.Sphere - Error: The radius must be greater than zero. Returning None.")
+            return None
+
+        # Validate/default origin.
+        if not Topology.IsInstance(origin, "Vertex"):
+            origin = Vertex.Origin()
+
+        # ----------------------------------------------------------------------
+        # Exact smooth sphere.
+        # ----------------------------------------------------------------------
+        if not polyhedron:
+            sphere = Cell._NativeCell(
+                "BySphere",
+                radius=radius,
+                tolerance=tolerance,
+                silent=silent
+            )
+
+            if not Topology.IsInstance(sphere, "Cell"):
+                return None
+
+            p = str(placement).lower()
+            source = [0, 0, 0]
+
+            if p == "bottom":
+                source = [0, 0, -radius]
+            elif p == "lowerleft":
+                source = [-radius, -radius, -radius]
+
+            return Cell._PlaceNativeCell(
+                sphere,
+                origin,
+                direction,
+                source,
+                tolerance,
+                silent
+            )
+
+        # ----------------------------------------------------------------------
+        # Existing faceted sphere.
+        # ----------------------------------------------------------------------
+        if uSides < 3 or vSides < 2:
+            if not silent:
+                print(
+                    "Cell.Sphere - Error: uSides must be at least 3 and "
+                    "vSides must be at least 2. Returning None."
+                )
+            return None
+
         ox = Vertex.X(origin)
         oy = Vertex.Y(origin)
         oz = Vertex.Z(origin)
 
-        # Poles
+        # Poles.
         top_pole = Vertex.ByCoordinates(ox, oy, oz + radius)
         bottom_pole = Vertex.ByCoordinates(ox, oy, oz - radius)
 
-        # Latitude rings (exclude poles)
-        rings = []  # list of list[Vertex]
+        # Latitude rings, excluding the poles.
+        rings = []
+
         for vi in range(1, vSides):
-            phi = math.pi * vi / vSides  # 0..pi
+            phi = math.pi * vi / vSides
             sin_phi = math.sin(phi)
             cos_phi = math.cos(phi)
+
             ring = []
+
             for ui in range(uSides):
                 theta = 2.0 * math.pi * ui / uSides
+
                 x = ox + radius * sin_phi * math.cos(theta)
                 y = oy + radius * sin_phi * math.sin(theta)
                 z = oz + radius * cos_phi
+
                 ring.append(Vertex.ByCoordinates(x, y, z))
+
             rings.append(ring)
 
         faces = []
 
-        # Top cap: triangles from top pole to first ring
+        # Top cap.
         first_ring = rings[0]
+
         for u in range(uSides):
             v1 = first_ring[u]
             v2 = first_ring[(u + 1) % uSides]
-            f = Face.ByVertices([top_pole, v1, v2], tolerance=tolerance)
-            if f:
-                faces.append(f)
 
-        # Middle bands: split quads into two triangles
+            face = Face.ByVertices(
+                [top_pole, v1, v2],
+                tolerance=tolerance
+            )
+
+            if face:
+                faces.append(face)
+
+        # Middle bands.
         for i in range(len(rings) - 1):
-            curr = rings[i]
-            nxt = rings[i + 1]
-            for u in range(uSides):
-                a = curr[u]
-                b = nxt[u]
-                c = nxt[(u + 1) % uSides]
-                d = curr[(u + 1) % uSides]
-                f1 = Face.ByVertices([a, b, c], tolerance=tolerance)
-                if f1:
-                    faces.append(f1)
-                f2 = Face.ByVertices([a, c, d], tolerance=tolerance)
-                if f2:
-                    faces.append(f2)
+            current_ring = rings[i]
+            next_ring = rings[i + 1]
 
-        # Bottom cap: triangles from last ring to bottom pole
+            for u in range(uSides):
+                a = current_ring[u]
+                b = next_ring[u]
+                c = next_ring[(u + 1) % uSides]
+                d = current_ring[(u + 1) % uSides]
+
+                face = Face.ByVertices(
+                    [a, b, c],
+                    tolerance=tolerance
+                )
+
+                if face:
+                    faces.append(face)
+
+                face = Face.ByVertices(
+                    [a, c, d],
+                    tolerance=tolerance
+                )
+
+                if face:
+                    faces.append(face)
+
+        # Bottom cap.
         last_ring = rings[-1]
+
         for u in range(uSides):
             v1 = last_ring[(u + 1) % uSides]
             v2 = last_ring[u]
-            f = Face.ByVertices([bottom_pole, v1, v2], tolerance=tolerance)
-            if f:
-                faces.append(f)
 
-        # Sew faces into a shell
-        sphere = None
+            face = Face.ByVertices(
+                [bottom_pole, v1, v2],
+                tolerance=tolerance
+            )
+
+            if face:
+                faces.append(face)
+
         try:
-            sphere = Cell.ByFaces(faces, tolerance=tolerance)
+            sphere = Cell.ByFaces(
+                faces,
+                tolerance=tolerance
+            )
         except Exception:
+            sphere = None
+
+        if not Topology.IsInstance(sphere, "Cell"):
             if not silent:
-                print("Cell.Sphere - Error: could not create a sphere. Returning None.")
+                print("Cell.Sphere - Error: Could not create the sphere. Returning None.")
             return None
-        if placement.lower() == "bottom":
-            sphere = Topology.Translate(sphere, 0, 0, radius)
-        elif placement.lower() == "lowerleft":
-            sphere = Topology.Translate(sphere, radius, radius, radius)
-        
-        if not direction == [0,0,1]:
-            sphere = Topology.Orient(sphere, origin=origin, dirA=[0, 0, 1], dirB=direction)
+
+        placement = str(placement).lower()
+
+        if placement == "bottom":
+            sphere = Topology.Translate(
+                sphere,
+                0,
+                0,
+                radius
+            )
+
+        elif placement == "lowerleft":
+            sphere = Topology.Translate(
+                sphere,
+                radius,
+                radius,
+                radius
+            )
+
+        if direction != [0, 0, 1]:
+            sphere = Topology.Orient(
+                sphere,
+                origin=origin,
+                dirA=[0, 0, 1],
+                dirB=direction
+            )
+
         return sphere
     
     @staticmethod
@@ -5836,291 +5948,277 @@ class Cell():
             return CellComplex.ExternalBoundary(CellComplex.ByCells([tetrahedron]+subdivided_tetrahedra))
 
     @staticmethod
-    def Torus(origin=None,
-              majorRadius: float = 0.5,
-              minorRadius: float = 0.125,
-              uSides: int = 16,
-              vSides: int = 8,
-              direction: list = [0, 0, 1],
-              placement: str = "center",
-              tolerance: float = 0.0001,
-              silent: bool = False,
-              polyhedron: bool = True):
+    def Torus(
+        origin=None,
+        majorRadius: float = 0.5,
+        minorRadius: float = 0.125,
+        uSides: int = 16,
+        vSides: int = 8,
+        direction: list = [0, 0, 1],
+        placement: str = "center",
+        tolerance: float = 0.0001,
+        silent: bool = False,
+        polyhedron: bool = True
+    ):
         """
         Creates a torus.
 
         Parameters
         ----------
-        origin : topologic_core.Vertex , optional
-            The origin location of the torus. Default is None which results in the torus being placed at (0, 0, 0).
-        majorRadius : float , optional
+        origin : topologic_core.Vertex, optional
+            The origin location of the torus. Default is None which results in
+            the torus being placed at (0, 0, 0).
+        majorRadius : float, optional
             The major radius of the torus. Default is 0.5.
-        minorRadius : float , optional
+        minorRadius : float, optional
             The minor radius of the torus. Default is 0.125.
-        uSides : int , optional
-            The number of sides along the longitude of the torus (around the hole). Default is 16.
-        vSides : int , optional
-            The number of sides along the latitude of the torus (tube direction). Default is 8.
-        direction : list , optional
-            The vector representing the up direction of the torus. Default is [0, 0, 1].
-        placement : str , optional
-            Placement of the input origin relative to the torus. One of:
-            - "center": origin is at the torus' geometric center (default)
-            - "bottom": origin lies on the lowest point along the up direction
-            - "lowerleft": origin is at x/y lower-left and bottom in z of the torus' local bbox
-            Comparison is case-insensitive.
-        tolerance : float , optional
+        uSides : int, optional
+            The number of sides around the major circumference when polyhedron
+            is True. This parameter is ignored when polyhedron is False.
+            Default is 16.
+        vSides : int, optional
+            The number of sides around the tube circumference when polyhedron
+            is True. This parameter is ignored when polyhedron is False.
+            Default is 8.
+        direction : list, optional
+            The vector representing the up direction of the torus.
+            Default is [0, 0, 1].
+        placement : str, optional
+            The placement of the input origin relative to the torus. This can
+            be "center", "bottom", or "lowerleft". It is case insensitive.
+            Default is "center".
+        tolerance : float, optional
             The desired tolerance. Default is 0.0001.
         silent : bool, optional
-            If set to True, suppresses warning and error messages. Default is False.
+            If set to True, error and warning messages are suppressed.
+            Default is False.
+        polyhedron : bool, optional
+            If True, creates a faceted torus. If False, creates an exact smooth
+            torus using the native PythonOCC backend. Default is True.
 
         Returns
         -------
         topologic_core.Cell
             The created torus.
+
         """
-        if not polyhedron:
-            from topologicpy.Vertex import Vertex
-            from topologicpy.Topology import Topology
-            if not Topology.IsInstance(origin,"Vertex"): origin=Vertex.Origin()
-            torus=Cell._NativeCell("ByTorus",majorRadius=majorRadius,minorRadius=minorRadius,tolerance=tolerance,silent=silent)
-            if not Topology.IsInstance(torus,"Cell"): return None
-            p=str(placement).lower(); source=[0,0,0]
-            if p=="bottom": source=[0,0,-minorRadius]
-            elif p=="lowerleft": source=[-(majorRadius+minorRadius),-(majorRadius+minorRadius),-minorRadius]
-            return Cell._PlaceNativeCell(torus,origin,direction,source,tolerance,silent)
-        # --- Imports kept inside to avoid cyclic dependencies in TopologicPy ---
-        from math import cos, sin, pi, sqrt
+        import math
+
         from topologicpy.Vertex import Vertex
         from topologicpy.Face import Face
-        from topologicpy.Shell import Shell
-        from topologicpy.Cell import Cell
         from topologicpy.Topology import Topology
-        
 
-        # --- Validation ---
+        # ----------------------------------------------------------------------
+        # Validate numeric inputs.
+        # ----------------------------------------------------------------------
+        try:
+            majorRadius = float(majorRadius)
+            minorRadius = float(minorRadius)
+        except Exception:
+            if not silent:
+                print(
+                    "Cell.Torus - Error: The majorRadius and minorRadius "
+                    "parameters must be valid numbers. Returning None."
+                )
+            return None
+
         if majorRadius <= 0 or minorRadius <= 0:
-            raise ValueError("majorRadius and minorRadius must be > 0.")
-        if uSides < 3 or vSides < 3:
-            raise ValueError("uSides and vSides must be >= 3.")
+            if not silent:
+                print(
+                    "Cell.Torus - Error: The majorRadius and minorRadius "
+                    "parameters must be greater than zero. Returning None."
+                )
+            return None
+
         if minorRadius >= majorRadius:
-            # Geometrically valid but unusual; keep strict to avoid self-intersections at low resolution
-            raise ValueError("minorRadius must be smaller than majorRadius for a clean torus.")
+            if not silent:
+                print(
+                    "Cell.Torus - Error: The minorRadius parameter must be "
+                    "smaller than the majorRadius parameter. Returning None."
+                )
+            return None
 
-        # --- Helpers ---
-        def _norm(v):
-            x, y, z = v
-            m = sqrt(x*x + y*y + z*z)
-            if m == 0:
-                return (0.0, 0.0, 1.0)
-            return (x/m, y/m, z/m)
+        if not Topology.IsInstance(origin, "Vertex"):
+            origin = Vertex.Origin()
 
-        def _dot(a, b):
-            return a[0]*b[0] + a[1]*b[1] + a[2]*b[2]
+        placement = str(placement).lower().strip()
 
-        def _cross(a, b):
-            return (a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0])
+        if placement not in ["center", "bottom", "lowerleft"]:
+            if not silent:
+                print(
+                    'Cell.Torus - Error: The placement parameter must be '
+                    '"center", "bottom", or "lowerleft". Returning None.'
+                )
+            return None
 
-        def _rot_matrix_from_z(to_dir):
-            """
-            Build a rotation matrix that maps +Z to 'to_dir' using Rodrigues' formula.
-            """
-            z = (0.0, 0.0, 1.0)
-            t = _norm(to_dir)
-            c = _dot(z, t)  # cos(theta)
-            if abs(c - 1.0) < 1e-12:
-                # Already aligned
-                return ((1.0,0.0,0.0),
-                        (0.0,1.0,0.0),
-                        (0.0,0.0,1.0))
-            if abs(c + 1.0) < 1e-12:
-                # 180 degrees: rotate around any axis perpendicular to z (e.g., x-axis)
-                return ((1.0, 0.0, 0.0),
-                        (0.0,-1.0, 0.0),
-                        (0.0, 0.0,-1.0))
-            k = _cross(z, t)
-            kx, ky, kz = _norm(k)
-            s = sqrt(max(0.0, 1.0 - c*c))
-            # Skew-symmetric K
-            K = ((0.0, -kz,  ky),
-                (kz,  0.0, -kx),
-                (-ky, kx,  0.0))
-            # I + K*s + K^2*(1-c)
-            # First compute K^2
-            K2 = (
-                (K[0][0]*K[0][0] + K[0][1]*K[1][0] + K[0][2]*K[2][0],
-                K[0][0]*K[0][1] + K[0][1]*K[1][1] + K[0][2]*K[2][1],
-                K[0][0]*K[0][2] + K[0][1]*K[1][2] + K[0][2]*K[2][2]),
-                (K[1][0]*K[0][0] + K[1][1]*K[1][0] + K[1][2]*K[2][0],
-                K[1][0]*K[0][1] + K[1][1]*K[1][1] + K[1][2]*K[2][1],
-                K[1][0]*K[0][2] + K[1][1]*K[1][2] + K[1][2]*K[2][2]),
-                (K[2][0]*K[0][0] + K[2][1]*K[1][0] + K[2][2]*K[2][0],
-                K[2][0]*K[0][1] + K[2][1]*K[1][1] + K[2][2]*K[2][1],
-                K[2][0]*K[0][2] + K[2][1]*K[1][2] + K[2][2]*K[2][2]),
-            )
-            I = ((1.0,0.0,0.0),(0.0,1.0,0.0),(0.0,0.0,1.0))
+        # ----------------------------------------------------------------------
+        # Determine canonical source origin used for placement.
+        #
+        # Canonical torus:
+        #   x/y = ±(majorRadius + minorRadius)
+        #   z   = ±minorRadius
+        # ----------------------------------------------------------------------
+        source = [0, 0, 0]
 
-            def _madd(A, B, s=1.0):
-                return tuple(tuple(A[i][j] + s*B[i][j] for j in range(3)) for i in range(3))
+        if placement == "bottom":
+            source = [0, 0, -minorRadius]
 
-            R = I
-            R = _madd(R, K, s)           # I + s*K
-            R = _madd(R, K2, (1.0 - c))  # + (1-c)*K^2
-            return R
+        elif placement == "lowerleft":
+            source = [
+                -(majorRadius + minorRadius),
+                -(majorRadius + minorRadius),
+                -minorRadius
+            ]
 
-        def _apply_R(p, R):
-            return (
-                R[0][0]*p[0] + R[0][1]*p[1] + R[0][2]*p[2],
-                R[1][0]*p[0] + R[1][1]*p[1] + R[1][2]*p[2],
-                R[2][0]*p[0] + R[2][1]*p[1] + R[2][2]*p[2],
+        # ----------------------------------------------------------------------
+        # Exact smooth torus.
+        # ----------------------------------------------------------------------
+        if not polyhedron:
+            torus = Cell._NativeCell(
+                "ByTorus",
+                majorRadius=majorRadius,
+                minorRadius=minorRadius,
+                tolerance=tolerance,
+                silent=silent
             )
 
-        def _add(a, b):
-            return (a[0]+b[0], a[1]+b[1], a[2]+b[2])
+            if not Topology.IsInstance(torus, "Cell"):
+                return None
 
-        def _scale(v, s):
-            return (v[0]*s, v[1]*s, v[2]*s)
+            return Cell._PlaceNativeCell(
+                torus,
+                origin,
+                direction,
+                source,
+                tolerance,
+                silent
+            )
 
-        # --- Parametric grid in local coordinates (+Z is up) ---
-        # u: around the main ring (longitude), v: around the tube (latitude)
-        du = 2.0*pi / uSides
-        dv = 2.0*pi / vSides
+        # ----------------------------------------------------------------------
+        # Faceted torus.
+        # ----------------------------------------------------------------------
+        try:
+            uSides = int(uSides)
+            vSides = int(vSides)
+        except Exception:
+            if not silent:
+                print(
+                    "Cell.Torus - Error: The uSides and vSides parameters "
+                    "must be valid integers. Returning None."
+                )
+            return None
 
-        # Precompute angles to avoid repeated trig
-        cosu = [cos(i*du) for i in range(uSides)]
-        sinu = [sin(i*du) for i in range(uSides)]
-        cosv = [cos(j*dv) for j in range(vSides)]
-        sinv = [sin(j*dv) for j in range(vSides)]
+        if uSides < 3 or vSides < 3:
+            if not silent:
+                print(
+                    "Cell.Torus - Error: uSides and vSides must both be "
+                    "at least 3. Returning None."
+                )
+            return None
 
-        # Vertex grid (uSides x vSides)
-        grid = [[None for _ in range(vSides)] for _ in range(uSides)]
-        points = [[None for _ in range(vSides)] for _ in range(uSides)]  # store tuples for transforms
+        vertices = []
 
+        # Construct a canonical torus centred at the world origin and aligned
+        # with +Z. Placement and orientation are applied afterwards.
         for i in range(uSides):
-            cu, su = cosu[i], sinu[i]
+            u = 2.0 * math.pi * i / uSides
+            cos_u = math.cos(u)
+            sin_u = math.sin(u)
+
+            ring = []
+
             for j in range(vSides):
-                cv, sv = cosv[j], sinv[j]
-                x = (majorRadius + minorRadius * cv) * cu
-                y = (majorRadius + minorRadius * cv) * su
-                z =  minorRadius * sv
-                points[i][j] = (x, y, z)
+                v = 2.0 * math.pi * j / vSides
+                cos_v = math.cos(v)
+                sin_v = math.sin(v)
 
-        # --- Orientation: rotate local +Z to requested direction ---
-        R = _rot_matrix_from_z(direction if isinstance(direction, (list, tuple)) else [0,0,1])
-        points = [[_apply_R(points[i][j], R) for j in range(vSides)] for i in range(uSides)]
+                r = majorRadius + minorRadius * cos_v
 
-        # --- Placement: translate relative to the given origin point ---
-        # Determine placement offset in *local* frame, then rotate it by R, then add origin.
-        placement_lc = placement.lower().strip()
-        if placement_lc not in ("center", "bottom", "lowerleft"):
-            raise ValueError('placement must be one of: "center", "bottom", "lowerleft".')
+                x = r * cos_u
+                y = r * sin_u
+                z = minorRadius * sin_v
 
-        # In local frame, bbox extents are:
-        #   x,y in [- (R + r), + (R + r)]
-        #   z in [ -r, +r ]
-        # So:
-        # - "center"   : no extra shift (center at (0,0,0))
-        # - "bottom"   : shift up by r along +Z so the lowest point touches z=0 (then move to origin)
-        # - "lowerleft": put min x,y at 0 and bottom at z=0, i.e. shift by (R+r, R+r, r)
-        if placement_lc == "center":
-            placement_local_offset = (0.0, 0.0, 0.0)
-        elif placement_lc == "bottom":
-            placement_local_offset = (0.0, 0.0, minorRadius)
-        else:  # "lowerleft"
-            placement_local_offset = (majorRadius + minorRadius, majorRadius + minorRadius, minorRadius)
+                vertex = Vertex.ByCoordinates(x, y, z)
 
-        # Rotate the local placement offset into world frame
-        placement_world_offset = _apply_R(placement_local_offset, R)
+                if not Topology.IsInstance(vertex, "Vertex"):
+                    if not silent:
+                        print(
+                            "Cell.Torus - Error: Could not create a torus "
+                            "vertex. Returning None."
+                        )
+                    return None
 
-        # Determine origin position
-        if origin is None:
-            ox, oy, oz = (0.0, 0.0, 0.0)
-        else:
-            try:
-                ox = Vertex.X(origin)
-                oy = Vertex.Y(origin)
-                oz = Vertex.Z(origin)
-            except Exception:
-                # Accept a plain (x,y,z) tuple/list as a convenience
-                ox, oy, oz = origin  # type: ignore
+                ring.append(vertex)
 
-        origin_pt = (ox, oy, oz)
-        base_translation = _add(origin_pt, placement_world_offset)
+            vertices.append(ring)
 
-        # Apply final translation
-        points = [[_add(points[i][j], base_translation) for j in range(vSides)] for i in range(uSides)]
-
-        # --- Build Topologic vertices (reuse grid references) ---
-        for i in range(uSides):
-            for j in range(vSides):
-                x, y, z = points[i][j]
-                grid[i][j] = Vertex.ByCoordinates(x, y, z)
-
-        # --- Triangulate the quad grid into faces (2 triangles per quad) ---
         faces = []
-        # Wind triangles so that normals generally point outward
+
+        # Two triangles per parametric quad.
         for i in range(uSides):
-            i1 = (i + 1) % uSides
+            i_next = (i + 1) % uSides
+
             for j in range(vSides):
-                j1 = (j + 1) % vSides
-                v00 = grid[i][j]
-                v10 = grid[i1][j]
-                v11 = grid[i1][j1]
-                v01 = grid[i][j1]
-                # Two triangles per cell:
-                f1 = Face.ByVertices([v00, v10, v11], tolerance)  # triangle
-                f2 = Face.ByVertices([v00, v11, v01], tolerance)  # triangle
-                if f1 is None or f2 is None:
-                    raise RuntimeError("Failed to create torus facets (Face.ByVertices returned None).")
-                faces.append(f1)
-                faces.append(f2)
+                j_next = (j + 1) % vSides
 
-        # --- Stitch into a closed shell, then a cell ---
-        shell = Shell.ByFaces(faces, tolerance)
-        if shell is None:
-            # As a fallback, try slight relaxation on tolerance (if environment is finicky)
-            shell = Shell.ByFaces(faces, tolerance * 10.0)
-        if shell is None:
-            raise RuntimeError("Failed to stitch torus shell from facets.")
+                v00 = vertices[i][j]
+                v10 = vertices[i_next][j]
+                v11 = vertices[i_next][j_next]
+                v01 = vertices[i][j_next]
 
-        # Try common constructors to obtain a solid Cell
-        cell = None
-        # 1) Common signature: Cell.ByShell(shell)
-        try:
-            cell = Cell.ByShell(shell)
-        except Exception:
-            cell = None
-        # 2) Sometimes requires tolerance
-        if cell is None:
-            try:
-                cell = Cell.ByShell(shell, tolerance)
-            except Exception:
-                cell = None
-        # 3) Some builds expect a list of shells (external only)
-        if cell is None:
-            try:
-                cell = Cell.ByShells([shell], tolerance)
-            except Exception:
-                cell = None
-        # 4) Rare builds: stitch directly from faces
-        if cell is None:
-            try:
-                cell = Cell.ByFaces(faces, tolerance, silent=silent)
-            except Exception:
-                cell = None
+                face_1 = Face.ByVertices(
+                    [v00, v10, v11],
+                    tolerance=tolerance,
+                    silent=silent
+                )
 
-        if cell is None:
-            # As a last resort, return the stitched shell so the caller still gets usable geometry.
-            # But the contract says Cell; better to error explicitly so issues are caught early.
-            raise RuntimeError("Failed to create a solid Cell from the torus shell. Check tolerances and resolution (uSides/vSides).")
+                face_2 = Face.ByVertices(
+                    [v00, v11, v01],
+                    tolerance=tolerance,
+                    silent=silent
+                )
 
-        # Clean up small topological defects if available
-        try:
-            cell = Topology.Clean(cell, tolerance, silent=silent)  # optional: no-op if not available
-        except Exception:
-            pass
+                if not Topology.IsInstance(face_1, "Face"):
+                    if not silent:
+                        print(
+                            "Cell.Torus - Error: Could not create a torus "
+                            "face. Returning None."
+                        )
+                    return None
 
-        return cell
+                if not Topology.IsInstance(face_2, "Face"):
+                    if not silent:
+                        print(
+                            "Cell.Torus - Error: Could not create a torus "
+                            "face. Returning None."
+                        )
+                    return None
+
+                faces.append(face_1)
+                faces.append(face_2)
+
+        torus = Cell.ByFaces(
+            faces,
+            tolerance=tolerance,
+            silent=silent
+        )
+
+        if not Topology.IsInstance(torus, "Cell"):
+            if not silent:
+                print(
+                    "Cell.Torus - Error: Could not create the torus Cell. "
+                    "Returning None."
+                )
+            return None
+
+        return Cell._PlaceNativeCell(
+            torus,
+            origin,
+            direction,
+            source,
+            tolerance,
+            silent
+        )
     
     @staticmethod
     def TShape(origin=None,
