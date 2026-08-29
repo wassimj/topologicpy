@@ -273,6 +273,793 @@ class Cell(Topology):
         return oriented if isinstance(oriented, Cell) else result
 
     @staticmethod
+    def _native_result(shape, require_cell: bool = True):
+        """Wrap a native OCCT result, optionally requiring a Cell."""
+        if _is_null_shape(shape):
+            return None
+        try:
+            result = Topology.ByOcctShape(shape)
+        except Exception:
+            return None
+        if require_cell and not isinstance(result, Cell):
+            return None
+        return result
+
+    @staticmethod
+    def _native_tolerance(tolerance: float = 0.0001):
+        """Return a finite positive backend tolerance, or None."""
+        try:
+            value = abs(float(tolerance))
+        except Exception:
+            return None
+        if not math.isfinite(value) or value <= 0.0:
+            return None
+        return value
+
+    @staticmethod
+    def ByCylinder(
+        radius: float = 0.5,
+        height: float = 1.0,
+        tolerance: float = 0.0001,
+        silent: bool = False,
+    ):
+        """Create a smooth canonical cylinder centred on the origin and +Z axis."""
+        tol = Cell._native_tolerance(tolerance)
+        try:
+            radius = float(radius)
+            height = float(height)
+        except Exception:
+            radius = height = float("nan")
+        if (
+            tol is None
+            or not math.isfinite(radius)
+            or not math.isfinite(height)
+            or radius <= tol
+            or height <= tol
+        ):
+            if not silent:
+                print("Cell.ByCylinder - Error: Invalid radius or height. Returning None.")
+            return None
+        try:
+            from OCC.Core.BRepPrimAPI import BRepPrimAPI_MakeCylinder
+            from OCC.Core.gp import gp_Ax2, gp_Dir, gp_Pnt
+
+            axis = gp_Ax2(gp_Pnt(0.0, 0.0, -0.5 * height), gp_Dir(0.0, 0.0, 1.0))
+            shape = BRepPrimAPI_MakeCylinder(axis, radius, height).Shape()
+        except Exception:
+            if not silent:
+                print("Cell.ByCylinder - Error: Native OCCT construction failed. Returning None.")
+            return None
+        return Cell._native_result(shape)
+
+    @staticmethod
+    def ByCone(
+        baseRadius: float = 0.5,
+        topRadius: float = 0.0,
+        height: float = 1.0,
+        tolerance: float = 0.0001,
+        silent: bool = False,
+    ):
+        """Create a smooth canonical cone/frustum centred on the origin and +Z axis."""
+        tol = Cell._native_tolerance(tolerance)
+        try:
+            base_radius = abs(float(baseRadius))
+            top_radius = abs(float(topRadius))
+            height = float(height)
+        except Exception:
+            base_radius = top_radius = height = float("nan")
+        if (
+            tol is None
+            or not all(math.isfinite(v) for v in (base_radius, top_radius, height))
+            or height <= tol
+            or max(base_radius, top_radius) <= tol
+        ):
+            if not silent:
+                print("Cell.ByCone - Error: Invalid radii or height. Returning None.")
+            return None
+        if abs(base_radius - top_radius) <= tol:
+            return Cell.ByCylinder(
+                radius=0.5 * (base_radius + top_radius),
+                height=height,
+                tolerance=tol,
+                silent=silent,
+            )
+        try:
+            from OCC.Core.BRepPrimAPI import BRepPrimAPI_MakeCone
+            from OCC.Core.gp import gp_Ax2, gp_Dir, gp_Pnt
+
+            axis = gp_Ax2(gp_Pnt(0.0, 0.0, -0.5 * height), gp_Dir(0.0, 0.0, 1.0))
+            shape = BRepPrimAPI_MakeCone(axis, base_radius, top_radius, height).Shape()
+        except Exception:
+            if not silent:
+                print("Cell.ByCone - Error: Native OCCT construction failed. Returning None.")
+            return None
+        return Cell._native_result(shape)
+
+    @staticmethod
+    def BySphere(
+        radius: float = 0.5,
+        tolerance: float = 0.0001,
+        silent: bool = False,
+    ):
+        """Create a smooth canonical sphere centred on the origin."""
+        tol = Cell._native_tolerance(tolerance)
+        try:
+            radius = abs(float(radius))
+        except Exception:
+            radius = float("nan")
+        if tol is None or not math.isfinite(radius) or radius <= tol:
+            if not silent:
+                print("Cell.BySphere - Error: Invalid radius. Returning None.")
+            return None
+        try:
+            from OCC.Core.BRepPrimAPI import BRepPrimAPI_MakeSphere
+            from OCC.Core.gp import gp_Pnt
+
+            shape = BRepPrimAPI_MakeSphere(gp_Pnt(0.0, 0.0, 0.0), radius).Shape()
+        except Exception:
+            if not silent:
+                print("Cell.BySphere - Error: Native OCCT construction failed. Returning None.")
+            return None
+        return Cell._native_result(shape)
+
+    @staticmethod
+    def ByTorus(
+        majorRadius: float = 0.5,
+        minorRadius: float = 0.125,
+        tolerance: float = 0.0001,
+        silent: bool = False,
+    ):
+        """Create a smooth canonical torus centred on the origin and +Z axis."""
+        tol = Cell._native_tolerance(tolerance)
+        try:
+            major_radius = abs(float(majorRadius))
+            minor_radius = abs(float(minorRadius))
+        except Exception:
+            major_radius = minor_radius = float("nan")
+        if (
+            tol is None
+            or not all(math.isfinite(v) for v in (major_radius, minor_radius))
+            or major_radius <= tol
+            or minor_radius <= tol
+            or minor_radius >= major_radius
+        ):
+            if not silent:
+                print("Cell.ByTorus - Error: Invalid major/minor radii. Returning None.")
+            return None
+        try:
+            from OCC.Core.BRepPrimAPI import BRepPrimAPI_MakeTorus
+            from OCC.Core.gp import gp_Ax2, gp_Dir, gp_Pnt
+
+            axis = gp_Ax2(gp_Pnt(0.0, 0.0, 0.0), gp_Dir(0.0, 0.0, 1.0))
+            shape = BRepPrimAPI_MakeTorus(axis, major_radius, minor_radius).Shape()
+        except Exception:
+            if not silent:
+                print("Cell.ByTorus - Error: Native OCCT construction failed. Returning None.")
+            return None
+        return Cell._native_result(shape)
+
+    @staticmethod
+    def ByCapsule(
+        radius: float = 0.25,
+        height: float = 1.0,
+        tolerance: float = 0.0001,
+        silent: bool = False,
+    ):
+        """Create a smooth canonical capsule with total extent ``height`` along +Z."""
+        tol = Cell._native_tolerance(tolerance)
+        try:
+            radius = abs(float(radius))
+            height = float(height)
+        except Exception:
+            radius = height = float("nan")
+        if (
+            tol is None
+            or not all(math.isfinite(v) for v in (radius, height))
+            or radius <= tol
+            or height <= tol
+        ):
+            if not silent:
+                print("Cell.ByCapsule - Error: Invalid radius or height. Returning None.")
+            return None
+
+        # Preserve the algorithm-layer definition: when there is no positive
+        # cylindrical middle section, the capsule degenerates to a sphere.
+        cylinder_height = height - 2.0 * radius
+        if cylinder_height <= tol:
+            return Cell.BySphere(radius=radius, tolerance=tol, silent=silent)
+
+        try:
+            from OCC.Core.BRepBuilderAPI import (
+                BRepBuilderAPI_MakeEdge,
+                BRepBuilderAPI_MakeFace,
+                BRepBuilderAPI_MakeWire,
+            )
+            from OCC.Core.BRepPrimAPI import BRepPrimAPI_MakeRevol
+            from OCC.Core.GC import GC_MakeArcOfCircle
+            from OCC.Core.gp import gp_Ax1, gp_Dir, gp_Pnt
+
+            half_middle = 0.5 * cylinder_height
+            inv_sqrt2 = 1.0 / math.sqrt(2.0)
+
+            p_bottom = gp_Pnt(0.0, 0.0, -0.5 * height)
+            p_bottom_mid = gp_Pnt(
+                radius * inv_sqrt2,
+                0.0,
+                -half_middle - radius * inv_sqrt2,
+            )
+            p_bottom_eq = gp_Pnt(radius, 0.0, -half_middle)
+            p_top_eq = gp_Pnt(radius, 0.0, half_middle)
+            p_top_mid = gp_Pnt(
+                radius * inv_sqrt2,
+                0.0,
+                half_middle + radius * inv_sqrt2,
+            )
+            p_top = gp_Pnt(0.0, 0.0, 0.5 * height)
+
+            bottom_arc = GC_MakeArcOfCircle(p_bottom, p_bottom_mid, p_bottom_eq).Value()
+            top_arc = GC_MakeArcOfCircle(p_top_eq, p_top_mid, p_top).Value()
+
+            edges = [
+                BRepBuilderAPI_MakeEdge(bottom_arc).Edge(),
+                BRepBuilderAPI_MakeEdge(p_bottom_eq, p_top_eq).Edge(),
+                BRepBuilderAPI_MakeEdge(top_arc).Edge(),
+                BRepBuilderAPI_MakeEdge(p_top, p_bottom).Edge(),
+            ]
+            wire_maker = BRepBuilderAPI_MakeWire()
+            for edge in edges:
+                wire_maker.Add(edge)
+            if not wire_maker.IsDone():
+                return None
+            face_maker = BRepBuilderAPI_MakeFace(wire_maker.Wire(), True)
+            if not face_maker.IsDone():
+                return None
+            axis = gp_Ax1(gp_Pnt(0.0, 0.0, 0.0), gp_Dir(0.0, 0.0, 1.0))
+            revol = BRepPrimAPI_MakeRevol(face_maker.Face(), axis, 2.0 * math.pi, True)
+            shape = revol.Shape()
+        except Exception:
+            if not silent:
+                print("Cell.ByCapsule - Error: Native OCCT construction failed. Returning None.")
+            return None
+        return Cell._native_result(shape)
+
+    @staticmethod
+    def ByCHS(
+        radius: float = 1.0,
+        height: float = 1.0,
+        thickness: float = 0.25,
+        tolerance: float = 0.0001,
+        silent: bool = False,
+    ):
+        """Create a smooth canonical circular hollow section centred on the origin."""
+        tol = Cell._native_tolerance(tolerance)
+        try:
+            radius = abs(float(radius))
+            height = float(height)
+            thickness = abs(float(thickness))
+        except Exception:
+            radius = height = thickness = float("nan")
+        if (
+            tol is None
+            or not all(math.isfinite(v) for v in (radius, height, thickness))
+            or radius <= tol
+            or height <= tol
+            or thickness <= tol
+            or thickness >= radius - tol
+        ):
+            if not silent:
+                print("Cell.ByCHS - Error: Invalid dimensions. Returning None.")
+            return None
+        try:
+            from OCC.Core.BRepAlgoAPI import BRepAlgoAPI_Cut
+            from OCC.Core.BRepPrimAPI import BRepPrimAPI_MakeCylinder
+            from OCC.Core.gp import gp_Ax2, gp_Dir, gp_Pnt
+
+            axis = gp_Ax2(gp_Pnt(0.0, 0.0, -0.5 * height), gp_Dir(0.0, 0.0, 1.0))
+            outer = BRepPrimAPI_MakeCylinder(axis, radius, height).Shape()
+            inner = BRepPrimAPI_MakeCylinder(axis, radius - thickness, height).Shape()
+            cut = BRepAlgoAPI_Cut(outer, inner)
+            cut.Build()
+            if not cut.IsDone():
+                return None
+            shape = cut.Shape()
+        except Exception:
+            if not silent:
+                print("Cell.ByCHS - Error: Native OCCT construction failed. Returning None.")
+            return None
+        return Cell._native_result(shape)
+
+    @staticmethod
+    def ByRHS(
+        width: float = 1.0,
+        length: float = 1.0,
+        height: float = 1.0,
+        thickness: float = 0.25,
+        outerRadius: float = 0.0,
+        innerRadius: float = 0.0,
+        tolerance: float = 0.0001,
+        silent: bool = False,
+    ):
+        """Create a canonical rectangular hollow section with optional exact corner arcs."""
+        tol = Cell._native_tolerance(tolerance)
+        try:
+            width = float(width)
+            length = float(length)
+            height = float(height)
+            thickness = abs(float(thickness))
+            outer_radius = max(0.0, float(outerRadius))
+            inner_radius = max(0.0, float(innerRadius))
+        except Exception:
+            width = length = height = thickness = outer_radius = inner_radius = float("nan")
+
+        inner_width = width - 2.0 * thickness
+        inner_length = length - 2.0 * thickness
+        if (
+            tol is None
+            or not all(
+                math.isfinite(v)
+                for v in (width, length, height, thickness, outer_radius, inner_radius)
+            )
+            or width <= tol
+            or length <= tol
+            or height <= tol
+            or thickness <= tol
+            or inner_width <= tol
+            or inner_length <= tol
+            or outer_radius > 0.5 * min(width, length) + tol
+            or inner_radius > 0.5 * min(inner_width, inner_length) + tol
+        ):
+            if not silent:
+                print("Cell.ByRHS - Error: Invalid dimensions or fillet radii. Returning None.")
+            return None
+
+        try:
+            from OCC.Core.BRepBuilderAPI import (
+                BRepBuilderAPI_MakeEdge,
+                BRepBuilderAPI_MakeFace,
+                BRepBuilderAPI_MakeWire,
+            )
+            from OCC.Core.BRepPrimAPI import BRepPrimAPI_MakePrism
+            from OCC.Core.GC import GC_MakeArcOfCircle
+            from OCC.Core.gp import gp_Pnt, gp_Vec
+
+            def rounded_wire(w, l, r, z):
+                hx = 0.5 * w
+                hy = 0.5 * l
+                r = min(max(0.0, r), hx, hy)
+                maker = BRepBuilderAPI_MakeWire()
+                if r <= tol:
+                    pts = [
+                        gp_Pnt(hx, -hy, z),
+                        gp_Pnt(-hx, -hy, z),
+                        gp_Pnt(-hx, hy, z),
+                        gp_Pnt(hx, hy, z),
+                    ]
+                    for i in range(4):
+                        maker.Add(BRepBuilderAPI_MakeEdge(pts[i], pts[(i + 1) % 4]).Edge())
+                else:
+                    q = r / math.sqrt(2.0)
+                    p0 = gp_Pnt(hx - r, -hy, z)
+                    p1 = gp_Pnt(-hx + r, -hy, z)
+                    p2 = gp_Pnt(-hx, -hy + r, z)
+                    p3 = gp_Pnt(-hx, hy - r, z)
+                    p4 = gp_Pnt(-hx + r, hy, z)
+                    p5 = gp_Pnt(hx - r, hy, z)
+                    p6 = gp_Pnt(hx, hy - r, z)
+                    p7 = gp_Pnt(hx, -hy + r, z)
+                    arcs = [
+                        (p1, gp_Pnt(-hx + r - q, -hy + r - q, z), p2),
+                        (p3, gp_Pnt(-hx + r - q, hy - r + q, z), p4),
+                        (p5, gp_Pnt(hx - r + q, hy - r + q, z), p6),
+                        (p7, gp_Pnt(hx - r + q, -hy + r - q, z), p0),
+                    ]
+                    sequence = [
+                        BRepBuilderAPI_MakeEdge(p0, p1).Edge(),
+                        BRepBuilderAPI_MakeEdge(GC_MakeArcOfCircle(*arcs[0]).Value()).Edge(),
+                        BRepBuilderAPI_MakeEdge(p2, p3).Edge(),
+                        BRepBuilderAPI_MakeEdge(GC_MakeArcOfCircle(*arcs[1]).Value()).Edge(),
+                        BRepBuilderAPI_MakeEdge(p4, p5).Edge(),
+                        BRepBuilderAPI_MakeEdge(GC_MakeArcOfCircle(*arcs[2]).Value()).Edge(),
+                        BRepBuilderAPI_MakeEdge(p6, p7).Edge(),
+                        BRepBuilderAPI_MakeEdge(GC_MakeArcOfCircle(*arcs[3]).Value()).Edge(),
+                    ]
+                    for edge in sequence:
+                        maker.Add(edge)
+                return maker.Wire() if maker.IsDone() else None
+
+            z0 = -0.5 * height
+            outer_wire = rounded_wire(width, length, outer_radius, z0)
+            inner_wire = rounded_wire(inner_width, inner_length, inner_radius, z0)
+            if outer_wire is None or inner_wire is None:
+                return None
+
+            # Hole wires must have the opposite orientation to the outer boundary.
+            inner_wire.Reverse()
+            face_maker = BRepBuilderAPI_MakeFace(outer_wire, True)
+            face_maker.Add(inner_wire)
+            if not face_maker.IsDone():
+                return None
+            prism = BRepPrimAPI_MakePrism(face_maker.Face(), gp_Vec(0.0, 0.0, height), True, True)
+            shape = prism.Shape()
+        except Exception:
+            if not silent:
+                print("Cell.ByRHS - Error: Native OCCT construction failed. Returning None.")
+            return None
+        return Cell._native_result(shape)
+
+    @staticmethod
+    def ByOffset(
+        cell,
+        offset: float = 1.0,
+        tolerance: float = 0.0001,
+        silent: bool = False,
+    ):
+        """Offset a Cell using OCCT's native 3-D offset algorithm."""
+        if not isinstance(cell, Cell):
+            if not silent:
+                print("Cell.ByOffset - Error: Invalid Cell. Returning None.")
+            return None
+        tol = Cell._native_tolerance(tolerance)
+        try:
+            offset = float(offset)
+        except Exception:
+            offset = float("nan")
+        if tol is None or not math.isfinite(offset):
+            return None
+        if abs(offset) <= tol:
+            return cell
+        shape = getattr(cell, "shape", None)
+        if _is_null_shape(shape):
+            return None
+        try:
+            from OCC.Core.BRepOffset import BRepOffset_Skin
+            from OCC.Core.BRepOffsetAPI import BRepOffsetAPI_MakeOffsetShape
+            from OCC.Core.GeomAbs import GeomAbs_Arc
+
+            maker = BRepOffsetAPI_MakeOffsetShape()
+            maker.PerformByJoin(
+                shape,
+                offset,
+                tol,
+                BRepOffset_Skin,
+                False,
+                False,
+                GeomAbs_Arc,
+                True,
+            )
+            if not maker.IsDone():
+                return None
+            result_shape = maker.Shape()
+        except Exception:
+            if not silent:
+                print("Cell.ByOffset - Error: Native OCCT offset failed. Returning None.")
+            return None
+        return Cell._native_result(result_shape, require_cell=False)
+
+    @staticmethod
+    def _native_thicken_shape(
+        topology,
+        thickness: float,
+        bothSides: bool,
+        reverse: bool,
+        tolerance: float,
+        silent: bool,
+        label: str,
+    ):
+        """Native normal-offset thickening shared by Face and Shell entry points."""
+        tol = Cell._native_tolerance(tolerance)
+        try:
+            thickness = abs(float(thickness))
+        except Exception:
+            thickness = float("nan")
+        if tol is None or not math.isfinite(thickness) or thickness <= tol:
+            if not silent:
+                print(f"Cell.{label} - Error: Invalid thickness. Returning None.")
+            return None
+        shape = getattr(topology, "shape", None)
+        if _is_null_shape(shape):
+            return None
+        signed = -thickness if reverse else thickness
+        try:
+            from OCC.Core.BRepOffsetAPI import (
+                BRepOffsetAPI_MakeOffsetShape,
+                BRepOffsetAPI_MakeThickSolid,
+            )
+
+            base_shape = shape
+            if bothSides:
+                offsetter = BRepOffsetAPI_MakeOffsetShape()
+                offsetter.PerformBySimple(shape, -0.5 * signed)
+                if not offsetter.IsDone():
+                    return None
+                base_shape = offsetter.Shape()
+                if _is_null_shape(base_shape):
+                    return None
+
+            thickener = BRepOffsetAPI_MakeThickSolid()
+            thickener.MakeThickSolidBySimple(base_shape, signed)
+            if not thickener.IsDone():
+                return None
+            result_shape = thickener.Shape()
+        except Exception:
+            if not silent:
+                print(f"Cell.{label} - Error: Native OCCT thickening failed. Returning None.")
+            return None
+        return Cell._native_result(result_shape)
+
+    @staticmethod
+    def ByThickenedFace(
+        face,
+        thickness: float = 1.0,
+        bothSides: bool = True,
+        reverse: bool = False,
+        tolerance: float = 0.0001,
+        silent: bool = False,
+    ):
+        """Create a smooth Cell by normally thickening a Face."""
+        if not Topology.IsInstance(face, "Face"):
+            if not silent:
+                print("Cell.ByThickenedFace - Error: Invalid Face. Returning None.")
+            return None
+        return Cell._native_thicken_shape(
+            face,
+            thickness,
+            bool(bothSides),
+            bool(reverse),
+            tolerance,
+            silent,
+            "ByThickenedFace",
+        )
+
+    @staticmethod
+    def ByThickenedShell(
+        shell,
+        thickness: float = 1.0,
+        bothSides: bool = True,
+        reverse: bool = False,
+        tolerance: float = 0.0001,
+        silent: bool = False,
+    ):
+        """Create a smooth Cell by normally thickening an open Shell."""
+        if not Topology.IsInstance(shell, "Shell"):
+            if not silent:
+                print("Cell.ByThickenedShell - Error: Invalid Shell. Returning None.")
+            return None
+        return Cell._native_thicken_shape(
+            shell,
+            thickness,
+            bool(bothSides),
+            bool(reverse),
+            tolerance,
+            silent,
+            "ByThickenedShell",
+        )
+
+    @staticmethod
+    def ByPipe(
+        edge,
+        profile=None,
+        radius: float = 0.5,
+        tolerance: float = 0.0001,
+        silent: bool = False,
+    ):
+        """Sweep a closed profile natively along an Edge and return a smooth Cell."""
+        if not Topology.IsInstance(edge, "Edge"):
+            if not silent:
+                print("Cell.ByPipe - Error: Invalid Edge. Returning None.")
+            return None
+        tol = Cell._native_tolerance(tolerance)
+        try:
+            radius = abs(float(radius))
+        except Exception:
+            radius = float("nan")
+        if tol is None or not math.isfinite(radius) or radius <= tol:
+            return None
+        edge_shape = getattr(edge, "shape", None)
+        if _is_null_shape(edge_shape):
+            return None
+
+        try:
+            from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakeEdge, BRepBuilderAPI_MakeWire
+            from OCC.Core.BRepOffsetAPI import BRepOffsetAPI_MakePipeShell
+            from OCC.Core.gp import gp_Ax2, gp_Circ, gp_Dir, gp_Pnt
+            from OCC.Core.TopoDS import topods
+
+            spine_maker = BRepBuilderAPI_MakeWire()
+            spine_maker.Add(topods.Edge(edge_shape))
+            if not spine_maker.IsDone():
+                return None
+            spine = spine_maker.Wire()
+
+            if profile is None:
+                circle = gp_Circ(
+                    gp_Ax2(gp_Pnt(0.0, 0.0, 0.0), gp_Dir(0.0, 0.0, 1.0)),
+                    radius,
+                )
+                profile_edge = BRepBuilderAPI_MakeEdge(circle).Edge()
+                profile_maker = BRepBuilderAPI_MakeWire()
+                profile_maker.Add(profile_edge)
+                if not profile_maker.IsDone():
+                    return None
+                profile_shape = profile_maker.Wire()
+            else:
+                profile_shape = getattr(profile, "shape", None)
+                if _is_null_shape(profile_shape):
+                    return None
+
+            pipe = BRepOffsetAPI_MakePipeShell(spine)
+            # Contact + correction lets OCCT place an XY-plane profile on the
+            # spine and rotate it orthogonal to the local tangent.
+            pipe.Add(profile_shape, True, True)
+            if not pipe.IsReady():
+                return None
+            pipe.Build()
+            if not pipe.IsDone():
+                return None
+            if not pipe.MakeSolid():
+                return None
+            result_shape = pipe.Shape()
+        except Exception:
+            if not silent:
+                print("Cell.ByPipe - Error: Native OCCT sweep failed. Returning None.")
+            return None
+        return Cell._native_result(result_shape)
+
+    @staticmethod
+    def ByEgg(
+        profile,
+        height: float = 1.0,
+        tolerance: float = 0.0001,
+        silent: bool = False,
+    ):
+        """Create a smooth body of revolution through the supplied egg profile."""
+        tol = Cell._native_tolerance(tolerance)
+        try:
+            height = abs(float(height))
+        except Exception:
+            height = float("nan")
+        if tol is None or not math.isfinite(height) or height <= tol:
+            return None
+        if not isinstance(profile, (list, tuple)) or len(profile) < 3:
+            if not silent:
+                print("Cell.ByEgg - Error: Invalid profile. Returning None.")
+            return None
+
+        points = []
+        try:
+            for item in profile:
+                if not isinstance(item, (list, tuple)) or len(item) < 3:
+                    return None
+                radius = abs(float(item[0])) * height
+                z = float(item[2]) * height
+                if not math.isfinite(radius) or not math.isfinite(z):
+                    return None
+                points.append((radius, z))
+        except Exception:
+            return None
+
+        try:
+            from OCC.Core.BRepBuilderAPI import (
+                BRepBuilderAPI_MakeEdge,
+                BRepBuilderAPI_MakeFace,
+                BRepBuilderAPI_MakeWire,
+            )
+            from OCC.Core.BRepPrimAPI import BRepPrimAPI_MakeRevol
+            from OCC.Core.GeomAPI import GeomAPI_PointsToBSpline
+            from OCC.Core.TColgp import TColgp_Array1OfPnt
+            from OCC.Core.gp import gp_Ax1, gp_Dir, gp_Pnt
+
+            array = TColgp_Array1OfPnt(1, len(points))
+            for index, (radius, z) in enumerate(points, start=1):
+                array.SetValue(index, gp_Pnt(radius, 0.0, z))
+            curve_builder = GeomAPI_PointsToBSpline(array)
+            curve = curve_builder.Curve()
+            profile_edge = BRepBuilderAPI_MakeEdge(curve).Edge()
+
+            first = gp_Pnt(points[0][0], 0.0, points[0][1])
+            last = gp_Pnt(points[-1][0], 0.0, points[-1][1])
+            first_axis = gp_Pnt(0.0, 0.0, points[0][1])
+            last_axis = gp_Pnt(0.0, 0.0, points[-1][1])
+
+            maker = BRepBuilderAPI_MakeWire()
+            maker.Add(profile_edge)
+            if points[-1][0] > tol:
+                maker.Add(BRepBuilderAPI_MakeEdge(last, last_axis).Edge())
+            maker.Add(BRepBuilderAPI_MakeEdge(last_axis, first_axis).Edge())
+            if points[0][0] > tol:
+                maker.Add(BRepBuilderAPI_MakeEdge(first_axis, first).Edge())
+            if not maker.IsDone():
+                return None
+            face_maker = BRepBuilderAPI_MakeFace(maker.Wire(), True)
+            if not face_maker.IsDone():
+                return None
+            axis = gp_Ax1(gp_Pnt(0.0, 0.0, 0.0), gp_Dir(0.0, 0.0, 1.0))
+            revol = BRepPrimAPI_MakeRevol(face_maker.Face(), axis, 2.0 * math.pi, True)
+            result_shape = revol.Shape()
+        except Exception:
+            if not silent:
+                print("Cell.ByEgg - Error: Native OCCT construction failed. Returning None.")
+            return None
+        return Cell._native_result(result_shape)
+
+    @staticmethod
+    def ByHyperboloid(
+        baseRadius: float = 0.5,
+        topRadius: float = 0.5,
+        height: float = 1.0,
+        twist: float = 60.0,
+        tolerance: float = 0.0001,
+        silent: bool = False,
+    ):
+        """Create a smooth ruled Cell between phase-shifted circular sections."""
+        tol = Cell._native_tolerance(tolerance)
+        try:
+            base_radius = abs(float(baseRadius))
+            top_radius = abs(float(topRadius))
+            height = float(height)
+            twist = float(twist)
+        except Exception:
+            base_radius = top_radius = height = twist = float("nan")
+        if (
+            tol is None
+            or not all(math.isfinite(v) for v in (base_radius, top_radius, height, twist))
+            or height <= tol
+            or max(base_radius, top_radius) <= tol
+        ):
+            return None
+        if base_radius <= tol or top_radius <= tol:
+            return Cell.ByCone(
+                baseRadius=base_radius,
+                topRadius=top_radius,
+                height=height,
+                tolerance=tol,
+                silent=silent,
+            )
+
+        try:
+            from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakeEdge, BRepBuilderAPI_MakeWire
+            from OCC.Core.BRepOffsetAPI import BRepOffsetAPI_ThruSections
+            from OCC.Core.gp import gp_Ax2, gp_Circ, gp_Dir, gp_Pnt
+
+            angle = math.radians(twist)
+            bottom_axis = gp_Ax2(
+                gp_Pnt(0.0, 0.0, -0.5 * height),
+                gp_Dir(0.0, 0.0, 1.0),
+                gp_Dir(math.cos(angle), math.sin(angle), 0.0),
+            )
+            top_axis = gp_Ax2(
+                gp_Pnt(0.0, 0.0, 0.5 * height),
+                gp_Dir(0.0, 0.0, 1.0),
+                gp_Dir(1.0, 0.0, 0.0),
+            )
+
+            def circle_wire(axis, radius):
+                edge = BRepBuilderAPI_MakeEdge(gp_Circ(axis, radius)).Edge()
+                maker = BRepBuilderAPI_MakeWire()
+                maker.Add(edge)
+                return maker.Wire() if maker.IsDone() else None
+
+            bottom_wire = circle_wire(bottom_axis, base_radius)
+            top_wire = circle_wire(top_axis, top_radius)
+            if bottom_wire is None or top_wire is None:
+                return None
+
+            loft = BRepOffsetAPI_ThruSections(True, True, tol)
+            loft.CheckCompatibility(False)
+            loft.AddWire(bottom_wire)
+            loft.AddWire(top_wire)
+            loft.Build()
+            if not loft.IsDone():
+                return None
+            result_shape = loft.Shape()
+        except Exception:
+            if not silent:
+                print("Cell.ByHyperboloid - Error: Native OCCT construction failed. Returning None.")
+            return None
+        return Cell._native_result(result_shape)
+
+
+    @staticmethod
     def _orient_to_direction(cell, origin, direction):
         """Rotate a Cell from the +Z axis to the supplied direction."""
         if not isinstance(cell, Cell) or not isinstance(origin, Vertex):
