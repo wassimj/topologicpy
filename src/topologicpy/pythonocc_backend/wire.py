@@ -8,7 +8,7 @@ from .topology import Topology
 from .vertex import Vertex
 from .edge import Edge
 from .occ_utils import make_occ_wire
-from .helpers import same_vertex, unique_by_uuid
+from .helpers import same_vertex
 
 
 
@@ -40,6 +40,23 @@ def _all_occ_wire_edges(wire):
     except Exception:
         return []
     return result
+
+
+def _same_occ_edge(edge_a, edge_b):
+    """Return True when two backend Edges reference the same OCCT topology."""
+    if not isinstance(edge_a, Edge) or not isinstance(edge_b, Edge):
+        return False
+
+    shape_a = getattr(edge_a, "shape", None)
+    shape_b = getattr(edge_b, "shape", None)
+
+    if shape_a is None or shape_b is None:
+        return False
+
+    try:
+        return bool(shape_a.IsSame(shape_b))
+    except Exception:
+        return edge_a is edge_b
 
 
 def _walk_occ_wire_edges(wire):
@@ -521,11 +538,19 @@ class Wire(Topology):
         edges = []
         for a, b in zip(vertices[:-1], vertices[1:]):
             if not same_vertex(a, b, tolerance):
-                e = Edge.ByStartVertexEndVertex(a, b)
+                e = Edge.ByStartVertexEndVertex(
+                    a,
+                    b,
+                    tolerance=tolerance,
+                )
                 if e is not None:
                     edges.append(e)
         if close and len(vertices) > 2 and not same_vertex(vertices[-1], vertices[0], tolerance):
-            e = Edge.ByStartVertexEndVertex(vertices[-1], vertices[0])
+            e = Edge.ByStartVertexEndVertex(
+                vertices[-1],
+                vertices[0],
+                tolerance=tolerance,
+            )
             if e is not None:
                 edges.append(e)
         if not edges:
@@ -723,6 +748,7 @@ class Wire(Topology):
 
 class WireUtility:
 
+    @staticmethod
     def IsClosed(wire, tolerance: float = 0.0001):
         """Return True when the input backend Wire is closed."""
         if isinstance(wire, Wire):
@@ -730,6 +756,7 @@ class WireUtility:
         return False
 
 
+    @staticmethod
     def Length(wire, tolerance: float = 0.0001):
         """Return the exact OCCT linear length of the complete Wire."""
         if not isinstance(wire, Wire):
@@ -1209,109 +1236,226 @@ class WireUtility:
                     result.append(item)
         return result if result else [wire]
 
-# Wire -> Shell: find Shells in hostTopology containing this Wire.
-def _adjacent_shells(wire, hostTopology, output):
-    """Populate Shells whose boundary contains the same OCCT Wire edges."""
-    from .topology import Topology
-    if not isinstance(wire, Wire) or hostTopology is None:
-        return 1
-    source_edges = _all_occ_wire_edges(wire) or list(getattr(wire, "edges", []) or [])
-    candidates = []
-    Topology.Shells(hostTopology, None, candidates)
-    result = []
-    def same_occ_edge(a, b):
-        try:
-            return bool(a.shape.IsSame(b.shape))
-        except Exception:
-            return False
-    for shell in candidates:
-        matched = False
-        for face in (getattr(shell, "faces", []) or []):
-            boundary = getattr(face, "external", None)
-            if not isinstance(boundary, Wire):
-                continue
-            candidate_edges = _all_occ_wire_edges(boundary) or list(getattr(boundary, "edges", []) or [])
-            if len(candidate_edges) == len(source_edges) and all(
-                any(same_occ_edge(candidate, source) for source in source_edges)
-                for candidate in candidate_edges
-            ):
-                matched = True
-                break
-        if matched:
-            result.append(shell)
-    if output is not None:
-        output.extend(result)
-    return 0
+    @staticmethod
+    def AdjacentVertices(
+        topology,
+        hostTopology,
+        output
+    ):
+        if topology is None:
+            return 1
 
-def _adjacent_cells(wire, hostTopology, output):
-    """Populate Cells whose shell boundaries contain the same OCCT Wire edges."""
-    from .topology import Topology
-    if not isinstance(wire, Wire) or hostTopology is None:
-        return 1
-    source_edges = _all_occ_wire_edges(wire) or list(getattr(wire, "edges", []) or [])
-    candidates = []
-    Topology.Cells(hostTopology, None, candidates)
-    result = []
-    def same_occ_edge(a, b):
-        try:
-            return bool(a.shape.IsSame(b.shape))
-        except Exception:
-            return False
-    for cell in candidates:
-        matched = False
-        for shell in (getattr(cell, "shells", []) or []):
-            for face in (getattr(shell, "faces", []) or []):
+        return topology.Vertices(
+            hostTopology,
+            output,
+        )
+
+    @staticmethod
+    def AdjacentEdges(
+        topology,
+        hostTopology,
+        output
+    ):
+        if topology is None:
+            return 1
+
+        return topology.Edges(
+            hostTopology,
+            output,
+        )
+
+    @staticmethod
+    def AdjacentWires(
+        topology,
+        hostTopology,
+        output
+    ):
+        if topology is None:
+            return 1
+
+        return topology.Wires(
+            hostTopology,
+            output,
+        )
+
+    @staticmethod
+    def AdjacentFaces(
+        topology,
+        hostTopology,
+        output
+    ):
+        if topology is None:
+            return 1
+
+        return topology.Faces(
+            hostTopology,
+            output,
+        )
+
+    @staticmethod
+    def AdjacentShells(
+        wire,
+        hostTopology,
+        output
+    ):
+        """
+        Populates output with Shells whose boundaries contain the input Wire.
+
+        The comparison uses OCCT Edge identity, preserving the distinction
+        between coincident geometry and shared topology.
+        """
+        if not isinstance(wire, Wire) or hostTopology is None:
+            return 1
+
+        source_edges = (
+            _all_occ_wire_edges(wire)
+            or [
+                edge
+                for edge in getattr(wire, "edges", []) or []
+                if isinstance(edge, Edge)
+            ]
+        )
+
+        if not source_edges:
+            return 1
+
+        candidates = []
+        Topology.Shells(
+            hostTopology,
+            None,
+            candidates,
+        )
+
+        result = []
+
+        for shell in candidates:
+            matched = False
+
+            for face in getattr(shell, "faces", []) or []:
                 boundary = getattr(face, "external", None)
+
                 if not isinstance(boundary, Wire):
                     continue
-                candidate_edges = _all_occ_wire_edges(boundary) or list(getattr(boundary, "edges", []) or [])
-                if len(candidate_edges) == len(source_edges) and all(
-                    any(same_occ_edge(candidate, source) for source in source_edges)
-                    for candidate in candidate_edges
+
+                candidate_edges = (
+                    _all_occ_wire_edges(boundary)
+                    or [
+                        edge
+                        for edge in getattr(boundary, "edges", []) or []
+                        if isinstance(edge, Edge)
+                    ]
+                )
+
+                if (
+                    len(candidate_edges) == len(source_edges)
+                    and all(
+                        any(
+                            _same_occ_edge(candidate, source)
+                            for source in source_edges
+                        )
+                        for candidate in candidate_edges
+                    )
                 ):
                     matched = True
                     break
+
             if matched:
-                break
-        if matched:
-            result.append(cell)
-    if output is not None:
-        output.extend(result)
-    return 0
+                result.append(shell)
 
+        if output is not None:
+            output.extend(result)
 
-def _make_adjacent(method_name):
-    """Return a staticmethod that delegates to topology.method(hostTopology, output)."""
+        return 0
+
     @staticmethod
-    def _impl(topology, hostTopology, output):
+    def AdjacentCells(
+        wire,
+        hostTopology,
+        output
+    ):
+        """
+        Populates output with Cells whose Shell boundaries contain the input Wire.
+
+        The comparison uses OCCT Edge identity, preserving the distinction
+        between coincident geometry and shared topology.
+        """
+        if not isinstance(wire, Wire) or hostTopology is None:
+            return 1
+
+        source_edges = (
+            _all_occ_wire_edges(wire)
+            or [
+                edge
+                for edge in getattr(wire, "edges", []) or []
+                if isinstance(edge, Edge)
+            ]
+        )
+
+        if not source_edges:
+            return 1
+
+        candidates = []
+        Topology.Cells(
+            hostTopology,
+            None,
+            candidates,
+        )
+
+        result = []
+
+        for cell in candidates:
+            matched = False
+
+            for shell in getattr(cell, "shells", []) or []:
+                for face in getattr(shell, "faces", []) or []:
+                    boundary = getattr(face, "external", None)
+
+                    if not isinstance(boundary, Wire):
+                        continue
+
+                    candidate_edges = (
+                        _all_occ_wire_edges(boundary)
+                        or [
+                            edge
+                            for edge in getattr(boundary, "edges", []) or []
+                            if isinstance(edge, Edge)
+                        ]
+                    )
+
+                    if (
+                        len(candidate_edges) == len(source_edges)
+                        and all(
+                            any(
+                                _same_occ_edge(candidate, source)
+                                for source in source_edges
+                            )
+                            for candidate in candidate_edges
+                        )
+                    ):
+                        matched = True
+                        break
+
+                if matched:
+                    break
+
+            if matched:
+                result.append(cell)
+
+        if output is not None:
+            output.extend(result)
+
+        return 0
+
+    @staticmethod
+    def AdjacentCellComplexes(
+        topology,
+        hostTopology,
+        output
+    ):
         if topology is None:
             return 1
-        return getattr(topology, method_name)(hostTopology, output)
-    return _impl
 
-WireUtility.AdjacentVertices = _make_adjacent("Vertices")
-WireUtility.AdjacentEdges = _make_adjacent("Edges")
-WireUtility.AdjacentWires = _make_adjacent("Wires")
-WireUtility.AdjacentFaces = _make_adjacent("Faces")
-WireUtility.AdjacentCellComplexes = _make_adjacent("CellComplexes")
-
-# ---------------------------------------------------------------------------
-# Wire.ByEdgesCluster, Wire.ByWires, Wire.Reverse, WireUtility.Length,
-# WireUtility.Cycles, and WireUtility.Split now have real implementations
-# defined on the classes above -- do not re-clobber them here (see gotcha
-# about stub assignments silently overriding real implementations added
-# earlier in the file).
-# ---------------------------------------------------------------------------
-from .helpers import not_implemented as _not_implemented
-
-
-def _wire_not_implemented(name, return_value=None):
-    def _method(*args, **kwargs):
-        return _not_implemented(f"Wire.{name}", return_value)
-    return _method
-
-
-def _wire_utility_not_implemented(name, return_value=None):
-    def _method(*args, **kwargs):
-        return _not_implemented(f"WireUtility.{name}", return_value)
-    return _method
+        return topology.CellComplexes(
+            hostTopology,
+            output,
+        )

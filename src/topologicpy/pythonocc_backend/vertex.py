@@ -8,6 +8,84 @@ from .occ_utils import make_occ_vertex
 from .helpers import distance3, same_vertex, unique_by_uuid
 
 
+def _vertex_tolerance(tolerance=0.0001):
+    """Returns a safe positive geometric tolerance."""
+    try:
+        value = abs(float(tolerance))
+    except Exception:
+        return 0.0001
+
+    if not math.isfinite(value):
+        return 0.0001
+
+    return max(value, 1.0e-12)
+
+
+def _adjacent_topologies_by_vertex(
+    vertex,
+    topology,
+    collection_name,
+    topology_type,
+):
+    """
+    Returns topologies of the requested type that contain the input Vertex.
+
+    Membership is determined geometrically using the backend vertex tolerance
+    semantics rather than Python wrapper identity.
+    """
+    if not isinstance(vertex, Vertex) or not isinstance(topology, Topology):
+        return []
+
+    getter = getattr(
+        Topology,
+        collection_name,
+        None,
+    )
+
+    if not callable(getter):
+        return []
+
+    candidates = []
+
+    try:
+        getter(
+            topology,
+            None,
+            candidates,
+        )
+    except Exception:
+        return []
+
+    result = []
+
+    for candidate in candidates:
+        if not Topology.IsInstance(
+            candidate,
+            topology_type,
+        ):
+            continue
+
+        vertices = []
+
+        try:
+            Topology.Vertices(
+                candidate,
+                None,
+                vertices,
+            )
+        except Exception:
+            continue
+
+        if any(
+            isinstance(candidate_vertex, Vertex)
+            and same_vertex(candidate_vertex, vertex)
+            for candidate_vertex in vertices
+        ):
+            result.append(candidate)
+
+    return unique_by_uuid(result)
+
+
 @dataclass(eq=False)
 class Vertex(Topology):
     x: float = 0.0
@@ -15,11 +93,52 @@ class Vertex(Topology):
     z: float = 0.0
 
     @staticmethod
-    def ByCoordinates(x=0.0, y=0.0, z=0.0):
-        x = float(x)
-        y = float(y)
-        z = float(z)
-        return Vertex(shape=make_occ_vertex(x, y, z), x=x, y=y, z=z)
+    def ByCoordinates(
+        x=0.0,
+        y=0.0,
+        z=0.0
+    ):
+        """Creates a backend Vertex from Cartesian coordinates."""
+        try:
+            x = float(x)
+            y = float(y)
+            z = float(z)
+        except Exception:
+            return None
+
+        if not all(
+            math.isfinite(value)
+            for value in (x, y, z)
+        ):
+            return None
+
+        try:
+            shape = make_occ_vertex(
+                x,
+                y,
+                z,
+            )
+        except Exception:
+            return None
+
+        if _is_null_shape(shape):
+            return None
+
+        return Vertex(
+            shape=shape,
+            x=x,
+            y=y,
+            z=z,
+        )
+
+    @staticmethod
+    def Origin():
+        """Returns the global origin Vertex."""
+        return Vertex.ByCoordinates(
+            0.0,
+            0.0,
+            0.0,
+        )
 
     @staticmethod
     def ByPoint(point):
@@ -29,19 +148,41 @@ class Vertex(Topology):
             return None
 
     @staticmethod
-    def ByOcctShape(shape, dictionary=None, contents=None, contexts=None, apertures=None):
+    def ByOcctShape(
+        shape,
+        dictionary=None,
+        contents=None,
+        contexts=None,
+        apertures=None
+    ):
+        """Wraps an existing OCCT Vertex."""
+        if _is_null_shape(shape):
+            return None
+
         try:
             from OCC.Core.BRep import BRep_Tool
-            pnt = BRep_Tool.Pnt(shape)
-            x, y, z = pnt.X(), pnt.Y(), pnt.Z()
+
+            point = BRep_Tool.Pnt(
+                shape
+            )
+
+            x = float(point.X())
+            y = float(point.Y())
+            z = float(point.Z())
+
         except Exception:
             return None
-        v = Vertex(shape=shape, x=float(x), y=float(y), z=float(z))
-        v.dictionary = dictionary
-        v.contents = list(contents) if contents else []
-        v.contexts = list(contexts) if contexts else []
-        v.apertures = list(apertures) if apertures else []
-        return v
+
+        return Vertex(
+            shape=shape,
+            x=x,
+            y=y,
+            z=z,
+            dictionary=dictionary,
+            contents=list(contents) if contents else [],
+            contexts=list(contexts) if contexts else [],
+            apertures=list(apertures) if apertures else [],
+        )
 
     def X(self):
         return float(self.x)
@@ -122,9 +263,7 @@ class Vertex(Topology):
         if _is_null_shape(target_shape):
             return None
 
-        tol = abs(float(tolerance)) if isinstance(tolerance, (int, float)) else 0.0001
-        if tol <= 0.0:
-            tol = 1.0e-12
+        tol = _vertex_tolerance(tolerance)
 
         # Treat an empty direction as unspecified for compatibility with the
         # historical TopologicPy projection API.
@@ -304,7 +443,7 @@ class VertexUtility:
         if not isinstance(vertex, Vertex) or not isinstance(topology, Topology):
             return False
 
-        tol = abs(float(tolerance)) if isinstance(tolerance, (int, float)) else 0.0001
+        tol = _vertex_tolerance(tolerance)
 
         if Topology.IsInstance(topology, "Vertex"):
             return VertexUtility.IsCoincident(vertex, topology, tolerance=tol)
@@ -435,116 +574,101 @@ class VertexUtility:
         return 0
 
     @staticmethod
-    def AdjacentWires(vertex, topology, wires):
-        from .wire import Wire
+    def AdjacentWires(
+        vertex,
+        topology,
+        wires
+    ):
+        """Populates wires with Wires that contain the input Vertex."""
         if not isinstance(vertex, Vertex):
             return 1
-        result = []
-        if isinstance(topology, Topology):
-            temp = []
-            Topology.Wires(topology, None, temp)
-            for w in temp:
-                if not isinstance(w, Wire):
-                    continue
-                sv, ev = Wire.StartVertex(w), Wire.EndVertex(w)
-                if sv is not None and same_vertex(sv, vertex):
-                    result.append(w)
-                elif ev is not None and same_vertex(ev, vertex):
-                    result.append(w)
-        wires.extend(unique_by_uuid(result))
+
+        result = _adjacent_topologies_by_vertex(
+            vertex,
+            topology,
+            "Wires",
+            "Wire",
+        )
+
+        wires.extend(result)
         return 0
 
     @staticmethod
-    def AdjacentFaces(vertex, topology, faces):
+    def AdjacentFaces(
+        vertex,
+        topology,
+        faces
+    ):
+        """Populates faces with Faces that contain the input Vertex."""
         if not isinstance(vertex, Vertex):
             return 1
-        result = []
-        if isinstance(topology, Topology):
-            temp = []
-            Topology.Faces(topology, None, temp)
-            for f in temp:
-                if not Topology.IsInstance(f, "Face"):
-                    continue
-                fverts = []
-                Topology.Vertices(f, None, fverts)
-                if any(same_vertex(v, vertex) for v in fverts):
-                    result.append(f)
-        faces.extend(unique_by_uuid(result))
+
+        result = _adjacent_topologies_by_vertex(
+            vertex,
+            topology,
+            "Faces",
+            "Face",
+        )
+
+        faces.extend(result)
         return 0
 
     @staticmethod
-    def AdjacentShells(vertex, topology, shells):
+    def AdjacentShells(
+        vertex,
+        topology,
+        shells
+    ):
+        """Populates shells with Shells that contain the input Vertex."""
         if not isinstance(vertex, Vertex):
             return 1
-        result = []
-        if isinstance(topology, Topology):
-            temp = []
-            Topology.Shells(topology, None, temp)
-            for s in temp:
-                if not Topology.IsInstance(s, "Shell"):
-                    continue
-                sverts = []
-                Topology.Vertices(s, None, sverts)
-                if any(same_vertex(sv, vertex) for sv in sverts):
-                    result.append(s)
-        shells.extend(unique_by_uuid(result))
+
+        result = _adjacent_topologies_by_vertex(
+            vertex,
+            topology,
+            "Shells",
+            "Shell",
+        )
+
+        shells.extend(result)
         return 0
 
     @staticmethod
-    def AdjacentCells(vertex, topology, cells):
+    def AdjacentCells(
+        vertex,
+        topology,
+        cells
+    ):
+        """Populates cells with Cells that contain the input Vertex."""
         if not isinstance(vertex, Vertex):
             return 1
-        result = []
-        if isinstance(topology, Topology):
-            temp = []
-            Topology.Cells(topology, None, temp)
-            for c in temp:
-                if not Topology.IsInstance(c, "Cell"):
-                    continue
-                cverts = []
-                Topology.Vertices(c, None, cverts)
-                if any(same_vertex(cv, vertex) for cv in cverts):
-                    result.append(c)
-        cells.extend(unique_by_uuid(result))
+
+        result = _adjacent_topologies_by_vertex(
+            vertex,
+            topology,
+            "Cells",
+            "Cell",
+        )
+
+        cells.extend(result)
         return 0
 
     @staticmethod
-    def AdjacentCellComplexes(vertex, topology, cellComplexes):
+    def AdjacentCellComplexes(
+        vertex,
+        topology,
+        cellComplexes
+    ):
+        """Populates cellComplexes with CellComplexes that contain the input Vertex."""
         if not isinstance(vertex, Vertex):
             return 1
-        result = []
-        if isinstance(topology, Topology):
-            temp = []
-            Topology.CellComplexes(topology, None, temp)
-            for cc in temp:
-                if not Topology.IsInstance(cc, "CellComplex"):
-                    continue
-                ccverts = []
-                Topology.Vertices(cc, None, ccverts)
-                if any(same_vertex(cvv, vertex) for cvv in ccverts):
-                    result.append(cc)
-        cellComplexes.extend(unique_by_uuid(result))
+
+        result = _adjacent_topologies_by_vertex(
+            vertex,
+            topology,
+            "CellComplexes",
+            "CellComplex",
+        )
+
+        cellComplexes.extend(result)
         return 0
-
-
-# ---------------------------------------------------------------------------
-# Explicit unsupported Vertex API
-# ---------------------------------------------------------------------------
-from .helpers import not_implemented as _not_implemented
-
-
-def _vertex_not_implemented(name, return_value=None):
-    def _method(*args, **kwargs):
-        return _not_implemented(f"Vertex.{name}", return_value)
-    return _method
-
-
-def _vertex_utility_not_implemented(name, return_value=None):
-    def _method(*args, **kwargs):
-        return _not_implemented(f"VertexUtility.{name}", return_value)
-    return _method
-
-
-Vertex.Origin = staticmethod(lambda: Vertex.ByCoordinates(0.0, 0.0, 0.0))
-# Vertex.ByCoordinatesString, Vertex.Project, Vertex.Fuse, VertexUtility.NearestVertex,
-# and VertexUtility.ParameterAtVertex have concrete implementations above.

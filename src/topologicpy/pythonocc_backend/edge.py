@@ -12,7 +12,7 @@ from .topology import (
 )
 from .vertex import Vertex
 from .occ_utils import make_occ_edge
-from .helpers import same_vertex
+from .helpers import same_vertex, unique_by_uuid
 
 
 def _curve_data(edge):
@@ -269,19 +269,64 @@ class Edge(Topology):
 
 
     @staticmethod
-    def ByStartVertexEndVertex(startVertex, endVertex):
-        """Create a straight Edge between two backend Vertex objects."""
+    def ByStartVertexEndVertex(
+        startVertex,
+        endVertex,
+        tolerance: float = 0.0001
+    ):
+        """
+        Creates a straight Edge between two backend Vertices.
+
+        Parameters
+        ----------
+        startVertex : Vertex
+            The start Vertex.
+        endVertex : Vertex
+            The end Vertex.
+        tolerance : float , optional
+            The minimum permitted distance between the two Vertices.
+            Default is 0.0001.
+
+        Returns
+        -------
+        Edge
+            The created Edge, or None if construction fails.
+
+        """
         if not isinstance(startVertex, Vertex) or not isinstance(endVertex, Vertex):
             return None
-        if same_vertex(startVertex, endVertex):
-            return None
+
         try:
-            shape = make_occ_edge(startVertex, endVertex)
+            tolerance = abs(float(tolerance))
         except Exception:
             return None
+
+        if not math.isfinite(tolerance):
+            return None
+
+        if same_vertex(
+            startVertex,
+            endVertex,
+            tolerance=tolerance,
+        ):
+            return None
+
+        try:
+            shape = make_occ_edge(
+                startVertex,
+                endVertex,
+            )
+        except Exception:
+            return None
+
         if _is_null_shape(shape):
             return None
-        return Edge(shape=shape, start=startVertex, end=endVertex)
+
+        return Edge(
+            shape=shape,
+            start=startVertex,
+            end=endVertex,
+        )
 
     @staticmethod
     def ByVertices(vertices):
@@ -291,19 +336,38 @@ class Edge(Topology):
         return Edge.ByStartVertexEndVertex(vertices[0], vertices[-1])
 
     @staticmethod
-    def ByStartVertexEndVertexTolerance(startVertex, endVertex, tolerance: float = 0.0001):
-        """Create a straight Edge if its endpoints are farther apart than tolerance."""
-        if not isinstance(startVertex, Vertex) or not isinstance(endVertex, Vertex):
-            return None
-        if same_vertex(startVertex, endVertex, tolerance=tolerance):
-            return None
-        try:
-            shape = make_occ_edge(startVertex, endVertex)
-        except Exception:
-            return None
-        if _is_null_shape(shape):
-            return None
-        return Edge(shape=shape, start=startVertex, end=endVertex)
+    def ByStartVertexEndVertexTolerance(
+        startVertex,
+        endVertex,
+        tolerance: float = 0.0001
+    ):
+        """
+        Creates a straight Edge between two Vertices using the input tolerance.
+
+        This method delegates to ByStartVertexEndVertex and is retained as a
+        backend compatibility entry point.
+
+        Parameters
+        ----------
+        startVertex : Vertex
+            The start Vertex.
+        endVertex : Vertex
+            The end Vertex.
+        tolerance : float , optional
+            The minimum permitted distance between the two Vertices.
+            Default is 0.0001.
+
+        Returns
+        -------
+        Edge
+            The created Edge, or None if construction fails.
+
+        """
+        return Edge.ByStartVertexEndVertex(
+            startVertex,
+            endVertex,
+            tolerance=tolerance,
+        )
     @staticmethod
     def ByNurbsParameters(controlPoints, weights=None, knots=None, isRational: bool = False, isPeriodic: bool = False, degree: int = 3):
         """Create an Edge from expanded NURBS/B-spline parameters."""
@@ -335,7 +399,14 @@ class Edge(Topology):
                 if interior > 0:
                     knots += [float(i) / float(interior + 1) for i in range(1, interior + 1)]
                 knots += [1.0] * (degree + 1)
-        return EdgeUtility.ByNurbsCurve(vertices, knots, weights, degree, bool(isPeriodic), bool(isRational))
+        return EdgeUtility.ByNurbsCurve(
+            vertices,
+            knots,
+            weights,
+            degree,
+            bool(isPeriodic),
+            bool(isRational),
+        )
 
     @staticmethod
     def ByCurve(points, degree: int = 3, periodic: bool = False, tolerance: float = 0.0001):
@@ -411,8 +482,6 @@ class Edge(Topology):
 
     def AdjacentEdges(self, hostTopology=None, output=None):
         """Return Edges in hostTopology that share an endpoint with this Edge."""
-        from .helpers import unique_by_uuid
-
         result = []
         if hostTopology is not None:
             candidates = Topology.Edges(hostTopology) or []
@@ -1260,77 +1329,134 @@ class EdgeUtility:
         except Exception:
             return None
 
+    @staticmethod
+    def AdjacentWires(
+        edge,
+        hostTopology,
+        output
+    ):
+        """
+        Populates output with Wires in hostTopology that contain the input Edge.
 
-# Edge -> Wire: find Wires in hostTopology containing this Edge.
-def _adjacent_wires(edge, hostTopology, output):
-    """Populate Wires in hostTopology that contain the actual input Edge topology."""
-    from .topology import Topology
+        OCCT topological identity is used rather than endpoint coincidence so
+        geometrically coincident but distinct Edges are not treated as the same
+        topology.
+        """
+        if not isinstance(edge, Edge) or hostTopology is None:
+            return 1
 
-    if not isinstance(edge, Edge) or hostTopology is None:
-        return 1
-    result, candidates = [], []
-    Topology.Wires(hostTopology, None, candidates)
-    for wire in candidates:
-        wire_edges = []
-        Topology.Edges(wire, None, wire_edges)
-        if any(_same_edge_topology(edge, candidate) for candidate in wire_edges if isinstance(candidate, Edge)):
-            result.append(wire)
-    if output is not None:
-        output.extend(result)
-    return 0
+        candidates = []
+        Topology.Wires(
+            hostTopology,
+            None,
+            candidates,
+        )
 
+        result = []
 
-# Edge -> Face: find Faces in hostTopology containing this Edge.
-def _adjacent_faces(edge, hostTopology, output):
-    """Populate Faces in hostTopology that contain the actual input Edge topology."""
-    from .topology import Topology
+        for wire in candidates:
+            wire_edges = []
+            Topology.Edges(
+                wire,
+                None,
+                wire_edges,
+            )
 
-    if not isinstance(edge, Edge) or hostTopology is None:
-        return 1
-    result, candidates = [], []
-    Topology.Faces(hostTopology, None, candidates)
-    for face in candidates:
-        face_edges = []
-        Topology.Edges(face, None, face_edges)
-        if any(_same_edge_topology(edge, candidate) for candidate in face_edges if isinstance(candidate, Edge)):
-            result.append(face)
-    if output is not None:
-        output.extend(result)
-    return 0
+            if any(
+                _same_edge_topology(edge, candidate)
+                for candidate in wire_edges
+                if isinstance(candidate, Edge)
+            ):
+                result.append(wire)
 
+        if output is not None:
+            output.extend(result)
 
-EdgeUtility.AdjacentWires = staticmethod(_adjacent_wires)
-EdgeUtility.AdjacentFaces = staticmethod(_adjacent_faces)
-
-
-def _make_adjacent(method_name):
-    """Return a utility function delegating to a topology adjacency method."""
+        return 0
 
     @staticmethod
-    def _impl(topology, hostTopology, output):
+    def AdjacentFaces(
+        edge,
+        hostTopology,
+        output
+    ):
+        """
+        Populates output with Faces in hostTopology that contain the input Edge.
+
+        OCCT topological identity is used rather than endpoint coincidence so
+        geometrically coincident but distinct Edges are not treated as the same
+        topology.
+        """
+        if not isinstance(edge, Edge) or hostTopology is None:
+            return 1
+
+        candidates = []
+        Topology.Faces(
+            hostTopology,
+            None,
+            candidates,
+        )
+
+        result = []
+
+        for face in candidates:
+            face_edges = []
+            Topology.Edges(
+                face,
+                None,
+                face_edges,
+            )
+
+            if any(
+                _same_edge_topology(edge, candidate)
+                for candidate in face_edges
+                if isinstance(candidate, Edge)
+            ):
+                result.append(face)
+
+        if output is not None:
+            output.extend(result)
+
+        return 0
+
+    @staticmethod
+    def AdjacentShells(
+        topology,
+        hostTopology,
+        output
+    ):
         if topology is None:
             return 1
-        return getattr(topology, method_name)(hostTopology, output)
 
-    return _impl
+        return topology.Shells(
+            hostTopology,
+            output,
+        )
 
+    @staticmethod
+    def AdjacentCells(
+        topology,
+        hostTopology,
+        output
+    ):
+        if topology is None:
+            return 1
 
-EdgeUtility.AdjacentShells = _make_adjacent("Shells")
-EdgeUtility.AdjacentCells = _make_adjacent("Cells")
-EdgeUtility.AdjacentCellComplexes = _make_adjacent("CellComplexes")
+        return topology.Cells(
+            hostTopology,
+            output,
+        )
 
-from .helpers import not_implemented as _not_implemented
+    @staticmethod
+    def AdjacentCellComplexes(
+        topology,
+        hostTopology,
+        output
+    ):
+        if topology is None:
+            return 1
 
-
-def _edge_not_implemented(name, return_value=None):
-    """Create a backend placeholder for an unsupported Edge operation."""
-    def _method(*args, **kwargs):
-        return _not_implemented(f"Edge.{name}", return_value)
-    return _method
-
-
-def _edge_utility_not_implemented(name, return_value=None):
-    """Create a backend placeholder for an unsupported EdgeUtility operation."""
-    def _method(*args, **kwargs):
-        return _not_implemented(f"EdgeUtility.{name}", return_value)
-    return _method
+        return topology.CellComplexes(
+            hostTopology,
+            output,
+        )
