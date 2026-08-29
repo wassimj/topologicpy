@@ -322,6 +322,8 @@ def test_section_shape_constructors_return_cells():
         Cell.SHS(size=4, height=2, thickness=0.25, silent=True),
         Cell.CHS(radius=1, height=2, thickness=0.2, sides=12, silent=True),
         Cell.Tube(radius=1, height=2, thickness=0.2, sides=12, silent=True),
+        Cell.CHS(radius=1, height=1, thickness=0.5, sides=12, silent=True),
+        Cell.Tube(radius=1, height=1, thickness=0.5, sides=12, silent=True),
     ]
 
     for cell in constructors:
@@ -333,10 +335,16 @@ def test_section_shape_constructors_return_cells():
     assert Cell.IShape(width=0, length=4, height=1, silent=True) is None
     assert Cell.LShape(width=0, length=4, height=1, silent=True) is None
     assert Cell.TShape(width=0, length=4, height=1, silent=True) is None
+
+    # Rectangular hollow sections become degenerate when twice the
+    # wall thickness consumes the full outer dimension.
     assert Cell.RHS(width=1, length=1, height=1, thickness=0.5, silent=True) is None
     assert Cell.SHS(size=1, height=1, thickness=0.5, silent=True) is None
-    assert Cell.CHS(radius=1, height=1, thickness=0.5, silent=True) is None
-    assert Cell.Tube(radius=1, height=1, thickness=0.5, silent=True) is None
+
+    # Circular hollow sections remain valid while thickness < outer radius.
+    # At thickness == radius the inner radius becomes zero.
+    assert Cell.CHS(radius=1, height=1, thickness=1.0, silent=True) is None
+    assert Cell.Tube(radius=1, height=1, thickness=1.0, silent=True) is None
 
 
 def test_pipe_returns_expected_dictionary():
