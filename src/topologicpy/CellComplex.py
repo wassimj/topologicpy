@@ -2029,25 +2029,77 @@ class CellComplex():
     
     @staticmethod
     def Prism(origin=None,
-              width: float = 1.0,
-              length: float = 1.0,
-              height: float = 1.0,
-              uSides: int = 2,
-              vSides: int = 2,
-              wSides: int = 2,
-              direction: list = [0, 0, 1],
-              placement: str = "center",
-              mantissa: int = 6,
-              tolerance: float = 0.0001,
-              silent: bool = False):
+            width: float = 1.0,
+            length: float = 1.0,
+            height: float = 1.0,
+            uSides: int = 2,
+            vSides: int = 2,
+            wSides: int = 2,
+            direction: list = [0, 0, 1],
+            placement: str = "center",
+            mantissa: int = 6,
+            tolerance: float = 0.0001,
+            silent: bool = False):
         """
-        Creates a prismatic CellComplex subdivided into a regular ``uSides`` by
-        ``vSides`` by ``wSides`` grid of Cells.
+        Creates a prismatic CellComplex subdivided into a regular uSides by
+        vSides by wSides grid of Cells.
+
+        The PythonOCC backend constructs the constituent Cells directly and
+        assembles them natively.
+
+        The TopologicCore backend constructs one Cell and partitions it using
+        Topology.Slice. This allows TopologicCore itself to generate the shared
+        internal topology and avoids numerical instability when the resulting
+        CellComplex is subsequently transformed or triangulated.
+
+        Parameters
+        ----------
+        origin : topologic_core.Vertex, optional
+            The origin location of the prism. Default is None, which places the
+            prism at (0, 0, 0).
+        width : float, optional
+            The width of the prism. Default is 1.
+        length : float, optional
+            The length of the prism. Default is 1.
+        height : float, optional
+            The height of the prism. Default is 1.
+        uSides : int, optional
+            The number of Cells along the width. Default is 2.
+        vSides : int, optional
+            The number of Cells along the length. Default is 2.
+        wSides : int, optional
+            The number of Cells along the height. Default is 2.
+        direction : list, optional
+            The vector representing the up direction of the prism.
+            Default is [0, 0, 1].
+        placement : str, optional
+            The placement of the input origin relative to the prism.
+            This can be "bottom", "center", or "lowerleft".
+            Default is "center".
+        mantissa : int, optional
+            The number of decimal places used by subsidiary operations.
+            Default is 6.
+        tolerance : float, optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool, optional
+            If set to True, error and warning messages are suppressed.
+            Default is False.
+
+        Returns
+        -------
+        topologic_core.CellComplex
+            The created CellComplex.
+
         """
         from topologicpy.Vertex import Vertex
+        from topologicpy.Face import Face
         from topologicpy.Cell import Cell
+        from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
 
+        # ------------------------------------------------------------------
+        # Validate numerical inputs.
+        # ------------------------------------------------------------------
         try:
             width = abs(float(width))
             length = abs(float(length))
@@ -2059,82 +2111,347 @@ class CellComplex():
             tolerance = abs(float(tolerance))
         except Exception:
             if not silent:
-                print("CellComplex.Prism - Error: One or more numerical parameters are invalid. Returning None.")
+                print(
+                    "CellComplex.Prism - Error: One or more numerical parameters "
+                    "are invalid. Returning None."
+                )
             return None
 
-        if min(width, length, height) <= tolerance or tolerance <= 0.0:
+        if tolerance <= 0.0:
             if not silent:
-                print("CellComplex.Prism - Error: width, length, and height must be greater than tolerance. Returning None.")
+                print(
+                    "CellComplex.Prism - Error: The input tolerance parameter "
+                    "must be greater than zero. Returning None."
+                )
             return None
+
+        if width <= tolerance or length <= tolerance or height <= tolerance:
+            if not silent:
+                print(
+                    "CellComplex.Prism - Error: width, length, and height must "
+                    "be greater than tolerance. Returning None."
+                )
+            return None
+
         if uSides < 1 or vSides < 1 or wSides < 1:
             if not silent:
-                print("CellComplex.Prism - Error: uSides, vSides, and wSides must each be at least 1. Returning None.")
+                print(
+                    "CellComplex.Prism - Error: uSides, vSides, and wSides "
+                    "must each be at least 1. Returning None."
+                )
             return None
 
+        # ------------------------------------------------------------------
+        # Validate direction.
+        # ------------------------------------------------------------------
         if not isinstance(direction, (list, tuple)) or len(direction) != 3:
             if not silent:
-                print("CellComplex.Prism - Error: The input direction parameter is not a valid 3D vector. Returning None.")
-            return None
-        try:
-            direction = [float(value) for value in direction]
-        except Exception:
-            return None
-        if sum(value * value for value in direction) ** 0.5 <= tolerance:
-            if not silent:
-                print("CellComplex.Prism - Error: The input direction vector has zero magnitude. Returning None.")
+                print(
+                    "CellComplex.Prism - Error: The input direction parameter "
+                    "is not a valid 3D vector. Returning None."
+                )
             return None
 
+        try:
+            direction = [
+                float(direction[0]),
+                float(direction[1]),
+                float(direction[2]),
+            ]
+        except Exception:
+            if not silent:
+                print(
+                    "CellComplex.Prism - Error: The input direction parameter "
+                    "does not contain valid numerical values. Returning None."
+                )
+            return None
+
+        magnitude = (
+            direction[0] * direction[0]
+            + direction[1] * direction[1]
+            + direction[2] * direction[2]
+        ) ** 0.5
+
+        if magnitude <= tolerance:
+            if not silent:
+                print(
+                    "CellComplex.Prism - Error: The input direction vector has "
+                    "zero magnitude. Returning None."
+                )
+            return None
+
+        # ------------------------------------------------------------------
+        # Validate origin and placement.
+        # ------------------------------------------------------------------
         if not Topology.IsInstance(origin, "Vertex"):
             origin = Vertex.Origin()
 
         placement = str(placement).lower().strip()
+
         if placement not in ["center", "bottom", "lowerleft"]:
             if not silent:
-                print('CellComplex.Prism - Error: placement must be "center", "bottom", or "lowerleft". Returning None.')
+                print(
+                    'CellComplex.Prism - Error: placement must be "center", '
+                    '"bottom", or "lowerleft". Returning None.'
+                )
             return None
 
-        dx = width / float(uSides)
-        dy = length / float(vSides)
-        dz = height / float(wSides)
-        cells = []
+        # Work in a canonical positive XYZ box:
+        #
+        #     (0, 0, 0) -> (width, length, height)
+        #
+        # Placement and orientation are applied exactly once at the end.
+        canonical_origin = Vertex.Origin()
 
-        for i in range(uSides):
-            for j in range(vSides):
-                for k in range(wSides):
-                    cell_origin = Vertex.ByCoordinates(i * dx, j * dy, k * dz)
-                    cell = Cell.Prism(
-                        origin=cell_origin,
-                        width=dx,
-                        length=dy,
-                        height=dz,
-                        uSides=1,
-                        vSides=1,
-                        wSides=1,
-                        direction=[0, 0, 1],
-                        placement="lowerleft",
-                        mantissa=mantissa,
-                        tolerance=tolerance,
-                        silent=True,
+        # ==================================================================
+        # TOPOLOGICCORE
+        #
+        # Build one Cell, then let TopologicCore partition that Cell itself.
+        # This preserves canonical shared internal Faces.
+        # ==================================================================
+        use_topologic_core = False
+
+        try:
+            use_topologic_core = Topology._IsTopologicCoreBackend()
+        except Exception:
+            use_topologic_core = False
+
+        if use_topologic_core:
+            base_cell = Cell.Prism(
+                origin=canonical_origin,
+                width=width,
+                length=length,
+                height=height,
+                uSides=1,
+                vSides=1,
+                wSides=1,
+                direction=[0, 0, 1],
+                placement="lowerleft",
+                mantissa=mantissa,
+                tolerance=tolerance,
+                silent=True,
+            )
+
+            if not Topology.IsInstance(base_cell, "Cell"):
+                if not silent:
+                    print(
+                        "CellComplex.Prism - Error: Could not create the base "
+                        "Cell. Returning None."
                     )
-                    if not Topology.IsInstance(cell, "Cell"):
-                        if not silent:
-                            print("CellComplex.Prism - Error: Could not create one of the constituent Cells. Returning None.")
-                        return None
-                    cells.append(cell)
+                return None
 
-        prism = CellComplex.ByCells(cells, tolerance=tolerance, silent=True)
-        if not Topology.IsInstance(prism, "CellComplex"):
-            if not silent:
-                print("CellComplex.Prism - Error: Could not assemble the constituent Cells. Returning None.")
-            return None
+            partition_faces = []
 
-        source = [0.0, 0.0, 0.0]
+            dx = width / float(uSides)
+            dy = length / float(vSides)
+            dz = height / float(wSides)
+
+            # --------------------------------------------------------------
+            # Planes normal to X.
+            # --------------------------------------------------------------
+            for i in range(1, uSides):
+                face_origin = Vertex.ByCoordinates(
+                    i * dx,
+                    0.5 * length,
+                    0.5 * height,
+                )
+
+                face = Face.Rectangle(
+                    origin=face_origin,
+                    width=height * 1.1,
+                    length=length * 1.1,
+                    direction=[1, 0, 0],
+                    placement="center",
+                    tolerance=tolerance,
+                    silent=True,
+                )
+
+                if not Topology.IsInstance(face, "Face"):
+                    if not silent:
+                        print(
+                            "CellComplex.Prism - Error: Could not create an "
+                            "X-direction partition Face. Returning None."
+                        )
+                    return None
+
+                partition_faces.append(face)
+
+            # --------------------------------------------------------------
+            # Planes normal to Y.
+            # --------------------------------------------------------------
+            for j in range(1, vSides):
+                face_origin = Vertex.ByCoordinates(
+                    0.5 * width,
+                    j * dy,
+                    0.5 * height,
+                )
+
+                face = Face.Rectangle(
+                    origin=face_origin,
+                    width=width * 1.1,
+                    length=height * 1.1,
+                    direction=[0, 1, 0],
+                    placement="center",
+                    tolerance=tolerance,
+                    silent=True,
+                )
+
+                if not Topology.IsInstance(face, "Face"):
+                    if not silent:
+                        print(
+                            "CellComplex.Prism - Error: Could not create a "
+                            "Y-direction partition Face. Returning None."
+                        )
+                    return None
+
+                partition_faces.append(face)
+
+            # --------------------------------------------------------------
+            # Planes normal to Z.
+            # --------------------------------------------------------------
+            for k in range(1, wSides):
+                face_origin = Vertex.ByCoordinates(
+                    0.5 * width,
+                    0.5 * length,
+                    k * dz,
+                )
+
+                face = Face.Rectangle(
+                    origin=face_origin,
+                    width=width * 1.1,
+                    length=length * 1.1,
+                    direction=[0, 0, 1],
+                    placement="center",
+                    tolerance=tolerance,
+                    silent=True,
+                )
+
+                if not Topology.IsInstance(face, "Face"):
+                    if not silent:
+                        print(
+                            "CellComplex.Prism - Error: Could not create a "
+                            "Z-direction partition Face. Returning None."
+                        )
+                    return None
+
+                partition_faces.append(face)
+
+            if len(partition_faces) == 0:
+                prism = CellComplex.ByCells(
+                    [base_cell],
+                    tolerance=tolerance,
+                    silent=True,
+                )
+            else:
+                cutting_cluster = Cluster.ByTopologies(partition_faces)
+
+                if not Topology.IsInstance(cutting_cluster, "Cluster"):
+                    if not silent:
+                        print(
+                            "CellComplex.Prism - Error: Could not create the "
+                            "partition Cluster. Returning None."
+                        )
+                    return None
+
+                prism = Topology.Slice(
+                    base_cell,
+                    cutting_cluster,
+                    tolerance=tolerance,
+                    silent=True,
+                )
+
+            if not Topology.IsInstance(prism, "CellComplex"):
+                if not silent:
+                    print(
+                        "CellComplex.Prism - Error: TopologicCore could not "
+                        "partition the base Cell into a CellComplex. Returning None."
+                    )
+                return None
+
+        # ==================================================================
+        # PYTHONOCC
+        #
+        # Directly construct the Cells and let the OCCT backend assemble them.
+        # ==================================================================
+        else:
+            dx = width / float(uSides)
+            dy = length / float(vSides)
+            dz = height / float(wSides)
+
+            cells = []
+
+            for i in range(uSides):
+                for j in range(vSides):
+                    for k in range(wSides):
+                        cell_origin = Vertex.ByCoordinates(
+                            i * dx,
+                            j * dy,
+                            k * dz,
+                        )
+
+                        cell = Cell.Prism(
+                            origin=cell_origin,
+                            width=dx,
+                            length=dy,
+                            height=dz,
+                            uSides=1,
+                            vSides=1,
+                            wSides=1,
+                            direction=[0, 0, 1],
+                            placement="lowerleft",
+                            mantissa=mantissa,
+                            tolerance=tolerance,
+                            silent=True,
+                        )
+
+                        if not Topology.IsInstance(cell, "Cell"):
+                            if not silent:
+                                print(
+                                    "CellComplex.Prism - Error: Could not create "
+                                    "one of the constituent Cells. Returning None."
+                                )
+                            return None
+
+                        cells.append(cell)
+
+            prism = CellComplex.ByCells(
+                cells,
+                tolerance=tolerance,
+                silent=True,
+            )
+
+            if not Topology.IsInstance(prism, "CellComplex"):
+                if not silent:
+                    print(
+                        "CellComplex.Prism - Error: Could not assemble the "
+                        "constituent Cells. Returning None."
+                    )
+                return None
+
+        # ------------------------------------------------------------------
+        # Canonical placement source.
+        # ------------------------------------------------------------------
         if placement == "center":
-            source = [0.5 * width, 0.5 * length, 0.5 * height]
-        elif placement == "bottom":
-            source = [0.5 * width, 0.5 * length, 0.0]
+            source = [
+                0.5 * width,
+                0.5 * length,
+                0.5 * height,
+            ]
 
-        return Topology.OrientAndPlace(
+        elif placement == "bottom":
+            source = [
+                0.5 * width,
+                0.5 * length,
+                0.0,
+            ]
+
+        else:  # lowerleft
+            source = [0.0, 0.0, 0.0]
+
+        # ------------------------------------------------------------------
+        # Apply orientation and placement exactly once.
+        # ------------------------------------------------------------------
+        result = Topology.OrientAndPlace(
             prism,
             originA=Vertex.ByCoordinates(source),
             originB=origin,
@@ -2145,6 +2462,15 @@ class CellComplex():
             silent=silent,
         )
 
+        if not Topology.IsInstance(result, "CellComplex"):
+            if not silent:
+                print(
+                    "CellComplex.Prism - Error: Could not orient and place "
+                    "the CellComplex. Returning None."
+                )
+            return None
+
+        return result
 
     @staticmethod
     def RemoveCollinearEdges(cellComplex, angTolerance: float = 0.1, tolerance: float = 0.0001, silent: bool = True):
