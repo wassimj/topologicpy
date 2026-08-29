@@ -1334,7 +1334,7 @@ class Cell():
     
     @staticmethod
     def Cone(origin = None, baseRadius: float = 0.5, topRadius: float = 0, height: float = 1, uSides: int = 16, vSides: int = 1, direction: list = [0, 0, 1],
-                 dirZ: float = 1, placement: str = "center", mantissa: int = 6, tolerance: float = 0.0001):
+                 dirZ: float = 1, placement: str = "center", mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
         """
         Creates a cone.
 
@@ -1360,7 +1360,9 @@ class Cell():
             The desired length of the mantissa. Default is 6
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
-
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+        
         Returns
         -------
         topologic_core.Cell
@@ -1376,7 +1378,9 @@ class Cell():
 
         def createCone(baseWire, topWire, baseVertex, topVertex, tolerance=0.0001):
             if baseWire == None and topWire == None:
-                raise Exception("Cell.Cone - Error: Both radii of the cone cannot be zero at the same time")
+                if not silent:
+                    print("Cell.Cone - Error: Both radii of the cone cannot be zero at the same time. Returning None.")
+                return None
             elif baseWire == None:
                 apex = baseVertex
                 wire = topWire
@@ -1384,7 +1388,7 @@ class Cell():
                 apex = topVertex
                 wire = baseWire
             else:
-                return Cell.ByWires([baseWire, topWire])
+                return Cell.ByWires([baseWire, topWire], tolerance=tolerance, silent=silent)
             vertices = Topology.Vertices(wire)
             faces = [Face.ByWire(wire, tolerance=tolerance)]
             for i in range(0, len(vertices)-1):
@@ -1398,7 +1402,8 @@ class Cell():
         if not Topology.IsInstance(origin, "Vertex"):
             origin = Vertex.ByCoordinates(0, 0, 0)
         if not Topology.IsInstance(origin, "Vertex"):
-            print("Cell.Cone - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
+            if not silent:
+                print("Cell.Cone - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
             return None
         xOffset = 0
         yOffset = 0
@@ -1439,7 +1444,8 @@ class Cell():
         topVertex = Vertex.ByCoordinates(Vertex.X(origin, mantissa=mantissa)+xOffset, Vertex.Y(origin, mantissa=mantissa)+yOffset, Vertex.Z(origin, mantissa=mantissa)+zOffset+height)
         cone = createCone(baseWire, topWire, baseVertex, topVertex, tolerance=tolerance)
         if cone == None:
-            print("Cell.Cone - Error: Could not create a cone. Returning None.")
+            if not silent:
+                print("Cell.Cone - Error: Could not create a cone. Returning None.")
             return None
         
         if vSides > 1:
@@ -1850,7 +1856,7 @@ class Cell():
         for i in range(wSides):
             c_shape_wire = Topology.Translate(c_shape_wire, 0, 0, distance)
             wires.append(c_shape_wire)
-        return_cell = Cell.ByWires(wires, triangulate=False, mantissa=mantissa, tolerance=tolerance, silent=silent)
+        return_cell = Cell.ByWires(wires, triangulate=False, tolerance=tolerance, silent=silent)
         xOffset = 0
         yOffset = 0
         zOffset = 0
@@ -4077,7 +4083,7 @@ class Cell():
         for i in range(wSides):
             i_shape_wire = Topology.Translate(i_shape_wire, 0, 0, distance)
             wires.append(i_shape_wire)
-        return_cell = Cell.ByWires(wires, triangulate=False, mantissa=mantissa, tolerance=tolerance, silent=silent)
+        return_cell = Cell.ByWires(wires, triangulate=False, tolerance=tolerance, silent=silent)
         # move down to center
         return_cell = Topology.Translate(return_cell, 0, 0, -height*0.5)
         xOffset = 0
@@ -4285,7 +4291,7 @@ class Cell():
         for i in range(wSides):
             l_shape_wire = Topology.Translate(l_shape_wire, 0, 0, distance)
             wires.append(l_shape_wire)
-        return_cell = Cell.ByWires(wires, triangulate=False, mantissa=mantissa, tolerance=tolerance, silent=silent)
+        return_cell = Cell.ByWires(wires, triangulate=False, tolerance=tolerance, silent=silent)
         xOffset = 0
         yOffset = 0
         zOffset = 0
@@ -4682,7 +4688,17 @@ class Cell():
         return cell
 
     @staticmethod
-    def Pipe(edge, profile = None, radius: float = 0.5, sides: int = 16, startOffset: float = 0, endOffset: float = 0, endcapA = None, endcapB = None, mantissa: int = 6) -> dict:
+    def Pipe(edge,
+             profile = None,
+             radius: float = 0.5,
+             sides: int = 16,
+             startOffset: float = 0,
+             endOffset: float = 0,
+             endcapA = None,
+             endcapB = None,
+             mantissa: int = 6,
+             tolerance: float = 0.0001,
+             silent: bool = False) -> dict:
         """
         Creates a pipe along the input edge.
 
@@ -4706,6 +4722,10 @@ class Cell():
             The topology to place at the end vertex of the centerline edge. The positive Z direction of the end cap will be oriented in the inverse direction of the centerline edge.
         mantissa : int , optional
             The desired length of the mantissa. Default is 6
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
         
         Returns
         -------
@@ -4723,7 +4743,8 @@ class Cell():
         import math
 
         if not Topology.IsInstance(edge, "Edge"):
-            print("Cell.Pipe - Error: The input edge parameter is not a valid topologic edge. Returning None.")
+            if not silent:
+                print("Cell.Pipe - Error: The input edge parameter is not a valid topologic edge. Returning None.")
             return None
         length = Edge.Length(edge)
         origin = Edge.StartVertex(edge)
@@ -4759,7 +4780,7 @@ class Cell():
             baseWire = Wire.ByVertices(baseV)
             topWire = Wire.ByVertices(topV)
         wires = [baseWire, topWire]
-        pipe = Cell.ByWires(wires)
+        pipe = Cell.ByWires(wires, tolerance=tolerance)
         phi = math.degrees(math.atan2(dy, dx)) # Rotation around Y-Axis
         if dist < 0.0001:
             theta = 0
@@ -5988,7 +6009,7 @@ class Cell():
         for i in range(wSides):
             t_shape_wire = Topology.Translate(t_shape_wire, 0, 0, distance)
             wires.append(t_shape_wire)
-        return_cell = Cell.ByWires(wires, triangulate=False, mantissa=mantissa, tolerance=tolerance, silent=silent)
+        return_cell = Cell.ByWires(wires, triangulate=False, tolerance=tolerance, silent=silent)
         # move down to center
         return_cell = Topology.Translate(return_cell, 0, 0, -height*0.5)
         xOffset = 0

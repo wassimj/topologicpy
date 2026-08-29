@@ -20708,7 +20708,6 @@ class Topology():
                     returnTopology = None
         elif Topology.Type(topology) == Topology.TypeID("Wire"):
             if Wire.IsClosed(topology):
-                #returnTopology = Cell.ByWires(topologies, triangulate=triangulate, tolerance=tolerance, silent=True)
                 try:
                     returnTopology = Cell.ByWires(topologies, triangulate=triangulate, tolerance=tolerance, silent=True)
                     returnTopology = Cell.ExternalBoundary(returnTopology)
