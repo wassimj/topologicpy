@@ -232,6 +232,84 @@ def _wrap_metadata(source, result):
     return result
 
 
+def _normalized_vector(values, tolerance=1.0e-12):
+    """Return a normalized 3D vector, or None if its magnitude is too small."""
+    try:
+        vector = [
+            float(values[0]),
+            float(values[1]),
+            float(values[2]),
+        ]
+    except Exception:
+        return None
+
+    if not all(math.isfinite(value) for value in vector):
+        return None
+
+    magnitude = math.sqrt(
+        sum(value * value for value in vector)
+    )
+
+    if magnitude <= _face_tolerance(tolerance):
+        return None
+
+    return [
+        value / magnitude
+        for value in vector
+    ]
+
+
+def _expanded_knot_data(values):
+    """
+    Convert an expanded knot vector to OCCT unique knots and multiplicities.
+
+    Returns
+    -------
+    tuple
+        ``(unique_knots, multiplicities)``, or None for invalid input.
+    """
+    if not isinstance(values, (list, tuple)):
+        return None
+
+    try:
+        expanded = [
+            float(value)
+            for value in values
+        ]
+    except Exception:
+        return None
+
+    if len(expanded) < 2:
+        return None
+
+    if any(
+        not math.isfinite(value)
+        for value in expanded
+    ):
+        return None
+
+    if any(
+        expanded[index] > expanded[index + 1]
+        for index in range(len(expanded) - 1)
+    ):
+        return None
+
+    unique_knots = []
+    multiplicities = []
+
+    for value in expanded:
+        if unique_knots and value == unique_knots[-1]:
+            multiplicities[-1] += 1
+        else:
+            unique_knots.append(value)
+            multiplicities.append(1)
+
+    if len(unique_knots) < 2:
+        return None
+
+    return unique_knots, multiplicities
+
+
 @dataclass(eq=False)
 class Face(Topology):
     """PythonOCC backend wrapper for an OCCT face."""
@@ -452,51 +530,9 @@ class Face(Topology):
                 for _ in range(nU)
             ]
 
-        # ------------------------------------------------------------------
-        # Expanded knot vector -> unique OCCT knots + multiplicities.
-        # ------------------------------------------------------------------
-
-        def knot_data(values):
-            try:
-                values = [
-                    float(value)
-                    for value in values
-                ]
-            except Exception:
-                return None
-
-            if len(values) < 2:
-                return None
-
-            if any(
-                not math.isfinite(value)
-                for value in values
-            ):
-                return None
-
-            if any(
-                values[i] > values[i + 1]
-                for i in range(len(values) - 1)
-            ):
-                return None
-
-            unique = []
-            multiplicities = []
-
-            for value in values:
-                if unique and value == unique[-1]:
-                    multiplicities[-1] += 1
-                else:
-                    unique.append(value)
-                    multiplicities.append(1)
-
-            if len(unique) < 2:
-                return None
-
-            return unique, multiplicities
-
-        u_data = knot_data(uKnots)
-        v_data = knot_data(vKnots)
+        # Expanded knot vectors -> OCCT unique knots + multiplicities.
+        u_data = _expanded_knot_data(uKnots)
+        v_data = _expanded_knot_data(vKnots)
 
         if u_data is None or v_data is None:
             return None
@@ -752,23 +788,37 @@ class Face(Topology):
             return None
 
     @staticmethod
-    def ByOcctShape(shape, dictionary=None, contents=None, contexts=None, apertures=None):
-        """Wrap an existing OCCT face without rebuilding its geometry."""
+    def ByOcctShape(
+        shape,
+        dictionary=None,
+        contents=None,
+        contexts=None,
+        apertures=None
+    ):
+        """Wrap an existing OCCT Face without rebuilding its geometry."""
         if _is_null_shape(shape):
             return None
+
         try:
             from OCC.Core.TopoDS import topods
-            occ_face = topods.Face(shape)
+
+            occ_face = topods.Face(
+                shape
+            )
+
             if occ_face.IsNull():
                 return None
+
         except Exception:
             return None
-        face = Face(shape=occ_face)
-        face.dictionary = dictionary
-        face.contents = list(contents) if contents else []
-        face.contexts = list(contexts) if contexts else []
-        face.apertures = list(apertures) if apertures else []
-        return face
+
+        return Face(
+            shape=occ_face,
+            dictionary=dictionary,
+            contents=list(contents) if contents else [],
+            contexts=list(contexts) if contexts else [],
+            apertures=list(apertures) if apertures else [],
+        )
 
     @staticmethod
     def CurvatureAtParameters(
@@ -1066,14 +1116,27 @@ class FaceUtility:
             if not props.IsNormalDefined():
                 return None
             normal = props.Normal()
-            result = [float(normal.X()), float(normal.Y()), float(normal.Z())]
+            result = [
+                float(normal.X()),
+                float(normal.Y()),
+                float(normal.Z()),
+            ]
+
             occ_face = _as_occ_face(face)
-            if occ_face is not None and occ_face.Orientation() == TopAbs_REVERSED:
-                result = [-result[0], -result[1], -result[2]]
-            length = math.sqrt(sum(value * value for value in result))
-            if length <= tol:
-                return None
-            return [value / length for value in result]
+
+            if (
+                occ_face is not None
+                and occ_face.Orientation() == TopAbs_REVERSED
+            ):
+                result = [
+                    -value
+                    for value in result
+                ]
+
+            return _normalized_vector(
+                result,
+                tolerance=tol,
+            )
         except Exception:
             return None
 
@@ -1233,41 +1296,123 @@ class FaceUtility:
         return None
 
     @staticmethod
-    def IsCoplanar(faceA, faceB, tolerance: float = 0.0001):
-        """Return True when two Faces lie on the same native OCCT plane."""
-        occ_a = _as_occ_face(faceA)
-        occ_b = _as_occ_face(faceB)
-        if occ_a is None or occ_b is None:
-            return None
-        tol = _face_tolerance(tolerance)
-        try:
-            from OCC.Core.BRepAdaptor import BRepAdaptor_Surface
-            from OCC.Core.GeomAbs import GeomAbs_Plane
+    def IsCoplanar(
+        faceA,
+        faceB,
+        tolerance: float = 0.0001
+    ):
+        """
+        Returns True when two geometrically planar Faces lie on the same plane.
 
-            adaptor_a = BRepAdaptor_Surface(occ_a, True)
-            adaptor_b = BRepAdaptor_Surface(occ_b, True)
-            if adaptor_a.GetType() != GeomAbs_Plane or adaptor_b.GetType() != GeomAbs_Plane:
-                return False
-            plane_a = adaptor_a.Plane()
-            plane_b = adaptor_b.Plane()
-            normal_a = plane_a.Axis().Direction()
-            normal_b = plane_b.Axis().Direction()
-            ax, ay, az = normal_a.X(), normal_a.Y(), normal_a.Z()
-            bx, by, bz = normal_b.X(), normal_b.Y(), normal_b.Z()
-            cx = ay * bz - az * by
-            cy = az * bx - ax * bz
-            cz = ax * by - ay * bx
-            if math.sqrt(cx * cx + cy * cy + cz * cz) > tol:
-                return False
-            location_a = plane_a.Location()
-            location_b = plane_b.Location()
-            dx = location_b.X() - location_a.X()
-            dy = location_b.Y() - location_a.Y()
-            dz = location_b.Z() - location_a.Z()
-            distance = abs(dx * ax + dy * ay + dz * az)
-            return distance <= tol
-        except Exception:
+        Unlike a surface-type-only test, this also recognizes planar B-spline
+        and Bezier surfaces.
+
+        Parameters
+        ----------
+        faceA : Face
+            The first input Face.
+        faceB : Face
+            The second input Face.
+        tolerance : float , optional
+            The desired geometric tolerance. Default is 0.0001.
+
+        Returns
+        -------
+        bool
+            True if the Faces are coplanar, False otherwise. None is returned
+            if either input is invalid or its planarity cannot be determined.
+
+        """
+        if _as_occ_face(faceA) is None or _as_occ_face(faceB) is None:
             return None
+
+        tol = _face_tolerance(
+            tolerance
+        )
+
+        planar_a = FaceUtility.IsPlanar(
+            faceA,
+            tolerance=tol,
+        )
+
+        planar_b = FaceUtility.IsPlanar(
+            faceB,
+            tolerance=tol,
+        )
+
+        if planar_a is None or planar_b is None:
+            return None
+
+        if not planar_a or not planar_b:
+            return False
+
+        normal_a = FaceUtility.NormalAtParameters(
+            faceA,
+            0.5,
+            0.5,
+            tolerance=tol,
+        )
+
+        normal_b = FaceUtility.NormalAtParameters(
+            faceB,
+            0.5,
+            0.5,
+            tolerance=tol,
+        )
+
+        normal_a = _normalized_vector(
+            normal_a,
+            tolerance=tol,
+        )
+
+        normal_b = _normalized_vector(
+            normal_b,
+            tolerance=tol,
+        )
+
+        if normal_a is None or normal_b is None:
+            return None
+
+        cross = [
+            normal_a[1] * normal_b[2] - normal_a[2] * normal_b[1],
+            normal_a[2] * normal_b[0] - normal_a[0] * normal_b[2],
+            normal_a[0] * normal_b[1] - normal_a[1] * normal_b[0],
+        ]
+
+        if math.sqrt(
+            sum(value * value for value in cross)
+        ) > tol:
+            return False
+
+        point_a = FaceUtility.VertexAtParameters(
+            faceA,
+            0.5,
+            0.5,
+        )
+
+        point_b = FaceUtility.VertexAtParameters(
+            faceB,
+            0.5,
+            0.5,
+        )
+
+        if not isinstance(point_a, Vertex) or not isinstance(point_b, Vertex):
+            return None
+
+        delta = [
+            float(point_b.x) - float(point_a.x),
+            float(point_b.y) - float(point_a.y),
+            float(point_b.z) - float(point_a.z),
+        ]
+
+        distance = abs(
+            sum(
+                delta[index] * normal_a[index]
+                for index in range(3)
+            )
+        )
+
+        return distance <= tol
 
     @staticmethod
     def Reverse(face):
@@ -1334,35 +1479,18 @@ class FaceUtility:
                 float(derivative_v.Z()),
             ]
 
-            magnitude_u = math.sqrt(
-                sum(
-                    value * value
-                    for value in tangent_u
-                )
+            tangent_u = _normalized_vector(
+                tangent_u,
+                tolerance=tol,
             )
 
-            magnitude_v = math.sqrt(
-                sum(
-                    value * value
-                    for value in tangent_v
-                )
+            tangent_v = _normalized_vector(
+                tangent_v,
+                tolerance=tol,
             )
 
-            if (
-                magnitude_u <= tol
-                or magnitude_v <= tol
-            ):
+            if tangent_u is None or tangent_v is None:
                 return None
-
-            tangent_u = [
-                value / magnitude_u
-                for value in tangent_u
-            ]
-
-            tangent_v = [
-                value / magnitude_v
-                for value in tangent_v
-            ]
 
             return [
                 tangent_u,
