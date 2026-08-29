@@ -407,172 +407,329 @@ class Shell():
         return return_shell
 
     @staticmethod
-    def ByWires(wires: list, triangulate: bool = True, tolerance: float = 0.0001, silent: bool = False):
+    def ByWires(
+        wires: list,
+        polyhedron: bool = True,
+        triangulate: bool = True,
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
         """
-        Creates a shell by lofting through the input wires
-        
+        Creates a Shell by lofting through the input Wires.
+
+        If polyhedron is True, a faceted Shell is constructed from planar Faces.
+
+        If polyhedron is False, the section curves are preserved and a genuine
+        curve-preserving ruled Shell is constructed by the PythonOCC backend.
+
         Parameters
         ----------
         wires : list
-            The input list of wires.
+            The ordered list of section Wires.
+        polyhedron : bool , optional
+            If True, constructs a faceted Shell made of planar Faces. If False,
+            constructs a curve-preserving ruled Shell. Default is True.
         triangulate : bool , optional
-            If set to True, the faces will be triangulated. Default is True.
+            If polyhedron is True, specifies whether each side strip is divided
+            into triangular Faces. This parameter is ignored when polyhedron is
+            False. Default is True.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
-       
+            If set to True, error and warning messages are suppressed.
+            Default is False.
+
         Returns
         -------
         topologic_core.Shell
-            The creates shell.
+            The created Shell.
+
         """
-        from topologicpy.Vertex import Vertex
+        import math
+
         from topologicpy.Edge import Edge
         from topologicpy.Wire import Wire
         from topologicpy.Face import Face
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
 
-        if not isinstance(wires, list):
-            return None
-        wireList = [x for x in wires if Topology.IsInstance(x, "Wire")]
-        faces = []
-        for i in range(len(wireList)-1):
-            wire1 = wireList[i]
-            wire2 = wireList[i+1]
-            if Topology.Type(wire1) < Topology.TypeID("Edge") or Topology.Type(wire2) < Topology.TypeID("Edge"):
-                return None
-            if Topology.Type(wire1) == Topology.TypeID("Edge"):
-                w1_edges = [wire1]
-            else:
-                w1_edges = Topology.Edges(wire1)
-            if Topology.Type(wire2) == Topology.TypeID("Edge"):
-                w2_edges = [wire2]
-            else:
-                w2_edges = Topology.Edges(wire2)
-            if len(w1_edges) != len(w2_edges):
-                return None
-            if triangulate == True:
-                for j in range (len(w1_edges)):
-                    e1 = w1_edges[j]
-                    e2 = w2_edges[j]
-                    e3 = None
-                    e4 = None
-                    try:
-                        e3 = Edge.ByVertices([Edge.StartVertex(e1), Edge.StartVertex(e2)], tolerance=tolerance, silent=silent)
-                    except:
-                        e4 = Edge.ByVertices([Edge.EndVertex(e1), Edge.EndVertex(e2)], tolerance=tolerance, silent=silent)
-                        faces.append(Face.ByWire(Wire.ByEdges([e1, e2, e4], tolerance=tolerance), tolerance=tolerance))
-                    try:
-                        e4 = Edge.ByVertices([Edge.EndVertex(e1), Edge.EndVertex(e2)], tolerance=tolerance, silent=silent)
-                    except:
-                        e3 = Edge.ByVertices([Edge.StartVertex(e1), Edge.StartVertex(e2)], tolerance=tolerance, silent=silent)
-                        faces.append(Face.ByWire(Wire.ByEdges([e1, e2, e3],tolerance=tolerance), tolerance=tolerance))
-                    if e3 and e4:
-                        e5 = Edge.ByVertices([Edge.StartVertex(e1), Edge.EndVertex(e2)], tolerance=tolerance, silent=silent)
-                        faces.append(Face.ByWire(Wire.ByEdges([e1, e5, e4], tolerance=tolerance), tolerance=tolerance))
-                        faces.append(Face.ByWire(Wire.ByEdges([e2, e5, e3], tolerance=tolerance), tolerance=tolerance))
-                    elif e3:
-                        verts = [Edge.StartVertex(e1), Edge.EndVertex(e1), Edge.StartVertex(e3), Edge.EndVertex(e3), Edge.StartVertex(e2), Edge.EndVertex(e2)]
-                        verts = Vertex.Fuse(verts, tolerance=tolerance)
-                        w = Wire.ByVertices(verts, close=True)
-                        if Topology.IsInstance(w, "Wire"):
-                            faces.append(Face.ByWire(w, tolerance=tolerance))
-                        else:
-                            if not silent:
-                                print("Shell.ByWires - Warning: Could not create face.")
-                    elif e4:
-                        verts = [Edge.StartVertex(e1), Edge.EndVertex(e1), Edge.StartVertex(e4), Edge.EndVertex(e4), Edge.StartVertex(e2), Edge.EndVertex(e2)]
-                        verts = Vertex.Fuse(verts, tolerance=tolerance)
-                        w = Wire.ByVertices(verts, close=True)
-                        if Topology.IsInstance(w, "Wire"):
-                            faces.append(Face.ByWire(w, tolerance=tolerance))
-                        else:
-                            if not silent:
-                                print("Shell.ByWires - Warning: Could not create face.")
-            else:
-                for j in range (len(w1_edges)):
-                    e1 = w1_edges[j]
-                    e2 = w2_edges[j]
-                    e3 = None
-                    e4 = None
-                    try:
-                        e3 = Edge.ByVertices([Edge.StartVertex(e1), Edge.StartVertex(e2)], tolerance=tolerance, silent=silent)
-                    except:
-                        try:
-                            e4 = Edge.ByVertices([Edge.EndVertex(e1), Edge.EndVertex(e2)], tolerance=tolerance, silent=silent)
-                        except:
-                            pass
-                    try:
-                        e4 = Edge.ByVertices([Edge.EndVertex(e1), Edge.EndVertex(e2)], tolerance=tolerance, silent=silent)
-                    except:
-                        try:
-                            e3 = Edge.ByVertices([Edge.StartVertex(e1), Edge.StartVertex(e2)], tolerance=tolerance, silent=silent)
-                        except:
-                            pass
-                    if e3 and e4:
-                        try:
-                            faces.append(Face.ByWire(Wire.ByEdges([e1, e4, e2, e3], tolerance=tolerance), tolerance=tolerance))
-                        except:
-                            faces.append(Face.ByWire(Wire.ByEdges([e1, e3, e2, e4], tolerance=tolerance), tolerance=tolerance))
-                    elif e3:
-                        verts = [Edge.StartVertex(e1), Edge.EndVertex(e1), Edge.StartVertex(e3), Edge.EndVertex(e3), Edge.StartVertex(e2), Edge.EndVertex(e2)]
-                        verts = Vertex.Fuse(verts, tolerance=tolerance)
-                        w = Wire.ByVertices(verts, close=True)
-                        if Topology.IsInstance(w, "Wire"):
-                            faces.append(Face.ByWire(w, tolerance=tolerance))
-                        else:
-                            if not silent:
-                                print("Shell.ByWires - Warning: Could not create face.")
-                    elif e4:
-                        verts = [Edge.StartVertex(e1), Edge.EndVertex(e1), Edge.StartVertex(e4), Edge.EndVertex(e4), Edge.StartVertex(e2), Edge.EndVertex(e2)]
-                        verts = Vertex.Fuse(verts, tolerance=tolerance)
-                        w = Wire.ByVertices(verts, close=True)
-                        if Topology.IsInstance(w, "Wire"):
-                            faces.append(Face.ByWire(w, tolerance=tolerance))
-                        else:
-                            if not silent:
-                                print("Shell.ByWires - Warning: Could not create face.")
-
-        shell = Shell.ByFaces(faces, tolerance=tolerance, silent=silent)
-        if shell == None:
+        if not isinstance(wires, (list, tuple)):
             if not silent:
-                print("Shell.ByWires - Warning: Could not create shell. Returning a cluster of faces instead.")
-            return Cluster.ByTopologies(faces)
-        return shell
+                print("Shell.ByWires - Error: The input wires parameter is not a valid list. Returning None.")
+            return None
+
+        wires = [
+            wire
+            for wire in wires
+            if Topology.IsInstance(wire, "Wire")
+        ]
+
+        if len(wires) < 2:
+            if not silent:
+                print("Shell.ByWires - Error: At least two valid wires are required. Returning None.")
+            return None
+
+        try:
+            tolerance = abs(float(tolerance))
+        except Exception:
+            if not silent:
+                print("Shell.ByWires - Error: The input tolerance parameter is not a valid number. Returning None.")
+            return None
+
+        if not math.isfinite(tolerance) or tolerance <= 0.0:
+            if not silent:
+                print("Shell.ByWires - Error: The input tolerance parameter must be greater than zero. Returning None.")
+            return None
+
+        # ------------------------------------------------------------------
+        # Curve-preserving native loft.
+        # ------------------------------------------------------------------
+
+        if not polyhedron:
+
+            try:
+                is_topologic_core = bool(
+                    Topology._IsTopologicCoreBackend()
+                )
+            except Exception:
+                is_topologic_core = True
+
+            if is_topologic_core:
+                if not silent:
+                    print(
+                        "Shell.ByWires - Error: The TopologicCore backend does "
+                        "not support curve-preserving Shell loft construction. "
+                        "Returning None."
+                    )
+                return None
+
+            try:
+                shell = Core.Shell.ByWires(
+                    wires,
+                    tolerance,
+                )
+            except Exception:
+                shell = None
+
+            if not Topology.IsInstance(shell, "Shell"):
+                if not silent:
+                    print(
+                        "Shell.ByWires - Error: Could not construct the "
+                        "curve-preserving Shell. Returning None."
+                    )
+                return None
+
+            return shell
+
+        # ------------------------------------------------------------------
+        # Polyhedral loft.
+        # ------------------------------------------------------------------
+
+        faces = []
+
+        for wire_a, wire_b in zip(
+            wires[:-1],
+            wires[1:],
+        ):
+
+            edges_a = Topology.Edges(
+                wire_a
+            )
+
+            edges_b = Topology.Edges(
+                wire_b
+            )
+
+            if (
+                not isinstance(edges_a, list)
+                or not isinstance(edges_b, list)
+                or len(edges_a) < 1
+                or len(edges_b) < 1
+            ):
+                if not silent:
+                    print(
+                        "Shell.ByWires - Error: Could not retrieve valid Edges "
+                        "from one or more input Wires. Returning None."
+                    )
+                return None
+
+            if len(edges_a) != len(edges_b):
+                if not silent:
+                    print(
+                        "Shell.ByWires - Error: Corresponding Wires must contain "
+                        "the same number of Edges when polyhedron is True. "
+                        "Returning None."
+                    )
+                return None
+
+            for edge_a, edge_b in zip(
+                edges_a,
+                edges_b,
+            ):
+
+                a0 = Edge.StartVertex(
+                    edge_a
+                )
+
+                a1 = Edge.EndVertex(
+                    edge_a
+                )
+
+                b0 = Edge.StartVertex(
+                    edge_b
+                )
+
+                b1 = Edge.EndVertex(
+                    edge_b
+                )
+
+                if triangulate:
+
+                    wire_1 = Wire.ByVertices(
+                        [a0, a1, b1],
+                        close=True,
+                        tolerance=tolerance,
+                        silent=True,
+                    )
+
+                    wire_2 = Wire.ByVertices(
+                        [a0, b1, b0],
+                        close=True,
+                        tolerance=tolerance,
+                        silent=True,
+                    )
+
+                    if Topology.IsInstance(wire_1, "Wire"):
+
+                        face_1 = Face.ByWire(
+                            wire_1,
+                            tolerance=tolerance,
+                            silent=True,
+                        )
+
+                        if Topology.IsInstance(face_1, "Face"):
+                            faces.append(
+                                face_1
+                            )
+
+                    if Topology.IsInstance(wire_2, "Wire"):
+
+                        face_2 = Face.ByWire(
+                            wire_2,
+                            tolerance=tolerance,
+                            silent=True,
+                        )
+
+                        if Topology.IsInstance(face_2, "Face"):
+                            faces.append(
+                                face_2
+                            )
+
+                else:
+
+                    side_wire = Wire.ByVertices(
+                        [a0, a1, b1, b0],
+                        close=True,
+                        tolerance=tolerance,
+                        silent=True,
+                    )
+
+                    if not Topology.IsInstance(side_wire, "Wire"):
+                        continue
+
+                    side_face = Face.ByWire(
+                        side_wire,
+                        tolerance=tolerance,
+                        silent=True,
+                    )
+
+                    if Topology.IsInstance(side_face, "Face"):
+                        faces.append(
+                            side_face
+                        )
+
+        if len(faces) < 1:
+            if not silent:
+                print("Shell.ByWires - Error: Could not construct any valid side Faces. Returning None.")
+            return None
+
+        shell = Shell.ByFaces(
+            faces,
+            tolerance=tolerance,
+            silent=True,
+        )
+
+        if Topology.IsInstance(shell, "Shell"):
+            return shell
+
+        if not silent:
+            print(
+                "Shell.ByWires - Warning: Could not construct a Shell from the "
+                "generated Faces. Returning a Cluster of Faces."
+            )
+
+        return Cluster.ByTopologies(
+            faces
+        )
 
     @staticmethod
-    def ByWiresCluster(cluster, triangulate: bool = True, tolerance: float = 0.0001, silent: bool = False):
+    def ByWiresCluster(
+        cluster,
+        polyhedron: bool = True,
+        triangulate: bool = True,
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
         """
-        Creates a shell by lofting through the input cluster of wires
+        Creates a Shell by lofting through the Wires contained in the input
+        Cluster.
 
         Parameters
         ----------
-        wires : topologic_core.Cluster
-            The input cluster of wires.
+        cluster : topologic_core.Cluster
+            The input Cluster containing the section Wires.
+        polyhedron : bool , optional
+            If True, constructs a faceted Shell made of planar Faces. If False,
+            constructs a curve-preserving ruled Shell. Default is True.
         triangulate : bool , optional
-            If set to True, the faces will be triangulated. Default is True.
+            If polyhedron is True, specifies whether each side strip is divided
+            into triangular Faces. This parameter is ignored when polyhedron is
+            False. Default is True.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
+            If set to True, error and warning messages are suppressed.
+            Default is False.
 
         Returns
         -------
         topologic_core.Shell
-            The creates shell.
+            The created Shell.
 
         """
-        from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
 
-        if not cluster:
-            return None
         if not Topology.IsInstance(cluster, "Cluster"):
+            if not silent:
+                print("Shell.ByWiresCluster - Error: The input cluster parameter is not a valid Cluster. Returning None.")
             return None
-        wires = Cluster.Wires(cluster)
-        return Shell.ByWires(wires, triangulate=triangulate, tolerance=tolerance, silent=silent)
+
+        wires = Topology.Wires(
+            cluster
+        )
+
+        if not isinstance(wires, list) or len(wires) < 2:
+            if not silent:
+                print("Shell.ByWiresCluster - Error: The input Cluster must contain at least two valid Wires. Returning None.")
+            return None
+
+        return Shell.ByWires(
+            wires,
+            polyhedron=polyhedron,
+            triangulate=triangulate,
+            tolerance=tolerance,
+            silent=silent,
+        )
 
     @staticmethod
     def Circle(origin= None, radius: float = 0.5, sides: int = 32, fromAngle: float = 0.0, toAngle: float = 360.0, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001):

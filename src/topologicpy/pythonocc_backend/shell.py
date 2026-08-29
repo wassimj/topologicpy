@@ -24,6 +24,24 @@ class Shell(Topology):
         self.faces = list(faces) if faces else []
 
     @staticmethod
+    def _UseNativeShellBackend() -> bool:
+        """
+        Returns True when the active TopologicPy core backend is PythonOCC.
+
+        Returns
+        -------
+        bool
+            True if the active backend is PythonOCC. False otherwise.
+
+        """
+        from topologicpy.Topology import Topology
+
+        try:
+            return not bool(Topology._IsTopologicCoreBackend())
+        except Exception:
+            return False
+
+    @staticmethod
     def ByFaces(faces, tolerance: float = 0.0001, silent: bool = False):
         if faces is None:
             if not silent:
@@ -61,6 +79,164 @@ class Shell(Topology):
         shell = Shell(shape=occ_shell, faces=valid_faces)
         Shell._patch_edge_face_membership(shell, valid_faces, tolerance=tolerance)
         return shell
+
+    @staticmethod
+    def ByWires(
+        wires,
+        tolerance: float = 0.0001
+    ):
+        """
+        Creates a curve-preserving Shell by lofting through the input Wires.
+
+        The resulting Shell is constructed directly by OCCT from the supplied
+        section Wires. Curved Edges are retained as true curves and the generated
+        side Faces are genuine ruled surfaces rather than planar tessellations.
+
+        All section Wires must contain the same number of Edges so that their
+        Edges correspond explicitly through the loft.
+
+        Parameters
+        ----------
+        wires : list
+            The ordered list of section Wires.
+        tolerance : float , optional
+            The desired geometric tolerance. Default is 0.0001.
+
+        Returns
+        -------
+        Shell
+            The created curve-preserving Shell, or None if construction fails.
+
+        """
+        import math
+
+        from .wire import Wire
+
+        if not isinstance(wires, (list, tuple)):
+            return None
+
+        wires = [
+            wire
+            for wire in wires
+            if isinstance(wire, Wire)
+        ]
+
+        if len(wires) < 2:
+            return None
+
+        try:
+            tolerance = abs(float(tolerance))
+        except Exception:
+            return None
+
+        if not math.isfinite(tolerance) or tolerance <= 0.0:
+            return None
+
+        try:
+            from OCC.Core.BRepOffsetAPI import BRepOffsetAPI_ThruSections
+            from OCC.Core.TopAbs import TopAbs_EDGE
+            from OCC.Core.TopExp import TopExp_Explorer
+            from OCC.Core.TopoDS import topods
+        except Exception:
+            return None
+
+        occ_wires = []
+        edge_count = None
+
+        for wire in wires:
+
+            shape = getattr(
+                wire,
+                "shape",
+                None,
+            )
+
+            if shape is None:
+                return None
+
+            try:
+                if shape.IsNull():
+                    return None
+
+                occ_wire = topods.Wire(
+                    shape
+                )
+
+                if occ_wire.IsNull():
+                    return None
+
+            except Exception:
+                return None
+
+            # Count Edges so correspondence between sections is explicit.
+            try:
+                explorer = TopExp_Explorer(
+                    occ_wire,
+                    TopAbs_EDGE,
+                )
+
+                count = 0
+
+                while explorer.More():
+                    count += 1
+                    explorer.Next()
+
+            except Exception:
+                return None
+
+            if count < 1:
+                return None
+
+            if edge_count is None:
+                edge_count = count
+            elif count != edge_count:
+                return None
+
+            occ_wires.append(
+                occ_wire
+            )
+
+        try:
+            loft = BRepOffsetAPI_ThruSections(
+                False,       # isSolid
+                True,        # ruled
+                tolerance,
+            )
+
+            # The Wires already have corresponding Edge counts. Do not let OCCT
+            # split or otherwise modify the sections while trying to establish
+            # compatibility.
+            loft.CheckCompatibility(
+                False
+            )
+
+            for occ_wire in occ_wires:
+                loft.AddWire(
+                    occ_wire
+                )
+
+            shape = loft.Shape()
+
+        except Exception:
+            return None
+
+        if shape is None:
+            return None
+
+        try:
+            if shape.IsNull():
+                return None
+        except Exception:
+            return None
+
+        result = Topology.ByOcctShape(
+            shape
+        )
+
+        if not isinstance(result, Shell):
+            return None
+
+        return result
 
     @staticmethod
     def _edge_face_incidence(faces, tolerance: float = 0.0001):
@@ -481,56 +657,6 @@ class ShellUtility:
         if Topology.IsInstance(merged, "Wire"):
             return [merged]
         return [w for w in getattr(merged, "topologies", []) or [] if Topology.IsInstance(w, "Wire")]
-
-
-def _shell_by_wires(wires, triangulate: bool = True, tolerance: float = 0.0001, silent: bool = False):
-    """
-    Backend CellComplex-style loft: connect consecutive profile Wires pairwise with side
-    faces (optionally triangulated). A smaller self-contained counterpart of
-    algorithm-layer Shell.ByWires for direct Core.Shell.ByWires callers.
-    """
-    from .wire import Wire
-
-    if not isinstance(wires, list):
-        if not silent:
-            print("Shell.ByWires - Error: The input wires parameter is not a valid list. Returning None.")
-        return None
-    wire_list = [w for w in wires if isinstance(w, Wire)]
-    if len(wire_list) < 2:
-        if not silent:
-            print("Shell.ByWires - Error: At least two valid wires are required. Returning None.")
-        return None
-
-    faces = []
-    for wire_a, wire_b in zip(wire_list[:-1], wire_list[1:]):
-        edges_a = wire_a.Edges()
-        edges_b = wire_b.Edges()
-        if len(edges_a) != len(edges_b):
-            if not silent:
-                print("Shell.ByWires - Warning: Corresponding wires do not have the same number of edges. Skipping this pair.")
-            continue
-        for edge_a, edge_b in zip(edges_a, edges_b):
-            quad_vertices = [edge_a.start, edge_a.end, edge_b.end, edge_b.start]
-            if triangulate:
-                tri1 = Face.ByVertices([edge_a.start, edge_a.end, edge_b.end])
-                tri2 = Face.ByVertices([edge_a.start, edge_b.end, edge_b.start])
-                if tri1 is not None:
-                    faces.append(tri1)
-                if tri2 is not None:
-                    faces.append(tri2)
-            else:
-                quad = Face.ByVertices(quad_vertices)
-                if quad is not None:
-                    faces.append(quad)
-
-    if not faces:
-        if not silent:
-            print("Shell.ByWires - Error: Could not create any side faces. Returning None.")
-        return None
-    return Shell.ByFaces(faces, tolerance=tolerance, silent=silent)
-
-
-Shell.ByWires = staticmethod(_shell_by_wires)
 
 # ---------------------------------------------------------------------------
 # Explicit unsupported Shell API
