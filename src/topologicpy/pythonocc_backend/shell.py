@@ -9,8 +9,9 @@ from .topology import (
     TopAbs_VERTEX,
     TopAbs_EDGE,
     TopAbs_FACE,
-    )
+)
 from .face import Face, FaceUtility
+from .wire import Wire
 from .edge import Edge
 from .vertex import Vertex
 from .occ_utils import make_occ_shell
@@ -23,23 +24,6 @@ class Shell(Topology):
         super().__init__(shape=shape, dictionary=dictionary, contents=contents, contexts=contexts, apertures=apertures)
         self.faces = list(faces) if faces else []
 
-    @staticmethod
-    def _UseNativeShellBackend() -> bool:
-        """
-        Returns True when the active TopologicPy core backend is PythonOCC.
-
-        Returns
-        -------
-        bool
-            True if the active backend is PythonOCC. False otherwise.
-
-        """
-        from topologicpy.Topology import Topology
-
-        try:
-            return not bool(Topology._IsTopologicCoreBackend())
-        except Exception:
-            return False
 
     @staticmethod
     def ByFaces(faces, tolerance: float = 0.0001, silent: bool = False):
@@ -109,8 +93,6 @@ class Shell(Topology):
 
         """
         import math
-
-        from .wire import Wire
 
         if not isinstance(wires, (list, tuple)):
             return None
@@ -384,8 +366,6 @@ class Shell(Topology):
         boundary chains are ordered on their own (via Wire._order_edges) as they may need
         per-edge reversal.
         """
-        from .wire import Wire
-
         edges = [e for e in edges if isinstance(e, Edge)]
         boundary_by_key = {}
         for e in edges:
@@ -480,8 +460,6 @@ class Shell(Topology):
         Wire.ByEdges (keeps the walk-ordered .edges the naive IsClosed relies on) over
         _merge_edges_into_wires; fall back for non-simple chains.
         """
-        from .wire import Wire
-
         edges = [e for e in edges if isinstance(e, Edge)]
         if not edges:
             return None
@@ -529,11 +507,17 @@ class Shell(Topology):
         def _wire_length(wire):
             total = 0.0
             for edge in getattr(wire, "edges", []) or []:
-                if isinstance(edge, Edge) and isinstance(edge.start, Vertex) and isinstance(edge.end, Vertex):
-                    dx = edge.end.x - edge.start.x
-                    dy = edge.end.y - edge.start.y
-                    dz = edge.end.z - edge.start.z
-                    total += (dx * dx + dy * dy + dz * dz) ** 0.5
+                if not isinstance(edge, Edge):
+                    continue
+
+                length = Edge.Length(
+                    edge,
+                    tolerance=tolerance,
+                )
+
+                if length is not None:
+                    total += float(length)
+
             return total
 
         wires.sort(key=_wire_length)
@@ -549,7 +533,6 @@ class Shell(Topology):
             _collect_boolean_operand_shapes,
             _postprocess_boolean_result,
             _merge_backend_dictionaries,
-            _is_null_shape,
             _iter_occ_subshapes,
         )
         try:
@@ -626,72 +609,171 @@ class Shell(Topology):
 class ShellUtility:
     @staticmethod
     def Area(shell):
+        """Returns the surface area of the input Shell."""
         if not isinstance(shell, Shell):
             return None
+
         return sum(
-        FaceUtility.Area(f) or 0.0
-        for f in shell.Faces()
+            FaceUtility.Area(face) or 0.0
+            for face in shell.Faces()
         )
 
     @staticmethod
-    def ExternalBoundary(shell, tolerance: float = 0.0001):
-        return Shell.ExternalBoundary(shell, tolerance=tolerance, silent=True)
+    def ExternalBoundary(
+        shell,
+        tolerance: float = 0.0001
+    ):
+        """Returns the external boundary of the input Shell."""
+        return Shell.ExternalBoundary(
+            shell,
+            tolerance=tolerance,
+            silent=True,
+        )
 
     @staticmethod
-    def InternalBoundaries(shell, tolerance: float = 0.0001):
+    def InternalBoundaries(
+        shell,
+        tolerance: float = 0.0001
+    ):
         """
-        Returns the internal (non-manifold, shared-by-2-faces) boundary wires
-        of the shell -- i.e. every wire made of edges that are NOT part of the
-        shell's single external boundary. For a simple open shell each such
-        internal edge is shared by exactly two faces.
+        Returns the internal boundary Wires of the input Shell.
+
+        Internal boundary Edges are those incident to two or more Faces. The
+        Edges are merged into one or more Wires while preserving their native
+        curve geometry.
+
+        Parameters
+        ----------
+        shell : Shell
+            The input Shell.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+
+        Returns
+        -------
+        list
+            The internal boundary Wires.
+
         """
         if not isinstance(shell, Shell):
             return []
+
         faces = shell.Faces() or []
-        internal_edges = Shell._boundary_edges(faces, tolerance=tolerance, min_count=2, max_count=None)
+
+        internal_edges = Shell._boundary_edges(
+            faces,
+            tolerance=tolerance,
+            min_count=2,
+            max_count=None,
+        )
+
         if not internal_edges:
             return []
-        merged = Shell._merge_boundary_edges(internal_edges, tolerance=tolerance)
+
+        merged = Shell._merge_boundary_edges(
+            internal_edges,
+            tolerance=tolerance,
+        )
+
         if merged is None:
             return []
+
         if Topology.IsInstance(merged, "Wire"):
             return [merged]
-        return [w for w in getattr(merged, "topologies", []) or [] if Topology.IsInstance(w, "Wire")]
 
-# ---------------------------------------------------------------------------
-# Explicit unsupported Shell API
-# ---------------------------------------------------------------------------
-from .helpers import not_implemented as _not_implemented
+        return [
+            wire
+            for wire in getattr(merged, "topologies", []) or []
+            if Topology.IsInstance(wire, "Wire")
+        ]
 
-
-def _shell_not_implemented(name, return_value=None):
-    def _method(*args, **kwargs):
-        return _not_implemented(f"Shell.{name}", return_value)
-    return _method
-
-
-def _shell_utility_not_implemented(name, return_value=None):
-    def _method(*args, **kwargs):
-        return _not_implemented(f"ShellUtility.{name}", return_value)
-    return _method
-
-
-def _make_adjacent(method_name):
-    """Return a staticmethod that delegates to topology.method(hostTopology, output)."""
     @staticmethod
-    def _impl(topology, hostTopology, output):
+    def AdjacentVertices(
+        topology,
+        hostTopology,
+        output
+    ):
         if topology is None:
             return 1
-        return getattr(topology, method_name)(hostTopology, output)
-    return _impl
+        return topology.Vertices(
+            hostTopology,
+            output,
+        )
 
-ShellUtility.AdjacentVertices = _make_adjacent("Vertices")
-ShellUtility.AdjacentEdges = _make_adjacent("Edges")
-ShellUtility.AdjacentWires = _make_adjacent("Wires")
-ShellUtility.AdjacentFaces = _make_adjacent("Faces")
-ShellUtility.AdjacentShells = _make_adjacent("Shells")
-ShellUtility.AdjacentCells = _make_adjacent("Cells")
-ShellUtility.AdjacentCellComplexes = _make_adjacent("CellComplexes")
+    @staticmethod
+    def AdjacentEdges(
+        topology,
+        hostTopology,
+        output
+    ):
+        if topology is None:
+            return 1
+        return topology.Edges(
+            hostTopology,
+            output,
+        )
 
-# Shell.ExternalBoundary, Shell.Slice/Divide/Impose/Imprint, ShellUtility.ExternalBoundary,
-# and ShellUtility.InternalBoundaries are implemented above -- do not clobber them here.
+    @staticmethod
+    def AdjacentWires(
+        topology,
+        hostTopology,
+        output
+    ):
+        if topology is None:
+            return 1
+        return topology.Wires(
+            hostTopology,
+            output,
+        )
+
+    @staticmethod
+    def AdjacentFaces(
+        topology,
+        hostTopology,
+        output
+    ):
+        if topology is None:
+            return 1
+        return topology.Faces(
+            hostTopology,
+            output,
+        )
+
+    @staticmethod
+    def AdjacentShells(
+        topology,
+        hostTopology,
+        output
+    ):
+        if topology is None:
+            return 1
+        return topology.Shells(
+            hostTopology,
+            output,
+        )
+
+    @staticmethod
+    def AdjacentCells(
+        topology,
+        hostTopology,
+        output
+    ):
+        if topology is None:
+            return 1
+        return topology.Cells(
+            hostTopology,
+            output,
+        )
+
+    @staticmethod
+    def AdjacentCellComplexes(
+        topology,
+        hostTopology,
+        output
+    ):
+        if topology is None:
+            return 1
+        return topology.CellComplexes(
+            hostTopology,
+            output,
+        )
