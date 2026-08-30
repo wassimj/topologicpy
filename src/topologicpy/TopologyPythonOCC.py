@@ -3238,6 +3238,550 @@ class Topology(TopologyLegacy):
         )
 
 
+    # -------------------------------------------------------------------------
+    # Geometric queries
+    # -------------------------------------------------------------------------
+
+    @staticmethod
+    def CenterOfMass(topology, silent: bool = False):
+        """
+        Returns the geometric center of mass of the input topology.
+
+        Parameters
+        ----------
+        topology : topologicpy.Topology
+            The input topology.
+        silent : bool, optional
+            If True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        topologicpy.Vertex or None
+            The center of mass of the input topology.
+        """
+        if not Topology.IsInstance(topology, "Topology"):
+            if not silent:
+                print(
+                    "Topology.CenterOfMass - Error: The input topology parameter "
+                    "is not a valid topology. Returning None."
+                )
+            return None
+
+        try:
+            result = Core.InstanceCall(topology, "CenterOfMass")
+        except Exception as error:
+            if not silent:
+                print(
+                    "Topology.CenterOfMass - Error: The backend operation failed. "
+                    "Returning None."
+                )
+                print("Error:", error)
+            return None
+
+        if not Topology.IsInstance(result, "Vertex"):
+            if not silent:
+                print(
+                    "Topology.CenterOfMass - Error: The backend did not return a "
+                    "valid Vertex. Returning None."
+                )
+            return None
+
+        return result
+
+    @staticmethod
+    def Centroid(topology, silent: bool = False):
+        """
+        Returns the geometric centroid of the input topology.
+
+        This is an alias for :meth:`Topology.CenterOfMass`.
+
+        Parameters
+        ----------
+        topology : topologicpy.Topology
+            The input topology.
+        silent : bool, optional
+            If True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        topologicpy.Vertex or None
+            The centroid of the input topology.
+        """
+        return Topology.CenterOfMass(topology, silent=silent)
+
+    @staticmethod
+    def IsPlanar(
+        topology,
+        mantissa: int = 6,
+        tolerance: float = 0.0001,
+        silent: bool = False,
+    ):
+        """
+        Returns True if all vertices of the input topology are coplanar.
+
+        Parameters
+        ----------
+        topology : topologicpy.Topology
+            The input topology.
+        mantissa : int, optional
+            Number of decimal places used by the planar test. Default is 6.
+        tolerance : float, optional
+            The geometric tolerance. Default is 0.0001.
+        silent : bool, optional
+            If True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        bool or None
+            True if planar, False if non-planar, or None if the query fails.
+        """
+        if not Topology.IsInstance(topology, "Topology"):
+            if not silent:
+                print(
+                    "Topology.IsPlanar - Error: The input topology parameter is "
+                    "not a valid topology. Returning None."
+                )
+            return None
+
+        try:
+            result = Core.InstanceCall(
+                topology,
+                "IsPlanarNative",
+                int(mantissa),
+                abs(float(tolerance)),
+            )
+        except Exception as error:
+            if not silent:
+                print(
+                    "Topology.IsPlanar - Error: The backend operation failed. "
+                    "Returning None."
+                )
+                print("Error:", error)
+            return None
+
+        if not isinstance(result, bool):
+            if not silent:
+                print(
+                    "Topology.IsPlanar - Error: The backend returned an invalid "
+                    "result. Returning None."
+                )
+            return None
+
+        return result
+
+    @staticmethod
+    def ShortestEdge(
+        topologyA,
+        topologyB,
+        tolerance: float = 0.0001,
+        silent: bool = False,
+    ):
+        """
+        Returns the shortest connecting Edge between two topologies.
+
+        If the topologies touch or intersect within tolerance, the shortest
+        connecting segment is degenerate and None is returned.
+
+        Parameters
+        ----------
+        topologyA : topologicpy.Topology
+            The first input topology.
+        topologyB : topologicpy.Topology
+            The second input topology.
+        tolerance : float, optional
+            The geometric tolerance. Default is 0.0001.
+        silent : bool, optional
+            If True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        topologicpy.Edge or None
+            The shortest connecting Edge, or None if it is degenerate or the
+            query fails.
+        """
+        if not Topology.IsInstance(topologyA, "Topology"):
+            if not silent:
+                print(
+                    "Topology.ShortestEdge - Error: The input topologyA parameter "
+                    "is not a valid topology. Returning None."
+                )
+            return None
+        if not Topology.IsInstance(topologyB, "Topology"):
+            if not silent:
+                print(
+                    "Topology.ShortestEdge - Error: The input topologyB parameter "
+                    "is not a valid topology. Returning None."
+                )
+            return None
+
+        try:
+            tolerance = abs(float(tolerance))
+            status, result = Core.InstanceCall(
+                topologyA,
+                "ShortestEdgeNative",
+                topologyB,
+                tolerance,
+            )
+        except Exception as error:
+            if not silent:
+                print(
+                    "Topology.ShortestEdge - Error: The backend operation failed. "
+                    "Returning None."
+                )
+                print("Error:", error)
+            return None
+
+        if status is not True:
+            if not silent:
+                print(
+                    "Topology.ShortestEdge - Error: The backend could not compute "
+                    "the shortest edge. Returning None."
+                )
+            return None
+
+        if result is None:
+            return None
+
+        if not Topology.IsInstance(result, "Edge"):
+            if not silent:
+                print(
+                    "Topology.ShortestEdge - Error: The backend returned an invalid "
+                    "result. Returning None."
+                )
+            return None
+
+        return result
+
+    @staticmethod
+    def ShortestDistance(
+        topologyA,
+        topologyB,
+        mantissa: int = 6,
+        tolerance: float = 0.0001,
+        silent: bool = False,
+    ):
+        """
+        Returns the shortest Euclidean distance between two topologies.
+
+        Parameters
+        ----------
+        topologyA : topologicpy.Topology
+            The first input topology.
+        topologyB : topologicpy.Topology
+            The second input topology.
+        mantissa : int, optional
+            Number of decimal places to which the result is rounded. Default is 6.
+        tolerance : float, optional
+            Distances less than or equal to this value are returned as zero.
+            Default is 0.0001.
+        silent : bool, optional
+            If True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        float or None
+            The shortest distance, or None if it cannot be computed.
+        """
+        import math
+
+        if not Topology.IsInstance(topologyA, "Topology"):
+            if not silent:
+                print(
+                    "Topology.ShortestDistance - Error: The input topologyA "
+                    "parameter is not a valid topology. Returning None."
+                )
+            return None
+        if not Topology.IsInstance(topologyB, "Topology"):
+            if not silent:
+                print(
+                    "Topology.ShortestDistance - Error: The input topologyB "
+                    "parameter is not a valid topology. Returning None."
+                )
+            return None
+
+        try:
+            mantissa = int(mantissa)
+            tolerance = abs(float(tolerance))
+        except Exception:
+            if not silent:
+                print(
+                    "Topology.ShortestDistance - Error: Invalid mantissa or "
+                    "tolerance parameter. Returning None."
+                )
+            return None
+
+        try:
+            has_native_distance = Core.HasAttribute("TopologyUtility", "Distance")
+        except Exception:
+            has_native_distance = False
+
+        if has_native_distance:
+            try:
+                distance = Core.TopologyUtility.Distance(
+                    topologyA,
+                    topologyB,
+                    tolerance,
+                )
+            except Exception as error:
+                if not silent:
+                    print(
+                        "Topology.ShortestDistance - Error: The backend distance "
+                        "operation failed. Returning None."
+                    )
+                    print("Error:", error)
+                return None
+
+            if distance is None:
+                return None
+
+            try:
+                distance = float(distance)
+            except Exception:
+                return None
+
+            if not math.isfinite(distance) or distance < -tolerance:
+                return None
+
+            if abs(distance) <= tolerance:
+                distance = 0.0
+
+            return round(distance, mantissa)
+
+        # Compatibility fallback for a backend that does not expose Distance.
+        # The PythonOCC backend normally never reaches this branch.
+        from topologicpy.Edge import Edge
+
+        edge = Topology.ShortestEdge(
+            topologyA,
+            topologyB,
+            tolerance=tolerance,
+            silent=True,
+        )
+        if Topology.IsInstance(edge, "Edge"):
+            length = Edge.Length(edge, mantissa=mantissa, silent=True)
+            if isinstance(length, (int, float)):
+                length = float(length)
+                return 0.0 if length <= tolerance else round(length, mantissa)
+
+        intersection = Topology.Intersect(
+            topologyA,
+            topologyB,
+            tolerance=tolerance,
+            silent=True,
+        )
+        if Topology.IsInstance(intersection, "Topology"):
+            return 0.0
+
+        return None
+
+    @staticmethod
+    def InternalVertex(
+        topology,
+        timeout: int = 30,
+        tolerance: float = 0.0001,
+        silent: bool = False,
+    ):
+        """
+        Returns a vertex internal to the input topology.
+
+        The PythonOCC implementation is synchronous. The ``timeout`` parameter
+        is retained for API compatibility but is not used.
+
+        Parameters
+        ----------
+        topology : topologicpy.Topology
+            The input topology.
+        timeout : int, optional
+            Retained for API compatibility. Default is 30.
+        tolerance : float, optional
+            The geometric tolerance. Default is 0.0001.
+        silent : bool, optional
+            If True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        topologicpy.Vertex or None
+            An internal vertex, or None if one cannot be computed.
+        """
+        from topologicpy.Aperture import Aperture
+        from topologicpy.Cell import Cell
+        from topologicpy.Edge import Edge
+        from topologicpy.Face import Face
+        from topologicpy.Wire import Wire
+
+        try:
+            tolerance = abs(float(tolerance))
+        except Exception:
+            if not silent:
+                print(
+                    "Topology.InternalVertex - Error: The input tolerance parameter "
+                    "is not valid. Returning None."
+                )
+            return None
+
+        if Topology.IsInstance(topology, "Aperture"):
+            try:
+                topology = Aperture.Topology(topology)
+            except Exception:
+                topology = None
+
+        if not Topology.IsInstance(topology, "Topology"):
+            if not silent:
+                print(
+                    "Topology.InternalVertex - Error: The input topology parameter "
+                    "is not a valid topology. Returning None."
+                )
+            return None
+
+        type_name = Topology.TypeAsString(topology, silent=True)
+        type_name = type_name.lower() if isinstance(type_name, str) else ""
+
+        if type_name == "vertex":
+            return topology
+
+        if type_name == "edge":
+            try:
+                result = Edge.VertexByParameter(topology, 0.5)
+            except Exception:
+                result = None
+            return result if Topology.IsInstance(result, "Vertex") else None
+
+        if type_name == "wire":
+            try:
+                closed = Wire.IsClosed(topology)
+            except Exception:
+                closed = None
+
+            if closed is True:
+                try:
+                    face = Core.Face.ByExternalInternalBoundaries(topology, [])
+                except Exception:
+                    face = None
+                if not Topology.IsInstance(face, "Face"):
+                    return None
+                try:
+                    result = Face.InternalVertex(
+                        face,
+                        tolerance=tolerance,
+                        silent=True,
+                    )
+                except Exception:
+                    result = None
+                return result if Topology.IsInstance(result, "Vertex") else None
+
+            if closed is False:
+                edges = Topology.Edges(topology, silent=True)
+                if not isinstance(edges, list) or not edges:
+                    return None
+                try:
+                    result = Edge.VertexByParameter(edges[0], 0.5)
+                except Exception:
+                    result = None
+                return result if Topology.IsInstance(result, "Vertex") else None
+
+            return None
+
+        if type_name == "face":
+            try:
+                result = Face.InternalVertex(
+                    topology,
+                    tolerance=tolerance,
+                    silent=True,
+                )
+            except Exception:
+                result = None
+            return result if Topology.IsInstance(result, "Vertex") else None
+
+        if type_name == "shell":
+            faces = Topology.Faces(topology, silent=True)
+            if not isinstance(faces, list):
+                return None
+            for face in faces:
+                try:
+                    result = Face.InternalVertex(
+                        face,
+                        tolerance=tolerance,
+                        silent=True,
+                    )
+                except Exception:
+                    result = None
+                if Topology.IsInstance(result, "Vertex"):
+                    return result
+            return None
+
+        if type_name == "cell":
+            try:
+                result = Cell.InternalVertex(
+                    topology,
+                    tolerance=tolerance,
+                    silent=True,
+                )
+            except Exception:
+                result = None
+            return result if Topology.IsInstance(result, "Vertex") else None
+
+        if type_name == "cellcomplex":
+            cells = Topology.Cells(topology, silent=True)
+            if not isinstance(cells, list):
+                return None
+            for cell in cells:
+                try:
+                    result = Cell.InternalVertex(
+                        cell,
+                        tolerance=tolerance,
+                        silent=True,
+                    )
+                except Exception:
+                    result = None
+                if Topology.IsInstance(result, "Vertex"):
+                    return result
+            return None
+
+        if type_name == "cluster":
+            try:
+                constituents = Core.InstanceCall(topology, "Topologies")
+            except Exception:
+                return None
+
+            if not isinstance(constituents, list) or not constituents:
+                return None
+
+            constituents = sorted(
+                constituents,
+                key=lambda item: Topology._TYPE_RANKS.get(
+                    str(Topology.TypeAsString(item, silent=True)).lower(),
+                    -1,
+                ),
+                reverse=True,
+            )
+
+            for constituent in constituents:
+                result = Topology.InternalVertex(
+                    constituent,
+                    tolerance=tolerance,
+                    silent=True,
+                )
+                if Topology.IsInstance(result, "Vertex"):
+                    return result
+
+            return None
+
+        return None
+
+    @staticmethod
+    def _InternalVertex(
+        topology,
+        tolerance: float = 0.0001,
+        silent: bool = False,
+    ):
+        """Compatibility alias for :meth:`Topology.InternalVertex`."""
+        return Topology.InternalVertex(
+            topology,
+            tolerance=tolerance,
+            silent=silent,
+        )
+
+
 # ---------------------------------------------------------------------------
 # Transitional late-dispatch bridge
 # ---------------------------------------------------------------------------
