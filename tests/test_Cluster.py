@@ -5,8 +5,6 @@ import pytest
 
 
 pytest.importorskip("numpy")
-pytest.importorskip("scipy")
-
 Vertex = pytest.importorskip("topologicpy.Vertex").Vertex
 Edge = pytest.importorskip("topologicpy.Edge").Edge
 Wire = pytest.importorskip("topologicpy.Wire").Wire
@@ -98,9 +96,13 @@ def test_by_topologies_accepts_list_and_variadic_inputs(basic_vertices):
     assert Cluster.ByTopologies([None, "bad"], silent=True) is None
 
 
-def test_by_topologies_with_one_topology_returns_that_topology(basic_vertices):
+def test_by_topologies_with_one_topology_returns_one_member_cluster(basic_vertices):
     result = Cluster.ByTopologies(basic_vertices[0], silent=True)
-    _assert_vertex(result)
+    _assert_cluster(result)
+    members = Cluster.Topologies(result, silent=True)
+    assert isinstance(members, list)
+    assert len(members) == 1
+    _assert_vertex(members[0])
 
 
 def test_by_formula_creates_vertex_clusters_from_2d_and_3d_formulas():
@@ -139,10 +141,16 @@ def test_by_function_groups_numeric_boolean_string_and_none_values(basic_vertice
         silent=True,
     )
 
-    assert sorted(len(group) for group in numeric_groups) == [1, 3]
-    assert sorted(len(group) for group in string_groups) == [1, 3]
+    for groups in [numeric_groups, string_groups, none_groups]:
+        assert isinstance(groups, list)
+        assert all(Topology.IsInstance(group, "Cluster") for group in groups)
+
+    numeric_sizes = sorted(len(Cluster.Topologies(group, silent=True)) for group in numeric_groups)
+    string_sizes = sorted(len(Cluster.Topologies(group, silent=True)) for group in string_groups)
+    assert numeric_sizes == [1, 3]
+    assert string_sizes == [1, 3]
     assert len(none_groups) == 1
-    assert len(none_groups[0]) == len(basic_vertices)
+    assert len(Cluster.Topologies(none_groups[0], silent=True)) == len(basic_vertices)
 
     assert Cluster.ByFunction(None, lambda topology, mantissa=6, tolerance=0.0001: 0, silent=True) is None
     assert Cluster.ByFunction(basic_vertices, None, silent=True) is None
@@ -274,6 +282,7 @@ def test_kmeans_returns_requested_number_of_clusters_with_centroid_dictionary(ba
     assert Cluster.KMeans(None, silent=True) is None
     assert Cluster.KMeans(basic_vertices, k=0, silent=True) is None
     assert Cluster.KMeans(basic_vertices, k=len(basic_vertices) + 1, silent=True) is None
+    assert Cluster.KMeans(basic_vertices, distanceMeasure="not-a-metric", silent=True) is None
 
 
 def test_mystic_rose_creates_edge_cluster_from_default_circle():
@@ -322,3 +331,74 @@ def test_single_dimension_clusters_have_expected_free_members():
     topologies = Cluster.Topologies(cluster, silent=True)
     assert isinstance(topologies, list)
     assert len(topologies) >= 3
+
+
+
+def test_by_formula_supports_descending_ranges_and_rejects_unsafe_expression():
+    descending = Cluster.ByFormula("X**2", xRange=(2, 0, -1), silent=True)
+    _assert_cluster(descending)
+    assert len(Cluster.Vertices(descending, silent=True)) == 3
+
+    assert Cluster.ByFormula("__import__('os').system('echo unsafe')", xRange=(0, 1, 1), silent=True) is None
+    assert Cluster.ByFormula("X", xRange=(0, 1, 0), silent=True) is None
+
+
+def test_by_topologies_dictionary_transfer_is_explicit(basic_vertices):
+    d1 = Dictionary.ByKeyValue("a", 1)
+    d2 = Dictionary.ByKeyValue("b", 2)
+    v1 = Topology.SetDictionary(basic_vertices[0], d1, silent=True)
+    v2 = Topology.SetDictionary(basic_vertices[1], d2, silent=True)
+
+    plain = Cluster.ByTopologies(v1, v2, transferDictionaries=False, silent=True)
+    transferred = Cluster.ByTopologies(v1, v2, transferDictionaries=True, silent=True)
+    _assert_cluster(plain)
+    _assert_cluster(transferred)
+
+    plain_dict = Topology.Dictionary(plain)
+    transferred_dict = Topology.Dictionary(transferred)
+    assert Dictionary.ValueAtKey(plain_dict, "a") is None
+    assert Dictionary.ValueAtKey(plain_dict, "b") is None
+    assert Dictionary.ValueAtKey(transferred_dict, "a") == 1
+    assert Dictionary.ValueAtKey(transferred_dict, "b") == 2
+
+
+def test_free_topologies_are_direct_constituents_not_boolean_reconstructions():
+    face = Face.Rectangle(width=2, length=2, silent=True)
+    edge = Edge.ByVertices([_v(-1, -1, 0), _v(1, 1, 0)], silent=True)
+    cluster = Cluster.ByTopologies(face, edge, silent=True)
+    _assert_cluster(cluster)
+
+    free = Cluster.FreeTopologies(cluster, silent=True)
+    assert isinstance(free, list)
+    assert len(free) == 2
+    assert sum(Topology.IsInstance(t, "Face") for t in free) == 1
+    assert sum(Topology.IsInstance(t, "Edge") for t in free) == 1
+
+    # Simplify must not discard the extra Edge merely because it uses points on the Face.
+    assert Topology.IsInstance(Cluster.Simplify(cluster, silent=True), "Cluster")
+
+
+def test_merge_cells_finds_transitive_connected_component():
+    cell_a = Cell.Prism(width=1, length=1, height=1, placement="center")
+    cell_b = Topology.Translate(cell_a, x=1, y=0, z=0)
+    cell_c = Topology.Translate(cell_a, x=2, y=0, z=0)
+
+    merged = Cluster.MergeCells([cell_a, cell_b, cell_c], silent=True)
+    _assert_cluster(merged)
+    members = Cluster.Topologies(merged, silent=True)
+    assert isinstance(members, list)
+    assert len(members) == 1
+    assert Topology.IsInstance(members[0], "CellComplex")
+    assert len(CellComplex.Cells(members[0], silent=True)) == 3
+
+
+def test_dbscan_requires_consistent_numeric_feature_rows(basic_vertices):
+    clusters, noise = Cluster.DBSCAN(
+        basic_vertices,
+        keys=["missing_numeric_key"],
+        epsilon=1.0,
+        minSamples=2,
+        silent=True,
+    )
+    assert clusters is None
+    assert noise is None
