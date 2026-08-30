@@ -2827,6 +2827,416 @@ class Topology(TopologyLegacy):
             silent=silent,
         )
 
+    # -------------------------------------------------------------------------
+    # Boolean operations
+    # -------------------------------------------------------------------------
+
+    @staticmethod
+    def _Boolean(
+        topologyA,
+        topologyB,
+        operation: str = "union",
+        tranDict: bool = False,
+        ontology: bool = False,
+        tolerance: float = 0.0001,
+        silent: bool = False,
+    ):
+        """
+        Executes a Boolean operation using the PythonOCC backend.
+
+        This internal dispatcher keeps the established backend Boolean
+        algorithms and result normalization unchanged. Public callers should
+        use Union, Difference, Intersect, SymmetricDifference, Merge, Slice,
+        Impose, or Imprint.
+
+        Parameters
+        ----------
+        topologyA : topologicpy.Topology
+            The first input topology.
+        topologyB : topologicpy.Topology
+            The second input topology.
+        operation : str , optional
+            The Boolean operation. Valid values are "union", "difference",
+            "intersect", "symdif", "merge", "slice", "impose", and
+            "imprint". Default is "union".
+        tranDict : bool , optional
+            If set to True, dictionaries are transferred to the result.
+            Default is False.
+        ontology : bool , optional
+            If set to True, ontology metadata is added to the result.
+            Default is False.
+        tolerance : float , optional
+            The desired tolerance. It is retained for API compatibility and
+            dictionary-transfer matching. The established PythonOCC Boolean
+            kernels currently use their validated native tolerances. Default
+            is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed.
+            Default is False.
+
+        Returns
+        -------
+        topologicpy.Topology
+            The Boolean result, or None if the operation has no result or
+            fails.
+        """
+        if not Topology.IsInstance(topologyA, "Topology"):
+            if not silent:
+                print(
+                    "Topology._Boolean - Error: The input topologyA parameter "
+                    "is not a valid topology. Returning None."
+                )
+            return None
+
+        if not Topology.IsInstance(topologyB, "Topology"):
+            if not silent:
+                print(
+                    "Topology._Boolean - Error: The input topologyB parameter "
+                    "is not a valid topology. Returning None."
+                )
+            return None
+
+        if not isinstance(operation, str):
+            if not silent:
+                print(
+                    "Topology._Boolean - Error: The input operation parameter "
+                    "is not a valid string. Returning None."
+                )
+            return None
+
+        operation = operation.strip().lower()
+        aliases = {
+            "intersection": "intersect",
+            "xor": "symdif",
+            "symmetricdifference": "symdif",
+            "symmetric_difference": "symdif",
+        }
+        operation = aliases.get(operation, operation)
+
+        backend_methods = {
+            "union": "Union",
+            "difference": "Difference",
+            "intersect": "Intersect",
+            "symdif": "XOR",
+            "merge": "Merge",
+            "slice": "Slice",
+            "impose": "Impose",
+            "imprint": "Imprint",
+        }
+
+        method_name = backend_methods.get(operation)
+        if method_name is None:
+            if not silent:
+                print(
+                    "Topology._Boolean - Error: The input operation parameter "
+                    "is not recognized. Returning None."
+                )
+            return None
+
+        if not isinstance(tranDict, bool):
+            if not silent:
+                print(
+                    f"Topology.{method_name} - Error: The input tranDict "
+                    "parameter is not a valid boolean. Returning None."
+                )
+            return None
+
+        # Preserve the existing, fully tested dictionary-transfer and ontology
+        # semantics while those two concerns are migrated separately. The
+        # normal Boolean path below is entirely PythonOCC-native and no longer
+        # passes through the legacy 629-line dispatcher.
+        if tranDict or ontology:
+            return TopologyLegacy._Boolean(
+                topologyA,
+                topologyB,
+                operation=operation,
+                tranDict=tranDict,
+                ontology=ontology,
+                tolerance=tolerance,
+                silent=silent,
+            )
+
+        if topologyA == topologyB:
+            if operation in ("difference", "symdif"):
+                return None
+            return topologyA
+
+        try:
+            return Core.InstanceCall(
+                topologyA,
+                method_name,
+                topologyB,
+                False,
+            )
+        except Exception as error:
+            if not silent:
+                print(
+                    f"Topology.{method_name} - Error: The PythonOCC Boolean "
+                    f"operation failed ({error}). Returning None."
+                )
+            return None
+
+    @staticmethod
+    def Union(
+        topologyA,
+        topologyB,
+        tranDict: bool = False,
+        tolerance: float = 0.0001,
+        silent: bool = False,
+    ):
+        """Returns the Boolean union of the input topologies."""
+        valid_a = Topology.IsInstance(topologyA, "Topology")
+        valid_b = Topology.IsInstance(topologyB, "Topology")
+
+        if not valid_a and not valid_b:
+            if not silent:
+                print(
+                    "Topology.Union - Error: The input topologyA and topologyB "
+                    "parameters are not valid topologies. Returning None."
+                )
+            return None
+        if not valid_a:
+            if not silent:
+                print(
+                    "Topology.Union - Warning: The input topologyA parameter is "
+                    "not a valid topology. Returning topologyB."
+                )
+            return topologyB
+        if not valid_b:
+            if not silent:
+                print(
+                    "Topology.Union - Warning: The input topologyB parameter is "
+                    "not a valid topology. Returning topologyA."
+                )
+            return topologyA
+
+        return Topology._Boolean(
+            topologyA,
+            topologyB,
+            operation="union",
+            tranDict=tranDict,
+            tolerance=tolerance,
+            silent=silent,
+        )
+
+    @staticmethod
+    def Difference(
+        topologyA,
+        topologyB,
+        tranDict: bool = False,
+        tolerance: float = 0.0001,
+        silent: bool = False,
+    ):
+        """Subtracts topologyB from topologyA."""
+        return Topology._Boolean(
+            topologyA,
+            topologyB,
+            operation="difference",
+            tranDict=tranDict,
+            tolerance=tolerance,
+            silent=silent,
+        )
+
+    @staticmethod
+    def Intersect(
+        topologyA,
+        topologyB,
+        tranDict: bool = False,
+        tolerance: float = 0.0001,
+        silent: bool = False,
+    ):
+        """Returns the Boolean intersection of the input topologies."""
+        return Topology._Boolean(
+            topologyA,
+            topologyB,
+            operation="intersect",
+            tranDict=tranDict,
+            tolerance=tolerance,
+            silent=silent,
+        )
+
+    @staticmethod
+    def SymmetricDifference(
+        topologyA,
+        topologyB,
+        tranDict: bool = False,
+        tolerance: float = 0.0001,
+        silent: bool = False,
+    ):
+        """Returns the symmetric difference of the input topologies."""
+        return Topology._Boolean(
+            topologyA,
+            topologyB,
+            operation="symdif",
+            tranDict=tranDict,
+            tolerance=tolerance,
+            silent=silent,
+        )
+
+    @staticmethod
+    def XOR(
+        topologyA,
+        topologyB,
+        tranDict: bool = False,
+        tolerance: float = 0.0001,
+        silent: bool = False,
+    ):
+        """Returns the symmetric difference of the input topologies."""
+        return Topology.SymmetricDifference(
+            topologyA,
+            topologyB,
+            tranDict=tranDict,
+            tolerance=tolerance,
+            silent=silent,
+        )
+
+    @staticmethod
+    def Merge(
+        topologyA,
+        topologyB,
+        tranDict: bool = False,
+        tolerance: float = 0.0001,
+        silent: bool = False,
+    ):
+        """Merges the input topologies while preserving shared interfaces."""
+        return Topology._Boolean(
+            topologyA,
+            topologyB,
+            operation="merge",
+            tranDict=tranDict,
+            tolerance=tolerance,
+            silent=silent,
+        )
+
+    @staticmethod
+    def Slice(
+        topologyA,
+        topologyB,
+        tranDict: bool = False,
+        tolerance: float = 0.0001,
+        silent: bool = False,
+    ):
+        """Slices topologyA using topologyB."""
+        valid_a = Topology.IsInstance(topologyA, "Topology")
+        valid_b = Topology.IsInstance(topologyB, "Topology")
+
+        if not valid_a and not valid_b:
+            if not silent:
+                print(
+                    "Topology.Slice - Error: The input topologyA and topologyB "
+                    "parameters are not valid topologies. Returning None."
+                )
+            return None
+        if not valid_a:
+            if not silent:
+                print(
+                    "Topology.Slice - Error: The input topologyA parameter is "
+                    "not a valid topology. Returning None."
+                )
+            return topologyA
+        if not valid_b:
+            if not silent:
+                print(
+                    "Topology.Slice - Warning: The input topologyB parameter is "
+                    "not a valid topology. Returning topologyA."
+                )
+            return topologyA
+
+        return Topology._Boolean(
+            topologyA,
+            topologyB,
+            operation="slice",
+            tranDict=tranDict,
+            tolerance=tolerance,
+            silent=silent,
+        )
+
+    @staticmethod
+    def Impose(
+        topologyA,
+        topologyB,
+        tranDict: bool = False,
+        tolerance: float = 0.0001,
+        silent: bool = False,
+    ):
+        """Imposes topologyB on topologyA."""
+        valid_a = Topology.IsInstance(topologyA, "Topology")
+        valid_b = Topology.IsInstance(topologyB, "Topology")
+
+        if not valid_a and not valid_b:
+            if not silent:
+                print(
+                    "Topology.Impose - Error: The input topologyA and topologyB "
+                    "parameters are not valid topologies. Returning None."
+                )
+            return None
+        if not valid_a:
+            if not silent:
+                print(
+                    "Topology.Impose - Error: The input topologyA parameter is "
+                    "not a valid topology. Returning None."
+                )
+            return topologyA
+        if not valid_b:
+            if not silent:
+                print(
+                    "Topology.Impose - Warning: The input topologyB parameter is "
+                    "not a valid topology. Returning topologyA."
+                )
+            return topologyA
+
+        return Topology._Boolean(
+            topologyA,
+            topologyB,
+            operation="impose",
+            tranDict=tranDict,
+            tolerance=tolerance,
+            silent=silent,
+        )
+
+    @staticmethod
+    def Imprint(
+        topologyA,
+        topologyB,
+        tranDict: bool = False,
+        tolerance: float = 0.0001,
+        silent: bool = False,
+    ):
+        """Imprints topologyB on topologyA."""
+        valid_a = Topology.IsInstance(topologyA, "Topology")
+        valid_b = Topology.IsInstance(topologyB, "Topology")
+
+        if not valid_a and not valid_b:
+            if not silent:
+                print(
+                    "Topology.Imprint - Error: The input topologyA and topologyB "
+                    "parameters are not valid topologies. Returning None."
+                )
+            return None
+        if not valid_a:
+            if not silent:
+                print(
+                    "Topology.Imprint - Error: The input topologyA parameter is "
+                    "not a valid topology. Returning None."
+                )
+            return topologyA
+        if not valid_b:
+            if not silent:
+                print(
+                    "Topology.Imprint - Warning: The input topologyB parameter is "
+                    "not a valid topology. Returning topologyA."
+                )
+            return topologyA
+
+        return Topology._Boolean(
+            topologyA,
+            topologyB,
+            operation="imprint",
+            tranDict=tranDict,
+            tolerance=tolerance,
+            silent=silent,
+        )
+
 
 # ---------------------------------------------------------------------------
 # Transitional late-dispatch bridge
