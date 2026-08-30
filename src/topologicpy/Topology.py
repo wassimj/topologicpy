@@ -2477,125 +2477,178 @@ class Topology():
         )
         
     @staticmethod
-    def Slice(topologyA, topologyB, tranDict: bool = False, tolerance: float = 0.0001, silent: bool = False):
+    def Slice(
+        topologyA,
+        topologyB,
+        tranDict: bool = False,
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
         """
-        Slices topologyA using topologyB. See https://en.wikipedia.org/wiki/Boolean_operation.
+        Slices topologyA using topologyB.
 
         Parameters
         ----------
         topologyA : topologic_core.Topology
-            The first input topology.
+            The topology to slice.
         topologyB : topologic_core.Topology
-            The second input topology.
+            The slicing topology.
         tranDict : bool , optional
-            If set to True the dictionaries of the operands are merged and transferred to the result. Default is False.
+            If set to True, dictionaries are transferred to the result.
+            Default is False.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
+            If set to True, error and warning messages are suppressed.
+            Default is False.
 
         Returns
         -------
         topologic_core.Topology
-            the resultant topology.
-
+            The sliced topology, the unchanged topologyA when topologyB is invalid,
+            or None when topologyA is invalid.
         """
-        if not Topology.IsInstance(topologyA, "topology") and not Topology.IsInstance(topologyB, "topology"):
+        if not Topology.IsInstance(topologyA, "Topology"):
             if not silent:
-                print("Topology.Slice - Error: The inputs topologyA and topologyB are not valid topologies. Returning None.")
+                print(
+                    "Topology.Slice - Error: The topologyA input parameter is not "
+                    "a valid topology. Returning None."
+                )
             return None
 
-        if not Topology.IsInstance(topologyA, "topology"):
+        if not Topology.IsInstance(topologyB, "Topology"):
             if not silent:
-                print("Topology.Slice - Error: The topologyA input parameter is not a valid topology. Returning None.")
-            return topologyA
-        
-        if not Topology.IsInstance(topologyB, "topology"):
-            if not silent:
-                print("Topology.Slice - Warning: The topologyB input parameter is not a valid topology. Returning topologyA.")
+                print(
+                    "Topology.Slice - Warning: The topologyB input parameter is not "
+                    "a valid topology. Returning topologyA."
+                )
             return topologyA
 
-        return Topology._Boolean(topologyA=topologyA, topologyB=topologyB, operation="slice", tranDict=tranDict, tolerance=tolerance, silent=silent)
+        return Topology._Boolean(
+            topologyA=topologyA,
+            topologyB=topologyB,
+            operation="slice",
+            tranDict=tranDict,
+            tolerance=tolerance,
+            silent=silent,
+        )
     
     @staticmethod
-    def Impose(topologyA, topologyB, tranDict: bool = False, tolerance: float = 0.0001, silent: bool = False):
+    def Impose(
+        topologyA,
+        topologyB,
+        tranDict: bool = False,
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
         """
-        Imposes topologyB on topologyA. See https://en.wikipedia.org/wiki/Boolean_operation.
+        Imposes topologyB on topologyA.
+
+        topologyA is the host topology and topologyB is the topology being imposed
+        on it.
 
         Parameters
         ----------
         topologyA : topologic_core.Topology
-            The first input topology.
+            The host topology.
         topologyB : topologic_core.Topology
-            The second input topology.
+            The topology to impose on topologyA.
         tranDict : bool , optional
-            If set to True the dictionaries of the operands are merged and transferred to the result. Default is False.
+            If set to True, dictionaries are transferred to the result.
+            Default is False.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
+            If set to True, error and warning messages are suppressed.
+            Default is False.
 
         Returns
         -------
         topologic_core.Topology
-            the resultant topology.
-
+            The resultant topology, the unchanged topologyA when topologyB is
+            invalid, or None when topologyA is invalid.
         """
-        if not Topology.IsInstance(topologyA, "topology") and not Topology.IsInstance(topologyB, "topology"):
+        if not Topology.IsInstance(topologyA, "Topology"):
             if not silent:
-                print("Topology.Impose - Error: The inputs topologyA and topologyB are not valid topologies. Returning None.")
+                print(
+                    "Topology.Impose - Error: The topologyA input parameter is not "
+                    "a valid topology. Returning None."
+                )
             return None
 
-        if not Topology.IsInstance(topologyA, "topology"):
+        if not Topology.IsInstance(topologyB, "Topology"):
             if not silent:
-                print("Topology.Impose - Error: The topologyA input parameter is not a valid topology. Returning None.")
+                print(
+                    "Topology.Impose - Warning: The topologyB input parameter is not "
+                    "a valid topology. Returning topologyA."
+                )
             return topologyA
-        
-        if not Topology.IsInstance(topologyB, "topology"):
-            if not silent:
-                print("Topology.Impose - Warning: The topologyB input parameter is not a valid topology. Returning topologyA.")
-            return topologyA
-        return Topology._Boolean(topologyA=topologyA, topologyB=topologyB, operation="impose", tranDict=tranDict, tolerance=tolerance, silent=silent)
+
+        return Topology._Boolean(
+            topologyA=topologyA,
+            topologyB=topologyB,
+            operation="impose",
+            tranDict=tranDict,
+            tolerance=tolerance,
+            silent=silent,
+        )
     
     @staticmethod
-    def Imprint(topologyA, topologyB, tranDict: bool = False, tolerance: float = 0.0001, silent: bool = False):
+    def Imprint(
+        topologyA,
+        topologyB,
+        tranDict: bool = False,
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
         """
-        Imprints topologyB on topologyA. See https://en.wikipedia.org/wiki/Boolean_operation.
+        Imprints topologyB on topologyA.
 
         Parameters
         ----------
         topologyA : topologic_core.Topology
-            The first input topology.
+            The host topology.
         topologyB : topologic_core.Topology
-            The second input topology.
+            The topology to imprint on topologyA.
         tranDict : bool , optional
-            If set to True the dictionaries of the operands are merged and transferred to the result. Default is False.
+            If set to True, dictionaries are transferred to the result.
+            Default is False.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
+            If set to True, error and warning messages are suppressed.
+            Default is False.
 
         Returns
         -------
         topologic_core.Topology
-            the resultant topology.
-
+            The resultant topology, the unchanged topologyA when topologyB is
+            invalid, or None when topologyA is invalid.
         """
-        if not Topology.IsInstance(topologyA, "topology") and not Topology.IsInstance(topologyB, "topology"):
+        if not Topology.IsInstance(topologyA, "Topology"):
             if not silent:
-                print("Topology.Imprint - Error: The inputs topologyA and topologyB are not valid topologies. Returning None.")
+                print(
+                    "Topology.Imprint - Error: The topologyA input parameter is not "
+                    "a valid topology. Returning None."
+                )
             return None
 
-        if not Topology.IsInstance(topologyA, "topology"):
+        if not Topology.IsInstance(topologyB, "Topology"):
             if not silent:
-                print("Topology.Imprint - Error: The topologyA input parameter is not a valid topology. Returning None.")
+                print(
+                    "Topology.Imprint - Warning: The topologyB input parameter is not "
+                    "a valid topology. Returning topologyA."
+                )
             return topologyA
-        
-        if not Topology.IsInstance(topologyB, "topology"):
-            if not silent:
-                print("Topology.Imprint - Warning: The topologyB input parameter is not a valid topology. Returning topologyA.")
-            return topologyA
-        return Topology._Boolean(topologyA=topologyA, topologyB=topologyB, operation="imprint", tranDict=tranDict, tolerance=tolerance, silent=silent)
+
+        return Topology._Boolean(
+            topologyA=topologyA,
+            topologyB=topologyB,
+            operation="imprint",
+            tranDict=tranDict,
+            tolerance=tolerance,
+            silent=silent,
+        )
     
     @staticmethod
     def _Boolean(
@@ -11471,51 +11524,79 @@ class Topology():
         return None
 
     @staticmethod
-    def InternalVertex(topology, timeout: int = 30, tolerance: float = 0.0001, silent: bool = False):
+    def InternalVertex(
+        topology,
+        timeout: int = 30,
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
         """
-        Returns a vertex guaranteed to be inside the input topology.
+        Returns a vertex guaranteed to be internal to the input topology.
+
+        The timeout parameter is retained for backward API compatibility but is
+        not used. Python threads cannot safely interrupt a blocking topology-kernel
+        operation; the previous thread-based timeout therefore did not provide a
+        reliable hard timeout.
 
         Parameters
         ----------
         topology : topologic_core.Topology
             The input topology.
         timeout : int , optional
-            The amount of seconds to wait before timing out. Default is 30 seconds.
-        tolerance : float , ptional
+            Retained for backward compatibility. It has no effect.
+            Default is 30.
+        tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
+            If set to True, error and warning messages are suppressed.
+            Default is False.
 
         Returns
         -------
         topologic_core.Vertex
-            A vertex guaranteed to be inside the input topology.
-
+            An internal Vertex, or None if one cannot be computed.
         """
-        import concurrent.futures
-        import time
-        # Wrapper function with timeout. The backend implementations
-        # (CellUtility/FaceUtility.InternalVertex) are synchronous and normally
-        # return in milliseconds; the original 30s cap fired spuriously under
-        # full-suite load (thread/GC contention during the ~2min run),
-        # returning None and breaking InternalVertex. Keep a generous floor
-        # to guard against genuine pathological-geometry hangs without
-        # penalising legitimate calls.
-        def run_with_timeout(func, topology, tolerance=0.0001, silent=False, timeout=300):
-            with concurrent.futures.ThreadPoolExecutor() as executor:
-                future = executor.submit(func, topology, tolerance=tolerance, silent=silent)
-                try:
-                    result = future.result(timeout=timeout)
-                    return result
-                except concurrent.futures.TimeoutError:
-                    return None
-
-        result = run_with_timeout(Topology._InternalVertex, topology=topology, tolerance=tolerance, silent=silent, timeout=max(timeout, 300))  # Generous floor; caller may still lower it
-        if result is None:
-            # Handle failure case (e.g., try a different solution)
+        if not Topology.IsInstance(topology, "Topology"):
             if not silent:
-                print("Topology.InternalVertex - Warning: Operation took too long. Returning None")
+                print(
+                    "Topology.InternalVertex - Error: The input topology parameter "
+                    "is not a valid topology. Returning None."
+                )
             return None
+
+        try:
+            tolerance = abs(float(tolerance))
+        except Exception:
+            if not silent:
+                print(
+                    "Topology.InternalVertex - Error: The tolerance parameter is "
+                    "not a valid number. Returning None."
+                )
+            return None
+
+        try:
+            result = Topology._InternalVertex(
+                topology,
+                tolerance=tolerance,
+                silent=True,
+            )
+        except Exception as error:
+            if not silent:
+                print(
+                    "Topology.InternalVertex - Error: Could not compute an internal "
+                    "vertex. Returning None."
+                )
+                print("Error:", error)
+            return None
+
+        if not Topology.IsInstance(result, "Vertex"):
+            if not silent:
+                print(
+                    "Topology.InternalVertex - Error: Could not compute an internal "
+                    "vertex. Returning None."
+                )
+            return None
+
         return result
 
     @staticmethod
@@ -11599,20 +11680,182 @@ class Topology():
         return False
     
     @staticmethod
-    def IsPlanar(topology, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
-        '\n        Returns True if all the vertices of the input topology are co-planar. Returns False otherwise.\n\n        Parameters\n        ----------\n        topology : topologic_core.Topology\n            The input topology.\n        mantissa : int , optional\n            The desired length of the mantissa. Default is 6\n        tolerance : float , optional\n            The desired tolerance. Default is 0.0001.\n        silent : bool , optional\n            If set to True, error and warning messages are suppressed. Default is False.\n\n        Returns\n        -------\n        bool\n            True if all the vertices of the input topology are co-planar. False otherwise.\n\n        '
+    def IsPlanar(
+        topology,
+        mantissa: int = 6,
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
+        """
+        Returns True if all vertices of the input topology are coplanar.
+
+        The test is robust when the first three vertices are coincident or
+        collinear. A non-degenerate reference plane is found before testing the
+        remaining vertices. A set of coincident or collinear vertices is considered
+        planar.
+
+        Parameters
+        ----------
+        topology : topologic_core.Topology
+            The input topology.
+        mantissa : int , optional
+            The number of decimal places used when obtaining vertex coordinates.
+            Default is 6.
+        tolerance : float , optional
+            The maximum perpendicular distance from the reference plane.
+            Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed.
+            Default is False.
+
+        Returns
+        -------
+        bool
+            True if the topology is planar. False otherwise.
+        """
+        import math
+        from topologicpy.Vertex import Vertex
+
         if not Topology.IsInstance(topology, "Topology"):
             if not silent:
-                print("Topology.IsPlanar - Error: The input topology parameter is not a valid topology. Returning None.")
+                print(
+                    "Topology.IsPlanar - Error: The input topology parameter is not "
+                    "a valid topology. Returning None."
+                )
             return None
+
+        try:
+            tolerance = abs(float(tolerance))
+        except Exception:
+            if not silent:
+                print(
+                    "Topology.IsPlanar - Error: The tolerance parameter is not "
+                    "a valid number. Returning None."
+                )
+            return None
+
+        # Preserve the native PythonOCC path.
         if not Topology._IsTopologicCoreBackend():
             try:
-                result = Core.InstanceCall(topology, "IsPlanarNative", mantissa, tolerance)
+                result = Core.InstanceCall(
+                    topology,
+                    "IsPlanarNative",
+                    mantissa,
+                    tolerance,
+                )
                 if isinstance(result, bool):
                     return result
             except Exception:
                 pass
-        return Topology._LegacyIsPlanar_BackendV1(topology, mantissa=mantissa, tolerance=tolerance, silent=silent)
+
+        vertices = Topology.Vertices(topology, silent=True)
+
+        if not isinstance(vertices, list):
+            return None
+
+        if len(vertices) <= 3:
+            return True
+
+        points = []
+
+        for vertex in vertices:
+            try:
+                point = [
+                    float(Vertex.X(vertex, mantissa=mantissa)),
+                    float(Vertex.Y(vertex, mantissa=mantissa)),
+                    float(Vertex.Z(vertex, mantissa=mantissa)),
+                ]
+            except Exception:
+                if not silent:
+                    print(
+                        "Topology.IsPlanar - Error: Could not determine the "
+                        "coordinates of an input vertex. Returning None."
+                    )
+                return None
+
+            points.append(point)
+
+        def subtract(a, b):
+            return [
+                a[0] - b[0],
+                a[1] - b[1],
+                a[2] - b[2],
+            ]
+
+        def cross(a, b):
+            return [
+                a[1] * b[2] - a[2] * b[1],
+                a[2] * b[0] - a[0] * b[2],
+                a[0] * b[1] - a[1] * b[0],
+            ]
+
+        def dot(a, b):
+            return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
+
+        def magnitude(vector):
+            return math.sqrt(dot(vector, vector))
+
+        p0 = points[0]
+
+        # Find a point distinct from p0.
+        p1 = None
+
+        for point in points[1:]:
+            vector = subtract(point, p0)
+
+            if magnitude(vector) > tolerance:
+                p1 = point
+                break
+
+        # All points are coincident.
+        if p1 is None:
+            return True
+
+        baseline = subtract(p1, p0)
+        baseline_length = magnitude(baseline)
+
+        # Find a point not collinear with p0-p1.
+        normal = None
+
+        for point in points:
+            candidate = cross(
+                baseline,
+                subtract(point, p0),
+            )
+
+            # |cross| / |baseline| is the perpendicular distance to the line.
+            if magnitude(candidate) > tolerance * baseline_length:
+                normal = candidate
+                break
+
+        # All vertices are collinear, therefore necessarily coplanar.
+        if normal is None:
+            return True
+
+        normal_length = magnitude(normal)
+
+        if normal_length <= 0.0:
+            return True
+
+        normal = [
+            normal[0] / normal_length,
+            normal[1] / normal_length,
+            normal[2] / normal_length,
+        ]
+
+        for point in points:
+            distance = abs(
+                dot(
+                    subtract(point, p0),
+                    normal,
+                )
+            )
+
+            if distance > tolerance:
+                return False
+
+        return True
+
     @staticmethod
     def _LegacyIsPlanar_BackendV1(topology, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
         """
@@ -14383,23 +14626,165 @@ class Topology():
         return result
 
     @staticmethod
-    def RemoveEdges(topology, edges: list = [], tolerance: float = 0.0001, silent: bool = False):
-        '\n        Removes the input list of faces from the input topology\n\n        Parameters\n        ----------\n        topology : topologic_core.Topology\n            The input topology.\n        edges : list\n            The input list of edges.\n        tolerance : float , optional\n            The desired tolerance. Default is 0.0001.\n        silent : bool , optional\n            If set to True, error and warning messages are suppressed. Default is False.\n\n        Returns\n        -------\n        topologic_core.Topology\n            The input topology with the input list of edges removed.\n\n        '
+    def RemoveEdges(
+        topology,
+        edges: list = [],
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
+        """
+        Removes the specified edges from the input topology.
+
+        If the topology contains Faces, removal is cascading: every Face incident
+        to a requested Edge is removed. For one-dimensional topology, the requested
+        Edges themselves are removed and the remaining topology is rebuilt.
+
+        Parameters
+        ----------
+        topology : topologic_core.Topology
+            The input topology.
+        edges : list , optional
+            The Edges to remove. Default is [].
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed.
+            Default is False.
+
+        Returns
+        -------
+        topologic_core.Topology
+            The resulting topology, or None if all topology is removed.
+        """
+        from topologicpy.Cluster import Cluster
+
         if not Topology.IsInstance(topology, "Topology"):
             if not silent:
-                print("Topology.RemoveEdges - Error: The input topology parameter is not a valid topology. Returning None.")
+                print(
+                    "Topology.RemoveEdges - Error: The input topology parameter is "
+                    "not a valid topology. Returning None."
+                )
             return None
-        edges = [e for e in edges if Topology.IsInstance(e, "Edge")]
-        if len(edges) < 1:
+
+        if edges is None:
             return topology
+
+        if not isinstance(edges, (list, tuple)):
+            edges = [edges]
+
+        edges = [
+            edge
+            for edge in edges
+            if Topology.IsInstance(edge, "Edge")
+        ]
+
+        if len(edges) == 0:
+            return topology
+
+        # PythonOCC native path.
         if not Topology._IsTopologicCoreBackend():
             try:
-                status, result = Core.InstanceCall(topology, "RemoveEdgesNative", edges, tolerance)
+                status, result = Core.InstanceCall(
+                    topology,
+                    "RemoveEdgesNative",
+                    edges,
+                    tolerance,
+                )
+
                 if status is True:
                     return result
             except Exception:
                 pass
-        return Topology._LegacyRemoveEdges_BackendV1(topology, edges=edges, tolerance=tolerance, silent=silent)
+
+        topology_edges = Topology.Edges(
+            topology,
+            silent=True,
+        ) or []
+
+        if len(topology_edges) == 0:
+            return topology
+
+        matching_edges = []
+
+        for topology_edge in topology_edges:
+            for edge in edges:
+                if Topology.IsSame(
+                    topology_edge,
+                    edge,
+                    silent=True,
+                ):
+                    matching_edges.append(topology_edge)
+                    break
+
+        if len(matching_edges) == 0:
+            return topology
+
+        topology_faces = Topology.Faces(
+            topology,
+            silent=True,
+        ) or []
+
+        # Cascading removal for Face-or-higher-dimensional topology.
+        if len(topology_faces) > 0:
+            remove_faces = []
+
+            for edge in matching_edges:
+                faces = Topology.SuperTopologies(
+                    edge,
+                    hostTopology=topology,
+                    topologyType="face",
+                    silent=True,
+                ) or []
+
+                for face in faces:
+                    if not any(
+                        Topology.IsSame(face, existing, silent=True)
+                        for existing in remove_faces
+                    ):
+                        remove_faces.append(face)
+
+            if len(remove_faces) == 0:
+                return topology
+
+            return Topology.RemoveFaces(
+                topology,
+                faces=remove_faces,
+                tolerance=tolerance,
+                silent=silent,
+            )
+
+        # Pure one-dimensional topology.
+        remaining_edges = []
+
+        for topology_edge in topology_edges:
+            if not any(
+                Topology.IsSame(
+                    topology_edge,
+                    edge,
+                    silent=True,
+                )
+                for edge in matching_edges
+            ):
+                remaining_edges.append(topology_edge)
+
+        if len(remaining_edges) == 0:
+            return None
+
+        if len(remaining_edges) == 1:
+            return remaining_edges[0]
+
+        cluster = Cluster.ByTopologies(
+            remaining_edges,
+            tolerance=tolerance,
+            silent=True,
+        )
+
+        return Topology.SelfMerge(
+            cluster,
+            tolerance=tolerance,
+            silent=silent,
+        )
+
     @staticmethod
     def _LegacyRemoveEdges_BackendV1(topology, edges: list = [], tolerance: float = 0.0001, silent: bool = False):
         """
@@ -14465,23 +14850,119 @@ class Topology():
             return Topology.SelfMerge(Cluster.ByTopologies(remaining_edges), tolerance=tolerance)
 
     @staticmethod
-    def RemoveFaces(topology, faces: list = [], tolerance: float = 0.0001, silent: bool = False):
-        '\n        Removes the input list of faces from the input topology\n\n        Parameters\n        ----------\n        topology : topologic_core.Topology\n            The input topology.\n        faces : list\n            The input list of faces.\n        tolerance : float , optional\n            The desired tolerance. Default is 0.0001.\n        silent : bool , optional\n            If set to True, error and warning messages are suppressed. Default is False.\n\n        Returns\n        -------\n        topologic_core.Topology\n            The input topology with the input list of faces removed.\n\n        '
+    def RemoveFaces(
+        topology,
+        faces: list = [],
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
+        """
+        Removes the specified Faces from the input topology.
+
+        Parameters
+        ----------
+        topology : topologic_core.Topology
+            The input topology.
+        faces : list , optional
+            The Faces to remove. Default is [].
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed.
+            Default is False.
+
+        Returns
+        -------
+        topologic_core.Topology
+            The resulting topology, or None if all Faces are removed.
+        """
+        from topologicpy.Cluster import Cluster
+
         if not Topology.IsInstance(topology, "Topology"):
             if not silent:
-                print("Topology.RemoveFaces - Error: The input topology parameter is not a valid topology. Returning None.")
+                print(
+                    "Topology.RemoveFaces - Error: The input topology parameter is "
+                    "not a valid topology. Returning None."
+                )
             return None
-        faces = [f for f in faces if Topology.IsInstance(f, "Face")]
-        if len(faces) < 1:
+
+        if faces is None:
             return topology
+
+        if not isinstance(faces, (list, tuple)):
+            faces = [faces]
+
+        faces = [
+            face
+            for face in faces
+            if Topology.IsInstance(face, "Face")
+        ]
+
+        if len(faces) == 0:
+            return topology
+
+        # PythonOCC native path.
         if not Topology._IsTopologicCoreBackend():
             try:
-                status, result = Core.InstanceCall(topology, "RemoveFacesNative", faces, tolerance)
+                status, result = Core.InstanceCall(
+                    topology,
+                    "RemoveFacesNative",
+                    faces,
+                    tolerance,
+                )
+
                 if status is True:
                     return result
             except Exception:
                 pass
-        return Topology._LegacyRemoveFaces_BackendV1(topology, faces=faces, tolerance=tolerance, silent=silent)
+
+        topology_faces = Topology.Faces(
+            topology,
+            silent=True,
+        ) or []
+
+        if len(topology_faces) == 0:
+            return topology
+
+        remaining_faces = []
+        removed_any = False
+
+        for topology_face in topology_faces:
+            remove = any(
+                Topology.IsSame(
+                    topology_face,
+                    face,
+                    silent=True,
+                )
+                for face in faces
+            )
+
+            if remove:
+                removed_any = True
+            else:
+                remaining_faces.append(topology_face)
+
+        if not removed_any:
+            return topology
+
+        if len(remaining_faces) == 0:
+            return None
+
+        if len(remaining_faces) == 1:
+            return remaining_faces[0]
+
+        cluster = Cluster.ByTopologies(
+            remaining_faces,
+            tolerance=tolerance,
+            silent=True,
+        )
+
+        return Topology.SelfMerge(
+            cluster,
+            tolerance=tolerance,
+            silent=silent,
+        )
+
     @staticmethod
     def _LegacyRemoveFaces_BackendV1(topology, faces: list = [], tolerance: float = 0.0001, silent: bool = False):
         """
@@ -14533,73 +15014,255 @@ class Topology():
         return Topology.SelfMerge(Cluster.ByTopologies(remaining_faces), tolerance=tolerance)
     
     @staticmethod
-    def RemoveFacesBySelectors(topology, selectors: list = [], tolerance: float = 0.0001, silent: bool = False):
+    def RemoveFacesBySelectors(
+        topology,
+        selectors: list = [],
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
         """
-        Removes faces that contain the input list of selectors (vertices) from the input topology
+        Removes Faces containing one or more of the input selector Vertices.
 
         Parameters
         ----------
         topology : topologic_core.Topology
             The input topology.
-        selectors : list
-            The input list of selectors (vertices).
+        selectors : list , optional
+            The selector Vertices. Default is [].
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
+            If set to True, error and warning messages are suppressed.
+            Default is False.
 
         Returns
         -------
         topologic_core.Topology
-            The input topology with the identified faces removed.
-
+            The resulting topology.
         """
         from topologicpy.Vertex import Vertex
 
         if not Topology.IsInstance(topology, "Topology"):
             if not silent:
-                print("Topology.RemoveFacesBySelectors - Error: The input topology parameter is not a valid topology. Returning None.")
+                print(
+                    "Topology.RemoveFacesBySelectors - Error: The input topology "
+                    "parameter is not a valid topology. Returning None."
+                )
             return None
-        selectors = [v for v in selectors if Topology.IsInstance(v, "Vertex")]
-        if len(selectors) < 1:
+
+        if selectors is None:
+            return topology
+
+        if not isinstance(selectors, (list, tuple)):
+            selectors = [selectors]
+
+        selectors = [
+            selector
+            for selector in selectors
+            if Topology.IsInstance(selector, "Vertex")
+        ]
+
+        if len(selectors) == 0:
             if not silent:
-                print("Topology.RemoveFacesBySelectors - Warning: The input selectors parameter does not contain any valid selectors. Returning the input topology.")
+                print(
+                    "Topology.RemoveFacesBySelectors - Warning: The selectors "
+                    "parameter contains no valid Vertices. Returning the input topology."
+                )
             return topology
-        t_faces = Topology.Faces(topology)
+
+        faces = Topology.Faces(
+            topology,
+            silent=True,
+        ) or []
+
         to_remove = []
-        for t_f in t_faces:
-            remove = False
-            for i, v in enumerate(selectors):
-                if Vertex.IsInternal(v, t_f, tolerance=tolerance):
-                    remove = True
-                    selectors = selectors[:i]+ selectors[i:]
+
+        for face in faces:
+            for selector in selectors:
+                try:
+                    contains = Vertex.IsInternal(
+                        selector,
+                        face,
+                        tolerance=tolerance,
+                        silent=True,
+                    )
+                except Exception:
+                    contains = False
+
+                if contains:
+                    to_remove.append(face)
                     break
-            if remove:
-                to_remove.append(t_f)
-        if len(to_remove) < 1:
+
+        if len(to_remove) == 0:
             return topology
-        return Topology.RemoveFaces(topology, faces = to_remove, silent=silent)
+
+        return Topology.RemoveFaces(
+            topology,
+            faces=to_remove,
+            tolerance=tolerance,
+            silent=silent,
+        )
 
     @staticmethod
-    def RemoveVertices(topology, vertices: list = [], tolerance: float = 0.0001, silent: bool = False):
-        '\n        Removes the input list of vertices from the input topology\n\n        Parameters\n        ----------\n        topology : topologic_core.Topology\n            The input topology.\n        vertices : list\n            The input list of vertices.\n        tolerance : float , optional\n            The desired tolerance. Default is 0.0001.\n        silent : bool , optional\n            If set to True, error and warning messages are suppressed. Default is False.\n\n        Returns\n        -------\n        topologic_core.Topology\n            The input topology with the input list of vertices removed.\n\n        '
+    def RemoveVertices(
+        topology,
+        vertices: list = [],
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
+        """
+        Removes the specified Vertices from the input topology.
+
+        If the topology contains Edges, removal is cascading: every Edge incident
+        to a requested Vertex is removed. This can consequently remove Faces that
+        depend on those Edges.
+
+        Parameters
+        ----------
+        topology : topologic_core.Topology
+            The input topology.
+        vertices : list , optional
+            The Vertices to remove. Default is [].
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed.
+            Default is False.
+
+        Returns
+        -------
+        topologic_core.Topology
+            The resulting topology, or None if all topology is removed.
+        """
+        from topologicpy.Cluster import Cluster
+
         if not Topology.IsInstance(topology, "Topology"):
             if not silent:
-                print("Topology.RemoveVertices - Error: The input topology parameter is not a valid topology. Returning None.")
+                print(
+                    "Topology.RemoveVertices - Error: The input topology parameter is "
+                    "not a valid topology. Returning None."
+                )
             return None
-        vertices = [v for v in vertices if Topology.IsInstance(v, "Vertex")]
-        if len(vertices) < 1:
-            if not silent:
-                print("Topology.RemoveFacesBySelectors - Warning: The input vertices parameter does not contain any valid selectors. Returning the input topology.")
+
+        if vertices is None:
             return topology
+
+        if not isinstance(vertices, (list, tuple)):
+            vertices = [vertices]
+
+        vertices = [
+            vertex
+            for vertex in vertices
+            if Topology.IsInstance(vertex, "Vertex")
+        ]
+
+        if len(vertices) == 0:
+            return topology
+
+        # PythonOCC native path.
         if not Topology._IsTopologicCoreBackend():
             try:
-                status, result = Core.InstanceCall(topology, "RemoveVerticesNative", vertices, tolerance)
+                status, result = Core.InstanceCall(
+                    topology,
+                    "RemoveVerticesNative",
+                    vertices,
+                    tolerance,
+                )
+
                 if status is True:
                     return result
             except Exception:
                 pass
-        return Topology._LegacyRemoveVertices_BackendV1(topology, vertices=vertices, tolerance=tolerance, silent=silent)
+
+        topology_vertices = Topology.Vertices(
+            topology,
+            silent=True,
+        ) or []
+
+        if len(topology_vertices) == 0:
+            return topology
+
+        matching_vertices = []
+
+        for topology_vertex in topology_vertices:
+            for vertex in vertices:
+                if Topology.IsSame(
+                    topology_vertex,
+                    vertex,
+                    silent=True,
+                ):
+                    matching_vertices.append(topology_vertex)
+                    break
+
+        if len(matching_vertices) == 0:
+            return topology
+
+        topology_edges = Topology.Edges(
+            topology,
+            silent=True,
+        ) or []
+
+        # Cascading removal for topology containing edges.
+        if len(topology_edges) > 0:
+            remove_edges = []
+
+            for vertex in matching_vertices:
+                edges = Topology.SuperTopologies(
+                    vertex,
+                    hostTopology=topology,
+                    topologyType="edge",
+                    silent=True,
+                ) or []
+
+                for edge in edges:
+                    if not any(
+                        Topology.IsSame(edge, existing, silent=True)
+                        for existing in remove_edges
+                    ):
+                        remove_edges.append(edge)
+
+            if len(remove_edges) == 0:
+                return topology
+
+            return Topology.RemoveEdges(
+                topology,
+                edges=remove_edges,
+                tolerance=tolerance,
+                silent=silent,
+            )
+
+        # Pure collection of vertices.
+        remaining_vertices = []
+
+        for topology_vertex in topology_vertices:
+            if not any(
+                Topology.IsSame(
+                    topology_vertex,
+                    vertex,
+                    silent=True,
+                )
+                for vertex in matching_vertices
+            ):
+                remaining_vertices.append(topology_vertex)
+
+        if len(remaining_vertices) == 0:
+            return None
+
+        if len(remaining_vertices) == 1:
+            return remaining_vertices[0]
+
+        cluster = Cluster.ByTopologies(
+            remaining_vertices,
+            tolerance=tolerance,
+            silent=True,
+        )
+
+        return Topology.SelfMerge(
+            cluster,
+            tolerance=tolerance,
+            silent=silent,
+        )
+
     @staticmethod
     def _LegacyRemoveVertices_BackendV1(topology, vertices: list = [], tolerance: float = 0.0001, silent: bool = False):
         """
@@ -22549,73 +23212,276 @@ class Topology():
         return superTopologies
     
     @staticmethod
-    def TransferDictionaries(sources, sinks, tolerance=0.0001, numWorkers=None, silent: bool = False):
+    def TransferDictionaries(
+        sources,
+        sinks,
+        tolerance: float = 0.0001,
+        numWorkers=None,
+        silent: bool = False
+    ):
         """
-        Transfers the dictionaries from the list of sources to the list of sinks.
+        Transfers dictionaries from source topologies to spatially corresponding
+        sink topologies.
+
+        Dictionary transfer is deterministic and independent of processor count.
+        If multiple matching sources contain the same key with different values,
+        those values are combined into a list in source order.
+
+        Existing sink dictionary values are preserved and combined with transferred
+        values where necessary.
+
+        The numWorkers parameter is retained for backward API compatibility but is
+        no longer used. The previous multiprocessing implementation could produce
+        different results depending on the number of workers.
 
         Parameters
         ----------
         sources : list
-            The list of topologies from which to transfer the dictionaries.
+            The source topologies.
         sinks : list
-            The list of topologies to which to transfer the dictionaries.
+            The sink topologies.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
-        numWorkers : int, optional
-            Number of workers run in parallel to process. Default is None which sets the number to twice the number of CPU cores.
+        numWorkers : int , optional
+            Retained for backward compatibility. It has no effect.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
-        
+            If set to True, error and warning messages are suppressed.
+            Default is False.
+
         Returns
         -------
         dict
-            Returns a dictionary with the lists of sources and sinks. The keys are "sinks" and "sources".
-
+            A dictionary containing the processed ``sources`` and ``sinks`` lists.
         """
+        from topologicpy.Vertex import Vertex
         from topologicpy.Dictionary import Dictionary
+
         if not isinstance(sources, list):
             if not silent:
-                print("Topology.TransferDictionaries - Error: The input sources parameter is not a valid list. Returning None.")
+                print(
+                    "Topology.TransferDictionaries - Error: The input sources "
+                    "parameter is not a valid list. Returning None."
+                )
             return None
+
         if not isinstance(sinks, list):
             if not silent:
-                print("Topology.TransferDictionaries - Error: The input sinks parameter is not a valid list. Returning None.")
+                print(
+                    "Topology.TransferDictionaries - Error: The input sinks "
+                    "parameter is not a valid list. Returning None."
+                )
             return None
-        if numWorkers == None:
-            import multiprocessing
-            numWorkers = multiprocessing.cpu_count()*2
-        sources = [x for x in sources if Topology.IsInstance(x, "Topology")]
-        sinks = [x for x in sinks if Topology.IsInstance(x, "Topology")]
-        so_dicts = [Dictionary.PythonDictionary(Topology.Dictionary(s)) for s in sources]
-        if len(sources) < 1:
+
+        try:
+            tolerance = abs(float(tolerance))
+        except Exception:
             if not silent:
-                print("Topology.TransferDictionaries - Error: The input sources does not contain any valid topologies. Returning None.")
+                print(
+                    "Topology.TransferDictionaries - Error: The tolerance parameter "
+                    "is not a valid number. Returning None."
+                )
             return None
-        if len(sinks) < 1:
+
+        sources = [
+            source
+            for source in sources
+            if Topology.IsInstance(source, "Topology")
+        ]
+
+        sinks = [
+            sink
+            for sink in sinks
+            if Topology.IsInstance(sink, "Topology")
+        ]
+
+        if len(sources) == 0:
             if not silent:
-                print("Topology.TransferDictionaries - Error: The input sinks does not contain any valid topologies. Returning None.")
+                print(
+                    "Topology.TransferDictionaries - Error: The sources list contains "
+                    "no valid topologies. Returning None."
+                )
             return None
 
-        queue = Queue()
-        sources_str = [Topology.BREPString(s) for s in sources]
-        sink_items = [SinkItem(id(s), Topology.BREPString(s)) for s in sinks]
-        mergingProcess = MergingProcess(queue, sources_str, sink_items, so_dicts)
-        mergingProcess.start()
+        if len(sinks) == 0:
+            if not silent:
+                print(
+                    "Topology.TransferDictionaries - Error: The sinks list contains "
+                    "no valid topologies. Returning None."
+                )
+            return None
 
-        workerProcessPool = WorkerProcessPool(numWorkers, queue, sources_str, sink_items, so_dicts, tolerance=tolerance)
-        workerProcessPool.startProcesses()
-        workerProcessPool.join()
+        def python_dictionary(topology):
+            try:
+                dictionary = Topology.Dictionary(
+                    topology,
+                    silent=True,
+                )
 
-        queue.put_nowait(None)
-        sinkMap = queue.get()
-        mergingProcess.join()
+                if dictionary is None:
+                    return {}
 
-        for i, sink in enumerate(sink_items):
-            mapItem = sinkMap[sink.ID]
-            newDict = Dictionary.ByKeysValues(mapItem.sinkKeys, mapItem.sinkValues)
-            _ = Topology.SetDictionary(sinks[i], newDict)
-        return {"sources": sources, "sinks": sinks}
+                result = Dictionary.PythonDictionary(
+                    dictionary,
+                    silent=True,
+                )
 
+                return result if isinstance(result, dict) else {}
+            except Exception:
+                return {}
+
+        def values_equal(a, b):
+            try:
+                return a == b
+            except Exception:
+                return False
+
+        def merge_value(current, incoming):
+            if current is None:
+                return incoming
+
+            if values_equal(current, incoming):
+                return current
+
+            if isinstance(current, list):
+                result = list(current)
+
+                if not any(
+                    values_equal(value, incoming)
+                    for value in result
+                ):
+                    result.append(incoming)
+
+                return result
+
+            return [current, incoming]
+
+        source_data = [
+            (
+                source,
+                python_dictionary(source),
+            )
+            for source in sources
+        ]
+
+        for sink in sinks:
+            sink_dictionary = python_dictionary(sink)
+            merged = dict(sink_dictionary)
+            matched = False
+
+            sink_internal_vertex = None
+            sink_internal_vertex_computed = False
+
+            for source, source_dictionary in source_data:
+                if len(source_dictionary) == 0:
+                    continue
+
+                is_match = False
+
+                # Prefer actual topological identity when available.
+                try:
+                    if Topology.IsSame(
+                        source,
+                        sink,
+                        silent=True,
+                    ):
+                        is_match = True
+                except Exception:
+                    is_match = False
+
+                if not is_match:
+                    if Topology.IsInstance(source, "Vertex"):
+                        try:
+                            is_match = bool(
+                                Vertex.IsInternal(
+                                    source,
+                                    sink,
+                                    tolerance=tolerance,
+                                    silent=True,
+                                )
+                            )
+                        except Exception:
+                            is_match = False
+
+                    else:
+                        if not sink_internal_vertex_computed:
+                            sink_internal_vertex_computed = True
+
+                            try:
+                                sink_internal_vertex = Topology.InternalVertex(
+                                    sink,
+                                    tolerance=tolerance,
+                                    silent=True,
+                                )
+                            except Exception:
+                                sink_internal_vertex = None
+
+                        if Topology.IsInstance(
+                            sink_internal_vertex,
+                            "Vertex",
+                        ):
+                            try:
+                                is_match = bool(
+                                    Vertex.IsInternal(
+                                        sink_internal_vertex,
+                                        source,
+                                        tolerance=tolerance,
+                                        silent=True,
+                                    )
+                                )
+                            except Exception:
+                                is_match = False
+
+                if not is_match:
+                    continue
+
+                matched = True
+
+                for key, value in source_dictionary.items():
+                    if key in merged:
+                        merged[key] = merge_value(
+                            merged[key],
+                            value,
+                        )
+                    else:
+                        merged[key] = value
+
+            # Do not erase a sink's existing dictionary if no source matched.
+            if not matched:
+                continue
+
+            try:
+                dictionary = Dictionary.ByPythonDictionary(
+                    merged,
+                    silent=True,
+                )
+            except Exception:
+                try:
+                    dictionary = Dictionary.ByKeysValues(
+                        list(merged.keys()),
+                        list(merged.values()),
+                        silent=True,
+                    )
+                except Exception:
+                    dictionary = None
+
+            if dictionary is None:
+                if not silent:
+                    print(
+                        "Topology.TransferDictionaries - Warning: Could not construct "
+                        "a transferred dictionary for one sink. Leaving it unchanged."
+                    )
+                continue
+
+            Topology.SetDictionary(
+                sink,
+                dictionary,
+                silent=True,
+            )
+
+        return {
+            "sources": sources,
+            "sinks": sinks,
+        }
 
     @staticmethod
     def TransferDictionariesByKey(topologies, dictionaries, key: str, silent: bool = False):
