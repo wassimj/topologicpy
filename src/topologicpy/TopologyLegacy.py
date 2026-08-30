@@ -1055,7 +1055,7 @@ class Topology():
                     pass
 
                 try:
-                    from topologicpy.Topology import Topology
+                    # from topologicpy.Topology import Topology
                     for rec in hostTopology._vertices:
                         if not rec.get("active", True):
                             continue
@@ -1083,7 +1083,7 @@ class Topology():
                     pass
 
                 try:
-                    from topologicpy.Topology import Topology
+                    # from topologicpy.Topology import Topology
                     for rec in hostTopology._edges:
                         if not rec.get("active", True):
                             continue
@@ -1815,7 +1815,7 @@ class Topology():
         >>> missing = groups.get("__MISSING__", [])
         """
 
-        from topologicpy.Topology import Topology
+        # from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
         
         def _hashable_key(value: Any) -> Any:
@@ -1935,7 +1935,7 @@ class Topology():
         from topologicpy.Vertex import Vertex
         from topologicpy.Face import Face
         from topologicpy.Vector import Vector
-        from topologicpy.Topology import Topology
+        # from topologicpy.Topology import Topology
 
         def angleCode(f, up, tiltAngle):
             # 0 = Vertical
@@ -2144,7 +2144,7 @@ class Topology():
             The external boundary of the input topology.
 
         """
-        from topologicpy.Topology import Topology
+        # from topologicpy.Topology import Topology
         from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
         from topologicpy.Wire import Wire
@@ -2203,7 +2203,7 @@ class Topology():
             The list of target topologies with the dictionary information inherited from the list of source topologies.
 
         """
-        from topologicpy.Topology import Topology
+        # from topologicpy.Topology import Topology
         from topologicpy.Vertex import Vertex
         from topologicpy.Dictionary import Dictionary
 
@@ -3714,7 +3714,7 @@ class Topology():
 
         """
         import math
-        from topologicpy.Topology import Topology
+        # from topologicpy.Topology import Topology
         from topologicpy.Vertex import Vertex
         from topologicpy.Wire import Wire
         from topologicpy.Face import Face
@@ -4567,7 +4567,7 @@ class Topology():
 
         """
         from topologicpy.Vertex import Vertex
-        from topologicpy.Topology import Topology
+        # from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
         import datetime
 
@@ -4719,7 +4719,7 @@ class Topology():
         from topologicpy.Shell import Shell
         from topologicpy.Cell import Cell
         from topologicpy.CellComplex import CellComplex
-        from topologicpy.Topology import Topology
+        # from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
 
 
@@ -7323,7 +7323,7 @@ class Topology():
         from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
         from topologicpy.CellComplex import CellComplex
-        from topologicpy.Topology import Topology
+        # from topologicpy.Topology import Topology
         from topologicpy.Grid import Grid
         from topologicpy.Matrix import Matrix
         import numpy as np
@@ -7565,7 +7565,7 @@ class Topology():
         """
 
         from topologicpy.Vertex import Vertex
-        from topologicpy.Topology import Topology
+        # from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(topology, "topology"):
             if not silent:
@@ -7925,7 +7925,7 @@ class Topology():
         from topologicpy.Cell import Cell
         from topologicpy.Shell import Shell
         from topologicpy.Cluster import Cluster
-        from topologicpy.Topology import Topology
+        # from topologicpy.Topology import Topology
 
         import numpy as np
         from scipy.spatial import ConvexHull as SciPyConvexHull
@@ -7941,7 +7941,7 @@ class Topology():
             from topologicpy.Wire import Wire
             from topologicpy.Face import Face
             from topologicpy.Cluster import Cluster
-            from topologicpy.Topology import Topology
+            # from topologicpy.Topology import Topology
 
             import numpy as np
             from scipy.spatial import ConvexHull as SciPyConvexHull
@@ -8890,7 +8890,7 @@ class Topology():
             True if the export operation is successful. False otherwise.
 
         """
-        from topologicpy.Topology import Topology
+        # from topologicpy.Topology import Topology
         from topologicpy.Helper import Helper
         from topologicpy.Dictionary import Dictionary
         from topologicpy.Cluster import Cluster
@@ -9211,7 +9211,7 @@ class Topology():
         from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
         from topologicpy.Cluster import Cluster
-        from topologicpy.Topology import Topology
+        # from topologicpy.Topology import Topology
 
         from os.path import exists
         if not isinstance(topologies, list):
@@ -10191,7 +10191,7 @@ class Topology():
 
         """
         import fnmatch
-        from topologicpy.Topology import Topology
+        # from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
 
         def normalize_string(item):
@@ -14015,7 +14015,7 @@ class Topology():
         """
         from topologicpy.Vertex import Vertex
         from topologicpy.CellComplex import CellComplex
-        from topologicpy.Topology import Topology
+        # from topologicpy.Topology import Topology
         from topologicpy.Grid import Grid
         from topologicpy.Vector import Vector
         import numpy as np
@@ -20312,7 +20312,7 @@ class Topology():
             The found spatial relationship. One of ["contains", "disjoint", "equals", "overlaps", "touches", "within", "covers", "coveredBy"] or "unknown"
 
         """
-        from topologicpy.Topology import Topology
+        # from topologicpy.Topology import Topology
         
         if not Topology.IsInstance(topologyA, "topology"):
             if not silent:
@@ -21478,7 +21478,7 @@ class Topology():
 
         from topologicpy.Cluster import Cluster
         from topologicpy.Graph import Graph
-        from topologicpy.Topology import Topology
+        # from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
         from topologicpy.Helper import Helper
         import random
