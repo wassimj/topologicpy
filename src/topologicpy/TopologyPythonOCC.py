@@ -58,6 +58,7 @@ class Topology(TopologyLegacy):
         "aperture": 256,
         "context": 512,
         "dictionary": 1024,
+        "content": 8192,
         "graph": 2048,
         "tgraph": 2048,
         "topology": 4096,
@@ -135,7 +136,7 @@ class Topology(TopologyLegacy):
             The requested type. Valid values are ``"vertex"``, ``"edge"``,
             ``"wire"``, ``"face"``, ``"shell"``, ``"cell"``,
             ``"cellcomplex"``, ``"cluster"``, ``"topology"``, ``"aperture"``,
-            ``"context"``, ``"dictionary"``, ``"graph"``, and ``"tgraph"``.
+            ``"context"``, ``"content"``, ``"dictionary"``, ``"graph"``, and ``"tgraph"``.
             The comparison is case insensitive.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default
@@ -164,6 +165,35 @@ class Topology(TopologyLegacy):
                     "a recognized type. Returning None."
                 )
             return None
+
+        # Content, Aperture, and Context are semantic-layer objects on the
+        # PythonOCC path. They are intentionally not kernel topology wrappers.
+        if requested in ("content", "aperture", "context"):
+            try:
+                from topologicpy.Content import Content
+                from topologicpy.Aperture import Aperture
+                from topologicpy.Context import Context
+
+                if requested == "content" and isinstance(topology, Content):
+                    return True
+                if requested == "aperture" and isinstance(topology, Aperture):
+                    return True
+                if requested == "context" and isinstance(topology, Context):
+                    return True
+            except Exception:
+                pass
+
+            # Retain recognition of backend-native objects during the transition.
+            namespace_name = {
+                "aperture": "Aperture",
+                "context": "Context",
+            }.get(requested)
+            if namespace_name is None:
+                return False
+            try:
+                return isinstance(topology, Core.Namespace(namespace_name))
+            except Exception:
+                return False
 
         is_tgraph = Topology._IsTGraph(topology)
 
@@ -222,11 +252,18 @@ class Topology(TopologyLegacy):
             The numeric topology type identifier, or None if the input is
             invalid.
         """
+        if Topology.IsInstance(topology, "Aperture"):
+            return Topology._TYPE_IDS["aperture"]
+        if Topology.IsInstance(topology, "Context"):
+            return Topology._TYPE_IDS["context"]
+        if Topology.IsInstance(topology, "Content"):
+            return Topology._TYPE_IDS["content"]
+
         if not Topology.IsInstance(topology, "Topology"):
             if not silent:
                 print(
-                    "Topology.Type - Error: The input topology parameter is not "
-                    "a valid topology. Returning None."
+                    "Topology.Type - Error: The input object is not a valid "
+                    "topology or semantic object. Returning None."
                 )
             return None
 
@@ -269,6 +306,13 @@ class Topology(TopologyLegacy):
         if Topology.IsInstance(topology, "Graph"):
             return "Graph"
 
+        if Topology.IsInstance(topology, "Aperture"):
+            return "Aperture"
+        if Topology.IsInstance(topology, "Context"):
+            return "Context"
+        if Topology.IsInstance(topology, "Content"):
+            return "Content"
+
         if Topology.IsInstance(topology, "Topology"):
             try:
                 result = Core.InstanceCall(topology, "GetTypeAsString")
@@ -296,7 +340,7 @@ class Topology(TopologyLegacy):
             The input type name. Valid values are ``"vertex"``, ``"edge"``,
             ``"wire"``, ``"face"``, ``"shell"``, ``"cell"``,
             ``"cellcomplex"``, ``"cluster"``, ``"aperture"``, ``"context"``,
-            ``"dictionary"``, ``"graph"``, ``"tgraph"``, and ``"topology"``.
+            ``"dictionary"``, ``"content"``, ``"graph"``, ``"tgraph"``, and ``"topology"``.
             The comparison is case insensitive. Default is None.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default
@@ -1073,6 +1117,12 @@ class Topology(TopologyLegacy):
         """
         Sets the dictionary of the input topology or graph.
 
+        On the PythonOCC topology path, dictionaries are stored canonically as
+        plain Python dictionaries in the shape-keyed backend AttributeManager.
+        This avoids the lossy conversion through legacy Core attribute objects
+        and preserves nested dictionaries, booleans, tuples/lists, and other
+        supported Python semantic values exactly.
+
         Parameters
         ----------
         topology : topologicpy.Topology, topologicpy.Graph, topologicpy.TGraph, or dict
@@ -1106,9 +1156,16 @@ class Topology(TopologyLegacy):
                 pass
 
             try:
-                result = Dictionary.PythonDictionary(value)
+                result = Dictionary.PythonDictionary(value, silent=True)
                 if isinstance(result, dict):
                     return result
+            except TypeError:
+                try:
+                    result = Dictionary.PythonDictionary(value)
+                    if isinstance(result, dict):
+                        return result
+                except Exception:
+                    pass
             except Exception:
                 pass
 
@@ -1203,10 +1260,10 @@ class Topology(TopologyLegacy):
 
             return topology
 
-        if not (
-            Topology.IsInstance(topology, "Topology")
-            or Topology.IsInstance(topology, "Graph")
-        ):
+        is_topology = Topology.IsInstance(topology, "Topology")
+        is_graph = Topology.IsInstance(topology, "Graph")
+
+        if not (is_topology or is_graph):
             if not silent:
                 print(
                     "Topology.SetDictionary - Error: The input topology parameter "
@@ -1215,12 +1272,47 @@ class Topology(TopologyLegacy):
                 )
             return None
 
+        # PythonOCC Topology wrappers already accept arbitrary Python dictionary
+        # payloads and persist them by OCCT shape identity. Keep that exact Python
+        # representation instead of round-tripping through legacy attribute classes.
+        if is_topology:
+            try:
+                result = Core.InstanceCall(
+                    topology,
+                    "SetDictionary",
+                    dict(python_dictionary),
+                )
+            except Exception:
+                result = None
+
+            if result is None:
+                if not silent:
+                    print(
+                        "Topology.SetDictionary - Error: Could not set the dictionary. "
+                        "Returning the original input."
+                    )
+                return topology
+
+            return result
+
+        # Graph remains on its existing backend dictionary contract for now.
         backend_dictionary = dictionary
 
         if isinstance(dictionary, dict):
             try:
-                backend_dictionary = Dictionary.ByPythonDictionary(dictionary)
+                backend_dictionary = Dictionary.ByPythonDictionary(
+                    dictionary,
+                    silent=True,
+                )
+            except TypeError:
+                try:
+                    backend_dictionary = Dictionary.ByPythonDictionary(dictionary)
+                except Exception:
+                    backend_dictionary = None
             except Exception:
+                backend_dictionary = None
+
+            if backend_dictionary is None:
                 try:
                     backend_dictionary = Dictionary.ByKeysValues(
                         list(dictionary.keys()),
@@ -1256,25 +1348,256 @@ class Topology(TopologyLegacy):
 
         return result
 
+    # ---------------------------------------------------------------------
+    # Semantic Content / Context relationships
+    # ---------------------------------------------------------------------
+
+    @staticmethod
+    def _RelationshipCandidates(topology, subTopologyType, allowed, silent=False):
+        """Returns candidate host topologies for semantic attachment."""
+        if subTopologyType is None:
+            requested = "self"
+        elif isinstance(subTopologyType, str):
+            requested = subTopologyType.strip().lower() or "self"
+        else:
+            if not silent:
+                print(
+                    "Topology - Error: The input subTopologyType parameter is "
+                    "not a valid string. Returning None."
+                )
+            return None
+
+        if requested not in allowed:
+            if not silent:
+                print(
+                    "Topology - Error: The input subTopologyType parameter is "
+                    "not recognized. Returning None."
+                )
+            return None
+
+        if requested == "self":
+            return [topology]
+
+        return Topology.SubTopologies(
+            topology,
+            subTopologyType=requested,
+            silent=silent,
+        )
+
+    @staticmethod
+    def _RelationshipHostForContent(content, candidates, tolerance=0.0001):
+        """Returns the first candidate that geometrically contains content."""
+        from topologicpy.Vertex import Vertex
+
+        try:
+            selector = Topology.InternalVertex(
+                content, tolerance=tolerance, silent=True
+            )
+        except Exception:
+            selector = None
+
+        if not Topology.IsInstance(selector, "Vertex"):
+            try:
+                selector = Topology.Centroid(content, silent=True)
+            except Exception:
+                selector = None
+
+        if not Topology.IsInstance(selector, "Vertex"):
+            return None
+
+        for candidate in candidates or []:
+            try:
+                if Vertex.IsInternal(
+                    selector,
+                    candidate,
+                    tolerance=tolerance,
+                    silent=True,
+                ):
+                    return candidate
+            except Exception:
+                continue
+        return None
+
+    @staticmethod
+    def AddContent(
+        topology,
+        contents=None,
+        subTopologyType: str = None,
+        tolerance: float = 0.0001,
+        silent: bool = False,
+    ):
+        """Adds Content relationships to the input topology.
+
+        Content topology identity is preserved: attaching a topology does not copy
+        it. The same Content can therefore participate in multiple Contexts.
+        Apertures are Contents and are included by :meth:`Topology.Contents`.
+        """
+        from topologicpy.SemanticManager import SemanticManager
+
+        if not Topology.IsInstance(topology, "Topology"):
+            if not silent:
+                print(
+                    "Topology.AddContent - Error: The input topology parameter is "
+                    "not a valid topology. Returning None."
+                )
+            return None
+
+        if contents is None:
+            if not silent:
+                print(
+                    "Topology.AddContent - Warning: The input contents parameter "
+                    "is empty. Returning the input topology unmodified."
+                )
+            return topology
+
+        if not isinstance(contents, list):
+            contents = [contents]
+        contents = [
+            content for content in contents
+            if Topology.IsInstance(content, "Topology")
+        ]
+        if not contents:
+            if not silent:
+                print(
+                    "Topology.AddContent - Warning: The input contents parameter "
+                    "does not contain valid topologies. Returning the input topology "
+                    "unmodified."
+                )
+            return topology
+
+        candidates = Topology._RelationshipCandidates(
+            topology,
+            subTopologyType,
+            allowed=(
+                "self", "cellcomplex", "cell", "shell",
+                "face", "wire", "edge", "vertex",
+            ),
+            silent=silent,
+        )
+        if candidates is None:
+            return None
+
+        manager = SemanticManager.GetInstance()
+        direct = (subTopologyType is None or (
+            isinstance(subTopologyType, str)
+            and (subTopologyType.strip() == "" or subTopologyType.strip().lower() == "self")
+        ))
+
+        for content in contents:
+            host = candidates[0] if direct else Topology._RelationshipHostForContent(
+                content, candidates, tolerance=tolerance
+            )
+            if host is None:
+                continue
+            manager.register(content, host, parameters=None)
+
+        return topology
+
+    @staticmethod
+    def AddApertures(
+        topology,
+        apertures,
+        exclusive=False,
+        subTopologyType=None,
+        tolerance=0.001,
+        silent: bool = False,
+    ):
+        """Adds Aperture Content relationships to the input topology.
+
+        Aperture is a specialised Content. The same represented topology can have
+        several Contexts, for example one to a host Face and one to a room Cell.
+        """
+        from topologicpy.Dictionary import Dictionary
+        from topologicpy.SemanticManager import SemanticManager
+
+        if not Topology.IsInstance(topology, "Topology"):
+            if not silent:
+                print(
+                    "Topology.AddApertures - Error: The input topology parameter is "
+                    "not a valid topology. Returning None."
+                )
+            return None
+        if not apertures:
+            if not silent:
+                print(
+                    "Topology.AddApertures - Warning: The input apertures parameter "
+                    "is empty. Returning the input topology."
+                )
+            return topology
+        if not isinstance(apertures, list):
+            if not silent:
+                print(
+                    "Topology.AddApertures - Error: The input apertures parameter "
+                    "is not a list. Returning None."
+                )
+            return None
+
+        apertures = [
+            aperture for aperture in apertures
+            if Topology.IsInstance(aperture, "Topology")
+        ]
+        if not apertures:
+            return topology
+
+        candidates = Topology._RelationshipCandidates(
+            topology,
+            subTopologyType,
+            allowed=("self", "cell", "face", "edge", "vertex"),
+            silent=silent,
+        )
+        if candidates is None:
+            return None
+
+        manager = SemanticManager.GetInstance()
+        direct = (subTopologyType is None or (
+            isinstance(subTopologyType, str)
+            and (subTopologyType.strip() == "" or subTopologyType.strip().lower() == "self")
+        ))
+
+        for aperture in apertures:
+            # Preserve the long-standing public marker on the represented topology.
+            dictionary = Topology.Dictionary(aperture, silent=True)
+            try:
+                dictionary = Dictionary.SetValueAtKey(dictionary, "type", "Aperture")
+                marked = Topology.SetDictionary(aperture, dictionary, silent=True)
+                if Topology.IsInstance(marked, "Topology"):
+                    aperture = marked
+            except Exception:
+                pass
+
+            if direct:
+                host = candidates[0]
+                if bool(exclusive) and manager.aperture_topologies_for_host(host):
+                    continue
+            else:
+                eligible = [
+                    candidate for candidate in candidates
+                    if not bool(exclusive)
+                    or not manager.aperture_topologies_for_host(candidate)
+                ]
+                host = Topology._RelationshipHostForContent(
+                    aperture, eligible, tolerance=tolerance
+                )
+
+            if host is None:
+                continue
+            manager.register(
+                aperture,
+                host,
+                aperture=True,
+                parameters=None,
+            )
+
+        return topology
+
     @staticmethod
     def Contents(topology, silent: bool = False):
-        """
-        Returns the contents attached to the input topology.
+        """Returns Content topologies hosted by ``topology``.
 
-        Parameters
-        ----------
-        topology : topologicpy.Topology
-            The input topology.
-        silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default
-            is False.
-
-        Returns
-        -------
-        list
-            The attached content topologies, or None if the input is invalid or
-            the query fails.
+        Apertures are a specialised Content and are therefore included.
         """
+        from topologicpy.SemanticManager import SemanticManager
+
         if not Topology.IsInstance(topology, "Topology"):
             if not silent:
                 print(
@@ -1282,94 +1605,32 @@ class Topology(TopologyLegacy):
                     "not a valid topology. Returning None."
                 )
             return None
-
-        try:
-            result = Core.InstanceCall(topology, "Contents")
-        except Exception:
-            result = None
-
-        if isinstance(result, list):
-            return result
-
-        if not silent:
-            print(
-                "Topology.Contents - Error: Could not retrieve the contents of "
-                "the input topology. Returning None."
-            )
-        return None
+        return Topology._Deduplicate(
+            SemanticManager.GetInstance().content_topologies_for_host(topology)
+        )
 
     @staticmethod
     def Contexts(topology, silent: bool = False):
-        """
-        Returns the contexts attached to the input topology.
+        """Returns all Context relationships of a Content topology."""
+        from topologicpy.Content import Content
+        from topologicpy.SemanticManager import SemanticManager
 
-        Parameters
-        ----------
-        topology : topologicpy.Topology
-            The input topology.
-        silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default
-            is False.
+        if isinstance(topology, Content):
+            return SemanticManager.GetInstance().contexts_for_content(topology)
 
-        Returns
-        -------
-        list
-            The attached contexts, or None if the input is invalid or the query
-            fails.
-        """
         if not Topology.IsInstance(topology, "Topology"):
             if not silent:
                 print(
                     "Topology.Contexts - Error: The input topology parameter is "
-                    "not a valid topology. Returning None."
+                    "not a valid topology or Content. Returning None."
                 )
             return None
-
-        try:
-            result = Core.InstanceCall(topology, "Contexts")
-        except Exception:
-            result = None
-
-        if isinstance(result, list):
-            return result
-
-        if not silent:
-            print(
-                "Topology.Contexts - Error: Could not retrieve the contexts of "
-                "the input topology. Returning None."
-            )
-        return None
+        return SemanticManager.GetInstance().contexts_for_content(topology)
 
     @staticmethod
-    def Apertures(
-        topology,
-        subTopologyType=None,
-        silent: bool = False,
-    ):
-        """
-        Returns the aperture topologies associated with the input topology.
-
-        Parameters
-        ----------
-        topology : topologicpy.Topology
-            The input topology.
-        subTopologyType : str , optional
-            The subtopology level from which apertures are collected. Valid
-            values are ``"vertex"``, ``"edge"``, ``"face"``, ``"cell"``, and
-            ``"all"``. If set to None, only apertures attached directly to the
-            input topology are returned. Default is None.
-        silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default
-            is False.
-
-        Returns
-        -------
-        list
-            The associated aperture topologies, or None if the input or
-            ``subTopologyType`` is invalid.
-        """
-        from topologicpy.Aperture import Aperture
-        from topologicpy.Dictionary import Dictionary
+    def Apertures(topology, subTopologyType=None, silent: bool = False):
+        """Returns Aperture Content topologies hosted by ``topology``."""
+        from topologicpy.SemanticManager import SemanticManager
 
         if not Topology.IsInstance(topology, "Topology"):
             if not silent:
@@ -1379,97 +1640,12 @@ class Topology(TopologyLegacy):
                 )
             return None
 
-        def direct_apertures(host):
-            try:
-                raw_apertures = Core.InstanceCall(host, "Apertures")
-            except Exception:
-                raw_apertures = None
-
-            if not isinstance(raw_apertures, list):
-                return None
-
-            result = []
-
-            for aperture in raw_apertures:
-                # An Aperture wrapper represents another topology through its
-                # ``topology`` attribute. If that attribute exists, it is the
-                # public result by definition. Do not route it back through
-                # IsInstance here: the wrapper and represented topology may have
-                # been created through different backend namespace objects during
-                # the transition, while still referring to the correct OCCT shape.
-                aperture_topology = getattr(aperture, "topology", None)
-
-                if aperture_topology is not None:
-                    result.append(aperture_topology)
-                    continue
-
-                # Some backend implementations expose the represented topology
-                # only through Aperture.Topology rather than a public attribute.
-                try:
-                    aperture_topology = Aperture.Topology(aperture)
-                except Exception:
-                    aperture_topology = None
-
-                if aperture_topology is not None:
-                    result.append(aperture_topology)
-                    continue
-
-                # Compatibility path for workflows that store an aperture
-                # topology directly instead of an Aperture wrapper. Only objects
-                # without a represented ``topology`` reach this branch.
-                if Topology.IsInstance(aperture, "Topology"):
-                    result.append(aperture)
-
-            # TopologicPy historically also recognizes content topologies whose
-            # dictionary explicitly identifies them as apertures.
-            contents = Topology.Contents(host, silent=True)
-
-            if contents is None:
-                return None
-
-            for content in contents:
-                dictionary = Topology.Dictionary(content, silent=True)
-
-                if dictionary is None:
-                    continue
-
-                try:
-                    keys = Dictionary.Keys(dictionary) or []
-                except Exception:
-                    keys = []
-
-                if "type" not in keys:
-                    continue
-
-                try:
-                    value = Dictionary.ValueAtKey(
-                        dictionary,
-                        "type",
-                        "",
-                    )
-                except TypeError:
-                    try:
-                        value = Dictionary.ValueAtKey(dictionary, "type")
-                    except Exception:
-                        value = ""
-                except Exception:
-                    value = ""
-
-                if "aperture" in str(value).lower():
-                    result.append(content)
-
-            return Topology._Deduplicate(result)
+        manager = SemanticManager.GetInstance()
 
         if subTopologyType is None:
-            result = direct_apertures(topology)
-
-            if result is None and not silent:
-                print(
-                    "Topology.Apertures - Error: Could not retrieve apertures from "
-                    "the input topology. Returning None."
-                )
-
-            return result
+            return Topology._Deduplicate(
+                manager.aperture_topologies_for_host(topology)
+            )
 
         if not isinstance(subTopologyType, str):
             if not silent:
@@ -1480,9 +1656,7 @@ class Topology(TopologyLegacy):
             return None
 
         requested = subTopologyType.strip().lower()
-        valid_types = ("vertex", "edge", "face", "cell", "all")
-
-        if requested not in valid_types:
+        if requested not in ("vertex", "edge", "face", "cell", "all"):
             if not silent:
                 print(
                     "Topology.Apertures - Error: The input subTopologyType "
@@ -1491,47 +1665,69 @@ class Topology(TopologyLegacy):
             return None
 
         result = []
-
         if requested == "all":
-            own_apertures = direct_apertures(topology)
-
-            if own_apertures is None:
-                return None
-
-            result.extend(own_apertures)
-            subtopology_types = ("vertex", "edge", "face", "cell")
+            result.extend(manager.aperture_topologies_for_host(topology))
+            requested_types = ("vertex", "edge", "face", "cell")
         else:
-            subtopology_types = (requested,)
+            requested_types = (requested,)
 
-        for type_name in subtopology_types:
+        for type_name in requested_types:
             subtopologies = Topology.SubTopologies(
                 topology,
                 subTopologyType=type_name,
                 silent=True,
             )
-
             if subtopologies is None:
                 if not silent:
                     print(
-                        "Topology.Apertures - Error: Could not retrieve the "
-                        f"requested {type_name} subtopologies. Returning None."
+                        "Topology.Apertures - Error: Could not retrieve requested "
+                        "subtopologies. Returning None."
                     )
                 return None
-
             for subtopology in subtopologies:
-                apertures = direct_apertures(subtopology)
-
-                if apertures is None:
-                    if not silent:
-                        print(
-                            "Topology.Apertures - Error: Could not retrieve "
-                            "apertures from a subtopology. Returning None."
-                        )
-                    return None
-
-                result.extend(apertures)
+                result.extend(manager.aperture_topologies_for_host(subtopology))
 
         return Topology._Deduplicate(result)
+
+    @staticmethod
+    def ApertureTopologies(
+        topology,
+        subTopologyType: str = None,
+        silent: bool = False,
+    ):
+        """Compatibility alias for :meth:`Topology.Apertures`."""
+        return Topology.Apertures(
+            topology,
+            subTopologyType=subTopologyType,
+            silent=silent,
+        )
+
+    @staticmethod
+    def RemoveContent(topology, contents, silent: bool = False):
+        """Removes Contexts linking the specified Contents to ``topology``."""
+        from topologicpy.Content import Content
+        from topologicpy.SemanticManager import SemanticManager
+
+        if not Topology.IsInstance(topology, "Topology"):
+            if not silent:
+                print(
+                    "Topology.RemoveContent - Error: The input topology parameter "
+                    "is not a valid topology. Returning None."
+                )
+            return None
+        if contents is None:
+            return topology
+        if not isinstance(contents, list):
+            contents = [contents]
+        contents = [
+            item for item in contents
+            if isinstance(item, Content) or Topology.IsInstance(item, "Topology")
+        ]
+        if not contents:
+            return topology
+
+        SemanticManager.GetInstance().remove(topology, contents=contents)
+        return topology
 
 
     # ---------------------------------------------------------------------
@@ -1599,6 +1795,12 @@ class Topology(TopologyLegacy):
                     f"{source_type} to {result_type}. Returning None."
                 )
             return None
+
+        try:
+            from topologicpy.SemanticManager import SemanticManager
+            SemanticManager.GetInstance().transfer_topology(topology, result)
+        except Exception:
+            pass
 
         return result
 
@@ -1773,6 +1975,12 @@ class Topology(TopologyLegacy):
                     f"type from {source_type} to {result_type}. Returning None."
                 )
             return None
+
+        try:
+            from topologicpy.SemanticManager import SemanticManager
+            SemanticManager.GetInstance().transfer_topology(source, result)
+        except Exception:
+            pass
 
         return result
 
@@ -3780,6 +3988,115 @@ class Topology(TopologyLegacy):
             tolerance=tolerance,
             silent=silent,
         )
+
+
+    # -----------------------------------------------------------------------
+    # Native persistence / codec routing
+    # -----------------------------------------------------------------------
+
+    @staticmethod
+    def Save(
+        topology,
+        path,
+        overwrite: bool = False,
+        silent: bool = False,
+    ) -> bool:
+        """Save a topology using the codec selected by the output extension.
+
+        ``.tpy`` is TopologicPy's native lossless persistence format. It stores
+        exact OCCT BREP geometry together with TopologicPy dictionaries and
+        semantic relationships. Mesh exchange formats are intentionally not
+        routed through this native persistence method.
+        """
+        if not Topology.IsInstance(topology, "Topology"):
+            if not silent:
+                print(
+                    "Topology.Save - Error: The input topology parameter is not "
+                    "a valid topology. Returning False."
+                )
+            return False
+
+        try:
+            from topologicpy.io import codec_for_path
+            codec = codec_for_path(path)
+        except Exception:
+            codec = None
+
+        if codec is None:
+            if not silent:
+                print(
+                    "Topology.Save - Error: No serialization codec is registered "
+                    "for the output path. Returning False."
+                )
+            return False
+
+        return bool(
+            codec.save(
+                topology,
+                path,
+                overwrite=overwrite,
+                silent=silent,
+            )
+        )
+
+    @staticmethod
+    def Load(path, silent: bool = False):
+        """Load a topology using the codec selected by the input extension."""
+        try:
+            from topologicpy.io import codec_for_path
+            codec = codec_for_path(path)
+        except Exception:
+            codec = None
+
+        if codec is None:
+            if not silent:
+                print(
+                    "Topology.Load - Error: No serialization codec is registered "
+                    "for the input path. Returning None."
+                )
+            return None
+
+        return codec.load(path, silent=silent)
+
+    @staticmethod
+    def ExportToTPY(
+        topology,
+        path,
+        overwrite: bool = False,
+        silent: bool = False,
+    ) -> bool:
+        """Export a topology to TopologicPy's exact native ``.tpy`` archive."""
+        try:
+            from topologicpy.io.tpy import TPYCodec
+        except Exception:
+            if not silent:
+                print(
+                    "Topology.ExportToTPY - Error: The TPY codec could not be "
+                    "loaded. Returning False."
+                )
+            return False
+        return bool(
+            TPYCodec.save(
+                topology,
+                path,
+                overwrite=overwrite,
+                silent=silent,
+            )
+        )
+
+    @staticmethod
+    def ByTPYPath(path, silent: bool = False):
+        """Create a topology from a TopologicPy native ``.tpy`` archive."""
+        try:
+            from topologicpy.io.tpy import TPYCodec
+        except Exception:
+            if not silent:
+                print(
+                    "Topology.ByTPYPath - Error: The TPY codec could not be "
+                    "loaded. Returning None."
+                )
+            return None
+        return TPYCodec.load(path, silent=silent)
 
 
 # ---------------------------------------------------------------------------
