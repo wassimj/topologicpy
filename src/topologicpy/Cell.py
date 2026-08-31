@@ -6471,7 +6471,7 @@ class Cell():
         return vertices
 
     @staticmethod
-    def Volume(cell, mantissa: int = 6) -> float:
+    def Volume(cell, mantissa: int = 6, silent: bool = False) -> float:
         """
         Returns the volume of the input cell.
 
@@ -6481,6 +6481,8 @@ class Cell():
             The input cell.
         manitssa: int , optional
             The number of decimal places to round the result to. Default is 6.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -6491,13 +6493,15 @@ class Cell():
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(cell, "Cell"):
-            print("Cell.Volume - Error: The input cell parameter is not a valid topologic cell. Returning None.")
+            if not silent:
+                print("Cell.Volume - Error: The input cell parameter is not a valid topologic cell. Returning None.")
             return None
         volume = None
         try:
             volume = round(Core.CellUtility.Volume(cell), mantissa)
         except:
-            print("Cell.Volume - Error: Could not compute the volume of the input cell. Returning None.")
+            if not silent:
+                print("Cell.Volume - Error: Could not compute the volume of the input cell. Returning None.")
             volume = None
         return volume
 

@@ -4059,6 +4059,63 @@ class Topology(TopologyLegacy):
         return codec.load(path, silent=silent)
 
     @staticmethod
+    def ExportToSTEP(
+        topology,
+        path,
+        overwrite: bool = False,
+        schema: str = "AP242DIS",
+        unit: str = "MM",
+        assembly="auto",
+        tolerance=None,
+        silent: bool = False,
+    ) -> bool:
+        """Export a topology to neutral STEP BREP geometry.
+
+        STEP is a tolerance-based CAD interchange format, not TopologicPy's
+        lossless semantic persistence format. Dictionaries, Content, Aperture
+        and Context identity are not guaranteed to survive this exchange.
+        """
+        try:
+            from topologicpy.io.step import STEPCodec
+        except Exception:
+            if not silent:
+                print(
+                    "Topology.ExportToSTEP - Error: The STEP codec could not be "
+                    "loaded. Returning False."
+                )
+            return False
+        return bool(
+            STEPCodec.save(
+                topology,
+                path,
+                overwrite=overwrite,
+                schema=schema,
+                unit=unit,
+                assembly=assembly,
+                tolerance=tolerance,
+                silent=silent,
+            )
+        )
+
+    @staticmethod
+    def BySTEPPath(
+        path,
+        unit: str = "MM",
+        silent: bool = False,
+    ):
+        """Create a topology from neutral STEP BREP geometry."""
+        try:
+            from topologicpy.io.step import STEPCodec
+        except Exception:
+            if not silent:
+                print(
+                    "Topology.BySTEPPath - Error: The STEP codec could not be "
+                    "loaded. Returning None."
+                )
+            return None
+        return STEPCodec.load(path, unit=unit, silent=silent)
+
+    @staticmethod
     def ExportToTPY(
         topology,
         path,

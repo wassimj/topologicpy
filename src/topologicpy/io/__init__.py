@@ -41,7 +41,10 @@ def codec_for_path(path):
 
 
 from .tpy import TPYCodec  # noqa: E402
+from .step import STEPCodec  # noqa: E402
 
 register_codec(".tpy", TPYCodec)
+register_codec(".step", STEPCodec)
+register_codec(".stp", STEPCodec)
 
-__all__ = ["TPYCodec", "codec_for_path", "register_codec"]
+__all__ = ["STEPCodec", "TPYCodec", "codec_for_path", "register_codec"]
