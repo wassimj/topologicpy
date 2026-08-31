@@ -90,6 +90,15 @@ class SemanticManager:
             except Exception:
                 pass
 
+        # TopologicCore objects do not expose an OCCT ``shape`` attribute, but
+        # the Core facade provides the kernel identity operation. Keep this
+        # below the direct OCCT path so PythonOCC stays fast.
+        try:
+            from topologicpy.Core import Core
+            return bool(Core.Topology.IsSame(a, b))
+        except Exception:
+            pass
+
         uuid_a = getattr(a, "_uuid", None)
         uuid_b = getattr(b, "_uuid", None)
         if isinstance(uuid_a, str) and uuid_a and isinstance(uuid_b, str):

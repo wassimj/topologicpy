@@ -12,13 +12,6 @@ from topologicpy.Content import Content
 from topologicpy.Core import Core
 
 
-def _is_pythonocc_backend() -> bool:
-    try:
-        return "pythonocc" in Core.Backend().__class__.__name__.lower()
-    except Exception:
-        return False
-
-
 def _mark_aperture_topology(topology):
     """Preserves the historical ``type=Aperture`` topology marker."""
     try:
@@ -38,13 +31,28 @@ class Aperture(Content):
     """A specialised Content representing an aperture such as a window or door.
 
     One Aperture can participate in multiple Context relationships, for example
-    one to its host Face and another to the containing room Cell.
+    one to its host Face and another to the containing room Cell. Aperture is a
+    TopologicPy semantic object independent of the active geometry kernel.
     """
+
+    @staticmethod
+    def _is_native_aperture(value) -> bool:
+        if value is None:
+            return False
+        try:
+            return isinstance(value, Core.Namespace("Aperture"))
+        except Exception:
+            return False
 
     def Topology(self):
         """Returns the topology represented by this Aperture."""
         if isinstance(self, Aperture):
             return self.topology
+
+        # Compatibility only for legacy/native Aperture values that may still
+        # enter through external code. Never call compiled code for invalid input.
+        if not Aperture._is_native_aperture(self):
+            return None
         try:
             return Core.Aperture.Topology(self)
         except Exception:
@@ -79,9 +87,10 @@ class Aperture(Content):
     def ByTopologyContext(topology, context):
         """Creates an Aperture from a represented topology and a Context.
 
-        This remains compatible with the historical API. On PythonOCC the
-        supplied Context is bound to the unique Aperture Content. On
-        TopologicCore the native Aperture implementation is used unchanged.
+        The public Aperture abstraction is backend independent. A native legacy
+        Context is accepted for compatibility, but the returned Aperture is the
+        TopologicPy semantic Content object and its relationship is registered in
+        the authoritative SemanticManager.
         """
         from topologicpy.Context import Context
         from topologicpy.SemanticManager import SemanticManager
@@ -94,25 +103,21 @@ class Aperture(Content):
             print("Aperture.ByTopologyContext - Error: The input context parameter is not a valid topologic context. Returning None.")
             return None
 
-        if not _is_pythonocc_backend():
-            try:
-                return Core.Aperture.ByTopologyContext(topology, context)
-            except Exception:
-                print("Aperture.ByTopologyContext - Error: The operation failed. Returning None.")
-                return None
-
-        host = context.Host() if isinstance(context, Context) else None
+        host = Context.Topology(context)
         if not Topology.IsInstance(host, "Topology"):
             print("Aperture.ByTopologyContext - Error: The input context does not reference a valid host topology. Returning None.")
             return None
 
+        parameters = Context.Parameters(context) if isinstance(context, Context) else None
+        context_dictionary = Context.Dictionary(context) if isinstance(context, Context) else None
+
         topology = _mark_aperture_topology(topology)
-        aperture, _ = SemanticManager.GetInstance().register(
+        aperture, relation = SemanticManager.GetInstance().register(
             topology,
             host,
             aperture=True,
-            parameters=context.Parameters() if isinstance(context, Context) else None,
-            context_dictionary=context.Dictionary() if isinstance(context, Context) else None,
+            parameters=parameters,
+            context_dictionary=context_dictionary,
             context=context if isinstance(context, Context) else None,
         )
         return aperture

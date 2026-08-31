@@ -14,19 +14,15 @@ import uuid
 from topologicpy.Core import Core
 
 
-def _is_pythonocc_backend() -> bool:
-    try:
-        return "pythonocc" in Core.Backend().__class__.__name__.lower()
-    except Exception:
-        return False
-
-
 class Context:
     """One semantic relationship between a Content and one host topology.
 
     ``parameters`` are optional relationship metadata. They can contain UV
     coordinates for a face, a scalar parameter for an edge, or any other
     meaningful structured data. No universal u/v/w parameterisation is assumed.
+
+    Context is a TopologicPy semantic object and is intentionally independent of
+    the active geometry kernel.
     """
 
     def __init__(self, content=None, host=None, parameters=None, dictionary=None, uuid_value=None):
@@ -36,10 +32,21 @@ class Context:
         self.dictionary = dict(dictionary) if isinstance(dictionary, dict) else {}
         self._uuid = str(uuid_value) if uuid_value else str(uuid.uuid4())
 
+    @staticmethod
+    def _is_native_context(value) -> bool:
+        if value is None:
+            return False
+        try:
+            return isinstance(value, Core.Namespace("Context"))
+        except Exception:
+            return False
+
     def Topology(self):
         """Returns the host topology. Retained as the legacy compatibility name."""
         if isinstance(self, Context):
             return self.host
+        if not Context._is_native_context(self):
+            return None
         try:
             return Core.InstanceCall(self, "Topology")
         except Exception:
@@ -47,12 +54,7 @@ class Context:
 
     def Host(self):
         """Returns the host topology of this Context."""
-        if isinstance(self, Context):
-            return self.host
-        try:
-            return Core.InstanceCall(self, "Topology")
-        except Exception:
-            return None
+        return Context.Topology(self)
 
     def Content(self):
         """Returns the semantic Content participating in this Context."""
@@ -60,14 +62,19 @@ class Context:
 
     def Parameters(self):
         """Returns a deep copy of the optional relationship parameters."""
-        return copy.deepcopy(self.parameters) if isinstance(self, Context) else None
+        if isinstance(self, Context):
+            return copy.deepcopy(self.parameters)
+        return None
 
     def Dictionary(self):
-        """Returns a shallow copy of the Context dictionary."""
+        """Returns a copy of the Context dictionary."""
         if isinstance(self, Context):
             return dict(self.dictionary)
+        if not Context._is_native_context(self):
+            return {}
         try:
-            return Core.InstanceCall(self, "GetDictionary")
+            dictionary = Core.InstanceCall(self, "GetDictionary")
+            return dictionary if dictionary is not None else {}
         except Exception:
             return {}
 
@@ -75,6 +82,8 @@ class Context:
         """Sets the Context dictionary and returns this Context."""
         if isinstance(self, Context):
             self.dictionary = dict(dictionary) if isinstance(dictionary, dict) else {}
+            return self
+        if not Context._is_native_context(self):
             return self
         try:
             return Core.InstanceCall(self, "SetDictionary", dictionary)
@@ -108,13 +117,12 @@ class Context:
 
     @staticmethod
     def ByTopologyParameters(topology, u=0.5, v=0.5, w=0.5):
-        """Creates a Context specification for a host topology.
+        """Creates an unbound Context specification for a host topology.
 
-        On PythonOCC this legacy factory creates an *unbound* Context whose host
-        is ``topology`` and whose optional parameters contain u/v/w. The Context
-        becomes bound to a Content when passed to ``Aperture.ByTopologyContext``
-        or registered through ``SemanticManager``. On TopologicCore the native
-        Context implementation is used unchanged.
+        This historical factory is now backend independent. The returned Context
+        stores the host topology and the supplied u/v/w values as optional
+        relationship parameters. It becomes bound to Content when passed to
+        ``Aperture.ByTopologyContext`` or registered through SemanticManager.
         """
         from topologicpy.Topology import Topology
 
@@ -122,19 +130,13 @@ class Context:
             print("Context.ByTopologyParameters - Error: The input topology parameter is not a valid topologic topology. Returning None.")
             return None
 
-        if _is_pythonocc_backend():
-            try:
-                parameters = {"u": float(u), "v": float(v), "w": float(w)}
-            except Exception:
-                print("Context.ByTopologyParameters - Error: The input parameters are not numeric. Returning None.")
-                return None
-            return Context(content=None, host=topology, parameters=parameters)
-
         try:
-            return Core.Context.ByTopologyParameters(topology, u, v, w)
+            parameters = {"u": float(u), "v": float(v), "w": float(w)}
         except Exception:
-            print("Context.ByTopologyParameters - Error: The operation failed. Returning None.")
+            print("Context.ByTopologyParameters - Error: The input parameters are not numeric. Returning None.")
             return None
+
+        return Context(content=None, host=topology, parameters=parameters)
 
 
 __all__ = ["Context"]
