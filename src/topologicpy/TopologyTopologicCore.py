@@ -351,4 +351,22 @@ class Topology(TopologyLegacy):
             return topology
 
 
+# ---------------------------------------------------------------------------
+# Transitional late-dispatch bridge
+# ---------------------------------------------------------------------------
+#
+# Methods inherited from TopologyLegacy retain the globals of TopologyLegacy.py.
+# Rebind that module-global Topology symbol to this public adapter so internal
+# calls such as ``Topology.Faces(...)`` resolve through the adapter as they did
+# before the router introduced this subclass. This is also required for tests
+# and callers that monkeypatch public Topology methods: inherited methods must
+# observe those replacements rather than bypassing them through the frozen base
+# class.
+#
+# TopologyLegacy above remains a reference to the original class, so the adapter
+# can still call frozen legacy implementations explicitly where required.
+#
+_legacy_module.Topology = Topology
+
+
 __all__ = ["Topology"]
