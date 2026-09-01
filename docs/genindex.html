@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Index &mdash; topologicpy 0.9.65 documentation</title>
+  <title>Index &mdash; topologicpy 0.9.66 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -30,7 +30,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.9.65
+                0.9.66
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -571,6 +571,8 @@
 </li>
       <li><a href="topologicpy.Shell.html#topologicpy.Shell.Shell.ByDisjointFaces">ByDisjointFaces() (topologicpy.Shell.Shell static method)</a>
 </li>
+      <li><a href="topologicpy.Grid.html#topologicpy.Grid.Grid.ByDivisions">ByDivisions() (topologicpy.Grid.Grid static method)</a>
+</li>
       <li><a href="topologicpy.Topology.html#topologicpy.Topology.Topology.ByDXFFile">ByDXFFile() (topologicpy.Topology.Topology static method)</a>
 </li>
       <li><a href="topologicpy.Topology.html#topologicpy.Topology.Topology.ByDXFPath">ByDXFPath() (topologicpy.Topology.Topology static method)</a>
@@ -615,10 +617,10 @@
 </li>
       <li><a href="topologicpy.Topology.html#topologicpy.Topology.Topology.ByGeometry">ByGeometry() (topologicpy.Topology.Topology static method)</a>
 </li>
-      <li><a href="topologicpy.Neo4j.html#topologicpy.Neo4j.Neo4j.ByGraph">ByGraph() (topologicpy.Neo4j.Neo4j static method)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="topologicpy.Neo4j.html#topologicpy.Neo4j.Neo4j.ByGraph">ByGraph() (topologicpy.Neo4j.Neo4j static method)</a>
+</li>
       <li><a href="topologicpy.Honeybee.html#topologicpy.Honeybee.Honeybee.ByHBJSONDictionary">ByHBJSONDictionary() (topologicpy.Honeybee.Honeybee static method)</a>
 </li>
       <li><a href="topologicpy.Honeybee.html#topologicpy.Honeybee.Honeybee.ByHBJSONPath">ByHBJSONPath() (topologicpy.Honeybee.Honeybee static method)</a>
@@ -1512,10 +1514,6 @@
 </li>
       </ul></li>
       <li><a href="topologicpy.TGraph.html#topologicpy.TGraph.TGraph.EdgesBetween">EdgesBetween() (topologicpy.TGraph.TGraph static method)</a>
-</li>
-      <li><a href="topologicpy.Grid.html#topologicpy.Grid.Grid.EdgesByDistances">EdgesByDistances() (topologicpy.Grid.Grid static method)</a>
-</li>
-      <li><a href="topologicpy.Grid.html#topologicpy.Grid.Grid.EdgesByParameters">EdgesByParameters() (topologicpy.Grid.Grid static method)</a>
 </li>
       <li><a href="topologicpy.TGraph.html#topologicpy.TGraph.TGraph.EdgesCSVString">EdgesCSVString() (topologicpy.TGraph.TGraph static method)</a>
 </li>
@@ -2970,6 +2968,8 @@
 </li>
       <li><a href="topologicpy.Dictionary.html#topologicpy.Dictionary.Dictionary.OneHotEncode">OneHotEncode() (topologicpy.Dictionary.Dictionary static method)</a>
 </li>
+      <li><a href="topologicpy.Grid.html#topologicpy.Grid.Grid.OnFace">OnFace() (topologicpy.Grid.Grid static method)</a>
+</li>
       <li><a href="topologicpy.Ontology.html#topologicpy.Ontology.Ontology">Ontology (class in topologicpy.Ontology)</a>
 </li>
       <li><a href="topologicpy.GQL.html#topologicpy.GQL.GQL.ONTOLOGY_CLASS_KEY">ONTOLOGY_CLASS_KEY (topologicpy.GQL.GQL attribute)</a>
@@ -3012,10 +3012,10 @@
 </li>
       <li><a href="topologicpy.GraphDB.html#topologicpy.GraphDB.GraphDB.OntologyKeys">OntologyKeys() (topologicpy.GraphDB.GraphDB static method)</a>
 </li>
-      <li><a href="topologicpy.TGraph.html#topologicpy.TGraph.TGraph.OntologyLabel">OntologyLabel() (topologicpy.TGraph.TGraph static method)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="topologicpy.TGraph.html#topologicpy.TGraph.TGraph.OntologyLabel">OntologyLabel() (topologicpy.TGraph.TGraph static method)</a>
+</li>
       <li><a href="topologicpy.PyG.html#topologicpy.PyG.PyG.OntologyMetadata">OntologyMetadata() (topologicpy.PyG.PyG method)</a>
 </li>
       <li><a href="topologicpy.Neo4j.html#topologicpy.Neo4j.Neo4j.OntologySummary">OntologySummary() (topologicpy.Neo4j.Neo4j static method)</a>
@@ -3382,6 +3382,8 @@
       </ul></li>
       <li><a href="topologicpy.Face.html#topologicpy.Face.Face.RectangleByPlaneEquation">RectangleByPlaneEquation() (topologicpy.Face.Face static method)</a>
 </li>
+      <li><a href="topologicpy.Grid.html#topologicpy.Grid.Grid.Rectangular">Rectangular() (topologicpy.Grid.Grid static method)</a>
+</li>
       <li><a href="topologicpy.IFC.html#topologicpy.IFC.IFC.RelationshipPredicateByIFCClass">RelationshipPredicateByIFCClass() (topologicpy.IFC.IFC static method)</a>
 </li>
       <li><a href="topologicpy.IFC.html#topologicpy.IFC.IFC.RelationshipTypes">RelationshipTypes() (topologicpy.IFC.IFC static method)</a>
@@ -3430,14 +3432,14 @@
         <li><a href="topologicpy.TGraph.html#topologicpy.TGraph.TGraph.RemoveIsolatedEdges">(topologicpy.TGraph.TGraph static method)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="topologicpy.Graph.html#topologicpy.Graph.Graph.RemoveIsolatedVertices">RemoveIsolatedVertices() (topologicpy.Graph.Graph static method)</a>
 
       <ul>
         <li><a href="topologicpy.TGraph.html#topologicpy.TGraph.TGraph.RemoveIsolatedVertices">(topologicpy.TGraph.TGraph static method)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="topologicpy.Dictionary.html#topologicpy.Dictionary.Dictionary.RemoveKey">RemoveKey() (topologicpy.Dictionary.Dictionary static method)</a>
 </li>
       <li><a href="topologicpy.Helper.html#topologicpy.Helper.Helper.RemoveOdd">RemoveOdd() (topologicpy.Helper.Helper static method)</a>
@@ -3716,10 +3718,10 @@
 </li>
       <li><a href="topologicpy.Polyskel.html#topologicpy.Polyskel.Subtree.sinks">sinks (topologicpy.Polyskel.Subtree attribute)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="topologicpy.Topology.html#topologicpy.Topology.QueueItem.sinkValues">sinkValues (topologicpy.Topology.QueueItem attribute)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="topologicpy.Graph.html#topologicpy.Graph.Graph.Size">Size() (topologicpy.Graph.Graph static method)</a>
 
       <ul>
@@ -3791,6 +3793,8 @@
       <li><a href="topologicpy.Face.html#topologicpy.Face.Face.Square">Square() (topologicpy.Face.Face static method)</a>
 
       <ul>
+        <li><a href="topologicpy.Grid.html#topologicpy.Grid.Grid.Square">(topologicpy.Grid.Grid static method)</a>
+</li>
         <li><a href="topologicpy.Shell.html#topologicpy.Shell.Shell.Square">(topologicpy.Shell.Shell static method)</a>
 </li>
         <li><a href="topologicpy.Wire.html#topologicpy.Wire.Wire.Square">(topologicpy.Wire.Wire static method)</a>
@@ -3833,6 +3837,8 @@
       <li><a href="topologicpy.Honeybee.html#topologicpy.Honeybee.Honeybee.String">String() (topologicpy.Honeybee.Honeybee static method)</a>
 </li>
       <li><a href="topologicpy.Core.html#topologicpy.Core.Core.StringAttribute">StringAttribute (topologicpy.Core.Core attribute)</a>
+</li>
+      <li><a href="topologicpy.Grid.html#topologicpy.Grid.Grid.Structural">Structural() (topologicpy.Grid.Grid static method)</a>
 </li>
       <li><a href="topologicpy.Topology.html#topologicpy.Topology.Topology.SubCombinations">SubCombinations() (topologicpy.Topology.Topology static method)</a>
 </li>
@@ -3950,6 +3956,8 @@
         <li><a href="topologicpy.TGraph.html#topologicpy.TGraph.TGraph.Tietze">(topologicpy.TGraph.TGraph static method)</a>
 </li>
       </ul></li>
+      <li><a href="topologicpy.Grid.html#topologicpy.Grid.Grid.TileLayout">TileLayout() (topologicpy.Grid.Grid static method)</a>
+</li>
       <li><a href="topologicpy.Neo4j.html#topologicpy.Neo4j.Neo4j.ToDataFrame">ToDataFrame() (topologicpy.Neo4j.Neo4j static method)</a>
 </li>
       <li><a href="topologicpy.IFC.html#topologicpy.IFC.IFCEntity.ToDict">ToDict() (topologicpy.IFC.IFCEntity method)</a>
@@ -4193,6 +4201,8 @@
         <li><a href="topologicpy.Polyskel.html#module-topologicpy.Polyskel">module</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     topologicpy.PyG
 
@@ -4200,8 +4210,6 @@
         <li><a href="topologicpy.PyG.html#module-topologicpy.PyG">module</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     topologicpy.ShapeGrammar
 
@@ -4606,6 +4614,8 @@
 </li>
         <li><a href="topologicpy.Graph.html#topologicpy.Graph.Graph.Vertices">(topologicpy.Graph.Graph static method)</a>
 </li>
+        <li><a href="topologicpy.Grid.html#topologicpy.Grid.Grid.Vertices">(topologicpy.Grid.Grid static method)</a>
+</li>
         <li><a href="topologicpy.Shell.html#topologicpy.Shell.Shell.Vertices">(topologicpy.Shell.Shell static method)</a>
 </li>
         <li><a href="topologicpy.TGraph.html#topologicpy.TGraph.TGraph.Vertices">(topologicpy.TGraph.TGraph static method)</a>
@@ -4619,10 +4629,6 @@
 </li>
       <li><a href="topologicpy.Sun.html#topologicpy.Sun.Sun.VerticesByDate">VerticesByDate() (topologicpy.Sun.Sun static method)</a>
 </li>
-      <li><a href="topologicpy.Grid.html#topologicpy.Grid.Grid.VerticesByDistances">VerticesByDistances() (topologicpy.Grid.Grid static method)</a>
-</li>
-      <li><a href="topologicpy.Grid.html#topologicpy.Grid.Grid.VerticesByDistances_old">VerticesByDistances_old() (topologicpy.Grid.Grid static method)</a>
-</li>
       <li><a href="topologicpy.Sun.html#topologicpy.Sun.Sun.VerticesByHour">VerticesByHour() (topologicpy.Sun.Sun static method)</a>
 </li>
       <li><a href="topologicpy.GraphDB.html#topologicpy.GraphDB.GraphDB.VerticesByOntologyClass">VerticesByOntologyClass() (topologicpy.GraphDB.GraphDB static method)</a>
@@ -4633,8 +4639,6 @@
         <li><a href="topologicpy.Neo4j.html#topologicpy.Neo4j.Neo4j.VerticesByOntologyClass">(topologicpy.Neo4j.Neo4j static method)</a>
 </li>
       </ul></li>
-      <li><a href="topologicpy.Grid.html#topologicpy.Grid.Grid.VerticesByParameters">VerticesByParameters() (topologicpy.Grid.Grid static method)</a>
-</li>
       <li><a href="topologicpy.Topology.html#topologicpy.Topology.Topology.VerticesCentroid">VerticesCentroid() (topologicpy.Topology.Topology static method)</a>
 </li>
       <li><a href="topologicpy.TGraph.html#topologicpy.TGraph.TGraph.VerticesCSVString">VerticesCSVString() (topologicpy.TGraph.TGraph static method)</a>
