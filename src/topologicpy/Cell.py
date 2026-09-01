@@ -19,45 +19,6 @@ from __future__ import annotations
 from topologicpy.Core import Core
     
 class Cell():
-
-    @staticmethod
-    def _NativeCell(methodName: str, *args, silent: bool = False, **kwargs):
-        """Call a PythonOCC-only native Cell constructor without silent approximation."""
-        from topologicpy.Topology import Topology
-        try:
-            if Topology._IsTopologicCoreBackend():
-                if not silent:
-                    print(f"Cell.{methodName[2:] if methodName.startswith('By') else methodName} - Error: polyhedron=False requires the PythonOCC backend. Returning None.")
-                return None
-        except Exception:
-            return None
-        method = getattr(Core.Cell, methodName, None)
-        if not callable(method):
-            if not silent:
-                print(f"Cell.{methodName[2:] if methodName.startswith('By') else methodName} - Error: Native backend constructor is unavailable. Returning None.")
-            return None
-        try:
-            return method(*args, **kwargs)
-        except Exception:
-            return None
-
-    @staticmethod
-    def _PlaceNativeCell(cell, origin=None, direction=[0, 0, 1], sourceOrigin=None, tolerance: float = 0.0001, silent: bool = False):
-        """Orient and place a canonical native Cell using TopologicPy transforms."""
-        from topologicpy.Vertex import Vertex
-        from topologicpy.Topology import Topology
-        if not Topology.IsInstance(cell, "Cell"):
-            return None
-        if not Topology.IsInstance(origin, "Vertex"):
-            origin = Vertex.Origin()
-        if sourceOrigin is None:
-            sourceOrigin = [0.0, 0.0, 0.0]
-        if not Topology.IsInstance(sourceOrigin, "Vertex"):
-            try:
-                sourceOrigin = Vertex.ByCoordinates(sourceOrigin[0], sourceOrigin[1], sourceOrigin[2])
-            except Exception:
-                return None
-        return Topology.OrientAndPlace(cell, originA=sourceOrigin, originB=origin, dirA=[0, 0, 1], dirB=direction, transferDictionaries=False, tolerance=tolerance, silent=silent)
     @staticmethod
     def Area(cell, mantissa: int = 6):
         """
@@ -215,24 +176,6 @@ class Cell():
             cell = Core.Cell.ByFaces(clean_faces, tolerance)
             if Topology.IsInstance(cell, "Cell"):
                 return cell
-
-        # Do not silently destroy curved geometry in the vertex-fused recovery path.
-        has_curved_geometry = False
-        for source_face in face_list:
-            planar = Face.IsPlanar(source_face, tolerance=tolerance, silent=True)
-            if planar is not True:
-                has_curved_geometry = True
-                break
-            for source_edge in Topology.Edges(source_face) or []:
-                linear = Edge.IsLinear(source_edge, tolerance=tolerance, silent=True)
-                if linear is not True:
-                    has_curved_geometry = True
-                    break
-            if has_curved_geometry:
-                break
-
-        if has_curved_geometry:
-            return _fail("Cell.ByFaces - Error: Native construction failed for curved geometry; refusing destructive vertex reconstruction. Returning None.")
 
         if not silent:
             print("Cell.ByFaces - Warning: Could not construct cell from cleaned faces. Trying vertex-fused reconstruction.")
@@ -412,7 +355,7 @@ class Cell():
         return Cell.ByFaces(faces, planarize=planarize, transferDictionaries=transferDictionaries, tolerance=tolerance, silent=silent)
     
     @staticmethod
-    def ByOffset(cell, offset: float = 1.0, tolerance: float = 0.0001, silent: bool = False, polyhedron: bool = True):
+    def ByOffset(cell, offset: float = 1.0, tolerance: float = 0.0001):
         """
         Creates an offset cell from the input cell.
 
@@ -431,14 +374,6 @@ class Cell():
             The created offset topology. WARNING: This method may fail to create a cell if the offset creates self-intersecting faces. Always check the type being returned by this method.
 
         """
-        if not polyhedron:
-            from topologicpy.Topology import Topology
-            if not Topology.IsInstance(cell, "Cell"):
-                if not silent: print("Cell.ByOffset - Error: Invalid Cell. Returning None.")
-                return None
-            result = Cell._NativeCell("ByOffset", cell, offset=offset, tolerance=tolerance, silent=silent)
-            if result is None and not silent: print("Cell.ByOffset - Error: Native offset failed. Returning None.")
-            return result
         from topologicpy.Face import Face
         from topologicpy.Topology import Topology
         from topologicpy.Vector import Vector
@@ -542,8 +477,7 @@ class Cell():
                         wSides: int = 1,
                         reverse: bool = False,
                         tolerance: float = 0.0001,
-                        silent: bool = False,
-                        polyhedron: bool = True):
+                        silent: bool = False):
         """
         Creates a cell by thickening the input face.
 
@@ -581,10 +515,6 @@ class Cell():
         topologic_core.Cell
             The created cell, or None on failure.
         """
-        if not polyhedron:
-            result = Cell._NativeCell("ByThickenedFace", face, thickness=thickness, bothSides=bothSides, reverse=reverse, tolerance=tolerance, silent=silent)
-            if result is None and not silent: print("Cell.ByThickenedFace - Error: Native thickening failed. Returning None.")
-            return result
         import math
         from topologicpy.Topology import Topology
         from topologicpy.Face import Face
@@ -768,7 +698,7 @@ class Cell():
 
     @staticmethod
     def ByThickenedShell(shell, direction: list = [0, 0, 1], thickness: float = 1.0, bothSides: bool = True, reverse: bool = False,
-                            planarize: bool = False, tolerance: float = 0.0001, silent: bool = False, polyhedron: bool = True):
+                            planarize: bool = False, tolerance: float = 0.0001, silent: bool = False):
         """
         Creates a cell by thickening the input shell. The shell must be open.
 
@@ -795,10 +725,6 @@ class Cell():
             The created cell.
 
         """
-        if not polyhedron:
-            result = Cell._NativeCell("ByThickenedShell", shell, thickness=thickness, bothSides=bothSides, reverse=reverse, tolerance=tolerance, silent=silent)
-            if result is None and not silent: print("Cell.ByThickenedShell - Error: Native thickening failed. Returning None.")
-            return result
         from topologicpy.Edge import Edge
         from topologicpy.Wire import Wire
         from topologicpy.Face import Face
@@ -830,321 +756,446 @@ class Cell():
         return Cell.ByFaces(cellFaces, planarize=planarize, tolerance=tolerance)
     
     @staticmethod
-    def ByWires(
-        wires: list,
-        polyhedron: bool = True,
-        triangulate: bool = True,
-        tolerance: float = 0.0001,
-        silent: bool = False
-    ):
+    def ByWires(wires: list,
+                close: bool = False,
+                triangulate: bool = True,
+                planarize: bool = False,
+                mantissa: int = 6,
+                tolerance: float = 0.0001,
+                silent: bool = False):
         """
-        Creates a Cell by lofting through the input Wires.
+        Creates a cell by lofting through the input list of wires.
 
-        If polyhedron is True, a faceted Cell is constructed from planar Faces.
-
-        If polyhedron is False, the section curves are preserved and a genuine
-        curve-preserving ruled Cell is constructed by the PythonOCC backend.
-
-        All input Wires must be closed and corresponding Wires must contain the
-        same number of Edges.
+        Unlike the older implementation, this version does NOT require
+        corresponding wires to have the same number of edges. Each pair of
+        wires is re-parameterized by normalized perimeter length and resampled
+        at a common set of breakpoints before side faces are created.
 
         Parameters
         ----------
         wires : list
-            The ordered list of closed section Wires.
-        polyhedron : bool , optional
-            If True, constructs a faceted Cell made of planar Faces. If False,
-            constructs a curve-preserving ruled Cell. Default is True.
+            The input list of wires.
+        close : bool , optional
+            If set to True, the last wire is also connected to the first wire.
+            Default is False.
         triangulate : bool , optional
-            If polyhedron is True, specifies whether side and cap Faces are
-            triangulated. This parameter is ignored when polyhedron is False.
+            If set to True, side and cap faces are triangulated where needed.
             Default is True.
+        planarize : bool, optional
+            If set to True, the created faces are planarized before building
+            the cell. Otherwise, they are not. Default is False.
+        mantissa : int , optional
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed.
-            Default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
         topologic_core.Cell
-            The created Cell.
-
+            The created cell.
         """
-        import math
-
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
         from topologicpy.Wire import Wire
         from topologicpy.Face import Face
         from topologicpy.Shell import Shell
         from topologicpy.Topology import Topology
 
-        if not isinstance(wires, (list, tuple)):
+        def _coords(v):
+            return [Vertex.X(v), Vertex.Y(v), Vertex.Z(v)]
+
+        def _distance(v1, v2):
+            x1, y1, z1 = _coords(v1)
+            x2, y2, z2 = _coords(v2)
+            dx = x2 - x1
+            dy = y2 - y1
+            dz = z2 - z1
+            return (dx*dx + dy*dy + dz*dz) ** 0.5
+
+        def _lerp(v1, v2, t):
+            x1, y1, z1 = _coords(v1)
+            x2, y2, z2 = _coords(v2)
+            return Vertex.ByCoordinates(
+                x1 + (x2 - x1) * t,
+                y1 + (y2 - y1) * t,
+                z1 + (z2 - z1) * t
+            )
+
+        def _ordered_vertices_from_edges(wire):
+            """
+            Attempts to reconstruct the ordered vertices of a wire from its edges.
+            Returns a closed loop as unique vertices without repeating the first
+            vertex at the end.
+            """
+            edges = Topology.Edges(wire)
+            if not edges or len(edges) < 1:
+                return None
+
+            unused = edges[:]
+            first_edge = unused.pop(0)
+
+            sv = Edge.StartVertex(first_edge)
+            ev = Edge.EndVertex(first_edge)
+            ordered = [sv, ev]
+
+            while unused:
+                current = ordered[-1]
+                found = False
+                for i, e in enumerate(unused):
+                    es = Edge.StartVertex(e)
+                    ee = Edge.EndVertex(e)
+                    if Topology.IsSame(es, current):
+                        ordered.append(ee)
+                        unused.pop(i)
+                        found = True
+                        break
+                    elif Topology.IsSame(ee, current):
+                        ordered.append(es)
+                        unused.pop(i)
+                        found = True
+                        break
+                if not found:
+                    break
+
+            if len(ordered) < 3:
+                return None
+
+            # Remove repeated closure vertex if present
+            if Topology.IsSame(ordered[0], ordered[-1]):
+                ordered = ordered[:-1]
+
+            return ordered
+
+        def _ordered_vertices(wire):
+            """
+            Tries to get ordered vertices from Wire.Vertices if available,
+            otherwise reconstructs from edges.
+            """
+            verts = None
+            try:
+                verts = Wire.Vertices(wire)
+            except:
+                verts = None
+
+            if isinstance(verts, list) and len(verts) >= 3:
+                # Remove repeated closure vertex if present
+                if Topology.IsSame(verts[0], verts[-1]):
+                    verts = verts[:-1]
+                return verts
+
+            return _ordered_vertices_from_edges(wire)
+
+        def _wire_parameters(verts):
+            """
+            Returns:
+                seg_lengths: list of segment lengths
+                cum_lengths: cumulative lengths starting at 0
+                total_length: total perimeter length
+                params: normalized parameter values at each vertex in [0,1)
+            """
+            n = len(verts)
+            seg_lengths = []
+            cum_lengths = [0.0]
+            total = 0.0
+            for i in range(n):
+                v1 = verts[i]
+                v2 = verts[(i + 1) % n]
+                d = _distance(v1, v2)
+                seg_lengths.append(d)
+                total += d
+                cum_lengths.append(total)
+
+            if total <= tolerance:
+                return None, None, None, None
+
+            params = [cum_lengths[i] / total for i in range(n)]
+            return seg_lengths, cum_lengths, total, params
+
+        def _vertex_at_parameter(verts, seg_lengths, cum_lengths, total_length, u):
+            """
+            Returns a vertex sampled on the closed polyline at normalized
+            parameter u in [0,1).
+            """
+            if u >= 1.0:
+                u = 0.0
+            if u < 0.0:
+                u = u % 1.0
+
+            target = u * total_length
+            n = len(seg_lengths)
+
+            for i in range(n):
+                a = cum_lengths[i]
+                b = cum_lengths[i + 1]
+                if target <= b or i == n - 1:
+                    seg_len = seg_lengths[i]
+                    if seg_len <= tolerance:
+                        return verts[i]
+                    t = (target - a) / seg_len
+                    t = max(0.0, min(1.0, t))
+                    return _lerp(verts[i], verts[(i + 1) % len(verts)], t)
+
+            return verts[0]
+
+        def _rotate_list(values, k):
+            k = k % len(values)
+            return values[k:] + values[:k]
+
+        def _best_rotated_vertices(verts_a, verts_b):
+            """
+            Rotate verts_b so its seam/start best aligns with verts_a.
+            This helps when wires are equivalent loops but start at different
+            vertices. It does not solve all correspondence issues, but it
+            improves many practical cases.
+            """
+            if len(verts_b) < 2:
+                return verts_b
+
+            a0 = verts_a[0]
+            best_i = 0
+            best_d = None
+            for i, vb in enumerate(verts_b):
+                d = _distance(a0, vb)
+                if best_d is None or d < best_d:
+                    best_d = d
+                    best_i = i
+            return _rotate_list(verts_b, best_i)
+
+        def _face_by_vertices(vertices):
+            """
+            Creates a face from the supplied vertices by explicitly building a
+            closed edge loop. Returns None on failure.
+            """
+            if not isinstance(vertices, list) or len(vertices) < 3:
+                return None
+
+            # Remove consecutive duplicate vertices
+            cleaned = []
+            for v in vertices:
+                if len(cleaned) == 0:
+                    cleaned.append(v)
+                else:
+                    if _distance(cleaned[-1], v) > tolerance:
+                        cleaned.append(v)
+
+            if len(cleaned) < 3:
+                return None
+
+            # Remove repeated closure vertex if present
+            if _distance(cleaned[0], cleaned[-1]) <= tolerance:
+                cleaned = cleaned[:-1]
+
+            if len(cleaned) < 3:
+                return None
+
+            edges = []
+            n = len(cleaned)
+            for i in range(n):
+                v1 = cleaned[i]
+                v2 = cleaned[(i + 1) % n]
+                if _distance(v1, v2) > tolerance:
+                    e = Edge.ByVertices([v1, v2], tolerance=tolerance, silent=True)
+                    if e:
+                        edges.append(e)
+
+            if len(edges) < 3:
+                return None
+
+            try:
+                # IMPORTANT: do NOT use orient=True for a closed loop
+                w = Wire.ByEdges(edges, orient=False, tolerance=tolerance, silent=True)
+                if not Topology.IsInstance(w, "Wire"):
+                    return None
+                return Face.ByWire(w, tolerance=tolerance)
+            except:
+                return None
+
+        def _triangulated_faces_from_loop_pair(verts1, verts2):
+            """
+            Creates side faces between two resampled closed loops.
+            """
+            local_faces = []
+            n = len(verts1)
+            for i in range(n):
+                a0 = verts1[i]
+                a1 = verts1[(i + 1) % n]
+                b1 = verts2[(i + 1) % n]
+                b0 = verts2[i]
+
+                # Skip fully collapsed strips
+                if (_distance(a0, a1) <= tolerance and
+                    _distance(b0, b1) <= tolerance):
+                    continue
+
+                if triangulate:
+                    f1 = _face_by_vertices([a0, a1, b1])
+                    f2 = _face_by_vertices([a0, b1, b0])
+                    if f1:
+                        local_faces.append(f1)
+                    if f2:
+                        local_faces.append(f2)
+                else:
+                    f = _face_by_vertices([a0, a1, b1, b0])
+                    if f:
+                        local_faces.append(f)
+                    else:
+                        # fallback to triangles
+                        f1 = _face_by_vertices([a0, a1, b1])
+                        f2 = _face_by_vertices([a0, b1, b0])
+                        if f1:
+                            local_faces.append(f1)
+                        if f2:
+                            local_faces.append(f2)
+            return local_faces
+
+        def _loft_faces_between_wires(wire1, wire2):
+            """
+            Resamples two wires at a shared set of normalized perimeter parameters
+            and returns the side faces between them.
+            """
+            verts1 = _ordered_vertices(wire1)
+            verts2 = _ordered_vertices(wire2)
+
+            if not isinstance(verts1, list) or len(verts1) < 3:
+                return []
+            if not isinstance(verts2, list) or len(verts2) < 3:
+                return []
+
+            verts2 = _best_rotated_vertices(verts1, verts2)
+
+            seg1, cum1, total1, params1 = _wire_parameters(verts1)
+            seg2, cum2, total2, params2 = _wire_parameters(verts2)
+
+            if total1 is None or total2 is None:
+                return []
+
+            # Shared sampling parameters from both loops
+            merged = sorted(set(
+                [round(p, mantissa) for p in params1] +
+                [round(p, mantissa) for p in params2]
+            ))
+
+            # Ensure 0 exists
+            if len(merged) == 0 or abs(merged[0]) > (10 ** (-mantissa)):
+                merged = [0.0] + merged
+
+            # Remove 1.0 if it appears due to rounding; closed loops use [0,1)
+            cleaned = []
+            for u in merged:
+                if abs(u - 1.0) <= (10 ** (-mantissa)):
+                    continue
+                if len(cleaned) == 0 or abs(cleaned[-1] - u) > (10 ** (-mantissa)):
+                    cleaned.append(u)
+            merged = cleaned
+
+            if len(merged) < 3:
+                return []
+
+            sample1 = [_vertex_at_parameter(verts1, seg1, cum1, total1, u) for u in merged]
+            sample2 = [_vertex_at_parameter(verts2, seg2, cum2, total2, u) for u in merged]
+
+            return _triangulated_faces_from_loop_pair(sample1, sample2)
+
+        if not isinstance(wires, list):
             if not silent:
                 print("Cell.ByWires - Error: The input wires parameter is not a valid list. Returning None.")
             return None
 
-        wires = [
-            wire
-            for wire in wires
-            if Topology.IsInstance(wire, "Wire")
-        ]
-
+        wires = [w for w in wires if Topology.IsInstance(w, "Wire")]
         if len(wires) < 2:
             if not silent:
-                print("Cell.ByWires - Error: At least two valid Wires are required. Returning None.")
+                print("Cell.ByWires - Error: The input wires parameter contains less than two valid topologic wires. Returning None.")
             return None
 
-        try:
-            tolerance = abs(float(tolerance))
-        except Exception:
+        faces = []
+
+        # End caps
+        cap1 = Face.ByWire(wires[0], tolerance=tolerance)
+        cap2 = Face.ByWire(wires[-1], tolerance=tolerance)
+        if cap1:
+            faces.append(cap1)
+        if cap2:
+            faces.append(cap2)
+
+        if triangulate:
+            triangulated_caps = []
+            for face in faces:
+                try:
+                    if len(Topology.Vertices(face)) > 3:
+                        triangulated_caps += Face.Triangulate(face, tolerance=tolerance)
+                    else:
+                        triangulated_caps.append(face)
+                except:
+                    triangulated_caps.append(face)
+            faces = triangulated_caps
+
+        # Consecutive lofting
+        pair_count = len(wires) - 1
+        for i in range(pair_count):
+            loft_faces = _loft_faces_between_wires(wires[i], wires[i + 1])
+            faces += [f for f in loft_faces if f]
+
+        # If close=True, also connect last wire back to first
+        if close:
+            loft_faces = _loft_faces_between_wires(wires[-1], wires[0])
+            faces += [f for f in loft_faces if f]
+
+        faces = [f for f in faces if Topology.IsInstance(f, "Face")]
+        if len(faces) < 4:
             if not silent:
-                print("Cell.ByWires - Error: The input tolerance parameter is not a valid number. Returning None.")
+                print("Cell.ByWires - Error: Could not create sufficient faces for a valid cell. Returning None.")
             return None
 
-        if not math.isfinite(tolerance) or tolerance <= 0.0:
-            if not silent:
-                print("Cell.ByWires - Error: The input tolerance parameter must be greater than zero. Returning None.")
-            return None
-
-        # Every section of a Cell loft must be closed.
-        for wire in wires:
-            if not Wire.IsClosed(
-                wire,
-                tolerance=tolerance,
-                silent=True,
-            ):
-                if not silent:
-                    print(
-                        "Cell.ByWires - Error: All input Wires must be closed. "
-                        "Returning None."
-                    )
-                return None
-
-        # Require explicit section topology instead of silently resampling or
-        # rebuilding the supplied geometry.
-        edge_counts = [
-            len(Topology.Edges(wire) or [])
-            for wire in wires
-        ]
-
-        if (
-            len(edge_counts) != len(wires)
-            or min(edge_counts) < 1
-            or len(set(edge_counts)) != 1
-        ):
-            if not silent:
-                print(
-                    "Cell.ByWires - Error: All input Wires must contain the same "
-                    "number of Edges. Returning None."
-                )
-            return None
-
-        # ------------------------------------------------------------------
-        # Curve-preserving native loft.
-        # ------------------------------------------------------------------
-
-        if not polyhedron:
-
-            try:
-                is_topologic_core = bool(
-                    Topology._IsTopologicCoreBackend()
-                )
-            except Exception:
-                is_topologic_core = True
-
-            if is_topologic_core:
-                if not silent:
-                    print(
-                        "Cell.ByWires - Error: The TopologicCore backend does "
-                        "not support curve-preserving Cell loft construction. "
-                        "Returning None."
-                    )
-                return None
-
-            try:
-                cell = Core.Cell.ByWires(
-                    wires,
-                    tolerance,
-                )
-            except Exception:
-                cell = None
+        cell = Cell.ByFaces(faces, planarize=planarize, tolerance=tolerance, silent=silent)
+        if not cell:
+            shell = Shell.ByFaces(faces, tolerance=tolerance)
+            if Topology.IsInstance(shell, "Shell"):
+                geom = Topology.Geometry(shell, mantissa=mantissa)
+                cell = Topology.ByGeometry(geom['vertices'], geom['edges'], geom['faces'])
 
             if not Topology.IsInstance(cell, "Cell"):
                 if not silent:
-                    print(
-                        "Cell.ByWires - Error: Could not construct the "
-                        "curve-preserving Cell. Returning None."
-                    )
+                    print("Cell.ByWires - Error: Could not create a cell. Returning None.")
                 return None
-
-            return cell
-
-        # ------------------------------------------------------------------
-        # Polyhedral loft.
-        #
-        # Delegate the side construction to Shell.ByWires so there is only one
-        # implementation of the faceted lofting logic.
-        # ------------------------------------------------------------------
-
-        side_shell = Shell.ByWires(
-            wires,
-            polyhedron=True,
-            triangulate=triangulate,
-            tolerance=tolerance,
-            silent=True,
-        )
-
-        if not Topology.IsInstance(side_shell, "Shell"):
-            if not silent:
-                print(
-                    "Cell.ByWires - Error: Could not construct the side Shell. "
-                    "Returning None."
-                )
-            return None
-
-        faces = Topology.Faces(
-            side_shell
-        ) or []
-
-        # ------------------------------------------------------------------
-        # End caps.
-        # ------------------------------------------------------------------
-
-        cap_a = Face.ByWire(
-            wires[0],
-            tolerance=tolerance,
-            silent=True,
-        )
-
-        cap_b = Face.ByWire(
-            wires[-1],
-            tolerance=tolerance,
-            silent=True,
-        )
-
-        if (
-            not Topology.IsInstance(cap_a, "Face")
-            or not Topology.IsInstance(cap_b, "Face")
-        ):
-            if not silent:
-                print(
-                    "Cell.ByWires - Error: Could not construct one or both "
-                    "end-cap Faces. Returning None."
-                )
-            return None
-
-        if triangulate:
-
-            for cap in [cap_a, cap_b]:
-
-                triangles = Face.Triangulate(
-                    cap,
-                    tolerance=tolerance,
-                    silent=True,
-                )
-
-                triangles = [
-                    face
-                    for face in (triangles or [])
-                    if Topology.IsInstance(face, "Face")
-                ]
-
-                if len(triangles) < 1:
-                    if not silent:
-                        print(
-                            "Cell.ByWires - Error: Could not triangulate an "
-                            "end-cap Face. Returning None."
-                        )
-                    return None
-
-                faces.extend(
-                    triangles
-                )
-
-        else:
-            faces.extend(
-                [cap_a, cap_b]
-            )
-
-        cell = Cell.ByFaces(
-            faces,
-            tolerance=tolerance,
-            silent=True,
-        )
-
-        if not Topology.IsInstance(cell, "Cell"):
-            if not silent:
-                print(
-                    "Cell.ByWires - Error: Could not construct a Cell from the "
-                    "generated Faces. Returning None."
-                )
-            return None
 
         return cell
 
     @staticmethod
-    def ByWiresCluster(
-        cluster,
-        polyhedron: bool = True,
-        triangulate: bool = True,
-        tolerance: float = 0.0001,
-        silent: bool = False
-    ):
+    def ByWiresCluster(cluster, close: bool = False, triangulate: bool = True, planarize: bool = False, tolerance: float = 0.0001):
         """
-        Creates a Cell by lofting through the Wires contained in the input Cluster.
+        Creates a cell by lofting through the input cluster of wires.
 
         Parameters
         ----------
-        cluster : topologic_core.Cluster
-            The input Cluster containing the section Wires.
-        polyhedron : bool , optional
-            If True, constructs a faceted Cell made of planar Faces. If False,
-            constructs a curve-preserving ruled Cell. Default is True.
+        cluster : Cluster
+            The input Cluster of wires.
+        close : bool , optional
+            If set to True, the last wire in the cluster of input wires will be connected to the first wire in the cluster of input wires. Default is False.
         triangulate : bool , optional
-            If polyhedron is True, specifies whether side and cap Faces are
-            triangulated. This parameter is ignored when polyhedron is False.
-            Default is True.
+            If set to True, the faces will be triangulated. Default is True.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
-        silent : bool , optional
-            If set to True, error and warning messages are suppressed.
-            Default is False.
+
+        Raises
+        ------
+        Exception
+            Raises an exception if the two wires in the list do not have the same number of edges.
 
         Returns
         -------
         topologic_core.Cell
-            The created Cell.
+            The created cell.
 
         """
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(cluster, "Cluster"):
-            if not silent:
-                print(
-                    "Cell.ByWiresCluster - Error: The input cluster parameter "
-                    "is not a valid Cluster. Returning None."
-                )
+            print("Cell.ByWiresCluster - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
-
-        wires = Topology.Wires(
-            cluster
-        )
-
-        if not isinstance(wires, list) or len(wires) < 2:
-            if not silent:
-                print(
-                    "Cell.ByWiresCluster - Error: The input Cluster must contain "
-                    "at least two valid Wires. Returning None."
-                )
-            return None
-
-        return Cell.ByWires(
-            wires,
-            polyhedron=polyhedron,
-            triangulate=triangulate,
-            tolerance=tolerance,
-            silent=silent,
-        )
+        wires = Topology.Wires(cluster)
+        return Cell.ByWires(wires, close=close, triangulate=triangulate, planarize=planarize, tolerance=tolerance)
 
     @staticmethod
     def Capsule(origin = None,
@@ -1156,8 +1207,7 @@ class Cell():
                 direction: list = [0, 0, 1],
                 placement: str = "center",
                 tolerance: float = 0.0001,
-                silent: bool = False,
-                polyhedron: bool = True):
+                silent: bool = False):
         """
         Creates a capsule shape. A capsule is a cylinder with hemispherical ends.
 
@@ -1192,18 +1242,6 @@ class Cell():
         topologic_core.Cell
             The created cell.
         """
-        if not polyhedron:
-            from topologicpy.Vertex import Vertex
-            from topologicpy.Topology import Topology
-            if not Topology.IsInstance(origin, "Vertex"): origin = Vertex.Origin()
-            capsule = Cell._NativeCell("ByCapsule", radius=radius, height=height, tolerance=tolerance, silent=silent)
-            if not Topology.IsInstance(capsule, "Cell"):
-                if not silent: print("Cell.Capsule - Error: Native capsule construction failed. Returning None.")
-                return None
-            p=str(placement).lower(); source=[0,0,0]
-            if p=="bottom": source=[0,0,-0.5*height]
-            elif p=="lowerleft": source=[-radius,-radius,-0.5*height]
-            return Cell._PlaceNativeCell(capsule, origin, direction, source, tolerance, silent)
         from topologicpy.Topology import Topology
         from topologicpy.Vertex import Vertex
 
@@ -1294,7 +1332,7 @@ class Cell():
         return capsule
 
     @staticmethod
-    def CHS(origin= None, radius: float = 1.0, height: float = 1.0, thickness: float = 0.25, sides: int = 16, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001, silent: bool = False, polyhedron: bool = True):
+    def CHS(origin= None, radius: float = 1.0, height: float = 1.0, thickness: float = 0.25, sides: int = 16, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001, silent: bool = False):
         """
         Creates a circular hollow section (CHS).
 
@@ -1325,30 +1363,13 @@ class Cell():
             The created cell.
 
         """
-        if not polyhedron:
-            from topologicpy.Vertex import Vertex
-            from topologicpy.Topology import Topology
-            if thickness >= radius:
-                if not silent: print("Cell.CHS - Error: thickness must be smaller than radius. Returning None.")
-                return None
-            if not Topology.IsInstance(origin, "Vertex"): origin=Vertex.Origin()
-            result=Cell._NativeCell("ByCHS", radius=radius, height=height, thickness=thickness, tolerance=tolerance, silent=silent)
-            if not Topology.IsInstance(result, "Cell"): return None
-            p=str(placement).lower(); source=[0,0,0]
-            if p=="bottom": source=[0,0,-0.5*height]
-            elif p=="top": source=[0,0,0.5*height]
-            elif p=="lowerleft": source=[-radius,-radius,-0.5*height]
-            elif p=="upperleft": source=[-radius,radius,0.5*height]
-            elif p=="lowerright": source=[radius,-radius,-0.5*height]
-            elif p=="upperright": source=[radius,radius,0.5*height]
-            return Cell._PlaceNativeCell(result, origin, direction, source, tolerance, silent)
         from topologicpy.Vertex import Vertex
         from topologicpy.Face import Face
         from topologicpy.Topology import Topology
 
-        if thickness >= radius:
+        if 2*thickness >= radius:
             if not silent:
-                print("Cell.CHS - Error: The thickness value is larger than or equal to the outer radius value. Returning None.")
+                print("Cell.CHS - Error: Twice the thickness value is larger than or equal to the width value. Returning None.")
             return None
         if origin == None:
             origin = Vertex.Origin()
@@ -1438,7 +1459,7 @@ class Cell():
     
     @staticmethod
     def Cone(origin = None, baseRadius: float = 0.5, topRadius: float = 0, height: float = 1, uSides: int = 16, vSides: int = 1, direction: list = [0, 0, 1],
-                 dirZ: float = 1, placement: str = "center", mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False, polyhedron: bool = True):
+                 dirZ: float = 1, placement: str = "center", mantissa: int = 6, tolerance: float = 0.0001):
         """
         Creates a cone.
 
@@ -1464,25 +1485,13 @@ class Cell():
             The desired length of the mantissa. Default is 6
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
-        silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
-        
+
         Returns
         -------
         topologic_core.Cell
             The created cone.
 
         """
-        if not polyhedron:
-            from topologicpy.Vertex import Vertex
-            from topologicpy.Topology import Topology
-            if not Topology.IsInstance(origin, "Vertex"): origin=Vertex.Origin()
-            cone=Cell._NativeCell("ByCone", baseRadius=baseRadius, topRadius=topRadius, height=height, tolerance=tolerance, silent=silent)
-            if not Topology.IsInstance(cone, "Cell"): return None
-            r=max(abs(baseRadius),abs(topRadius)); p=str(placement).lower(); source=[0,0,0]
-            if p=="bottom": source=[0,0,-0.5*height]
-            elif p=="lowerleft": source=[-r,-r,-0.5*height]
-            return Cell._PlaceNativeCell(cone, origin, direction, source, tolerance, silent)
         from topologicpy.Vertex import Vertex
         from topologicpy.Wire import Wire
         from topologicpy.Face import Face
@@ -1492,9 +1501,7 @@ class Cell():
 
         def createCone(baseWire, topWire, baseVertex, topVertex, tolerance=0.0001):
             if baseWire == None and topWire == None:
-                if not silent:
-                    print("Cell.Cone - Error: Both radii of the cone cannot be zero at the same time. Returning None.")
-                return None
+                raise Exception("Cell.Cone - Error: Both radii of the cone cannot be zero at the same time")
             elif baseWire == None:
                 apex = baseVertex
                 wire = topWire
@@ -1502,7 +1509,7 @@ class Cell():
                 apex = topVertex
                 wire = baseWire
             else:
-                return Cell.ByWires([baseWire, topWire], tolerance=tolerance, silent=silent)
+                return Cell.ByWires([baseWire, topWire])
             vertices = Topology.Vertices(wire)
             faces = [Face.ByWire(wire, tolerance=tolerance)]
             for i in range(0, len(vertices)-1):
@@ -1516,8 +1523,7 @@ class Cell():
         if not Topology.IsInstance(origin, "Vertex"):
             origin = Vertex.ByCoordinates(0, 0, 0)
         if not Topology.IsInstance(origin, "Vertex"):
-            if not silent:
-                print("Cell.Cone - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
+            print("Cell.Cone - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
             return None
         xOffset = 0
         yOffset = 0
@@ -1558,8 +1564,7 @@ class Cell():
         topVertex = Vertex.ByCoordinates(Vertex.X(origin, mantissa=mantissa)+xOffset, Vertex.Y(origin, mantissa=mantissa)+yOffset, Vertex.Z(origin, mantissa=mantissa)+zOffset+height)
         cone = createCone(baseWire, topWire, baseVertex, topVertex, tolerance=tolerance)
         if cone == None:
-            if not silent:
-                print("Cell.Cone - Error: Could not create a cone. Returning None.")
+            print("Cell.Cone - Error: Could not create a cone. Returning None.")
             return None
         
         if vSides > 1:
@@ -1970,7 +1975,7 @@ class Cell():
         for i in range(wSides):
             c_shape_wire = Topology.Translate(c_shape_wire, 0, 0, distance)
             wires.append(c_shape_wire)
-        return_cell = Cell.ByWires(wires, triangulate=False, tolerance=tolerance, silent=silent)
+        return_cell = Cell.ByWires(wires, triangulate=False, mantissa=mantissa, tolerance=tolerance, silent=silent)
         xOffset = 0
         yOffset = 0
         zOffset = 0
@@ -2045,7 +2050,7 @@ class Cell():
     
     @staticmethod
     def Cylinder(origin = None, radius: float = 0.5, height: float = 1, uSides: int = 16, vSides: int = 1, direction: list = [0, 0, 1],
-                     placement: str = "center", mantissa: int = 6, tolerance: float = 0.0001, polyhedron: bool = True):
+                     placement: str = "center", mantissa: int = 6, tolerance: float = 0.0001):
         """
         Creates a cylinder.
 
@@ -2076,16 +2081,6 @@ class Cell():
             The created cell.
 
         """
-        if not polyhedron:
-            from topologicpy.Vertex import Vertex
-            from topologicpy.Topology import Topology
-            if not Topology.IsInstance(origin, "Vertex"): origin=Vertex.Origin()
-            cylinder=Cell._NativeCell("ByCylinder", radius=radius, height=height, tolerance=tolerance, silent=False)
-            if not Topology.IsInstance(cylinder, "Cell"): return None
-            p=str(placement).lower(); source=[0,0,0]
-            if p=="bottom": source=[0,0,-0.5*height]
-            elif p=="lowerleft": source=[-radius,-radius,-0.5*height]
-            return Cell._PlaceNativeCell(cylinder, origin, direction, source, tolerance, False)
         from topologicpy.Vertex import Vertex
         from topologicpy.Wire import Wire
         from topologicpy.Face import Face
@@ -2372,8 +2367,7 @@ class Cell():
             direction: list = [0, 0, 1],
             placement: str = "center",
             tolerance: float = 0.0001,
-            silent: bool = False,
-            polyhedron: bool = True):
+            silent: bool = False):
         """
         Creates an egg-shaped cell.
 
@@ -2402,17 +2396,6 @@ class Cell():
             The created egg-shaped cell.
 
         """
-        if not polyhedron:
-            from topologicpy.Vertex import Vertex
-            from topologicpy.Topology import Topology
-            if not Topology.IsInstance(origin, "Vertex"): origin=Vertex.Origin()
-            profile=[[0.0,0.0,-0.5],[0.074748,0.0,-0.494015],[0.140819,0.0,-0.473222],[0.204118,0.0,-0.438358],[0.259512,0.0,-0.391913],[0.304837,0.0,-0.335519],[0.338649,0.0,-0.271416],[0.361307,0.0,-0.202039],[0.375678,0.0,-0.129109],[0.381294,0.0,-0.053696],[0.377694,0.0,0.019874],[0.365135,0.0,0.091978],[0.341482,0.0,0.173973],[0.300154,0.0,0.276001],[0.252928,0.0,0.355989],[0.206605,0.0,0.405813],[0.157529,0.0,0.442299],[0.10604,0.0,0.472092],[0.05547,0.0,0.491784],[0.0,0.0,0.5]]
-            egg=Cell._NativeCell("ByEgg", profile, height=height, tolerance=tolerance, silent=silent)
-            if not Topology.IsInstance(egg, "Cell"): return None
-            maxr=max(p[0] for p in profile)*height; p=str(placement).lower(); source=[0,0,0]
-            if p=="bottom": source=[0,0,-0.5*height]
-            elif p=="lowerleft": source=[-maxr,-maxr,-0.5*height]
-            return Cell._PlaceNativeCell(egg, origin, direction, source, tolerance, silent)
 
         from topologicpy.Vertex import Vertex
         from topologicpy.Wire import Wire
@@ -2564,8 +2547,7 @@ class Cell():
                     placement: str = "center",
                     mantissa: int = 6,
                     tolerance: float = 0.0001,
-                    silent: bool = False,
-                    polyhedron: bool = True):
+                    silent: bool = False):
         """
         Creates a hyperboloid.
 
@@ -2600,16 +2582,6 @@ class Cell():
             The created hyperboloid.
 
         """
-        if not polyhedron:
-            from topologicpy.Vertex import Vertex
-            from topologicpy.Topology import Topology
-            if not Topology.IsInstance(origin, "Vertex"): origin=Vertex.Origin()
-            result=Cell._NativeCell("ByHyperboloid", baseRadius=baseRadius, topRadius=topRadius, height=height, twist=twist, tolerance=tolerance, silent=silent)
-            if not Topology.IsInstance(result, "Cell"): return None
-            r=max(baseRadius,topRadius); p=str(placement).lower(); source=[0,0,0]
-            if p=="bottom": source=[0,0,-0.5*height]
-            elif p=="lowerleft": source=[-r,-r,-0.5*height]
-            return Cell._PlaceNativeCell(result, origin, direction, source, tolerance, silent)
         from topologicpy.Vertex import Vertex
         from topologicpy.Wire import Wire
         from topologicpy.Face import Face
@@ -4230,7 +4202,7 @@ class Cell():
         for i in range(wSides):
             i_shape_wire = Topology.Translate(i_shape_wire, 0, 0, distance)
             wires.append(i_shape_wire)
-        return_cell = Cell.ByWires(wires, triangulate=False, tolerance=tolerance, silent=silent)
+        return_cell = Cell.ByWires(wires, triangulate=False, mantissa=mantissa, tolerance=tolerance, silent=silent)
         # move down to center
         return_cell = Topology.Translate(return_cell, 0, 0, -height*0.5)
         xOffset = 0
@@ -4438,7 +4410,7 @@ class Cell():
         for i in range(wSides):
             l_shape_wire = Topology.Translate(l_shape_wire, 0, 0, distance)
             wires.append(l_shape_wire)
-        return_cell = Cell.ByWires(wires, triangulate=False, tolerance=tolerance, silent=silent)
+        return_cell = Cell.ByWires(wires, triangulate=False, mantissa=mantissa, tolerance=tolerance, silent=silent)
         xOffset = 0
         yOffset = 0
         zOffset = 0
@@ -4703,7 +4675,7 @@ class Cell():
     
     @staticmethod
     def Paraboloid(origin= None, focalLength=0.125, width: float = 1, length: float = 1, height: float = 0, uSides: int = 16, vSides: int = 16,
-                        direction: list = [0, 0, 1], placement: str ="center", mantissa: int = 6, tolerance: float = 0.0001, silent=False, polyhedron: bool = True):
+                        direction: list = [0, 0, 1], placement: str ="center", mantissa: int = 6, tolerance: float = 0.0001, silent=False):
         """
         Creates a paraboloid cell. See https://en.wikipedia.org/wiki/Paraboloid
 
@@ -4740,36 +4712,6 @@ class Cell():
             The created paraboloid.
 
         """
-        if not polyhedron:
-            from topologicpy.Vertex import Vertex
-            from topologicpy.Face import Face
-            from topologicpy.Wire import Wire
-            from topologicpy.Shell import Shell
-            from topologicpy.Topology import Topology
-            if focalLength == 0 or width <= 0 or length <= 0 or height < 0:
-                if not silent: print("Cell.Paraboloid - Error: Invalid dimensions/focalLength. Returning None.")
-                return None
-            if Topology._IsTopologicCoreBackend():
-                if not silent: print("Cell.Paraboloid - Error: polyhedron=False requires PythonOCC. Returning None.")
-                return None
-            if not Topology.IsInstance(origin, "Vertex"): origin=Vertex.Origin()
-            a=1.0/(4.0*float(focalLength)); x0=-0.5*width; x1=0.5*width; y0=-0.5*length; y1=0.5*length
-            xs=[x0,0.0,x1]; ys=[y0,0.0,y1]; zx=[a*x0*x0,a*x0*x1,a*x1*x1]; zy=[a*y0*y0,a*y0*y1,a*y1*y1]
-            cps=[[Vertex.ByCoordinates(xs[i],ys[j],zx[i]+zy[j]) for j in range(3)] for i in range(3)]
-            top=Face.ByNurbsParameters(cps, weights=[[1.0]*3 for _ in range(3)], uKnots=[0,0,0,1,1,1], vKnots=[0,0,0,1,1,1], isRational=False, isUPeriodic=False, isVPeriodic=False, uDegree=2, vDegree=2, tolerance=tolerance, silent=True)
-            if not Topology.IsInstance(top,"Face"): return None
-            eb=Face.ExternalBoundary(top); verts=Topology.Vertices(eb) or []
-            corner_z=a*(x1*x1+y1*y1); base_z=corner_z + (height if focalLength>0 else -height)
-            bverts=[Vertex.ByCoordinates(Vertex.X(v),Vertex.Y(v),base_z) for v in verts]
-            bw=Wire.ByVertices(bverts,close=True,tolerance=tolerance,silent=True); base=Face.ByWire(bw,tolerance=tolerance,silent=True)
-            sleeve=Shell.ByWires([eb,bw],polyhedron=False,triangulate=False,tolerance=tolerance,silent=True)
-            if not Topology.IsInstance(sleeve,"Shell") or not Topology.IsInstance(base,"Face"): return None
-            result=Cell.ByFaces((Topology.Faces(sleeve) or [])+[top,base],tolerance=tolerance,silent=True)
-            if not Topology.IsInstance(result,"Cell"): return None
-            minz=min(0.0,base_z); maxz=max(0.0,base_z); p=str(placement).lower(); source=[0,0,0.5*(minz+maxz)]
-            if p=="bottom": source=[0,0,minz]
-            elif p=="lowerleft": source=[x0,y0,minz]
-            return Cell._PlaceNativeCell(result,origin,direction,source,tolerance,silent)
         from topologicpy.Vertex import Vertex
         from topologicpy.Topology import Topology
         from topologicpy.Face import Face
@@ -4865,18 +4807,7 @@ class Cell():
         return cell
 
     @staticmethod
-    def Pipe(edge,
-             profile = None,
-             radius: float = 0.5,
-             sides: int = 16,
-             startOffset: float = 0,
-             endOffset: float = 0,
-             endcapA = None,
-             endcapB = None,
-             mantissa: int = 6,
-             tolerance: float = 0.0001,
-             silent: bool = False,
-             polyhedron: bool = True) -> dict:
+    def Pipe(edge, profile = None, radius: float = 0.5, sides: int = 16, startOffset: float = 0, endOffset: float = 0, endcapA = None, endcapB = None, mantissa: int = 6) -> dict:
         """
         Creates a pipe along the input edge.
 
@@ -4900,10 +4831,6 @@ class Cell():
             The topology to place at the end vertex of the centerline edge. The positive Z direction of the end cap will be oriented in the inverse direction of the centerline edge.
         mantissa : int , optional
             The desired length of the mantissa. Default is 6
-        tolerance : float , optional
-            The desired tolerance. Default is 0.0001.
-        silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
         
         Returns
         -------
@@ -4914,33 +4841,6 @@ class Cell():
             'endcapB'
 
         """
-        if not polyhedron:
-            from topologicpy.Edge import Edge
-            from topologicpy.Vertex import Vertex
-            from topologicpy.Topology import Topology
-            if not Topology.IsInstance(edge, "Edge"):
-                if not silent: print("Cell.Pipe - Error: Invalid Edge. Returning None.")
-                return None
-            work=edge
-            if startOffset > 0:
-                work=Edge.Trim(work,distance=startOffset,bothSides=False,reverse=True,tolerance=tolerance,silent=True)
-            if Topology.IsInstance(work,"Edge") and endOffset > 0:
-                work=Edge.Trim(work,distance=endOffset,bothSides=False,reverse=False,tolerance=tolerance,silent=True)
-            if not Topology.IsInstance(work,"Edge"):
-                if not silent: print("Cell.Pipe - Error: Offsets consume or invalidate the centerline. Returning None.")
-                return None
-            pipe=Cell._NativeCell("ByPipe", work, profile=profile, radius=radius, tolerance=tolerance, silent=silent)
-            if not Topology.IsInstance(pipe,"Cell"):
-                if not silent: print("Cell.Pipe - Error: Native sweep failed. Returning None.")
-                return None
-            sv=Edge.StartVertex(work); ev=Edge.EndVertex(work)
-            tan_a=Edge.TangentAtParameter(work,u=0.0,mantissa=None,tolerance=tolerance,silent=True)
-            tan_b=Edge.TangentAtParameter(work,u=1.0,mantissa=None,tolerance=tolerance,silent=True)
-            if endcapA is not None and Topology.IsInstance(sv,"Vertex") and isinstance(tan_a,(list,tuple)):
-                endcapA=Topology.OrientAndPlace(Topology.Copy(endcapA),originA=Vertex.Origin(),originB=sv,dirA=[0,0,1],dirB=tan_a,transferDictionaries=False,tolerance=tolerance,silent=True)
-            if endcapB is not None and Topology.IsInstance(ev,"Vertex") and isinstance(tan_b,(list,tuple)):
-                endcapB=Topology.OrientAndPlace(Topology.Copy(endcapB),originA=Vertex.Origin(),originB=ev,dirA=[0,0,1],dirB=[-tan_b[0],-tan_b[1],-tan_b[2]],transferDictionaries=False,tolerance=tolerance,silent=True)
-            return {'pipe': pipe, 'endcapA': endcapA, 'endcapB': endcapB}
         from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
         from topologicpy.Wire import Wire
@@ -4948,8 +4848,7 @@ class Cell():
         import math
 
         if not Topology.IsInstance(edge, "Edge"):
-            if not silent:
-                print("Cell.Pipe - Error: The input edge parameter is not a valid topologic edge. Returning None.")
+            print("Cell.Pipe - Error: The input edge parameter is not a valid topologic edge. Returning None.")
             return None
         length = Edge.Length(edge)
         origin = Edge.StartVertex(edge)
@@ -4985,7 +4884,7 @@ class Cell():
             baseWire = Wire.ByVertices(baseV)
             topWire = Wire.ByVertices(topV)
         wires = [baseWire, topWire]
-        pipe = Cell.ByWires(wires, tolerance=tolerance)
+        pipe = Cell.ByWires(wires)
         phi = math.degrees(math.atan2(dy, dx)) # Rotation around Y-Axis
         if dist < 0.0001:
             theta = 0
@@ -5193,7 +5092,7 @@ class Cell():
         return Cell.ByFaces(clean_faces, tolerance=tolerance)
     
     @staticmethod
-    def RHS(origin= None, width: float = 1.0, length: float = 1.0, height: float = 1.0, thickness: float = 0.25, outerFillet: float = 0.0, innerFillet: float = 0.0, sides: int = 16, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001, silent: bool = False, polyhedron: bool = True):
+    def RHS(origin= None, width: float = 1.0, length: float = 1.0, height: float = 1.0, thickness: float = 0.25, outerFillet: float = 0.0, innerFillet: float = 0.0, sides: int = 16, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001, silent: bool = False):
         """
         Creates a rectangluar hollow section (RHS).
 
@@ -5230,21 +5129,6 @@ class Cell():
             The created cell.
 
         """
-        if not polyhedron:
-            from topologicpy.Vertex import Vertex
-            from topologicpy.Topology import Topology
-            if 2*thickness >= width or 2*thickness >= length: return None
-            if not Topology.IsInstance(origin,"Vertex"): origin=Vertex.Origin()
-            result=Cell._NativeCell("ByRHS", width=width, length=length, height=height, thickness=thickness, outerRadius=outerFillet*thickness, innerRadius=innerFillet*thickness, tolerance=tolerance, silent=silent)
-            if not Topology.IsInstance(result,"Cell"): return None
-            p=str(placement).lower(); source=[0,0,0]
-            if p=="bottom": source=[0,0,-0.5*height]
-            elif p=="top": source=[0,0,0.5*height]
-            elif p=="lowerleft": source=[-0.5*width,-0.5*length,-0.5*height]
-            elif p=="upperleft": source=[-0.5*width,0.5*length,0.5*height]
-            elif p=="lowerright": source=[0.5*width,-0.5*length,-0.5*height]
-            elif p=="upperright": source=[0.5*width,0.5*length,0.5*height]
-            return Cell._PlaceNativeCell(result,origin,direction,source,tolerance,silent)
         from topologicpy.Vertex import Vertex
         from topologicpy.Face import Face
         from topologicpy.Topology import Topology
@@ -5253,7 +5137,7 @@ class Cell():
             if not silent:
                 print("Cell.RHS - Error: Twice the thickness value is larger than or equal to the width value. Returning None.")
             return None
-        if 2*thickness >= length:
+        if 2*thickness >= width:
             if not silent:
                 print("Cell.RHS - Error: Twice the thickness value is larger than or equal to the length value. Returning None.")
             return None
@@ -5436,7 +5320,7 @@ class Cell():
         return shells
 
     @staticmethod
-    def SHS(origin= None, size: float = 1.0, height: float = 1.0, thickness: float = 0.25, outerFillet: float = 0.0, innerFillet: float = 0.0, sides: int = 16, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001, silent: bool = False, polyhedron: bool = True):
+    def SHS(origin= None, size: float = 1.0, height: float = 1.0, thickness: float = 0.25, outerFillet: float = 0.0, innerFillet: float = 0.0, sides: int = 16, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001, silent: bool = False):
         """
         Creates a square hollow section (SHS).
 
@@ -5473,8 +5357,6 @@ class Cell():
             The created cell.
 
         """
-        if not polyhedron:
-            return Cell.RHS(origin=origin,width=size,length=size,height=height,thickness=thickness,outerFillet=outerFillet,innerFillet=innerFillet,sides=sides,polyhedron=False,direction=direction,placement=placement,tolerance=tolerance,silent=silent)
         from topologicpy.Vertex import Vertex
         from topologicpy.Face import Face
         from topologicpy.Topology import Topology
@@ -5508,50 +5390,30 @@ class Cell():
                         silent = silent)
     
     @staticmethod
-    def Sphere(
-        origin=None,
-        radius: float = 0.5,
-        uSides: int = 16,
-        vSides: int = 8,
-        direction: list = [0, 0, 1],
-        placement: str = "center",
-        tolerance: float = 0.0001,
-        silent: bool = False,
-        polyhedron: bool = True
-    ):
+    def Sphere(origin= None, radius: float = 0.5, uSides: int = 16, vSides: int = 8, direction: list = [0, 0, 1],
+                   placement: str = "center", tolerance: float = 0.0001, silent: bool = False):
         """
-        Creates a sphere.
+        Creates an approximation of a sphere using a UV grid of triangular faces.
 
         Parameters
         ----------
-        origin : topologic_core.Vertex, optional
-            The origin location of the sphere. Default is None which results in
-            the sphere being placed at (0, 0, 0).
-        radius : float, optional
+        origin : topologic_core.Vertex , optional
+            The origin location of the sphere. Default is None which results in the sphere being placed at (0, 0, 0).
+        radius : float , optional
             The radius of the sphere. Default is 0.5.
-        uSides : int, optional
-            The number of sides along the longitude of the sphere when
-            polyhedron is True. This parameter is ignored when polyhedron is
-            False. Default is 16.
-        vSides : int, optional
-            The number of sides along the latitude of the sphere when
-            polyhedron is True. This parameter is ignored when polyhedron is
-            False. Default is 8.
-        direction : list, optional
-            The vector representing the up direction of the sphere.
-            Default is [0, 0, 1].
-        placement : str, optional
-            The placement of the origin. This can be "bottom", "center",
-            or "lowerleft". It is case insensitive. Default is "center".
-        tolerance : float, optional
+        uSides : int , optional
+            The number of sides along the longitude of the sphere. Default is 16.
+        vSides : int , optional
+            The number of sides along the latitude of the sphere. Default is 8.
+        direction : list , optional
+            The vector representing the up direction of the sphere. Default is [0, 0, 1].
+        placement : str , optional
+            The description of the placement of the origin of the sphere. This can be "bottom", "center", or "lowerleft". It is case insensitive. Default is "center".
+        tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool, optional
-            If set to True, error and warning messages are suppressed.
-            Default is False.
-        polyhedron : bool, optional
-            If True, creates a faceted approximation of a sphere. If False,
-            creates an exact smooth sphere using the native PythonOCC backend.
-            Default is True.
+            If set to True, suppresses warning and error messages. Default is False.
+        
 
         Returns
         -------
@@ -5559,198 +5421,96 @@ class Cell():
             The created sphere.
 
         """
+    
         import math
-
         from topologicpy.Vertex import Vertex
         from topologicpy.Face import Face
+        from topologicpy.Cell import Cell
         from topologicpy.Topology import Topology
 
-        # Validate radius.
-        try:
-            radius = float(radius)
-        except Exception:
+        # Validate inputs
+        if radius <= 0 or uSides < 3 or vSides < 2:
             if not silent:
-                print("Cell.Sphere - Error: The input radius parameter is not a valid number. Returning None.")
+                print("Cell.Sphere - Error: radius must be > 0, uSides >= 3, vSides >= 2. Returning None.")
             return None
 
-        if radius <= 0:
-            if not silent:
-                print("Cell.Sphere - Error: The radius must be greater than zero. Returning None.")
-            return None
-
-        # Validate/default origin.
-        if not Topology.IsInstance(origin, "Vertex"):
-            origin = Vertex.Origin()
-
-        # ----------------------------------------------------------------------
-        # Exact smooth sphere.
-        # ----------------------------------------------------------------------
-        if not polyhedron:
-            sphere = Cell._NativeCell(
-                "BySphere",
-                radius=radius,
-                tolerance=tolerance,
-                silent=silent
-            )
-
-            if not Topology.IsInstance(sphere, "Cell"):
-                return None
-
-            p = str(placement).lower()
-            source = [0, 0, 0]
-
-            if p == "bottom":
-                source = [0, 0, -radius]
-            elif p == "lowerleft":
-                source = [-radius, -radius, -radius]
-
-            return Cell._PlaceNativeCell(
-                sphere,
-                origin,
-                direction,
-                source,
-                tolerance,
-                silent
-            )
-
-        # ----------------------------------------------------------------------
-        # Existing faceted sphere.
-        # ----------------------------------------------------------------------
-        if uSides < 3 or vSides < 2:
-            if not silent:
-                print(
-                    "Cell.Sphere - Error: uSides must be at least 3 and "
-                    "vSides must be at least 2. Returning None."
-                )
-            return None
-
+        # Center
+        if origin is None:
+            origin = Vertex.ByCoordinates(0, 0, 0)
         ox = Vertex.X(origin)
         oy = Vertex.Y(origin)
         oz = Vertex.Z(origin)
 
-        # Poles.
+        # Poles
         top_pole = Vertex.ByCoordinates(ox, oy, oz + radius)
         bottom_pole = Vertex.ByCoordinates(ox, oy, oz - radius)
 
-        # Latitude rings, excluding the poles.
-        rings = []
-
+        # Latitude rings (exclude poles)
+        rings = []  # list of list[Vertex]
         for vi in range(1, vSides):
-            phi = math.pi * vi / vSides
+            phi = math.pi * vi / vSides  # 0..pi
             sin_phi = math.sin(phi)
             cos_phi = math.cos(phi)
-
             ring = []
-
             for ui in range(uSides):
                 theta = 2.0 * math.pi * ui / uSides
-
                 x = ox + radius * sin_phi * math.cos(theta)
                 y = oy + radius * sin_phi * math.sin(theta)
                 z = oz + radius * cos_phi
-
                 ring.append(Vertex.ByCoordinates(x, y, z))
-
             rings.append(ring)
 
         faces = []
 
-        # Top cap.
+        # Top cap: triangles from top pole to first ring
         first_ring = rings[0]
-
         for u in range(uSides):
             v1 = first_ring[u]
             v2 = first_ring[(u + 1) % uSides]
+            f = Face.ByVertices([top_pole, v1, v2], tolerance=tolerance)
+            if f:
+                faces.append(f)
 
-            face = Face.ByVertices(
-                [top_pole, v1, v2],
-                tolerance=tolerance
-            )
-
-            if face:
-                faces.append(face)
-
-        # Middle bands.
+        # Middle bands: split quads into two triangles
         for i in range(len(rings) - 1):
-            current_ring = rings[i]
-            next_ring = rings[i + 1]
-
+            curr = rings[i]
+            nxt = rings[i + 1]
             for u in range(uSides):
-                a = current_ring[u]
-                b = next_ring[u]
-                c = next_ring[(u + 1) % uSides]
-                d = current_ring[(u + 1) % uSides]
+                a = curr[u]
+                b = nxt[u]
+                c = nxt[(u + 1) % uSides]
+                d = curr[(u + 1) % uSides]
+                f1 = Face.ByVertices([a, b, c], tolerance=tolerance)
+                if f1:
+                    faces.append(f1)
+                f2 = Face.ByVertices([a, c, d], tolerance=tolerance)
+                if f2:
+                    faces.append(f2)
 
-                face = Face.ByVertices(
-                    [a, b, c],
-                    tolerance=tolerance
-                )
-
-                if face:
-                    faces.append(face)
-
-                face = Face.ByVertices(
-                    [a, c, d],
-                    tolerance=tolerance
-                )
-
-                if face:
-                    faces.append(face)
-
-        # Bottom cap.
+        # Bottom cap: triangles from last ring to bottom pole
         last_ring = rings[-1]
-
         for u in range(uSides):
             v1 = last_ring[(u + 1) % uSides]
             v2 = last_ring[u]
+            f = Face.ByVertices([bottom_pole, v1, v2], tolerance=tolerance)
+            if f:
+                faces.append(f)
 
-            face = Face.ByVertices(
-                [bottom_pole, v1, v2],
-                tolerance=tolerance
-            )
-
-            if face:
-                faces.append(face)
-
+        # Sew faces into a shell
+        sphere = None
         try:
-            sphere = Cell.ByFaces(
-                faces,
-                tolerance=tolerance
-            )
+            sphere = Cell.ByFaces(faces, tolerance=tolerance)
         except Exception:
-            sphere = None
-
-        if not Topology.IsInstance(sphere, "Cell"):
             if not silent:
-                print("Cell.Sphere - Error: Could not create the sphere. Returning None.")
+                print("Cell.Sphere - Error: could not create a sphere. Returning None.")
             return None
-
-        placement = str(placement).lower()
-
-        if placement == "bottom":
-            sphere = Topology.Translate(
-                sphere,
-                0,
-                0,
-                radius
-            )
-
-        elif placement == "lowerleft":
-            sphere = Topology.Translate(
-                sphere,
-                radius,
-                radius,
-                radius
-            )
-
-        if direction != [0, 0, 1]:
-            sphere = Topology.Orient(
-                sphere,
-                origin=origin,
-                dirA=[0, 0, 1],
-                dirB=direction
-            )
-
+        if placement.lower() == "bottom":
+            sphere = Topology.Translate(sphere, 0, 0, radius)
+        elif placement.lower() == "lowerleft":
+            sphere = Topology.Translate(sphere, radius, radius, radius)
+        
+        if not direction == [0,0,1]:
+            sphere = Topology.Orient(sphere, origin=origin, dirA=[0, 0, 1], dirB=direction)
         return sphere
     
     @staticmethod
@@ -5948,277 +5708,280 @@ class Cell():
             return CellComplex.ExternalBoundary(CellComplex.ByCells([tetrahedron]+subdivided_tetrahedra))
 
     @staticmethod
-    def Torus(
-        origin=None,
-        majorRadius: float = 0.5,
-        minorRadius: float = 0.125,
-        uSides: int = 16,
-        vSides: int = 8,
-        direction: list = [0, 0, 1],
-        placement: str = "center",
-        tolerance: float = 0.0001,
-        silent: bool = False,
-        polyhedron: bool = True
-    ):
+    def Torus(origin=None,
+              majorRadius: float = 0.5,
+              minorRadius: float = 0.125,
+              uSides: int = 16,
+              vSides: int = 8,
+              direction: list = [0, 0, 1],
+              placement: str = "center",
+              tolerance: float = 0.0001,
+              silent: bool = False):
         """
         Creates a torus.
 
         Parameters
         ----------
-        origin : topologic_core.Vertex, optional
-            The origin location of the torus. Default is None which results in
-            the torus being placed at (0, 0, 0).
-        majorRadius : float, optional
+        origin : topologic_core.Vertex , optional
+            The origin location of the torus. Default is None which results in the torus being placed at (0, 0, 0).
+        majorRadius : float , optional
             The major radius of the torus. Default is 0.5.
-        minorRadius : float, optional
+        minorRadius : float , optional
             The minor radius of the torus. Default is 0.125.
-        uSides : int, optional
-            The number of sides around the major circumference when polyhedron
-            is True. This parameter is ignored when polyhedron is False.
-            Default is 16.
-        vSides : int, optional
-            The number of sides around the tube circumference when polyhedron
-            is True. This parameter is ignored when polyhedron is False.
-            Default is 8.
-        direction : list, optional
-            The vector representing the up direction of the torus.
-            Default is [0, 0, 1].
-        placement : str, optional
-            The placement of the input origin relative to the torus. This can
-            be "center", "bottom", or "lowerleft". It is case insensitive.
-            Default is "center".
-        tolerance : float, optional
+        uSides : int , optional
+            The number of sides along the longitude of the torus (around the hole). Default is 16.
+        vSides : int , optional
+            The number of sides along the latitude of the torus (tube direction). Default is 8.
+        direction : list , optional
+            The vector representing the up direction of the torus. Default is [0, 0, 1].
+        placement : str , optional
+            Placement of the input origin relative to the torus. One of:
+            - "center": origin is at the torus' geometric center (default)
+            - "bottom": origin lies on the lowest point along the up direction
+            - "lowerleft": origin is at x/y lower-left and bottom in z of the torus' local bbox
+            Comparison is case-insensitive.
+        tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool, optional
-            If set to True, error and warning messages are suppressed.
-            Default is False.
-        polyhedron : bool, optional
-            If True, creates a faceted torus. If False, creates an exact smooth
-            torus using the native PythonOCC backend. Default is True.
+            If set to True, suppresses warning and error messages. Default is False.
 
         Returns
         -------
         topologic_core.Cell
             The created torus.
-
         """
-        import math
-
+        # --- Imports kept inside to avoid cyclic dependencies in TopologicPy ---
+        from math import cos, sin, pi, sqrt
         from topologicpy.Vertex import Vertex
         from topologicpy.Face import Face
+        from topologicpy.Shell import Shell
+        from topologicpy.Cell import Cell
         from topologicpy.Topology import Topology
+        
 
-        # ----------------------------------------------------------------------
-        # Validate numeric inputs.
-        # ----------------------------------------------------------------------
-        try:
-            majorRadius = float(majorRadius)
-            minorRadius = float(minorRadius)
-        except Exception:
-            if not silent:
-                print(
-                    "Cell.Torus - Error: The majorRadius and minorRadius "
-                    "parameters must be valid numbers. Returning None."
-                )
-            return None
-
+        # --- Validation ---
         if majorRadius <= 0 or minorRadius <= 0:
-            if not silent:
-                print(
-                    "Cell.Torus - Error: The majorRadius and minorRadius "
-                    "parameters must be greater than zero. Returning None."
-                )
-            return None
-
-        if minorRadius >= majorRadius:
-            if not silent:
-                print(
-                    "Cell.Torus - Error: The minorRadius parameter must be "
-                    "smaller than the majorRadius parameter. Returning None."
-                )
-            return None
-
-        if not Topology.IsInstance(origin, "Vertex"):
-            origin = Vertex.Origin()
-
-        placement = str(placement).lower().strip()
-
-        if placement not in ["center", "bottom", "lowerleft"]:
-            if not silent:
-                print(
-                    'Cell.Torus - Error: The placement parameter must be '
-                    '"center", "bottom", or "lowerleft". Returning None.'
-                )
-            return None
-
-        # ----------------------------------------------------------------------
-        # Determine canonical source origin used for placement.
-        #
-        # Canonical torus:
-        #   x/y = ±(majorRadius + minorRadius)
-        #   z   = ±minorRadius
-        # ----------------------------------------------------------------------
-        source = [0, 0, 0]
-
-        if placement == "bottom":
-            source = [0, 0, -minorRadius]
-
-        elif placement == "lowerleft":
-            source = [
-                -(majorRadius + minorRadius),
-                -(majorRadius + minorRadius),
-                -minorRadius
-            ]
-
-        # ----------------------------------------------------------------------
-        # Exact smooth torus.
-        # ----------------------------------------------------------------------
-        if not polyhedron:
-            torus = Cell._NativeCell(
-                "ByTorus",
-                majorRadius=majorRadius,
-                minorRadius=minorRadius,
-                tolerance=tolerance,
-                silent=silent
-            )
-
-            if not Topology.IsInstance(torus, "Cell"):
-                return None
-
-            return Cell._PlaceNativeCell(
-                torus,
-                origin,
-                direction,
-                source,
-                tolerance,
-                silent
-            )
-
-        # ----------------------------------------------------------------------
-        # Faceted torus.
-        # ----------------------------------------------------------------------
-        try:
-            uSides = int(uSides)
-            vSides = int(vSides)
-        except Exception:
-            if not silent:
-                print(
-                    "Cell.Torus - Error: The uSides and vSides parameters "
-                    "must be valid integers. Returning None."
-                )
-            return None
-
+            raise ValueError("majorRadius and minorRadius must be > 0.")
         if uSides < 3 or vSides < 3:
-            if not silent:
-                print(
-                    "Cell.Torus - Error: uSides and vSides must both be "
-                    "at least 3. Returning None."
-                )
-            return None
+            raise ValueError("uSides and vSides must be >= 3.")
+        if minorRadius >= majorRadius:
+            # Geometrically valid but unusual; keep strict to avoid self-intersections at low resolution
+            raise ValueError("minorRadius must be smaller than majorRadius for a clean torus.")
 
-        vertices = []
+        # --- Helpers ---
+        def _norm(v):
+            x, y, z = v
+            m = sqrt(x*x + y*y + z*z)
+            if m == 0:
+                return (0.0, 0.0, 1.0)
+            return (x/m, y/m, z/m)
 
-        # Construct a canonical torus centred at the world origin and aligned
-        # with +Z. Placement and orientation are applied afterwards.
+        def _dot(a, b):
+            return a[0]*b[0] + a[1]*b[1] + a[2]*b[2]
+
+        def _cross(a, b):
+            return (a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0])
+
+        def _rot_matrix_from_z(to_dir):
+            """
+            Build a rotation matrix that maps +Z to 'to_dir' using Rodrigues' formula.
+            """
+            z = (0.0, 0.0, 1.0)
+            t = _norm(to_dir)
+            c = _dot(z, t)  # cos(theta)
+            if abs(c - 1.0) < 1e-12:
+                # Already aligned
+                return ((1.0,0.0,0.0),
+                        (0.0,1.0,0.0),
+                        (0.0,0.0,1.0))
+            if abs(c + 1.0) < 1e-12:
+                # 180 degrees: rotate around any axis perpendicular to z (e.g., x-axis)
+                return ((1.0, 0.0, 0.0),
+                        (0.0,-1.0, 0.0),
+                        (0.0, 0.0,-1.0))
+            k = _cross(z, t)
+            kx, ky, kz = _norm(k)
+            s = sqrt(max(0.0, 1.0 - c*c))
+            # Skew-symmetric K
+            K = ((0.0, -kz,  ky),
+                (kz,  0.0, -kx),
+                (-ky, kx,  0.0))
+            # I + K*s + K^2*(1-c)
+            # First compute K^2
+            K2 = (
+                (K[0][0]*K[0][0] + K[0][1]*K[1][0] + K[0][2]*K[2][0],
+                K[0][0]*K[0][1] + K[0][1]*K[1][1] + K[0][2]*K[2][1],
+                K[0][0]*K[0][2] + K[0][1]*K[1][2] + K[0][2]*K[2][2]),
+                (K[1][0]*K[0][0] + K[1][1]*K[1][0] + K[1][2]*K[2][0],
+                K[1][0]*K[0][1] + K[1][1]*K[1][1] + K[1][2]*K[2][1],
+                K[1][0]*K[0][2] + K[1][1]*K[1][2] + K[1][2]*K[2][2]),
+                (K[2][0]*K[0][0] + K[2][1]*K[1][0] + K[2][2]*K[2][0],
+                K[2][0]*K[0][1] + K[2][1]*K[1][1] + K[2][2]*K[2][1],
+                K[2][0]*K[0][2] + K[2][1]*K[1][2] + K[2][2]*K[2][2]),
+            )
+            I = ((1.0,0.0,0.0),(0.0,1.0,0.0),(0.0,0.0,1.0))
+
+            def _madd(A, B, s=1.0):
+                return tuple(tuple(A[i][j] + s*B[i][j] for j in range(3)) for i in range(3))
+
+            R = I
+            R = _madd(R, K, s)           # I + s*K
+            R = _madd(R, K2, (1.0 - c))  # + (1-c)*K^2
+            return R
+
+        def _apply_R(p, R):
+            return (
+                R[0][0]*p[0] + R[0][1]*p[1] + R[0][2]*p[2],
+                R[1][0]*p[0] + R[1][1]*p[1] + R[1][2]*p[2],
+                R[2][0]*p[0] + R[2][1]*p[1] + R[2][2]*p[2],
+            )
+
+        def _add(a, b):
+            return (a[0]+b[0], a[1]+b[1], a[2]+b[2])
+
+        def _scale(v, s):
+            return (v[0]*s, v[1]*s, v[2]*s)
+
+        # --- Parametric grid in local coordinates (+Z is up) ---
+        # u: around the main ring (longitude), v: around the tube (latitude)
+        du = 2.0*pi / uSides
+        dv = 2.0*pi / vSides
+
+        # Precompute angles to avoid repeated trig
+        cosu = [cos(i*du) for i in range(uSides)]
+        sinu = [sin(i*du) for i in range(uSides)]
+        cosv = [cos(j*dv) for j in range(vSides)]
+        sinv = [sin(j*dv) for j in range(vSides)]
+
+        # Vertex grid (uSides x vSides)
+        grid = [[None for _ in range(vSides)] for _ in range(uSides)]
+        points = [[None for _ in range(vSides)] for _ in range(uSides)]  # store tuples for transforms
+
         for i in range(uSides):
-            u = 2.0 * math.pi * i / uSides
-            cos_u = math.cos(u)
-            sin_u = math.sin(u)
-
-            ring = []
-
+            cu, su = cosu[i], sinu[i]
             for j in range(vSides):
-                v = 2.0 * math.pi * j / vSides
-                cos_v = math.cos(v)
-                sin_v = math.sin(v)
+                cv, sv = cosv[j], sinv[j]
+                x = (majorRadius + minorRadius * cv) * cu
+                y = (majorRadius + minorRadius * cv) * su
+                z =  minorRadius * sv
+                points[i][j] = (x, y, z)
 
-                r = majorRadius + minorRadius * cos_v
+        # --- Orientation: rotate local +Z to requested direction ---
+        R = _rot_matrix_from_z(direction if isinstance(direction, (list, tuple)) else [0,0,1])
+        points = [[_apply_R(points[i][j], R) for j in range(vSides)] for i in range(uSides)]
 
-                x = r * cos_u
-                y = r * sin_u
-                z = minorRadius * sin_v
+        # --- Placement: translate relative to the given origin point ---
+        # Determine placement offset in *local* frame, then rotate it by R, then add origin.
+        placement_lc = placement.lower().strip()
+        if placement_lc not in ("center", "bottom", "lowerleft"):
+            raise ValueError('placement must be one of: "center", "bottom", "lowerleft".')
 
-                vertex = Vertex.ByCoordinates(x, y, z)
+        # In local frame, bbox extents are:
+        #   x,y in [- (R + r), + (R + r)]
+        #   z in [ -r, +r ]
+        # So:
+        # - "center"   : no extra shift (center at (0,0,0))
+        # - "bottom"   : shift up by r along +Z so the lowest point touches z=0 (then move to origin)
+        # - "lowerleft": put min x,y at 0 and bottom at z=0, i.e. shift by (R+r, R+r, r)
+        if placement_lc == "center":
+            placement_local_offset = (0.0, 0.0, 0.0)
+        elif placement_lc == "bottom":
+            placement_local_offset = (0.0, 0.0, minorRadius)
+        else:  # "lowerleft"
+            placement_local_offset = (majorRadius + minorRadius, majorRadius + minorRadius, minorRadius)
 
-                if not Topology.IsInstance(vertex, "Vertex"):
-                    if not silent:
-                        print(
-                            "Cell.Torus - Error: Could not create a torus "
-                            "vertex. Returning None."
-                        )
-                    return None
+        # Rotate the local placement offset into world frame
+        placement_world_offset = _apply_R(placement_local_offset, R)
 
-                ring.append(vertex)
+        # Determine origin position
+        if origin is None:
+            ox, oy, oz = (0.0, 0.0, 0.0)
+        else:
+            try:
+                ox = Vertex.X(origin)
+                oy = Vertex.Y(origin)
+                oz = Vertex.Z(origin)
+            except Exception:
+                # Accept a plain (x,y,z) tuple/list as a convenience
+                ox, oy, oz = origin  # type: ignore
 
-            vertices.append(ring)
+        origin_pt = (ox, oy, oz)
+        base_translation = _add(origin_pt, placement_world_offset)
 
+        # Apply final translation
+        points = [[_add(points[i][j], base_translation) for j in range(vSides)] for i in range(uSides)]
+
+        # --- Build Topologic vertices (reuse grid references) ---
+        for i in range(uSides):
+            for j in range(vSides):
+                x, y, z = points[i][j]
+                grid[i][j] = Vertex.ByCoordinates(x, y, z)
+
+        # --- Triangulate the quad grid into faces (2 triangles per quad) ---
         faces = []
-
-        # Two triangles per parametric quad.
+        # Wind triangles so that normals generally point outward
         for i in range(uSides):
-            i_next = (i + 1) % uSides
-
+            i1 = (i + 1) % uSides
             for j in range(vSides):
-                j_next = (j + 1) % vSides
+                j1 = (j + 1) % vSides
+                v00 = grid[i][j]
+                v10 = grid[i1][j]
+                v11 = grid[i1][j1]
+                v01 = grid[i][j1]
+                # Two triangles per cell:
+                f1 = Face.ByVertices([v00, v10, v11], tolerance)  # triangle
+                f2 = Face.ByVertices([v00, v11, v01], tolerance)  # triangle
+                if f1 is None or f2 is None:
+                    raise RuntimeError("Failed to create torus facets (Face.ByVertices returned None).")
+                faces.append(f1)
+                faces.append(f2)
 
-                v00 = vertices[i][j]
-                v10 = vertices[i_next][j]
-                v11 = vertices[i_next][j_next]
-                v01 = vertices[i][j_next]
+        # --- Stitch into a closed shell, then a cell ---
+        shell = Shell.ByFaces(faces, tolerance)
+        if shell is None:
+            # As a fallback, try slight relaxation on tolerance (if environment is finicky)
+            shell = Shell.ByFaces(faces, tolerance * 10.0)
+        if shell is None:
+            raise RuntimeError("Failed to stitch torus shell from facets.")
 
-                face_1 = Face.ByVertices(
-                    [v00, v10, v11],
-                    tolerance=tolerance,
-                    silent=silent
-                )
+        # Try common constructors to obtain a solid Cell
+        cell = None
+        # 1) Common signature: Cell.ByShell(shell)
+        try:
+            cell = Cell.ByShell(shell)
+        except Exception:
+            cell = None
+        # 2) Sometimes requires tolerance
+        if cell is None:
+            try:
+                cell = Cell.ByShell(shell, tolerance)
+            except Exception:
+                cell = None
+        # 3) Some builds expect a list of shells (external only)
+        if cell is None:
+            try:
+                cell = Cell.ByShells([shell], tolerance)
+            except Exception:
+                cell = None
+        # 4) Rare builds: stitch directly from faces
+        if cell is None:
+            try:
+                cell = Cell.ByFaces(faces, tolerance, silent=silent)
+            except Exception:
+                cell = None
 
-                face_2 = Face.ByVertices(
-                    [v00, v11, v01],
-                    tolerance=tolerance,
-                    silent=silent
-                )
+        if cell is None:
+            # As a last resort, return the stitched shell so the caller still gets usable geometry.
+            # But the contract says Cell; better to error explicitly so issues are caught early.
+            raise RuntimeError("Failed to create a solid Cell from the torus shell. Check tolerances and resolution (uSides/vSides).")
 
-                if not Topology.IsInstance(face_1, "Face"):
-                    if not silent:
-                        print(
-                            "Cell.Torus - Error: Could not create a torus "
-                            "face. Returning None."
-                        )
-                    return None
+        # Clean up small topological defects if available
+        try:
+            cell = Topology.Clean(cell, tolerance, silent=silent)  # optional: no-op if not available
+        except Exception:
+            pass
 
-                if not Topology.IsInstance(face_2, "Face"):
-                    if not silent:
-                        print(
-                            "Cell.Torus - Error: Could not create a torus "
-                            "face. Returning None."
-                        )
-                    return None
-
-                faces.append(face_1)
-                faces.append(face_2)
-
-        torus = Cell.ByFaces(
-            faces,
-            tolerance=tolerance,
-            silent=silent
-        )
-
-        if not Topology.IsInstance(torus, "Cell"):
-            if not silent:
-                print(
-                    "Cell.Torus - Error: Could not create the torus Cell. "
-                    "Returning None."
-                )
-            return None
-
-        return Cell._PlaceNativeCell(
-            torus,
-            origin,
-            direction,
-            source,
-            tolerance,
-            silent
-        )
+        return cell
     
     @staticmethod
     def TShape(origin=None,
@@ -6350,7 +6113,7 @@ class Cell():
         for i in range(wSides):
             t_shape_wire = Topology.Translate(t_shape_wire, 0, 0, distance)
             wires.append(t_shape_wire)
-        return_cell = Cell.ByWires(wires, triangulate=False, tolerance=tolerance, silent=silent)
+        return_cell = Cell.ByWires(wires, triangulate=False, mantissa=mantissa, tolerance=tolerance, silent=silent)
         # move down to center
         return_cell = Topology.Translate(return_cell, 0, 0, -height*0.5)
         xOffset = 0
@@ -6388,7 +6151,7 @@ class Cell():
         return return_cell
     
     @staticmethod
-    def Tube(origin= None, radius: float = 1.0, height: float = 1.0, thickness: float = 0.25, sides: int = 16, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001, silent: bool = False, polyhedron: bool = True):
+    def Tube(origin= None, radius: float = 1.0, height: float = 1.0, thickness: float = 0.25, sides: int = 16, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001, silent: bool = False):
         """
         Creates a Tube. This method is an alias for the circular hollow section (CHS).
 
@@ -6419,8 +6182,6 @@ class Cell():
             The created cell.
 
         """
-        if not polyhedron:
-            return Cell.CHS(origin=origin,radius=radius,height=height,thickness=thickness,sides=sides,polyhedron=False,direction=direction,placement=placement,tolerance=tolerance,silent=silent)
         from topologicpy.Vertex import Vertex
         from topologicpy.Face import Face
         from topologicpy.Topology import Topology
@@ -6471,7 +6232,7 @@ class Cell():
         return vertices
 
     @staticmethod
-    def Volume(cell, mantissa: int = 6, silent: bool = False) -> float:
+    def Volume(cell, mantissa: int = 6) -> float:
         """
         Returns the volume of the input cell.
 
@@ -6481,8 +6242,6 @@ class Cell():
             The input cell.
         manitssa: int , optional
             The number of decimal places to round the result to. Default is 6.
-        silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -6493,15 +6252,13 @@ class Cell():
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(cell, "Cell"):
-            if not silent:
-                print("Cell.Volume - Error: The input cell parameter is not a valid topologic cell. Returning None.")
+            print("Cell.Volume - Error: The input cell parameter is not a valid topologic cell. Returning None.")
             return None
         volume = None
         try:
             volume = round(Core.CellUtility.Volume(cell), mantissa)
         except:
-            if not silent:
-                print("Cell.Volume - Error: Could not compute the volume of the input cell. Returning None.")
+            print("Cell.Volume - Error: Could not compute the volume of the input cell. Returning None.")
             volume = None
         return volume
 

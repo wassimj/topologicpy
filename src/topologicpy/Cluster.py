@@ -17,1916 +17,2191 @@
 from __future__ import annotations
 
 from topologicpy.Core import Core
-from typing import Callable
+import os
+import warnings
+from typing import Iterable, Callable, List
 
+try:
+    import numpy as np
+except:
+    print("Cluster - Installing required numpy library.")
+    try:
+        os.system("pip install numpy")
+    except:
+        os.system("pip install numpy --user")
+    try:
+        import numpy as np
+        print("Cluster - numpy library installed correctly.")
+    except:
+        warnings.warn("Cluster - Error: Could not import numpy.")
 
-class Cluster:
-    """Utility methods for creating, querying, and analysing Topologic Clusters."""
+try:
+    from scipy.spatial.distance import pdist, squareform
+except:
+    print("Cluster - Installing required scipy library.")
+    try:
+        os.system("pip install scipy")
+    except:
+        os.system("pip install scipy --user")
+    try:
+        from scipy.spatial.distance import pdist, squareform
+        print("Cluster - scipy library installed correctly.")
+    except:
+        warnings.warn("Cluster - Error: Could not import scipy.")
 
-    # -------------------------------------------------------------------------
-    # Internal helpers
-    # -------------------------------------------------------------------------
-
+class Cluster():
     @staticmethod
-    def _Flatten(values):
-        """Flattens Python list/tuple containers without flattening Topologies."""
-        result = []
-
-        def walk(value):
-            if isinstance(value, (list, tuple)):
-                for item in value:
-                    walk(item)
-            else:
-                result.append(value)
-
-        walk(values)
-        return result
-
-    @staticmethod
-    def _Query(cluster, methodName: str, silent: bool = False):
-        """Executes a backend collection query using the canonical output-list contract."""
-        from topologicpy.Topology import Topology
-
-        if not Topology.IsInstance(cluster, "Cluster"):
-            if not silent:
-                print(f"Cluster.{methodName} - Error: The input cluster parameter is not a valid Cluster. Returning None.")
-            return None
-
-        output = []
-        try:
-            result = Core.InstanceCall(cluster, methodName, None, output)
-        except Exception:
-            try:
-                result = Core.InstanceCall(cluster, methodName)
-            except Exception:
-                if not silent:
-                    print(f"Cluster.{methodName} - Error: Could not query the backend. Returning None.")
-                return None
-
-        if output:
-            return [item for item in output if Topology.IsInstance(item, "Topology")]
-        if isinstance(result, list):
-            return [item for item in result if Topology.IsInstance(item, "Topology")]
-        if result in (0, None):
-            return []
-
-        if not silent:
-            print(f"Cluster.{methodName} - Error: The backend returned an invalid result. Returning None.")
-        return None
-
-    @staticmethod
-    def _IsSame(topologyA, topologyB) -> bool:
-        """Backend-neutral topology identity comparison."""
-        from topologicpy.Topology import Topology
-
-        try:
-            return bool(Topology.IsSame(topologyA, topologyB, silent=True))
-        except TypeError:
-            try:
-                return bool(Topology.IsSame(topologyA, topologyB))
-            except Exception:
-                return topologyA is topologyB
-        except Exception:
-            return topologyA is topologyB
-
-    @staticmethod
-    def _ReconstructTopologies(cluster, silent: bool = False):
+    def ByFormula(formula, xRange=None, yRange=None, xString="X", yString="Y"):
         """
-        Reconstructs top-level constituents when a backend cannot expose a direct
-        Cluster.Topologies query. This is a hierarchy/identity operation only; no
-        geometric Boolean operations are used.
-        """
-        from topologicpy.Topology import Topology
-
-        type_methods = [
-            ("CellComplex", "CellComplexes", "cellcomplex"),
-            ("Cell", "Cells", "cell"),
-            ("Shell", "Shells", "shell"),
-            ("Face", "Faces", "face"),
-            ("Wire", "Wires", "wire"),
-            ("Edge", "Edges", "edge"),
-            ("Vertex", "Vertices", "vertex"),
-        ]
-
-        selected = []
-        for type_name, method_name, sub_type in type_methods:
-            candidates = Cluster._Query(cluster, method_name, silent=True)
-            if candidates is None:
-                continue
-
-            for candidate in candidates:
-                if not Topology.IsInstance(candidate, type_name):
-                    continue
-
-                contained = False
-                for parent in selected:
-                    try:
-                        descendants = Topology.SubTopologies(
-                            parent,
-                            subTopologyType=sub_type,
-                            silent=True,
-                        ) or []
-                    except TypeError:
-                        try:
-                            descendants = Topology.SubTopologies(
-                                parent,
-                                subTopologyType=sub_type,
-                            ) or []
-                        except Exception:
-                            descendants = []
-                    except Exception:
-                        descendants = []
-
-                    if any(Cluster._IsSame(candidate, descendant) for descendant in descendants):
-                        contained = True
-                        break
-
-                if not contained and not any(Cluster._IsSame(candidate, item) for item in selected):
-                    selected.append(candidate)
-
-        if selected:
-            return selected
-
-        if not silent:
-            print("Cluster.Topologies - Error: Could not determine the direct constituents of the Cluster. Returning None.")
-        return None
-
-    @staticmethod
-    def _DirectOfType(cluster, typeName: str, tolerance: float = 0.0001, silent: bool = False):
-        """Returns direct Cluster constituents of the requested Topologic type."""
-        from topologicpy.Topology import Topology
-
-        topologies = Cluster.Topologies(cluster, tolerance=tolerance, silent=silent)
-        if topologies is None:
-            return None
-        return [topology for topology in topologies if Topology.IsInstance(topology, typeName)]
-
-    # -------------------------------------------------------------------------
-    # Constructors and grouping
-    # -------------------------------------------------------------------------
-
-    @staticmethod
-    def ByFormula(
-        formula: str,
-        xRange=None,
-        yRange=None,
-        xString: str = "X",
-        yString: str = "Y",
-        tolerance: float = 0.0001,
-        silent: bool = False,
-    ):
-        """
-        Creates a Cluster of Vertices by evaluating a mathematical expression.
-
-        If only ``xRange`` is supplied, X is the independent variable and the
-        expression computes Y. If only ``yRange`` is supplied, Y is the
-        independent variable and the expression computes X. If both ranges are
-        supplied, the expression computes Z over the Cartesian product of X and Y.
-
-        The expression is parsed and restricted to arithmetic, the independent
-        variables, common mathematical functions, and mathematical constants. It
-        does not execute arbitrary Python code.
+        Creates a cluster of vertices by evaluating the input formula for a range of x values and, optionally, a range of y values.
 
         Parameters
         ----------
         formula : str
-            The mathematical expression to evaluate, for example ``"X**2"`` or
-            ``"cos(X) + sin(Y)"``.
-        xRange : tuple or list, optional
-            ``(start, end, step)`` for X. The endpoint is included. Default is None.
-        yRange : tuple or list, optional
-            ``(start, end, step)`` for Y. The endpoint is included. Default is None.
-        xString : str, optional
-            The identifier used for the X variable. It must not be lowercase.
-            Default is ``"X"``.
-        yString : str, optional
-            The identifier used for the Y variable. It must not be lowercase.
-            Default is ``"Y"``.
-        tolerance : float, optional
-            Numerical tolerance used when generating inclusive ranges and creating
-            Vertices. Default is 0.0001.
-        silent : bool, optional
-            If True, error and warning messages are suppressed. Default is False.
+            A string representing the formula to be evaluated.
+            For 2D formulas (i.e. Z = 0), use either 'X' (uppercase) or 'Y' (uppercase) for the independent variable.
+            For 3D formulas, use 'X' and 'Y' (uppercase) for the independent variables. The Z value will be evaluated.
+            For 3D formulas, both xRange and yRange MUST be specified.
+            You can use standard math functions like 'sin', 'cos', 'tan', 'sqrt', etc.
+            For example, 'X**2 + 2*X - sqrt(X)' or 'cos(abs(X)+abs(Y))'
+        xRange : tuple , optional
+            A tuple (start, end, step) representing the range of X values for which the formula should be evaluated.
+            For example, to evaluate Y for X values from -5 to 5 with a step of 0.1, you should specify xRange=(-5, 5, 0.1).
+            If the xRange is set to None or not specified:
+            . The method assumes that the formula uses the yString (e.g. 'Y' as in 'Y**2 + 2*Y - sqrt(Y)')
+            . The method will attempt to evaluate X based on the specified yRange.
+            . xRange and yRange CANNOT be None or unspecified at the same time. One or the other must be specified.
+        yRange : tuple , optional
+            A tuple (start, end, step) representing the range of Y values for which the formula should be evaluated.
+            For example, to evaluate X for Y values from -5 to 5 with a step of 0.1, you should specify yRange=(-5,5,0.1).
+            If the yRange is set to None or not specified:
+            . The method assumes that the formula uses the xString (e.g. 'X' as in 'X**2 + 2*X - sqrt(X)')
+            . The method will attempt to evaluate Y based on the specified xRange.
+            . xRange and yRange CANNOT be None or unspecified at the same time. One or the other must be specified.
+        xString : str , optional
+            The string used to represent the X independent variable. Default is 'X' (uppercase).
+        yString : str , optional
+            The string used to represent the Y independent variable. Default is 'Y' (uppercase).
 
         Returns
         -------
-        topologic_core.Cluster or None
-            The Cluster of generated Vertices, or None if the inputs or expression
-            are invalid.
+        topologic_core.Cluster
+            The created cluster of vertices.
         """
-        import ast
-        import math
+
         from topologicpy.Vertex import Vertex
-        from topologicpy.Topology import Topology
-
-        try:
-            tolerance = abs(float(tolerance))
-        except Exception:
-            tolerance = 0.0001
-        if tolerance <= 0:
-            tolerance = 0.0001
-
-        if not isinstance(formula, str) or not formula.strip():
-            if not silent:
-                print("Cluster.ByFormula - Error: The input formula parameter is not a valid string. Returning None.")
+        import math
+        if xRange == None and yRange == None:
+            print("Cluster.ByFormula - Error: Both ranges cannot be None at the same time. Returning None.")
             return None
-        if xRange is None and yRange is None:
-            if not silent:
-                print("Cluster.ByFormula - Error: xRange and yRange cannot both be None. Returning None.")
+        if xString.islower():
+            print("Cluster.ByFormula - Error: the input xString cannot lowercase. Please consider using uppercase (e.g. X). Returning None.")
             return None
-        if not isinstance(xString, str) or not xString.isidentifier() or xString.islower():
-            if not silent:
-                print("Cluster.ByFormula - Error: xString must be a valid non-lowercase Python identifier. Returning None.")
+        if yString == 'y':
+            print("Cluster.ByFormula - Error: the input yString cannot be lowercase. Please consider using uppercase (e.g. Y). Returning None.")
             return None
-        if not isinstance(yString, str) or not yString.isidentifier() or yString.islower():
-            if not silent:
-                print("Cluster.ByFormula - Error: yString must be a valid non-lowercase Python identifier. Returning None.")
-            return None
-        if xString == yString:
-            if not silent:
-                print("Cluster.ByFormula - Error: xString and yString must be different identifiers. Returning None.")
-            return None
+        
+        x_values = []
+        y_values = []
+        if not xRange == None:
+            x_start, x_end, x_step = xRange
+            x = x_start
+            while x < x_end:
+                x_values.append(x)
+                x = x + x_step
+            x_values.append(x_end)
+        
+        if not yRange == None:
+            y_start, y_end, y_step = yRange
+            y = y_start
+            while y < y_end:
+                y_values.append(y)
+                y = y + y_step
+            y_values.append(y_end)
 
-        def build_range(value, name):
-            if value is None:
-                return []
-            if not isinstance(value, (list, tuple)) or len(value) != 3:
-                raise ValueError(f"{name} must be a (start, end, step) tuple or list")
-            start, end, step = map(float, value)
-            if not all(math.isfinite(v) for v in (start, end, step)):
-                raise ValueError(f"{name} contains a non-finite value")
-            if abs(step) <= tolerance:
-                raise ValueError(f"{name} step cannot be zero")
-            delta = end - start
-            if abs(delta) <= tolerance:
-                return [start]
-            if delta * step < 0:
-                raise ValueError(f"{name} step has the wrong sign")
-
-            values = []
-            current = start
-            max_count = 1_000_000
-            for _ in range(max_count):
-                if step > 0:
-                    if current >= end - tolerance:
-                        break
-                else:
-                    if current <= end + tolerance:
-                        break
-                values.append(current)
-                current += step
-            else:
-                raise ValueError(f"{name} generated too many values")
-
-            if not values or abs(values[-1] - end) > tolerance:
-                values.append(end)
-            else:
-                values[-1] = end
-            return values
-
-        try:
-            x_values = build_range(xRange, "xRange")
-            y_values = build_range(yRange, "yRange")
-        except Exception as error:
-            if not silent:
-                print(f"Cluster.ByFormula - Error: {error}. Returning None.")
-            return None
-
-        allowed_functions = {
-            "abs": abs,
-            "min": min,
-            "max": max,
-            "round": round,
-            "sqrt": math.sqrt,
-            "sin": math.sin,
-            "cos": math.cos,
-            "tan": math.tan,
-            "asin": math.asin,
-            "acos": math.acos,
-            "atan": math.atan,
-            "atan2": math.atan2,
-            "sinh": math.sinh,
-            "cosh": math.cosh,
-            "tanh": math.tanh,
-            "exp": math.exp,
-            "log": math.log,
-            "log10": math.log10,
-            "floor": math.floor,
-            "ceil": math.ceil,
-            "degrees": math.degrees,
-            "radians": math.radians,
-            "pow": pow,
-        }
-        allowed_constants = {"pi": math.pi, "e": math.e, "tau": math.tau}
-        allowed_names = set(allowed_functions) | set(allowed_constants) | {xString, yString}
-        allowed_nodes = (
-            ast.Expression,
-            ast.BinOp,
-            ast.UnaryOp,
-            ast.Call,
-            ast.Name,
-            ast.Load,
-            ast.Constant,
-            ast.Add,
-            ast.Sub,
-            ast.Mult,
-            ast.Div,
-            ast.FloorDiv,
-            ast.Mod,
-            ast.Pow,
-            ast.UAdd,
-            ast.USub,
-        )
-
-        try:
-            tree = ast.parse(formula, mode="eval")
-            for node in ast.walk(tree):
-                if not isinstance(node, allowed_nodes):
-                    raise ValueError(f"Unsupported expression element: {node.__class__.__name__}")
-                if isinstance(node, ast.Name) and node.id not in allowed_names:
-                    raise ValueError(f"Unsupported name: {node.id}")
-                if isinstance(node, ast.Call):
-                    if not isinstance(node.func, ast.Name) or node.func.id not in allowed_functions:
-                        raise ValueError("Only supported mathematical functions can be called")
-                    if node.keywords:
-                        raise ValueError("Keyword arguments are not supported")
-            code = compile(tree, "<Cluster.ByFormula>", "eval")
-        except Exception as error:
-            if not silent:
-                print(f"Cluster.ByFormula - Error: Invalid formula ({error}). Returning None.")
-            return None
-
-        def evaluate(x=None, y=None):
-            env = dict(allowed_functions)
-            env.update(allowed_constants)
-            if x is not None:
-                env[xString] = x
-            if y is not None:
-                env[yString] = y
-            value = eval(code, {"__builtins__": {}}, env)
-            value = float(value)
-            if not math.isfinite(value):
-                raise ValueError("Formula produced a non-finite value")
-            return value
-
-        vertices = []
-        try:
-            if x_values and y_values:
-                for x in x_values:
-                    for y in y_values:
-                        z = evaluate(x=x, y=y)
-                        vertex = Vertex.ByCoordinates(x, y, z)
-                        if Topology.IsInstance(vertex, "Vertex"):
-                            vertices.append(vertex)
-            elif x_values:
-                for x in x_values:
-                    y = evaluate(x=x)
-                    vertex = Vertex.ByCoordinates(x, y, 0.0)
-                    if Topology.IsInstance(vertex, "Vertex"):
-                        vertices.append(vertex)
-            else:
+        # Evaluate the formula for each x and y value
+        x_return = []
+        y_return = []
+        z_return = []
+        if len(x_values) > 0 and len(y_values) > 0: # Both X and Y exist, compute Z.
+            for x in x_values:
                 for y in y_values:
-                    x = evaluate(y=y)
-                    vertex = Vertex.ByCoordinates(x, y, 0.0)
-                    if Topology.IsInstance(vertex, "Vertex"):
-                        vertices.append(vertex)
-        except Exception as error:
-            if not silent:
-                print(f"Cluster.ByFormula - Error: Could not evaluate the formula ({error}). Returning None.")
-            return None
-
-        if not vertices:
-            if not silent:
-                print("Cluster.ByFormula - Error: No valid Vertices were created. Returning None.")
-            return None
-        return Cluster.ByTopologies(vertices, silent=silent)
+                    x_return.append(x)
+                    y_return.append(y)
+                    formula1 = formula.replace(xString, str(x)).replace(yString, str(y)).replace('sqrt', 'math.sqrt').replace('sin', 'math.sin').replace('cos', 'math.cos').replace('tan', 'math.tan').replace('radians', 'math.radians').replace('pi', 'math.pi')
+                    z_return.append(eval(formula1))
+        elif len(x_values) == 0 and len(y_values) > 0: # Only Y exists, compute X, Z is always 0.
+            for y in y_values:
+                y_return.append(y)
+                formula1 = formula.replace(xString, str(y)).replace('sqrt', 'math.sqrt').replace('sin', 'math.sin').replace('cos', 'math.cos').replace('tan', 'math.tan').replace('radians', 'math.radians').replace('pi', 'math.pi')
+                x_return.append(eval(formula1))
+                z_return.append(0)
+        else: # Only X exists, compute Y, Z is always 0.
+            for x in x_values:
+                x_return.append(x)
+                formula1 = formula.replace(xString, str(x)).replace('sqrt', 'math.sqrt').replace('sin', 'math.sin').replace('cos', 'math.cos').replace('tan', 'math.tan').replace('radians', 'math.radians').replace('pi', 'math.pi')
+                y_return.append(eval(formula1))
+                z_return.append(0)
+        vertices = []
+        for i in range(len(x_return)):
+            vertices.append(Vertex.ByCoordinates(x_return[i], y_return[i], z_return[i]))
+        return Cluster.ByTopologies(vertices)
+    
 
     @staticmethod
-    def ByFunction(
-        topologies: list,
-        function: Callable,
-        mantissa: int = 6,
-        tolerance: float = 0.0001,
-        silent: bool = False,
-    ):
+    def ByFunction(topologies: list,
+                function: Callable,
+                mantissa: int = 6,
+                tolerance: float = 0.0001,
+                silent: bool = False):
         """
-        Groups input topologies according to the value returned by a function.
+        Clusters the list of input topologies based on an input evaluation function.
 
-        Numeric values are grouped using ``tolerance``. Boolean, string, None,
-        and other comparable values are grouped by exact equality. Each group is
-        returned as a Topologic Cluster.
+        The input function may return:
+            - numeric values (int, float) -> clustered using tolerance-based matching
+            - booleans                   -> clustered by exact value
+            - strings                    -> clustered by exact value
+            - None                       -> clustered by exact value
+            - other values               -> clustered by exact value where possible
 
         Parameters
         ----------
         topologies : list
-            The input Topologies to group.
+            The list of input topologies to be clustered.
         function : callable
-            A function called as ``function(topology, mantissa=..., tolerance=...)``.
-        mantissa : int, optional
-            Decimal precision applied to numeric function results. Default is 6.
-        tolerance : float, optional
-            Maximum numerical difference for two numeric values to belong to the
-            same group. Default is 0.0001.
-        silent : bool, optional
-            If True, error and warning messages are suppressed. Default is False.
+            The callable evaluation function that determines the category of each topology.
+            The function must take three inputs only in the following order:
+            1. A single topology
+            2. A "mantissa" (named input)
+            3. A "tolerance" (named input)
+
+            e.g. compute_value(topology, mantissa=6, tolerance=0.0001)
+
+        mantissa : int , optional
+            The desired length of the mantissa. Default is 6.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
-        list[topologic_core.Cluster] or None
-            One Cluster per equivalence class, or None for invalid inputs.
+        list
+            The list of clusters. Each item in the list is a list of topologies that
+            return the same or equivalent value from the evaluation function.
         """
-        import math
         from numbers import Number
-        from topologicpy.Topology import Topology
 
-        if not isinstance(topologies, list):
+        def warn(message):
             if not silent:
-                print("Cluster.ByFunction - Error: The input topologies parameter is not a valid list. Returning None.")
-            return None
-        if not callable(function):
-            if not silent:
-                print("Cluster.ByFunction - Error: The input function parameter is not callable. Returning None.")
-            return None
-        if len(topologies) == 0:
-            return []
-
-        try:
-            mantissa = max(0, int(mantissa))
-            tolerance = abs(float(tolerance))
-        except Exception:
-            if not silent:
-                print("Cluster.ByFunction - Error: mantissa or tolerance is invalid. Returning None.")
-            return None
-
-        valid_topologies = [t for t in topologies if Topology.IsInstance(t, "Topology")]
-        if not valid_topologies:
-            if not silent:
-                print("Cluster.ByFunction - Error: No valid Topologies were supplied. Returning None.")
-            return None
+                print(message)
 
         def is_numeric(value):
             return isinstance(value, Number) and not isinstance(value, bool)
 
-        numeric_groups = []  # [representative, members]
-        exact_groups = []    # [representative, members]
+        def normalize_numeric(value):
+            return round(float(value), mantissa)
 
-        for index, topology in enumerate(valid_topologies):
+        if not isinstance(topologies, list):
+            warn("Cluster.ByFunction - Error: The input topologies parameter is not a valid list. Returning None.")
+            return None
+        if not callable(function):
+            warn("Cluster.ByFunction - Error: The input function parameter is not callable. Returning None.")
+            return None
+        if len(topologies) < 1:
+            return []
+
+        valid_topologies = []
+        values = []
+
+        for i, topology in enumerate(topologies):
             try:
                 value = function(topology, mantissa=mantissa, tolerance=tolerance)
-            except Exception as error:
-                if not silent:
-                    print(f"Cluster.ByFunction - Warning: Function evaluation failed at index {index}; skipping topology ({error}).")
+                if is_numeric(value):
+                    value = normalize_numeric(value)
+                values.append(value)
+                valid_topologies.append(topology)
+            except Exception as e:
+                warn(f"Cluster.ByFunction - Warning: Could not evaluate topology at index {i}. Skipping it. {e}")
+
+        if len(valid_topologies) < 1:
+            return []
+
+        # Build sorted unique keys.
+        numeric_keys = sorted(set(v for v in values if is_numeric(v)))
+        exact_keys = []
+        seen = set()
+
+        for v in values:
+            if is_numeric(v):
                 continue
+            # preserve first-seen order for exact-match types
+            try:
+                marker = ("hashable", v)
+                if marker not in seen:
+                    seen.add(marker)
+                    exact_keys.append(v)
+            except Exception:
+                marker = ("repr", repr(v))
+                if marker not in seen:
+                    seen.add(marker)
+                    exact_keys.append(v)
+
+        keys = numeric_keys + exact_keys
+        clusters = [[] for _ in keys]
+
+        for topology, value in zip(valid_topologies, values):
+            placed = False
 
             if is_numeric(value):
-                try:
-                    value = round(float(value), mantissa)
-                    if not math.isfinite(value):
-                        raise ValueError
-                except Exception:
-                    if not silent:
-                        print(f"Cluster.ByFunction - Warning: Non-finite numeric value at index {index}; skipping topology.")
-                    continue
-
-                placed = False
-                for group in numeric_groups:
-                    if abs(value - group[0]) <= tolerance:
-                        group[1].append(topology)
+                for i, key in enumerate(numeric_keys):
+                    if abs(value - key) <= tolerance:
+                        clusters[i].append(topology)
                         placed = True
                         break
-                if not placed:
-                    numeric_groups.append([value, [topology]])
             else:
-                placed = False
-                for group in exact_groups:
-                    try:
-                        equal = value == group[0]
-                        if not isinstance(equal, bool):
-                            equal = bool(equal)
-                    except Exception:
-                        equal = repr(value) == repr(group[0])
-                    if equal:
-                        group[1].append(topology)
+                offset = len(numeric_keys)
+                for i, key in enumerate(exact_keys):
+                    if value == key:
+                        clusters[offset + i].append(topology)
                         placed = True
                         break
-                if not placed:
-                    exact_groups.append([value, [topology]])
 
-        groups = numeric_groups + exact_groups
-        clusters = []
-        for _, members in groups:
-            cluster = Cluster.ByTopologies(members, silent=True)
-            if Topology.IsInstance(cluster, "Cluster"):
-                clusters.append(cluster)
+            # Fallback safety
+            if not placed:
+                keys.append(value)
+                clusters.append([topology])
 
         return clusters
 
     @staticmethod
-    def ByTopologies(*topologies, transferDictionaries: bool = False, silent: bool = False):
+    def ByTopologies(*topologies, transferDictionaries: bool = False, silent=False):
         """
-        Creates a Cluster from one or more Topologies.
-
-        Python list/tuple containers may be nested arbitrarily. Unlike the legacy
-        implementation, a single valid input Topology still produces a one-member
-        Cluster; the constructor therefore has a stable return type.
+        Creates a topologic Cluster from the input list of topologies. The input can be individual topologies each as an input argument or a list of topologies stored in one input argument.
 
         Parameters
         ----------
-        *topologies : topologic_core.Topology or list
-            One or more Topologies, optionally nested in lists or tuples.
-        transferDictionaries : bool, optional
-            If True, dictionaries from all valid input Topologies are merged and
-            assigned to the resulting Cluster. Default is False.
-        silent : bool, optional
-            If True, error and warning messages are suppressed. Default is False.
-
+        *topologies : topologic_core.Topology
+            One or more instances of `topologic_core.Topology` to be processed.
+        transferDictionaries : bool , optional
+            If set to True, the dictionaries from the input topologies are merged and transferred to the cluster. Otherwise they are not. Default is False.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+        
         Returns
         -------
-        topologic_core.Cluster or None
-            The created Cluster, or None if no valid Topologies are supplied.
+        topologic_core.Cluster
+            The created topologic Cluster.
+
         """
         from topologicpy.Dictionary import Dictionary
         from topologicpy.Topology import Topology
-
-        flat = Cluster._Flatten(list(topologies))
-        topology_list = [item for item in flat if Topology.IsInstance(item, "Topology")]
-        if not topology_list:
+        from topologicpy.Helper import Helper
+        import inspect
+        
+        if len(topologies) == 0:
             if not silent:
-                print("Cluster.ByTopologies - Error: The input parameters do not contain any valid Topologies. Returning None.")
+                print("Cluster.ByTopologies - Error: The input topologies parameter is an empty list. Returning None.")
+                print("Topologies:", topologies)
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
+                print('caller name:', calframe[1][2])
             return None
-
-        try:
-            cluster = Core.Cluster.ByTopologies(topology_list, False)
-        except Exception:
-            try:
-                cluster = Core.Cluster.ByTopologies(topology_list, transferDictionaries=False)
-            except Exception:
-                cluster = None
-
-        if not Topology.IsInstance(cluster, "Cluster"):
+        if len(topologies) == 1:
+            topologies = topologies[0]
+            if isinstance(topologies, list):
+                if len(topologies) == 0:
+                    if not silent:
+                        print("Cluster.ByTopologies - Error: The input topologies parameter is an empty list. Returning None.")
+                        print("Topologies:", topologies)
+                        curframe = inspect.currentframe()
+                        calframe = inspect.getouterframes(curframe, 2)
+                        print('caller name:', calframe[1][3])
+                        print('caller name:', calframe[1][2])
+                    return None
+                else:
+                    topologyList = [x for x in topologies if Topology.IsInstance(x, "Topology")]
+                    if len(topologyList) == 0:
+                        if not silent:
+                            print("Cluster.ByTopologies - Error: The input topologies parameter does not contain any valid topologies. Returning None.")
+                            curframe = inspect.currentframe()
+                            calframe = inspect.getouterframes(curframe, 2)
+                            print('caller name:', calframe[1][3])
+                        return None
+            else:
+                if not silent:
+                    print("Cluster.ByTopologies - Warning: The input topologies parameter contains only one topology. Returning the same topology.")
+                    curframe = inspect.currentframe()
+                    calframe = inspect.getouterframes(curframe, 2)
+                    print('caller name:', calframe[1][3])
+                return topologies
+        else:
+            topologyList = Helper.Flatten(list(topologies))
+            topologyList = [x for x in topologyList if Topology.IsInstance(x, "Topology")]
+        if len(topologyList) == 0:
             if not silent:
-                print("Cluster.ByTopologies - Error: The backend could not create a Cluster. Returning None.")
+                print("Cluster.ByTopologies - Error: The input parameters do not contain any valid topologies. Returning None.")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
             return None
-
-        if transferDictionaries:
-            dictionaries = []
-            for topology in topology_list:
-                try:
-                    dictionary = Topology.Dictionary(topology, silent=True)
-                except TypeError:
-                    dictionary = Topology.Dictionary(topology)
-                except Exception:
-                    dictionary = None
-                try:
-                    keys = Dictionary.Keys(dictionary)
-                except Exception:
-                    keys = None
-                if isinstance(keys, list) and keys:
-                    dictionaries.append(dictionary)
-
-            if dictionaries:
-                try:
-                    merged = Dictionary.ByMergedDictionaries(dictionaries, silent=True)
-                except TypeError:
-                    merged = Dictionary.ByMergedDictionaries(dictionaries)
-                except Exception:
-                    merged = None
-                if merged is not None:
-                    try:
-                        cluster = Topology.SetDictionary(cluster, merged, silent=True)
-                    except TypeError:
-                        cluster = Topology.SetDictionary(cluster, merged)
-
+        cluster = Core.Cluster.ByTopologies(topologyList, False)
+        dictionaries = []
+        for t in topologyList:
+            d = Topology.Dictionary(t)
+            keys = Dictionary.Keys(d)
+            if isinstance(keys, list):
+                if len(keys) > 0:
+                    dictionaries.append(d)
+        if len(dictionaries) > 0:
+            if len(dictionaries) > 1:
+                d = Dictionary.ByMergedDictionaries(dictionaries, silent=silent)
+            else:
+                d = dictionaries[0]
+                cluster = Topology.SetDictionary(cluster, d)
         return cluster
 
-    # -------------------------------------------------------------------------
-    # Direct constituents and descendant accessors
-    # -------------------------------------------------------------------------
+    # @staticmethod
+    # def Topologies(cluster, tolerance: float = 0.0001, silent: bool = False) -> list:
+    #     """
+    #     Returns the topologies of the input cluster.
+
+    #     Parameters
+    #     ----------
+    #     cluster : topologic_core.Cluster
+    #         The input cluster.
+    #     tolerance : float , optional
+    #         The desired tolerance. Default is 0.0001.
+    #     silent : bool , optional
+    #         If set to True, error and warning messages are suppressed. Default is False.
+
+    #     Returns
+    #     -------
+    #     list
+    #         The list of cellComplexes.
+
+    #     """
+    #     from topologicpy.Topology import Topology
+
+    #     if not Topology.IsInstance(cluster, "Cluster"):
+    #         if not silent:
+    #             print("Cluster.Topologies - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
+    #         return None
+    #     topologies = []
+    #     topologies.extend(Cluster.CellComplexes(cluster, silent=silent))
+    #     topologies.extend(Cluster.FreeCells(cluster, tolerance=tolerance, silent=silent))
+    #     topologies.extend(Cluster.FreeShells(cluster, tolerance=tolerance, silent=silent))
+    #     topologies.extend(Cluster.FreeFaces(cluster, tolerance=tolerance, silent=silent))
+    #     topologies.extend(Cluster.FreeWires(cluster, tolerance=tolerance, silent=silent))
+    #     topologies.extend(Cluster.FreeEdges(cluster, tolerance=tolerance, silent=silent))
+    #     topologies.extend(Cluster.FreeVertices(cluster, tolerance=tolerance, silent=silent))
+    #     return topologies
 
     @staticmethod
-    def Topologies(cluster, tolerance: float = 0.0001, silent: bool = False) -> list:
+    def Topologies(
+        cluster,
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ) -> list:
         """
-        Returns the direct, top-level constituent Topologies of a Cluster.
-
-        This method does not return every descendant. For example, a Face inside
-        a direct Shell constituent is not itself a direct constituent.
+        Returns the top-level constituent topologies of the input cluster.
 
         Parameters
         ----------
         cluster : topologic_core.Cluster
-            The input Cluster.
-        tolerance : float, optional
-            Reserved for backend-neutral hierarchy fallbacks. Default is 0.0001.
-        silent : bool, optional
-            If True, error and warning messages are suppressed. Default is False.
+            The input cluster.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed.
+            Default is False.
 
         Returns
         -------
-        list or None
-            Direct constituent Topologies, or None if the query fails.
+        list
+            The list of top-level constituent topologies.
         """
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(cluster, "Cluster"):
             if not silent:
-                print("Cluster.Topologies - Error: The input cluster parameter is not a valid Cluster. Returning None.")
+                print(
+                    "Cluster.Topologies - Error: The input cluster parameter "
+                    "is not a valid cluster. Returning None."
+                )
             return None
 
-        output = []
+        # ------------------------------------------------------------------
+        # Native direct-constituent query.
+        #
+        # The backends expose slightly different calling conventions:
+        #
+        #     Topologies()
+        #     Topologies(output)
+        #     Topologies(None, output)
+        #
+        # Try all of them. Some bindings can accept a call but return only a
+        # partial result, so do not stop at the first non-empty result. Keep
+        # the most complete successful result instead.
+        # ------------------------------------------------------------------
+
+        candidates = []
+
+        def add_candidate(values):
+            if not isinstance(values, list):
+                return
+
+            values = [
+                topology
+                for topology in values
+                if Topology.IsInstance(
+                    topology,
+                    "Topology"
+                )
+            ]
+
+            if values:
+                candidates.append(
+                    values
+                )
+
+        # Python-style return-list convention.
         try:
-            result = Core.InstanceCall(cluster, "Topologies", None, output)
-            if output:
-                return [item for item in output if Topology.IsInstance(item, "Topology")]
-            if isinstance(result, list):
-                return [item for item in result if Topology.IsInstance(item, "Topology")]
-            # A successful output-list call on an empty Cluster is still valid.
-            if result == 0:
-                return []
+            result = Core.InstanceCall(
+                cluster,
+                "Topologies"
+            )
+
+            add_candidate(
+                result
+            )
+
+        except Exception:
+            pass
+
+        # Topologic-style host + output convention.
+        try:
+            output = []
+
+            result = Core.InstanceCall(
+                cluster,
+                "Topologies",
+                None,
+                output
+            )
+
+            add_candidate(
+                output
+            )
+
+            add_candidate(
+                result
+            )
+
+        except Exception:
+            pass
+
+        # Alternative output-list convention.
+        try:
+            output = []
+
+            result = Core.InstanceCall(
+                cluster,
+                "Topologies",
+                output
+            )
+
+            add_candidate(
+                output
+            )
+
+            add_candidate(
+                result
+            )
+
+        except Exception:
+            pass
+
+        if candidates:
+            # Prefer the most complete direct query.
+            candidate = max(
+                candidates,
+                key=len
+            )
+
+            # Remove duplicate wrappers without changing order.
+            topologies = []
+
+            for topology in candidate:
+                duplicate = False
+
+                for existing in topologies:
+                    try:
+                        if Topology.IsSame(
+                            topology,
+                            existing
+                        ):
+                            duplicate = True
+                            break
+                    except Exception:
+                        if topology is existing:
+                            duplicate = True
+                            break
+
+                if not duplicate:
+                    topologies.append(
+                        topology
+                    )
+
+            if topologies:
+                return topologies
+
+        # ------------------------------------------------------------------
+        # Compatibility fallback.
+        #
+        # If the active backend does not provide a usable direct-constituent
+        # query, reconstruct the top-level set from free topologies.
+        # ------------------------------------------------------------------
+
+        topologies = []
+
+        try:
+            result = Cluster.CellComplexes(
+                cluster,
+                silent=True
+            ) or []
+
+            topologies.extend(
+                result
+            )
         except Exception:
             pass
 
         try:
-            result = Core.InstanceCall(cluster, "Topologies")
-            if isinstance(result, list):
-                return [item for item in result if Topology.IsInstance(item, "Topology")]
+            result = Cluster.FreeCells(
+                cluster,
+                tolerance=tolerance,
+                silent=True
+            ) or []
+
+            topologies.extend(
+                result
+            )
         except Exception:
             pass
 
-        return Cluster._ReconstructTopologies(cluster, silent=silent)
+        try:
+            result = Cluster.FreeShells(
+                cluster,
+                tolerance=tolerance,
+                silent=True
+            ) or []
 
+            topologies.extend(
+                result
+            )
+        except Exception:
+            pass
+
+        try:
+            result = Cluster.FreeFaces(
+                cluster,
+                tolerance=tolerance,
+                silent=True
+            ) or []
+
+            topologies.extend(
+                result
+            )
+        except Exception:
+            pass
+
+        try:
+            result = Cluster.FreeWires(
+                cluster,
+                tolerance=tolerance,
+                silent=True
+            ) or []
+
+            topologies.extend(
+                result
+            )
+        except Exception:
+            pass
+
+        try:
+            result = Cluster.FreeEdges(
+                cluster,
+                tolerance=tolerance,
+                silent=True
+            ) or []
+
+            topologies.extend(
+                result
+            )
+        except Exception:
+            pass
+
+        try:
+            result = Cluster.FreeVertices(
+                cluster,
+                tolerance=tolerance,
+                silent=True
+            ) or []
+
+            topologies.extend(
+                result
+            )
+        except Exception:
+            pass
+
+        return [
+            topology
+            for topology in topologies
+            if Topology.IsInstance(
+                topology,
+                "Topology"
+            )
+        ]
+        
     @staticmethod
     def CellComplexes(cluster, silent: bool = False) -> list:
         """
-        Returns all CellComplex descendants of the input Cluster.
+        Returns the cellComplexes of the input cluster.
 
         Parameters
         ----------
         cluster : topologic_core.Cluster
-            The input Cluster.
-        silent : bool, optional
-            If True, error and warning messages are suppressed. Default is False.
+            The input cluster.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
-        list or None
-            The CellComplex descendants, an empty list when none exist, or None if
-            the input/query is invalid.
+        list
+            The list of cellComplexes.
+
         """
-        return Cluster._Query(cluster, "CellComplexes", silent=silent)
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(cluster, "Cluster"):
+            if not silent:
+                print("Cluster.CellComplexes - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
+            return None
+        cellComplexes = []
+        # _ = cluster.CellComplexes(None, cellComplexes) # H to Core
+        try:
+            _ = Core.InstanceCall(cluster, "CellComplexes", None, cellComplexes)
+        except Exception:
+            cellComplexes = []
+        return cellComplexes
 
     @staticmethod
     def Cells(cluster, silent: bool = False) -> list:
         """
-        Returns all Cell descendants of the input Cluster.
+        Returns the cells of the input cluster.
 
         Parameters
         ----------
         cluster : topologic_core.Cluster
-            The input Cluster.
-        silent : bool, optional
-            If True, error and warning messages are suppressed. Default is False.
+            The input cluster.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
-        list or None
-            The Cell descendants, an empty list when none exist, or None on failure.
+        list
+            The list of cells.
+
         """
-        return Cluster._Query(cluster, "Cells", silent=silent)
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(cluster, "Cluster"):
+            if not silent:
+                print("Cluster.Cells - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
+            return None
+        cells = []
+        # _ = cluster.Cells(None, cells) # H to Core
+        try:
+            _ = Core.InstanceCall(cluster, "Cells", None, cells)
+        except Exception:
+            if not silent:
+                print("Cluster.Cells - Error: Could not fetch cells. Returning None.")
+            cells = None
+        return cells
+
+    @staticmethod
+    def DBSCAN(topologies, selectors=None, keys=["x", "y", "z"], epsilon: float = 0.5, minSamples: int = 2):
+        """
+        Clusters the input vertices based on the Density-Based Spatial Clustering of Applications with Noise (DBSCAN) method. See https://en.wikipedia.org/wiki/DBSCAN
+
+        Parameters
+        ----------
+        topologies : list
+            The input list of topologies to be clustered.
+        selectors : list , optional
+            If the list of topologies are not vertices then please provide a corresponding list of selectors (vertices) that represent the topologies for clustering. For example, these can be the centroids of the topologies.
+            If set to None, the list of topologies is expected to be a list of vertices. Default is None.
+        keys : list, optional
+            The keys in the embedded dictionaries in the topologies. If specified, the values at these keys will be added to the dimensions to be clustered. The values must be numeric. If you wish the x, y, z location to be included,
+            make sure the keys list includes "X", "Y", and/or "Z" (case insensitive). Default is ["x", "y", "z"]
+        epsilon : float , optional
+            The maximum radius around a data point within which other points are considered to be part of the same sense region (cluster). Default is 0.5. 
+        minSamples : int , optional
+            The minimum number of points required to form a dense region (cluster). Default is 2.
+
+        Returns
+        -------
+        list, list
+            The list of clusters and the list of vertices considered to be noise if any (otherwise returns None).
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+
+        def dbscan_3d_indices(data, eps, min_samples):
+            """
+            DBSCAN clustering algorithm for 3D points.
+
+            Parameters:
+            - data: NumPy array, input data points with X, Y, and Z coordinates.
+            - eps: float, maximum distance between two samples for one to be considered as in the neighborhood of the other.
+            - min_samples: int, the number of samples (or total weight) in a neighborhood for a point to be considered as a core point.
+
+            Returns:
+            - clusters: List of lists, each list containing the indices of points in a cluster.
+            - noise: List of indices, indices of points labeled as noise.
+            """
+
+            # Compute pairwise distances
+            dists = squareform(pdist(data))
+
+            # Initialize labels and cluster ID
+            labels = np.full(data.shape[0], -1)
+            cluster_id = 0
+
+            # Iterate through each point
+            for i in range(data.shape[0]):
+                if labels[i] != -1:
+                    continue  # Skip already processed points
+
+                # Find neighbors within epsilon distance
+                neighbors = np.where(dists[i] < eps)[0]
+
+                if len(neighbors) < min_samples:
+                    # Label as noise
+                    labels[i] = -1
+                else:
+                    # Expand cluster
+                    cluster_id += 1
+                    expand_cluster_3d_indices(labels, dists, i, neighbors, cluster_id, eps, min_samples)
+
+            # Organize indices into clusters and noise
+            clusters = [list(np.where(labels == cid)[0]) for cid in range(1, cluster_id + 1)]
+            noise = list(np.where(labels == -1)[0])
+
+            return clusters, noise
+
+        def expand_cluster_3d_indices(labels, dists, point_index, neighbors, cluster_id, eps, min_samples):
+            """
+            Expand the cluster around a core point for 3D points.
+
+            Parameters:
+            - labels: NumPy array, cluster labels for each data point.
+            - dists: NumPy array, pairwise distances between data points.
+            - point_index: int, index of the core point.
+            - neighbors: NumPy array, indices of neighbors.
+            - cluster_id: int, current cluster ID.
+            - eps: float, maximum distance between two samples for one to be considered as in the neighborhood of the other.
+            - min_samples: int, the number of samples (or total weight) in a neighborhood for a point to be considered as a core point.
+            """
+            labels[point_index] = cluster_id
+
+            i = 0
+            while i < len(neighbors):
+                current_neighbor = neighbors[i]
+
+                if labels[current_neighbor] == -1:
+                    labels[current_neighbor] = cluster_id
+
+                    new_neighbors = np.where(dists[current_neighbor] < eps)[0]
+                    if len(new_neighbors) >= min_samples:
+                        neighbors = np.concatenate([neighbors, new_neighbors])
+
+                elif labels[current_neighbor] == 0:
+                    labels[current_neighbor] = cluster_id
+
+                i += 1
+        
+        if not isinstance(topologies, list):
+            print("Cluster.DBSCAN - Error: The input vertices parameter is not a valid list. Returning None.")
+            return None, None
+        topologyList = [t for t in topologies if Topology.IsInstance(t, "Topology")]
+        if len(topologyList) < 1:
+            print("Cluster.DBSCAN - Error: The input vertices parameter does not contain any valid vertices. Returning None.")
+            return None, None
+        if len(topologyList) < minSamples:
+            print("Cluster.DBSCAN - Error: The input minSamples parameter cannot be larger than the number of vertices. Returning None.")
+            return None, None
+        
+        if not isinstance(selectors, list):
+            check_vertices = [t for t in topologyList if not Topology.IsInstance(t, "Vertex")]
+            if len(check_vertices) > 0:
+                print("Cluster.DBSCAN - Error: The input selectors parameter is not a valid list and this is needed since the list of topologies contains objects of type other than a topologic_core.Vertex. Returning None.")
+                return None, None
+        else:
+            selectors = [s for s in selectors if Topology.IsInstance(s, "Vertex")]
+            if len(selectors) < 1:
+                check_vertices = [t for t in topologyList if not Topology.IsInstance(t, "Vertex")]
+                if len(check_vertices) > 0:
+                    print("Cluster.DBSCAN - Error: The input selectors parameter does not contain any valid vertices and this is needed since the list of topologies contains objects of type other than a topologic_core.Vertex. Returning None.")
+                    return None, None
+            if not len(selectors) == len(topologyList):
+                print("Cluster.DBSCAN - Error: The input topologies and selectors parameters do not have the same length. Returning None.")
+                return None, None
+        if not isinstance(keys, list):
+            print("Cluster.DBSCAN - Error: The input keys parameter is not a valid list. Returning None.")
+            return None
+        
+
+        data = []
+        if selectors == None:
+            for t in topologyList:
+                elements = []
+                if keys:
+                    d = Topology.Dictionary(t)
+                    for key in keys:
+                        if key.lower() == "x":
+                            value = Vertex.X(t)
+                        elif key.lower() == "y":
+                            value = Vertex.Y(t)
+                        elif key.lower() == "z":
+                            value = Vertex.Z(t)
+                        else:
+                            value = Dictionary.ValueAtKey(d, key)
+                        if value != None:
+                            elements.append(value)
+                data.append(elements)
+        else:
+            for i, s in enumerate(selectors):
+                elements = []
+                if keys:
+                    d = Topology.Dictionary(topologyList[i])
+                    for key in keys:
+                        if key.lower() == "x":
+                            value = Vertex.X(s)
+                        elif key.lower() == "y":
+                            value = Vertex.Y(s)
+                        elif key.lower() == "z":
+                            value = Vertex.Z(s)
+                        else:
+                            value = Dictionary.ValueAtKey(d, key)
+                        if value != None:
+                            elements.append(value)
+                data.append(elements)
+        #coords = [[Vertex.X(v), Vertex.Y(v), Vertex.Z(v)] for v in vertexList]
+        clusters, noise = dbscan_3d_indices(np.array(data), epsilon, minSamples)
+        tp_clusters = []
+        for cluster in clusters:
+            tp_clusters.append(Cluster.ByTopologies([topologyList[i] for i in cluster]))
+        vert_group = []
+        tp_noise = None
+        if len(noise) > 0:
+            tp_noise = Cluster.ByTopologies([topologyList[i] for i in noise])
+        return tp_clusters, tp_noise
 
     @staticmethod
     def Edges(cluster, silent: bool = False) -> list:
         """
-        Returns all Edge descendants of the input Cluster.
+        Returns the edges of the input cluster.
 
         Parameters
         ----------
         cluster : topologic_core.Cluster
-            The input Cluster.
-        silent : bool, optional
-            If True, error and warning messages are suppressed. Default is False.
+            The input cluster.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
-        list or None
-            The Edge descendants, an empty list when none exist, or None on failure.
+        list
+            The list of edges.
+
         """
-        return Cluster._Query(cluster, "Edges", silent=silent)
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(cluster, "Cluster"):
+            print("Cluster.Edges - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
+            return None
+        edges = []
+        # _ = cluster.Edges(None, edges) # H to Core
+        try:
+            _ = Core.InstanceCall(cluster, "Edges", None, edges)
+        except Exception:
+            if not silent:
+                print("Cluster.Edges - Error: Could not fetch edges. Returning None.")
+            edges = None
+        return edges
+
+
+    @staticmethod
+    def ExternalBoundary(cluster, silent: bool = False):
+        """
+        Returns the external boundary of the input cluster.
+
+        Parameters
+        ----------
+        cluster : topologic_core.Clusterx
+            The input cluster.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        topologic_core.Cluster
+            The external boundary of the input cluster.
+
+        """
+        from topologicpy.Face import Face
+        from topologicpy.Cell import Cell
+        from topologicpy.CellComplex import CellComplex
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(cluster, "Cluster"):
+            if not silent:
+                print("Cluster.ExternalBoundary - Error: The input cellComplex parameter is not a valid cellComplex. Returning None.")
+            return None
+        
+        cellComplexes = Cluster.CellComplexes(cluster)
+        cells = Cluster.FreeCells(cluster)
+        shells = Cluster.FreeShells(cluster)
+        faces = Cluster.FreeFaces(cluster)
+        wires = Cluster.FreeWires(cluster)
+        edges = Cluster.FreeEdges(cluster)
+        vertices = Cluster.FreeVertices(cluster)
+
+        eb_list = []
+        for cc in cellComplexes:
+            eb_list.append(CellComplex.ExternalBoundary(cc))
+        for c in cells:
+            eb = Cell.ExternalBoundary(c)
+            c2 = Cell.ByShell(eb)
+            if Topology.IsInstance(c2, "cell"):
+                eb_list.append(c2)
+        for f in faces:
+            eb = Face.ExternalBoundary(f)
+            ibList = Face.InternalBoundaries(f)
+            f2 = Face.ByWires(eb, ibList)
+            if Topology.IsInstance(f2, "face"):
+                eb_list.append(Face.ExternalBoundary(f2))
+        eb_list.extend(shells)
+        eb_list.extend(wires)
+        eb_list.extend(edges)
+        eb_list.extend(vertices)
+        if len(eb_list) > 0:
+            return Cluster.ByTopologies(eb_list)
+        return cluster
 
     @staticmethod
     def Faces(cluster, silent: bool = False) -> list:
         """
-        Returns all Face descendants of the input Cluster.
+        Returns the faces of the input cluster.
 
         Parameters
         ----------
         cluster : topologic_core.Cluster
-            The input Cluster.
-        silent : bool, optional
-            If True, error and warning messages are suppressed. Default is False.
+            The input cluster.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
-        list or None
-            The Face descendants, an empty list when none exist, or None on failure.
+        list
+            The list of faces.
+
         """
-        return Cluster._Query(cluster, "Faces", silent=silent)
+        from topologicpy.Topology import Topology
 
-    @staticmethod
-    def Shells(cluster, silent: bool = False) -> list:
-        """
-        Returns all Shell descendants of the input Cluster.
-
-        Parameters
-        ----------
-        cluster : topologic_core.Cluster
-            The input Cluster.
-        silent : bool, optional
-            If True, error and warning messages are suppressed. Default is False.
-
-        Returns
-        -------
-        list or None
-            The Shell descendants, an empty list when none exist, or None on failure.
-        """
-        return Cluster._Query(cluster, "Shells", silent=silent)
-
-    @staticmethod
-    def Vertices(cluster, silent: bool = False) -> list:
-        """
-        Returns all Vertex descendants of the input Cluster.
-
-        Parameters
-        ----------
-        cluster : topologic_core.Cluster
-            The input Cluster.
-        silent : bool, optional
-            If True, error and warning messages are suppressed. Default is False.
-
-        Returns
-        -------
-        list or None
-            The Vertex descendants, an empty list when none exist, or None on failure.
-        """
-        return Cluster._Query(cluster, "Vertices", silent=silent)
-
-    @staticmethod
-    def Wires(cluster, silent: bool = False) -> list:
-        """
-        Returns all Wire descendants of the input Cluster.
-
-        Parameters
-        ----------
-        cluster : topologic_core.Cluster
-            The input Cluster.
-        silent : bool, optional
-            If True, error and warning messages are suppressed. Default is False.
-
-        Returns
-        -------
-        list or None
-            The Wire descendants, an empty list when none exist, or None on failure.
-        """
-        return Cluster._Query(cluster, "Wires", silent=silent)
-
-    # -------------------------------------------------------------------------
-    # Free/direct topology queries
-    # -------------------------------------------------------------------------
+        if not Topology.IsInstance(cluster, "Cluster"):
+            print("Cluster.Faces - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
+            return None
+        faces = []
+        # _ = cluster.Faces(None, faces) # H to Core
+        try:
+            _ = Core.InstanceCall(cluster, "Faces", None, faces)
+        except Exception:
+            if not silent:
+                print("Cluster.Faces - Error: Could not fetch faces. Returning None.")
+            faces = None
+        return faces
 
     @staticmethod
     def FreeCells(cluster, tolerance: float = 0.0001, silent: bool = False) -> list:
         """
-        Returns direct Cell constituents of the input Cluster.
-
-        Direct constituents are not descendants of another direct Cluster member.
-        This query is resolved from Cluster hierarchy and topology identity; it does
-        not use geometric Boolean subtraction.
+        Returns the free cells of the input cluster that are not part of a higher topology.
 
         Parameters
         ----------
         cluster : topologic_core.Cluster
-            The input Cluster.
-        tolerance : float, optional
-            Reserved for backend-neutral hierarchy fallbacks. Default is 0.0001.
-        silent : bool, optional
-            If True, error and warning messages are suppressed. Default is False.
+            The input cluster.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
-        list or None
-            The free Cells, an empty list when none exist, or None on failure.
-        """
-        return Cluster._DirectOfType(cluster, "Cell", tolerance=tolerance, silent=silent)
+        list
+            The list of free cells.
 
+        """
+        from topologicpy.CellComplex import CellComplex
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(cluster, "Cluster"):
+            if not silent:
+                print("Cluster.FreeCells - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
+            return None
+        allCells = Cluster.Cells(cluster)
+        if len(allCells) < 1:
+            return []
+        allCellsCluster = Cluster.ByTopologies(allCells)
+        freeCells = []
+        cellComplexes = Cluster.CellComplexes(cluster)
+        cellComplexesCells = []
+        for cellComplex in cellComplexes:
+            tempCells = CellComplex.Cells(cellComplex)
+            cellComplexesCells += tempCells
+        if len(cellComplexesCells) == 0:
+            return allCells
+        cellComplexesCluster = Cluster.ByTopologies(cellComplexesCells)
+        resultingCluster = Topology.Difference(allCellsCluster, cellComplexesCluster, tolerance=tolerance)
+        if resultingCluster == None:
+            return []
+        if Topology.IsInstance(resultingCluster, "Cell"):
+            return [resultingCluster]
+        result = Topology.SubTopologies(resultingCluster, subTopologyType="cell")
+        if result == None:
+            return [] #Make sure you return an empty list instead of None
+        return result
+    
     @staticmethod
     def FreeShells(cluster, tolerance: float = 0.0001, silent: bool = False) -> list:
         """
-        Returns direct Shell constituents of the input Cluster.
-
-        Direct constituents are not descendants of another direct Cluster member.
-        This query is resolved from Cluster hierarchy and topology identity; it does
-        not use geometric Boolean subtraction.
+        Returns the free shells of the input cluster that are not part of a higher topology.
 
         Parameters
         ----------
         cluster : topologic_core.Cluster
-            The input Cluster.
+            The input cluster.
         tolerance : float, optional
-            Reserved for backend-neutral hierarchy fallbacks. Default is 0.0001.
-        silent : bool, optional
-            If True, error and warning messages are suppressed. Default is False.
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
-        list or None
-            The free Shells, an empty list when none exist, or None on failure.
-        """
-        return Cluster._DirectOfType(cluster, "Shell", tolerance=tolerance, silent=silent)
+        list
+            The list of free shells.
 
+        """
+        from topologicpy.Cell import Cell
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(cluster, "Cluster"):
+            if not silent:
+                print("Cluster.FreeShells - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
+            return None
+        allShells = Cluster.Shells(cluster)
+        if len(allShells) < 1:
+            return []
+        allShellsCluster = Cluster.ByTopologies(allShells)
+        cells = Cluster.Cells(cluster)
+        cellsShells = []
+        for cell in cells:
+            tempShells = Cell.Shells(cell)
+            cellsShells += tempShells
+        if len(cellsShells) == 0:
+            return allShells
+        cellsCluster = Cluster.ByTopologies(cellsShells)
+        resultingCluster = Topology.Difference(allShellsCluster, cellsCluster, tolerance=tolerance)
+        if resultingCluster == None:
+            return []
+        if Topology.IsInstance(resultingCluster, "Shell"):
+            return [resultingCluster]
+        result = Topology.SubTopologies(resultingCluster, subTopologyType="shell")
+        if result == None:
+            return [] #Make sure you return an empty list instead of None
+        return result
+    
     @staticmethod
     def FreeFaces(cluster, tolerance: float = 0.0001, silent: bool = False) -> list:
         """
-        Returns direct Face constituents of the input Cluster.
-
-        Direct constituents are not descendants of another direct Cluster member.
-        This query is resolved from Cluster hierarchy and topology identity; it does
-        not use geometric Boolean subtraction.
+        Returns the free faces of the input cluster that are not part of a higher topology.
 
         Parameters
         ----------
         cluster : topologic_core.Cluster
-            The input Cluster.
-        tolerance : float, optional
-            Reserved for backend-neutral hierarchy fallbacks. Default is 0.0001.
-        silent : bool, optional
-            If True, error and warning messages are suppressed. Default is False.
+            The input cluster.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
-        list or None
-            The free Faces, an empty list when none exist, or None on failure.
+        list
+            The list of free faces.
+
         """
-        return Cluster._DirectOfType(cluster, "Face", tolerance=tolerance, silent=silent)
+        from topologicpy.Shell import Shell
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(cluster, "Cluster"):
+            if not silent:
+                print("Cluster.FreeFaces - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
+            return None
+        allFaces = Cluster.Faces(cluster)
+        if len(allFaces) < 1:
+            return []
+        allFacesCluster = Cluster.ByTopologies(allFaces)
+        shells = Cluster.Shells(cluster)
+        shellFaces = []
+        for shell in shells:
+            tempFaces = Shell.Faces(shell)
+            shellFaces += tempFaces
+        if len(shellFaces) == 0:
+            return allFaces
+        shellCluster = Cluster.ByTopologies(shellFaces)
+        resultingCluster = Topology.Difference(allFacesCluster, shellCluster, tolerance=tolerance)
+        if resultingCluster == None:
+            return []
+        if Topology.IsInstance(resultingCluster, "Face"):
+            return [resultingCluster]
+        result = Topology.SubTopologies(resultingCluster, subTopologyType="face")
+        if result == None:
+            return [] #Make sure you return an empty list instead of None
+        return result
 
     @staticmethod
     def FreeWires(cluster, tolerance: float = 0.0001, silent: bool = False) -> list:
         """
-        Returns direct Wire constituents of the input Cluster.
-
-        Direct constituents are not descendants of another direct Cluster member.
-        This query is resolved from Cluster hierarchy and topology identity; it does
-        not use geometric Boolean subtraction.
+        Returns the free wires of the input cluster that are not part of a higher topology.
 
         Parameters
         ----------
         cluster : topologic_core.Cluster
-            The input Cluster.
-        tolerance : float, optional
-            Reserved for backend-neutral hierarchy fallbacks. Default is 0.0001.
-        silent : bool, optional
-            If True, error and warning messages are suppressed. Default is False.
-
-        Returns
-        -------
-        list or None
-            The free Wires, an empty list when none exist, or None on failure.
-        """
-        return Cluster._DirectOfType(cluster, "Wire", tolerance=tolerance, silent=silent)
-
-    @staticmethod
-    def FreeEdges(cluster, tolerance: float = 0.0001, silent: bool = False) -> list:
-        """
-        Returns direct Edge constituents of the input Cluster.
-
-        Direct constituents are not descendants of another direct Cluster member.
-        This query is resolved from Cluster hierarchy and topology identity; it does
-        not use geometric Boolean subtraction.
-
-        Parameters
-        ----------
-        cluster : topologic_core.Cluster
-            The input Cluster.
-        tolerance : float, optional
-            Reserved for backend-neutral hierarchy fallbacks. Default is 0.0001.
-        silent : bool, optional
-            If True, error and warning messages are suppressed. Default is False.
-
-        Returns
-        -------
-        list or None
-            The free Edges, an empty list when none exist, or None on failure.
-        """
-        return Cluster._DirectOfType(cluster, "Edge", tolerance=tolerance, silent=silent)
-
-    @staticmethod
-    def FreeVertices(cluster, tolerance: float = 0.0001, silent: bool = False) -> list:
-        """
-        Returns direct Vertex constituents of the input Cluster.
-
-        Direct constituents are not descendants of another direct Cluster member.
-        This query is resolved from Cluster hierarchy and topology identity; it does
-        not use geometric Boolean subtraction.
-
-        Parameters
-        ----------
-        cluster : topologic_core.Cluster
-            The input Cluster.
-        tolerance : float, optional
-            Reserved for backend-neutral hierarchy fallbacks. Default is 0.0001.
-        silent : bool, optional
-            If True, error and warning messages are suppressed. Default is False.
-
-        Returns
-        -------
-        list or None
-            The free Vertices, an empty list when none exist, or None on failure.
-        """
-        return Cluster._DirectOfType(cluster, "Vertex", tolerance=tolerance, silent=silent)
-
-    @staticmethod
-    def FreeTopologies(cluster, tolerance: float = 0.0001, silent: bool = False) -> list:
-        """
-        Returns the direct constituent Topologies of the Cluster.
-
-        For a heterogeneous Cluster, these are precisely the members that are not
-        descendants of another direct constituent. No Boolean operations are used.
-        """
-        return Cluster.Topologies(cluster, tolerance=tolerance, silent=silent)
-
-    # -------------------------------------------------------------------------
-    # Boundary, type, and simplification
-    # -------------------------------------------------------------------------
-
-    @staticmethod
-    def ExternalBoundary(cluster, tolerance: float = 0.0001, silent: bool = False):
-        """
-        Returns a Cluster representing the exposed boundary of each free constituent.
-
-        CellComplex and Cell constituents contribute their outer Shells. Free Shells,
-        Wires, Edges, and Vertices are already boundary objects and are retained.
-        Free Faces contribute their external boundary Wires.
-
-        Parameters
-        ----------
-        cluster : topologic_core.Cluster
-            The input Cluster.
-        tolerance : float, optional
+            The input cluster.
+        tolerance : float , optional
             The desired tolerance. Default is 0.0001.
-        silent : bool, optional
-            If True, error and warning messages are suppressed. Default is False.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
-        topologic_core.Cluster or None
-            A Cluster of exposed boundary Topologies.
+        list
+            The list of free wires.
+
         """
-        from topologicpy.Cell import Cell
-        from topologicpy.CellComplex import CellComplex
         from topologicpy.Face import Face
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(cluster, "Cluster"):
             if not silent:
-                print("Cluster.ExternalBoundary - Error: The input cluster parameter is not a valid Cluster. Returning None.")
+                print("Cluster.FreeWires - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
-
-        boundary = []
-        for topology in Cluster.FreeTopologies(cluster, tolerance=tolerance, silent=True) or []:
-            item = None
-            if Topology.IsInstance(topology, "CellComplex"):
-                item = CellComplex.ExternalBoundary(topology, silent=True)
-            elif Topology.IsInstance(topology, "Cell"):
-                item = Cell.ExternalBoundary(topology, silent=True)
-            elif Topology.IsInstance(topology, "Face"):
-                try:
-                    item = Face.ExternalBoundary(topology, silent=True)
-                except TypeError:
-                    item = Face.ExternalBoundary(topology)
-            elif Topology.IsInstance(topology, "Topology"):
-                item = topology
-
-            if Topology.IsInstance(item, "Topology"):
-                boundary.append(item)
-
-        if not boundary:
-            if not silent:
-                print("Cluster.ExternalBoundary - Error: No boundary Topologies could be created. Returning None.")
-            return None
-        return Cluster.ByTopologies(boundary, silent=silent)
-
+        allWires = Cluster.Wires(cluster)
+        if len(allWires) < 1:
+            return []
+        allWiresCluster = Cluster.ByTopologies(allWires)
+        faces = Cluster.Faces(cluster)
+        facesWires = []
+        for face in faces:
+            tempWires = Face.Wires(face)
+            facesWires += tempWires
+        if len(facesWires) == 0:
+            return allWires
+        facesCluster = Cluster.ByTopologies(facesWires)
+        resultingCluster = Topology.Difference(allWiresCluster, facesCluster, tolerance=tolerance)
+        if resultingCluster == None:
+            return []
+        if Topology.IsInstance(resultingCluster, "Wire"):
+            return [resultingCluster]
+        result = Topology.SubTopologies(resultingCluster, subTopologyType="wire")
+        if not result:
+            return [] #Make sure you return an empty list instead of None
+        return result
+    
     @staticmethod
-    def HighestType(cluster, silent: bool = False) -> int:
+    def FreeEdges(cluster, tolerance: float = 0.0001, silent: bool = False) -> list:
         """
-        Returns the type ID of the highest-dimensional topology present in a Cluster.
+        Returns the free edges of the input cluster that are not part of a higher topology.
 
         Parameters
         ----------
         cluster : topologic_core.Cluster
-            The input Cluster.
-        silent : bool, optional
-            If True, error and warning messages are suppressed. Default is False.
+            The input cluster.
+        tolerance : float, optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
-        int or None
-            The highest Topologic type ID, or None for invalid/empty input.
+        list
+            The list of free edges.
+
         """
+        from topologicpy.Wire import Wire
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(cluster, "Cluster"):
             if not silent:
-                print("Cluster.HighestType - Error: The input cluster parameter is not a valid Cluster. Returning None.")
+                print("Cluster.FreeEdges - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
-
-        checks = [
-            (Cluster.CellComplexes, "CellComplex"),
-            (Cluster.Cells, "Cell"),
-            (Cluster.Shells, "Shell"),
-            (Cluster.Faces, "Face"),
-            (Cluster.Wires, "Wire"),
-            (Cluster.Edges, "Edge"),
-            (Cluster.Vertices, "Vertex"),
-        ]
-        for method, type_name in checks:
-            values = method(cluster, silent=True)
-            if values:
-                return Topology.TypeID(type_name)
-        return None
-
+        allEdges = Cluster.Edges(cluster)
+        if len(allEdges) < 1:
+            return []
+        allEdgesCluster = Cluster.ByTopologies(allEdges)
+        wires = Cluster.Wires(cluster)
+        wireEdges = []
+        for wire in wires:
+            tempEdges = Wire.Edges(wire)
+            wireEdges += tempEdges
+        if len(wireEdges) == 0:
+            return allEdges
+        wireCluster = Cluster.ByTopologies(wireEdges)
+        resultingCluster = Topology.Difference(allEdgesCluster, wireCluster, tolerance=tolerance)
+        if resultingCluster == None:
+            return []
+        if Topology.IsInstance(resultingCluster, "Edge"):
+            return [resultingCluster]
+        result = Topology.SubTopologies(resultingCluster, subTopologyType="edge")
+        if result == None:
+            return [] #Make sure you return an empty list instead of None
+        return result
+    
     @staticmethod
-    def Simplify(cluster, tolerance: float = 0.0001, silent: bool = False):
+    def FreeVertices(cluster, tolerance: float = 0.0001, silent: bool = False) -> list:
         """
-        Simplifies a Cluster only when it has exactly one direct constituent.
-
-        This method deliberately does not infer redundancy from vertex counts or
-        geometric coincidence. A multi-member Cluster is returned unchanged.
+        Returns the free vertices of the input cluster that are not part of a higher topology.
 
         Parameters
         ----------
         cluster : topologic_core.Cluster
-            The input Cluster.
-        tolerance : float, optional
-            Reserved for backend-neutral hierarchy queries. Default is 0.0001.
-        silent : bool, optional
-            If True, error and warning messages are suppressed. Default is False.
+            The input cluster.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
-        topologic_core.Topology or None
-            The sole constituent when there is exactly one; otherwise the input Cluster.
+        list
+            The list of free vertices.
+
         """
+        from topologicpy.Edge import Edge
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(cluster, "Cluster"):
             if not silent:
-                print("Cluster.Simplify - Error: The input cluster parameter is not a valid Cluster. Returning None.")
+                print("Cluster.FreeVertices - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
-        topologies = Cluster.Topologies(cluster, tolerance=tolerance, silent=True)
-        if topologies is None:
-            return None
-        return topologies[0] if len(topologies) == 1 else cluster
+        allVertices = Topology.Vertices(cluster)
+        if len(allVertices) < 1:
+            return []
+        allVerticesCluster = Cluster.ByTopologies(allVertices)
+        edges = Topology.Edges(cluster)
+        edgesVertices = []
+        for edge in edges:
+            tempVertices = Topology.Vertices(edge)
+            edgesVertices += tempVertices
+        if len(edgesVertices) == 0:
+            return allVertices
+        edgesCluster = Cluster.ByTopologies(edgesVertices)
+        resultingCluster = Topology.Difference(allVerticesCluster, edgesCluster, tolerance=tolerance)
+        if Topology.IsInstance(resultingCluster, "Vertex"):
+            return [resultingCluster]
+        if resultingCluster == None:
+            return []
+        result = Topology.SubTopologies(resultingCluster, subTopologyType="vertex")
+        if result == None:
+            return [] #Make sure you return an empty list instead of None
+        return result
+    
+    @staticmethod
+    def FreeTopologies(cluster, tolerance: float = 0.0001) -> list:
+        """
+        Returns the free topologies of the input cluster that are not part of a higher topology.
 
-    # -------------------------------------------------------------------------
-    # Clustering algorithms
-    # -------------------------------------------------------------------------
+        Parameters
+        ----------
+        cluster : topologic_core.Cluster
+            The input cluster.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+
+        Returns
+        -------
+        list
+            The list of free topologies.
+
+        """
+        topologies = Cluster.FreeVertices(cluster, tolerance=tolerance)
+        topologies += Cluster.FreeEdges(cluster, tolerance=tolerance)
+        topologies += Cluster.FreeWires(cluster, tolerance=tolerance)
+        topologies += Cluster.FreeFaces(cluster, tolerance=tolerance)
+        topologies += Cluster.FreeShells(cluster, tolerance=tolerance)
+        topologies += Cluster.FreeCells(cluster, tolerance=tolerance)
+        topologies += Cluster.CellComplexes(cluster)
+
+        return topologies
+    
+    @staticmethod
+    def HighestType(cluster) -> int:
+        """
+        Returns the type of the highest dimension subtopology found in the input cluster.
+
+        Parameters
+        ----------
+        cluster : topologic_core.Cluster
+            The input cluster.
+
+        Returns
+        -------
+        int
+            The type of the highest dimension subtopology found in the input cluster.
+
+        """
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(cluster, "Cluster"):
+            print("Cluster.HighestType - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
+            return None
+        cellComplexes = Topology.CellComplexes(cluster)
+        if len(cellComplexes) > 0:
+            return Topology.TypeID("CellComplex")
+        cells = Topology.Cells(cluster)
+        if len(cells) > 0:
+            return Topology.TypeID("Cell")
+        shells = Topology.Shells(cluster)
+        if len(shells) > 0:
+            return Topology.TypeID("Shell")
+        faces = Topology.Faces(cluster)
+        if len(faces) > 0:
+            return Topology.TypeID("Face")
+        wires = Cluster.Wires(cluster)
+        if len(wires) > 0:
+            return Topology.TypeID("Wire")
+        edges = Topology.Edges(cluster)
+        if len(edges) > 0:
+            return Topology.TypeID("Edge")
+        vertices = Topology.Vertices(cluster)
+        if len(vertices) > 0:
+            return Topology.TypeID("Vertex")
 
     @staticmethod
-    def DBSCAN(
-        topologies,
-        selectors=None,
-        keys=["x", "y", "z"],
-        epsilon: float = 0.5,
-        minSamples: int = 2,
-        tolerance: float = 0.0001,
-        silent: bool = False,
-    ):
+    def KMeans(topologies,
+                selectors=None,
+                keys=["x", "y", "z"],
+                k=4,
+                maxIterations=100,
+                centroidKey="k_centroid",
+                distanceMeasure: str = "euclidean",   # "euclidean", "sqeuclidean", "manhattan", "chebyshev", "cosine", "mahalanobis"
+                init: str = "kmeans++",              # "kmeans++" or "random"
+                nInit: int = 10,                     # best-of-n restarts (like sklearn)
+                tol: float = 1e-6,                   # convergence tolerance on centroid shift
+                standardize: bool = False,           # z-score standardization
+                normalize: bool = False,             # L2-normalize rows (useful for cosine / spherical k-means)
+                randomSeed: int = None,
+                mantissa: int = 6,
+                tolerance: float = 0.0001,
+                silent: bool = False):
         """
-        Clusters Topologies using the DBSCAN density-based clustering algorithm.
+        Clusters the input topologies using K-Means-like clustering.
 
-        Coordinate features (``x``, ``y``, ``z``; case-insensitive) are read from
-        selector Vertices. Additional features are read from the dictionaries of
-        the corresponding Topologies and must be finite numeric values.
+        Best-practice upgrades vs the legacy implementation:
+        - k-means++ initialization (default) for faster, stabler convergence.
+        - Multiple restarts (nInit) and selects best (lowest inertia / objective).
+        - Vectorized numpy core for speed.
+        - More distance measures:
+            * euclidean / sqeuclidean : classic k-means (centroid = mean)
+            * manhattan              : k-medians update (centroid = coordinate-wise median)
+            * chebyshev              : centroid = coordinate-wise midrange (0.5*(min+max)) (robust-ish heuristic)
+            * cosine                 : spherical k-means (normalize; centroid = normalized mean)
+            * mahalanobis            : mean in whitened space (uses global covariance)
+        - Robust empty-cluster handling (reseed with farthest point).
+
+        Notes
+        - Classic k-means objective is squared Euclidean; for other metrics this function uses the
+        appropriate/standard centroid update where available (k-medians, spherical k-means), or a
+        reasonable heuristic (chebyshev).
+        - Feature extraction:
+            * If keys include "x","y","z" (case-insensitive), these are taken from the selector vertex (or topology vertex).
+            * Any other key is read from the topology dictionary and must be numeric.
+            * Missing/None values are replaced by 0.0 (warns unless silent).
 
         Parameters
         ----------
         topologies : list
-            The Topologies to cluster.
-        selectors : list, optional
-            Representative Vertices corresponding one-to-one with ``topologies``.
-            Required when any input topology is not a Vertex. Default is None.
+            The input list of topologies.
+        selectors : list , optional
+            If topologies are not vertices, provide selector vertices (e.g., centroids) of equal length.
+            If None, topologies must be vertices.
         keys : list, optional
-            Feature keys. ``x``, ``y``, and ``z`` refer to selector coordinates;
-            other keys refer to topology dictionary values. Default is
-            ``["x", "y", "z"]``.
-        epsilon : float, optional
-            DBSCAN neighbourhood radius. Default is 0.5.
-        minSamples : int, optional
-            Minimum number of samples, including the sample itself, required for a
-            core point. Default is 2.
-        tolerance : float, optional
-            Numerical allowance used at the epsilon boundary. Default is 0.0001.
-        silent : bool, optional
-            If True, error and warning messages are suppressed. Default is False.
+            Keys to build the feature vector. Include "x","y","z" (any case) for coordinates.
+        k : int , optional
+            Number of clusters.
+        maxIterations : int , optional
+            Maximum iterations.
+        centroidKey : str , optional
+            Dictionary key under which to store the cluster centroid feature vector.
+        distanceMeasure : str , optional
+            See list above.
+        init : str , optional
+            "kmeans++" or "random".
+        nInit : int , optional
+            Number of random restarts; best result returned.
+        tol : float , optional
+            Convergence tolerance on centroid movement.
+        standardize : bool , optional
+            Z-score features before clustering (recommended when mixing units).
+        normalize : bool , optional
+            L2-normalize feature rows (recommended for cosine / spherical k-means).
+        randomSeed : int , optional
+            RNG seed.
+        mantissa : int , optional
+            The desired length of the mantissa. Default is 6.
+        tolerance : float , optional
+            Tolerance (kept for API consistency).
+        silent : bool , optional
+            Suppress warnings/errors.
 
         Returns
         -------
-        tuple[list[topologic_core.Cluster], topologic_core.Cluster or None]
-            The detected clusters and an optional Cluster containing noise points.
-            ``(None, None)`` is returned for invalid input.
+        list
+            The created list of clusters (topologic_core.Cluster), each with centroidKey stored in its dictionary.
         """
+        
         import math
+        import numpy as np
+
+        from topologicpy.Vertex import Vertex
         from topologicpy.Dictionary import Dictionary
         from topologicpy.Topology import Topology
-        from topologicpy.Vertex import Vertex
+        from topologicpy.Cluster import Cluster
 
-        if not isinstance(topologies, list) or not topologies:
+        # --------------------------
+        # Validation
+        # --------------------------
+        if not isinstance(topologies, list):
             if not silent:
-                print("Cluster.DBSCAN - Error: The input topologies parameter is not a valid non-empty list. Returning None.")
-            return None, None
-        if not all(Topology.IsInstance(t, "Topology") for t in topologies):
-            if not silent:
-                print("Cluster.DBSCAN - Error: Every item in topologies must be a valid Topology. Returning None.")
-            return None, None
-        if not isinstance(keys, list) or not keys:
-            if not silent:
-                print("Cluster.DBSCAN - Error: keys must be a valid non-empty list. Returning None.")
-            return None, None
-
-        try:
-            epsilon = float(epsilon)
-            tolerance = abs(float(tolerance))
-            minSamples = int(minSamples)
-        except Exception:
-            if not silent:
-                print("Cluster.DBSCAN - Error: epsilon, minSamples, or tolerance is invalid. Returning None.")
-            return None, None
-        if not math.isfinite(epsilon) or epsilon <= 0 or minSamples < 1 or minSamples > len(topologies):
-            if not silent:
-                print("Cluster.DBSCAN - Error: epsilon must be positive and minSamples must be between 1 and the number of Topologies. Returning None.")
-            return None, None
-
-        if selectors is None:
-            if not all(Topology.IsInstance(t, "Vertex") for t in topologies):
-                if not silent:
-                    print("Cluster.DBSCAN - Error: selectors are required when topologies contain non-Vertex objects. Returning None.")
-                return None, None
-            selectors = topologies
-        else:
-            if not isinstance(selectors, list) or len(selectors) != len(topologies):
-                if not silent:
-                    print("Cluster.DBSCAN - Error: selectors must be a list with the same length as topologies. Returning None.")
-                return None, None
-            if not all(Topology.IsInstance(s, "Vertex") for s in selectors):
-                if not silent:
-                    print("Cluster.DBSCAN - Error: Every selector must be a valid Vertex. Returning None.")
-                return None, None
-
-        def numeric(value):
-            try:
-                value = float(value)
-                return value if math.isfinite(value) else None
-            except Exception:
-                return None
-
-        data = []
-        for topology, selector in zip(topologies, selectors):
-            try:
-                dictionary = Topology.Dictionary(topology, silent=True)
-            except TypeError:
-                dictionary = Topology.Dictionary(topology)
-            row = []
-            for key in keys:
-                key_lower = str(key).lower()
-                if key_lower == "x":
-                    value = Vertex.X(selector)
-                elif key_lower == "y":
-                    value = Vertex.Y(selector)
-                elif key_lower == "z":
-                    value = Vertex.Z(selector)
-                else:
-                    value = Dictionary.ValueAtKey(dictionary, key)
-                value = numeric(value)
-                if value is None:
-                    if not silent:
-                        print(f"Cluster.DBSCAN - Error: Feature '{key}' is missing or non-numeric. Returning None.")
-                    return None, None
-                row.append(value)
-            data.append(row)
-
-        n = len(data)
-        limit2 = (epsilon + tolerance) ** 2
-
-        def neighbours(index):
-            source = data[index]
-            result = []
-            for j, target in enumerate(data):
-                distance2 = sum((a - b) ** 2 for a, b in zip(source, target))
-                if distance2 <= limit2:
-                    result.append(j)
-            return result
-
-        UNVISITED = 0
-        NOISE = -1
-        labels = [UNVISITED] * n
-        cluster_id = 0
-
-        for i in range(n):
-            if labels[i] != UNVISITED:
-                continue
-            seed_neighbours = neighbours(i)
-            if len(seed_neighbours) < minSamples:
-                labels[i] = NOISE
-                continue
-
-            cluster_id += 1
-            labels[i] = cluster_id
-            queue = list(seed_neighbours)
-            queued = set(queue)
-            cursor = 0
-            while cursor < len(queue):
-                j = queue[cursor]
-                cursor += 1
-
-                if labels[j] == NOISE:
-                    labels[j] = cluster_id
-                if labels[j] != UNVISITED:
-                    continue
-
-                labels[j] = cluster_id
-                j_neighbours = neighbours(j)
-                if len(j_neighbours) >= minSamples:
-                    for neighbour in j_neighbours:
-                        if neighbour not in queued:
-                            queued.add(neighbour)
-                            queue.append(neighbour)
-
-        clusters = []
-        for cid in range(1, cluster_id + 1):
-            members = [topologies[i] for i, label in enumerate(labels) if label == cid]
-            cluster = Cluster.ByTopologies(members, silent=True)
-            if Topology.IsInstance(cluster, "Cluster"):
-                clusters.append(cluster)
-
-        noise_members = [topologies[i] for i, label in enumerate(labels) if label == NOISE]
-        noise = Cluster.ByTopologies(noise_members, silent=True) if noise_members else None
-        return clusters, noise
-
-    @staticmethod
-    def KMeans(
-        topologies,
-        selectors=None,
-        keys=["x", "y", "z"],
-        k=4,
-        maxIterations=100,
-        centroidKey="k_centroid",
-        distanceMeasure: str = "euclidean",
-        init: str = "kmeans++",
-        nInit: int = 10,
-        tol: float = 1e-6,
-        standardize: bool = False,
-        normalize: bool = False,
-        randomSeed: int = None,
-        mantissa: int = 6,
-        tolerance: float = 0.0001,
-        silent: bool = False,
-    ):
-        """
-        Clusters Topologies using a K-Means-like partitioning algorithm.
-
-        Supported distance measures are ``euclidean``, ``sqeuclidean``,
-        ``manhattan``, ``chebyshev``, ``cosine``, and ``mahalanobis``. Euclidean
-        variants use arithmetic means; Manhattan uses coordinate-wise medians;
-        Chebyshev uses coordinate-wise midranges; Cosine uses normalized means;
-        Mahalanobis uses arithmetic means with a global inverse covariance metric.
-
-        Parameters
-        ----------
-        topologies : list
-            The Topologies to cluster.
-        selectors : list, optional
-            Representative Vertices corresponding one-to-one with ``topologies``.
-            Required when any topology is not a Vertex. Default is None.
-        keys : list, optional
-            Feature keys. Coordinate keys are read from selectors; other keys are
-            read from topology dictionaries. Default is ["x", "y", "z"].
-        k : int, optional
-            Number of clusters. Default is 4.
-        maxIterations : int, optional
-            Maximum iterations per restart. Default is 100.
-        centroidKey : str, optional
-            Dictionary key used to store each cluster centroid. Default is
-            ``"k_centroid"``.
-        distanceMeasure : str, optional
-            Distance metric. Default is ``"euclidean"``.
-        init : str, optional
-            ``"kmeans++"`` or ``"random"``. Default is ``"kmeans++"``.
-        nInit : int, optional
-            Number of restarts. The solution with the lowest objective is retained.
-            Default is 10.
-        tol : float, optional
-            Convergence tolerance. Default is 1e-6.
-        standardize : bool, optional
-            If True, z-score standardizes features before clustering. Default False.
-        normalize : bool, optional
-            If True, L2-normalizes feature rows. Default False.
-        randomSeed : int, optional
-            Random seed. Default is None.
-        mantissa : int, optional
-            Decimal precision used when storing centroids. Default is 6.
-        tolerance : float, optional
-            Topologic tolerance retained for API consistency. Default is 0.0001.
-        silent : bool, optional
-            If True, error and warning messages are suppressed. Default is False.
-
-        Returns
-        -------
-        list[topologic_core.Cluster] or None
-            The resulting Clusters, each carrying its centroid in its dictionary.
-        """
-        import math
-        try:
-            import numpy as np
-        except Exception:
-            if not silent:
-                print("Cluster.KMeans - Error: NumPy is required for KMeans. Returning None.")
+                print("Cluster.KMeans - Error: The input topologies parameter is not a valid list. Returning None.")
             return None
 
-        from topologicpy.Dictionary import Dictionary
-        from topologicpy.Topology import Topology
-        from topologicpy.Vertex import Vertex
-
-        if not isinstance(topologies, list) or not topologies:
+        topologies = [t for t in topologies if Topology.IsInstance(t, "Topology")]
+        if len(topologies) < 1:
             if not silent:
-                print("Cluster.KMeans - Error: topologies must be a valid non-empty list. Returning None.")
-            return None
-        if not all(Topology.IsInstance(t, "Topology") for t in topologies):
-            if not silent:
-                print("Cluster.KMeans - Error: Every item in topologies must be a valid Topology. Returning None.")
-            return None
-        if not isinstance(keys, list) or not keys:
-            if not silent:
-                print("Cluster.KMeans - Error: keys must be a valid non-empty list. Returning None.")
+                print("Cluster.KMeans - Error: The input topologies parameter does not contain any valid topologies. Returning None.")
             return None
 
         if selectors is None:
-            if not all(Topology.IsInstance(t, "Vertex") for t in topologies):
+            # Require vertices
+            non_vertices = [t for t in topologies if not Topology.IsInstance(t, "Vertex")]
+            if len(non_vertices) > 0:
                 if not silent:
-                    print("Cluster.KMeans - Error: selectors are required when topologies contain non-Vertex objects. Returning None.")
+                    print("Cluster.KMeans - Error: selectors is None but topologies include non-Vertex objects. Returning None.")
                 return None
-            selectors = topologies
         else:
-            if not isinstance(selectors, list) or len(selectors) != len(topologies):
+            if not isinstance(selectors, list):
                 if not silent:
-                    print("Cluster.KMeans - Error: selectors must have the same length as topologies. Returning None.")
+                    print("Cluster.KMeans - Error: The input selectors parameter is not a valid list. Returning None.")
                 return None
-            if not all(Topology.IsInstance(s, "Vertex") for s in selectors):
+            selectors = [s for s in selectors if Topology.IsInstance(s, "Vertex")]
+            if len(selectors) != len(topologies):
                 if not silent:
-                    print("Cluster.KMeans - Error: Every selector must be a valid Vertex. Returning None.")
+                    print("Cluster.KMeans - Error: topologies and selectors must have the same length. Returning None.")
+                return None
+            if len(selectors) < 1:
+                if not silent:
+                    print("Cluster.KMeans - Error: selectors does not contain any valid vertices. Returning None.")
                 return None
 
-        try:
-            k = int(k)
-            maxIterations = int(maxIterations)
-            nInit = int(nInit)
-            tol = abs(float(tol))
-            mantissa = max(0, int(mantissa))
-            tolerance = abs(float(tolerance))
-        except Exception:
+        if not isinstance(keys, list) or len(keys) < 1:
             if not silent:
-                print("Cluster.KMeans - Error: One or more numerical parameters are invalid. Returning None.")
+                print("Cluster.KMeans - Error: The input keys parameter is not a valid non-empty list. Returning None.")
+            return None
+
+        if not isinstance(k, int) or k < 1:
+            if not silent:
+                print("Cluster.KMeans - Error: The input k parameter is not a valid integer >= 1. Returning None.")
             return None
 
         n = len(topologies)
-        if k < 1 or k > n or maxIterations < 1 or nInit < 1:
+        if n < k:
             if not silent:
-                print("Cluster.KMeans - Error: Require 1 <= k <= number of Topologies, maxIterations >= 1, and nInit >= 1. Returning None.")
+                print("Cluster.KMeans - Error: The number of topologies is less than k. Returning None.")
             return None
 
-        distanceMeasure = str(distanceMeasure or "euclidean").strip().lower()
-        allowed_metrics = {"euclidean", "sqeuclidean", "manhattan", "chebyshev", "cosine", "mahalanobis"}
-        if distanceMeasure not in allowed_metrics:
+        if not isinstance(maxIterations, int) or maxIterations < 1:
             if not silent:
-                print(f"Cluster.KMeans - Error: Unsupported distanceMeasure '{distanceMeasure}'. Returning None.")
-            return None
-        init = str(init or "kmeans++").strip().lower()
-        if init not in {"kmeans++", "random"}:
-            if not silent:
-                print("Cluster.KMeans - Error: init must be 'kmeans++' or 'random'. Returning None.")
+                print("Cluster.KMeans - Error: maxIterations must be an integer >= 1. Returning None.")
             return None
 
-        def safe_float(value):
+        distanceMeasure = (distanceMeasure or "euclidean").strip().lower()
+        init = (init or "kmeans++").strip().lower()
+        if init not in ["kmeans++", "random"]:
+            init = "kmeans++"
+
+        if not isinstance(nInit, int) or nInit < 1:
+            nInit = 1
+
+        rng = np.random.default_rng(randomSeed)
+
+        # --------------------------
+        # Feature extraction
+        # --------------------------
+        def _safe_float(val):
             try:
-                value = float(value)
-                return value if math.isfinite(value) else None
+                if val is None:
+                    return None
+                f = float(val)
+                if math.isnan(f) or math.isinf(f):
+                    return None
+                return f
             except Exception:
                 return None
 
-        rows = []
-        for topology, selector in zip(topologies, selectors):
-            try:
-                dictionary = Topology.Dictionary(topology, silent=True)
-            except TypeError:
-                dictionary = Topology.Dictionary(topology)
+        def _feature_row(topology, selector_vertex):
             row = []
+            d = Topology.Dictionary(topology)
             for key in keys:
-                lower = str(key).lower()
-                if lower == "x":
-                    value = Vertex.X(selector)
-                elif lower == "y":
-                    value = Vertex.Y(selector)
-                elif lower == "z":
-                    value = Vertex.Z(selector)
+                kl = str(key).lower()
+                if kl == "x":
+                    v = Vertex.X(selector_vertex)
+                    fv = _safe_float(v)
+                elif kl == "y":
+                    v = Vertex.Y(selector_vertex)
+                    fv = _safe_float(v)
+                elif kl == "z":
+                    v = Vertex.Z(selector_vertex)
+                    fv = _safe_float(v)
                 else:
-                    value = Dictionary.ValueAtKey(dictionary, key)
-                value = safe_float(value)
-                if value is None:
+                    v = Dictionary.ValueAtKey(d, key)
+                    fv = _safe_float(v)
+                if fv is None:
                     if not silent:
-                        print(f"Cluster.KMeans - Warning: Feature '{key}' is missing or non-numeric; using 0.0.")
-                    value = 0.0
-                row.append(value)
-            rows.append(row)
+                        print(f"Cluster.KMeans - Warning: Non-numeric or missing value for key '{key}'. Using 0.0.")
+                    fv = 0.0
+                row.append(fv)
+            return row
 
-        X = np.asarray(rows, dtype=float)
+        selector_list = selectors if selectors is not None else topologies
+        X = np.array([_feature_row(topologies[i], selector_list[i]) for i in range(n)], dtype=float)
+
         if X.ndim != 2 or X.shape[0] != n or X.shape[1] < 1:
             if not silent:
-                print("Cluster.KMeans - Error: Could not construct a valid feature matrix. Returning None.")
+                print("Cluster.KMeans - Error: Could not build a valid feature matrix. Returning None.")
             return None
 
+        # Optional preprocessing
         X_work = X.copy()
-        mu = None
-        sigma = None
+
         if standardize:
             mu = X_work.mean(axis=0)
             sigma = X_work.std(axis=0)
             sigma[sigma == 0] = 1.0
             X_work = (X_work - mu) / sigma
+
         if normalize:
             norms = np.linalg.norm(X_work, axis=1, keepdims=True)
             norms[norms == 0] = 1.0
             X_work = X_work / norms
 
-        inv_cov = None
-        if distanceMeasure == "mahalanobis":
-            cov = np.atleast_2d(np.cov(X_work, rowvar=False))
-            regularized = cov + 1e-9 * np.eye(cov.shape[0])
-            try:
-                inv_cov = np.linalg.inv(regularized)
-            except Exception:
-                inv_cov = np.linalg.pinv(regularized)
+        # --------------------------
+        # Distance utilities
+        # --------------------------
+        def _pairwise_distances(Xa, C):
+            """
+            Returns D shape (n, k): distance from each Xa row to each centroid row in C.
+            """
+            if distanceMeasure in ["euclidean", "sqeuclidean"]:
+                # Use squared distances for stability/speed; take sqrt only if requested.
+                # d^2 = ||x||^2 + ||c||^2 - 2 x·c
+                x2 = np.sum(Xa * Xa, axis=1, keepdims=True)          # (n,1)
+                c2 = np.sum(C * C, axis=1, keepdims=True).T          # (1,k)
+                d2 = np.maximum(x2 + c2 - 2.0 * (Xa @ C.T), 0.0)
+                if distanceMeasure == "euclidean":
+                    return np.sqrt(d2)
+                return d2
 
-        def pairwise_distances(A, C):
-            if distanceMeasure in {"euclidean", "sqeuclidean"}:
-                diff = A[:, None, :] - C[None, :, :]
-                d2 = np.sum(diff * diff, axis=2)
-                return np.sqrt(d2) if distanceMeasure == "euclidean" else d2
             if distanceMeasure == "manhattan":
-                return np.sum(np.abs(A[:, None, :] - C[None, :, :]), axis=2)
+                return np.sum(np.abs(Xa[:, None, :] - C[None, :, :]), axis=2)
+
             if distanceMeasure == "chebyshev":
-                return np.max(np.abs(A[:, None, :] - C[None, :, :]), axis=2)
+                return np.max(np.abs(Xa[:, None, :] - C[None, :, :]), axis=2)
+
             if distanceMeasure == "cosine":
-                an = np.linalg.norm(A, axis=1, keepdims=True)
-                cn = np.linalg.norm(C, axis=1, keepdims=True).T
-                an[an == 0] = 1.0
-                cn[cn == 0] = 1.0
-                similarity = np.clip((A @ C.T) / (an * cn), -1.0, 1.0)
-                return 1.0 - similarity
-            diff = A[:, None, :] - C[None, :, :]
-            d2 = np.einsum("nkd,df,nkf->nk", diff, inv_cov, diff)
-            return np.sqrt(np.maximum(d2, 0.0))
+                # 1 - cosine similarity (in [0,2]); assumes rows are normalized for spherical k-means
+                # Still works without normalization but then includes magnitude effects.
+                xnorm = np.linalg.norm(Xa, axis=1, keepdims=True)
+                cnorm = np.linalg.norm(C, axis=1, keepdims=True).T
+                xnorm[xnorm == 0] = 1.0
+                cnorm[cnorm == 0] = 1.0
+                sim = (Xa @ C.T) / (xnorm * cnorm)
+                sim = np.clip(sim, -1.0, 1.0)
+                return 1.0 - sim
 
-        def update_centroids(A, labels):
-            C = np.zeros((k, A.shape[1]), dtype=float)
-            counts = np.zeros(k, dtype=int)
-            for j in range(k):
-                members = A[labels == j]
-                counts[j] = members.shape[0]
-                if counts[j] == 0:
-                    continue
-                if distanceMeasure in {"euclidean", "sqeuclidean", "mahalanobis"}:
-                    C[j] = members.mean(axis=0)
-                elif distanceMeasure == "manhattan":
-                    C[j] = np.median(members, axis=0)
-                elif distanceMeasure == "chebyshev":
-                    C[j] = 0.5 * (members.min(axis=0) + members.max(axis=0))
-                else:  # cosine
-                    centroid = members.mean(axis=0)
-                    norm = np.linalg.norm(centroid)
-                    C[j] = centroid / (norm if norm > 0 else 1.0)
-            return C, counts
+            if distanceMeasure == "mahalanobis":
+                # Global covariance (whitening) on X_work
+                # d(x,c) = sqrt( (x-c)^T S^{-1} (x-c) )
+                # We'll precompute inv covariance in outer scope for speed.
+                raise RuntimeError("Internal: mahalanobis handled via whitening.")
 
-        rng = np.random.default_rng(randomSeed)
+            # Fallback
+            return _pairwise_distances(Xa, C)
 
-        def initialize(A):
-            if init == "random":
-                indices = rng.choice(A.shape[0], size=k, replace=False)
-                return A[indices].copy()
+        # Mahalanobis via whitening
+        if distanceMeasure == "mahalanobis":
+            # Regularized covariance
+            cov = np.cov(X_work, rowvar=False)
+            cov = np.atleast_2d(cov)
+            reg = 1e-9 * np.eye(cov.shape[0])
+            try:
+                inv_cov = np.linalg.inv(cov + reg)
+            except Exception:
+                inv_cov = np.linalg.pinv(cov + reg)
 
-            chosen = [int(rng.integers(0, A.shape[0]))]
-            C = [A[chosen[0]].copy()]
-            closest_d2 = np.sum((A - C[0]) ** 2, axis=1)
+            # whiten transform via Cholesky of inv_cov if possible; else use eig
+            try:
+                L = np.linalg.cholesky(inv_cov)   # inv_cov = L L^T
+                Xw = X_work @ L
+            except Exception:
+                w, V = np.linalg.eigh(inv_cov)
+                w[w < 0] = 0
+                Xw = X_work @ (V @ np.diag(np.sqrt(w)) @ V.T)
+            X_work = Xw
+            # Now Mahalanobis distance reduces to Euclidean in whitened space
+            distanceMeasure = "euclidean"
+
+        # --------------------------
+        # Initialization
+        # --------------------------
+        def _init_centroids_random(Xa, k):
+            idx = rng.choice(Xa.shape[0], size=k, replace=False)
+            return Xa[idx].copy()
+
+        def _init_centroids_kmeanspp(Xa, k):
+            n = Xa.shape[0]
+            # pick first centroid uniformly
+            c_idx = [int(rng.integers(0, n))]
+            C = [Xa[c_idx[0]].copy()]
+
+            # maintain closest squared distance to any chosen centroid
+            # use squared euclidean in working space for kmeans++ selection (standard approach)
+            closest_d2 = np.sum((Xa - C[0]) ** 2, axis=1)
+
             for _ in range(1, k):
-                available = [i for i in range(A.shape[0]) if i not in chosen]
-                if not available:
-                    break
-                weights = closest_d2.copy()
-                weights[chosen] = 0.0
-                total = float(weights.sum())
-                if total <= 0:
-                    index = int(rng.choice(available))
-                else:
-                    index = int(rng.choice(A.shape[0], p=weights / total))
-                    if index in chosen:
-                        index = int(rng.choice(available))
-                chosen.append(index)
-                C.append(A[index].copy())
-                closest_d2 = np.minimum(closest_d2, np.sum((A - A[index]) ** 2, axis=1))
+                probs = closest_d2 / (closest_d2.sum() if closest_d2.sum() > 0 else 1.0)
+                next_idx = int(rng.choice(n, p=probs))
+                c_idx.append(next_idx)
+                C.append(Xa[next_idx].copy())
+                d2_new = np.sum((Xa - Xa[next_idx]) ** 2, axis=1)
+                closest_d2 = np.minimum(closest_d2, d2_new)
+
             return np.vstack(C)
 
-        def objective(A, C, labels):
-            if distanceMeasure in {"euclidean", "sqeuclidean"}:
-                diff = A - C[labels]
-                return float(np.sum(diff * diff))
-            distances = pairwise_distances(A, C)
-            return float(distances[np.arange(A.shape[0]), labels].sum())
+        # --------------------------
+        # Centroid updates
+        # --------------------------
+        def _update_centroids(Xa, labels, k):
+            C = np.zeros((k, Xa.shape[1]), dtype=float)
+            counts = np.zeros(k, dtype=int)
 
-        def solve_once(A):
-            C = initialize(A)
-            previous = None
-            labels = np.zeros(A.shape[0], dtype=int)
+            for j in range(k):
+                mask = (labels == j)
+                counts[j] = int(mask.sum())
+                if counts[j] == 0:
+                    continue
+                Xj = Xa[mask]
+                if distanceMeasure in ["sqeuclidean", "euclidean"]:
+                    C[j] = Xj.mean(axis=0)
+                elif distanceMeasure == "manhattan":
+                    C[j] = np.median(Xj, axis=0)
+                elif distanceMeasure == "chebyshev":
+                    C[j] = 0.5 * (Xj.min(axis=0) + Xj.max(axis=0))
+                elif distanceMeasure == "cosine":
+                    # spherical k-means: mean then renormalize
+                    cj = Xj.mean(axis=0)
+                    norm = np.linalg.norm(cj)
+                    C[j] = cj / (norm if norm > 0 else 1.0)
+                else:
+                    C[j] = Xj.mean(axis=0)
+            return C, counts
 
-            for _ in range(maxIterations):
-                distances = pairwise_distances(A, C)
-                labels = np.argmin(distances, axis=1)
-                C_new, counts = update_centroids(A, labels)
+        def _objective(Xa, C, labels):
+            # Inertia-like objective (sum of distances or squared distances depending on metric)
+            if distanceMeasure == "sqeuclidean":
+                d2 = np.sum((Xa - C[labels]) ** 2, axis=1)
+                return float(d2.sum())
+            D = _pairwise_distances(Xa, C)
+            return float(D[np.arange(Xa.shape[0]), labels].sum())
 
+        # --------------------------
+        # Core solve (single run)
+        # --------------------------
+        def _solve_once(Xa):
+            if init == "random":
+                C = _init_centroids_random(Xa, k)
+            else:
+                C = _init_centroids_kmeanspp(Xa, k)
+
+            prev_obj = None
+
+            for _it in range(maxIterations):
+                D = _pairwise_distances(Xa, C)
+                labels = np.argmin(D, axis=1)
+
+                C_new, counts = _update_centroids(Xa, labels, k)
+
+                # Empty cluster handling: reseed empties to farthest points
                 if np.any(counts == 0):
-                    assigned_distance = distances[np.arange(A.shape[0]), labels]
-                    farthest = np.argsort(-assigned_distance)
+                    # distance to assigned centroid
+                    dist_to_assigned = D[np.arange(Xa.shape[0]), labels]
+                    # sort farthest-first
+                    far_order = np.argsort(-dist_to_assigned)
+                    empties = np.where(counts == 0)[0].tolist()
                     used = set()
-                    for empty in np.where(counts == 0)[0]:
-                        pick = next((int(i) for i in farthest if int(i) not in used), int(farthest[0]))
+                    for j in empties:
+                        # pick farthest point not already used for reseeding
+                        pick = None
+                        for idx in far_order:
+                            if int(idx) not in used:
+                                pick = int(idx)
+                                break
+                        if pick is None:
+                            pick = int(far_order[0])
                         used.add(pick)
-                        C_new[empty] = A[pick]
+                        C_new[j] = Xa[pick].copy()
 
-                shift = float(np.linalg.norm(C_new - C))
+                # Convergence check: centroid shift
+                shift = np.linalg.norm(C_new - C)
                 C = C_new
-                current = objective(A, C, labels)
-                if shift <= tol or (previous is not None and abs(previous - current) <= tol * (abs(previous) + tol)):
+
+                obj = _objective(Xa, C, labels)
+                if prev_obj is not None and abs(prev_obj - obj) <= tol * (abs(prev_obj) + tol):
                     break
-                previous = current
-
-            distances = pairwise_distances(A, C)
-            labels = np.argmin(distances, axis=1)
-
-            # Guarantee non-empty output clusters by moving a farthest donor point
-            # from a cluster that has more than one member into each empty cluster.
-            counts = np.bincount(labels, minlength=k)
-            for empty in np.where(counts == 0)[0]:
-                donors = [j for j in range(k) if counts[j] > 1]
-                if not donors:
+                if shift <= tol:
                     break
-                donor = max(donors, key=lambda j: counts[j])
-                donor_indices = np.where(labels == donor)[0]
-                donor_distances = distances[donor_indices, donor]
-                pick = int(donor_indices[int(np.argmax(donor_distances))])
-                labels[pick] = int(empty)
-                counts[donor] -= 1
-                counts[empty] += 1
+                prev_obj = obj
 
-            C, _ = update_centroids(A, labels)
-            return labels, C, objective(A, C, labels)
+            # final labels/objective
+            D = _pairwise_distances(Xa, C)
+            labels = np.argmin(D, axis=1)
+            obj = _objective(Xa, C, labels)
+            return labels, C, obj
 
+        # --------------------------
+        # Best-of-nInit
+        # --------------------------
         best = None
-        best_objective = float("inf")
+        best_obj = float("inf")
         for _ in range(nInit):
-            labels, centroids, score = solve_once(X_work)
-            if score < best_objective:
-                best_objective = score
-                best = (labels.copy(), centroids.copy())
+            labels, C_work, obj = _solve_once(X_work)
+            if obj < best_obj:
+                best_obj = obj
+                best = (labels.copy(), C_work.copy())
 
-        if best is None:
-            return None
         labels, C_work = best
 
-        if normalize:
-            C_store = C_work.copy()
-        elif standardize:
-            C_store = C_work * sigma + mu
-        else:
-            C_store = C_work.copy()
+        # --------------------------
+        # Map centroids back to original feature space (for storage)
+        # --------------------------
+        # If we standardized, unstandardize stored centroids.
+        # If we normalized, stored centroids are in normalized space (that’s appropriate for cosine/spherical);
+        # we still store them as-is, since they represent the model centroid in feature space used.
+        C_store = C_work.copy()
+        if standardize:
+            # reverse z-score
+            C_store = (C_store * sigma) + mu
+
+        # Round centroids for storage
         C_store = np.round(C_store.astype(float), mantissa).tolist()
 
-        result = []
+        # --------------------------
+        # Build Topologic clusters
+        # --------------------------
+        t_clusters = []
         for j in range(k):
-            indices = np.where(labels == j)[0].tolist()
-            if not indices:
-                continue
-            members = [topologies[i] for i in indices]
-            cluster = Cluster.ByTopologies(members, silent=True)
-            if not Topology.IsInstance(cluster, "Cluster"):
-                continue
-            dictionary = Dictionary.ByKeysValues([centroidKey], [C_store[j]])
-            cluster = Topology.SetDictionary(cluster, dictionary, silent=True)
-            result.append(cluster)
-        return result
+            idxs = np.where(labels == j)[0].tolist()
+            if len(idxs) == 0:
+                continue  # should not happen after reseeding, but keep safe
 
-    # -------------------------------------------------------------------------
-    # Cell grouping and geometric helpers
-    # -------------------------------------------------------------------------
+            # cluster members are ORIGINAL topologies (not selectors)
+            members = [topologies[i] for i in idxs]
+            t_cluster = Cluster.ByTopologies(members)
+
+            d = Dictionary.ByKeysValues([centroidKey], [C_store[j]])
+            t_cluster = Topology.SetDictionary(t_cluster, d)
+            t_clusters.append(t_cluster)
+
+        return t_clusters
 
     @staticmethod
-    def MergeCells(cells, tolerance: float = 0.0001, silent: bool = False):
+    def MergeCells(cells, tolerance=0.0001):
         """
-        Groups face-adjacent Cells into CellComplexes and retains isolated Cells.
-
-        Connected components are found with a complete breadth-first traversal.
-        Shared Face queries are attempted first. A backend merge test is used only
-        as a compatibility fallback for independently constructed Cells whose
-        coincident interface is not represented by shared topological identity.
+        Creates a cluster that contains cellComplexes where it can create them plus any additional free cells.
 
         Parameters
         ----------
         cells : list
-            The input Cells.
-        tolerance : float, optional
+            The input list of cells.
+        tolerance : float , optional
             The desired tolerance. Default is 0.0001.
-        silent : bool, optional
-            If True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
-        topologic_core.Cluster or None
-            A Cluster containing one CellComplex per connected component of two or
-            more Cells plus any isolated Cells.
+        topologic_core.Cluster
+            The created cluster with merged cells as possible.
+
         """
-        from collections import deque
+
         from topologicpy.CellComplex import CellComplex
         from topologicpy.Topology import Topology
 
+        def find_cell_complexes(cells, adjacency_test, tolerance=0.0001):
+            cell_complexes = []
+            remaining_cells = set(cells)
+
+            def explore_complex(cell_complex, remaining, tolerance=0.0001):
+                new_cells = set()
+                for cell in remaining:
+                    if any(adjacency_test(cell, existing_cell, tolerance=tolerance) for existing_cell in cell_complex):
+                        new_cells.add(cell)
+                return new_cells
+
+            while remaining_cells:
+                current_cell = remaining_cells.pop()
+                current_complex = {current_cell}
+                current_complex.update(explore_complex(current_complex, remaining_cells, tolerance=tolerance))
+                cell_complexes.append(current_complex)
+                remaining_cells -= current_complex
+
+            return cell_complexes
+
+        # Example adjacency test function (replace this with your actual implementation)
+        def adjacency_test(cell1, cell2, tolerance=0.0001):
+            return Topology.IsInstance(Topology.Merge(cell1, cell2, tolerance=tolerance), "CellComplex")
+
         if not isinstance(cells, list):
-            if not silent:
-                print("Cluster.MergeCells - Error: cells must be a valid list. Returning None.")
+            print("Cluster.MergeCells - Error: The input cells parameter is not a valid list of cells. Returning None.")
             return None
-        valid_cells = [cell for cell in cells if Topology.IsInstance(cell, "Cell")]
-        if len(valid_cells) != len(cells) or not valid_cells:
-            if not silent:
-                print("Cluster.MergeCells - Error: cells must contain one or more valid Cells only. Returning None.")
+        #cells = [cell for cell in cells if Topology.IsInstance(cell, "Cell")]
+        if len(cells) < 1:
+            print("Cluster.MergeCells - Error: The input cells parameter does not contain any valid cells. Returning None.")
             return None
-
-        try:
-            tolerance = abs(float(tolerance))
-        except Exception:
-            tolerance = 0.0001
-
-        adjacency_cache = {}
-
-        def adjacent(i, j):
-            key = (min(i, j), max(i, j))
-            if key in adjacency_cache:
-                return adjacency_cache[key]
-            cell_a = valid_cells[i]
-            cell_b = valid_cells[j]
-
-            shared = None
-            try:
-                shared = Topology.SharedFaces(cell_a, cell_b, silent=True)
-            except TypeError:
-                try:
-                    shared = Topology.SharedFaces(cell_a, cell_b)
-                except Exception:
-                    shared = None
-            except Exception:
-                shared = None
-            if shared:
-                adjacency_cache[key] = True
-                return True
-
-            # Compatibility fallback for coincident but independently-created faces.
-            try:
-                merged = Topology.Merge(cell_a, cell_b, tolerance=tolerance, silent=True)
-            except TypeError:
-                try:
-                    merged = Topology.Merge(cell_a, cell_b, tolerance=tolerance)
-                except Exception:
-                    merged = None
-            except Exception:
-                merged = None
-            value = Topology.IsInstance(merged, "CellComplex")
-            adjacency_cache[key] = bool(value)
-            return bool(value)
-
-        remaining = set(range(len(valid_cells)))
-        components = []
-        while remaining:
-            seed = remaining.pop()
-            component = [seed]
-            queue = deque([seed])
-            while queue:
-                current = queue.popleft()
-                neighbours = [index for index in list(remaining) if adjacent(current, index)]
-                for index in neighbours:
-                    remaining.remove(index)
-                    component.append(index)
-                    queue.append(index)
-            components.append(component)
-
-        output = []
-        for component in components:
-            component_cells = [valid_cells[index] for index in component]
-            if len(component_cells) == 1:
-                output.append(component_cells[0])
-                continue
-            cell_complex = CellComplex.ByCells(component_cells, tolerance=tolerance, silent=True)
-            if Topology.IsInstance(cell_complex, "CellComplex"):
-                output.append(cell_complex)
-            else:
-                # Never lose input Cells if a backend cannot assemble one component.
-                output.extend(component_cells)
-
-        return Cluster.ByTopologies(output, silent=silent)
-
+        
+        complexes = find_cell_complexes(cells, adjacency_test)
+        cellComplexes = []
+        cells = []
+        for aComplex in complexes:
+            aComplex = list(aComplex)
+            if len(aComplex) > 1:
+                cc = CellComplex.ByCells(aComplex, silent=True)
+                if Topology.IsInstance(cc, "CellComplex"):
+                    cellComplexes.append(cc)
+            elif len(aComplex) == 1:
+                if Topology.IsInstance(aComplex[0], "Cell"):
+                    cells.append(aComplex[0])
+        return Cluster.ByTopologies(cellComplexes+cells)
+    
     @staticmethod
-    def MysticRose(
-        wire=None,
-        origin=None,
-        radius: float = 0.5,
-        sides: int = 16,
-        perimeter: bool = True,
-        direction: list = [0, 0, 1],
-        placement: str = "center",
-        tolerance: float = 0.0001,
-        silent: bool = False,
-    ):
+    def MysticRose(wire= None, origin= None, radius: float = 0.5, sides: int = 16, perimeter: bool = True, direction: list = [0, 0, 1], placement:str = "center", tolerance: float = 0.0001, silent: bool = False):
         """
-        Creates a Mystic Rose as a Cluster of chords between non-adjacent vertices.
+        Creates a mystic rose.
 
         Parameters
         ----------
-        wire : topologic_core.Wire, optional
-            Closed source Wire. If None, a polygonal circle is created. Default None.
-        origin : topologic_core.Vertex, optional
-            Origin used when a source Wire is generated. Default is the global origin.
-        radius : float, optional
-            Radius of the generated source circle. Default is 0.5.
-        sides : int, optional
-            Number of source circle sides. Default is 16.
-        perimeter : bool, optional
-            If True, includes the source Wire perimeter Edges. Default is True.
-        direction : list, optional
-            Source circle normal. Default is [0, 0, 1].
-        placement : str, optional
-            Source circle placement. Default is "center".
-        tolerance : float, optional
+        wire : topologic_core.Wire , optional
+            The input Wire. if set to None, a circle with the input parameters is created. Otherwise, the input parameters are ignored.
+        origin : topologic_core.Vertex , optional
+            The location of the origin of the circle. Default is None which results in the circle being placed at (0, 0, 0).
+        radius : float , optional
+            The radius of the mystic rose. Default is 1.
+        sides : int , optional
+            The number of sides of the mystic rose. Default is 16.
+        perimeter : bool , optional
+            If True, the perimeter edges are included in the output. Default is True.
+        direction : list , optional
+            The vector representing the up direction of the mystic rose. Default is [0, 0, 1].
+        placement : str , optional
+            The description of the placement of the origin of the mystic rose. This can be "center", or "lowerleft". It is case insensitive. Default is "center".
+        tolerance : float , optional
             The desired tolerance. Default is 0.0001.
-        silent : bool, optional
-            If True, error and warning messages are suppressed. Default is False.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
-        topologic_core.Cluster or None
-            The created Edge Cluster.
+        topologic_core.Cluster
+            The created mystic rose (cluster of edges).
+
         """
-        from itertools import combinations
+        import topologicpy
         from topologicpy.Edge import Edge
-        from topologicpy.Topology import Topology
         from topologicpy.Wire import Wire
+        from topologicpy.Cluster import Cluster
+        from topologicpy.Topology import Topology
+        from itertools import combinations
 
-        if wire is None:
-            try:
-                radius = abs(float(radius))
-                sides = int(sides)
-            except Exception:
-                if not silent:
-                    print("Cluster.MysticRose - Error: radius or sides is invalid. Returning None.")
-                return None
-            if radius <= tolerance or sides < 3:
-                if not silent:
-                    print("Cluster.MysticRose - Error: radius must exceed tolerance and sides must be at least 3. Returning None.")
-                return None
-            wire = Wire.Circle(
-                origin=origin,
-                radius=radius,
-                sides=sides,
-                fromAngle=0,
-                toAngle=360,
-                close=True,
-                direction=direction,
-                placement=placement,
-                tolerance=tolerance,
-                silent=True,
-            )
-
-        if not Topology.IsInstance(wire, "Wire"):
-            if not silent:
-                print("Cluster.MysticRose - Error: wire is not a valid Wire. Returning None.")
+        if wire == None:
+            wire = Wire.Circle(origin=origin, radius=radius, sides=sides, fromAngle=0, toAngle=360, close=True, direction=direction, placement=placement, tolerance=tolerance)
+        if not Wire.IsClosed(wire):
+            print("Cluster.MysticRose - Error: The input wire parameter is not a closed topologic wire. Returning None.")
             return None
-        try:
-            closed = Wire.IsClosed(wire, tolerance=tolerance, silent=True)
-        except TypeError:
-            try:
-                closed = Wire.IsClosed(wire)
-            except Exception:
-                closed = False
-        if not closed:
-            if not silent:
-                print("Cluster.MysticRose - Error: wire must be closed. Returning None.")
-            return None
-
-        vertices = Topology.Vertices(wire, silent=True) or []
-        if len(vertices) < 3:
-            return None
-
-        edges = list(Wire.Edges(wire) or []) if perimeter else []
-        n = len(vertices)
-        for a, b in combinations(range(n), 2):
-            if abs(a - b) in {1, n - 1}:
-                continue
-            edge = Edge.ByVertices([vertices[a], vertices[b]], tolerance=tolerance, silent=True)
-            if Topology.IsInstance(edge, "Edge"):
-                edges.append(edge)
-        return Cluster.ByTopologies(edges, silent=silent)
-
+        vertices = Topology.Vertices(wire)
+        indices = list(range(len(vertices)))
+        combs = [[comb[0],comb[1]] for comb in combinations(indices, 2) if not (abs(comb[0]-comb[1]) == 1) and not (abs(comb[0]-comb[1]) == len(indices)-1)]
+        edges = []
+        if perimeter:
+            edges = Wire.Edges(wire)
+        for comb in combs:
+            edges.append(Edge.ByVertices([vertices[comb[0]], vertices[comb[1]]], tolerance=tolerance, silent=silent))
+        return Cluster.ByTopologies(edges)
+    
     @staticmethod
-    def Tripod(
-        size: float = 1.0,
-        radius: float = 0.03,
-        sides: int = 4,
-        faceColorKey="faceColor",
-        xColor="red",
-        yColor="green",
-        zColor="blue",
-        matrix=None,
-        tolerance: float = 0.0001,
-        silent: bool = False,
-    ):
+    def Shells(cluster, silent: bool = False) -> list:
         """
-        Creates a three-axis colour-coded XYZ tripod.
+        Returns the shells of the input cluster.
 
         Parameters
         ----------
-        size : float, optional
-            Overall axis length. Default is 1.0.
-        radius : float, optional
-            Shaft radius. Default is 0.03.
-        sides : int, optional
-            Number of radial sides used by shafts and arrow heads. Default is 4.
-        faceColorKey : str, optional
-            Dictionary key used to store Face colours. Default is "faceColor".
-        xColor, yColor, zColor : optional
-            Values stored for X, Y, and Z axis Face colours.
-        matrix : list, optional
-            Optional 4x4 transformation matrix applied to the resulting Cluster.
-        tolerance : float, optional
-            The desired tolerance. Default is 0.0001.
-        silent : bool, optional
-            If True, error and warning messages are suppressed. Default is False.
+        cluster : topologic_core.Cluster
+            The input cluster.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
-        topologic_core.Cluster or None
-            The created tripod.
+        list
+            The list of shells.
+
         """
-        from topologicpy.Cell import Cell
-        from topologicpy.Dictionary import Dictionary
         from topologicpy.Topology import Topology
 
+        if not Topology.IsInstance(cluster, "Cluster"):
+            print("Cluster.Shells - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
+            return None
+        shells = []
+        # _ = cluster.Shells(None, shells) # H to Core
         try:
-            size = abs(float(size))
-            radius = abs(float(radius))
-            sides = int(sides)
-            tolerance = abs(float(tolerance))
+            _ = Core.InstanceCall(cluster, "Shells", None, shells)
         except Exception:
             if not silent:
-                print("Cluster.Tripod - Error: size, radius, sides, or tolerance is invalid. Returning None.")
-            return None
-        if size <= tolerance or radius <= tolerance or sides < 3:
-            if not silent:
-                print("Cluster.Tripod - Error: size and radius must exceed tolerance and sides must be at least 3. Returning None.")
-            return None
+                print("Cluster.Shells - Error: Could not fetch shells. Returning None.")
+            shells = None
+        return shells
 
-        shaft_height = size * 0.7
-        head_height = size - shaft_height
-        cylinder = Cell.Cylinder(radius=radius, height=shaft_height, uSides=sides, placement="bottom", tolerance=tolerance)
-        cone = Cell.Cone(baseRadius=radius * 2.25, height=head_height, placement="bottom", uSides=sides, tolerance=tolerance, silent=True)
-        if not Topology.IsInstance(cylinder, "Cell") or not Topology.IsInstance(cone, "Cell"):
-            return None
-        cone = Topology.Translate(cone, 0, 0, shaft_height, silent=True)
-        z_arrow = Topology.Union(cylinder, cone, tolerance=tolerance, silent=True)
-        if not Topology.IsInstance(z_arrow, "Topology"):
-            return None
-        x_arrow = Topology.Rotate(z_arrow, axis=[0, 1, 0], angle=90, tolerance=tolerance, silent=True)
-        y_arrow = Topology.Rotate(z_arrow, axis=[1, 0, 0], angle=-90, tolerance=tolerance, silent=True)
+    @staticmethod
+    def Simplify(cluster):
+        """
+        Simplifies the input cluster if possible. For example, if the cluster contains only one cell, that cell is returned.
 
-        for arrow, color in ((x_arrow, xColor), (y_arrow, yColor), (z_arrow, zColor)):
-            for face in Topology.Faces(arrow, silent=True) or []:
-                dictionary = Dictionary.ByKeyValue(faceColorKey, color)
-                try:
-                    Topology.SetDictionary(face, dictionary, silent=True)
-                except Exception:
-                    pass
+        Parameters
+        ----------
+        cluster : topologic_core.Cluster
+            The input cluster.
 
-        cluster = Cluster.ByTopologies(x_arrow, y_arrow, z_arrow, silent=silent)
+        Returns
+        -------
+        topologic_core.Topology or list
+            The simplification of the cluster.
+
+        """
+        from topologicpy.Topology import Topology
+
         if not Topology.IsInstance(cluster, "Cluster"):
+            print("Cluster.Simplify - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
-        if matrix is not None:
-            cluster = Topology.Transform(cluster, matrix=matrix, tolerance=tolerance, silent=silent)
+        resultingTopologies = []
+        topCC = Topology.CellComplexes(cluster)
+        topCells = Topology.Cells(cluster)
+        topShells = Topology.Shells(cluster)
+        topFaces = Topology.Faces(cluster)
+        topWires = Topology.Wires(cluster)
+        topEdges = Topology.Edges(cluster)
+        topVertices = Topology.Vertices(cluster)
+        if len(topCC) == 1:
+            cc = topCC[0]
+            ccVertices = Topology.Vertices(cc)
+            if len(topVertices) == len(ccVertices):
+                resultingTopologies.append(cc)
+        if len(topCC) == 0 and len(topCells) == 1:
+            cell = topCells[0]
+            ccVertices = Topology.Vertices(cell)
+            if len(topVertices) == len(ccVertices):
+                resultingTopologies.append(cell)
+        if len(topCC) == 0 and len(topCells) == 0 and len(topShells) == 1:
+            shell = topShells[0]
+            ccVertices = Topology.Vertices(shell)
+            if len(topVertices) == len(ccVertices):
+                resultingTopologies.append(shell)
+        if len(topCC) == 0 and len(topCells) == 0 and len(topShells) == 0 and len(topFaces) == 1:
+            face = topFaces[0]
+            ccVertices = Topology.Vertices(face)
+            if len(topVertices) == len(ccVertices):
+                resultingTopologies.append(face)
+        if len(topCC) == 0 and len(topCells) == 0 and len(topShells) == 0 and len(topFaces) == 0 and len(topWires) == 1:
+            wire = topWires[0]
+            ccVertices = Topology.Vertices(wire)
+            if len(topVertices) == len(ccVertices):
+                resultingTopologies.append(wire)
+        if len(topCC) == 0 and len(topCells) == 0 and len(topShells) == 0 and len(topFaces) == 0 and len(topWires) == 0 and len(topEdges) == 1:
+            edge = topEdges[0]
+            ccVertices = Topology.Vertices(edge)
+            if len(topVertices) == len(ccVertices):
+                resultingTopologies.append(edge)
+        if len(topCC) == 0 and len(topCells) == 0 and len(topShells) == 0 and len(topFaces) == 0 and len(topWires) == 0 and len(topEdges) == 0 and len(topVertices) == 1:
+            vertex = topVertices[0]
+            resultingTopologies.append(vertex)
+        if len(resultingTopologies) == 1:
+            return resultingTopologies[0]
         return cluster
+
+    @staticmethod
+    def Tripod(size: float = 1.0,
+               radius: float = 0.03,
+               sides: int = 4,
+               faceColorKey="faceColor",
+               xColor = "red",
+               yColor = "green",
+               zColor = "blue",
+               matrix=None):
+        """
+        Creates a color-coded Axes tripod for X, Y, and Z axes. X-Axis is red, Y-Axis is "green", and Z-Axis= "blue"
+
+        Parameters
+        ----------
+        size : float , optional
+            The desired size of the tripod. Default is 1.0.
+        radius : float , optional
+            The desired radiues of the tripod. Default is 0.03
+        sides : int , optional
+            The desired number of sides of the tripod. Default is 4.
+        faceColorKey : str , optional
+            The dictionary key under which to store the colors of the axes.
+        xColor : str , optional
+            The color to use for the X axis. Default is "red".
+        yColor : str , optional
+            The color to use for the Y axis. Default is "green".
+        zColor : str , optional
+            The color to use for the Z axis. Default is "blue".
+        matrix : list , optional
+            The desired 4X4 transformation matrix to use for transforming the tripod. Default is None which means the tripod will be placed at the origin and will be axis-aligned. 
+
+        Returns
+        -------
+        topologic_core.Cluster
+            The created tripod
+
+        """
+
+        from topologicpy.Cell import Cell
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+
+        cyl = Cell.Cylinder(radius=radius, height=size - size*0.3, uSides=sides, placement="bottom")
+        cone = Cell.Cone(baseRadius=radius*2.25, height=size*0.3, placement="bottom", uSides=sides)
+        cone = Topology.Translate(cone, 0, 0, size - size*0.3)
+        z_arrow = Topology.Union(cyl, cone)
+        x_arrow = Topology.Rotate(z_arrow, axis=[0,1,0], angle=90)
+        y_arrow = Topology.Rotate(z_arrow, axis=[1,0,0], angle=-90)
+
+        x_faces = Topology.Faces(x_arrow)
+        for x_face in x_faces:
+            d = Dictionary.ByKeyValue(faceColorKey, xColor)
+            x_face = Topology.SetDictionary(x_face, d)
+        y_faces = Topology.Faces(y_arrow)
+        for y_face in y_faces:
+            d = Dictionary.ByKeyValue(faceColorKey, yColor)
+            y_face = Topology.SetDictionary(y_face, d)
+        z_faces = Topology.Faces(z_arrow)
+        for z_face in z_faces:
+            d = Dictionary.ByKeyValue(faceColorKey, zColor)
+            z_face = Topology.SetDictionary(z_face, d)
+
+        cluster = Cluster.ByTopologies(x_arrow, y_arrow, z_arrow)
+        if not matrix == None:
+            cluster = Topology.Transform(cluster, matrix=matrix)
+        return cluster
+
+    @staticmethod
+    def Vertices(cluster, silent: bool = False) -> list:
+        """
+        Returns the vertices of the input cluster.
+
+        Parameters
+        ----------
+        cluster : topologic_core.Cluster
+            The input cluster.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        list
+            The list of vertices.
+
+        """
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(cluster, "Cluster"):
+            print("Cluster.Vertices - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
+            return None
+        vertices = []
+        # _ = cluster.Vertices(None, vertices) # H to Core
+        try:
+            _ = Core.InstanceCall(cluster, "Vertices", None, vertices)
+        except Exception:
+            if not silent:
+                print("Cluster.Vertices - Error: Could not fetch vertices. Returning None.")
+            vertices = None
+        return vertices
+
+    @staticmethod
+    def Wires(cluster, silent: bool = False) -> list:
+        """
+        Returns the wires of the input cluster.
+
+        Parameters
+        ----------
+        cluster : topologic_core.Cluster
+            The input cluster.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        list
+            The list of wires.
+
+        """
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(cluster, "Cluster"):
+            print("Cluster.Wires - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
+            return None
+        wires = []
+        # _ = cluster.Wires(None, wires) # H to Core
+        try:
+            _ = Core.InstanceCall(cluster, "Wires", None, wires)
+        except Exception:
+            if not silent:
+                print("Cluster.Wires - Error: Could not fetch wires. Returning None.")
+            wires = None
+        return wires
+
+    

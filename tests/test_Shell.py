@@ -320,3 +320,150 @@ def test_roof_and_skeleton_create_topologies_for_rectangle_face():
 
     assert len(roof_faces) > 0
     assert len(skeleton_faces) > 0
+
+def test_slice_face_by_edge_returns_shell():
+    from topologicpy.Edge import Edge
+    from topologicpy.Face import Face
+    from topologicpy.Topology import Topology
+    from topologicpy.Vertex import Vertex
+
+    face = Face.Rectangle(
+        origin=Vertex.Origin(),
+        width=2.0,
+        length=2.0,
+        placement="center",
+        silent=True,
+    )
+
+    cutter = Edge.ByVertices(
+        [
+            Vertex.ByCoordinates(0, -1, 0),
+            Vertex.ByCoordinates(0, 1, 0),
+        ],
+        silent=True,
+    )
+
+    result = Topology.Slice(
+        face,
+        cutter,
+        silent=True,
+    )
+
+    assert Topology.IsInstance(
+        result,
+        "Shell",
+    )
+
+    assert len(
+        Topology.Faces(
+            result,
+            silent=True,
+        )
+    ) == 2
+
+def test_slice_face_by_edge_cluster_returns_shell():
+    from topologicpy.Cluster import Cluster
+    from topologicpy.Edge import Edge
+    from topologicpy.Face import Face
+    from topologicpy.Topology import Topology
+    from topologicpy.Vertex import Vertex
+
+    face = Face.Rectangle(
+        origin=Vertex.Origin(),
+        width=2.0,
+        length=2.0,
+        placement="center",
+        silent=True,
+    )
+
+    cutters = Cluster.ByTopologies(
+        [
+            Edge.ByVertices(
+                [
+                    Vertex.ByCoordinates(0, -1, 0),
+                    Vertex.ByCoordinates(0, 1, 0),
+                ],
+                silent=True,
+            ),
+            Edge.ByVertices(
+                [
+                    Vertex.ByCoordinates(-1, 0, 0),
+                    Vertex.ByCoordinates(1, 0, 0),
+                ],
+                silent=True,
+            ),
+        ]
+    )
+
+    result = Topology.Slice(
+        face,
+        cutters,
+        silent=True,
+    )
+
+    assert Topology.IsInstance(
+        result,
+        "Shell",
+    )
+
+    assert len(
+        Topology.Faces(
+            result,
+            silent=True,
+        )
+    ) == 4
+
+def test_shell_by_faces_accepts_slice_faces():
+    from topologicpy.Edge import Edge
+    from topologicpy.Face import Face
+    from topologicpy.Shell import Shell
+    from topologicpy.Topology import Topology
+    from topologicpy.Vertex import Vertex
+
+    face = Face.Rectangle(
+        origin=Vertex.Origin(),
+        width=2.0,
+        length=2.0,
+        placement="center",
+        silent=True,
+    )
+
+    cutter = Edge.ByVertices(
+        [
+            Vertex.ByCoordinates(0, -1, 0),
+            Vertex.ByCoordinates(0, 1, 0),
+        ],
+        silent=True,
+    )
+
+    sliced = Topology.Slice(
+        face,
+        cutter,
+        silent=True,
+    )
+
+    faces = Topology.Faces(
+        sliced,
+        silent=True,
+    )
+
+    assert len(faces) == 2
+
+    shell = Shell.ByFaces(
+        faces,
+        silent=True,
+    )
+
+    assert Topology.IsInstance(
+        shell,
+        "Shell",
+    )
+
+    assert len(
+        Topology.Faces(
+            shell,
+            silent=True,
+        )
+    ) == 2
+
+

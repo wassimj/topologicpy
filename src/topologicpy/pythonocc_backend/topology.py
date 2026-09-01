@@ -1932,43 +1932,6 @@ class Topology:
         return _shape_to_brep_text(shape)
 
     @staticmethod
-    def ByBREPString(string: Any):
-        """
-        Creates a topology from a raw Open CASCADE BREP string.
-
-        This method reads only raw OCCT BREP geometry. Unlike ByString, it does
-        not interpret the TopologicPy JSON serialization envelope and does not
-        restore TopologicPy dictionaries or other metadata.
-
-        Parameters
-        ----------
-        string : str
-            The input raw Open CASCADE BREP string.
-
-        Returns
-        -------
-        Topology
-            The reconstructed backend topology, or None if the input BREP string
-            is invalid.
-
-        """
-        if not isinstance(string, str) or not string.strip():
-            return None
-
-        try:
-            shape = _shape_from_brep_text(string)
-        except Exception:
-            shape = None
-
-        if shape is None:
-            return None
-
-        try:
-            return Topology.ByOcctShape(shape)
-        except Exception:
-            return None
-
-    @staticmethod
     def String(topology: Any, version: int = 0) -> Optional[str]:
         """
         Returns a textual serialization of the topology.
@@ -3860,54 +3823,315 @@ class Topology:
     # Transform / Translate / Rotate / Scale
     # -------------------------------------------------------------------
 
+    @staticmethod
+    def _apply_transform_to_members(topology: Any, apply_one) -> Any:
+        """
+        Applies a transformation recursively to the direct members of an
+        aggregate topology and rebuilds the same aggregate type.
+
+        This is used for heterogeneous Clusters, for which transforming the
+        complete OCCT Compound as one shape can alter the intermediate topology
+        hierarchy, and as a fallback for aggregate wrappers without a usable
+        native OCCT shape.
+
+        Parameters
+        ----------
+        topology : Topology
+            The input aggregate topology.
+        apply_one : callable
+            A callable that accepts one topology and returns its transformed
+            topology.
+
+        Returns
+        -------
+        Topology
+            The transformed aggregate topology, or None if the transformation
+            or reconstruction fails.
+        """
+        type_name = _topology_type_name(
+            topology
+        )
+
+        # ------------------------------------------------------------------
+        # Cluster
+        #
+        # Always preserve the actual DIRECT constituent hierarchy.
+        #
+        # Cluster.ByTopologies intentionally stores a native OCCT Compound, so
+        # topology.topologies may be empty. Retrieve the direct children through
+        # Cluster.Topologies() first.
+        # ------------------------------------------------------------------
+
+        if type_name == "Cluster":
+
+            from .cluster import Cluster
+
+            members = []
+
+            try:
+                members = topology.Topologies()
+            except Exception:
+                members = []
+
+            if not isinstance(
+                members,
+                list
+            ):
+                members = []
+
+            if len(members) == 0:
+                try:
+                    members = list(
+                        getattr(
+                            topology,
+                            "topologies",
+                            []
+                        )
+                        or []
+                    )
+                except Exception:
+                    members = []
+
+            members = [
+                member
+                for member in members
+                if isinstance(
+                    member,
+                    Topology
+                )
+            ]
+
+            if len(members) == 0:
+                return None
+
+            transformed = []
+
+            for member in members:
+
+                try:
+                    transformed_member = apply_one(
+                        member
+                    )
+                except Exception:
+                    transformed_member = None
+
+                # Do not silently drop a failed constituent.
+                if not isinstance(
+                    transformed_member,
+                    Topology
+                ):
+                    return None
+
+                transformed.append(
+                    transformed_member
+                )
+
+            if len(transformed) != len(members):
+                return None
+
+            try:
+                result = Cluster.ByTopologies(
+                    transformed
+                )
+            except Exception:
+                result = None
+
+            if not isinstance(
+                result,
+                Cluster
+            ):
+                return None
+
+            # --------------------------------------------------------------
+            # Preserve aggregate metadata.
+            # --------------------------------------------------------------
+
+            try:
+                result.dictionary = Topology.GetDictionary(
+                    topology
+                )
+            except Exception:
+                pass
+
+            try:
+                result.contents = list(
+                    getattr(
+                        topology,
+                        "contents",
+                        []
+                    )
+                    or []
+                )
+            except Exception:
+                pass
+
+            try:
+                result.contexts = list(
+                    getattr(
+                        topology,
+                        "contexts",
+                        []
+                    )
+                    or []
+                )
+            except Exception:
+                pass
+
+            try:
+                result.apertures = list(
+                    getattr(
+                        topology,
+                        "apertures",
+                        []
+                    )
+                    or []
+                )
+            except Exception:
+                pass
+
+            return result
+
+        # ------------------------------------------------------------------
+        # CellComplex fallback
+        #
+        # Normally a shaped CellComplex is transformed natively as one OCCT
+        # CompSolid. This branch is primarily for wrappers without a usable
+        # shape.
+        # ------------------------------------------------------------------
+
+        if type_name == "CellComplex":
+
+            from .cell_complex import CellComplex
+
+            cells = []
+
+            try:
+                cells = list(
+                    getattr(
+                        topology,
+                        "cells",
+                        []
+                    )
+                    or []
+                )
+            except Exception:
+                cells = []
+
+            if len(cells) == 0:
+                try:
+                    cells = topology.Cells()
+                except Exception:
+                    cells = []
+
+            cells = [
+                cell
+                for cell in cells
+                if isinstance(
+                    cell,
+                    Topology
+                )
+            ]
+
+            if len(cells) == 0:
+                return None
+
+            transformed = []
+
+            for cell in cells:
+
+                try:
+                    transformed_cell = apply_one(
+                        cell
+                    )
+                except Exception:
+                    transformed_cell = None
+
+                if not isinstance(
+                    transformed_cell,
+                    Topology
+                ):
+                    return None
+
+                transformed.append(
+                    transformed_cell
+                )
+
+            if len(transformed) != len(cells):
+                return None
+
+            try:
+                result = CellComplex.ByCells(
+                    transformed
+                )
+            except Exception:
+                result = None
+
+            if result is None:
+                return None
+
+            try:
+                result.dictionary = Topology.GetDictionary(
+                    topology
+                )
+            except Exception:
+                pass
+
+            try:
+                result.contents = list(
+                    getattr(
+                        topology,
+                        "contents",
+                        []
+                    )
+                    or []
+                )
+            except Exception:
+                pass
+
+            try:
+                result.contexts = list(
+                    getattr(
+                        topology,
+                        "contexts",
+                        []
+                    )
+                    or []
+                )
+            except Exception:
+                pass
+
+            try:
+                result.apertures = list(
+                    getattr(
+                        topology,
+                        "apertures",
+                        []
+                    )
+                    or []
+                )
+            except Exception:
+                pass
+
+            return result
+
+        return None
 
 
     @staticmethod
-    def _rewrap_preserving_wrapper(
-        result: Any,
-        original: Any,
-        transformed_shape: Any = None,
-        transferDictionaries: bool = True,
-    ) -> Any:
-        """Preserves semantic aggregate wrappers across transformations.
-
-        Generic OCCT wrapping may promote a transformed Compound of Faces to a
-        Shell. A source Cluster must remain a Cluster, because Cluster is a
-        public semantic container rather than a geometric promotion request.
-        CellComplex is similarly preserved when a transformed CompSolid is
-        normalized to a single Cell.
+    def _rewrap_preserving_wrapper(result: Any, original: Any) -> Any:
+        """
+        Preserves a CellComplex wrapper across transforms even when the underlying
+        transformed OCCT result contains only one Solid.
         """
         if result is None:
             return None
 
-        type_name = _topology_type_name(original)
-
-        if type_name == "Cluster" and not _is_null_shape(transformed_shape):
-            try:
-                from .cluster import Cluster
-
-                cluster = Cluster.ByOcctShape(
-                    transformed_shape,
-                    dictionary=(
-                        copy.deepcopy(Topology.GetDictionary(original))
-                        if transferDictionaries
-                        else {}
-                    ),
-                    contents=list(getattr(original, "contents", []) or []),
-                    contexts=list(getattr(original, "contexts", []) or []),
-                    apertures=list(getattr(original, "apertures", []) or []),
-                )
-                if cluster is not None:
-                    return cluster
-            except Exception:
-                pass
-
-        if type_name != "CellComplex":
-            return result
-
         try:
             from .cell import Cell
             from .cell_complex import CellComplex
+
+            if not isinstance(original, CellComplex):
+                return result
 
             if isinstance(result, CellComplex):
                 return result
@@ -3916,181 +4140,133 @@ class Topology:
                 return CellComplex(
                     shape=getattr(result, "shape", None),
                     cells=[],
-                    dictionary=(
-                        copy.deepcopy(Topology.GetDictionary(original))
-                        if transferDictionaries
-                        else {}
-                    ),
+                    dictionary=Topology.GetDictionary(original),
                     contents=list(getattr(original, "contents", []) or []),
                     contexts=list(getattr(original, "contexts", []) or []),
                     apertures=list(getattr(original, "apertures", []) or []),
                 )
+
         except Exception:
             pass
 
         return result
 
-    @staticmethod
-    def _transfer_transform_attributes(
-        source_shape: Any,
-        target_shape: Any,
-        maker: Any,
-        transferDictionaries: bool = True,
-    ) -> None:
-        """Transfers metadata through the OCCT transform history.
-
-        Dictionaries are transferred only when ``transferDictionaries`` is
-        True. Contents, contexts, and apertures are structural relationships
-        and are preserved independently.
-
-        Parameters
-        ----------
-        source_shape : OCC.Core.TopoDS.TopoDS_Shape
-            The source OCCT shape.
-        target_shape : OCC.Core.TopoDS.TopoDS_Shape
-            The transformed OCCT shape.
-        maker : OCC.Core.BRepBuilderAPI.BRepBuilderAPI_ModifyShape
-            The OCCT transformation builder that maps source shapes to result
-            shapes through ``ModifiedShape``.
-        transferDictionaries : bool , optional
-            If set to True, dictionaries are transferred. Default is True.
-        """
-        if _is_null_shape(source_shape) or _is_null_shape(target_shape):
-            return
-
-        manager = AttributeManager.GetInstance()
-
-        def has_metadata(shape):
-            if transferDictionaries:
-                try:
-                    if manager.HasDictionary(shape):
-                        return True
-                except Exception:
-                    pass
-
-            for predicate in (
-                manager.HasContents,
-                manager.HasContexts,
-                manager.HasApertures,
-            ):
-                try:
-                    if predicate(shape):
-                        return True
-                except Exception:
-                    pass
-            return False
-
-        def transfer(source, target):
-            if _is_null_shape(target):
-                return
-
-            if transferDictionaries:
-                try:
-                    if manager.HasDictionary(source):
-                        manager.SetDictionary(
-                            target,
-                            copy.deepcopy(manager.GetDictionary(source)),
-                        )
-                except Exception:
-                    pass
-
-            for has_value, get_value, set_value in (
-                (manager.HasContents, manager.GetContents, manager.SetContents),
-                (manager.HasContexts, manager.GetContexts, manager.SetContexts),
-                (manager.HasApertures, manager.GetApertures, manager.SetApertures),
-            ):
-                try:
-                    if has_value(source):
-                        set_value(target, get_value(source))
-                except Exception:
-                    pass
-
-        if has_metadata(source_shape):
-            transfer(source_shape, target_shape)
-
-        for shape_type in (
-            TopAbs_VERTEX,
-            TopAbs_EDGE,
-            TopAbs_WIRE,
-            TopAbs_FACE,
-            TopAbs_SHELL,
-            TopAbs_SOLID,
-            TopAbs_COMPSOLID,
-        ):
-            for source_subshape in _iter_occ_subshapes_unique(source_shape, shape_type):
-                if not has_metadata(source_subshape):
-                    continue
-                try:
-                    target_subshape = maker.ModifiedShape(source_subshape)
-                except Exception:
-                    continue
-                transfer(source_subshape, target_subshape)
-
-
     def _apply_gtrsf(
         self,
         gtrsf,
-        transferDictionaries: bool = True,
+        dictionary_passthrough: bool = True
     ):
-        """Applies a general affine OCCT transformation.
+        """
+        Applies a gp_GTrsf general affine transformation to the topology.
+
+        Heterogeneous Clusters are transformed constituent-by-constituent so
+        that their direct topology hierarchy is preserved. Other topologies are
+        transformed natively as a single OCCT shape whenever possible.
 
         Parameters
         ----------
         gtrsf : OCC.Core.gp.gp_GTrsf
-            The affine transformation.
-        transferDictionaries : bool , optional
-            If set to True, dictionaries attached to the topology and its
-            native subtopologies are transferred through OCCT shape history.
+            The general affine transformation.
+        dictionary_passthrough : bool , optional
+            If set to True, the topology dictionary is preserved.
             Default is True.
 
         Returns
         -------
         Topology
-            The transformed topology, or None if the operation fails.
+            The transformed topology, or None if the transformation fails.
         """
-        if self is None or BRepBuilderAPI_GTransform is None:
-            return None
 
-        shape = _shape_from_topology(self)
-        if _is_null_shape(shape):
-            return None
+        # ------------------------------------------------------------------
+        # Heterogeneous Cluster
+        #
+        # Do not transform the complete mixed-dimensional Compound in one
+        # BRepBuilderAPI_GTransform operation. Doing so can alter intermediate
+        # containers such as the Shell inside a Cell.
+        #
+        # Transform the direct constituent topologies independently and rebuild
+        # the Cluster instead.
+        # ------------------------------------------------------------------
 
-        try:
-            maker = BRepBuilderAPI_GTransform(shape, gtrsf, True)
-            maker.Build()
-            new_shape = maker.Shape()
-        except Exception:
-            return None
+        if _topology_type_name(
+            self
+        ) == "Cluster":
 
-        if _is_null_shape(new_shape):
-            return None
+            return Topology._apply_transform_to_members(
+                self,
+                lambda member: Topology._apply_gtrsf(
+                    member,
+                    gtrsf,
+                    dictionary_passthrough
+                )
+            )
 
-        Topology._transfer_transform_attributes(
-            shape,
-            new_shape,
-            maker,
-            transferDictionaries=transferDictionaries,
+        # ------------------------------------------------------------------
+        # Native OCCT affine transformation
+        # ------------------------------------------------------------------
+
+        shape = _shape_from_topology(
+            self
         )
 
-        result = Topology.ByOcctShape(new_shape)
-        if result is None:
-            return None
+        if (
+            not _is_null_shape(shape)
+            and BRepBuilderAPI_GTransform is not None
+        ):
 
-        return Topology._rewrap_preserving_wrapper(
-            result,
+            try:
+                maker = BRepBuilderAPI_GTransform(
+                    shape,
+                    gtrsf,
+                    True
+                )
+
+                if maker.IsDone():
+
+                    new_shape = maker.Shape()
+
+                    if not _is_null_shape(
+                        new_shape
+                    ):
+
+                        result = Topology.ByOcctShape(
+                            new_shape
+                        )
+
+                        if result is not None:
+
+                            if dictionary_passthrough:
+                                try:
+                                    result.dictionary = Topology.GetDictionary(
+                                        self
+                                    )
+                                except Exception:
+                                    pass
+
+                            result = Topology._rewrap_preserving_wrapper(
+                                result,
+                                self
+                            )
+
+                            return result
+
+            except Exception:
+                pass
+
+        # ------------------------------------------------------------------
+        # Aggregate fallback
+        # ------------------------------------------------------------------
+
+        return Topology._apply_transform_to_members(
             self,
-            transformed_shape=new_shape,
-            transferDictionaries=transferDictionaries,
+            lambda member: Topology._apply_gtrsf(
+                member,
+                gtrsf,
+                dictionary_passthrough
+            )
         )
 
-
-    def Translate(
-        self,
-        x: float,
-        y: float,
-        z: float,
-        transferDictionaries: bool = True,
-    ):
+    def Translate(self, x: float, y: float, z: float):
         if self is None:
             return None
         try:
@@ -4098,147 +4274,79 @@ class Topology:
             trsf.SetTranslation(gp_Vec(float(x), float(y), float(z)))
         except Exception:
             return None
-        return Topology._apply_rigid(
-            self,
-            trsf,
-            transferDictionaries=transferDictionaries,
-        )
+        return Topology._apply_rigid(self, trsf)
 
-    def Rotate(
-        self,
-        origin: Any,
-        x: float,
-        y: float,
-        z: float,
-        angle: float,
-        transferDictionaries: bool = True,
-    ):
+    def Rotate(self, origin: Any, x: float, y: float, z: float, angle: float):
         if self is None:
             return None
         try:
             ox, oy, oz = origin.x, origin.y, origin.z
-            axis = gp_Ax1(
-                gp_Pnt(float(ox), float(oy), float(oz)),
-                gp_Dir(float(x), float(y), float(z)),
-            )
+            axis = gp_Ax1(gp_Pnt(float(ox), float(oy), float(oz)), gp_Dir(float(x), float(y), float(z)))
             trsf = gp_Trsf()
             trsf.SetRotation(axis, math.radians(float(angle)))
         except Exception:
             return None
-        return Topology._apply_rigid(
-            self,
-            trsf,
-            transferDictionaries=transferDictionaries,
-        )
+        return Topology._apply_rigid(self, trsf)
 
-    def Scale(
-        self,
-        origin: Any,
-        x: float,
-        y: float,
-        z: float,
-        transferDictionaries: bool = True,
-    ):
+    def Scale(self, origin: Any, x: float, y: float, z: float):
         if self is None:
             return None
         try:
             ox, oy, oz = origin.x, origin.y, origin.z
             gtrsf = gp_GTrsf()
-            mat = gp_Mat(
-                float(x), 0.0, 0.0,
-                0.0, float(y), 0.0,
-                0.0, 0.0, float(z),
-            )
+            mat = gp_Mat(float(x), 0.0, 0.0, 0.0, float(y), 0.0, 0.0, 0.0, float(z))
             gtrsf.SetVectorialPart(mat)
-            gtrsf.SetTranslationPart(
-                gp_XYZ(
-                    ox - float(x) * ox,
-                    oy - float(y) * oy,
-                    oz - float(z) * oz,
-                )
-            )
+            gtrsf.SetTranslationPart(gp_XYZ(
+                ox - float(x) * ox, oy - float(y) * oy, oz - float(z) * oz
+            ))
         except Exception:
             return None
-        return Topology._apply_gtrsf(
-            self,
-            gtrsf,
-            transferDictionaries=transferDictionaries,
-        )
+        return Topology._apply_gtrsf(self, gtrsf)
 
     def Transform(self, *args):
         """
-        Applies a general affine transformation.
-
-        Accepted forms are ``Transform(matrix)``,
-        ``Transform(matrix, transferDictionaries)``, a flat 16-value matrix, or
-        the historical 12-scalar form ``tx, ty, tz, r11..r33``.
+        Accepts either a single 4x4 (row-major) matrix, a flat 16-value list,
+        or 12 scalar args (tx, ty, tz, r11..r33) as used by EnergyModel.py.
         """
         if self is None:
             return None
-
-        transfer_dictionaries = True
-        values = args
-
-        if (
-            len(args) == 2
-            and isinstance(args[0], (list, tuple))
-            and isinstance(args[1], bool)
-        ):
-            values = (args[0],)
-            transfer_dictionaries = args[1]
-
         try:
-            if len(values) == 1 and isinstance(values[0], (list, tuple)):
-                flat_or_nested = values[0]
-                if (
-                    len(flat_or_nested) == 4
-                    and isinstance(flat_or_nested[0], (list, tuple))
-                ):
-                    m = [value for row in flat_or_nested for value in row]
+            if len(args) == 1 and isinstance(args[0], (list, tuple)):
+                flat_or_nested = args[0]
+                if len(flat_or_nested) == 4 and isinstance(flat_or_nested[0], (list, tuple)):
+                    m = [v for row in flat_or_nested for v in row]
                 else:
                     m = list(flat_or_nested)
-                if len(m) != 16:
-                    return None
                 tx, ty, tz = m[3], m[7], m[11]
                 a00, a01, a02 = m[0], m[1], m[2]
                 a10, a11, a12 = m[4], m[5], m[6]
                 a20, a21, a22 = m[8], m[9], m[10]
-            elif len(values) == 12:
-                (
-                    tx, ty, tz,
-                    a00, a01, a02,
-                    a10, a11, a12,
-                    a20, a21, a22,
-                ) = values
+            elif len(args) == 12:
+                tx, ty, tz, a00, a01, a02, a10, a11, a12, a20, a21, a22 = args
             else:
                 return None
 
             gtrsf = gp_GTrsf()
-            mat = gp_Mat(
-                float(a00), float(a01), float(a02),
-                float(a10), float(a11), float(a12),
-                float(a20), float(a21), float(a22),
-            )
+            mat = gp_Mat(float(a00), float(a01), float(a02),
+                         float(a10), float(a11), float(a12),
+                         float(a20), float(a21), float(a22))
             gtrsf.SetVectorialPart(mat)
-            gtrsf.SetTranslationPart(
-                gp_XYZ(float(tx), float(ty), float(tz))
-            )
+            gtrsf.SetTranslationPart(gp_XYZ(float(tx), float(ty), float(tz)))
         except Exception:
             return None
-
-        return Topology._apply_gtrsf(
-            self,
-            gtrsf,
-            transferDictionaries=transfer_dictionaries,
-        )
+        return Topology._apply_gtrsf(self, gtrsf)
 
     @staticmethod
     def _apply_rigid(
         topology: Any,
-        trsf,
-        transferDictionaries: bool = True,
+        trsf
     ) -> Any:
-        """Applies a rigid OCCT transformation.
+        """
+        Applies a gp_Trsf rigid transformation and rebuilds the topology.
+
+        Heterogeneous Clusters are transformed constituent-by-constituent so
+        that their direct topology hierarchy is preserved. Other topologies are
+        transformed natively as a single OCCT shape whenever possible.
 
         Parameters
         ----------
@@ -4246,51 +4354,91 @@ class Topology:
             The input topology.
         trsf : OCC.Core.gp.gp_Trsf
             The rigid transformation.
-        transferDictionaries : bool , optional
-            If set to True, dictionaries attached to the topology and its
-            native subtopologies are transferred through OCCT shape history.
-            Default is True.
 
         Returns
         -------
         Topology
-            The transformed topology, or None if the operation fails.
+            The transformed topology, or None if the transformation fails.
         """
-        if topology is None or BRepBuilderAPI_Transform is None:
-            return None
 
-        shape = _shape_from_topology(topology)
-        if _is_null_shape(shape):
-            return None
+        # ------------------------------------------------------------------
+        # Heterogeneous Cluster
+        # ------------------------------------------------------------------
 
-        try:
-            maker = BRepBuilderAPI_Transform(shape, trsf, True)
-            maker.Build()
-            new_shape = maker.Shape()
-        except Exception:
-            return None
+        if _topology_type_name(
+            topology
+        ) == "Cluster":
 
-        if _is_null_shape(new_shape):
-            return None
+            return Topology._apply_transform_to_members(
+                topology,
+                lambda member: Topology._apply_rigid(
+                    member,
+                    trsf
+                )
+            )
 
-        Topology._transfer_transform_attributes(
-            shape,
-            new_shape,
-            maker,
-            transferDictionaries=transferDictionaries,
+        # ------------------------------------------------------------------
+        # Native OCCT rigid transformation
+        # ------------------------------------------------------------------
+
+        shape = _shape_from_topology(
+            topology
         )
 
-        result = Topology.ByOcctShape(new_shape)
-        if result is None:
-            return None
+        if (
+            not _is_null_shape(shape)
+            and BRepBuilderAPI_Transform is not None
+        ):
 
-        return Topology._rewrap_preserving_wrapper(
-            result,
+            try:
+                maker = BRepBuilderAPI_Transform(
+                    shape,
+                    trsf,
+                    True
+                )
+
+                if maker.IsDone():
+
+                    new_shape = maker.Shape()
+
+                    if not _is_null_shape(
+                        new_shape
+                    ):
+
+                        result = Topology.ByOcctShape(
+                            new_shape
+                        )
+
+                        if result is not None:
+
+                            try:
+                                result.dictionary = Topology.GetDictionary(
+                                    topology
+                                )
+                            except Exception:
+                                pass
+
+                            result = Topology._rewrap_preserving_wrapper(
+                                result,
+                                topology
+                            )
+
+                            return result
+
+            except Exception:
+                pass
+
+        # ------------------------------------------------------------------
+        # Aggregate fallback
+        # ------------------------------------------------------------------
+
+        return Topology._apply_transform_to_members(
             topology,
-            transformed_shape=new_shape,
-            transferDictionaries=transferDictionaries,
+            lambda member: Topology._apply_rigid(
+                member,
+                trsf
+            )
         )
-
 
     # -------------------------------------------------------------------
     # Analysis / copy / mass properties

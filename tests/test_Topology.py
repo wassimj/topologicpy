@@ -712,3 +712,589 @@ def test_json_export_and_import_path_round_trip(tmp_path):
     assert any(Topology.IsInstance(item, "Vertex") for item in imported)
 
     assert Topology.ByJSONPath(None, silent=True) is None
+
+def test_navigation_shared_topologies_use_native_identity():
+    from topologicpy.Cell import Cell
+    from topologicpy.CellComplex import CellComplex
+    from topologicpy.Topology import Topology
+    from topologicpy.Vertex import Vertex
+
+    cell_complex = CellComplex.Prism(
+        origin=Vertex.Origin(),
+        width=2.0,
+        length=1.0,
+        height=1.0,
+        uSides=2,
+        vSides=1,
+        wSides=1,
+        placement="center",
+        silent=True,
+    )
+
+    assert Topology.IsInstance(
+        cell_complex,
+        "CellComplex",
+    )
+
+    cells = Topology.Cells(
+        cell_complex,
+        silent=True,
+    )
+
+    assert len(cells) == 2
+
+    shared = Topology.SharedTopologies(
+        cells[0],
+        cells[1],
+        silent=True,
+    )
+
+    assert isinstance(shared, dict)
+    assert set(shared.keys()) == {
+        "vertices",
+        "edges",
+        "wires",
+        "faces",
+    }
+
+    assert len(shared["faces"]) == 1
+    assert len(shared["edges"]) == 4
+    assert len(shared["vertices"]) == 4
+
+    assert len(
+        Topology.SharedFaces(
+            cells[0],
+            cells[1],
+            silent=True,
+        )
+    ) == 1
+
+    assert len(
+        Topology.SharedEdges(
+            cells[0],
+            cells[1],
+            silent=True,
+        )
+    ) == 4
+
+    assert len(
+        Topology.SharedVertices(
+            cells[0],
+            cells[1],
+            silent=True,
+        )
+    ) == 4
+
+    # Independently constructed but coincident geometry is not shared topology.
+    cell_a = Cell.Prism(
+        origin=Vertex.Origin(),
+        width=1.0,
+        length=1.0,
+        height=1.0,
+        placement="center",
+        silent=True,
+    )
+
+    cell_b = Cell.Prism(
+        origin=Vertex.Origin(),
+        width=1.0,
+        length=1.0,
+        height=1.0,
+        placement="center",
+        silent=True,
+    )
+
+    coincident = Topology.SharedTopologies(
+        cell_a,
+        cell_b,
+        silent=True,
+    )
+
+    assert coincident == {
+        "vertices": [],
+        "edges": [],
+        "wires": [],
+        "faces": [],
+    }
+
+def test_navigation_adjacent_cells_and_face_ancestors():
+    from topologicpy.CellComplex import CellComplex
+    from topologicpy.Topology import Topology
+    from topologicpy.Vertex import Vertex
+
+    cell_complex = CellComplex.Prism(
+        origin=Vertex.Origin(),
+        width=2.0,
+        length=1.0,
+        height=1.0,
+        uSides=2,
+        vSides=1,
+        wSides=1,
+        placement="center",
+        silent=True,
+    )
+
+    cells = Topology.Cells(
+        cell_complex,
+        silent=True,
+    )
+
+    assert len(cells) == 2
+
+    adjacent = Topology.AdjacentTopologies(
+        cells[0],
+        cell_complex,
+        topologyType="cell",
+        silent=True,
+    )
+
+    assert len(adjacent) == 1
+
+    assert Topology.IsSame(
+        adjacent[0],
+        cells[1],
+        silent=True,
+    )
+
+    shared_faces = Topology.SharedFaces(
+        cells[0],
+        cells[1],
+        silent=True,
+    )
+
+    assert len(shared_faces) == 1
+
+    incident_cells = Topology.AdjacentTopologies(
+        shared_faces[0],
+        cell_complex,
+        topologyType="cell",
+        silent=True,
+    )
+
+    assert len(incident_cells) == 2
+
+    faces_of_cell = Topology.AdjacentTopologies(
+        cells[0],
+        cell_complex,
+        topologyType="face",
+        silent=True,
+    )
+
+    assert len(faces_of_cell) == 6
+
+def test_navigation_degree_uses_native_incidence():
+    from topologicpy.CellComplex import CellComplex
+    from topologicpy.Topology import Topology
+    from topologicpy.Vertex import Vertex
+
+    cell_complex = CellComplex.Prism(
+        origin=Vertex.Origin(),
+        width=2.0,
+        length=1.0,
+        height=1.0,
+        uSides=2,
+        vSides=1,
+        wSides=1,
+        placement="center",
+        silent=True,
+    )
+
+    cells = Topology.Cells(
+        cell_complex,
+        silent=True,
+    )
+
+    shared_faces = Topology.SharedFaces(
+        cells[0],
+        cells[1],
+        silent=True,
+    )
+
+    assert len(shared_faces) == 1
+
+    assert (
+        Topology.Degree(
+            shared_faces[0],
+            cell_complex,
+            silent=True,
+        )
+        == 2
+    )
+
+    external_faces = [
+        face
+        for face in Topology.Faces(
+            cell_complex,
+            silent=True,
+        )
+        if Topology.Degree(
+            face,
+            cell_complex,
+            silent=True,
+        )
+        == 1
+    ]
+
+    assert len(external_faces) > 0
+
+def test_navigation_open_topologies_follow_incidence():
+    from topologicpy.Edge import Edge
+    from topologicpy.Face import Face
+    from topologicpy.Topology import Topology
+    from topologicpy.Vertex import Vertex
+    from topologicpy.Wire import Wire
+
+    # Open Wire: exactly two end vertices have degree 1.
+    v0 = Vertex.ByCoordinates(
+        0,
+        0,
+        0,
+    )
+
+    v1 = Vertex.ByCoordinates(
+        1,
+        0,
+        0,
+    )
+
+    v2 = Vertex.ByCoordinates(
+        2,
+        0,
+        0,
+    )
+
+    e0 = Edge.ByVertices(
+        [v0, v1],
+        silent=True,
+    )
+
+    e1 = Edge.ByVertices(
+        [v1, v2],
+        silent=True,
+    )
+
+    wire = Wire.ByEdges(
+        [e0, e1],
+        silent=True,
+    )
+
+    open_vertices = Topology.OpenVertices(
+        wire,
+        silent=True,
+    )
+
+    assert len(open_vertices) == 2
+
+    # A standalone Face has boundary edges incident to only one Face.
+    face = Face.Rectangle(
+        origin=Vertex.Origin(),
+        width=2.0,
+        length=2.0,
+        placement="center",
+        silent=True,
+    )
+
+    open_edges = Topology.OpenEdges(
+        face,
+        silent=True,
+    )
+
+    assert len(open_edges) == 4
+
+    # The Face itself is not incident to a Cell.
+    open_faces = Topology.OpenFaces(
+        face,
+        silent=True,
+    )
+
+    assert len(open_faces) == 1
+    assert Topology.IsSame(
+        open_faces[0],
+        face,
+        silent=True,
+    )
+
+def test_navigation_select_subtopology():
+    from topologicpy.Face import Face
+    from topologicpy.Topology import Topology
+    from topologicpy.Vertex import Vertex
+
+    face = Face.Rectangle(
+        origin=Vertex.Origin(),
+        width=2.0,
+        length=2.0,
+        placement="center",
+        silent=True,
+    )
+
+    vertices = Topology.Vertices(
+        face,
+        silent=True,
+    )
+
+    assert len(vertices) == 4
+
+    selected_vertex = Topology.SelectSubTopology(
+        face,
+        vertices[0],
+        subTopologyType="vertex",
+        silent=True,
+    )
+
+    assert Topology.IsInstance(
+        selected_vertex,
+        "Vertex",
+    )
+
+    assert Topology.IsSame(
+        selected_vertex,
+        vertices[0],
+        silent=True,
+    )
+
+    selected_face = Topology.SelectSubTopology(
+        face,
+        Vertex.Origin(),
+        subTopologyType="face",
+        silent=True,
+    )
+
+    assert Topology.IsInstance(
+        selected_face,
+        "Face",
+    )
+
+    assert Topology.IsSame(
+        selected_face,
+        face,
+        silent=True,
+    )
+
+def test_remove_faces_preserves_nurbs_surface():
+    from OCC.Core.BRepAdaptor import BRepAdaptor_Surface
+    from OCC.Core.GeomAbs import GeomAbs_BSplineSurface
+
+    from topologicpy.Cluster import Cluster
+    from topologicpy.Face import Face
+    from topologicpy.Topology import Topology
+    from topologicpy.Vertex import Vertex
+
+    z = [
+        [0, 0, 0, 0],
+        [0, 4, 2, 0],
+        [0, 1, -1, 0],
+        [0, 0, 0, 0],
+    ]
+
+    control_points = []
+
+    for i in range(4):
+        row = []
+
+        for j in range(4):
+            row.append(
+                Vertex.ByCoordinates(
+                    i,
+                    j,
+                    z[i][j],
+                )
+            )
+
+        control_points.append(row)
+
+    nurbs = Face.ByNurbsParameters(
+        controlPoints=control_points,
+        uDegree=3,
+        vDegree=3,
+        silent=True,
+    )
+
+    planar = Face.Rectangle(
+        origin=Vertex.ByCoordinates(
+            10,
+            0,
+            0,
+        ),
+        width=1,
+        length=1,
+        silent=True,
+    )
+
+    cluster = Cluster.ByTopologies(
+        [nurbs, planar]
+    )
+
+    result = Topology.RemoveFaces(
+        cluster,
+        [planar],
+        silent=True,
+    )
+
+    faces = Topology.Faces(
+        result,
+        silent=True,
+    )
+
+    assert len(faces) == 1
+
+    shape = Topology.OCCTShape(
+        faces[0],
+        silent=True,
+    )
+
+    adaptor = BRepAdaptor_Surface(shape)
+
+    assert (
+        adaptor.GetType()
+        == GeomAbs_BSplineSurface
+    )
+
+def test_remove_edge_from_face_cascades_to_face_removal():
+    from topologicpy.Face import Face
+    from topologicpy.Topology import Topology
+    from topologicpy.Vertex import Vertex
+
+    face = Face.Rectangle(
+        origin=Vertex.Origin(),
+        width=2,
+        length=2,
+        silent=True,
+    )
+
+    edge = Topology.Edges(
+        face,
+        silent=True,
+    )[0]
+
+    result = Topology.RemoveEdges(
+        face,
+        [edge],
+        silent=True,
+    )
+
+    assert result is None
+
+def test_remove_vertex_from_face_cascades_to_face_removal():
+    from topologicpy.Face import Face
+    from topologicpy.Topology import Topology
+    from topologicpy.Vertex import Vertex
+
+    face = Face.Rectangle(
+        origin=Vertex.Origin(),
+        width=2,
+        length=2,
+        silent=True,
+    )
+
+    vertex = Topology.Vertices(
+        face,
+        silent=True,
+    )[0]
+
+    result = Topology.RemoveVertices(
+        face,
+        [vertex],
+        silent=True,
+    )
+
+    assert result is None
+
+def test_remove_collinear_edges_native_polyhedron():
+    from topologicpy.Topology import Topology
+    from topologicpy.Vertex import Vertex
+    from topologicpy.Wire import Wire
+
+    wire = Wire.ByVertices(
+        [
+            Vertex.ByCoordinates(0, 0, 0),
+            Vertex.ByCoordinates(1, 0, 0),
+            Vertex.ByCoordinates(2, 0, 0),
+            Vertex.ByCoordinates(2, 1, 0),
+            Vertex.ByCoordinates(0, 1, 0),
+        ],
+        close=True,
+        silent=True,
+    )
+
+    assert len(
+        Topology.Edges(
+            wire,
+            silent=True,
+        )
+    ) == 5
+
+    simplified = (
+        Topology.RemoveCollinearEdges(
+            wire,
+            polyhedron=True,
+            silent=True,
+        )
+    )
+
+    assert Topology.IsInstance(
+        simplified,
+        "Wire",
+    )
+
+    assert len(
+        Topology.Edges(
+            simplified,
+            silent=True,
+        )
+    ) == 4
+
+def test_remove_coplanar_faces_native_polyhedron():
+    from topologicpy.Face import Face
+    from topologicpy.Shell import Shell
+    from topologicpy.Topology import Topology
+    from topologicpy.Vertex import Vertex
+
+    face_a = Face.Rectangle(
+        origin=Vertex.ByCoordinates(
+            -0.5,
+            0,
+            0,
+        ),
+        width=1,
+        length=1,
+        silent=True,
+    )
+
+    face_b = Face.Rectangle(
+        origin=Vertex.ByCoordinates(
+            0.5,
+            0,
+            0,
+        ),
+        width=1,
+        length=1,
+        silent=True,
+    )
+
+    shell = Shell.ByFaces(
+        [face_a, face_b],
+        silent=True,
+    )
+
+    assert len(
+        Topology.Faces(
+            shell,
+            silent=True,
+        )
+    ) == 2
+
+    simplified = (
+        Topology.RemoveCoplanarFaces(
+            shell,
+            polyhedron=True,
+            silent=True,
+        )
+    )
+
+    assert len(
+        Topology.Faces(
+            simplified,
+            silent=True,
+        )
+    ) == 1
+

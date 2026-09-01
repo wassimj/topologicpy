@@ -354,53 +354,35 @@ class Dictionary():
     @staticmethod
     def _ConvertAttribute(attr):
         """
-        Converts a Topologic/Core attribute, Python value, or backend dictionary
-        value into its equivalent Python value.
-
-        String attributes preserve their string type unless they contain structured
-        JSON (a JSON object or array) used internally to serialize dictionaries or
-        topologies.
+        Converts a Topologic/Core attribute, Python value, or backend dictionary value into a Python value.
         """
         from topologicpy.Topology import Topology
         import json
 
-        def structured_json_value(value):
-            if not isinstance(value, str):
-                return None
-
-            stripped = value.strip()
-            if len(stripped) < 1 or stripped[0] not in ["{", "["]:
-                return None
-
+        def is_json_string(input_string):
+            if not isinstance(input_string, str):
+                return False
             try:
-                result = json.loads(stripped)
+                json.loads(input_string)
+                return True
+            except Exception:
+                return False
+
+        def topology_from_json_string(json_string):
+            if not is_json_string(json_string):
+                return None
+            try:
+                topologies = Topology.ByJSONString(json_string)
             except Exception:
                 return None
-
-            if isinstance(result, (dict, list)):
-                return result
-
-            return None
-
-        def topology_from_json_string(value):
-            if structured_json_value(value) is None:
-                return None
-
-            try:
-                topologies = Topology.ByJSONString(value)
-            except Exception:
-                return None
-
             if isinstance(topologies, list):
                 if len(topologies) == 0:
                     return None
                 if len(topologies) == 1:
                     return topologies[0]
                 return topologies
-
             if Topology.IsInstance(topologies, "Topology"):
                 return topologies
-
             return None
 
         if attr is None:
@@ -413,61 +395,42 @@ class Dictionary():
 
         if isinstance(attr, IntAttribute):
             return Dictionary._CoreCall(attr, "IntValue")
-
         if isinstance(attr, DoubleAttribute):
             return Dictionary._CoreCall(attr, "DoubleValue")
-
         if isinstance(attr, StringAttribute):
-            value = Dictionary._CoreCall(attr, "StringValue")
-
-            if value == "__NONE__":
+            temp_value = Dictionary._CoreCall(attr, "StringValue")
+            if temp_value == "__NONE__":
                 return None
-
-            topology = topology_from_json_string(value)
-            if topology is not None:
-                return topology
-
-            structured_value = structured_json_value(value)
-            if structured_value is not None:
-                return structured_value
-
-            return value
-
+            topologies = topology_from_json_string(temp_value)
+            if topologies is not None:
+                return topologies
+            if is_json_string(temp_value):
+                return json.loads(temp_value)
+            return temp_value
         if isinstance(attr, ListAttribute):
             return Dictionary.ListAttributeValues(attr)
 
         if isinstance(attr, bool):
             return attr
-
         if isinstance(attr, (float, int)):
             return attr
-
         if isinstance(attr, str):
             if attr == "__NONE__":
                 return None
-
-            topology = topology_from_json_string(attr)
-            if topology is not None:
-                return topology
-
-            structured_value = structured_json_value(attr)
-            if structured_value is not None:
-                return structured_value
-
+            topologies = topology_from_json_string(attr)
+            if topologies is not None:
+                return topologies
+            if is_json_string(attr):
+                return json.loads(attr)
             return attr
-
         if isinstance(attr, tuple):
-            return [Dictionary._ConvertAttribute(x) for x in attr]
-
+            return [Dictionary._ConvertAttribute(x) for x in list(attr)]
         if isinstance(attr, list):
             return [Dictionary._ConvertAttribute(x) for x in attr]
-
         if isinstance(attr, dict):
             return attr
-
         if Dictionary._IsDictionary(attr):
             return Dictionary.PythonDictionary(attr, silent=True)
-
         return attr
 
     @staticmethod
