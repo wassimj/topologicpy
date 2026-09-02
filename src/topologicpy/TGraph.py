@@ -589,28 +589,36 @@ class TGraph:
         return graph
 
     @staticmethod
-    def AccessibilityCentrality(graph: "TGraph", step: int = 2, normalize: bool = False,
-                                key: str = "accessibility_centrality", colorKey: str = "ac_color",
-                                colorScale: str = "viridis", mantissa: int = 6,
-                                tolerance: float = 0.0001, silent: bool = False) -> List[float]:
+    def AccessibilityCentrality(
+        graph: "TGraph",
+        step: int = 2,
+        normalize: bool = False,
+        key: str = "accessibility_centrality",
+        colorKey: str = "ac_color",
+        colorScale: str = "viridis",
+        mantissa: int = 6,
+        tolerance: float = 0.0001,
+        silent: bool = False,
+    ) -> List[float]:
         """
         Computes accessibility centrality values for the vertices of the input TGraph.
 
         Parameters
         ----------
-        graph : 'TGraph'
+        graph : TGraph
             The input TGraph.
         step : int , optional
             The input step value. Default is 2.
         normalize : bool , optional
             If set to True, returned values are normalized. Default is False.
         key : str , optional
-            The dictionary key to use. Default is 'accessibility_centrality'.
+            The dictionary key under which values are stored.
+            Default is "accessibility_centrality".
         colorKey : str , optional
-            The dictionary key under which computed color values are stored. Default is
-            'ac_color'.
+            The dictionary key under which computed colors are stored.
+            Default is "ac_color".
         colorScale : str , optional
-            The Plotly color scale to use. Default is 'viridis'.
+            The Plotly color scale to use. Default is "viridis".
         mantissa : int , optional
             The number of decimal places to round numeric results to. Default is 6.
         tolerance : float , optional
@@ -620,48 +628,157 @@ class TGraph:
 
         Returns
         -------
-        List[float]
-            The resulting accessibility centrality list.
+        list
+            The resulting accessibility centrality values.
         """
         if not isinstance(graph, TGraph):
             return []
+
         vertices = TGraph._ActiveVertexIndices(graph)
         n = len(vertices)
+
         if n == 0:
             return []
-        pos = {v:i for i,v in enumerate(vertices)}
-        P = [[0.0 for _ in range(n)] for _ in range(n)]
-        for v in vertices:
-            ns = [u for u in TGraph.AdjacentIndices(graph, v, mode="all") if u in pos]
-            if ns:
-                w = 1.0/len(ns)
-                for u in ns:
-                    P[pos[v]][pos[u]] += w
-        def mm(A,B):
-            m=len(A); C=[[0.0]*m for _ in range(m)]
-            for i in range(m):
-                for k in range(m):
-                    if A[i][k]:
-                        aik=A[i][k]
-                        for j in range(m):
-                            C[i][j]+=aik*B[k][j]
-            return C
-        M = [[float(i==j) for j in range(n)] for i in range(n)]
-        for _ in range(max(0,int(step))):
-            M = mm(M,P)
-        vals=[]
-        import math as _math
-        for row in M:
-            probs=[p for p in row if p>0]
-            entropy=-sum(p*_math.log(p) for p in probs)
-            vals.append(_math.exp(entropy))
-        if normalize and vals:
-            mn,mx=min(vals),max(vals)
-            vals=[0.0 if abs(mx-mn)<=1e-12 else (v-mn)/(mx-mn) for v in vals]
-        vals=[round(v,mantissa) for v in vals]
-        for idx,value in zip(vertices,vals):
-            graph._vertices[idx]["dictionary"][key]=value
-        return vals
+
+        position = {
+            vertex: i
+            for i, vertex in enumerate(vertices)
+        }
+
+        matrix = [
+            [0.0 for _ in range(n)]
+            for _ in range(n)
+        ]
+
+        for vertex in vertices:
+            neighbours = [
+                neighbour
+                for neighbour in TGraph.AdjacentIndices(
+                    graph,
+                    vertex,
+                    mode="all",
+                )
+                if neighbour in position
+            ]
+
+            if neighbours:
+                weight = 1.0 / len(neighbours)
+
+                for neighbour in neighbours:
+                    matrix[position[vertex]][position[neighbour]] += weight
+
+        def multiply(a, b):
+            size = len(a)
+            result = [
+                [0.0] * size
+                for _ in range(size)
+            ]
+
+            for i in range(size):
+                for k in range(size):
+                    if not a[i][k]:
+                        continue
+
+                    value = a[i][k]
+
+                    for j in range(size):
+                        result[i][j] += value * b[k][j]
+
+            return result
+
+        transition = [
+            [
+                float(i == j)
+                for j in range(n)
+            ]
+            for i in range(n)
+        ]
+
+        for _ in range(max(0, int(step))):
+            transition = multiply(
+                transition,
+                matrix,
+            )
+
+        values = []
+
+        for row in transition:
+            probabilities = [
+                probability
+                for probability in row
+                if probability > 0
+            ]
+
+            entropy = -sum(
+                probability * math.log(probability)
+                for probability in probabilities
+            )
+
+            values.append(math.exp(entropy))
+
+        if normalize and values:
+            minimum = min(values)
+            maximum = max(values)
+
+            if abs(maximum - minimum) <= 1e-12:
+                values = [0.0 for _ in values]
+            else:
+                values = [
+                    (value - minimum) / (maximum - minimum)
+                    for value in values
+                ]
+
+        values = [
+            round(value, mantissa)
+            for value in values
+        ]
+
+        minimum = min(values) if values else 0.0
+        maximum = max(values) if values else 1.0
+
+        def color_at(value):
+            if colorKey is None:
+                return None
+
+            try:
+                from topologicpy.Color import Color
+
+                if abs(maximum - minimum) <= tolerance:
+                    value = 0.5
+                    min_value = 0.0
+                    max_value = 1.0
+                else:
+                    min_value = minimum
+                    max_value = maximum
+
+                return Color.AnyToHex(
+                    Color.ByValueInRange(
+                        value,
+                        minValue=min_value,
+                        maxValue=max_value,
+                        colorScale=colorScale,
+                    )
+                )
+            except Exception:
+                return None
+
+        for index, value in zip(vertices, values):
+            dictionary = graph._vertices[index].setdefault(
+                "dictionary",
+                {},
+            )
+
+            if key is not None:
+                dictionary[key] = value
+
+            color = color_at(value)
+
+            if colorKey is not None and color is not None:
+                dictionary[colorKey] = color
+
+        graph._invalidate_cache()
+
+        return values
 
     @staticmethod
     def ActiveEdgeIndices(graph: "TGraph") -> List[int]:
@@ -7610,7 +7727,7 @@ class TGraph:
         edgeTargetIDKey: str = "target_id",
         storeRepresentations: bool = True,
         allowGeometricFallback: bool = True,
-        ambiguousEndpointPolicy: str = "warn",  # "warn", "skip", "first", "error"
+        ambiguousEndpointPolicy: str = "warn",
         mantissa: int = 6,
         tolerance: float = 0.0001,
         silent: bool = False,
@@ -7619,59 +7736,86 @@ class TGraph:
         """
         Creates a TGraph from input vertices and edges.
 
+        Vertices may be Topologic vertices, TGraph vertex records, dictionaries,
+        or other objects from which coordinates and dictionaries can be derived.
+
+        Edges may be Topologic edges, TGraph edge records, dictionaries containing
+        endpoint information, or two-item endpoint sequences.
+
+        Edge endpoints are resolved in the following order:
+
+        1. Explicit source/destination vertex indices stored in the edge dictionary.
+        2. Explicit source/destination vertex IDs stored in the edge dictionary.
+        3. Source/target values interpreted as vertex IDs.
+        4. Endpoint objects interpreted directly as vertex indices.
+        5. Endpoint objects interpreted directly as vertex IDs.
+        6. Object identity with an input vertex or its stored representation.
+        7. Geometric matching of endpoint coordinates, if enabled.
+
         Parameters
         ----------
-        vertices : Optional[List[Any]] , optional
-            The input vertices or vertex indices. Default is None.
-        edges : Optional[List[Any]] , optional
-            The input edges or edge records. Default is None.
+        vertices : list , optional
+            The input vertices. Default is None.
+        edges : list , optional
+            The input edges. Default is None.
         directed : bool , optional
             If set to True, graph edges are treated as directed. Default is False.
         allowSelfLoops : bool , optional
             If set to True, self-loop edges are allowed. Default is True.
         allowParallelEdges : bool , optional
             If set to True, parallel edges are allowed. Default is False.
-        dictionary : Optional[Dict[str, Any]] , optional
-            The input dictionary. Default is None.
+        dictionary : dict , optional
+            The graph dictionary. Default is None.
         vertexIDKey : str , optional
-            The dictionary key to use. Default is 'id'.
+            The vertex dictionary key used as a semantic vertex ID.
+            Default is "id".
         edgeSRCKey : str , optional
-            The dictionary key to use. Default is 'src'.
+            The edge dictionary key used for the source vertex index.
+            Default is "src".
         edgeDSTKey : str , optional
-            The dictionary key to use. Default is 'dst'.
+            The edge dictionary key used for the destination vertex index.
+            Default is "dst".
         edgeSourceKey : str , optional
-            The dictionary key to use. Default is 'source'.
+            An alternative edge dictionary source key. Default is "source".
         edgeTargetKey : str , optional
-            The dictionary key to use. Default is 'target'.
+            An alternative edge dictionary destination key. Default is "target".
         edgeSRCIDKey : str , optional
-            The dictionary key to use. Default is 'src_id'.
+            The edge dictionary key used for a source vertex ID.
+            Default is "src_id".
         edgeDSTIDKey : str , optional
-            The dictionary key to use. Default is 'dst_id'.
+            The edge dictionary key used for a destination vertex ID.
+            Default is "dst_id".
         edgeSourceIDKey : str , optional
-            The dictionary key to use. Default is 'source_id'.
+            An alternative source vertex ID key. Default is "source_id".
         edgeTargetIDKey : str , optional
-            The dictionary key to use. Default is 'target_id'.
+            An alternative destination vertex ID key. Default is "target_id".
         storeRepresentations : bool , optional
-            If set to True, input objects are stored as graph representations. Default is True.
+            If set to True, source objects are retained as graph representations
+            where appropriate. Default is True.
         allowGeometricFallback : bool , optional
-            The input allow geometric fallback value. Default is True.
+            If set to True, unresolved edge endpoints may be matched to vertices
+            geometrically. Default is True.
         ambiguousEndpointPolicy : str , optional
-            The input ambiguous endpoint policy value. Default is 'warn'.
+            Policy used when geometric matching finds more than one vertex.
+            Valid values are "warn", "skip", "first", and "error".
+            Default is "warn".
         mantissa : int , optional
-            The number of decimal places to round numeric results to. Default is 6.
+            The number of decimal places used for coordinates. Default is 6.
         tolerance : float , optional
-            The desired tolerance. Default is 0.0001.
+            The geometric matching tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
+            If set to True, error and warning messages are suppressed.
+            Default is False.
         ontology : bool , optional
-            If set to True, ontology metadata is added or preserved where applicable. Default is
-            True.
+            If set to True, ontology metadata is added or preserved where
+            applicable. Default is True.
 
         Returns
         -------
         TGraph
-            The resulting TGraph, or None if the operation fails.
+            The resulting TGraph.
         """
+        from topologicpy.Vertex import Vertex
 
         vertices = vertices or []
         edges = edges or []
@@ -7683,9 +7827,42 @@ class TGraph:
             dictionary=dictionary,
         )
 
-        ambiguousEndpointPolicy = str(ambiguousEndpointPolicy or "warn").lower()
-        if ambiguousEndpointPolicy not in ("warn", "skip", "first", "error"):
+        try:
+            mantissa = max(0, int(mantissa))
+        except Exception:
+            mantissa = 6
+
+        try:
+            tolerance = abs(float(tolerance))
+        except Exception:
+            tolerance = 0.0001
+
+        ambiguousEndpointPolicy = str(
+            ambiguousEndpointPolicy or "warn"
+        ).lower().strip()
+
+        if ambiguousEndpointPolicy not in (
+            "warn",
+            "skip",
+            "first",
+            "error",
+        ):
             ambiguousEndpointPolicy = "warn"
+
+        # ------------------------------------------------------------------
+        # Local caches
+        # ------------------------------------------------------------------
+
+        # Keep the object together with its cached coordinates. This prevents
+        # transient Python object IDs from being reused while the method runs.
+        coordinate_cache: Dict[
+            int,
+            Tuple[Any, Optional[Tuple[float, float, float]]],
+        ] = {}
+
+        # ------------------------------------------------------------------
+        # Basic helpers
+        # ------------------------------------------------------------------
 
         def _warn(message: str) -> None:
             if not silent:
@@ -7700,103 +7877,262 @@ class TGraph:
         def _dictionary_to_python(obj: Any) -> Dict[str, Any]:
             if obj is None:
                 return {}
+
+            # TGraph vertex/edge record.
             if isinstance(obj, dict):
+                nested = obj.get("dictionary")
+
+                if isinstance(nested, dict) and any(
+                    key in obj
+                    for key in (
+                        "index",
+                        "representation",
+                        "src",
+                        "dst",
+                        "active",
+                        "directed",
+                    )
+                ):
+                    d = dict(nested)
+
+                    # Preserve useful structural endpoint metadata when converting
+                    # an edge record back into input data.
+                    for key in (
+                        "index",
+                        "src",
+                        "dst",
+                        "source",
+                        "target",
+                        "src_id",
+                        "dst_id",
+                        "source_id",
+                        "target_id",
+                        "directed",
+                        "active",
+                    ):
+                        if key in obj:
+                            d.setdefault(key, obj[key])
+
+                    return d
+
                 return dict(obj)
+
             try:
                 return TGraph._TopologyDictionaryToPython(obj)
             except Exception:
                 pass
+
             try:
                 from topologicpy.Topology import Topology
                 from topologicpy.Dictionary import Dictionary
 
                 d = Topology.Dictionary(obj)
                 keys = Dictionary.Keys(d) or []
-                return {k: Dictionary.ValueAtKey(d, k, None) for k in keys}
-            except TypeError:
-                try:
-                    from topologicpy.Topology import Topology
-                    from topologicpy.Dictionary import Dictionary
 
-                    d = Topology.Dictionary(obj)
-                    keys = Dictionary.Keys(d) or []
-                    return {k: Dictionary.ValueAtKey(d, k) for k in keys}
-                except Exception:
-                    return {}
-            except Exception:
-                return {}
+                result = {}
 
-        def _is_topologic_instance(obj: Any, type_name: str) -> bool:
-            try:
-                from topologicpy.Topology import Topology
-                return bool(Topology.IsInstance(obj, type_name))
-            except Exception:
-                return False
-
-        def _coordinates(obj: Any) -> Optional[List[float]]:
-            if obj is None:
-                return None
-
-            if isinstance(obj, dict):
-                if all(k in obj for k in ("x", "y", "z")):
+                for key in keys:
                     try:
-                        return [
-                            round(float(obj["x"]), mantissa),
-                            round(float(obj["y"]), mantissa),
-                            round(float(obj["z"]), mantissa),
-                        ]
+                        result[key] = Dictionary.ValueAtKey(
+                            d,
+                            key,
+                            None,
+                        )
+                    except TypeError:
+                        try:
+                            result[key] = Dictionary.ValueAtKey(
+                                d,
+                                key,
+                            )
+                        except Exception:
+                            pass
                     except Exception:
                         pass
 
-            try:
-                from topologicpy.Vertex import Vertex
-                from topologicpy.Topology import Topology
+                return result
 
-                if Topology.IsInstance(obj, "Vertex"):
-                    c = Vertex.Coordinates(obj)
-                    if c and len(c) >= 3:
-                        return [
-                            round(float(c[0]), mantissa),
-                            round(float(c[1]), mantissa),
-                            round(float(c[2]), mantissa),
-                        ]
-
-                if Topology.IsInstance(obj, "Topology"):
-                    v = None
-                    try:
-                        v = Topology.CenterOfMass(obj)
-                    except Exception:
-                        v = None
-                    if v is not None:
-                        c = Vertex.Coordinates(v)
-                        if c and len(c) >= 3:
-                            return [
-                                round(float(c[0]), mantissa),
-                                round(float(c[1]), mantissa),
-                                round(float(c[2]), mantissa),
-                            ]
             except Exception:
-                pass
+                return {}
+
+        def _direct_coordinates(value: Any):
+            if value is None:
+                return None
+
+            # TGraph record or ordinary dictionary containing x/y/z.
+            if isinstance(value, dict):
+                d = value
+
+                nested = value.get("dictionary")
+                if isinstance(nested, dict):
+                    d = nested
+
+                try:
+                    x = d.get("x")
+                    y = d.get("y")
+                    z = d.get("z")
+
+                    if all(
+                        isinstance(c, (int, float))
+                        and not isinstance(c, bool)
+                        for c in (x, y, z)
+                    ):
+                        return (
+                            round(float(x), mantissa),
+                            round(float(y), mantissa),
+                            round(float(z), mantissa),
+                        )
+                except Exception:
+                    pass
+
+            # Explicit [x, y, z] coordinate.
+            if isinstance(value, (list, tuple)) and len(value) >= 3:
+                try:
+                    if all(
+                        isinstance(c, (int, float))
+                        and not isinstance(c, bool)
+                        for c in value[:3]
+                    ):
+                        return (
+                            round(float(value[0]), mantissa),
+                            round(float(value[1]), mantissa),
+                            round(float(value[2]), mantissa),
+                        )
+                except Exception:
+                    pass
 
             return None
 
-        def _coord_key(coords: Optional[List[float]]) -> Optional[Tuple[int, int, int]]:
+        def _coordinates(value: Any):
+            if value is None:
+                return None
+
+            direct = _direct_coordinates(value)
+            if direct is not None:
+                return direct
+
+            # A TGraph record may contain a Topologic representation.
+            if isinstance(value, dict):
+                representation = value.get("representation")
+
+                if representation is not None:
+                    value = representation
+
+                    direct = _direct_coordinates(value)
+                    if direct is not None:
+                        return direct
+
+            object_id = id(value)
+
+            cached = coordinate_cache.get(object_id)
+
+            if cached is not None:
+                cached_object, cached_coordinates = cached
+
+                if cached_object is value:
+                    return cached_coordinates
+
+            result = None
+
+            try:
+                c = Vertex.Coordinates(
+                    value,
+                    mantissa=mantissa,
+                )
+
+                if isinstance(c, (list, tuple)) and len(c) >= 3:
+                    result = (
+                        round(float(c[0]), mantissa),
+                        round(float(c[1]), mantissa),
+                        round(float(c[2]), mantissa),
+                    )
+
+            except Exception:
+                pass
+
+            if result is None:
+                try:
+                    result = (
+                        round(
+                            float(
+                                Vertex.X(
+                                    value,
+                                    mantissa=mantissa,
+                                )
+                            ),
+                            mantissa,
+                        ),
+                        round(
+                            float(
+                                Vertex.Y(
+                                    value,
+                                    mantissa=mantissa,
+                                )
+                            ),
+                            mantissa,
+                        ),
+                        round(
+                            float(
+                                Vertex.Z(
+                                    value,
+                                    mantissa=mantissa,
+                                )
+                            ),
+                            mantissa,
+                        ),
+                    )
+
+                except Exception:
+                    result = None
+
+            coordinate_cache[object_id] = (
+                value,
+                result,
+            )
+
+            return result
+
+        def _coord_key(
+            coords: Optional[List[float]],
+        ) -> Optional[Tuple[int, int, int]]:
             if coords is None:
                 return None
+
             try:
-                scale = 1.0 / float(tolerance) if tolerance > 0 else 10000.0
+                scale = (
+                    1.0 / tolerance
+                    if tolerance > 0
+                    else 10000.0
+                )
+
                 return (
                     int(round(float(coords[0]) * scale)),
                     int(round(float(coords[1]) * scale)),
                     int(round(float(coords[2]) * scale)),
                 )
+
             except Exception:
                 return None
+
+        def _distance(a, b) -> float:
+            try:
+                dx = float(a[0]) - float(b[0])
+                dy = float(a[1]) - float(b[1])
+                dz = float(a[2]) - float(b[2])
+
+                return math.sqrt(
+                    dx * dx
+                    + dy * dy
+                    + dz * dz
+                )
+            except Exception:
+                return float("inf")
 
         def _edge_start_end(edge_obj: Any) -> Tuple[Any, Any]:
             if edge_obj is None:
                 return None, None
 
+            # TGraph edge records normally carry endpoint indices rather than
+            # endpoint objects. These are resolved from their dictionaries below.
             if isinstance(edge_obj, dict):
                 return None, None
 
@@ -7805,86 +8141,210 @@ class TGraph:
 
             try:
                 from topologicpy.Edge import Edge
-                return Edge.StartVertex(edge_obj), Edge.EndVertex(edge_obj)
+
+                return (
+                    Edge.StartVertex(edge_obj),
+                    Edge.EndVertex(edge_obj),
+                )
+
             except Exception:
                 pass
 
             try:
                 from topologicpy.Topology import Topology
-                sv = Topology.StartVertex(edge_obj)
-                ev = Topology.EndVertex(edge_obj)
-                return sv, ev
+
+                return (
+                    Topology.StartVertex(edge_obj),
+                    Topology.EndVertex(edge_obj),
+                )
+
             except Exception:
-                pass
+                return None, None
 
-            return None, None
+        def _vertex_index_by_id(value: Any) -> Optional[int]:
+            if value is None:
+                return None
 
-        def _value_at_keys(d: Dict[str, Any], keys: List[str], default: Any = None) -> Any:
-            if not isinstance(d, dict):
-                return default
-            for key in keys:
-                if key is not None and key in d:
-                    return d.get(key)
-            return default
+            try:
+                return vertex_id_to_index.get(value)
+            except (TypeError, ValueError):
+                # Lists, dictionaries and some foreign topology wrappers are
+                # intentionally not treated as semantic IDs.
+                return None
 
         # ------------------------------------------------------------------
-        # Add vertices and build endpoint-resolution indices.
+        # Add vertices and construct endpoint-resolution indices
         # ------------------------------------------------------------------
 
         object_id_to_index: Dict[int, int] = {}
         vertex_id_to_index: Dict[Any, int] = {}
-        coord_to_indices: Dict[Tuple[int, int, int], List[int]] = {}
 
-        for i, item in enumerate(vertices):
+        coord_to_indices: Dict[
+            Tuple[int, int, int],
+            List[int],
+        ] = {}
+
+        vertex_coordinates: Dict[
+            int,
+            Tuple[float, float, float],
+        ] = {}
+
+        for item in vertices:
             d = _dictionary_to_python(item)
 
             coords = _coordinates(item)
+
             if coords is not None:
                 d.setdefault("x", coords[0])
                 d.setdefault("y", coords[1])
                 d.setdefault("z", coords[2])
 
-            representation = item if storeRepresentations else None
-            if isinstance(item, dict):
-                representation = item.get("representation", None) if storeRepresentations else None
+            representation = None
 
-            idx = g.AddVertex(dictionary=d, representation=representation)
+            if storeRepresentations:
+                if isinstance(item, dict):
+                    representation = item.get(
+                        "representation",
+                        None,
+                    )
+                else:
+                    representation = item
 
+            idx = g.AddVertex(
+                dictionary=d,
+                representation=representation,
+            )
+
+            if idx is None:
+                continue
+
+            # The original input object.
             object_id_to_index[id(item)] = idx
 
-            v_id = d.get(vertexIDKey, None)
+            # Also map an explicitly stored representation. This is useful when
+            # input data are TGraph records.
+            if representation is not None:
+                object_id_to_index[id(representation)] = idx
+
+            v_id = d.get(
+                vertexIDKey,
+                None,
+            )
+
             if v_id is not None:
-                vertex_id_to_index[v_id] = idx
+                try:
+                    vertex_id_to_index[v_id] = idx
+                except TypeError:
+                    pass
 
-            # Also support common ID aliases without requiring the caller to set
-            # vertexIDKey differently.
-            for alias in ("id", "ID", "uuid", "guid", "ifc_guid", "GlobalId", "name", "label"):
-                value = d.get(alias, None)
-                if value is not None and value not in vertex_id_to_index:
-                    vertex_id_to_index[value] = idx
+            # Common semantic ID aliases.
+            for alias in (
+                "id",
+                "ID",
+                "uuid",
+                "guid",
+                "ifc_guid",
+                "GlobalId",
+                "name",
+                "label",
+            ):
+                value = d.get(
+                    alias,
+                    None,
+                )
 
-            ck = _coord_key(coords)
-            if ck is not None:
-                coord_to_indices.setdefault(ck, []).append(idx)
+                if value is None:
+                    continue
 
-        def _resolve_by_geometry(endpoint: Any, role: str, edge_index: int) -> Optional[int]:
+                try:
+                    if value not in vertex_id_to_index:
+                        vertex_id_to_index[value] = idx
+                except TypeError:
+                    pass
+
+            if coords is not None:
+                vertex_coordinates[idx] = coords
+
+                key = _coord_key(coords)
+
+                if key is not None:
+                    coord_to_indices.setdefault(
+                        key,
+                        [],
+                    ).append(idx)
+
+        # ------------------------------------------------------------------
+        # Geometric endpoint resolution
+        # ------------------------------------------------------------------
+
+        def _resolve_by_geometry(
+            endpoint: Any,
+            role: str,
+            edge_index: int,
+        ) -> Optional[int]:
             if not allowGeometricFallback:
                 return None
 
             coords = _coordinates(endpoint)
-            ck = _coord_key(coords)
-            if ck is None:
+
+            if coords is None:
                 return None
 
-            matches = coord_to_indices.get(ck, [])
+            key = _coord_key(coords)
+
+            if key is None:
+                return None
+
+            # Check the matching quantisation cell and its neighbours. Checking
+            # adjacent cells prevents points within tolerance from being missed
+            # simply because they lie either side of a rounding boundary.
+            candidates = set()
+
+            for dx in (-1, 0, 1):
+                for dy in (-1, 0, 1):
+                    for dz in (-1, 0, 1):
+                        neighbour_key = (
+                            key[0] + dx,
+                            key[1] + dy,
+                            key[2] + dz,
+                        )
+
+                        candidates.update(
+                            coord_to_indices.get(
+                                neighbour_key,
+                                [],
+                            )
+                        )
+
+            matches = []
+
+            geometric_tolerance = (
+                tolerance
+                if tolerance > 0
+                else 0.0001
+            )
+
+            for candidate in sorted(candidates):
+                candidate_coords = vertex_coordinates.get(
+                    candidate
+                )
+
+                if candidate_coords is None:
+                    continue
+
+                if _distance(
+                    coords,
+                    candidate_coords,
+                ) <= geometric_tolerance:
+                    matches.append(candidate)
 
             if len(matches) == 1:
                 return matches[0]
 
             if len(matches) > 1:
                 message = (
-                    "TGraph.ByVerticesEdges - Warning: Ambiguous geometric endpoint "
-                    f"for edge {edge_index}, role '{role}'. "
+                    "TGraph.ByVerticesEdges - Warning: Ambiguous geometric "
+                    f"endpoint for edge {edge_index}, role '{role}'. "
                     f"Coordinates {coords} match vertex indices {matches}."
                 )
 
@@ -7893,15 +8353,26 @@ class TGraph:
 
                 if ambiguousEndpointPolicy == "first":
                     if not silent:
-                        print(message + " Using first match.")
+                        print(
+                            message
+                            + " Using first match."
+                        )
+
                     return matches[0]
 
-                if ambiguousEndpointPolicy in ("warn", "skip"):
-                    if ambiguousEndpointPolicy == "warn":
-                        _warn(message + " Skipping edge.")
-                    return None
+                if ambiguousEndpointPolicy == "warn":
+                    _warn(
+                        message
+                        + " Skipping edge."
+                    )
+
+                return None
 
             return None
+
+        # ------------------------------------------------------------------
+        # General endpoint resolution
+        # ------------------------------------------------------------------
 
         def _resolve_endpoint(
             endpoint: Any,
@@ -7909,71 +8380,156 @@ class TGraph:
             role: str,
             edge_index: int,
         ) -> Optional[int]:
-            """
-            Resolves an edge endpoint to a TGraph vertex index.
-
-            role must be "src" or "dst".
-            """
-
             if role == "src":
-                index_keys = [edgeSRCKey, edgeSourceKey]
-                id_keys = [edgeSRCIDKey, edgeSourceIDKey]
-            else:
-                index_keys = [edgeDSTKey, edgeTargetKey]
-                id_keys = [edgeDSTIDKey, edgeTargetIDKey]
+                index_keys = [
+                    edgeSRCKey,
+                    edgeSourceKey,
+                ]
 
-            # 1. Explicit index keys.
+                id_keys = [
+                    edgeSRCIDKey,
+                    edgeSourceIDKey,
+                ]
+
+            else:
+                index_keys = [
+                    edgeDSTKey,
+                    edgeTargetKey,
+                ]
+
+                id_keys = [
+                    edgeDSTIDKey,
+                    edgeTargetIDKey,
+                ]
+
+            # 1. Explicit source/destination index keys.
             for key in index_keys:
-                value = edge_dict.get(key, None)
+                if key is None:
+                    continue
+
+                value = edge_dict.get(
+                    key,
+                    None,
+                )
+
                 if _valid_index(value):
                     return int(value)
 
-            # 2. Explicit ID keys.
+            # 2. Explicit source/destination semantic ID keys.
             for key in id_keys:
-                value = edge_dict.get(key, None)
-                if value in vertex_id_to_index:
-                    return vertex_id_to_index[value]
+                if key is None:
+                    continue
 
-            # 3. source/target may be IDs rather than indices.
+                value = edge_dict.get(
+                    key,
+                    None,
+                )
+
+                idx = _vertex_index_by_id(value)
+
+                if idx is not None:
+                    return idx
+
+            # 3. source/target may themselves contain semantic IDs.
             for key in index_keys:
-                value = edge_dict.get(key, None)
-                if value in vertex_id_to_index:
-                    return vertex_id_to_index[value]
+                if key is None:
+                    continue
+
+                value = edge_dict.get(
+                    key,
+                    None,
+                )
+
+                idx = _vertex_index_by_id(value)
+
+                if idx is not None:
+                    return idx
 
             # 4. Endpoint itself may be an index.
             if _valid_index(endpoint):
                 return int(endpoint)
 
-            # 5. Endpoint itself may be an ID.
-            if endpoint in vertex_id_to_index:
-                return vertex_id_to_index[endpoint]
+            # 5. Endpoint itself may be a semantic ID.
+            idx = _vertex_index_by_id(endpoint)
+
+            if idx is not None:
+                return idx
 
             # 6. Object identity.
-            if endpoint is not None and id(endpoint) in object_id_to_index:
-                return object_id_to_index[id(endpoint)]
+            if endpoint is not None:
+                idx = object_id_to_index.get(
+                    id(endpoint)
+                )
 
-            # 7. Geometric fallback only if unambiguous.
-            return _resolve_by_geometry(endpoint, role=role, edge_index=edge_index)
+                if idx is not None:
+                    return idx
+
+                if isinstance(endpoint, dict):
+                    representation = endpoint.get(
+                        "representation"
+                    )
+
+                    if representation is not None:
+                        idx = object_id_to_index.get(
+                            id(representation)
+                        )
+
+                        if idx is not None:
+                            return idx
+
+            # 7. Geometric fallback.
+            return _resolve_by_geometry(
+                endpoint,
+                role=role,
+                edge_index=edge_index,
+            )
 
         # ------------------------------------------------------------------
-        # Add edges.
+        # Add edges
         # ------------------------------------------------------------------
 
         for edge_index, edge_item in enumerate(edges):
-            edge_dict = _dictionary_to_python(edge_item)
-            representation = edge_item if storeRepresentations else None
+            edge_dict = _dictionary_to_python(
+                edge_item
+            )
 
-            # Tuple/list pairs are interpreted as endpoint references unless they
-            # look like Topologic control data.
-            if isinstance(edge_item, (list, tuple)) and len(edge_item) >= 2:
-                start_obj, end_obj = edge_item[0], edge_item[1]
-                if not edge_dict:
-                    edge_dict = {}
+            if storeRepresentations:
+                if isinstance(edge_item, dict):
+                    representation = edge_item.get(
+                        "representation",
+                        None,
+                    )
+                else:
+                    representation = edge_item
             else:
-                start_obj, end_obj = _edge_start_end(edge_item)
+                representation = None
 
-            src = _resolve_endpoint(start_obj, edge_dict, "src", edge_index)
-            dst = _resolve_endpoint(end_obj, edge_dict, "dst", edge_index)
+            # A tuple/list is interpreted as an endpoint pair.
+            if (
+                isinstance(edge_item, (list, tuple))
+                and len(edge_item) >= 2
+            ):
+                start_obj = edge_item[0]
+                end_obj = edge_item[1]
+
+            else:
+                start_obj, end_obj = _edge_start_end(
+                    edge_item
+                )
+
+            src = _resolve_endpoint(
+                start_obj,
+                edge_dict,
+                "src",
+                edge_index,
+            )
+
+            dst = _resolve_endpoint(
+                end_obj,
+                edge_dict,
+                "dst",
+                edge_index,
+            )
 
             if src is None or dst is None:
                 if not silent:
@@ -7981,11 +8537,15 @@ class TGraph:
                         "TGraph.ByVerticesEdges - Warning: Could not resolve "
                         f"endpoints for edge {edge_index}. Skipping edge."
                     )
+
                 continue
 
-            # Make endpoint metadata explicit in the stored edge dictionary.
-            edge_dict.setdefault(edgeSRCKey, src)
-            edge_dict.setdefault(edgeDSTKey, dst)
+            # Store resolved incidence explicitly in the edge dictionary.
+            if edgeSRCKey is not None:
+                edge_dict[edgeSRCKey] = src
+
+            if edgeDSTKey is not None:
+                edge_dict[edgeDSTKey] = dst
 
             g.AddEdge(
                 src,
@@ -7996,8 +8556,14 @@ class TGraph:
             )
 
         return TGraph._OntologyAnnotateGraph(
-            g, graphClass="top:Graph", vertexClass="top:Node", edgeClass="top:Relationship",
-            generatedBy="TGraph.ByVerticesEdges", ontology=ontology, silent=silent)
+            g,
+            graphClass="top:Graph",
+            vertexClass="top:Node",
+            edgeClass="top:Relationship",
+            generatedBy="TGraph.ByVerticesEdges",
+            ontology=ontology,
+            silent=silent,
+        )
 
     @staticmethod
     def CategoryByOntologyClass(ontologyClass: str, defaultValue: Any = None) -> Any:
@@ -11863,45 +12429,115 @@ class TGraph:
         return components
 
     @staticmethod
-    def Connectivity(graph: "TGraph", key: str = "connectivity", colorKey: str = None,
-                     mode: str = "all", normalize: bool = False, mantissa: int = 6,
-                     silent: bool = False) -> List[float]:
+    def Connectivity(
+        graph: "TGraph",
+        key: str = "connectivity",
+        colorKey: str = None,
+        mode: str = "all",
+        normalize: bool = False,
+        mantissa: int = 6,
+        silent: bool = False,
+        colorScale: str = "viridis",
+    ) -> List[float]:
         """
         Returns graph connectivity information for the input TGraph.
 
         Parameters
         ----------
-        graph : 'TGraph'
+        graph : TGraph
             The input TGraph.
         key : str , optional
-            The dictionary key to use. Default is 'connectivity'.
+            The dictionary key under which connectivity values are stored.
+            Default is "connectivity".
         colorKey : str , optional
-            The dictionary key under which computed color values are stored. Default is None.
+            The dictionary key under which computed colors are stored. Default is None.
         mode : str , optional
-            The traversal or adjacency mode. Valid values are typically "out", "in", or "all".
-            Default is 'all'.
+            The traversal mode. Valid values are "out", "in", and "all".
+            Default is "all".
         normalize : bool , optional
-            If set to True, returned values are normalized. Default is False.
+            If set to True, values are normalized. Default is False.
         mantissa : int , optional
             The number of decimal places to round numeric results to. Default is 6.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
+        colorScale : str , optional
+            The color scale used when colorKey is not None. Default is "viridis".
 
         Returns
         -------
-        List[float]
-            The resulting connectivity list.
+        list
+            The resulting connectivity values.
         """
         if not isinstance(graph, TGraph):
             return []
-        vals = [float(TGraph.Degree(graph, i, mode=mode)) for i in TGraph._ActiveVertexIndices(graph)]
-        if normalize and vals:
-            mx = max(vals) or 1.0
-            vals = [v/mx for v in vals]
-        vals = [round(v, mantissa) for v in vals]
-        for idx, value in zip(TGraph._ActiveVertexIndices(graph), vals):
-            graph._vertices[idx]["dictionary"][key] = value
-        return vals
+
+        vertices = TGraph._ActiveVertexIndices(graph)
+
+        values = [
+            float(TGraph.Degree(graph, index, mode=mode))
+            for index in vertices
+        ]
+
+        if normalize and values:
+            maximum = max(values)
+
+            if maximum != 0:
+                values = [
+                    value / maximum
+                    for value in values
+                ]
+
+        values = [
+            round(value, mantissa)
+            for value in values
+        ]
+
+        minimum = min(values) if values else 0.0
+        maximum = max(values) if values else 1.0
+
+        def color_at(value):
+            if colorKey is None:
+                return None
+
+            try:
+                from topologicpy.Color import Color
+
+                if abs(maximum - minimum) <= 1e-12:
+                    value = 0.5
+                    min_value = 0.0
+                    max_value = 1.0
+                else:
+                    min_value = minimum
+                    max_value = maximum
+
+                return Color.AnyToHex(
+                    Color.ByValueInRange(
+                        value,
+                        minValue=min_value,
+                        maxValue=max_value,
+                        colorScale=colorScale,
+                    )
+                )
+            except Exception:
+                return None
+
+        for index, value in zip(vertices, values):
+            dictionary = graph._vertices[index].setdefault(
+                "dictionary",
+                {},
+            )
+
+            if key is not None:
+                dictionary[key] = value
+
+            color = color_at(value)
+
+            if colorKey is not None and color is not None:
+                dictionary[colorKey] = color
+
+        graph._invalidate_cache()
+
+        return values
 
     @staticmethod
     def ContainsEdge(graph: "TGraph", edge: Any, tolerance: float = 0.0001, silent: bool = False) -> bool:
@@ -13328,43 +13964,74 @@ class TGraph:
         return TGraph.TopologicalDistance(graph, vertexA, vertexB, mode=mode, silent=silent)
 
     @staticmethod
-    def Edge(graph: "TGraph", index: Any = None, vertexA: Any = None, vertexB: Any = None,
-             directed: Optional[bool] = None, silent: bool = False) -> Optional[Dict[str, Any]]:
+    def Edge(
+        graph: "TGraph",
+        index: Any = None,
+        vertexA: Any = None,
+        vertexB: Any = None,
+        directed: Optional[bool] = None,
+        silent: bool = False,
+        copy: bool = False,
+    ) -> Optional[Dict[str, Any]]:
         """
-        Returns an edge record or Topologic edge from the input TGraph.
+        Returns an edge record from the input TGraph.
 
         Parameters
         ----------
-        graph : 'TGraph'
+        graph : TGraph
             The input TGraph.
         index : Any , optional
-            The input index. Default is None.
+            The edge index or edge record. Default is None.
         vertexA : Any , optional
-            The first input vertex or vertex index. Default is None.
+            The first vertex or vertex index. Default is None.
         vertexB : Any , optional
-            The second input vertex or vertex index. Default is None.
-        directed : Optional[bool] , optional
-            If set to True, graph edges are treated as directed. Default is None.
+            The second vertex or vertex index. Default is None.
+        directed : bool , optional
+            If set to True, only a directed edge is considered. If set to False,
+            only an undirected edge is considered. Default is None.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
+        copy : bool , optional
+            If set to True, a shallow copy of the record with a copied dictionary is
+            returned. If set to False, the live internal record is returned and may
+            be modified in-place. Default is False.
 
         Returns
         -------
-        dict or topologic_core.Edge or None
-            The requested edge record or Topologic edge.
+        dict or None
+            The requested edge record.
         """
         if not isinstance(graph, TGraph):
+            if not silent:
+                print("TGraph.Edge - Error: The input graph is not a valid TGraph. Returning None.")
             return None
+
         if vertexA is not None and vertexB is not None:
-            a = TGraph.VertexIndex(graph, vertexA); b = TGraph.VertexIndex(graph, vertexB)
+            a = TGraph.VertexIndex(graph, vertexA)
+            b = TGraph.VertexIndex(graph, vertexB)
             if a is None or b is None:
                 return None
-            return TGraph.EdgeBetween(graph, a, b, directed=directed)
-        idx = TGraph.EdgeIndex(graph, index)
+            return TGraph.EdgeBetween(
+                graph,
+                a,
+                b,
+                directed=directed,
+                copy=copy,
+            )
+
+        idx = TGraph._as_index(index)
         if idx is None or not graph._validate_edge_index(idx):
             return None
-        e = graph._edges[idx]
-        return dict(e, dictionary=dict(e.get("dictionary", {})))
+
+        record = graph._edges[idx]
+
+        if not copy:
+            return record
+
+        return dict(
+            record,
+            dictionary=dict(record.get("dictionary", {})),
+        )
 
     def _edge_key(self, src: int, dst: int, directed: bool) -> Tuple[int, int, bool]:
         """
@@ -13390,46 +14057,79 @@ class TGraph:
         return (a, b, False)
 
     @staticmethod
-    def EdgeBetween(graph: "TGraph", src: int, dst: int, directed: Optional[bool] = None) -> Optional[Dict[str, Any]]:
+    def EdgeBetween(
+        graph: "TGraph",
+        src: int,
+        dst: int,
+        directed: Optional[bool] = None,
+        copy: bool = False,
+    ) -> Optional[Dict[str, Any]]:
         """
         Returns the first active edge between two input vertex indices.
 
         Parameters
         ----------
-        graph : 'TGraph'
+        graph : TGraph
             The input TGraph.
         src : int
             The source vertex index.
         dst : int
             The destination vertex index.
-        directed : Optional[bool] , optional
-            If set to True, graph edges are treated as directed. Default is None.
+        directed : bool , optional
+            The direction flag used when searching for the edge. Default is None.
+        copy : bool , optional
+            If set to True, a copy of the edge record is returned. If False, the live
+            internal edge record is returned. Default is False.
 
         Returns
         -------
-        Optional[Dict[str, Any]]
-            The resulting edge between dictionary.
+        dict or None
+            The requested edge record.
         """
-        edges = TGraph.EdgesBetween(graph, src, dst, directed=directed)
+        edges = TGraph.EdgesBetween(
+            graph,
+            src,
+            dst,
+            directed=directed,
+            copy=copy,
+        )
         return edges[0] if edges else None
 
-    def EdgeDictionary(self, index: int) -> Dict[str, Any]:
+    def EdgeDictionary(
+        self,
+        index: Any,
+        copy: bool = True,
+    ) -> Dict[str, Any]:
         """
-        Returns the dictionary of the input edge index.
+        Returns the dictionary of an edge.
 
         Parameters
         ----------
-        index : int
-            The input index.
+        index : int or dict
+            The edge index or edge record.
+        copy : bool , optional
+            If set to True, a copy of the dictionary is returned. If set to False,
+            the live dictionary is returned and may be modified in-place.
+            Default is True.
 
         Returns
         -------
-        Dict[str, Any]
-            The resulting edge dictionary dictionary.
+        dict
+            The edge dictionary.
         """
-        if not self._validate_edge_index(index, active=False):
+        index = TGraph._as_index(index)
+
+        if index is None or not self._validate_edge_index(index, active=False):
             return {}
-        return dict(self._edges[index].get("dictionary", {}))
+
+        record = self._edges[index]
+        dictionary = record.get("dictionary")
+
+        if not isinstance(dictionary, dict):
+            dictionary = {}
+            record["dictionary"] = dictionary
+
+        return dict(dictionary) if copy else dictionary
 
     @staticmethod
     def EdgeIndex(graph: "TGraph", edge: Union[int, Dict[str, Any]]) -> Optional[int]:
@@ -13525,30 +14225,42 @@ class TGraph:
         return None
 
     @staticmethod
-    def Edges(graph: "TGraph", asTopologic: bool = False, useRepresentation: bool = True,
-              active: bool = True, segmentCurves: bool = True, mantissa: int = 6,
-              tolerance: float = 0.0001, silent: bool = False,
-              selfLoopMode: str = "circle", selfLoopRadius: float = 0.25,
-              selfLoopMajorRadius: Optional[float] = None, selfLoopMinorRadius: Optional[float] = None,
-              selfLoopSides: int = 32, selfLoopNormal: Optional[List[float]] = None,
-              sagittaKey: str = "sagitta") -> List[Any]:
+    def Edges(
+        graph: "TGraph",
+        asTopologic: bool = False,
+        useRepresentation: bool = True,
+        active: bool = True,
+        segmentCurves: bool = True,
+        mantissa: int = 6,
+        tolerance: float = 0.0001,
+        silent: bool = False,
+        selfLoopMode: str = "circle",
+        selfLoopRadius: float = 0.25,
+        selfLoopMajorRadius: Optional[float] = None,
+        selfLoopMinorRadius: Optional[float] = None,
+        selfLoopSides: int = 32,
+        selfLoopNormal: Optional[List[float]] = None,
+        sagittaKey: str = "sagitta",
+        copy: bool = False,
+    ) -> List[Any]:
         """
         Returns the edges of the input TGraph.
 
         Parameters
         ----------
-        graph : 'TGraph'
+        graph : TGraph
             The input TGraph.
         asTopologic : bool , optional
-            If set to True, records are returned as Topologic objects when possible. Default is
-            False.
+            If set to True, Topologic edge/wire representations are returned where
+            possible. Default is False.
         useRepresentation : bool , optional
-            If set to True, stored representation objects are used when possible. Default is
-            True.
+            If set to True, stored representation objects are used when possible.
+            Default is True.
         active : bool , optional
-            If set to True, only active records are considered. Default is True.
+            If set to True, only active records are returned. Default is True.
         segmentCurves : bool , optional
-            The input segment curves value. Default is True.
+            If set to True, curve control data may be converted to segmented wires.
+            Default is True.
         mantissa : int , optional
             The number of decimal places to round numeric results to. Default is 6.
         tolerance : float , optional
@@ -13556,56 +14268,92 @@ class TGraph:
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
         selfLoopMode : str , optional
-            The input self loop mode value. Default is 'circle'.
+            The self-loop geometry mode. Default is "circle".
         selfLoopRadius : float , optional
-            The radius value to use. Default is 0.25.
-        selfLoopMajorRadius : Optional[float] , optional
-            The radius value to use. Default is None.
-        selfLoopMinorRadius : Optional[float] , optional
-            The radius value to use. Default is None.
+            The default self-loop radius. Default is 0.25.
+        selfLoopMajorRadius : float , optional
+            The self-loop major radius. Default is None.
+        selfLoopMinorRadius : float , optional
+            The self-loop minor radius. Default is None.
         selfLoopSides : int , optional
-            The input self loop sides value. Default is 32.
-        selfLoopNormal : Optional[List[float]] , optional
-            The input self loop normal value. Default is None.
+            The number of self-loop segments. Default is 32.
+        selfLoopNormal : list , optional
+            The self-loop normal. Default is None.
         sagittaKey : str , optional
-            The dictionary key to use. Default is 'sagitta'.
+            The dictionary key under which sagitta is stored. Default is "sagitta".
+        copy : bool , optional
+            When asTopologic is False, if set to True copied edge records are
+            returned. If False, live edge records are returned. Default is False.
 
         Returns
         -------
         list
-            The requested edge records or Topologic edge representations.
+            The requested edge records or Topologic representations.
         """
         if not isinstance(graph, TGraph):
             return []
-        records = [e for e in graph._edges if (not active or e.get("active", True))]
+
+        records = [
+            edge
+            for edge in graph._edges
+            if not active or edge.get("active", True)
+        ]
+
         if not asTopologic:
-            return [dict(e, dictionary=dict(e.get("dictionary", {}))) for e in records]
-        vertices = TGraph.Vertices(graph, asTopologic=True, useRepresentation=True, active=False,
-                                   mantissa=mantissa, tolerance=tolerance, silent=silent)
+            if not copy:
+                return records
+
+            return [
+                dict(
+                    edge,
+                    dictionary=dict(edge.get("dictionary", {})),
+                )
+                for edge in records
+            ]
+
+        vertices = TGraph.Vertices(
+            graph,
+            asTopologic=True,
+            useRepresentation=True,
+            active=False,
+            mantissa=mantissa,
+            tolerance=tolerance,
+            silent=silent,
+        )
+
         result = []
+
         for record in records:
-            src, dst = record.get("src"), record.get("dst")
-            d = dict(record.get("dictionary", {}))
-            rep = record.get("representation")
+            src = record.get("src")
+            dst = record.get("dst")
+            dictionary = dict(record.get("dictionary", {}))
+            representation = record.get("representation")
+
             topology = None
 
-            if useRepresentation and rep is not None:
-                topology = TGraph._EdgeRepresentationToTopology(rep, dictionary=d, segmentCurves=segmentCurves,
-                                                                tolerance=tolerance, silent=silent)
+            if useRepresentation and representation is not None:
+                topology = TGraph._EdgeRepresentationToTopology(
+                    representation,
+                    dictionary=dictionary,
+                    segmentCurves=segmentCurves,
+                    tolerance=tolerance,
+                    silent=silent,
+                )
 
             if topology is None:
-                if not isinstance(src, int) or not isinstance(dst, int) or src >= len(vertices) or dst >= len(vertices):
+                if (
+                    not isinstance(src, int)
+                    or not isinstance(dst, int)
+                    or src >= len(vertices)
+                    or dst >= len(vertices)
+                ):
                     continue
 
-                # A self-loop is valid graph incidence but cannot be represented
-                # as a straight Topologic Edge. Generate a circular/elliptical
-                # Wire representation unless an explicit representation already
-                # handled it above.
                 if src == dst:
                     topology = TGraph._SelfLoopToWire(
                         vertex=vertices[src],
-                        dictionary=d,
-                        representation=rep,
+                        dictionary=dictionary,
+                        representation=representation,
                         mode=selfLoopMode,
                         radius=selfLoopRadius,
                         majorRadius=selfLoopMajorRadius,
@@ -13616,66 +14364,101 @@ class TGraph:
                         silent=silent,
                     )
                 else:
-                    # Optional visual arc representation through a sagitta. This
-                    # is drawing geometry only; the graph edge remains pure
-                    # incidence between src and dst.
                     topology = TGraph._SagittaArcToWire(
                         vertexA=vertices[src],
                         vertexB=vertices[dst],
-                        dictionary=d,
-                        representation=rep,
+                        dictionary=dictionary,
+                        representation=representation,
                         sagittaKey=sagittaKey,
                         tolerance=tolerance,
                         silent=silent,
                     )
 
             if topology is None:
-                if not isinstance(src, int) or not isinstance(dst, int) or src >= len(vertices) or dst >= len(vertices):
+                if (
+                    not isinstance(src, int)
+                    or not isinstance(dst, int)
+                    or src >= len(vertices)
+                    or dst >= len(vertices)
+                    or src == dst
+                ):
                     continue
-                if src == dst:
-                    continue
+
                 try:
                     from topologicpy.Edge import Edge
                     from topologicpy.Vertex import Vertex
                     from topologicpy.Topology import Topology
+
                     if Vertex.Distance(vertices[src], vertices[dst]) <= tolerance:
                         continue
-                    topology = Edge.ByStartVertexEndVertex(vertices[src], vertices[dst], tolerance=tolerance)
+
+                    topology = Edge.ByStartVertexEndVertex(
+                        vertices[src],
+                        vertices[dst],
+                        tolerance=tolerance,
+                    )
+
                     if topology is not None:
-                        topology = Topology.SetDictionary(topology, TGraph._PythonToDictionary(d), silent=True)
+                        topology = Topology.SetDictionary(
+                            topology,
+                            TGraph._PythonToDictionary(dictionary),
+                            silent=True,
+                        )
                 except Exception:
                     topology = None
+
             if topology is not None:
                 result.append(topology)
+
         return result
 
     @staticmethod
-    def EdgesBetween(graph: "TGraph", src: int, dst: int, directed: Optional[bool] = None) -> List[Dict[str, Any]]:
+    def EdgesBetween(
+        graph: "TGraph",
+        src: int,
+        dst: int,
+        directed: Optional[bool] = None,
+        copy: bool = False,
+    ) -> List[Dict[str, Any]]:
         """
         Returns all active edges between two input vertex indices.
 
         Parameters
         ----------
-        graph : 'TGraph'
+        graph : TGraph
             The input TGraph.
         src : int
             The source vertex index.
         dst : int
             The destination vertex index.
-        directed : Optional[bool] , optional
-            If set to True, graph edges are treated as directed. Default is None.
+        directed : bool , optional
+            The direction flag used when searching for edges. Default is None.
+        copy : bool , optional
+            If set to True, copies of edge records are returned. If False, live
+            internal records are returned. Default is False.
 
         Returns
         -------
-        List[Dict[str, Any]]
-            The resulting edges between list.
+        list
+            The matching edge records.
         """
         if not isinstance(graph, TGraph):
             return []
+
         TGraph._EnsureEdgeLookup(graph)
+
         edge_directed = graph._directed if directed is None else bool(directed)
-        ids = graph._edge_lookup.get(graph._edge_key(src, dst, edge_directed), set())
-        return [TGraph.Edge(graph, i) for i in sorted(ids) if graph._validate_edge_index(i)]
+
+        ids = graph._edge_lookup.get(
+            graph._edge_key(src, dst, edge_directed),
+            set(),
+        )
+
+        return [
+            TGraph.Edge(graph, i, copy=copy)
+            for i in sorted(ids)
+            if graph._validate_edge_index(i)
+        ]
 
     @staticmethod
     def EigenvectorCentrality(
@@ -13794,17 +14577,18 @@ class TGraph:
 
         Parameters
         ----------
-        graph : 'TGraph'
+        graph : TGraph
             The input TGraph.
         normalize : bool , optional
             If set to True, returned values are normalized. Default is False.
         key : str , optional
-            The dictionary key to use. Default is 'eigen_vector_centrality'.
+            The dictionary key under which values are stored.
+            Default is "eigen_vector_centrality".
         colorKey : str , optional
-            The dictionary key under which computed color values are stored. Default is
-            'evc_color'.
+            The dictionary key under which computed colors are stored.
+            Default is "evc_color".
         colorScale : str , optional
-            The Plotly color scale to use. Default is 'viridis'.
+            The color scale used to generate colors. Default is "viridis".
         mantissa : int , optional
             The number of decimal places to round numeric results to. Default is 6.
         tolerance : float , optional
@@ -13814,9 +14598,14 @@ class TGraph:
 
         Returns
         -------
-        List[float]
-            The resulting eigen vector centrality list.
+        list
+            The resulting eigenvector centrality values.
         """
+        if not isinstance(graph, TGraph):
+            return []
+
+        vertices = TGraph.ActiveVertexIndices(graph)
+
         values = TGraph.EigenvectorCentrality(
             graph,
             mode="all" if not TGraph.IsDirected(graph) else "out",
@@ -13825,13 +14614,67 @@ class TGraph:
             key=key,
             mantissa=mantissa,
         )
-        if normalize and values:
-            max_value = max(abs(v) for v in values)
-            if max_value > 0:
-                values = [round(float(v) / max_value, mantissa) for v in values]
-                if isinstance(graph, TGraph) and key is not None:
-                    for idx, v_idx in enumerate(TGraph.ActiveVertexIndices(graph)):
-                        TGraph._SetVertexValue(graph, v_idx, key, values[idx])
+
+        if not values:
+            return []
+
+        if normalize:
+            maximum = max(
+                abs(value)
+                for value in values
+            )
+
+            if maximum > 0:
+                values = [
+                    round(float(value) / maximum, mantissa)
+                    for value in values
+                ]
+
+        minimum = min(values)
+        maximum = max(values)
+
+        def color_at(value):
+            if colorKey is None:
+                return None
+
+            try:
+                from topologicpy.Color import Color
+
+                if abs(maximum - minimum) <= tolerance:
+                    value = 0.5
+                    min_value = 0.0
+                    max_value = 1.0
+                else:
+                    min_value = minimum
+                    max_value = maximum
+
+                return Color.AnyToHex(
+                    Color.ByValueInRange(
+                        value,
+                        minValue=min_value,
+                        maxValue=max_value,
+                        colorScale=colorScale,
+                    )
+                )
+            except Exception:
+                return None
+
+        for index, value in zip(vertices, values):
+            dictionary = graph._vertices[index].setdefault(
+                "dictionary",
+                {},
+            )
+
+            if key is not None:
+                dictionary[key] = value
+
+            color = color_at(value)
+
+            if colorKey is not None and color is not None:
+                dictionary[colorKey] = color
+
+        graph._invalidate_cache()
+
         return values
 
     @staticmethod
@@ -20187,142 +21030,6 @@ class TGraph:
             tolerance=tolerance,
             silent=silent,
         )
-    
-    @staticmethod
-    def PlotlyData(
-        graph: "TGraph",
-        vertexLabelKey: str = "label",
-        vertexColorKey: str = "color",
-        vertexSizeKey: str = "size",
-        edgeColorKey: str = "color",
-        edgeWidthKey: str = "width",
-        defaultVertexSize: float = 6,
-        defaultEdgeWidth: float = 2,
-        showVertexLabels: bool = False,
-        showEdgeLabels: bool = False,
-        edgeLabelKey: str = "label",
-        mantissa: int = 6,
-        tolerance: float = 0.0001,
-        silent: bool = False,
-    ) -> List[Any]:
-        """
-        Returns Plotly trace data representing the input TGraph.
-
-        Parameters
-        ----------
-        graph : 'TGraph'
-            The input TGraph.
-        vertexLabelKey : str , optional
-            The dictionary key to use. Default is 'label'.
-        vertexColorKey : str , optional
-            The dictionary key to use. Default is 'color'.
-        vertexSizeKey : str , optional
-            The dictionary key to use. Default is 'size'.
-        edgeColorKey : str , optional
-            The dictionary key to use. Default is 'color'.
-        edgeWidthKey : str , optional
-            The dictionary key to use. Default is 'width'.
-        defaultVertexSize : float , optional
-            The input default vertex size value. Default is 6.
-        defaultEdgeWidth : float , optional
-            The input default edge width value. Default is 2.
-        showVertexLabels : bool , optional
-            If set to True, show vertex labels are shown. Default is False.
-        showEdgeLabels : bool , optional
-            If set to True, show edge labels are shown. Default is False.
-        edgeLabelKey : str , optional
-            The dictionary key to use. Default is 'label'.
-        mantissa : int , optional
-            The number of decimal places to round numeric results to. Default is 6.
-        tolerance : float , optional
-            The desired tolerance. Default is 0.0001.
-        silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
-
-        Returns
-        -------
-        List[Any]
-            The resulting plotly data list.
-        """
-        if not isinstance(graph, TGraph):
-            return []
-        try:
-            import plotly.graph_objects as go
-        except Exception:
-            if not silent:
-                print("TGraph.PlotlyData - Error: Plotly is not installed. Returning an empty list.")
-            return []
-
-        active = TGraph.ActiveVertexIndices(graph)
-        n = max(1, len(active))
-        coords: Dict[int, List[float]] = {}
-        for pos, idx in enumerate(active):
-            c = TGraph.Coordinates(graph, idx)
-            if c is None:
-                angle = 2.0 * math.pi * float(pos) / float(n)
-                c = [math.cos(angle), math.sin(angle), 0.0]
-            coords[idx] = [round(float(c[0]), mantissa), round(float(c[1]), mantissa), round(float(c[2]), mantissa)]
-
-        edge_traces = []
-        # Group edges by style to avoid one trace per edge where possible.
-        grouped: Dict[Tuple[Any, Any], Dict[str, List[Any]]] = {}
-        edge_text_grouped: Dict[Tuple[Any, Any], List[str]] = {}
-        for e in graph._edges:
-            if not e.get("active", True):
-                continue
-            srcIndex = e.get("src")
-            dstIndex = e.get("dst")
-            if srcIndex not in coords or dstIndex not in coords:
-                continue
-            d = e.get("dictionary", {}) if isinstance(e.get("dictionary", {}), dict) else {}
-            color = d.get(edgeColorKey, "black")
-            width = d.get(edgeWidthKey, defaultEdgeWidth)
-            key = (str(color), float(width) if isinstance(width, (int, float)) else defaultEdgeWidth)
-            grouped.setdefault(key, {"x": [], "y": [], "z": []})
-            edge_text_grouped.setdefault(key, [])
-            a = coords[srcIndex]
-            b = coords[dstIndex]
-            grouped[key]["x"].extend([a[0], b[0], None])
-            grouped[key]["y"].extend([a[1], b[1], None])
-            grouped[key]["z"].extend([a[2], b[2], None])
-            edge_text_grouped[key].append(str(d.get(edgeLabelKey, "")))
-
-        for (color, width), data in grouped.items():
-            edge_traces.append(
-                go.Scatter3d(
-                    x=data["x"],
-                    y=data["y"],
-                    z=data["z"],
-                    mode="lines+text" if showEdgeLabels else "lines",
-                    line=dict(color=color, width=width),
-                    hoverinfo="none",
-                    showlegend=False,
-                )
-            )
-
-        xs, ys, zs, labels, colors, sizes = [], [], [], [], [], []
-        for idx in active:
-            c = coords[idx]
-            d = graph._vertices[idx].get("dictionary", {})
-            xs.append(c[0])
-            ys.append(c[1])
-            zs.append(c[2])
-            labels.append(str(d.get(vertexLabelKey, d.get("index", idx))))
-            colors.append(d.get(vertexColorKey, "black"))
-            sizes.append(d.get(vertexSizeKey, defaultVertexSize))
-
-        vertex_trace = go.Scatter3d(
-            x=xs,
-            y=ys,
-            z=zs,
-            mode="markers+text" if showVertexLabels else "markers",
-            marker=dict(size=sizes, color=colors),
-            text=labels if showVertexLabels else None,
-            hovertext=labels,
-            hoverinfo="text",
-            showlegend=False,
-        )
-        return edge_traces + [vertex_trace]
 
     @staticmethod
     def _PythonToDictionary(data: Optional[Dict[str, Any]]) -> Any:
@@ -21266,29 +21973,53 @@ class TGraph:
         self._invalidate_cache()
         return self
 
-    def SetEdgeDictionary(self, index: int, dictionary: Optional[Dict[str, Any]] = None) -> "TGraph":
+    def SetEdgeDictionary(
+        self,
+        index: Any,
+        dictionary: Optional[Dict[str, Any]] = None,
+    ) -> "TGraph":
         """
         Sets the dictionary of an edge in this TGraph.
 
+        Structural edge fields are preserved automatically.
+
         Parameters
         ----------
-        index : int
-            The input index.
-        dictionary : Optional[Dict[str, Any]] , optional
-            The input dictionary. Default is None.
+        index : int or dict
+            The edge index or edge record.
+        dictionary : dict , optional
+            The replacement dictionary. Default is None.
 
         Returns
         -------
         TGraph
-            The resulting TGraph, or None if the operation fails.
+            The input TGraph.
         """
-        if not self._validate_edge_index(index, active=False):
+        index = TGraph._as_index(index)
+
+        if index is None or not self._validate_edge_index(index, active=False):
             return self
-        e = self._edges[index]
-        d = dict(dictionary) if isinstance(dictionary, dict) else {}
-        d.update({"index": index, "src": e["src"], "dst": e["dst"], "directed": e["directed"], "active": e.get("active", True)})
-        self._edges[index]["dictionary"] = d
+
+        record = self._edges[index]
+
+        dictionary = (
+            dict(dictionary)
+            if isinstance(dictionary, dict)
+            else {}
+        )
+
+        dictionary.update({
+            "index": index,
+            "src": record["src"],
+            "dst": record["dst"],
+            "directed": record["directed"],
+            "active": record.get("active", True),
+        })
+
+        record["dictionary"] = dictionary
+
         self._invalidate_cache()
+
         return self
 
     @staticmethod
@@ -21447,30 +22178,48 @@ class TGraph:
 
         return True
     
-    @staticmethod
-    def SetVertexDictionary(self, index: int, dictionary: Optional[Dict[str, Any]] = None) -> "TGraph":
+    def SetVertexDictionary(
+        self,
+        index: Any,
+        dictionary: Optional[Dict[str, Any]] = None,
+    ) -> "TGraph":
         """
         Sets the dictionary of a vertex in this TGraph.
 
+        Structural vertex fields are preserved automatically.
+
         Parameters
         ----------
-        index : int
-            The input index.
-        dictionary : Optional[Dict[str, Any]] , optional
-            The input dictionary. Default is None.
+        index : int or dict
+            The vertex index or vertex record.
+        dictionary : dict , optional
+            The replacement dictionary. Default is None.
 
         Returns
         -------
         TGraph
-            The resulting TGraph, or None if the operation fails.
+            The input TGraph.
         """
-        if not self._validate_vertex_index(index, active=False):
+        index = TGraph._as_index(index)
+
+        if index is None or not self._validate_vertex_index(index, active=False):
             return self
-        d = dict(dictionary) if isinstance(dictionary, dict) else {}
-        d["index"] = index
-        d.setdefault("active", self._vertices[index].get("active", True))
-        self._vertices[index]["dictionary"] = d
+
+        record = self._vertices[index]
+
+        dictionary = (
+            dict(dictionary)
+            if isinstance(dictionary, dict)
+            else {}
+        )
+
+        dictionary["index"] = index
+        dictionary["active"] = record.get("active", True)
+
+        record["dictionary"] = dictionary
+
         self._invalidate_cache()
+
         return self
 
     @staticmethod
@@ -24777,53 +25526,56 @@ class TGraph:
     #     return final
 
     @staticmethod
-    def Show(*graphs,
-             sagitta = 0,
-             absolute = False,
-             sides = 8,
-             angle = 0,
-             vertexColor="black",
-             vertexColorKey=None,
-             vertexSize=10,
-             vertexSizeKey=None,
-             vertexLabelKey=None,
-             vertexGroupKey=None,
-             vertexGroups=[],
-             vertexMinGroup=None,
-             vertexMaxGroup=None,
-             showVertices=True,
-             showVertexLabel=False,
-             showVertexLegend=False,
-             edgeColor="red",
-             edgeColorKey=None,
-             edgeWidth=1,
-             edgeWidthKey=None,
-             edgeLabelKey=None,
-             edgeGroupKey=None,
-             edgeGroups=[],
-             edgeMinGroup=None,
-             edgeMaxGroup=None,
-             showEdges=True,
-             showEdgeLabel=False,
-             showEdgeLegend=False,
-             colorScale='viridis',
-             renderer=None,
-             width=950,
-             height=500,
-             xAxis=False,
-             yAxis=False,
-             zAxis=False,
-             axisSize=1,
-             backgroundColor='rgba(0,0,0,0)',
-             marginLeft=0,
-             marginRight=0,
-             marginTop=20,
-             marginBottom=0,
-             camera=[-1.25, -1.25, 1.25],
-             center=[0, 0, 0], up=[0, 0, 1],
-             projection="perspective",
-             tolerance=0.0001,
-             silent=False):
+    def Show(
+        *graphs,
+        sagitta=0,
+        absolute=False,
+        sides=8,
+        angle=0,
+        vertexColor="black",
+        vertexColorKey="color",
+        vertexSize=10,
+        vertexSizeKey="size",
+        vertexLabelKey=None,
+        vertexGroupKey=None,
+        vertexGroups=None,
+        vertexMinGroup=None,
+        vertexMaxGroup=None,
+        showVertices=True,
+        showVertexLabel=False,
+        showVertexLegend=False,
+        edgeColor="red",
+        edgeColorKey="color",
+        edgeWidth=1,
+        edgeWidthKey="width",
+        edgeLabelKey=None,
+        edgeGroupKey=None,
+        edgeGroups=None,
+        edgeMinGroup=None,
+        edgeMaxGroup=None,
+        showEdges=True,
+        showEdgeLabel=False,
+        showEdgeLegend=False,
+        colorScale="viridis",
+        renderer=None,
+        width=950,
+        height=500,
+        xAxis=False,
+        yAxis=False,
+        zAxis=False,
+        axisSize=1,
+        backgroundColor="rgba(0,0,0,0)",
+        marginLeft=0,
+        marginRight=0,
+        marginTop=20,
+        marginBottom=0,
+        camera=[-1.25, -1.25, 1.25],
+        center=[0, 0, 0],
+        up=[0, 0, 1],
+        projection="perspective",
+        tolerance=0.0001,
+        silent=False,
+    ):
         """
         Displays a representation of the input TGraph.
 
@@ -24928,57 +25680,95 @@ class TGraph:
 
         Returns
         -------
-        Any
-            The resulting show object or value.
+        None
+            None
         """
         from topologicpy.Plotly import Plotly
-        from topologicpy.Topology import Topology
         from topologicpy.Helper import Helper
 
-        if isinstance(graphs, tuple):
-            graphs = Helper.Flatten(list(graphs))
-        if isinstance(graphs, list):
-            new_graphs = [t for t in graphs if isinstance(t, TGraph)]
-        if len(new_graphs) == 0:
+        graphs = Helper.Flatten(list(graphs))
+
+        valid_graphs = [
+            graph
+            for graph in graphs
+            if isinstance(graph, TGraph)
+        ]
+
+        if not valid_graphs:
             if not silent:
-                print("Graph.Show - Error: the input graphs parameter does not contain any valid graphs. Returning None.")
+                print(
+                    "TGraph.Show - Error: The input graphs parameter does not "
+                    "contain any valid TGraphs. Returning None."
+                )
             return None
+
         data = []
-        for graph in new_graphs:
-            data += Plotly.DataByTGraph(graph,
-                                    sagitta=sagitta,
-                                    absolute=absolute,
-                                    sides=sides,
-                                    angle=angle,
-                                    vertexColor=vertexColor,
-                                    vertexColorKey=vertexColorKey,
-                                    vertexSize=vertexSize,
-                                    vertexSizeKey=vertexSizeKey,
-                                    vertexLabelKey=vertexLabelKey,
-                                    vertexGroupKey=vertexGroupKey,
-                                    vertexGroups=vertexGroups,
-                                    vertexMinGroup=vertexMinGroup,
-                                    vertexMaxGroup=vertexMaxGroup,
-                                    showVertices=showVertices,
-                                    showVertexLabel=showVertexLabel,
-                                    showVertexLegend=showVertexLegend,
-                                    edgeColor=edgeColor,
-                                    edgeColorKey=edgeColorKey,
-                                    edgeWidth=edgeWidth,
-                                    edgeWidthKey=edgeWidthKey,
-                                    edgeLabelKey=edgeLabelKey,
-                                    edgeGroupKey=edgeGroupKey,
-                                    edgeGroups=edgeGroups,
-                                    edgeMinGroup=edgeMinGroup,
-                                    edgeMaxGroup=edgeMaxGroup,
-                                    showEdges=showEdges,
-                                    showEdgeLabel=showEdgeLabel,
-                                    showEdgeLegend=showEdgeLegend,
-                                    colorScale=colorScale,
-                                    silent=silent)
-        fig = Plotly.FigureByData(data, width=width, height=height, xAxis=xAxis, yAxis=yAxis, zAxis=zAxis, axisSize=axisSize, backgroundColor=backgroundColor,
-                                  marginLeft=marginLeft, marginRight=marginRight, marginTop=marginTop, marginBottom=marginBottom, tolerance=tolerance)
-        Plotly.Show(fig, renderer=renderer, camera=camera, center=center, up=up, projection=projection)
+
+        for graph in valid_graphs:
+            graph_data = Plotly.DataByTGraph(
+                graph,
+                sagitta=sagitta,
+                absolute=absolute,
+                sides=sides,
+                angle=angle,
+                vertexColor=vertexColor,
+                vertexColorKey=vertexColorKey,
+                vertexSize=vertexSize,
+                vertexSizeKey=vertexSizeKey,
+                vertexLabelKey=vertexLabelKey,
+                vertexGroupKey=vertexGroupKey,
+                vertexGroups=vertexGroups,
+                vertexMinGroup=vertexMinGroup,
+                vertexMaxGroup=vertexMaxGroup,
+                showVertices=showVertices,
+                showVertexLabel=showVertexLabel,
+                showVertexLegend=showVertexLegend,
+                edgeColor=edgeColor,
+                edgeColorKey=edgeColorKey,
+                edgeWidth=edgeWidth,
+                edgeWidthKey=edgeWidthKey,
+                edgeLabelKey=edgeLabelKey,
+                edgeGroupKey=edgeGroupKey,
+                edgeGroups=edgeGroups,
+                edgeMinGroup=edgeMinGroup,
+                edgeMaxGroup=edgeMaxGroup,
+                showEdges=showEdges,
+                showEdgeLabel=showEdgeLabel,
+                showEdgeLegend=showEdgeLegend,
+                colorScale=colorScale,
+                tolerance=tolerance,
+                silent=silent,
+            )
+
+            if isinstance(graph_data, list):
+                data.extend(graph_data)
+
+        figure = Plotly.FigureByData(
+            data,
+            width=width,
+            height=height,
+            xAxis=xAxis,
+            yAxis=yAxis,
+            zAxis=zAxis,
+            axisSize=axisSize,
+            backgroundColor=backgroundColor,
+            marginLeft=marginLeft,
+            marginRight=marginRight,
+            marginTop=marginTop,
+            marginBottom=marginBottom,
+            tolerance=tolerance,
+        )
+
+        Plotly.Show(
+            figure,
+            renderer=renderer,
+            camera=camera,
+            center=center,
+            up=up,
+            projection=projection,
+        )
+
+        return None
 
     @staticmethod
     def _SimpleUndirectedNeighborSets(graph: "TGraph", includeSelfLoops: bool = False) -> Dict[int, Set[int]]:
@@ -27078,42 +27868,70 @@ class TGraph:
             return None
         return TGraph.Degree(graph, idx, mode=mode)
 
-    def VertexDictionary(self, index: int) -> Dict[str, Any]:
+    def VertexDictionary(
+        self,
+        index: Any,
+        copy: bool = True,
+    ) -> Dict[str, Any]:
         """
-        Returns the dictionary of the input vertex index.
+        Returns the dictionary of a vertex.
 
         Parameters
         ----------
-        index : int
-            The input index.
+        index : int or dict
+            The vertex index or vertex record.
+        copy : bool , optional
+            If set to True, a copy of the dictionary is returned. If set to False,
+            the live dictionary is returned and may be modified in-place.
+            Default is True.
 
         Returns
         -------
-        Dict[str, Any]
-            The resulting vertex dictionary dictionary.
+        dict
+            The vertex dictionary.
         """
-        if not self._validate_vertex_index(index, active=False):
+        index = TGraph._as_index(index)
+
+        if index is None or not self._validate_vertex_index(index, active=False):
             return {}
-        return dict(self._vertices[index].get("dictionary", {}))
+
+        record = self._vertices[index]
+        dictionary = record.get("dictionary")
+
+        if not isinstance(dictionary, dict):
+            dictionary = {}
+            record["dictionary"] = dictionary
+
+        return dict(dictionary) if copy else dictionary
 
     @staticmethod
-    def VertexDictionaryStatic(graph: "TGraph", index: int) -> Dict[str, Any]:
+    def VertexDictionaryStatic(
+        graph: "TGraph",
+        index: Any,
+        copy: bool = True,
+    ) -> Dict[str, Any]:
         """
         Returns the dictionary of a vertex in the input TGraph.
 
         Parameters
         ----------
-        graph : 'TGraph'
+        graph : TGraph
             The input TGraph.
-        index : int
-            The input index.
+        index : int or dict
+            The vertex index or vertex record.
+        copy : bool , optional
+            If set to True, a copy of the dictionary is returned. If False, the live
+            dictionary is returned. Default is True.
 
         Returns
         -------
-        Dict[str, Any]
-            The resulting vertex dictionary static dictionary.
+        dict
+            The vertex dictionary.
         """
-        return graph.VertexDictionary(index) if isinstance(graph, TGraph) else {}
+        if not isinstance(graph, TGraph):
+            return {}
+
+        return graph.VertexDictionary(index, copy=copy)
 
     @staticmethod
     def VertexIndex(graph: "TGraph", vertex: Union[int, Dict[str, Any]]) -> Optional[int]:
@@ -27134,6 +27952,196 @@ class TGraph:
         """
         idx = TGraph._as_index(vertex)
         return idx if isinstance(graph, TGraph) and graph._validate_vertex_index(idx) else None
+
+    def VertexValue(
+        self,
+        vertex: Any,
+        key: str,
+        default: Any = None,
+    ) -> Any:
+        """
+        Returns a dictionary value from a vertex.
+
+        Parameters
+        ----------
+        vertex : int or dict
+            The vertex index or vertex record.
+        key : str
+            The dictionary key.
+        default : Any , optional
+            The value returned if the key is not found. Default is None.
+
+        Returns
+        -------
+        Any
+            The requested value.
+        """
+        if key is None:
+            return default
+
+        dictionary = self.VertexDictionary(
+            vertex,
+            copy=False,
+        )
+
+        if not isinstance(dictionary, dict):
+            return default
+
+        return dictionary.get(key, default)
+
+
+    def EdgeValue(
+        self,
+        edge: Any,
+        key: str,
+        default: Any = None,
+    ) -> Any:
+        """
+        Returns a dictionary value from an edge.
+
+        Parameters
+        ----------
+        edge : int or dict
+            The edge index or edge record.
+        key : str
+            The dictionary key.
+        default : Any , optional
+            The value returned if the key is not found. Default is None.
+
+        Returns
+        -------
+        Any
+            The requested value.
+        """
+        if key is None:
+            return default
+
+        dictionary = self.EdgeDictionary(
+            edge,
+            copy=False,
+        )
+
+        if not isinstance(dictionary, dict):
+            return default
+
+        return dictionary.get(key, default)
+
+    def SetVertexValue(
+        self,
+        vertex: Any,
+        key: str,
+        value: Any,
+        silent: bool = False,
+    ) -> "TGraph":
+        """
+        Sets a dictionary value on a vertex.
+
+        Parameters
+        ----------
+        vertex : int or dict
+            The vertex index or vertex record.
+        key : str
+            The dictionary key.
+        value : Any
+            The value to store.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        TGraph
+            The input TGraph.
+        """
+        index = TGraph._as_index(vertex)
+
+        if index is None or not self._validate_vertex_index(index, active=False):
+            if not silent:
+                print("TGraph.SetVertexValue - Error: The input vertex is not valid. Returning the input graph.")
+            return self
+
+        if not isinstance(key, str) or not key:
+            if not silent:
+                print("TGraph.SetVertexValue - Error: The input key is not valid. Returning the input graph.")
+            return self
+
+        if key in {"index", "active"}:
+            if not silent:
+                print(
+                    f"TGraph.SetVertexValue - Error: '{key}' is a structural "
+                    "vertex key and cannot be modified using this method. "
+                    "Returning the input graph."
+                )
+            return self
+
+        dictionary = self._vertices[index].setdefault(
+            "dictionary",
+            {},
+        )
+
+        dictionary[key] = value
+
+        self._invalidate_cache()
+
+        return self
+
+
+    def SetEdgeValue(
+        self,
+        edge: Any,
+        key: str,
+        value: Any,
+        silent: bool = False,
+    ) -> "TGraph":
+        """
+        Sets a dictionary value on an edge.
+
+        Parameters
+        ----------
+        edge : int or dict
+            The edge index or edge record.
+        key : str
+            The dictionary key.
+        value : Any
+            The value to store.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        TGraph
+            The input TGraph.
+        """
+        index = TGraph._as_index(edge)
+
+        if index is None or not self._validate_edge_index(index, active=False):
+            if not silent:
+                print("TGraph.SetEdgeValue - Error: The input edge is not valid. Returning the input graph.")
+            return self
+
+        if not isinstance(key, str) or not key:
+            if not silent:
+                print("TGraph.SetEdgeValue - Error: The input key is not valid. Returning the input graph.")
+            return self
+
+        if key in {"index", "src", "dst", "directed", "active"}:
+            if not silent:
+                print(
+                    f"TGraph.SetEdgeValue - Error: '{key}' is a structural "
+                    "edge key and cannot be modified using this method. "
+                    "Returning the input graph."
+                )
+            return self
+
+        dictionary = self._edges[index].setdefault(
+            "dictionary",
+            {},
+        )
+
+        dictionary[key] = value
+
+        self._invalidate_cache()
+
+        return self
 
     @staticmethod
     def Vertices(graph: "TGraph",
