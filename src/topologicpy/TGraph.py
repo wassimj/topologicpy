@@ -110,6 +110,3184 @@ class TGraph:
     # ---------------------------------------------------------------------
 
     @staticmethod
+    def _FlowNetwork(
+        graph: "TGraph",
+        capacityKey: str = "capacity",
+        defaultCapacity: float = 1.0,
+        silent: bool = False,
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Returns an internal capacitated flow-network representation of the input TGraph.
+
+        Each active TGraph edge is preserved as an individual flow arc so that parallel
+        edges retain their identity. Directed edges contribute one traversal arc.
+        Undirected edges contribute one traversal arc in each direction.
+
+        This method only constructs the logical flow network. Residual reverse arcs are
+        created later by TGraph._MaximumFlowEngine.
+
+        Parameters
+        ----------
+        graph : TGraph
+            The input TGraph.
+        capacityKey : str , optional
+            The edge dictionary key containing the capacity value.
+            Default is "capacity".
+        defaultCapacity : float , optional
+            The capacity assigned to an edge when capacityKey is absent or its value
+            cannot be interpreted as a finite number. Default is 1.0.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        dict or None
+            A dictionary containing:
+
+            - "nodes": active stable TGraph vertex indices.
+            - "arcs": capacitated directed flow arcs derived from the TGraph edges.
+
+            Returns None if the input graph or default capacity is invalid.
+        """
+        import math
+
+        if not isinstance(graph, TGraph):
+            if not silent:
+                print("TGraph._FlowNetwork - Error: The input graph is not a valid TGraph. Returning None.")
+            return None
+
+        try:
+            default_capacity = float(defaultCapacity)
+        except Exception:
+            if not silent:
+                print("TGraph._FlowNetwork - Error: defaultCapacity is not a valid number. Returning None.")
+            return None
+
+        if not math.isfinite(default_capacity) or default_capacity < 0:
+            if not silent:
+                print("TGraph._FlowNetwork - Error: defaultCapacity must be a finite non-negative number. Returning None.")
+            return None
+
+        nodes = [
+            vertex.get("index")
+            for vertex in graph._vertices
+            if isinstance(vertex, dict)
+            and vertex.get("active", True)
+            and isinstance(vertex.get("index"), int)
+        ]
+
+        node_set = set(nodes)
+        arcs = []
+
+        for edge in graph._edges:
+            if not isinstance(edge, dict):
+                continue
+            if not edge.get("active", True):
+                continue
+
+            src = edge.get("src")
+            dst = edge.get("dst")
+
+            if src not in node_set or dst not in node_set:
+                continue
+
+            dictionary = edge.get("dictionary", {})
+            if not isinstance(dictionary, dict):
+                dictionary = {}
+
+            if capacityKey:
+                raw_capacity = dictionary.get(capacityKey, default_capacity)
+            else:
+                raw_capacity = default_capacity
+
+            if raw_capacity is None:
+                raw_capacity = default_capacity
+
+            try:
+                capacity = float(raw_capacity)
+            except Exception:
+                capacity = default_capacity
+
+            if not math.isfinite(capacity):
+                capacity = default_capacity
+
+            # Negative capacities are not meaningful in a standard flow network.
+            # Treat them as closed arcs rather than allowing invalid residual values.
+            if capacity < 0:
+                capacity = 0.0
+
+            edge_index = edge.get("index")
+            directed = bool(edge.get("directed", graph._directed))
+
+            arcs.append(
+                {
+                    "arc_index": len(arcs),
+                    "edge_index": edge_index,
+                    "src": src,
+                    "dst": dst,
+                    "capacity": capacity,
+                    "directed": directed,
+                    "orientation": 1,
+                }
+            )
+
+            if not directed:
+                arcs.append(
+                    {
+                        "arc_index": len(arcs),
+                        "edge_index": edge_index,
+                        "src": dst,
+                        "dst": src,
+                        "capacity": capacity,
+                        "directed": False,
+                        "orientation": -1,
+                    }
+                )
+
+        return {
+            "nodes": nodes,
+            "arcs": arcs,
+        }
+    
+    @staticmethod
+    def _MaximumFlowEngine(
+        nodes: List[Any],
+        arcs: List[Dict[str, Any]],
+        source: Any,
+        sink: Any,
+        maxFlow: Optional[float] = None,
+        tolerance: float = 1e-12,
+    ) -> Dict[str, Any]:
+        """
+        Computes maximum flow on an internal directed capacitated network.
+
+        The method uses the Edmonds-Karp algorithm over an explicit residual adjacency
+        structure. Each input arc remains independent, allowing parallel arcs and
+        preserving any metadata supplied with the arc.
+
+        Unlike TGraph.MaximumFlow, this method retains the final flow assigned to every
+        input arc. It is intended as the reusable internal flow engine for methods such
+        as MaximumFlow and DisjointPaths.
+
+        Parameters
+        ----------
+        nodes : List[Any]
+            The network node identifiers.
+        arcs : List[Dict[str, Any]]
+            The directed capacitated arcs. Each arc must contain "src", "dst", and
+            "capacity". Additional fields are preserved as metadata.
+        source : Any
+            The source node identifier.
+        sink : Any
+            The sink node identifier.
+        maxFlow : float , optional
+            Optional upper bound on the amount of flow to compute. If None, the maximum
+            possible flow is computed. Default is None.
+        tolerance : float , optional
+            Numerical tolerance below which residual capacity is treated as zero.
+            Default is 1e-12.
+
+        Returns
+        -------
+        dict
+            A dictionary containing:
+
+            - "value": computed flow value.
+            - "arcs": original arcs augmented with "flow" and "residual_capacity".
+            - "residual": complete residual arc records.
+            - "adjacency": residual adjacency mapping.
+            - "augmentations": number of augmenting paths used.
+            - "source": resolved source node.
+            - "sink": resolved sink node.
+        """
+        from collections import deque
+        import math
+
+        try:
+            tol = abs(float(tolerance))
+        except Exception:
+            tol = 1e-12
+
+        tol = max(tol, 1e-15)
+
+        node_list = []
+        node_set = set()
+
+        for node in nodes or []:
+            try:
+                if node not in node_set:
+                    node_set.add(node)
+                    node_list.append(node)
+            except Exception:
+                continue
+
+        # Permit callers to omit nodes that can be inferred directly from the arcs.
+        for arc in arcs or []:
+            if not isinstance(arc, dict):
+                continue
+
+            for key in ("src", "dst"):
+                node = arc.get(key)
+                try:
+                    if node not in node_set:
+                        node_set.add(node)
+                        node_list.append(node)
+                except Exception:
+                    pass
+
+        empty_result = {
+            "value": 0.0,
+            "arcs": [],
+            "residual": [],
+            "adjacency": {node: [] for node in node_list},
+            "augmentations": 0,
+            "source": source,
+            "sink": sink,
+        }
+
+        if source not in node_set or sink not in node_set:
+            return empty_result
+
+        # Flow from a node to itself is defined here as zero. This also avoids the
+        # infinite-flow behaviour that the previous implementation could enter.
+        if source == sink:
+            return empty_result
+
+        if maxFlow is None:
+            flow_limit = math.inf
+        else:
+            try:
+                flow_limit = float(maxFlow)
+            except Exception:
+                flow_limit = 0.0
+
+            if not math.isfinite(flow_limit):
+                flow_limit = math.inf
+            elif flow_limit < 0:
+                flow_limit = 0.0
+
+        adjacency = {node: [] for node in node_list}
+        residual = []
+        forward_indices = []
+
+        def _add_residual_pair(src, dst, capacity, metadata):
+            forward_index = len(residual)
+            reverse_index = forward_index + 1
+
+            forward = {
+                "src": src,
+                "dst": dst,
+                "capacity": capacity,
+                "residual_capacity": capacity,
+                "reverse": reverse_index,
+                "is_reverse": False,
+                "metadata": metadata,
+            }
+
+            reverse = {
+                "src": dst,
+                "dst": src,
+                "capacity": 0.0,
+                "residual_capacity": 0.0,
+                "reverse": forward_index,
+                "is_reverse": True,
+                "metadata": metadata,
+            }
+
+            residual.append(forward)
+            residual.append(reverse)
+
+            adjacency.setdefault(src, []).append(forward_index)
+            adjacency.setdefault(dst, []).append(reverse_index)
+
+            forward_indices.append(forward_index)
+
+        for input_index, arc in enumerate(arcs or []):
+            if not isinstance(arc, dict):
+                continue
+
+            src = arc.get("src")
+            dst = arc.get("dst")
+
+            if src not in node_set or dst not in node_set:
+                continue
+
+            try:
+                capacity = float(arc.get("capacity", 0.0))
+            except Exception:
+                capacity = 0.0
+
+            if not math.isfinite(capacity) or capacity < 0:
+                capacity = 0.0
+
+            metadata = dict(arc)
+            metadata.setdefault("input_arc_index", input_index)
+
+            _add_residual_pair(
+                src,
+                dst,
+                capacity,
+                metadata,
+            )
+
+        flow_value = 0.0
+        augmentations = 0
+
+        while flow_value < flow_limit - tol:
+
+            parent_arc = {source: None}
+            queue = deque([source])
+
+            # --------------------------------------------------------------
+            # Breadth-first search of the residual network.
+            # --------------------------------------------------------------
+
+            while queue and sink not in parent_arc:
+                current = queue.popleft()
+
+                for residual_index in adjacency.get(current, []):
+                    arc = residual[residual_index]
+
+                    if arc["residual_capacity"] <= tol:
+                        continue
+
+                    next_node = arc["dst"]
+
+                    if next_node in parent_arc:
+                        continue
+
+                    parent_arc[next_node] = residual_index
+
+                    if next_node == sink:
+                        break
+
+                    queue.append(next_node)
+
+            if sink not in parent_arc:
+                break
+
+            # --------------------------------------------------------------
+            # Determine augmentation capacity.
+            # --------------------------------------------------------------
+
+            increment = math.inf
+            current = sink
+
+            while current != source:
+                residual_index = parent_arc[current]
+                arc = residual[residual_index]
+
+                increment = min(
+                    increment,
+                    arc["residual_capacity"],
+                )
+
+                current = arc["src"]
+
+            if flow_limit != math.inf:
+                increment = min(
+                    increment,
+                    flow_limit - flow_value,
+                )
+
+            if not math.isfinite(increment) or increment <= tol:
+                break
+
+            # --------------------------------------------------------------
+            # Augment and update reverse residual capacities.
+            # --------------------------------------------------------------
+
+            current = sink
+
+            while current != source:
+                residual_index = parent_arc[current]
+                reverse_index = residual[residual_index]["reverse"]
+
+                residual[residual_index]["residual_capacity"] -= increment
+                residual[reverse_index]["residual_capacity"] += increment
+
+                # Suppress insignificant floating-point residue.
+                if abs(residual[residual_index]["residual_capacity"]) <= tol:
+                    residual[residual_index]["residual_capacity"] = 0.0
+
+                current = residual[residual_index]["src"]
+
+            flow_value += increment
+            augmentations += 1
+
+        # ------------------------------------------------------------------
+        # Recover the flow associated with every original input arc.
+        # ------------------------------------------------------------------
+
+        flow_arcs = []
+
+        for residual_index in forward_indices:
+            record = residual[residual_index]
+
+            capacity = float(record["capacity"])
+            residual_capacity = float(record["residual_capacity"])
+            arc_flow = capacity - residual_capacity
+
+            if abs(arc_flow) <= tol:
+                arc_flow = 0.0
+
+            if abs(capacity - arc_flow) <= tol:
+                arc_flow = capacity
+
+            result_arc = dict(record.get("metadata", {}))
+
+            result_arc["src"] = record["src"]
+            result_arc["dst"] = record["dst"]
+            result_arc["capacity"] = capacity
+            result_arc["flow"] = arc_flow
+            result_arc["residual_capacity"] = residual_capacity
+
+            flow_arcs.append(result_arc)
+
+        if abs(flow_value) <= tol:
+            flow_value = 0.0
+
+        return {
+            "value": float(flow_value),
+            "arcs": flow_arcs,
+            "residual": residual,
+            "adjacency": adjacency,
+            "augmentations": augmentations,
+            "source": source,
+            "sink": sink,
+        }
+
+    @staticmethod
+    def _FlowPaths(
+        flowResult: Dict[str, Any],
+        source: Any = None,
+        sink: Any = None,
+        returnFlows: bool = False,
+        tolerance: float = 1e-12,
+    ):
+        """
+        Decomposes a completed flow assignment into source-to-sink paths.
+
+        The method extracts simple paths from the positive-flow arcs returned by
+        TGraph._MaximumFlowEngine. Flow is removed from each extracted path by its
+        bottleneck amount and the process continues until no positive-flow
+        source-to-sink path remains.
+
+        Any residual circulation that does not contribute to source-to-sink flow is
+        ignored.
+
+        Parameters
+        ----------
+        flowResult : dict
+            The result dictionary returned by TGraph._MaximumFlowEngine.
+        source : Any , optional
+            The source node. If None, the source stored in flowResult is used.
+            Default is None.
+        sink : Any , optional
+            The sink node. If None, the sink stored in flowResult is used.
+            Default is None.
+        returnFlows : bool , optional
+            If set to True, returns a tuple containing the paths and the amount of
+            flow carried by each extracted path. Default is False.
+        tolerance : float , optional
+            Numerical tolerance below which flow is treated as zero.
+            Default is 1e-12.
+
+        Returns
+        -------
+        list or tuple
+            If returnFlows is False, returns a list of ordered node-index paths.
+
+            If returnFlows is True, returns:
+
+            (paths, flows)
+
+            where flows[i] is the amount of flow carried by paths[i].
+
+            For unit-capacity integral flow networks, each flow value will normally
+            be 1.0 and the number of returned paths will equal the maximum-flow value.
+        """
+        from collections import deque
+        import math
+
+        if not isinstance(flowResult, dict):
+            return ([], []) if returnFlows else []
+
+        if source is None:
+            source = flowResult.get("source")
+
+        if sink is None:
+            sink = flowResult.get("sink")
+
+        if source is None or sink is None or source == sink:
+            return ([], []) if returnFlows else []
+
+        try:
+            tol = abs(float(tolerance))
+        except Exception:
+            tol = 1e-12
+
+        tol = max(tol, 1e-15)
+
+        arcs = flowResult.get("arcs", [])
+
+        if not isinstance(arcs, list):
+            return ([], []) if returnFlows else []
+
+        # ------------------------------------------------------------------
+        # Build a mutable positive-flow network.
+        #
+        # Keep every arc separate so parallel arcs retain their identity.
+        # ------------------------------------------------------------------
+
+        flow_arcs = []
+        adjacency = {}
+
+        for arc in arcs:
+            if not isinstance(arc, dict):
+                continue
+
+            src = arc.get("src")
+            dst = arc.get("dst")
+
+            if src is None or dst is None:
+                continue
+
+            try:
+                flow = float(arc.get("flow", 0.0))
+            except Exception:
+                flow = 0.0
+
+            if not math.isfinite(flow) or flow <= tol:
+                continue
+
+            index = len(flow_arcs)
+
+            flow_arcs.append(
+                {
+                    "src": src,
+                    "dst": dst,
+                    "remaining": flow,
+                    "arc": arc,
+                }
+            )
+
+            adjacency.setdefault(src, []).append(index)
+            adjacency.setdefault(dst, [])
+
+        paths = []
+        path_flows = []
+
+        # ------------------------------------------------------------------
+        # Repeatedly extract a simple positive-flow source-to-sink path.
+        #
+        # BFS is used deliberately:
+        # - it prevents cycling while finding one decomposition path;
+        # - it is deterministic with respect to the stored arc order;
+        # - it does not attempt to re-optimise the already-computed flow.
+        # ------------------------------------------------------------------
+
+        while True:
+
+            parent_arc = {source: None}
+            queue = deque([source])
+
+            while queue and sink not in parent_arc:
+                current = queue.popleft()
+
+                for arc_index in adjacency.get(current, []):
+                    record = flow_arcs[arc_index]
+
+                    if record["remaining"] <= tol:
+                        continue
+
+                    next_node = record["dst"]
+
+                    if next_node in parent_arc:
+                        continue
+
+                    parent_arc[next_node] = arc_index
+
+                    if next_node == sink:
+                        break
+
+                    queue.append(next_node)
+
+            if sink not in parent_arc:
+                break
+
+            # --------------------------------------------------------------
+            # Reconstruct the path and determine its bottleneck flow.
+            # --------------------------------------------------------------
+
+            path_arc_indices = []
+            current = sink
+
+            while current != source:
+                arc_index = parent_arc[current]
+
+                if arc_index is None:
+                    path_arc_indices = []
+                    break
+
+                path_arc_indices.append(arc_index)
+                current = flow_arcs[arc_index]["src"]
+
+            if not path_arc_indices:
+                break
+
+            path_arc_indices.reverse()
+
+            bottleneck = min(
+                flow_arcs[arc_index]["remaining"]
+                for arc_index in path_arc_indices
+            )
+
+            if not math.isfinite(bottleneck) or bottleneck <= tol:
+                break
+
+            # --------------------------------------------------------------
+            # Construct the ordered node path.
+            # --------------------------------------------------------------
+
+            path = [source]
+
+            for arc_index in path_arc_indices:
+                path.append(flow_arcs[arc_index]["dst"])
+
+            # --------------------------------------------------------------
+            # Remove this path's flow from the mutable flow network.
+            # --------------------------------------------------------------
+
+            for arc_index in path_arc_indices:
+                remaining = flow_arcs[arc_index]["remaining"] - bottleneck
+
+                if abs(remaining) <= tol:
+                    remaining = 0.0
+
+                flow_arcs[arc_index]["remaining"] = remaining
+
+            paths.append(path)
+            path_flows.append(float(bottleneck))
+
+        if returnFlows:
+            return paths, path_flows
+
+        return paths
+
+    @staticmethod
+    def _FlowCut(
+        flowResult: Dict[str, Any],
+        network: Dict[str, Any],
+        tolerance: float = 1e-12,
+    ) -> Dict[str, Any]:
+        """
+        Extracts the minimum cut induced by a completed maximum-flow residual network.
+
+        Parameters
+        ----------
+        flowResult : dict
+            The result returned by TGraph._MaximumFlowEngine.
+        network : dict
+            The transformed flow network used to compute the maximum flow. The
+            network should have been created by TGraph._VertexDisjointFlowNetwork
+            or TGraph._EdgeDisjointFlowNetwork.
+        tolerance : float , optional
+            Numerical tolerance used when testing residual capacities.
+            Default is 1e-12.
+
+        Returns
+        -------
+        dict
+            A dictionary containing the cut value, cut type, cut indices,
+            source-side and target-side original vertex indices, transformed
+            source/target-side nodes, crossing arcs, cut capacity, and whether
+            the cut consists purely of the requested vertex or edge elements.
+        """
+        from collections import deque
+
+        if not isinstance(flowResult, dict) or not isinstance(network, dict):
+            return {
+                "value": 0.0,
+                "cutType": None,
+                "cut": [],
+                "sourceSide": [],
+                "targetSide": [],
+                "sourceSideNodes": [],
+                "targetSideNodes": [],
+                "cutArcs": [],
+                "cutCapacity": 0.0,
+                "isPureCut": False,
+            }
+
+        try:
+            tol = abs(float(tolerance))
+        except Exception:
+            tol = 1e-12
+
+        residual = flowResult.get("residual", [])
+        adjacency = flowResult.get("adjacency", {})
+        source = flowResult.get(
+            "source",
+            network.get("source", None),
+        )
+
+        if (
+            not isinstance(residual, list)
+            or not isinstance(adjacency, dict)
+            or source is None
+        ):
+            try:
+                value = float(
+                    flowResult.get("value", 0.0)
+                )
+            except Exception:
+                value = 0.0
+
+            return {
+                "value": value,
+                "cutType": network.get("disjoint", None),
+                "cut": [],
+                "sourceSide": [],
+                "targetSide": [],
+                "sourceSideNodes": [],
+                "targetSideNodes": [],
+                "cutArcs": [],
+                "cutCapacity": 0.0,
+                "isPureCut": False,
+            }
+
+        # ------------------------------------------------------------------
+        # Find all transformed nodes reachable from the source through
+        # positive-capacity residual arcs.
+        # ------------------------------------------------------------------
+
+        reachable = {source}
+        queue = deque([source])
+
+        while queue:
+            u = queue.popleft()
+
+            for residual_index in adjacency.get(u, []):
+                if (
+                    not isinstance(residual_index, int)
+                    or residual_index < 0
+                    or residual_index >= len(residual)
+                ):
+                    continue
+
+                record = residual[residual_index]
+
+                if not isinstance(record, dict):
+                    continue
+
+                try:
+                    residual_capacity = float(
+                        record.get(
+                            "residual_capacity",
+                            0.0,
+                        )
+                    )
+                except Exception:
+                    residual_capacity = 0.0
+
+                if residual_capacity <= tol:
+                    continue
+
+                v = record.get("dst", None)
+
+                if v is None or v in reachable:
+                    continue
+
+                reachable.add(v)
+                queue.append(v)
+
+        network_nodes = network.get("nodes", [])
+
+        if not isinstance(network_nodes, list):
+            try:
+                network_nodes = list(network_nodes)
+            except Exception:
+                network_nodes = []
+
+        source_side_nodes = [
+            node
+            for node in network_nodes
+            if node in reachable
+        ]
+
+        target_side_nodes = [
+            node
+            for node in network_nodes
+            if node not in reachable
+        ]
+
+        # ------------------------------------------------------------------
+        # Original forward arcs that cross from the reachable residual set to
+        # the unreachable residual set form the transformed minimum cut.
+        # ------------------------------------------------------------------
+
+        crossing_arcs = []
+
+        for arc in network.get("arcs", []) or []:
+            if not isinstance(arc, dict):
+                continue
+
+            src = arc.get("src", None)
+            dst = arc.get("dst", None)
+
+            if (
+                src not in reachable
+                or dst in reachable
+            ):
+                continue
+
+            try:
+                capacity = float(
+                    arc.get(
+                        "capacity",
+                        0.0,
+                    )
+                )
+            except Exception:
+                capacity = 0.0
+
+            if capacity <= tol:
+                continue
+
+            crossing_arcs.append(arc)
+
+        cut_type = str(
+            network.get(
+                "disjoint",
+                "",
+            )
+            or ""
+        ).strip().lower()
+
+        if cut_type not in (
+            "vertex",
+            "edge",
+        ):
+            cut_type = None
+
+        selected_arc_ids = set()
+        cut_indices = []
+
+        # ------------------------------------------------------------------
+        # Map transformed cut arcs back to original graph elements.
+        # ------------------------------------------------------------------
+
+        if cut_type == "vertex":
+
+            for arc in crossing_arcs:
+
+                if arc.get("kind", None) != "vertex":
+                    continue
+
+                vertex_index = arc.get(
+                    "vertex_index",
+                    None,
+                )
+
+                if (
+                    isinstance(vertex_index, int)
+                    and not isinstance(vertex_index, bool)
+                ):
+                    cut_indices.append(
+                        vertex_index
+                    )
+                    selected_arc_ids.add(
+                        id(arc)
+                    )
+
+        elif cut_type == "edge":
+
+            for arc in crossing_arcs:
+
+                edge_index = arc.get(
+                    "edge_index",
+                    None,
+                )
+
+                if (
+                    not isinstance(edge_index, int)
+                    or isinstance(edge_index, bool)
+                ):
+                    continue
+
+                kind = str(
+                    arc.get(
+                        "kind",
+                        "",
+                    )
+                    or ""
+                ).strip().lower()
+
+                try:
+                    capacity = float(
+                        arc.get(
+                            "capacity",
+                            0.0,
+                        )
+                    )
+                except Exception:
+                    capacity = 0.0
+
+                # In the edge-disjoint transformation, each physical edge
+                # contributes one unit-capacity edge arc. High-capacity feeder
+                # and transit arcs must not be reported as cut edges.
+                if (
+                    kind in (
+                        "edge",
+                        "edge_capacity",
+                    )
+                    and capacity <= 1.0 + tol
+                ):
+                    cut_indices.append(
+                        edge_index
+                    )
+                    selected_arc_ids.add(
+                        id(arc)
+                    )
+
+        cut_indices = sorted(
+            set(cut_indices)
+        )
+
+        # ------------------------------------------------------------------
+        # Compare the complete transformed cut capacity with the part that
+        # maps cleanly to the requested graph element type.
+        # ------------------------------------------------------------------
+
+        cut_capacity = 0.0
+        selected_capacity = 0.0
+
+        for arc in crossing_arcs:
+
+            try:
+                capacity = float(
+                    arc.get(
+                        "capacity",
+                        0.0,
+                    )
+                )
+            except Exception:
+                capacity = 0.0
+
+            cut_capacity += capacity
+
+            if id(arc) in selected_arc_ids:
+                selected_capacity += capacity
+
+        scale = max(
+            1.0,
+            abs(cut_capacity),
+        )
+
+        is_pure_cut = (
+            abs(
+                cut_capacity
+                - selected_capacity
+            )
+            <= tol * scale
+        )
+
+        # ------------------------------------------------------------------
+        # Map the transformed partition back to original graph vertices.
+        #
+        # For a vertex cut, a cut vertex has:
+        #
+        #     vertex_in  reachable
+        #     vertex_out unreachable
+        #
+        # and is deliberately excluded from both sourceSide and targetSide.
+        # ------------------------------------------------------------------
+
+        vertex_to_nodes = network.get(
+            "vertex_to_nodes",
+            {},
+        )
+
+        source_side = []
+        target_side = []
+
+        if isinstance(vertex_to_nodes, dict):
+
+            for vertex_index, node_pair in vertex_to_nodes.items():
+
+                if (
+                    not isinstance(vertex_index, int)
+                    or isinstance(vertex_index, bool)
+                ):
+                    continue
+
+                if (
+                    cut_type == "vertex"
+                    and vertex_index in cut_indices
+                ):
+                    continue
+
+                if isinstance(node_pair, dict):
+                    in_node = node_pair.get(
+                        "in",
+                        vertex_index,
+                    )
+
+                    out_node = node_pair.get(
+                        "out",
+                        in_node,
+                    )
+
+                else:
+                    in_node = vertex_index
+                    out_node = vertex_index
+
+                in_reachable = (
+                    in_node in reachable
+                )
+
+                out_reachable = (
+                    out_node in reachable
+                )
+
+                if (
+                    in_reachable
+                    and out_reachable
+                ):
+                    source_side.append(
+                        vertex_index
+                    )
+
+                elif (
+                    not in_reachable
+                    and not out_reachable
+                ):
+                    target_side.append(
+                        vertex_index
+                    )
+
+                else:
+                    # Normally a mixed state occurs only for a vertex-cut
+                    # element, which was excluded above. Keep deterministic
+                    # behaviour for custom or malformed transformed networks.
+                    if out_reachable:
+                        source_side.append(
+                            vertex_index
+                        )
+                    else:
+                        target_side.append(
+                            vertex_index
+                        )
+
+        try:
+            value = float(
+                flowResult.get(
+                    "value",
+                    0.0,
+                )
+            )
+        except Exception:
+            value = 0.0
+
+        return {
+            "value": value,
+            "cutType": cut_type,
+            "cut": cut_indices,
+            "sourceSide": sorted(
+                source_side
+            ),
+            "targetSide": sorted(
+                target_side
+            ),
+            "sourceSideNodes": source_side_nodes,
+            "targetSideNodes": target_side_nodes,
+            "cutArcs": crossing_arcs,
+            "cutCapacity": float(
+                cut_capacity
+            ),
+            "isPureCut": bool(
+                is_pure_cut
+            ),
+        }
+
+    @staticmethod
+    def MinimumCut(
+        graph: "TGraph",
+        source: Any,
+        target: Any,
+        cut: str = "vertex",
+        snapEndpoints: bool = True,
+        tolerance: float = 1e-12,
+        silent: bool = False,
+        includeDetails: bool = False,
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Returns the minimum source-target vertex or edge cut.
+
+        Parameters
+        ----------
+        graph : TGraph
+            The input TGraph.
+        source : Any
+            The source vertex index or vertex-like input.
+        target : Any
+            The target vertex index or vertex-like input.
+        cut : str , optional
+            The cut type. Valid values are "vertex" and "edge", together with
+            common aliases. Default is "vertex".
+        snapEndpoints : bool , optional
+            If True, unresolved vertex-like inputs are snapped to the nearest
+            active TGraph vertex. Default is True.
+        tolerance : float , optional
+            Numerical tolerance used by the maximum-flow and residual-cut
+            calculations. Default is 1e-12.
+        silent : bool , optional
+            If True, suppresses error messages. Default is False.
+        includeDetails : bool , optional
+            If True, includes transformed residual-network details such as
+            source-side nodes, target-side nodes, and cut arcs. These can be
+            large for substantial graphs. Default is False.
+
+        Returns
+        -------
+        dict or None
+            A dictionary describing the minimum cut, or None if the request is
+            invalid.
+
+            The default returned dictionary contains:
+
+            value : float
+                The maximum-flow/minimum-cut value.
+            cutType : str
+                Either "vertex" or "edge".
+            cut : list
+                Stable vertex indices for a vertex cut, or stable edge indices
+                for an edge cut.
+            sourceSide : list
+                Stable original graph vertex indices on the source side of the
+                cut.
+            targetSide : list
+                Stable original graph vertex indices on the target side of the
+                cut.
+            cutCapacity : float
+                Capacity of the transformed minimum cut.
+            isPureCut : bool
+                True when the transformed minimum cut consists entirely of
+                elements of the requested cut type.
+            source : int
+                Stable source vertex index.
+            target : int
+                Stable target vertex index.
+
+            If includeDetails is True, the dictionary additionally contains:
+
+            sourceSideNodes : list
+                Reachable transformed-network nodes.
+            targetSideNodes : list
+                Unreachable transformed-network nodes.
+            cutArcs : list
+                Transformed-network arcs crossing the residual minimum cut.
+
+            For directly adjacent source and target vertices, an internal vertex
+            separator may not exist. In such a case the transformed minimum cut
+            can include the direct source-target edge and isPureCut can therefore
+            be False.
+        """
+        if not isinstance(graph, TGraph):
+            if not silent:
+                print(
+                    "TGraph.MinimumCut - Error: "
+                    "The input graph is not a valid TGraph. Returning None."
+                )
+            return None
+
+        aliases = {
+            "vertex": "vertex",
+            "vertices": "vertex",
+            "node": "vertex",
+            "nodes": "vertex",
+            "vertex-disjoint": "vertex",
+            "vertex_disjoint": "vertex",
+            "edge": "edge",
+            "edges": "edge",
+            "edge-disjoint": "edge",
+            "edge_disjoint": "edge",
+        }
+
+        cut_type = aliases.get(
+            str(cut or "vertex").strip().lower(),
+            None,
+        )
+
+        if cut_type is None:
+            if not silent:
+                print(
+                    "TGraph.MinimumCut - Error: "
+                    "cut must be 'vertex' or 'edge'. Returning None."
+                )
+            return None
+
+        def _resolve(value):
+            idx = TGraph._as_index(value)
+
+            if graph._validate_vertex_index(idx):
+                return idx
+
+            if not snapEndpoints:
+                return None
+
+            try:
+                record = TGraph.NearestVertex(
+                    graph,
+                    vertex=value,
+                    active=True,
+                    copy=False,
+                    asTopologic=False,
+                    silent=True,
+                )
+
+                idx = TGraph._as_index(record)
+
+                return (
+                    idx
+                    if graph._validate_vertex_index(idx)
+                    else None
+                )
+
+            except Exception:
+                return None
+
+        source_index = _resolve(source)
+        target_index = _resolve(target)
+
+        if source_index is None or target_index is None:
+            if not silent:
+                print(
+                    "TGraph.MinimumCut - Error: "
+                    "Could not resolve the source or target vertex. Returning None."
+                )
+            return None
+
+        if source_index == target_index:
+            if not silent:
+                print(
+                    "TGraph.MinimumCut - Error: "
+                    "The source and target must be different vertices. Returning None."
+                )
+            return None
+
+        try:
+            tol = abs(float(tolerance))
+        except Exception:
+            tol = 1e-12
+
+        # ------------------------------------------------------------------
+        # Build the appropriate unit-capacity transformed network.
+        # ------------------------------------------------------------------
+
+        if cut_type == "vertex":
+            network = TGraph._VertexDisjointFlowNetwork(
+                graph,
+                source_index,
+                target_index,
+                vertexCapacity=1.0,
+                edgeCapacity=1.0,
+                edgeCosts=None,
+                vertexCosts=None,
+                silent=silent,
+            )
+
+        else:
+            network = TGraph._EdgeDisjointFlowNetwork(
+                graph,
+                source_index,
+                target_index,
+                edgeCosts=None,
+                vertexCosts=None,
+                maxFlow=None,
+                silent=silent,
+            )
+
+        if not isinstance(network, dict):
+            return None
+
+        # ------------------------------------------------------------------
+        # Compute maximum flow.
+        # ------------------------------------------------------------------
+
+        flow_result = TGraph._MaximumFlowEngine(
+            nodes=network.get("nodes", []),
+            arcs=network.get("arcs", []),
+            source=network.get(
+                "source",
+                source_index,
+            ),
+            sink=network.get(
+                "sink",
+                target_index,
+            ),
+            maxFlow=None,
+            tolerance=tol,
+        )
+
+        if not isinstance(flow_result, dict):
+            return None
+
+        # ------------------------------------------------------------------
+        # Extract the corresponding residual minimum cut.
+        # ------------------------------------------------------------------
+
+        cut_result = TGraph._FlowCut(
+            flow_result,
+            network,
+            tolerance=tol,
+        )
+
+        if not isinstance(cut_result, dict):
+            return None
+
+        # ------------------------------------------------------------------
+        # Compact public result.
+        # ------------------------------------------------------------------
+
+        result = {
+            "value": float(
+                cut_result.get(
+                    "value",
+                    0.0,
+                )
+            ),
+            "cutType": cut_result.get(
+                "cutType",
+                cut_type,
+            ),
+            "cut": list(
+                cut_result.get(
+                    "cut",
+                    [],
+                )
+            ),
+            "sourceSide": list(
+                cut_result.get(
+                    "sourceSide",
+                    [],
+                )
+            ),
+            "targetSide": list(
+                cut_result.get(
+                    "targetSide",
+                    [],
+                )
+            ),
+            "cutCapacity": float(
+                cut_result.get(
+                    "cutCapacity",
+                    0.0,
+                )
+            ),
+            "isPureCut": bool(
+                cut_result.get(
+                    "isPureCut",
+                    False,
+                )
+            ),
+            "source": source_index,
+            "target": target_index,
+        }
+
+        # ------------------------------------------------------------------
+        # Optional transformed-network diagnostics.
+        # ------------------------------------------------------------------
+
+        if includeDetails:
+            result["sourceSideNodes"] = list(
+                cut_result.get(
+                    "sourceSideNodes",
+                    [],
+                )
+            )
+
+            result["targetSideNodes"] = list(
+                cut_result.get(
+                    "targetSideNodes",
+                    [],
+                )
+            )
+
+            result["cutArcs"] = list(
+                cut_result.get(
+                    "cutArcs",
+                    [],
+                )
+            )
+
+        return result
+
+    @staticmethod
+    def _VertexDisjointFlowNetwork(
+        graph: "TGraph",
+        source: Any,
+        sink: Any,
+        vertexCapacity: float = 1.0,
+        edgeCapacity: float = 1.0,
+        edgeCosts: Optional[Dict[int, float]] = None,
+        vertexCosts: Optional[Dict[int, float]] = None,
+        silent: bool = False,
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Returns a flow network for computing internally vertex-disjoint paths.
+
+        Every active internal vertex is split into an input node and an output node.
+        The arc connecting those two nodes controls vertex capacity and carries any
+        vertex traversal cost.
+
+        Original graph edges become traversal arcs with non-limiting capacity. Thus,
+        only the internal vertex-split arcs constrain the number of vertex-disjoint
+        paths.
+
+        Source and sink are not split, allowing all paths to share those endpoints.
+
+        Directed TGraph edges produce one traversal arc. Undirected TGraph edges
+        produce one traversal arc in each direction.
+
+        Parameters
+        ----------
+        graph : TGraph
+            The input TGraph.
+        source : Any
+            The source vertex index or TGraph vertex record.
+        sink : Any
+            The sink vertex index or TGraph vertex record.
+        vertexCapacity : float , optional
+            Capacity assigned to each internal vertex-split arc. A value of 1
+            produces internally vertex-disjoint paths. Default is 1.0.
+        edgeCapacity : float , optional
+            Minimum capacity assigned to ordinary graph-edge traversal arcs. The
+            actual traversal capacity is automatically raised when necessary so
+            that graph edges do not constrain the vertex-disjoint flow.
+            Default is 1.0.
+        edgeCosts : dict , optional
+            Mapping of stable edge indices to non-negative traversal costs.
+            Default is None.
+        vertexCosts : dict , optional
+            Mapping of stable vertex indices to non-negative traversal costs.
+            Default is None.
+        silent : bool , optional
+            If True, suppresses error messages. Default is False.
+
+        Returns
+        -------
+        dict or None
+            The transformed flow network, or None if the input is invalid.
+        """
+        import math
+
+        if not isinstance(graph, TGraph):
+            if not silent:
+                print(
+                    "TGraph._VertexDisjointFlowNetwork - Error: "
+                    "The input graph is not a valid TGraph. Returning None."
+                )
+            return None
+
+        source_index = TGraph.VertexIndex(
+            graph,
+            source,
+        )
+
+        sink_index = TGraph.VertexIndex(
+            graph,
+            sink,
+        )
+
+        if source_index is None or sink_index is None:
+            if not silent:
+                print(
+                    "TGraph._VertexDisjointFlowNetwork - Error: "
+                    "Could not resolve the source or sink vertex. Returning None."
+                )
+            return None
+
+        if source_index == sink_index:
+            if not silent:
+                print(
+                    "TGraph._VertexDisjointFlowNetwork - Error: "
+                    "The source and sink must be different vertices. Returning None."
+                )
+            return None
+
+        try:
+            vertex_capacity = float(vertexCapacity)
+        except Exception:
+            if not silent:
+                print(
+                    "TGraph._VertexDisjointFlowNetwork - Error: "
+                    "vertexCapacity is not a valid number. Returning None."
+                )
+            return None
+
+        try:
+            minimum_edge_capacity = float(edgeCapacity)
+        except Exception:
+            if not silent:
+                print(
+                    "TGraph._VertexDisjointFlowNetwork - Error: "
+                    "edgeCapacity is not a valid number. Returning None."
+                )
+            return None
+
+        if (
+            not math.isfinite(vertex_capacity)
+            or vertex_capacity < 0.0
+        ):
+            if not silent:
+                print(
+                    "TGraph._VertexDisjointFlowNetwork - Error: "
+                    "vertexCapacity must be finite and non-negative. Returning None."
+                )
+            return None
+
+        if (
+            not math.isfinite(minimum_edge_capacity)
+            or minimum_edge_capacity < 0.0
+        ):
+            if not silent:
+                print(
+                    "TGraph._VertexDisjointFlowNetwork - Error: "
+                    "edgeCapacity must be finite and non-negative. Returning None."
+                )
+            return None
+
+        edgeCosts = (
+            edgeCosts
+            if isinstance(edgeCosts, dict)
+            else {}
+        )
+
+        vertexCosts = (
+            vertexCosts
+            if isinstance(vertexCosts, dict)
+            else {}
+        )
+
+        def _cost(mapping, key):
+
+            try:
+                value = float(
+                    mapping.get(
+                        key,
+                        0.0,
+                    )
+                )
+            except Exception:
+                value = 0.0
+
+            if not math.isfinite(value):
+                value = 0.0
+
+            return value
+
+        # ------------------------------------------------------------------
+        # Collect active vertices.
+        # ------------------------------------------------------------------
+
+        active_vertices = []
+
+        for vertex in graph._vertices:
+
+            if not isinstance(vertex, dict):
+                continue
+
+            if not vertex.get("active", True):
+                continue
+
+            index = vertex.get("index")
+
+            if (
+                isinstance(index, int)
+                and not isinstance(index, bool)
+            ):
+                active_vertices.append(index)
+
+        active_vertex_set = set(
+            active_vertices
+        )
+
+        if (
+            source_index not in active_vertex_set
+            or sink_index not in active_vertex_set
+        ):
+            if not silent:
+                print(
+                    "TGraph._VertexDisjointFlowNetwork - Error: "
+                    "The source or sink is not active. Returning None."
+                )
+            return None
+
+        # ------------------------------------------------------------------
+        # Collect valid active edges.
+        # ------------------------------------------------------------------
+
+        active_edges = []
+
+        for edge in graph._edges:
+
+            if not isinstance(edge, dict):
+                continue
+
+            if not edge.get("active", True):
+                continue
+
+            src = edge.get("src")
+            dst = edge.get("dst")
+
+            if (
+                src not in active_vertex_set
+                or dst not in active_vertex_set
+            ):
+                continue
+
+            if src == dst:
+                continue
+
+            active_edges.append(edge)
+
+        # ------------------------------------------------------------------
+        # Determine a non-limiting traversal capacity.
+        #
+        # The maximum number of internally vertex-disjoint paths cannot exceed
+        # the number of active vertices. Using that value as the capacity of
+        # ordinary traversal arcs ensures that only vertex-split arcs constrain
+        # the flow.
+        #
+        # edgeCapacity is retained as a backward-compatible minimum.
+        # ------------------------------------------------------------------
+
+        transit_capacity = max(
+            minimum_edge_capacity,
+            float(max(1, len(active_vertices))),
+        )
+
+        # ------------------------------------------------------------------
+        # Create transformed nodes.
+        #
+        # Source and sink remain unsplit.
+        #
+        # Every internal vertex v becomes:
+        #
+        #     ("vertex_in", v)
+        #             |
+        #             | capacity = vertexCapacity
+        #             | cost     = vertexCosts[v]
+        #             v
+        #     ("vertex_out", v)
+        # ------------------------------------------------------------------
+
+        nodes = []
+        node_to_vertex = {}
+        vertex_to_nodes = {}
+
+        for vertex_index in active_vertices:
+
+            if vertex_index in (
+                source_index,
+                sink_index,
+            ):
+
+                node = vertex_index
+
+                nodes.append(node)
+
+                node_to_vertex[node] = (
+                    vertex_index
+                )
+
+                vertex_to_nodes[
+                    vertex_index
+                ] = {
+                    "in": node,
+                    "out": node,
+                }
+
+            else:
+
+                in_node = (
+                    "vertex_in",
+                    vertex_index,
+                )
+
+                out_node = (
+                    "vertex_out",
+                    vertex_index,
+                )
+
+                nodes.extend(
+                    [
+                        in_node,
+                        out_node,
+                    ]
+                )
+
+                node_to_vertex[
+                    in_node
+                ] = vertex_index
+
+                node_to_vertex[
+                    out_node
+                ] = vertex_index
+
+                vertex_to_nodes[
+                    vertex_index
+                ] = {
+                    "in": in_node,
+                    "out": out_node,
+                }
+
+        # ------------------------------------------------------------------
+        # Arc helper.
+        # ------------------------------------------------------------------
+
+        arcs = []
+
+        def _append_arc(
+            src,
+            dst,
+            capacity,
+            cost,
+            kind,
+            edge_index=None,
+            vertex_index=None,
+            orientation=0,
+        ):
+
+            arcs.append(
+                {
+                    "arc_index": len(arcs),
+                    "src": src,
+                    "dst": dst,
+                    "capacity": float(capacity),
+                    "cost": float(cost),
+                    "kind": kind,
+                    "edge_index": edge_index,
+                    "vertex_index": vertex_index,
+                    "orientation": orientation,
+                }
+            )
+
+        # ------------------------------------------------------------------
+        # Internal vertex-capacity / vertex-cost arcs.
+        #
+        # These are the ONLY capacity-1 constraints in the transformed network.
+        # ------------------------------------------------------------------
+
+        for vertex_index in active_vertices:
+
+            if vertex_index in (
+                source_index,
+                sink_index,
+            ):
+                continue
+
+            vertex_cost = _cost(
+                vertexCosts,
+                vertex_index,
+            )
+
+            if vertex_cost < 0.0:
+                if not silent:
+                    print(
+                        "TGraph._VertexDisjointFlowNetwork - Error: "
+                        "Negative vertex costs are not supported. Returning None."
+                    )
+                return None
+
+            _append_arc(
+                vertex_to_nodes[
+                    vertex_index
+                ]["in"],
+                vertex_to_nodes[
+                    vertex_index
+                ]["out"],
+                vertex_capacity,
+                vertex_cost,
+                "vertex",
+                vertex_index=vertex_index,
+            )
+
+        def _from_node(vertex_index):
+            return vertex_to_nodes[
+                vertex_index
+            ]["out"]
+
+        def _to_node(vertex_index):
+            return vertex_to_nodes[
+                vertex_index
+            ]["in"]
+
+        # ------------------------------------------------------------------
+        # Original graph-edge traversal arcs.
+        #
+        # Their capacity is deliberately non-limiting.
+        # ------------------------------------------------------------------
+
+        for edge in active_edges:
+
+            src = edge.get("src")
+            dst = edge.get("dst")
+            edge_index = edge.get("index")
+
+            edge_cost = _cost(
+                edgeCosts,
+                edge_index,
+            )
+
+            if edge_cost < 0.0:
+                if not silent:
+                    print(
+                        "TGraph._VertexDisjointFlowNetwork - Error: "
+                        "Negative edge costs are not supported. Returning None."
+                    )
+                return None
+
+            directed = bool(
+                edge.get(
+                    "directed",
+                    graph._directed,
+                )
+            )
+
+            # A direct source-to-sink edge is a special case. Allowing arbitrary
+            # flow through one physical s-t edge would produce duplicate copies of
+            # the same route. Therefore each direct physical edge retains capacity 1.
+            direct_endpoint_edge = (
+                (
+                    src == source_index
+                    and dst == sink_index
+                )
+                or (
+                    not directed
+                    and src == sink_index
+                    and dst == source_index
+                )
+            )
+
+            traversal_capacity = (
+                1.0
+                if direct_endpoint_edge
+                else transit_capacity
+            )
+
+            _append_arc(
+                _from_node(src),
+                _to_node(dst),
+                traversal_capacity,
+                edge_cost,
+                "edge",
+                edge_index=edge_index,
+                orientation=1,
+            )
+
+            if not directed:
+
+                _append_arc(
+                    _from_node(dst),
+                    _to_node(src),
+                    traversal_capacity,
+                    edge_cost,
+                    "edge",
+                    edge_index=edge_index,
+                    orientation=-1,
+                )
+
+        return {
+            "nodes": nodes,
+            "arcs": arcs,
+            "source": source_index,
+            "sink": sink_index,
+            "source_index": source_index,
+            "sink_index": sink_index,
+            "node_to_vertex": node_to_vertex,
+            "vertex_to_nodes": vertex_to_nodes,
+            "split": True,
+            "disjoint": "vertex",
+            "transit_capacity": transit_capacity,
+        }
+
+    @staticmethod
+    def _EdgeDisjointFlowNetwork(
+        graph: "TGraph",
+        source: Any,
+        sink: Any,
+        edgeCosts: Optional[Dict[int, float]] = None,
+        vertexCosts: Optional[Dict[int, float]] = None,
+        maxFlow: Optional[float] = None,
+        silent: bool = False,
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Returns a flow network for computing edge-disjoint paths.
+
+        Original graph edges receive unit capacity. Vertices are split only to
+        provide a consistent location for vertex traversal costs; their capacity is
+        sufficiently large that they do not impose vertex-disjointness.
+
+        Undirected TGraph edges use a shared-capacity gadget so that traversing the
+        same physical edge in opposite directions still consumes the same unit of
+        capacity.
+
+        Parameters
+        ----------
+        graph : TGraph
+            The input TGraph.
+        source : Any
+            The source vertex index or TGraph vertex record.
+        sink : Any
+            The sink vertex index or TGraph vertex record.
+        edgeCosts : dict , optional
+            Mapping of edge indices to non-negative traversal costs.
+        vertexCosts : dict , optional
+            Mapping of vertex indices to non-negative traversal costs.
+        maxFlow : float , optional
+            Optional upper bound on required flow. Used to size unconstrained
+            transit capacities.
+        silent : bool , optional
+            If True, suppresses error messages. Default is False.
+
+        Returns
+        -------
+        dict or None
+            The transformed flow network, or None if the input is invalid.
+        """
+        import math
+
+        if not isinstance(graph, TGraph):
+            if not silent:
+                print(
+                    "TGraph._EdgeDisjointFlowNetwork - Error: "
+                    "The input graph is not a valid TGraph. Returning None."
+                )
+            return None
+
+        source_index = TGraph.VertexIndex(graph, source)
+        sink_index = TGraph.VertexIndex(graph, sink)
+
+        if source_index is None or sink_index is None:
+            if not silent:
+                print(
+                    "TGraph._EdgeDisjointFlowNetwork - Error: "
+                    "Could not resolve the source or sink vertex. Returning None."
+                )
+            return None
+
+        if source_index == sink_index:
+            if not silent:
+                print(
+                    "TGraph._EdgeDisjointFlowNetwork - Error: "
+                    "The source and sink must be different. Returning None."
+                )
+            return None
+
+        edgeCosts = edgeCosts if isinstance(edgeCosts, dict) else {}
+        vertexCosts = vertexCosts if isinstance(vertexCosts, dict) else {}
+
+        def _cost(mapping, key):
+            try:
+                value = float(mapping.get(key, 0.0))
+            except Exception:
+                value = 0.0
+
+            if not math.isfinite(value):
+                value = 0.0
+
+            return value
+
+        active_vertices = []
+
+        for vertex in graph._vertices:
+
+            if not isinstance(vertex, dict):
+                continue
+
+            if not vertex.get("active", True):
+                continue
+
+            index = vertex.get("index")
+
+            if isinstance(index, int) and not isinstance(index, bool):
+                active_vertices.append(index)
+
+        active_vertex_set = set(active_vertices)
+
+        if (
+            source_index not in active_vertex_set
+            or sink_index not in active_vertex_set
+        ):
+            return None
+
+        active_edges = []
+
+        for edge in graph._edges:
+
+            if not isinstance(edge, dict):
+                continue
+
+            if not edge.get("active", True):
+                continue
+
+            src = edge.get("src")
+            dst = edge.get("dst")
+
+            if src not in active_vertex_set or dst not in active_vertex_set:
+                continue
+
+            if src == dst:
+                continue
+
+            active_edges.append(edge)
+
+        if maxFlow is not None:
+            try:
+                transit_capacity = float(maxFlow)
+            except Exception:
+                transit_capacity = 0.0
+
+            if (
+                not math.isfinite(transit_capacity)
+                or transit_capacity <= 0.0
+            ):
+                transit_capacity = 1.0
+
+        else:
+            transit_capacity = float(
+                max(
+                    1,
+                    len(active_edges) + 1,
+                )
+            )
+
+        # ------------------------------------------------------------------
+        # Split all internal vertices, but give the split arc high capacity.
+        # ------------------------------------------------------------------
+
+        nodes = []
+        node_to_vertex = {}
+        vertex_to_nodes = {}
+
+        for vertex_index in active_vertices:
+
+            if vertex_index in (source_index, sink_index):
+
+                node = vertex_index
+
+                nodes.append(node)
+                node_to_vertex[node] = vertex_index
+
+                vertex_to_nodes[vertex_index] = {
+                    "in": node,
+                    "out": node,
+                }
+
+            else:
+
+                in_node = ("vertex_in", vertex_index)
+                out_node = ("vertex_out", vertex_index)
+
+                nodes.extend(
+                    [
+                        in_node,
+                        out_node,
+                    ]
+                )
+
+                node_to_vertex[in_node] = vertex_index
+                node_to_vertex[out_node] = vertex_index
+
+                vertex_to_nodes[vertex_index] = {
+                    "in": in_node,
+                    "out": out_node,
+                }
+
+        arcs = []
+
+        def _append_arc(
+            src,
+            dst,
+            capacity,
+            cost,
+            kind,
+            edge_index=None,
+            vertex_index=None,
+            orientation=0,
+        ):
+            arcs.append(
+                {
+                    "arc_index": len(arcs),
+                    "src": src,
+                    "dst": dst,
+                    "capacity": float(capacity),
+                    "cost": float(cost),
+                    "kind": kind,
+                    "edge_index": edge_index,
+                    "vertex_index": vertex_index,
+                    "orientation": orientation,
+                }
+            )
+
+        # ------------------------------------------------------------------
+        # Vertex-cost arcs.
+        # ------------------------------------------------------------------
+
+        for vertex_index in active_vertices:
+
+            if vertex_index in (source_index, sink_index):
+                continue
+
+            vertex_cost = _cost(
+                vertexCosts,
+                vertex_index,
+            )
+
+            if vertex_cost < 0.0:
+                if not silent:
+                    print(
+                        "TGraph._EdgeDisjointFlowNetwork - Error: "
+                        "Negative costs are not supported. Returning None."
+                    )
+                return None
+
+            _append_arc(
+                vertex_to_nodes[vertex_index]["in"],
+                vertex_to_nodes[vertex_index]["out"],
+                transit_capacity,
+                vertex_cost,
+                "vertex",
+                vertex_index=vertex_index,
+            )
+
+        def _from_node(vertex_index):
+            return vertex_to_nodes[vertex_index]["out"]
+
+        def _to_node(vertex_index):
+            return vertex_to_nodes[vertex_index]["in"]
+
+        # ------------------------------------------------------------------
+        # Edge-capacity arcs.
+        # ------------------------------------------------------------------
+
+        for edge in active_edges:
+
+            src = edge["src"]
+            dst = edge["dst"]
+            edge_index = edge.get("index")
+
+            edge_cost = _cost(
+                edgeCosts,
+                edge_index,
+            )
+
+            if edge_cost < 0.0:
+                if not silent:
+                    print(
+                        "TGraph._EdgeDisjointFlowNetwork - Error: "
+                        "Negative costs are not supported. Returning None."
+                    )
+                return None
+
+            directed = bool(
+                edge.get(
+                    "directed",
+                    graph._directed,
+                )
+            )
+
+            if directed:
+
+                # Directed physical edge: one unit of capacity.
+                _append_arc(
+                    _from_node(src),
+                    _to_node(dst),
+                    1.0,
+                    edge_cost,
+                    "edge",
+                    edge_index=edge_index,
+                    orientation=1,
+                )
+
+                continue
+
+            # --------------------------------------------------------------
+            # Undirected physical edge with shared capacity.
+            #
+            # Either direction must cross:
+            #
+            #     edge_in -> edge_out
+            #
+            # whose capacity is exactly one.
+            # --------------------------------------------------------------
+
+            edge_in = ("edge_in", edge_index)
+            edge_out = ("edge_out", edge_index)
+
+            nodes.extend(
+                [
+                    edge_in,
+                    edge_out,
+                ]
+            )
+
+            _append_arc(
+                _from_node(src),
+                edge_in,
+                transit_capacity,
+                0.0,
+                "edge_entry",
+                edge_index=edge_index,
+                orientation=1,
+            )
+
+            _append_arc(
+                _from_node(dst),
+                edge_in,
+                transit_capacity,
+                0.0,
+                "edge_entry",
+                edge_index=edge_index,
+                orientation=-1,
+            )
+
+            # Charge the physical edge cost exactly once.
+            _append_arc(
+                edge_in,
+                edge_out,
+                1.0,
+                edge_cost,
+                "edge_capacity",
+                edge_index=edge_index,
+                orientation=0,
+            )
+
+            _append_arc(
+                edge_out,
+                _to_node(dst),
+                transit_capacity,
+                0.0,
+                "edge_exit",
+                edge_index=edge_index,
+                orientation=1,
+            )
+
+            _append_arc(
+                edge_out,
+                _to_node(src),
+                transit_capacity,
+                0.0,
+                "edge_exit",
+                edge_index=edge_index,
+                orientation=-1,
+            )
+
+        return {
+            "nodes": nodes,
+            "arcs": arcs,
+            "source": source_index,
+            "sink": sink_index,
+            "source_index": source_index,
+            "sink_index": sink_index,
+            "node_to_vertex": node_to_vertex,
+            "vertex_to_nodes": vertex_to_nodes,
+            "split": True,
+            "disjoint": "edge",
+        }
+
+    @staticmethod
+    def _MinimumCostFlowEngine(
+        nodes: List[Any],
+        arcs: List[Dict[str, Any]],
+        source: Any,
+        sink: Any,
+        maxFlow: Optional[float] = None,
+        tolerance: float = 1e-12,
+    ) -> Dict[str, Any]:
+        """
+        Computes a minimum-cost maximum flow on a directed capacitated network.
+
+        The primary objective is to maximize source-to-sink flow, optionally capped
+        by maxFlow. Among flows of that value, the secondary objective is to
+        minimize total cost.
+
+        Input forward-arc costs must be non-negative. Residual reverse arcs are
+        created automatically with the corresponding negative cost.
+
+        The implementation uses the successive shortest augmenting path algorithm
+        with reduced-cost node potentials and Dijkstra search.
+
+        Parameters
+        ----------
+        nodes : list
+            Network node identifiers.
+        arcs : list
+            Directed arc dictionaries containing at least "src", "dst", and
+            "capacity". Optional "cost" defaults to zero.
+        source : Any
+            Source node.
+        sink : Any
+            Sink node.
+        maxFlow : float , optional
+            Optional upper bound on total flow. If None, the maximum possible flow
+            is computed.
+        tolerance : float , optional
+            Numerical tolerance. Default is 1e-12.
+
+        Returns
+        -------
+        dict
+            A flow-result dictionary compatible with TGraph._FlowPaths. Additional
+            fields include "cost" and "potentials".
+        """
+        import heapq
+        import math
+
+        try:
+            tol = abs(float(tolerance))
+        except Exception:
+            tol = 1e-12
+
+        tol = max(tol, 1e-15)
+
+        # ------------------------------------------------------------------
+        # Collect unique nodes.
+        # ------------------------------------------------------------------
+
+        node_list = []
+        node_set = set()
+
+        for node in nodes:
+            if node in node_set:
+                continue
+
+            node_set.add(node)
+            node_list.append(node)
+
+        # Include any nodes referenced by arcs but absent from nodes.
+        for arc in arcs:
+
+            if not isinstance(arc, dict):
+                continue
+
+            for key in ("src", "dst"):
+
+                node = arc.get(key)
+
+                if node not in node_set:
+                    node_set.add(node)
+                    node_list.append(node)
+
+        def _empty_result():
+            return {
+                "value": 0.0,
+                "cost": 0.0,
+                "arcs": [],
+                "residual": [],
+                "adjacency": {
+                    node: []
+                    for node in node_list
+                },
+                "augmentations": 0,
+                "source": source,
+                "sink": sink,
+                "potentials": {
+                    node: 0.0
+                    for node in node_list
+                },
+            }
+
+        if source not in node_set or sink not in node_set:
+            return _empty_result()
+
+        if source == sink:
+            return _empty_result()
+
+        # ------------------------------------------------------------------
+        # Flow limit.
+        # ------------------------------------------------------------------
+
+        if maxFlow is None:
+
+            flow_limit = float("inf")
+
+        else:
+
+            try:
+                flow_limit = float(maxFlow)
+            except Exception:
+                return _empty_result()
+
+            if (
+                not math.isfinite(flow_limit)
+                or flow_limit < 0.0
+            ):
+                return _empty_result()
+
+            if flow_limit <= tol:
+                return _empty_result()
+
+        # ------------------------------------------------------------------
+        # Build explicit residual network.
+        # ------------------------------------------------------------------
+
+        adjacency = {
+            node: []
+            for node in node_list
+        }
+
+        residual = []
+        original_forward_indices = []
+
+        for original_index, arc in enumerate(arcs):
+
+            if not isinstance(arc, dict):
+                continue
+
+            src = arc.get("src")
+            dst = arc.get("dst")
+
+            if src not in node_set or dst not in node_set:
+                continue
+
+            try:
+                capacity = float(
+                    arc.get(
+                        "capacity",
+                        0.0,
+                    )
+                )
+            except Exception:
+                capacity = 0.0
+
+            try:
+                cost = float(
+                    arc.get(
+                        "cost",
+                        0.0,
+                    )
+                )
+            except Exception:
+                cost = 0.0
+
+            if (
+                not math.isfinite(capacity)
+                or capacity < 0.0
+            ):
+                capacity = 0.0
+
+            if not math.isfinite(cost):
+                cost = 0.0
+
+            # Forward costs must be non-negative.
+            # Reverse residual arcs receive negative costs automatically.
+            if cost < -tol:
+                return _empty_result()
+
+            if abs(cost) <= tol:
+                cost = 0.0
+
+            forward_index = len(residual)
+            reverse_index = forward_index + 1
+
+            metadata = dict(arc)
+
+            residual.append(
+                {
+                    "src": src,
+                    "dst": dst,
+                    "capacity": capacity,
+                    "residual_capacity": capacity,
+                    "cost": cost,
+                    "reverse": reverse_index,
+                    "is_reverse": False,
+                    "original_index": original_index,
+                    "metadata": metadata,
+                }
+            )
+
+            residual.append(
+                {
+                    "src": dst,
+                    "dst": src,
+                    "capacity": 0.0,
+                    "residual_capacity": 0.0,
+                    "cost": -cost,
+                    "reverse": forward_index,
+                    "is_reverse": True,
+                    "original_index": original_index,
+                    "metadata": metadata,
+                }
+            )
+
+            adjacency[src].append(
+                forward_index
+            )
+
+            adjacency[dst].append(
+                reverse_index
+            )
+
+            original_forward_indices.append(
+                forward_index
+            )
+
+        # ------------------------------------------------------------------
+        # Potentials.
+        #
+        # All original forward costs are non-negative, so zero potentials are
+        # valid for the initial residual network.
+        # ------------------------------------------------------------------
+
+        potentials = {
+            node: 0.0
+            for node in node_list
+        }
+
+        flow_value = 0.0
+        augmentations = 0
+
+        # ------------------------------------------------------------------
+        # Successive shortest augmenting paths.
+        # ------------------------------------------------------------------
+
+        while flow_value + tol < flow_limit:
+
+            distances = {
+                source: 0.0
+            }
+
+            parent_arc = {}
+
+            queue = []
+            push_order = 0
+
+            heapq.heappush(
+                queue,
+                (
+                    0.0,
+                    push_order,
+                    source,
+                )
+            )
+
+            # --------------------------------------------------------------
+            # Dijkstra on reduced costs.
+            #
+            # IMPORTANT:
+            # Do NOT stop when the sink is reached.
+            #
+            # We need final shortest-distance labels for every residual node
+            # reachable from the source. These labels are subsequently used to
+            # update the node potentials. Premature termination can invalidate
+            # the potentials and prevent reverse residual arcs from being used
+            # during later rerouting.
+            # --------------------------------------------------------------
+
+            while queue:
+
+                current_distance, _, current = heapq.heappop(
+                    queue
+                )
+
+                best_distance = distances.get(
+                    current,
+                    float("inf"),
+                )
+
+                if current_distance > best_distance + tol:
+                    continue
+
+                for residual_index in adjacency.get(
+                    current,
+                    [],
+                ):
+
+                    record = residual[
+                        residual_index
+                    ]
+
+                    if record["residual_capacity"] <= tol:
+                        continue
+
+                    next_node = record["dst"]
+
+                    reduced_cost = (
+                        record["cost"]
+                        + potentials[current]
+                        - potentials[next_node]
+                    )
+
+                    # Correct potentials guarantee non-negative reduced costs.
+                    # Allow for insignificant floating-point drift.
+                    if (
+                        reduced_cost < 0.0
+                        and reduced_cost >= -tol
+                    ):
+                        reduced_cost = 0.0
+
+                    # A materially negative reduced cost would indicate a broken
+                    # potential invariant. It should not occur with non-negative
+                    # original costs and complete potential updates.
+                    if reduced_cost < -tol:
+                        continue
+
+                    candidate = (
+                        current_distance
+                        + reduced_cost
+                    )
+
+                    if candidate + tol < distances.get(
+                        next_node,
+                        float("inf"),
+                    ):
+
+                        distances[next_node] = candidate
+
+                        parent_arc[next_node] = residual_index
+
+                        push_order += 1
+
+                        heapq.heappush(
+                            queue,
+                            (
+                                candidate,
+                                push_order,
+                                next_node,
+                            )
+                        )
+
+            # No residual source-to-sink path remains.
+            if sink not in distances:
+                break
+
+            # --------------------------------------------------------------
+            # Update potentials for every source-reachable residual node.
+            #
+            # Because Dijkstra has now run to completion, these are final
+            # shortest reduced-cost distances.
+            # --------------------------------------------------------------
+
+            for node, distance in distances.items():
+                potentials[node] += distance
+
+            # --------------------------------------------------------------
+            # Reconstruct the augmenting path.
+            # --------------------------------------------------------------
+
+            path_arcs = []
+            current = sink
+
+            while current != source:
+
+                residual_index = parent_arc.get(
+                    current
+                )
+
+                if residual_index is None:
+                    path_arcs = []
+                    break
+
+                path_arcs.append(
+                    residual_index
+                )
+
+                current = residual[
+                    residual_index
+                ]["src"]
+
+            if not path_arcs:
+                break
+
+            path_arcs.reverse()
+
+            # --------------------------------------------------------------
+            # Determine augmentation amount.
+            # --------------------------------------------------------------
+
+            bottleneck = min(
+                residual[residual_index][
+                    "residual_capacity"
+                ]
+                for residual_index in path_arcs
+            )
+
+            if math.isfinite(flow_limit):
+
+                bottleneck = min(
+                    bottleneck,
+                    flow_limit - flow_value,
+                )
+
+            if bottleneck <= tol:
+                break
+
+            # --------------------------------------------------------------
+            # Augment the residual network.
+            #
+            # Reverse residual arcs allow previous routing decisions to be
+            # cancelled and replaced by a cheaper global flow assignment.
+            # --------------------------------------------------------------
+
+            for residual_index in path_arcs:
+
+                reverse_index = residual[
+                    residual_index
+                ]["reverse"]
+
+                residual[
+                    residual_index
+                ]["residual_capacity"] -= bottleneck
+
+                residual[
+                    reverse_index
+                ]["residual_capacity"] += bottleneck
+
+                if (
+                    abs(
+                        residual[
+                            residual_index
+                        ]["residual_capacity"]
+                    )
+                    <= tol
+                ):
+                    residual[
+                        residual_index
+                    ]["residual_capacity"] = 0.0
+
+            flow_value += bottleneck
+            augmentations += 1
+
+        # ------------------------------------------------------------------
+        # Reconstruct flow on original forward arcs.
+        # ------------------------------------------------------------------
+
+        flow_arcs = []
+
+        for forward_index in original_forward_indices:
+
+            record = residual[
+                forward_index
+            ]
+
+            capacity = record["capacity"]
+
+            flow = (
+                capacity
+                - record["residual_capacity"]
+            )
+
+            if abs(flow) <= tol:
+                flow = 0.0
+
+            metadata = dict(
+                record.get(
+                    "metadata",
+                    {},
+                )
+            )
+
+            metadata.update(
+                {
+                    "src": record["src"],
+                    "dst": record["dst"],
+                    "capacity": capacity,
+                    "cost": record["cost"],
+                    "flow": float(flow),
+                    "residual_capacity": float(
+                        record["residual_capacity"]
+                    ),
+                }
+            )
+
+            flow_arcs.append(
+                metadata
+            )
+
+        # ------------------------------------------------------------------
+        # Compute total cost from the final flow assignment.
+        #
+        # This correctly accounts for any cancellation/rerouting that occurred
+        # through reverse residual arcs.
+        # ------------------------------------------------------------------
+
+        total_cost = sum(
+            arc["flow"]
+            * arc.get(
+                "cost",
+                0.0,
+            )
+            for arc in flow_arcs
+        )
+
+        if abs(total_cost) <= tol:
+            total_cost = 0.0
+
+        return {
+            "value": float(flow_value),
+            "cost": float(total_cost),
+            "arcs": flow_arcs,
+            "residual": residual,
+            "adjacency": adjacency,
+            "augmentations": augmentations,
+            "source": source,
+            "sink": sink,
+            "potentials": potentials,
+        }
+
+    @staticmethod
+    def _CollapseFlowPaths(
+        paths: List[List[Any]],
+        network: Dict[str, Any],
+    ) -> List[List[int]]:
+        """
+        Collapses transformed flow-network paths to original TGraph vertex paths.
+
+        Only transformed nodes explicitly contained in network["node_to_vertex"]
+        are mapped to TGraph vertices. Auxiliary flow-network nodes such as
+        undirected edge-capacity gadgets are ignored.
+
+        Consecutive duplicate vertex indices resulting from input/output vertex
+        splitting are removed.
+
+        Parameters
+        ----------
+        paths : list
+            Paths expressed in transformed flow-network node identifiers.
+        network : dict
+            The transformed flow-network dictionary.
+
+        Returns
+        -------
+        List[List[int]]
+            Paths expressed as stable TGraph vertex indices.
+        """
+        if not isinstance(paths, list):
+            return []
+
+        if not isinstance(network, dict):
+            return []
+
+        node_to_vertex = network.get(
+            "node_to_vertex",
+            {},
+        )
+
+        if not isinstance(node_to_vertex, dict):
+            return []
+
+        collapsed_paths = []
+
+        for path in paths:
+
+            if not isinstance(
+                path,
+                (list, tuple),
+            ):
+                continue
+
+            collapsed = []
+
+            for node in path:
+
+                if node in node_to_vertex:
+                    vertex_index = node_to_vertex[node]
+
+                elif (
+                    isinstance(node, int)
+                    and not isinstance(node, bool)
+                ):
+                    # Ordinary unsplit TGraph node.
+                    vertex_index = node
+
+                else:
+                    # Auxiliary network node, e.g. edge_in / edge_out.
+                    continue
+
+                if (
+                    not isinstance(vertex_index, int)
+                    or isinstance(vertex_index, bool)
+                ):
+                    continue
+
+                if (
+                    not collapsed
+                    or collapsed[-1] != vertex_index
+                ):
+                    collapsed.append(
+                        vertex_index
+                    )
+
+            if collapsed:
+                collapsed_paths.append(
+                    collapsed
+                )
+
+        return collapsed_paths
+
+    @staticmethod
+    def _FlowCosts(
+        graph: "TGraph",
+        source: Any,
+        sink: Any,
+        edgeKey: str = "Length",
+        vertexKey: str = "",
+        silent: bool = False,
+    ) -> Optional[Dict[str, Dict[int, float]]]:
+        """
+        Returns edge and vertex cost dictionaries for flow-based routing.
+
+        The cost conventions mirror those of TGraph.ShortestPath:
+
+        - edgeKey="Length", "Distance", "Metric", "", or None uses geometric
+        endpoint distance.
+        - edgeKey="hop", "hops", "unweighted", or "unit" assigns unit edge cost.
+        - Any other edgeKey reads a numeric value from the edge dictionary.
+        - vertexKey reads a numeric value from the vertex dictionary.
+        - Empty vertexKey assigns zero vertex cost.
+
+        Source and sink vertex costs are set to zero because they are shared by
+        every path in a fixed-cardinality disjoint-path family and therefore cannot
+        affect route selection.
+
+        Negative costs are not supported.
+
+        Parameters
+        ----------
+        graph : TGraph
+            The input TGraph.
+        source : Any
+            The source vertex index or TGraph vertex record.
+        sink : Any
+            The sink vertex index or TGraph vertex record.
+        edgeKey : str , optional
+            The edge cost key. Default is "Length".
+        vertexKey : str , optional
+            The vertex cost key. Default is "".
+        silent : bool , optional
+            If True, suppresses error messages. Default is False.
+
+        Returns
+        -------
+        dict or None
+            A dictionary containing "edge_costs" and "vertex_costs", or None if the
+            input is invalid.
+        """
+        import math
+
+        if not isinstance(graph, TGraph):
+            if not silent:
+                print(
+                    "TGraph._FlowCosts - Error: "
+                    "The input graph is not a valid TGraph. Returning None."
+                )
+            return None
+
+        source_index = TGraph.VertexIndex(graph, source)
+        sink_index = TGraph.VertexIndex(graph, sink)
+
+        if source_index is None or sink_index is None:
+            if not silent:
+                print(
+                    "TGraph._FlowCosts - Error: "
+                    "Could not resolve the source or sink vertex. Returning None."
+                )
+            return None
+
+        def _number(value, default=0.0):
+            if isinstance(value, bool):
+                return float(int(value))
+
+            if isinstance(value, (list, tuple)) and len(value) == 1:
+                value = value[0]
+
+            try:
+                result = float(value)
+            except Exception:
+                return float(default)
+
+            if not math.isfinite(result):
+                return float(default)
+
+            return result
+
+        def _dictionary(record):
+            if not isinstance(record, dict):
+                return {}
+
+            dictionary = record.get("dictionary", {})
+            return dictionary if isinstance(dictionary, dict) else {}
+
+        active_vertices = {
+            vertex.get("index")
+            for vertex in graph._vertices
+            if isinstance(vertex, dict)
+            and vertex.get("active", True)
+            and isinstance(vertex.get("index"), int)
+            and not isinstance(vertex.get("index"), bool)
+        }
+
+        if (
+            source_index not in active_vertices
+            or sink_index not in active_vertices
+        ):
+            if not silent:
+                print(
+                    "TGraph._FlowCosts - Error: "
+                    "The source or sink is not active. Returning None."
+                )
+            return None
+
+        # ------------------------------------------------------------------
+        # Vertex costs
+        # ------------------------------------------------------------------
+
+        vertex_costs = {
+            vertex_index: 0.0
+            for vertex_index in active_vertices
+        }
+
+        if vertexKey:
+            for vertex_index in active_vertices:
+                vertex_costs[vertex_index] = _number(
+                    _dictionary(
+                        graph._vertices[vertex_index]
+                    ).get(vertexKey),
+                    0.0,
+                )
+
+        # Endpoint costs do not affect selection of a fixed-cardinality family.
+        vertex_costs[source_index] = 0.0
+        vertex_costs[sink_index] = 0.0
+
+        if any(cost < 0.0 for cost in vertex_costs.values()):
+            if not silent:
+                print(
+                    "TGraph._FlowCosts - Error: "
+                    "Negative vertex costs are not supported. Returning None."
+                )
+            return None
+
+        # ------------------------------------------------------------------
+        # Edge-cost mode
+        # ------------------------------------------------------------------
+
+        edge_key = (
+            str(edgeKey).strip().lower()
+            if edgeKey is not None
+            else ""
+        )
+
+        geometric = (
+            edgeKey is None
+            or edge_key in ("", "length", "distance", "metric")
+        )
+
+        hop_count = edge_key in (
+            "hop",
+            "hops",
+            "unweighted",
+            "unit",
+        )
+
+        # ------------------------------------------------------------------
+        # Coordinate cache for geometric cost
+        # ------------------------------------------------------------------
+
+        coordinates = {}
+
+        if geometric:
+            for vertex_index in active_vertices:
+                value = TGraph.Coordinates(
+                    graph,
+                    vertex_index,
+                    default=None,
+                )
+
+                try:
+                    coordinates[vertex_index] = (
+                        float(value[0]),
+                        float(value[1]),
+                        float(value[2]) if len(value) > 2 else 0.0,
+                    )
+                except Exception:
+                    coordinates[vertex_index] = None
+
+        def _distance(a, b):
+            ca = coordinates.get(a)
+            cb = coordinates.get(b)
+
+            if ca is None or cb is None:
+                return 1.0
+
+            dx = cb[0] - ca[0]
+            dy = cb[1] - ca[1]
+            dz = cb[2] - ca[2]
+
+            value = math.sqrt(
+                dx * dx
+                + dy * dy
+                + dz * dz
+            )
+
+            return value if math.isfinite(value) else 1.0
+
+        # ------------------------------------------------------------------
+        # Edge costs
+        # ------------------------------------------------------------------
+
+        edge_costs = {}
+
+        for edge in graph._edges:
+
+            if not isinstance(edge, dict):
+                continue
+
+            if not edge.get("active", True):
+                continue
+
+            edge_index = edge.get("index")
+            src = edge.get("src")
+            dst = edge.get("dst")
+
+            if not isinstance(edge_index, int) or isinstance(edge_index, bool):
+                continue
+
+            if src not in active_vertices or dst not in active_vertices:
+                continue
+
+            if geometric:
+                cost = _distance(src, dst)
+
+            elif hop_count:
+                cost = 1.0
+
+            else:
+                cost = _number(
+                    _dictionary(edge).get(edgeKey),
+                    0.0,
+                )
+
+            if cost < 0.0:
+                if not silent:
+                    print(
+                        "TGraph._FlowCosts - Error: "
+                        "Negative edge costs are not supported. Returning None."
+                    )
+                return None
+
+            edge_costs[edge_index] = float(cost)
+
+        return {
+            "edge_costs": edge_costs,
+            "vertex_costs": vertex_costs,
+        }
+
+    @staticmethod
     def KnowledgeGraph(graph: "TGraph", **kwargs):
         """
         Returns a KnowledgeGraph view of the input TGraph.
@@ -2630,6 +5808,398 @@ class TGraph:
                     parent[v] = u
                     q.append(v)
         return dist, parent
+
+    @staticmethod
+    def BiconnectedComponents(
+        graph: "TGraph",
+        silent: bool = False,
+    ) -> List[List[int]]:
+        """
+        Returns the biconnected components of the input TGraph.
+
+        The graph is treated as undirected, consistent with TGraph.CutVertices
+        and TGraph.Bridges. Each returned component is a sorted list of stable
+        vertex indices.
+
+        Articulation vertices can therefore appear in more than one component.
+        Bridge edges produce two-vertex components, and isolated active vertices
+        are returned as singleton components.
+
+        The implementation uses an iterative Tarjan edge-stack decomposition,
+        avoiding Python recursion-depth limits on large graphs.
+
+        Parameters
+        ----------
+        graph : TGraph
+            The input TGraph.
+        silent : bool , optional
+            If True, suppresses error messages. Default is False.
+
+        Returns
+        -------
+        List[List[int]]
+            The biconnected components as lists of stable vertex indices.
+        """
+        if not isinstance(graph, TGraph):
+            if not silent:
+                print(
+                    "TGraph.BiconnectedComponents - Error: "
+                    "The input graph is not a valid TGraph. Returning an empty list."
+                )
+            return []
+
+        vertices = sorted(
+            TGraph._ActiveVertexIndices(
+                graph
+            )
+        )
+
+        if not vertices:
+            return []
+
+        # ------------------------------------------------------------------
+        # Build an undirected edge-aware adjacency structure.
+        #
+        # Edge identity is retained so that parallel edges are handled
+        # correctly.
+        # ------------------------------------------------------------------
+
+        adjacency = {
+            vertex_index: []
+            for vertex_index in vertices
+        }
+
+        edge_endpoints = {}
+
+        for edge in TGraph._ActiveEdges(
+            graph
+        ):
+
+            if not isinstance(
+                edge,
+                dict,
+            ):
+                continue
+
+            u = edge.get(
+                "src",
+                None,
+            )
+
+            v = edge.get(
+                "dst",
+                None,
+            )
+
+            edge_index = edge.get(
+                "index",
+                None,
+            )
+
+            if (
+                u not in adjacency
+                or v not in adjacency
+                or not isinstance(
+                    edge_index,
+                    int,
+                )
+                or isinstance(
+                    edge_index,
+                    bool,
+                )
+            ):
+                continue
+
+            # Self-loops do not influence articulation structure.
+            if u == v:
+                continue
+
+            adjacency[u].append(
+                (
+                    v,
+                    edge_index,
+                )
+            )
+
+            adjacency[v].append(
+                (
+                    u,
+                    edge_index,
+                )
+            )
+
+            edge_endpoints[
+                edge_index
+            ] = (
+                u,
+                v,
+            )
+
+        for vertex_index in adjacency:
+
+            adjacency[
+                vertex_index
+            ].sort(
+                key=lambda item: (
+                    item[0],
+                    item[1],
+                )
+            )
+
+        discovery = {}
+        low = {}
+
+        parent_vertex = {}
+        parent_edge = {}
+
+        edge_stack = []
+        raw_components = []
+
+        time_counter = 0
+
+        # ------------------------------------------------------------------
+        # Pop one biconnected block from the Tarjan edge stack.
+        # ------------------------------------------------------------------
+
+        def _pop_component(
+            stop_edge=None,
+        ):
+
+            component_vertices = set()
+
+            while edge_stack:
+
+                edge_index = (
+                    edge_stack.pop()
+                )
+
+                endpoints = (
+                    edge_endpoints.get(
+                        edge_index,
+                        None,
+                    )
+                )
+
+                if endpoints is not None:
+                    component_vertices.update(
+                        endpoints
+                    )
+
+                if (
+                    stop_edge is not None
+                    and edge_index == stop_edge
+                ):
+                    break
+
+            if component_vertices:
+                raw_components.append(
+                    tuple(
+                        sorted(
+                            component_vertices
+                        )
+                    )
+                )
+
+        # ------------------------------------------------------------------
+        # Iterative Tarjan DFS.
+        # ------------------------------------------------------------------
+
+        for root in vertices:
+
+            if root in discovery:
+                continue
+
+            # An isolated active vertex, including one with only self-loops,
+            # is returned as a singleton block.
+            if not adjacency[root]:
+
+                discovery[root] = (
+                    time_counter
+                )
+
+                low[root] = (
+                    time_counter
+                )
+
+                time_counter += 1
+
+                raw_components.append(
+                    (
+                        root,
+                    )
+                )
+
+                continue
+
+            discovery[root] = (
+                time_counter
+            )
+
+            low[root] = (
+                time_counter
+            )
+
+            time_counter += 1
+
+            # Each frame contains:
+            #
+            #     [vertex, next adjacency position]
+            #
+            dfs_stack = [
+                [
+                    root,
+                    0,
+                ]
+            ]
+
+            while dfs_stack:
+
+                u, position = (
+                    dfs_stack[-1]
+                )
+
+                # ----------------------------------------------------------
+                # Finished processing u. This is the iterative DFS
+                # equivalent of returning from the recursive call.
+                # ----------------------------------------------------------
+
+                if position >= len(
+                    adjacency[u]
+                ):
+
+                    dfs_stack.pop()
+
+                    if u in parent_edge:
+
+                        p = parent_vertex[u]
+
+                        tree_edge = (
+                            parent_edge[u]
+                        )
+
+                        low[p] = min(
+                            low[p],
+                            low[u],
+                        )
+
+                        # All edges from the top of edge_stack back through
+                        # the tree edge p-u form one biconnected block.
+                        if (
+                            low[u]
+                            >= discovery[p]
+                        ):
+                            _pop_component(
+                                tree_edge
+                            )
+
+                    continue
+
+                # ----------------------------------------------------------
+                # Process next incident edge.
+                # ----------------------------------------------------------
+
+                v, edge_index = (
+                    adjacency[u][position]
+                )
+
+                dfs_stack[-1][1] += 1
+
+                # Skip only the exact tree edge used to enter u. A parallel
+                # edge to the parent must still be processed as a back edge.
+                if (
+                    edge_index
+                    == parent_edge.get(
+                        u,
+                        None,
+                    )
+                ):
+                    continue
+
+                # ----------------------------------------------------------
+                # Tree edge.
+                # ----------------------------------------------------------
+
+                if v not in discovery:
+
+                    parent_vertex[v] = u
+
+                    parent_edge[v] = (
+                        edge_index
+                    )
+
+                    edge_stack.append(
+                        edge_index
+                    )
+
+                    discovery[v] = (
+                        time_counter
+                    )
+
+                    low[v] = (
+                        time_counter
+                    )
+
+                    time_counter += 1
+
+                    dfs_stack.append(
+                        [
+                            v,
+                            0,
+                        ]
+                    )
+
+                    continue
+
+                # ----------------------------------------------------------
+                # Back edge.
+                #
+                # Each undirected non-tree edge is pushed exactly once:
+                # from its descendant endpoint to its already discovered
+                # ancestor.
+                # ----------------------------------------------------------
+
+                if (
+                    discovery[v]
+                    < discovery[u]
+                ):
+
+                    edge_stack.append(
+                        edge_index
+                    )
+
+                    low[u] = min(
+                        low[u],
+                        discovery[v],
+                    )
+
+            # Normally the root articulation tests empty edge_stack.
+            # Retain this only as a defensive flush for malformed/custom
+            # multigraph data.
+            if edge_stack:
+                _pop_component()
+
+        # ------------------------------------------------------------------
+        # Parallel edges can produce identical vertex sets. Remove duplicate
+        # blocks and return deterministic ordering.
+        # ------------------------------------------------------------------
+
+        unique_components = sorted(
+            set(
+                raw_components
+            ),
+            key=lambda component: (
+                component[0]
+                if component
+                else -1,
+                len(component),
+                component,
+            ),
+        )
+
+        return [
+            list(component)
+            for component in unique_components
+        ]
 
     @staticmethod
     def BOTClassByOntologyClass(ontologyClass: str, defaultValue: Any = None) -> Any:
@@ -6009,44 +9579,42 @@ class TGraph:
         ----------
         topology : topologic_core.Topology
             The input Topologic topology.
-        direct : bool , optional
-            If set to True, direct topological relationships are included. Default is True.
-        directApertures : bool , optional
-            If set to True, direct aperture relationships are included. Default is False.
-        viaSharedTopologies : bool , optional
-            If set to True, relationships through shared topologies are included. Default is False.
-        viaSharedApertures : bool , optional
-            If set to True, relationships through shared apertures are included. Default is False.
-        toExteriorTopologies : bool , optional
-            If set to True, relationships to exterior topologies are included. Default is False.
-        toExteriorApertures : bool , optional
-            If set to True, relationships to exterior apertures are included. Default is False.
-        toContents : bool , optional
-            If set to True, relationships to contents are included. Default is False.
-        toOutposts : bool , optional
-            If set to True, relationships to outposts are included. Default is False.
-        idKey : str , optional
-            The dictionary key used to identify outposts. Default is "TOPOLOGIC_ID".
-        outpostsKey : str , optional
-            The dictionary key containing outpost identifiers. Default is "outposts".
-        vertexCategoryKey : str , optional
-            The vertex category dictionary key. Default is "category".
-        edgeCategoryKey : str , optional
-            The edge category dictionary key. Default is "category".
-        useInternalVertex : bool , optional
-            If set to True, an internal vertex is used instead of the center of mass.
-            Default is False.
-        storeBREP : bool , optional
-            If set to True, BREP strings are stored in dictionaries where possible.
-            Default is False.
-        ontology : bool , optional
-            If set to True, ontology metadata is added or preserved. Default is True.
-        mantissa : int , optional
-            The number of decimal places to round numeric values to. Default is 6.
-        tolerance : float , optional
-            The desired tolerance. Default is 0.0001.
-        silent : bool , optional
-            If set to True, warning and error messages are suppressed. Default is False.
+        direct : bool, optional
+            If True, direct topological relationships are included.
+        directApertures : bool, optional
+            If True, direct aperture relationships are included.
+        viaSharedTopologies : bool, optional
+            If True, relationships through shared topologies are included.
+        viaSharedApertures : bool, optional
+            If True, relationships through shared apertures are included.
+        toExteriorTopologies : bool, optional
+            If True, relationships to exterior topologies are included.
+        toExteriorApertures : bool, optional
+            If True, relationships to exterior apertures are included.
+        toContents : bool, optional
+            If True, relationships to contents are included.
+        toOutposts : bool, optional
+            If True, relationships to outposts are included.
+        idKey : str, optional
+            Dictionary key used to identify outposts.
+        outpostsKey : str, optional
+            Dictionary key containing outpost identifiers.
+        vertexCategoryKey : str, optional
+            Dictionary key used for graph vertex categories.
+        edgeCategoryKey : str, optional
+            Dictionary key used for graph edge categories.
+        useInternalVertex : bool, optional
+            If True, an internal vertex is used instead of center of mass.
+        storeBREP : bool, optional
+            If True, BREP information is stored where possible.
+        ontology : bool, optional
+            If True, ontology metadata is added or preserved.
+        mantissa : int, optional
+            Number of decimal places used for coordinates.
+        tolerance : float, optional
+            Desired geometric tolerance.
+        silent : bool, optional
+            If True, suppress warnings and errors.
 
         Returns
         -------
@@ -6060,6 +9628,10 @@ class TGraph:
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
         from topologicpy.Aperture import Aperture
+
+        # ------------------------------------------------------------------
+        # Validate input
+        # ------------------------------------------------------------------
 
         if not Topology.IsInstance(topology, "Topology"):
             if not silent:
@@ -6079,7 +9651,7 @@ class TGraph:
         offset = tolerance * 100.0
 
         # ------------------------------------------------------------------
-        # Local method bindings
+        # Local bindings
         # ------------------------------------------------------------------
 
         T_CenterOfMass = Topology.CenterOfMass
@@ -6106,7 +9678,9 @@ class TGraph:
         # ------------------------------------------------------------------
 
         try:
-            input_type = str(T_TypeAsString(topology)).lower().replace(" ", "")
+            input_type = str(
+                T_TypeAsString(topology)
+            ).lower().replace(" ", "")
         except Exception:
             input_type = ""
 
@@ -6122,9 +9696,18 @@ class TGraph:
             graph_dictionary = {}
 
         if ontology:
-            graph_dictionary.setdefault("ontology_class", "top:SpatialGraph")
-            graph_dictionary.setdefault("category", "graph")
-            graph_dictionary.setdefault("generated_by", "TGraph.ByTopology")
+            graph_dictionary.setdefault(
+                "ontology_class",
+                "top:SpatialGraph",
+            )
+            graph_dictionary.setdefault(
+                "category",
+                "graph",
+            )
+            graph_dictionary.setdefault(
+                "generated_by",
+                "TGraph.ByTopology",
+            )
 
         graph = TGraph(
             directed=False,
@@ -6171,7 +9754,6 @@ class TGraph:
         dictionary_lower_keys_cache = {}
 
         brep_cache = {}
-
         coordinate_cache = {}
 
         vertices_cache = {}
@@ -6187,9 +9769,14 @@ class TGraph:
 
         boundary_key_cache = {}
 
-        representative_cache = {}
+        # Maps an exact source object/category/offset combination to graph index.
         representative_index_object_cache = {}
+
+        # Maps a canonical semantic/geometric identity to graph index.
         representative_index_identity_cache = {}
+
+        # Stores the actual representative geometry used by the graph.
+        representative_cache = {}
 
         added_edge_pairs = set()
 
@@ -6204,26 +9791,31 @@ class TGraph:
             if t is None:
                 return ""
 
-            tid = _id(t)
-
+            tid = id(t)
             value = type_cache.get(tid)
 
             if value is not None:
                 return value
 
             try:
-                value = str(T_TypeAsString(t)).lower().replace(" ", "")
+                value = str(
+                    T_TypeAsString(t)
+                ).lower().replace(" ", "")
             except Exception:
                 value = type(t).__name__.lower()
 
             type_cache[tid] = value
             return value
 
+        # ------------------------------------------------------------------
+        # Dictionary helpers
+        # ------------------------------------------------------------------
+
         def _dictionary(t):
             if t is None:
                 return None
 
-            tid = _id(t)
+            tid = id(t)
 
             if tid in dictionary_cache:
                 return dictionary_cache[tid]
@@ -6280,10 +9872,17 @@ class TGraph:
                 return default
 
             try:
-                value = Dictionary.ValueAtKey(d, key, default)
+                value = Dictionary.ValueAtKey(
+                    d,
+                    key,
+                    default,
+                )
             except TypeError:
                 try:
-                    value = Dictionary.ValueAtKey(d, key)
+                    value = Dictionary.ValueAtKey(
+                        d,
+                        key,
+                    )
                 except Exception:
                     return default
             except Exception:
@@ -6297,18 +9896,24 @@ class TGraph:
             if d is None:
                 return default
 
-            actual_key = _dictionary_lower_keys(d).get(str(key).lower())
+            actual_key = _dictionary_lower_keys(d).get(
+                str(key).lower()
+            )
 
             if actual_key is None:
                 return default
 
-            return _value_at_key(d, actual_key, default)
+            return _value_at_key(
+                d,
+                actual_key,
+                default,
+            )
 
         def _dictionary_to_python(t):
             if t is None:
                 return {}
 
-            tid = _id(t)
+            tid = id(t)
 
             if tid in dictionary_python_cache:
                 return dict(dictionary_python_cache[tid])
@@ -6329,14 +9934,21 @@ class TGraph:
                     result = dict(zip(keys, values))
                 else:
                     for key in keys:
-                        result[key] = _value_at_key(d, key, None)
+                        result[key] = _value_at_key(
+                            d,
+                            key,
+                            None,
+                        )
 
             except Exception:
                 for key in _dictionary_keys(d):
-                    result[key] = _value_at_key(d, key, None)
+                    result[key] = _value_at_key(
+                        d,
+                        key,
+                        None,
+                    )
 
             dictionary_python_cache[tid] = result
-
             return dict(result)
 
         # ------------------------------------------------------------------
@@ -6347,7 +9959,7 @@ class TGraph:
             if t is None:
                 return None, None, None
 
-            tid = _id(t)
+            tid = id(t)
 
             if tid in brep_cache:
                 return brep_cache[tid]
@@ -6382,7 +9994,17 @@ class TGraph:
             return d
 
         # ------------------------------------------------------------------
-        # Aperture normalization
+        # Aperture handling
+        #
+        # IMPORTANT:
+        #
+        # An aperture has two identities:
+        #
+        #   1. the aperture object itself
+        #   2. the topology used to calculate its representative point
+        #
+        # We must NEVER use the second as a substitute for the first when
+        # determining whether the graph vertex is an aperture vertex.
         # ------------------------------------------------------------------
 
         def _topology_from_aperture(t):
@@ -6394,9 +10016,10 @@ class TGraph:
 
             try:
                 result = Aperture.Topology(t)
-                return result if result is not None else t
             except Exception:
-                return t
+                return None
+
+            return result
 
         # ------------------------------------------------------------------
         # Coordinates
@@ -6406,7 +10029,7 @@ class TGraph:
             if v is None:
                 return None
 
-            vid = _id(v)
+            vid = id(v)
 
             if vid in coordinate_cache:
                 return coordinate_cache[vid]
@@ -6414,7 +10037,10 @@ class TGraph:
             result = None
 
             try:
-                c = Vertex.Coordinates(v, mantissa=mantissa)
+                c = Vertex.Coordinates(
+                    v,
+                    mantissa=mantissa,
+                )
 
                 if isinstance(c, (list, tuple)) and len(c) >= 3:
                     result = (
@@ -6428,9 +10054,33 @@ class TGraph:
             if result is None:
                 try:
                     result = (
-                        round(float(Vertex.X(v, mantissa=mantissa)), mantissa),
-                        round(float(Vertex.Y(v, mantissa=mantissa)), mantissa),
-                        round(float(Vertex.Z(v, mantissa=mantissa)), mantissa),
+                        round(
+                            float(
+                                Vertex.X(
+                                    v,
+                                    mantissa=mantissa,
+                                )
+                            ),
+                            mantissa,
+                        ),
+                        round(
+                            float(
+                                Vertex.Y(
+                                    v,
+                                    mantissa=mantissa,
+                                )
+                            ),
+                            mantissa,
+                        ),
+                        round(
+                            float(
+                                Vertex.Z(
+                                    v,
+                                    mantissa=mantissa,
+                                )
+                            ),
+                            mantissa,
+                        ),
                     )
                 except Exception:
                     result = None
@@ -6446,13 +10096,16 @@ class TGraph:
             if t is None:
                 return []
 
-            tid = _id(t)
+            tid = id(t)
 
             if tid in cache:
                 return cache[tid]
 
             try:
-                result = function(t, silent=True) or []
+                result = function(
+                    t,
+                    silent=True,
+                ) or []
             except TypeError:
                 try:
                     result = function(t) or []
@@ -6465,22 +10118,46 @@ class TGraph:
             return result
 
         def _vertices(t):
-            return _cached_topologies(t, vertices_cache, T_Vertices)
+            return _cached_topologies(
+                t,
+                vertices_cache,
+                T_Vertices,
+            )
 
         def _edges(t):
-            return _cached_topologies(t, edges_cache, T_Edges)
+            return _cached_topologies(
+                t,
+                edges_cache,
+                T_Edges,
+            )
 
         def _faces(t):
-            return _cached_topologies(t, faces_cache, T_Faces)
+            return _cached_topologies(
+                t,
+                faces_cache,
+                T_Faces,
+            )
 
         def _cells(t):
-            return _cached_topologies(t, cells_cache, T_Cells)
+            return _cached_topologies(
+                t,
+                cells_cache,
+                T_Cells,
+            )
 
         def _shells(t):
-            return _cached_topologies(t, shells_cache, T_Shells)
+            return _cached_topologies(
+                t,
+                shells_cache,
+                T_Shells,
+            )
 
         def _wires(t):
-            return _cached_topologies(t, wires_cache, T_Wires)
+            return _cached_topologies(
+                t,
+                wires_cache,
+                T_Wires,
+            )
 
         def _cellcomplexes(t):
             return _cached_topologies(
@@ -6490,7 +10167,7 @@ class TGraph:
             )
 
         # ------------------------------------------------------------------
-        # Very cheap Edge endpoints
+        # Edge endpoints
         # ------------------------------------------------------------------
 
         def _edge_vertices(e):
@@ -6518,8 +10195,7 @@ class TGraph:
             return _coordinates(v)
 
         def _edge_key(e):
-            eid = _id(e)
-            cache_key = ("edge", eid)
+            cache_key = ("edge", id(e))
 
             if cache_key in boundary_key_cache:
                 return boundary_key_cache[cache_key]
@@ -6543,8 +10219,7 @@ class TGraph:
             return result
 
         def _face_key(f):
-            fid = _id(f)
-            cache_key = ("face", fid)
+            cache_key = ("face", id(f))
 
             if cache_key in boundary_key_cache:
                 return boundary_key_cache[cache_key]
@@ -6574,7 +10249,7 @@ class TGraph:
             if t is None or not needs_apertures:
                 return []
 
-            tid = _id(t)
+            tid = id(t)
 
             if tid in apertures_cache:
                 return apertures_cache[tid]
@@ -6591,13 +10266,16 @@ class TGraph:
             if t is None or not toContents:
                 return []
 
-            tid = _id(t)
+            tid = id(t)
 
             if tid in contents_cache:
                 return contents_cache[tid]
 
             try:
-                result = T_Contents(t, silent=True) or []
+                result = T_Contents(
+                    t,
+                    silent=True,
+                ) or []
             except TypeError:
                 try:
                     result = T_Contents(t) or []
@@ -6612,34 +10290,71 @@ class TGraph:
                 if c is not None
             ]
 
+            result = [
+                c for c in result
+                if c is not None
+            ]
+
             contents_cache[tid] = result
             return result
 
         # ------------------------------------------------------------------
-        # Representative identity
+        # Canonical geometric identity
+        #
+        # This is deliberately aperture-aware.
+        #
+        # For ordinary topology:
+        #     identity = topology geometry
+        #
+        # For aperture:
+        #     identity = ("aperture", aperture geometry)
+        #
+        # Therefore an aperture can never become identical to the ordinary
+        # topology from which it originated merely because Aperture.Topology()
+        # returns that topology.
         # ------------------------------------------------------------------
 
         def _geometric_identity(t):
-            """
-            Used only when a topology may have arrived through independently
-            generated wrappers and no already-computed incidence key is available.
-            """
-
-            t = _topology_from_aperture(t)
-
             if t is None:
                 return None
 
             type_name = _type_name(t)
 
+            if type_name == "aperture":
+                aperture_topology = _topology_from_aperture(t)
+
+                if aperture_topology is None:
+                    return (
+                        "aperture",
+                        id(t),
+                    )
+
+                underlying_identity = _geometric_identity(
+                    aperture_topology
+                )
+
+                return (
+                    "aperture",
+                    underlying_identity,
+                )
+
             if type_name == "vertex":
-                return (type_name, _vertex_key(t))
+                return (
+                    "vertex",
+                    _vertex_key(t),
+                )
 
             if type_name == "edge":
-                return (type_name, _edge_key(t))
+                return (
+                    "edge",
+                    _edge_key(t),
+                )
 
             if type_name == "face":
-                return (type_name, _face_key(t))
+                return (
+                    "face",
+                    _face_key(t),
+                )
 
             coordinates = []
 
@@ -6651,19 +10366,38 @@ class TGraph:
 
             if coordinates:
                 coordinates.sort()
-                return (type_name, tuple(coordinates))
+
+                return (
+                    type_name,
+                    tuple(coordinates),
+                )
 
             try:
-                return (type_name, hash(T_BREPString(t)))
+                brep = T_BREPString(t)
+
+                if brep is not None:
+                    return (
+                        type_name,
+                        hash(brep),
+                    )
             except Exception:
-                return (type_name, _id(t))
+                pass
+
+            return (
+                type_name,
+                id(t),
+            )
 
         # ------------------------------------------------------------------
         # Graph vertex creation
         # ------------------------------------------------------------------
 
         def _add_vertex_record(representation, dictionary):
-            d = dict(dictionary) if isinstance(dictionary, dict) else {}
+            d = (
+                dict(dictionary)
+                if isinstance(dictionary, dict)
+                else {}
+            )
 
             c = _coordinates(representation)
 
@@ -6677,7 +10411,9 @@ class TGraph:
                 representation=representation,
             )
 
-            graph._vertices[index]["dictionary"][vertexIndexKey] = index
+            graph._vertices[index]["dictionary"][
+                vertexIndexKey
+            ] = index
 
             return index
 
@@ -6689,31 +10425,48 @@ class TGraph:
             canonical=False,
             source_dictionary_topology=None,
         ):
-            t = _topology_from_aperture(t)
-
             if t is None:
                 return None
 
-            source = (
-                source_dictionary_topology
-                if source_dictionary_topology is not None
-                else t
-            )
+            # --------------------------------------------------------------
+            # Preserve the ORIGINAL object.
+            #
+            # This is the critical distinction for Apertures.
+            # --------------------------------------------------------------
+
+            original_t = t
+
+            # This object is used only for geometry operations.
+            geometry_t = _topology_from_aperture(t)
+
+            if geometry_t is None:
+                return None
+
+            # --------------------------------------------------------------
+            # Exact-object cache.
+            #
+            # IMPORTANT: original_t, not geometry_t.
+            # --------------------------------------------------------------
 
             object_key = (
-                _id(t),
+                id(original_t),
                 category,
                 bool(apply_offset),
             )
 
-            # Fastest path: exact wrapper has already been seen.
-            if object_key in representative_index_object_cache:
-                return representative_index_object_cache[object_key]
+            cached_index = representative_index_object_cache.get(
+                object_key
+            )
+
+            if cached_index is not None:
+                return cached_index
+
+            # --------------------------------------------------------------
+            # Canonical identity.
+            # --------------------------------------------------------------
 
             identity_key = None
 
-            # An incidence key already calculated by the caller is much cheaper
-            # than rebuilding geometric identity.
             if identity is not None:
                 identity_key = (
                     identity,
@@ -6722,21 +10475,33 @@ class TGraph:
                 )
 
             elif canonical:
-                geometry_identity = _geometric_identity(t)
-
                 identity_key = (
-                    geometry_identity,
+                    _geometric_identity(original_t),
                     category,
                     bool(apply_offset),
                 )
 
-            if (
-                identity_key is not None
-                and identity_key in representative_index_identity_cache
-            ):
-                index = representative_index_identity_cache[identity_key]
-                representative_index_object_cache[object_key] = index
-                return index
+            # --------------------------------------------------------------
+            # Canonical graph-index cache.
+            # --------------------------------------------------------------
+
+            if identity_key is not None:
+                cached_index = (
+                    representative_index_identity_cache.get(
+                        identity_key
+                    )
+                )
+
+                if cached_index is not None:
+                    representative_index_object_cache[
+                        object_key
+                    ] = cached_index
+
+                    return cached_index
+
+            # --------------------------------------------------------------
+            # Representative geometry cache.
+            # --------------------------------------------------------------
 
             representative_key = (
                 identity_key
@@ -6745,29 +10510,33 @@ class TGraph:
             )
 
             if representative_key in representative_cache:
-                v = representative_cache[representative_key]
+                representative = representative_cache[
+                    representative_key
+                ]
 
             else:
                 try:
                     if useInternalVertex:
-                        v = T_InternalVertex(
-                            t,
+                        representative = T_InternalVertex(
+                            geometry_t,
                             tolerance=tolerance,
                         )
                     else:
-                        v = T_CenterOfMass(t)
+                        representative = T_CenterOfMass(
+                            geometry_t
+                        )
                 except Exception:
-                    v = None
+                    representative = None
 
-                if v is None:
+                if representative is None:
                     return None
 
                 if apply_offset:
-                    c = _coordinates(v)
+                    c = _coordinates(representative)
 
                     if c is not None:
                         try:
-                            v = Vertex.ByCoordinates(
+                            representative = Vertex.ByCoordinates(
                                 c[0] + offset,
                                 c[1] + offset,
                                 c[2] + offset,
@@ -6775,21 +10544,53 @@ class TGraph:
                         except Exception:
                             pass
 
-                representative_cache[representative_key] = v
+                representative_cache[
+                    representative_key
+                ] = representative
+
+            # --------------------------------------------------------------
+            # Metadata must come from the ORIGINAL object.
+            #
+            # This is especially important for Apertures.
+            # --------------------------------------------------------------
+
+            source = (
+                source_dictionary_topology
+                if source_dictionary_topology is not None
+                else original_t
+            )
 
             d = _dictionary_to_python(source)
 
             if category is not None:
                 d[vertexCategoryKey] = category
 
-            d = _add_brep(d, source)
+            d = _add_brep(
+                d,
+                source,
+            )
 
-            index = _add_vertex_record(v, d)
+            index = _add_vertex_record(
+                representative,
+                d,
+            )
 
-            representative_index_object_cache[object_key] = index
+            # --------------------------------------------------------------
+            # Store exact-object mapping.
+            # --------------------------------------------------------------
+
+            representative_index_object_cache[
+                object_key
+            ] = index
+
+            # --------------------------------------------------------------
+            # Store canonical mapping.
+            # --------------------------------------------------------------
 
             if identity_key is not None:
-                representative_index_identity_cache[identity_key] = index
+                representative_index_identity_cache[
+                    identity_key
+                ] = index
 
             return index
 
@@ -6798,24 +10599,37 @@ class TGraph:
                 return None
 
             object_key = (
-                _id(t),
+                id(t),
                 category,
                 False,
             )
 
-            if object_key in representative_index_object_cache:
-                return representative_index_object_cache[object_key]
+            cached_index = representative_index_object_cache.get(
+                object_key
+            )
+
+            if cached_index is not None:
+                return cached_index
 
             d = _dictionary_to_python(t)
 
             if category is not None:
                 d[vertexCategoryKey] = category
 
-            d = _add_brep(d, t)
+            d = _add_brep(
+                d,
+                t,
+            )
 
-            index = _add_vertex_record(t, d)
+            index = _add_vertex_record(
+                t,
+                d,
+            )
 
-            representative_index_object_cache[object_key] = index
+            representative_index_object_cache[
+                object_key
+            ] = index
+
             return index
 
         # ------------------------------------------------------------------
@@ -6829,10 +10643,25 @@ class TGraph:
         ):
             d = {}
 
-            source = _topology_from_aperture(source_topology)
+            source = _topology_from_aperture(
+                source_topology
+            )
 
-            if source is not None:
-                d.update(_dictionary_to_python(source))
+            # Preserve the existing behavior of using the source topology's
+            # dictionary for edge metadata. If it is an Aperture, prefer its
+            # own dictionary when available.
+            dictionary_source = (
+                source_topology
+                if source_topology is not None
+                else source
+            )
+
+            if dictionary_source is not None:
+                d.update(
+                    _dictionary_to_python(
+                        dictionary_source
+                    )
+                )
 
             d["relationship"] = relationship
             d[edgeCategoryKey] = category
@@ -6849,11 +10678,10 @@ class TGraph:
             if src is None or dst is None or src == dst:
                 return None
 
-            pair = (
-                (src, dst)
-                if src < dst
-                else (dst, src)
-            )
+            if src < dst:
+                pair = (src, dst)
+            else:
+                pair = (dst, src)
 
             if pair in added_edge_pairs:
                 return None
@@ -6921,7 +10749,11 @@ class TGraph:
             lookup = {}
 
             for t in topologies:
-                value = _case_value(t, id_key_lower, None)
+                value = _case_value(
+                    t,
+                    id_key_lower,
+                    None,
+                )
 
                 if value is not None and value not in lookup:
                     lookup[value] = t
@@ -6937,7 +10769,9 @@ class TGraph:
                 return
 
             try:
-                d = graph._vertices[source_index]["dictionary"]
+                d = graph._vertices[
+                    source_index
+                ]["dictionary"]
             except Exception:
                 return
 
@@ -6988,6 +10822,10 @@ class TGraph:
             shared,
             outpost_lookup,
         ):
+            # --------------------------------------------------------------
+            # Shared topology
+            # --------------------------------------------------------------
+
             if shared:
                 if viaSharedTopologies:
                     identity = (
@@ -7012,7 +10850,10 @@ class TGraph:
                         )
 
                         if toContents:
-                            _add_contents(child_index, child)
+                            _add_contents(
+                                child_index,
+                                child,
+                            )
 
                         if toOutposts:
                             _add_outposts(
@@ -7022,11 +10863,13 @@ class TGraph:
 
                 if viaSharedApertures:
                     for aperture in _apertures(child):
-                        aperture_index = _representative_vertex_index(
-                            aperture,
-                            category=2,
-                            apply_offset=True,
-                            canonical=True,
+                        aperture_index = (
+                            _representative_vertex_index(
+                                aperture,
+                                category=2,
+                                apply_offset=True,
+                                canonical=True,
+                            )
                         )
 
                         if aperture_index is not None:
@@ -7038,58 +10881,74 @@ class TGraph:
                                 source_topology=aperture,
                             )
 
-            else:
-                if toExteriorTopologies:
-                    identity = (
-                        "boundary",
-                        child_type,
-                        boundary_key,
+                return
+
+            # --------------------------------------------------------------
+            # Exterior topology
+            # --------------------------------------------------------------
+
+            if toExteriorTopologies:
+                identity = (
+                    "boundary",
+                    child_type,
+                    boundary_key,
+                )
+
+                child_index = _representative_vertex_index(
+                    child,
+                    category=3,
+                    identity=identity,
+                )
+
+                if child_index is not None:
+                    _append_edge(
+                        owner_index,
+                        child_index,
+                        "To_Exterior_Topologies",
+                        3,
+                        source_topology=child,
                     )
 
-                    child_index = _representative_vertex_index(
-                        child,
-                        category=3,
-                        identity=identity,
-                    )
-
-                    if child_index is not None:
-                        _append_edge(
-                            owner_index,
+                    if toContents:
+                        _add_contents(
                             child_index,
-                            "To_Exterior_Topologies",
-                            3,
-                            source_topology=child,
+                            child,
                         )
 
-                        if toContents:
-                            _add_contents(child_index, child)
+                    if toOutposts:
+                        _add_outposts(
+                            child_index,
+                            outpost_lookup,
+                        )
 
-                        if toOutposts:
-                            _add_outposts(
-                                child_index,
-                                outpost_lookup,
-                            )
+            # --------------------------------------------------------------
+            # Exterior apertures
+            #
+            # Aperture identity is kept distinct from the exterior topology.
+            # --------------------------------------------------------------
 
-                if toExteriorApertures:
-                    for aperture in _apertures(child):
-                        aperture_index = _representative_vertex_index(
+            if toExteriorApertures:
+                for aperture in _apertures(child):
+                    aperture_index = (
+                        _representative_vertex_index(
                             aperture,
                             category=4,
                             apply_offset=True,
                             canonical=True,
                         )
+                    )
 
-                        if aperture_index is not None:
-                            _append_edge(
-                                owner_index,
-                                aperture_index,
-                                "To_Exterior_Apertures",
-                                4,
-                                source_topology=aperture,
-                            )
+                    if aperture_index is not None:
+                        _append_edge(
+                            owner_index,
+                            aperture_index,
+                            "To_Exterior_Apertures",
+                            4,
+                            source_topology=aperture,
+                        )
 
         # ------------------------------------------------------------------
-        # Optimized collection processor
+        # Collection processor
         # ------------------------------------------------------------------
 
         def _process_collection(
@@ -7105,32 +10964,35 @@ class TGraph:
             owner_count = len(owners)
 
             # --------------------------------------------------------------
-            # Owner graph vertices: exactly one pass.
+            # Owner vertices
             # --------------------------------------------------------------
 
             owner_indices = [None] * owner_count
 
-            for i in range(owner_count):
-                owner_indices[i] = _representative_vertex_index(
-                    owners[i],
-                    category=0,
+            for i, owner in enumerate(owners):
+                owner_indices[i] = (
+                    _representative_vertex_index(
+                        owner,
+                        category=0,
+                    )
                 )
 
             # --------------------------------------------------------------
-            # Owner contents/outposts are independent of boundary incidence.
+            # Owner contents/outposts
             # --------------------------------------------------------------
 
             if toContents or toOutposts:
-                for i in range(owner_count):
+                for i, owner in enumerate(owners):
                     owner_index = owner_indices[i]
 
                     if owner_index is None:
                         continue
 
-                    owner = owners[i]
-
                     if toContents:
-                        _add_contents(owner_index, owner)
+                        _add_contents(
+                            owner_index,
+                            owner,
+                        )
 
                     if toOutposts:
                         _add_outposts(
@@ -7142,29 +11004,25 @@ class TGraph:
                 return
 
             # --------------------------------------------------------------
-            # Build incidence ONCE.
-            #
-            # boundary_records:
-            #     key -> [owner_positions, child_refs]
-            #
-            # owner_boundary_records:
-            #     owner -> [(child, key), ...]
+            # Build incidence once.
             # --------------------------------------------------------------
 
             boundary_records = {}
+
             owner_boundary_records = (
                 [None] * owner_count
                 if needs_extended_boundaries
                 else None
             )
 
-            for owner_position in range(owner_count):
-                owner = owners[owner_position]
+            for owner_position, owner in enumerate(owners):
                 children = child_getter(owner)
 
                 if needs_extended_boundaries:
                     local_records = []
-                    owner_boundary_records[owner_position] = local_records
+                    owner_boundary_records[
+                        owner_position
+                    ] = local_records
 
                 for child in children:
                     key = boundary_key_function(child)
@@ -7173,7 +11031,9 @@ class TGraph:
                         continue
 
                     if needs_extended_boundaries:
-                        local_records.append((child, key))
+                        local_records.append(
+                            (child, key)
+                        )
 
                     record = boundary_records.get(key)
 
@@ -7187,9 +11047,12 @@ class TGraph:
 
                         if (
                             not owner_positions
-                            or owner_positions[-1] != owner_position
+                            or owner_positions[-1]
+                            != owner_position
                         ):
-                            owner_positions.append(owner_position)
+                            owner_positions.append(
+                                owner_position
+                            )
 
                         record[1].append(child)
 
@@ -7198,8 +11061,9 @@ class TGraph:
             # --------------------------------------------------------------
 
             if direct or directApertures:
-                for owner_positions, child_refs in boundary_records.values():
-
+                for owner_positions, child_refs in (
+                    boundary_records.values()
+                ):
                     if len(owner_positions) < 2:
                         continue
 
@@ -7213,22 +11077,28 @@ class TGraph:
 
                     if directApertures:
                         for child in child_refs:
-                            apertures = _apertures(child)
+                            child_apertures = _apertures(child)
 
-                            if apertures:
-                                aperture_source = apertures[0]
+                            if child_apertures:
+                                aperture_source = (
+                                    child_apertures[0]
+                                )
                                 break
 
                     n = len(owner_positions)
 
                     for i in range(n - 1):
-                        src = owner_indices[owner_positions[i]]
+                        src = owner_indices[
+                            owner_positions[i]
+                        ]
 
                         if src is None:
                             continue
 
                         for j in range(i + 1, n):
-                            dst = owner_indices[owner_positions[j]]
+                            dst = owner_indices[
+                                owner_positions[j]
+                            ]
 
                             if dst is None or src == dst:
                                 continue
@@ -7258,19 +11128,20 @@ class TGraph:
                 return
 
             # --------------------------------------------------------------
-            # Shared / exterior processing.
-            #
-            # Critically, this does NOT re-extract children and does NOT
-            # reconstruct boundary keys.
+            # Shared/exterior processing
             # --------------------------------------------------------------
 
             for owner_position in range(owner_count):
-                owner_index = owner_indices[owner_position]
+                owner_index = owner_indices[
+                    owner_position
+                ]
 
                 if owner_index is None:
                     continue
 
-                records = owner_boundary_records[owner_position]
+                records = owner_boundary_records[
+                    owner_position
+                ]
 
                 if not records:
                     continue
@@ -7293,7 +11164,7 @@ class TGraph:
                     )
 
         # ------------------------------------------------------------------
-        # Optimized single-topology processor
+        # Single-topology processor
         # ------------------------------------------------------------------
 
         def _process_single(
@@ -7311,7 +11182,10 @@ class TGraph:
                 return
 
             if toContents:
-                _add_contents(owner_index, t)
+                _add_contents(
+                    owner_index,
+                    t,
+                )
 
             if toOutposts:
                 _add_outposts(
@@ -7328,25 +11202,29 @@ class TGraph:
             children = child_getter(t)
 
             for child in children:
+                if child_type == "Face":
+                    key = _face_key(child)
+                elif child_type == "Edge":
+                    key = _edge_key(child)
+                else:
+                    key = _vertex_key(child)
+
+                if key is None:
+                    continue
 
                 if toExteriorTopologies:
-                    if child_type == "Face":
-                        key = _face_key(child)
-                    elif child_type == "Edge":
-                        key = _edge_key(child)
-                    else:
-                        key = _vertex_key(child)
-
                     identity = (
                         "boundary",
                         child_type,
                         key,
                     )
 
-                    child_index = _representative_vertex_index(
-                        child,
-                        category=3,
-                        identity=identity,
+                    child_index = (
+                        _representative_vertex_index(
+                            child,
+                            category=3,
+                            identity=identity,
+                        )
                     )
 
                     if child_index is not None:
@@ -7359,7 +11237,10 @@ class TGraph:
                         )
 
                         if toContents:
-                            _add_contents(child_index, child)
+                            _add_contents(
+                                child_index,
+                                child,
+                            )
 
                         if toOutposts:
                             _add_outposts(
@@ -7369,11 +11250,13 @@ class TGraph:
 
                 if toExteriorApertures:
                     for aperture in _apertures(child):
-                        aperture_index = _representative_vertex_index(
-                            aperture,
-                            category=4,
-                            apply_offset=True,
-                            canonical=True,
+                        aperture_index = (
+                            _representative_vertex_index(
+                                aperture,
+                                category=4,
+                                apply_offset=True,
+                                canonical=True,
+                            )
                         )
 
                         if aperture_index is not None:
@@ -7399,7 +11282,10 @@ class TGraph:
                 return
 
             if toContents:
-                _add_contents(index, t)
+                _add_contents(
+                    index,
+                    t,
+                )
 
             if toOutposts:
                 _add_outposts(
@@ -7408,8 +11294,7 @@ class TGraph:
                 )
 
         # ------------------------------------------------------------------
-        # Expensive all-subtopology traversal:
-        # ONLY executed if outposts are requested.
+        # All-subtopologies
         # ------------------------------------------------------------------
 
         def _all_subtopologies(t):
@@ -7424,7 +11309,7 @@ class TGraph:
             )
 
         # ------------------------------------------------------------------
-        # Resolve outposts lazily
+        # Outpost lookup
         # ------------------------------------------------------------------
 
         if toOutposts:
@@ -7439,7 +11324,6 @@ class TGraph:
         # ------------------------------------------------------------------
 
         if input_type == "cellcomplex":
-
             _process_collection(
                 _cells(topology),
                 _faces,
@@ -7449,7 +11333,6 @@ class TGraph:
             )
 
         elif input_type == "cell":
-
             _process_single(
                 topology,
                 _faces,
@@ -7458,7 +11341,6 @@ class TGraph:
             )
 
         elif input_type == "shell":
-
             _process_collection(
                 _faces(topology),
                 _edges,
@@ -7468,7 +11350,6 @@ class TGraph:
             )
 
         elif input_type == "face":
-
             _process_single(
                 topology,
                 _edges,
@@ -7477,7 +11358,6 @@ class TGraph:
             )
 
         elif input_type == "wire":
-
             _process_collection(
                 _edges(topology),
                 _vertices,
@@ -7487,7 +11367,6 @@ class TGraph:
             )
 
         elif input_type == "edge":
-
             _process_single(
                 topology,
                 _vertices,
@@ -7496,18 +11375,14 @@ class TGraph:
             )
 
         elif input_type == "vertex":
-
             _process_vertex(
                 topology,
                 outposts,
             )
 
         elif input_type == "cluster":
-
             # --------------------------------------------------------------
-            # Cluster decomposition remains inherently more expensive, but
-            # each Free* operation is now executed exactly once and its
-            # result is reused.
+            # Cluster decomposition.
             # --------------------------------------------------------------
 
             c_cellcomplexes = _cellcomplexes(topology)
@@ -7559,9 +11434,6 @@ class TGraph:
                 ) or []
             except Exception:
                 c_vertices = []
-
-            # Existing global outpost lookup already includes the Cluster's
-            # subtopologies. Do not rebuild it from the free lists.
 
             for t in c_cellcomplexes:
                 _process_collection(
@@ -7638,16 +11510,1701 @@ class TGraph:
                         silent=True,
                     )
                 else:
-                    graph._dictionary["ontology_class"] = "top:SpatialGraph"
-                    graph._dictionary["category"] = "graph"
-                    graph._dictionary["generated_by"] = "TGraph.ByTopology"
+                    graph._dictionary[
+                        "ontology_class"
+                    ] = "top:SpatialGraph"
+
+                    graph._dictionary[
+                        "category"
+                    ] = "graph"
+
+                    graph._dictionary[
+                        "generated_by"
+                    ] = "TGraph.ByTopology"
 
             except Exception:
-                graph._dictionary["ontology_class"] = "top:SpatialGraph"
-                graph._dictionary["category"] = "graph"
-                graph._dictionary["generated_by"] = "TGraph.ByTopology"
+                graph._dictionary[
+                    "ontology_class"
+                ] = "top:SpatialGraph"
+
+                graph._dictionary[
+                    "category"
+                ] = "graph"
+
+                graph._dictionary[
+                    "generated_by"
+                ] = "TGraph.ByTopology"
 
         return graph
+
+    # @staticmethod
+    # def ByTopology(
+    #     topology,
+    #     direct: bool = True,
+    #     directApertures: bool = False,
+    #     viaSharedTopologies: bool = False,
+    #     viaSharedApertures: bool = False,
+    #     toExteriorTopologies: bool = False,
+    #     toExteriorApertures: bool = False,
+    #     toContents: bool = False,
+    #     toOutposts: bool = False,
+    #     idKey: str = "TOPOLOGIC_ID",
+    #     outpostsKey: str = "outposts",
+    #     vertexCategoryKey: str = "category",
+    #     edgeCategoryKey: str = "category",
+    #     useInternalVertex: bool = False,
+    #     storeBREP: bool = False,
+    #     ontology: bool = True,
+    #     mantissa: int = 6,
+    #     tolerance: float = 0.0001,
+    #     silent: bool = False,
+    # ):
+    #     """
+    #     Creates a TGraph from a Topologic topology and selected relationship rules.
+
+    #     Parameters
+    #     ----------
+    #     topology : topologic_core.Topology
+    #         The input Topologic topology.
+    #     direct : bool , optional
+    #         If set to True, direct topological relationships are included. Default is True.
+    #     directApertures : bool , optional
+    #         If set to True, direct aperture relationships are included. Default is False.
+    #     viaSharedTopologies : bool , optional
+    #         If set to True, relationships through shared topologies are included. Default is False.
+    #     viaSharedApertures : bool , optional
+    #         If set to True, relationships through shared apertures are included. Default is False.
+    #     toExteriorTopologies : bool , optional
+    #         If set to True, relationships to exterior topologies are included. Default is False.
+    #     toExteriorApertures : bool , optional
+    #         If set to True, relationships to exterior apertures are included. Default is False.
+    #     toContents : bool , optional
+    #         If set to True, relationships to contents are included. Default is False.
+    #     toOutposts : bool , optional
+    #         If set to True, relationships to outposts are included. Default is False.
+    #     idKey : str , optional
+    #         The dictionary key used to identify outposts. Default is "TOPOLOGIC_ID".
+    #     outpostsKey : str , optional
+    #         The dictionary key containing outpost identifiers. Default is "outposts".
+    #     vertexCategoryKey : str , optional
+    #         The vertex category dictionary key. Default is "category".
+    #     edgeCategoryKey : str , optional
+    #         The edge category dictionary key. Default is "category".
+    #     useInternalVertex : bool , optional
+    #         If set to True, an internal vertex is used instead of the center of mass.
+    #         Default is False.
+    #     storeBREP : bool , optional
+    #         If set to True, BREP strings are stored in dictionaries where possible.
+    #         Default is False.
+    #     ontology : bool , optional
+    #         If set to True, ontology metadata is added or preserved. Default is True.
+    #     mantissa : int , optional
+    #         The number of decimal places to round numeric values to. Default is 6.
+    #     tolerance : float , optional
+    #         The desired tolerance. Default is 0.0001.
+    #     silent : bool , optional
+    #         If set to True, warning and error messages are suppressed. Default is False.
+
+    #     Returns
+    #     -------
+    #     TGraph or None
+    #         The resulting TGraph, or None if the operation fails.
+    #     """
+
+    #     from topologicpy.Dictionary import Dictionary
+    #     from topologicpy.Vertex import Vertex
+    #     from topologicpy.Edge import Edge
+    #     from topologicpy.Cluster import Cluster
+    #     from topologicpy.Topology import Topology
+    #     from topologicpy.Aperture import Aperture
+
+    #     if not Topology.IsInstance(topology, "Topology"):
+    #         if not silent:
+    #             print(
+    #                 "TGraph.ByTopology - Error: The input topology parameter "
+    #                 "is not a valid topology. Returning None."
+    #             )
+    #         return None
+
+    #     # ------------------------------------------------------------------
+    #     # Constants
+    #     # ------------------------------------------------------------------
+
+    #     vertexIndexKey = "index"
+    #     edgeSrcKey = "src"
+    #     edgeDstKey = "dst"
+    #     offset = tolerance * 100.0
+
+    #     # ------------------------------------------------------------------
+    #     # Local method bindings
+    #     # ------------------------------------------------------------------
+
+    #     T_CenterOfMass = Topology.CenterOfMass
+    #     T_InternalVertex = Topology.InternalVertex
+    #     T_Dictionary = Topology.Dictionary
+    #     T_Apertures = Topology.Apertures
+    #     T_Contents = Topology.Contents
+    #     T_Vertices = Topology.Vertices
+    #     T_Edges = Topology.Edges
+    #     T_Faces = Topology.Faces
+    #     T_Cells = Topology.Cells
+    #     T_Shells = Topology.Shells
+    #     T_Wires = Topology.Wires
+    #     T_CellComplexes = Topology.CellComplexes
+    #     T_Type = Topology.Type
+    #     T_TypeAsString = Topology.TypeAsString
+    #     T_BREPString = Topology.BREPString
+
+    #     E_StartVertex = Edge.StartVertex
+    #     E_EndVertex = Edge.EndVertex
+
+    #     # ------------------------------------------------------------------
+    #     # Input type
+    #     # ------------------------------------------------------------------
+
+    #     try:
+    #         input_type = str(T_TypeAsString(topology)).lower().replace(" ", "")
+    #     except Exception:
+    #         input_type = ""
+
+    #     # ------------------------------------------------------------------
+    #     # Graph
+    #     # ------------------------------------------------------------------
+
+    #     try:
+    #         graph_dictionary = TGraph._TopologyDictionaryToPython(topology)
+    #         if not isinstance(graph_dictionary, dict):
+    #             graph_dictionary = {}
+    #     except Exception:
+    #         graph_dictionary = {}
+
+    #     if ontology:
+    #         graph_dictionary.setdefault("ontology_class", "top:SpatialGraph")
+    #         graph_dictionary.setdefault("category", "graph")
+    #         graph_dictionary.setdefault("generated_by", "TGraph.ByTopology")
+
+    #     graph = TGraph(
+    #         directed=False,
+    #         allowSelfLoops=False,
+    #         allowParallelEdges=False,
+    #         dictionary=graph_dictionary,
+    #     )
+
+    #     # ------------------------------------------------------------------
+    #     # Feature flags
+    #     # ------------------------------------------------------------------
+
+    #     needs_incidence = (
+    #         direct
+    #         or directApertures
+    #         or viaSharedTopologies
+    #         or viaSharedApertures
+    #         or toExteriorTopologies
+    #         or toExteriorApertures
+    #     )
+
+    #     needs_apertures = (
+    #         directApertures
+    #         or viaSharedApertures
+    #         or toExteriorApertures
+    #     )
+
+    #     needs_extended_boundaries = (
+    #         viaSharedTopologies
+    #         or viaSharedApertures
+    #         or toExteriorTopologies
+    #         or toExteriorApertures
+    #     )
+
+    #     # ------------------------------------------------------------------
+    #     # Caches
+    #     # ------------------------------------------------------------------
+
+    #     type_cache = {}
+
+    #     dictionary_cache = {}
+    #     dictionary_python_cache = {}
+    #     dictionary_keys_cache = {}
+    #     dictionary_lower_keys_cache = {}
+
+    #     brep_cache = {}
+
+    #     coordinate_cache = {}
+
+    #     vertices_cache = {}
+    #     edges_cache = {}
+    #     faces_cache = {}
+    #     cells_cache = {}
+    #     shells_cache = {}
+    #     wires_cache = {}
+    #     cellcomplexes_cache = {}
+
+    #     apertures_cache = {}
+    #     contents_cache = {}
+
+    #     boundary_key_cache = {}
+
+    #     representative_cache = {}
+    #     representative_index_object_cache = {}
+    #     representative_index_identity_cache = {}
+
+    #     added_edge_pairs = set()
+
+    #     # ------------------------------------------------------------------
+    #     # Basic helpers
+    #     # ------------------------------------------------------------------
+
+    #     def _id(t):
+    #         return id(t)
+
+    #     def _type_name(t):
+    #         if t is None:
+    #             return ""
+
+    #         tid = _id(t)
+
+    #         value = type_cache.get(tid)
+
+    #         if value is not None:
+    #             return value
+
+    #         try:
+    #             value = str(T_TypeAsString(t)).lower().replace(" ", "")
+    #         except Exception:
+    #             value = type(t).__name__.lower()
+
+    #         type_cache[tid] = value
+    #         return value
+
+    #     def _dictionary(t):
+    #         if t is None:
+    #             return None
+
+    #         tid = _id(t)
+
+    #         if tid in dictionary_cache:
+    #             return dictionary_cache[tid]
+
+    #         try:
+    #             d = T_Dictionary(t, silent=True)
+    #         except TypeError:
+    #             try:
+    #                 d = T_Dictionary(t)
+    #             except Exception:
+    #                 d = None
+    #         except Exception:
+    #             d = None
+
+    #         dictionary_cache[tid] = d
+    #         return d
+
+    #     def _dictionary_keys(d):
+    #         if d is None:
+    #             return []
+
+    #         did = id(d)
+
+    #         if did in dictionary_keys_cache:
+    #             return dictionary_keys_cache[did]
+
+    #         try:
+    #             result = Dictionary.Keys(d) or []
+    #         except Exception:
+    #             result = []
+
+    #         dictionary_keys_cache[did] = result
+    #         return result
+
+    #     def _dictionary_lower_keys(d):
+    #         if d is None:
+    #             return {}
+
+    #         did = id(d)
+
+    #         if did in dictionary_lower_keys_cache:
+    #             return dictionary_lower_keys_cache[did]
+
+    #         result = {}
+
+    #         for key in _dictionary_keys(d):
+    #             result.setdefault(str(key).lower(), key)
+
+    #         dictionary_lower_keys_cache[did] = result
+    #         return result
+
+    #     def _value_at_key(d, key, default=None):
+    #         if d is None or key is None:
+    #             return default
+
+    #         try:
+    #             value = Dictionary.ValueAtKey(d, key, default)
+    #         except TypeError:
+    #             try:
+    #                 value = Dictionary.ValueAtKey(d, key)
+    #             except Exception:
+    #                 return default
+    #         except Exception:
+    #             return default
+
+    #         return default if value is None else value
+
+    #     def _case_value(t, key, default=None):
+    #         d = _dictionary(t)
+
+    #         if d is None:
+    #             return default
+
+    #         actual_key = _dictionary_lower_keys(d).get(str(key).lower())
+
+    #         if actual_key is None:
+    #             return default
+
+    #         return _value_at_key(d, actual_key, default)
+
+    #     def _dictionary_to_python(t):
+    #         if t is None:
+    #             return {}
+
+    #         tid = _id(t)
+
+    #         if tid in dictionary_python_cache:
+    #             return dict(dictionary_python_cache[tid])
+
+    #         d = _dictionary(t)
+
+    #         if d is None:
+    #             dictionary_python_cache[tid] = {}
+    #             return {}
+
+    #         result = {}
+
+    #         try:
+    #             keys = _dictionary_keys(d)
+    #             values = Dictionary.Values(d) or []
+
+    #             if len(keys) == len(values):
+    #                 result = dict(zip(keys, values))
+    #             else:
+    #                 for key in keys:
+    #                     result[key] = _value_at_key(d, key, None)
+
+    #         except Exception:
+    #             for key in _dictionary_keys(d):
+    #                 result[key] = _value_at_key(d, key, None)
+
+    #         dictionary_python_cache[tid] = result
+
+    #         return dict(result)
+
+    #     # ------------------------------------------------------------------
+    #     # BREP
+    #     # ------------------------------------------------------------------
+
+    #     def _brep_data(t):
+    #         if t is None:
+    #             return None, None, None
+
+    #         tid = _id(t)
+
+    #         if tid in brep_cache:
+    #             return brep_cache[tid]
+
+    #         try:
+    #             result = (
+    #                 T_BREPString(t),
+    #                 T_Type(t),
+    #                 T_TypeAsString(t),
+    #             )
+    #         except Exception:
+    #             result = (None, None, None)
+
+    #         brep_cache[tid] = result
+    #         return result
+
+    #     def _add_brep(d, t):
+    #         if not storeBREP or t is None:
+    #             return d
+
+    #         brep, brep_type, brep_type_string = _brep_data(t)
+
+    #         if brep is not None:
+    #             d["brep"] = brep
+
+    #         if brep_type is not None:
+    #             d["brepType"] = brep_type
+
+    #         if brep_type_string is not None:
+    #             d["brepTypeString"] = brep_type_string
+
+    #         return d
+
+    #     # ------------------------------------------------------------------
+    #     # Aperture normalization
+    #     # ------------------------------------------------------------------
+
+    #     def _topology_from_aperture(t):
+    #         if t is None:
+    #             return None
+
+    #         if _type_name(t) != "aperture":
+    #             return t
+
+    #         try:
+    #             result = Aperture.Topology(t)
+    #             return result if result is not None else t
+    #         except Exception:
+    #             return t
+
+    #     # ------------------------------------------------------------------
+    #     # Coordinates
+    #     # ------------------------------------------------------------------
+
+    #     def _coordinates(v):
+    #         if v is None:
+    #             return None
+
+    #         vid = _id(v)
+
+    #         if vid in coordinate_cache:
+    #             return coordinate_cache[vid]
+
+    #         result = None
+
+    #         try:
+    #             c = Vertex.Coordinates(v, mantissa=mantissa)
+
+    #             if isinstance(c, (list, tuple)) and len(c) >= 3:
+    #                 result = (
+    #                     round(float(c[0]), mantissa),
+    #                     round(float(c[1]), mantissa),
+    #                     round(float(c[2]), mantissa),
+    #                 )
+    #         except Exception:
+    #             pass
+
+    #         if result is None:
+    #             try:
+    #                 result = (
+    #                     round(float(Vertex.X(v, mantissa=mantissa)), mantissa),
+    #                     round(float(Vertex.Y(v, mantissa=mantissa)), mantissa),
+    #                     round(float(Vertex.Z(v, mantissa=mantissa)), mantissa),
+    #                 )
+    #             except Exception:
+    #                 result = None
+
+    #         coordinate_cache[vid] = result
+    #         return result
+
+    #     # ------------------------------------------------------------------
+    #     # Cached topology extraction
+    #     # ------------------------------------------------------------------
+
+    #     def _cached_topologies(t, cache, function):
+    #         if t is None:
+    #             return []
+
+    #         tid = _id(t)
+
+    #         if tid in cache:
+    #             return cache[tid]
+
+    #         try:
+    #             result = function(t, silent=True) or []
+    #         except TypeError:
+    #             try:
+    #                 result = function(t) or []
+    #             except Exception:
+    #                 result = []
+    #         except Exception:
+    #             result = []
+
+    #         cache[tid] = result
+    #         return result
+
+    #     def _vertices(t):
+    #         return _cached_topologies(t, vertices_cache, T_Vertices)
+
+    #     def _edges(t):
+    #         return _cached_topologies(t, edges_cache, T_Edges)
+
+    #     def _faces(t):
+    #         return _cached_topologies(t, faces_cache, T_Faces)
+
+    #     def _cells(t):
+    #         return _cached_topologies(t, cells_cache, T_Cells)
+
+    #     def _shells(t):
+    #         return _cached_topologies(t, shells_cache, T_Shells)
+
+    #     def _wires(t):
+    #         return _cached_topologies(t, wires_cache, T_Wires)
+
+    #     def _cellcomplexes(t):
+    #         return _cached_topologies(
+    #             t,
+    #             cellcomplexes_cache,
+    #             T_CellComplexes,
+    #         )
+
+    #     # ------------------------------------------------------------------
+    #     # Very cheap Edge endpoints
+    #     # ------------------------------------------------------------------
+
+    #     def _edge_vertices(e):
+    #         try:
+    #             a = E_StartVertex(e)
+    #             b = E_EndVertex(e)
+
+    #             if a is not None and b is not None:
+    #                 return a, b
+    #         except Exception:
+    #             pass
+
+    #         vertices = _vertices(e)
+
+    #         if len(vertices) >= 2:
+    #             return vertices[0], vertices[-1]
+
+    #         return None, None
+
+    #     # ------------------------------------------------------------------
+    #     # Boundary keys
+    #     # ------------------------------------------------------------------
+
+    #     def _vertex_key(v):
+    #         return _coordinates(v)
+
+    #     def _edge_key(e):
+    #         eid = _id(e)
+    #         cache_key = ("edge", eid)
+
+    #         if cache_key in boundary_key_cache:
+    #             return boundary_key_cache[cache_key]
+
+    #         a, b = _edge_vertices(e)
+
+    #         if a is None or b is None:
+    #             result = None
+    #         else:
+    #             ka = _coordinates(a)
+    #             kb = _coordinates(b)
+
+    #             if ka is None or kb is None:
+    #                 result = None
+    #             elif ka <= kb:
+    #                 result = (ka, kb)
+    #             else:
+    #                 result = (kb, ka)
+
+    #         boundary_key_cache[cache_key] = result
+    #         return result
+
+    #     def _face_key(f):
+    #         fid = _id(f)
+    #         cache_key = ("face", fid)
+
+    #         if cache_key in boundary_key_cache:
+    #             return boundary_key_cache[cache_key]
+
+    #         coordinates = []
+
+    #         for v in _vertices(f):
+    #             c = _coordinates(v)
+
+    #             if c is not None:
+    #                 coordinates.append(c)
+
+    #         if coordinates:
+    #             coordinates.sort()
+    #             result = tuple(coordinates)
+    #         else:
+    #             result = None
+
+    #         boundary_key_cache[cache_key] = result
+    #         return result
+
+    #     # ------------------------------------------------------------------
+    #     # Apertures / contents
+    #     # ------------------------------------------------------------------
+
+    #     def _apertures(t):
+    #         if t is None or not needs_apertures:
+    #             return []
+
+    #         tid = _id(t)
+
+    #         if tid in apertures_cache:
+    #             return apertures_cache[tid]
+
+    #         try:
+    #             result = T_Apertures(t) or []
+    #         except Exception:
+    #             result = []
+
+    #         apertures_cache[tid] = result
+    #         return result
+
+    #     def _contents(t):
+    #         if t is None or not toContents:
+    #             return []
+
+    #         tid = _id(t)
+
+    #         if tid in contents_cache:
+    #             return contents_cache[tid]
+
+    #         try:
+    #             result = T_Contents(t, silent=True) or []
+    #         except TypeError:
+    #             try:
+    #                 result = T_Contents(t) or []
+    #             except Exception:
+    #                 result = []
+    #         except Exception:
+    #             result = []
+
+    #         result = [
+    #             _topology_from_aperture(c)
+    #             for c in result
+    #             if c is not None
+    #         ]
+
+    #         contents_cache[tid] = result
+    #         return result
+
+    #     # ------------------------------------------------------------------
+    #     # Representative identity
+    #     # ------------------------------------------------------------------
+
+    #     def _geometric_identity(t):
+    #         """
+    #         Used only when a topology may have arrived through independently
+    #         generated wrappers and no already-computed incidence key is available.
+    #         """
+
+    #         t = _topology_from_aperture(t)
+
+    #         if t is None:
+    #             return None
+
+    #         type_name = _type_name(t)
+
+    #         if type_name == "vertex":
+    #             return (type_name, _vertex_key(t))
+
+    #         if type_name == "edge":
+    #             return (type_name, _edge_key(t))
+
+    #         if type_name == "face":
+    #             return (type_name, _face_key(t))
+
+    #         coordinates = []
+
+    #         for v in _vertices(t):
+    #             c = _coordinates(v)
+
+    #             if c is not None:
+    #                 coordinates.append(c)
+
+    #         if coordinates:
+    #             coordinates.sort()
+    #             return (type_name, tuple(coordinates))
+
+    #         try:
+    #             return (type_name, hash(T_BREPString(t)))
+    #         except Exception:
+    #             return (type_name, _id(t))
+
+    #     # ------------------------------------------------------------------
+    #     # Graph vertex creation
+    #     # ------------------------------------------------------------------
+
+    #     def _add_vertex_record(representation, dictionary):
+    #         d = dict(dictionary) if isinstance(dictionary, dict) else {}
+
+    #         c = _coordinates(representation)
+
+    #         if c is not None:
+    #             d.setdefault("x", c[0])
+    #             d.setdefault("y", c[1])
+    #             d.setdefault("z", c[2])
+
+    #         index = graph.AddVertex(
+    #             dictionary=d,
+    #             representation=representation,
+    #         )
+
+    #         graph._vertices[index]["dictionary"][vertexIndexKey] = index
+
+    #         return index
+
+    #     def _representative_vertex_index(
+    #         t,
+    #         category=None,
+    #         apply_offset=False,
+    #         identity=None,
+    #         canonical=False,
+    #         source_dictionary_topology=None,
+    #     ):
+    #         t = _topology_from_aperture(t)
+
+    #         if t is None:
+    #             return None
+
+    #         source = (
+    #             source_dictionary_topology
+    #             if source_dictionary_topology is not None
+    #             else t
+    #         )
+
+    #         object_key = (
+    #             _id(t),
+    #             category,
+    #             bool(apply_offset),
+    #         )
+
+    #         # Fastest path: exact wrapper has already been seen.
+    #         if object_key in representative_index_object_cache:
+    #             return representative_index_object_cache[object_key]
+
+    #         identity_key = None
+
+    #         # An incidence key already calculated by the caller is much cheaper
+    #         # than rebuilding geometric identity.
+    #         if identity is not None:
+    #             identity_key = (
+    #                 identity,
+    #                 category,
+    #                 bool(apply_offset),
+    #             )
+
+    #         elif canonical:
+    #             geometry_identity = _geometric_identity(t)
+
+    #             identity_key = (
+    #                 geometry_identity,
+    #                 category,
+    #                 bool(apply_offset),
+    #             )
+
+    #         if (
+    #             identity_key is not None
+    #             and identity_key in representative_index_identity_cache
+    #         ):
+    #             index = representative_index_identity_cache[identity_key]
+    #             representative_index_object_cache[object_key] = index
+    #             return index
+
+    #         representative_key = (
+    #             identity_key
+    #             if identity_key is not None
+    #             else object_key
+    #         )
+
+    #         if representative_key in representative_cache:
+    #             v = representative_cache[representative_key]
+
+    #         else:
+    #             try:
+    #                 if useInternalVertex:
+    #                     v = T_InternalVertex(
+    #                         t,
+    #                         tolerance=tolerance,
+    #                     )
+    #                 else:
+    #                     v = T_CenterOfMass(t)
+    #             except Exception:
+    #                 v = None
+
+    #             if v is None:
+    #                 return None
+
+    #             if apply_offset:
+    #                 c = _coordinates(v)
+
+    #                 if c is not None:
+    #                     try:
+    #                         v = Vertex.ByCoordinates(
+    #                             c[0] + offset,
+    #                             c[1] + offset,
+    #                             c[2] + offset,
+    #                         )
+    #                     except Exception:
+    #                         pass
+
+    #             representative_cache[representative_key] = v
+
+    #         d = _dictionary_to_python(source)
+
+    #         if category is not None:
+    #             d[vertexCategoryKey] = category
+
+    #         d = _add_brep(d, source)
+
+    #         index = _add_vertex_record(v, d)
+
+    #         representative_index_object_cache[object_key] = index
+
+    #         if identity_key is not None:
+    #             representative_index_identity_cache[identity_key] = index
+
+    #         return index
+
+    #     def _append_vertex_from_topology(t, category=None):
+    #         if t is None:
+    #             return None
+
+    #         object_key = (
+    #             _id(t),
+    #             category,
+    #             False,
+    #         )
+
+    #         if object_key in representative_index_object_cache:
+    #             return representative_index_object_cache[object_key]
+
+    #         d = _dictionary_to_python(t)
+
+    #         if category is not None:
+    #             d[vertexCategoryKey] = category
+
+    #         d = _add_brep(d, t)
+
+    #         index = _add_vertex_record(t, d)
+
+    #         representative_index_object_cache[object_key] = index
+    #         return index
+
+    #     # ------------------------------------------------------------------
+    #     # Graph edge creation
+    #     # ------------------------------------------------------------------
+
+    #     def _edge_dictionary(
+    #         relationship,
+    #         category,
+    #         source_topology=None,
+    #     ):
+    #         d = {}
+
+    #         source = _topology_from_aperture(source_topology)
+
+    #         if source is not None:
+    #             d.update(_dictionary_to_python(source))
+
+    #         d["relationship"] = relationship
+    #         d[edgeCategoryKey] = category
+
+    #         return d
+
+    #     def _append_edge(
+    #         src,
+    #         dst,
+    #         relationship,
+    #         category,
+    #         source_topology=None,
+    #     ):
+    #         if src is None or dst is None or src == dst:
+    #             return None
+
+    #         pair = (
+    #             (src, dst)
+    #             if src < dst
+    #             else (dst, src)
+    #         )
+
+    #         if pair in added_edge_pairs:
+    #             return None
+
+    #         d = _edge_dictionary(
+    #             relationship,
+    #             category,
+    #             source_topology,
+    #         )
+
+    #         d[edgeSrcKey] = src
+    #         d[edgeDstKey] = dst
+
+    #         result = graph.AddEdge(
+    #             src,
+    #             dst,
+    #             directed=False,
+    #             dictionary=d,
+    #             representation=None,
+    #         )
+
+    #         if result is not None:
+    #             added_edge_pairs.add(pair)
+
+    #         return result
+
+    #     # ------------------------------------------------------------------
+    #     # Contents
+    #     # ------------------------------------------------------------------
+
+    #     def _add_contents(source_index, t):
+    #         if not toContents or source_index is None:
+    #             return
+
+    #         for content in _contents(t):
+    #             target_index = _representative_vertex_index(
+    #                 content,
+    #                 category=5,
+    #                 apply_offset=True,
+    #                 canonical=True,
+    #             )
+
+    #             if target_index is None:
+    #                 continue
+
+    #             _append_edge(
+    #                 source_index,
+    #                 target_index,
+    #                 "To_Contents",
+    #                 5,
+    #                 source_topology=content,
+    #             )
+
+    #     # ------------------------------------------------------------------
+    #     # Outposts
+    #     # ------------------------------------------------------------------
+
+    #     id_key_lower = str(idKey).lower()
+    #     outposts_key_lower = str(outpostsKey).lower()
+
+    #     def _outpost_lookup(topologies):
+    #         if not toOutposts:
+    #             return {}
+
+    #         lookup = {}
+
+    #         for t in topologies:
+    #             value = _case_value(t, id_key_lower, None)
+
+    #             if value is not None and value not in lookup:
+    #                 lookup[value] = t
+
+    #         return lookup
+
+    #     def _add_outposts(source_index, outpost_lookup):
+    #         if (
+    #             not toOutposts
+    #             or source_index is None
+    #             or not outpost_lookup
+    #         ):
+    #             return
+
+    #         try:
+    #             d = graph._vertices[source_index]["dictionary"]
+    #         except Exception:
+    #             return
+
+    #         ids = None
+
+    #         for key, value in d.items():
+    #             if str(key).lower() == outposts_key_lower:
+    #                 ids = value
+    #                 break
+
+    #         if ids is None:
+    #             return
+
+    #         if not isinstance(ids, list):
+    #             ids = [ids]
+
+    #         for an_id in ids:
+    #             outpost = outpost_lookup.get(an_id)
+
+    #             if outpost is None:
+    #                 continue
+
+    #             target_index = _representative_vertex_index(
+    #                 outpost,
+    #                 category=6,
+    #                 canonical=True,
+    #             )
+
+    #             if target_index is None:
+    #                 continue
+
+    #             _append_edge(
+    #                 source_index,
+    #                 target_index,
+    #                 "To_Outposts",
+    #                 6,
+    #             )
+
+    #     # ------------------------------------------------------------------
+    #     # Shared/exterior topology relationship
+    #     # ------------------------------------------------------------------
+
+    #     def _add_boundary_topology(
+    #         owner_index,
+    #         child,
+    #         child_type,
+    #         boundary_key,
+    #         shared,
+    #         outpost_lookup,
+    #     ):
+    #         if shared:
+    #             if viaSharedTopologies:
+    #                 identity = (
+    #                     "boundary",
+    #                     child_type,
+    #                     boundary_key,
+    #                 )
+
+    #                 child_index = _representative_vertex_index(
+    #                     child,
+    #                     category=1,
+    #                     identity=identity,
+    #                 )
+
+    #                 if child_index is not None:
+    #                     _append_edge(
+    #                         owner_index,
+    #                         child_index,
+    #                         "Via_Shared_Topologies",
+    #                         1,
+    #                         source_topology=child,
+    #                     )
+
+    #                     if toContents:
+    #                         _add_contents(child_index, child)
+
+    #                     if toOutposts:
+    #                         _add_outposts(
+    #                             child_index,
+    #                             outpost_lookup,
+    #                         )
+
+    #             if viaSharedApertures:
+    #                 for aperture in _apertures(child):
+    #                     aperture_index = _representative_vertex_index(
+    #                         aperture,
+    #                         category=2,
+    #                         apply_offset=True,
+    #                         canonical=True,
+    #                     )
+
+    #                     if aperture_index is not None:
+    #                         _append_edge(
+    #                             owner_index,
+    #                             aperture_index,
+    #                             "Via_Shared_Apertures",
+    #                             2,
+    #                             source_topology=aperture,
+    #                         )
+
+    #         else:
+    #             if toExteriorTopologies:
+    #                 identity = (
+    #                     "boundary",
+    #                     child_type,
+    #                     boundary_key,
+    #                 )
+
+    #                 child_index = _representative_vertex_index(
+    #                     child,
+    #                     category=3,
+    #                     identity=identity,
+    #                 )
+
+    #                 if child_index is not None:
+    #                     _append_edge(
+    #                         owner_index,
+    #                         child_index,
+    #                         "To_Exterior_Topologies",
+    #                         3,
+    #                         source_topology=child,
+    #                     )
+
+    #                     if toContents:
+    #                         _add_contents(child_index, child)
+
+    #                     if toOutposts:
+    #                         _add_outposts(
+    #                             child_index,
+    #                             outpost_lookup,
+    #                         )
+
+    #             if toExteriorApertures:
+    #                 for aperture in _apertures(child):
+    #                     aperture_index = _representative_vertex_index(
+    #                         aperture,
+    #                         category=4,
+    #                         apply_offset=True,
+    #                         canonical=True,
+    #                     )
+
+    #                     if aperture_index is not None:
+    #                         _append_edge(
+    #                             owner_index,
+    #                             aperture_index,
+    #                             "To_Exterior_Apertures",
+    #                             4,
+    #                             source_topology=aperture,
+    #                         )
+
+    #     # ------------------------------------------------------------------
+    #     # Optimized collection processor
+    #     # ------------------------------------------------------------------
+
+    #     def _process_collection(
+    #         owners,
+    #         child_getter,
+    #         boundary_key_function,
+    #         child_type,
+    #         outpost_lookup,
+    #     ):
+    #         if not owners:
+    #             return
+
+    #         owner_count = len(owners)
+
+    #         # --------------------------------------------------------------
+    #         # Owner graph vertices: exactly one pass.
+    #         # --------------------------------------------------------------
+
+    #         owner_indices = [None] * owner_count
+
+    #         for i in range(owner_count):
+    #             owner_indices[i] = _representative_vertex_index(
+    #                 owners[i],
+    #                 category=0,
+    #             )
+
+    #         # --------------------------------------------------------------
+    #         # Owner contents/outposts are independent of boundary incidence.
+    #         # --------------------------------------------------------------
+
+    #         if toContents or toOutposts:
+    #             for i in range(owner_count):
+    #                 owner_index = owner_indices[i]
+
+    #                 if owner_index is None:
+    #                     continue
+
+    #                 owner = owners[i]
+
+    #                 if toContents:
+    #                     _add_contents(owner_index, owner)
+
+    #                 if toOutposts:
+    #                     _add_outposts(
+    #                         owner_index,
+    #                         outpost_lookup,
+    #                     )
+
+    #         if not needs_incidence:
+    #             return
+
+    #         # --------------------------------------------------------------
+    #         # Build incidence ONCE.
+    #         #
+    #         # boundary_records:
+    #         #     key -> [owner_positions, child_refs]
+    #         #
+    #         # owner_boundary_records:
+    #         #     owner -> [(child, key), ...]
+    #         # --------------------------------------------------------------
+
+    #         boundary_records = {}
+    #         owner_boundary_records = (
+    #             [None] * owner_count
+    #             if needs_extended_boundaries
+    #             else None
+    #         )
+
+    #         for owner_position in range(owner_count):
+    #             owner = owners[owner_position]
+    #             children = child_getter(owner)
+
+    #             if needs_extended_boundaries:
+    #                 local_records = []
+    #                 owner_boundary_records[owner_position] = local_records
+
+    #             for child in children:
+    #                 key = boundary_key_function(child)
+
+    #                 if key is None:
+    #                     continue
+
+    #                 if needs_extended_boundaries:
+    #                     local_records.append((child, key))
+
+    #                 record = boundary_records.get(key)
+
+    #                 if record is None:
+    #                     boundary_records[key] = [
+    #                         [owner_position],
+    #                         [child],
+    #                     ]
+    #                 else:
+    #                     owner_positions = record[0]
+
+    #                     if (
+    #                         not owner_positions
+    #                         or owner_positions[-1] != owner_position
+    #                     ):
+    #                         owner_positions.append(owner_position)
+
+    #                     record[1].append(child)
+
+    #         # --------------------------------------------------------------
+    #         # Direct relationships
+    #         # --------------------------------------------------------------
+
+    #         if direct or directApertures:
+    #             for owner_positions, child_refs in boundary_records.values():
+
+    #                 if len(owner_positions) < 2:
+    #                     continue
+
+    #                 direct_source = (
+    #                     child_refs[0]
+    #                     if child_refs
+    #                     else None
+    #                 )
+
+    #                 aperture_source = None
+
+    #                 if directApertures:
+    #                     for child in child_refs:
+    #                         apertures = _apertures(child)
+
+    #                         if apertures:
+    #                             aperture_source = apertures[0]
+    #                             break
+
+    #                 n = len(owner_positions)
+
+    #                 for i in range(n - 1):
+    #                     src = owner_indices[owner_positions[i]]
+
+    #                     if src is None:
+    #                         continue
+
+    #                     for j in range(i + 1, n):
+    #                         dst = owner_indices[owner_positions[j]]
+
+    #                         if dst is None or src == dst:
+    #                             continue
+
+    #                         if direct:
+    #                             _append_edge(
+    #                                 src,
+    #                                 dst,
+    #                                 "Direct",
+    #                                 0,
+    #                                 source_topology=direct_source,
+    #                             )
+
+    #                         if (
+    #                             directApertures
+    #                             and aperture_source is not None
+    #                         ):
+    #                             _append_edge(
+    #                                 src,
+    #                                 dst,
+    #                                 "Direct_Apertures",
+    #                                 2,
+    #                                 source_topology=aperture_source,
+    #                             )
+
+    #         if not needs_extended_boundaries:
+    #             return
+
+    #         # --------------------------------------------------------------
+    #         # Shared / exterior processing.
+    #         #
+    #         # Critically, this does NOT re-extract children and does NOT
+    #         # reconstruct boundary keys.
+    #         # --------------------------------------------------------------
+
+    #         for owner_position in range(owner_count):
+    #             owner_index = owner_indices[owner_position]
+
+    #             if owner_index is None:
+    #                 continue
+
+    #             records = owner_boundary_records[owner_position]
+
+    #             if not records:
+    #                 continue
+
+    #             for child, key in records:
+    #                 incidence = boundary_records.get(key)
+
+    #                 if incidence is None:
+    #                     continue
+
+    #                 shared = len(incidence[0]) > 1
+
+    #                 _add_boundary_topology(
+    #                     owner_index,
+    #                     child,
+    #                     child_type,
+    #                     key,
+    #                     shared,
+    #                     outpost_lookup,
+    #                 )
+
+    #     # ------------------------------------------------------------------
+    #     # Optimized single-topology processor
+    #     # ------------------------------------------------------------------
+
+    #     def _process_single(
+    #         t,
+    #         child_getter,
+    #         child_type,
+    #         outpost_lookup,
+    #     ):
+    #         owner_index = _representative_vertex_index(
+    #             t,
+    #             category=0,
+    #         )
+
+    #         if owner_index is None:
+    #             return
+
+    #         if toContents:
+    #             _add_contents(owner_index, t)
+
+    #         if toOutposts:
+    #             _add_outposts(
+    #                 owner_index,
+    #                 outpost_lookup,
+    #             )
+
+    #         if not (
+    #             toExteriorTopologies
+    #             or toExteriorApertures
+    #         ):
+    #             return
+
+    #         children = child_getter(t)
+
+    #         for child in children:
+
+    #             if toExteriorTopologies:
+    #                 if child_type == "Face":
+    #                     key = _face_key(child)
+    #                 elif child_type == "Edge":
+    #                     key = _edge_key(child)
+    #                 else:
+    #                     key = _vertex_key(child)
+
+    #                 identity = (
+    #                     "boundary",
+    #                     child_type,
+    #                     key,
+    #                 )
+
+    #                 child_index = _representative_vertex_index(
+    #                     child,
+    #                     category=3,
+    #                     identity=identity,
+    #                 )
+
+    #                 if child_index is not None:
+    #                     _append_edge(
+    #                         owner_index,
+    #                         child_index,
+    #                         "To_Exterior_Topologies",
+    #                         3,
+    #                         source_topology=child,
+    #                     )
+
+    #                     if toContents:
+    #                         _add_contents(child_index, child)
+
+    #                     if toOutposts:
+    #                         _add_outposts(
+    #                             child_index,
+    #                             outpost_lookup,
+    #                         )
+
+    #             if toExteriorApertures:
+    #                 for aperture in _apertures(child):
+    #                     aperture_index = _representative_vertex_index(
+    #                         aperture,
+    #                         category=4,
+    #                         apply_offset=True,
+    #                         canonical=True,
+    #                     )
+
+    #                     if aperture_index is not None:
+    #                         _append_edge(
+    #                             owner_index,
+    #                             aperture_index,
+    #                             "To_Exterior_Apertures",
+    #                             4,
+    #                             source_topology=aperture,
+    #                         )
+
+    #     # ------------------------------------------------------------------
+    #     # Vertex processor
+    #     # ------------------------------------------------------------------
+
+    #     def _process_vertex(t, outpost_lookup):
+    #         index = _append_vertex_from_topology(
+    #             t,
+    #             category=0,
+    #         )
+
+    #         if index is None:
+    #             return
+
+    #         if toContents:
+    #             _add_contents(index, t)
+
+    #         if toOutposts:
+    #             _add_outposts(
+    #                 index,
+    #                 outpost_lookup,
+    #             )
+
+    #     # ------------------------------------------------------------------
+    #     # Expensive all-subtopology traversal:
+    #     # ONLY executed if outposts are requested.
+    #     # ------------------------------------------------------------------
+
+    #     def _all_subtopologies(t):
+    #         return (
+    #             _cellcomplexes(t)
+    #             + _cells(t)
+    #             + _shells(t)
+    #             + _faces(t)
+    #             + _wires(t)
+    #             + _edges(t)
+    #             + _vertices(t)
+    #         )
+
+    #     # ------------------------------------------------------------------
+    #     # Resolve outposts lazily
+    #     # ------------------------------------------------------------------
+
+    #     if toOutposts:
+    #         outposts = _outpost_lookup(
+    #             _all_subtopologies(topology)
+    #         )
+    #     else:
+    #         outposts = {}
+
+    #     # ------------------------------------------------------------------
+    #     # Dispatch
+    #     # ------------------------------------------------------------------
+
+    #     if input_type == "cellcomplex":
+
+    #         _process_collection(
+    #             _cells(topology),
+    #             _faces,
+    #             _face_key,
+    #             "Face",
+    #             outposts,
+    #         )
+
+    #     elif input_type == "cell":
+
+    #         _process_single(
+    #             topology,
+    #             _faces,
+    #             "Face",
+    #             outposts,
+    #         )
+
+    #     elif input_type == "shell":
+
+    #         _process_collection(
+    #             _faces(topology),
+    #             _edges,
+    #             _edge_key,
+    #             "Edge",
+    #             outposts,
+    #         )
+
+    #     elif input_type == "face":
+
+    #         _process_single(
+    #             topology,
+    #             _edges,
+    #             "Edge",
+    #             outposts,
+    #         )
+
+    #     elif input_type == "wire":
+
+    #         _process_collection(
+    #             _edges(topology),
+    #             _vertices,
+    #             _vertex_key,
+    #             "Vertex",
+    #             outposts,
+    #         )
+
+    #     elif input_type == "edge":
+
+    #         _process_single(
+    #             topology,
+    #             _vertices,
+    #             "Vertex",
+    #             outposts,
+    #         )
+
+    #     elif input_type == "vertex":
+
+    #         _process_vertex(
+    #             topology,
+    #             outposts,
+    #         )
+
+    #     elif input_type == "cluster":
+
+    #         # --------------------------------------------------------------
+    #         # Cluster decomposition remains inherently more expensive, but
+    #         # each Free* operation is now executed exactly once and its
+    #         # result is reused.
+    #         # --------------------------------------------------------------
+
+    #         c_cellcomplexes = _cellcomplexes(topology)
+
+    #         try:
+    #             c_cells = Cluster.FreeCells(
+    #                 topology,
+    #                 tolerance=tolerance,
+    #             ) or []
+    #         except Exception:
+    #             c_cells = []
+
+    #         try:
+    #             c_shells = Cluster.FreeShells(
+    #                 topology,
+    #                 tolerance=tolerance,
+    #             ) or []
+    #         except Exception:
+    #             c_shells = []
+
+    #         try:
+    #             c_faces = Cluster.FreeFaces(
+    #                 topology,
+    #                 tolerance=tolerance,
+    #             ) or []
+    #         except Exception:
+    #             c_faces = []
+
+    #         try:
+    #             c_wires = Cluster.FreeWires(
+    #                 topology,
+    #                 tolerance=tolerance,
+    #             ) or []
+    #         except Exception:
+    #             c_wires = []
+
+    #         try:
+    #             c_edges = Cluster.FreeEdges(
+    #                 topology,
+    #                 tolerance=tolerance,
+    #             ) or []
+    #         except Exception:
+    #             c_edges = []
+
+    #         try:
+    #             c_vertices = Cluster.FreeVertices(
+    #                 topology,
+    #                 tolerance=tolerance,
+    #             ) or []
+    #         except Exception:
+    #             c_vertices = []
+
+    #         # Existing global outpost lookup already includes the Cluster's
+    #         # subtopologies. Do not rebuild it from the free lists.
+
+    #         for t in c_cellcomplexes:
+    #             _process_collection(
+    #                 _cells(t),
+    #                 _faces,
+    #                 _face_key,
+    #                 "Face",
+    #                 outposts,
+    #             )
+
+    #         for t in c_cells:
+    #             _process_single(
+    #                 t,
+    #                 _faces,
+    #                 "Face",
+    #                 outposts,
+    #             )
+
+    #         for t in c_shells:
+    #             _process_collection(
+    #                 _faces(t),
+    #                 _edges,
+    #                 _edge_key,
+    #                 "Edge",
+    #                 outposts,
+    #             )
+
+    #         for t in c_faces:
+    #             _process_single(
+    #                 t,
+    #                 _edges,
+    #                 "Edge",
+    #                 outposts,
+    #             )
+
+    #         for t in c_wires:
+    #             _process_collection(
+    #                 _edges(t),
+    #                 _vertices,
+    #                 _vertex_key,
+    #                 "Vertex",
+    #                 outposts,
+    #             )
+
+    #         for t in c_edges:
+    #             _process_single(
+    #                 t,
+    #                 _vertices,
+    #                 "Vertex",
+    #                 outposts,
+    #             )
+
+    #         for t in c_vertices:
+    #             _process_vertex(
+    #                 t,
+    #                 outposts,
+    #             )
+
+    #     else:
+    #         return None
+
+    #     # ------------------------------------------------------------------
+    #     # Ontology
+    #     # ------------------------------------------------------------------
+
+    #     if ontology:
+    #         try:
+    #             if hasattr(TGraph, "AnnotateOntology"):
+    #                 TGraph.AnnotateOntology(
+    #                     graph,
+    #                     ontologyClass="top:SpatialGraph",
+    #                     category="graph",
+    #                     generatedBy="TGraph.ByTopology",
+    #                     silent=True,
+    #                 )
+    #             else:
+    #                 graph._dictionary["ontology_class"] = "top:SpatialGraph"
+    #                 graph._dictionary["category"] = "graph"
+    #                 graph._dictionary["generated_by"] = "TGraph.ByTopology"
+
+    #         except Exception:
+    #             graph._dictionary["ontology_class"] = "top:SpatialGraph"
+    #             graph._dictionary["category"] = "graph"
+    #             graph._dictionary["generated_by"] = "TGraph.ByTopology"
+
+    #     return graph
 
     @staticmethod
     def ByTriples(
@@ -13931,6 +19488,382 @@ class TGraph:
             graph._vertices[stable_index].setdefault("dictionary", {})[key] = value
 
     @staticmethod
+    def DisjointPaths(
+        graph: "TGraph",
+        source: Any,
+        target: Any,
+        disjoint: str = "vertex",
+        maxPaths: Optional[int] = None,
+        optimize: bool = False,
+        edgeKey: str = "Length",
+        vertexKey: str = "",
+        snapEndpoints: bool = True,
+        tolerance: float = 1e-12,
+        silent: bool = False,
+    ) -> List[List[int]]:
+        """
+        Returns mutually disjoint paths between two vertices of the input TGraph.
+
+        The paths are computed jointly using network flow rather than by repeatedly
+        removing previously discovered shortest paths.
+
+        Two disjointness modes are supported:
+
+        - "vertex": Paths may share the source and target but no internal vertices.
+        - "edge": Paths may share vertices but may not share an original TGraph
+        edge.
+
+        The primary objective is always to maximize the number of disjoint paths,
+        subject to maxPaths.
+
+        If optimize is True, the secondary objective is to minimize the total cost
+        of the complete maximum-cardinality path family. This is a joint
+        optimization and is not equivalent to repeatedly finding the shortest
+        remaining path.
+
+        Edge and vertex cost semantics follow TGraph.ShortestPath. Edge costs may
+        be geometric length, unit hop cost, or values stored in an edge dictionary.
+        Vertex costs are read from the specified vertex dictionary key. Source and
+        target vertex costs are ignored.
+
+        Parameters
+        ----------
+        graph : TGraph
+            The input TGraph.
+        source : Any
+            The source vertex. This may be a stable vertex index, TGraph vertex
+            record, Topologic vertex, or coordinate-like input.
+        target : Any
+            The target vertex. This may be a stable vertex index, TGraph vertex
+            record, Topologic vertex, or coordinate-like input.
+        disjoint : str , optional
+            The disjointness criterion: "vertex" or "edge". Common aliases are
+            accepted. Default is "vertex".
+        maxPaths : int , optional
+            Maximum number of paths to return. If None, the maximum possible number
+            is computed. Default is None.
+        optimize : bool , optional
+            If True, minimizes the total cost of the maximum-cardinality path
+            family. If False, returns any valid maximum-cardinality family.
+            Default is False.
+        edgeKey : str , optional
+            Edge cost key used when optimize=True. "Length", "Distance", "Metric",
+            "", or None uses geometric endpoint distance. "hop", "hops",
+            "unweighted", or "unit" assigns unit cost. Other values refer to edge
+            dictionary keys. Default is "Length".
+        vertexKey : str , optional
+            Numeric vertex dictionary key added as a traversal cost when
+            optimize=True. Empty string disables vertex cost. Default is "".
+        snapEndpoints : bool , optional
+            If True, unresolved source and target inputs are snapped to the nearest
+            active TGraph vertices. Default is True.
+        tolerance : float , optional
+            Numerical flow tolerance. Default is 1e-12.
+        silent : bool , optional
+            If True, suppresses error and warning messages. Default is False.
+
+        Returns
+        -------
+        List[List[int]]
+            The resulting mutually disjoint paths as ordered lists of stable TGraph
+            vertex indices. Returns an empty list if no path exists or the input is
+            invalid.
+        """
+        import math
+
+        if not isinstance(graph, TGraph):
+            if not silent:
+                print(
+                    "TGraph.DisjointPaths - Error: "
+                    "The input graph is not a valid TGraph. Returning an empty list."
+                )
+            return []
+
+        # ------------------------------------------------------------------
+        # Endpoint resolution
+        # ------------------------------------------------------------------
+
+        def _resolve(value):
+
+            index = TGraph._as_index(value)
+
+            if graph._validate_vertex_index(index):
+                return index
+
+            if not snapEndpoints:
+                return None
+
+            try:
+                record = TGraph.NearestVertex(
+                    graph,
+                    vertex=value,
+                    active=True,
+                    copy=False,
+                    asTopologic=False,
+                    silent=True,
+                )
+
+                index = TGraph._as_index(
+                    record
+                )
+
+                if graph._validate_vertex_index(index):
+                    return index
+
+            except Exception:
+                pass
+
+            return None
+
+        source_index = _resolve(source)
+        target_index = _resolve(target)
+
+        if source_index is None or target_index is None:
+            if not silent:
+                print(
+                    "TGraph.DisjointPaths - Error: "
+                    "Could not resolve the source or target vertex. "
+                    "Returning an empty list."
+                )
+            return []
+
+        if source_index == target_index:
+            if not silent:
+                print(
+                    "TGraph.DisjointPaths - Error: "
+                    "The source and target must be different vertices. "
+                    "Returning an empty list."
+                )
+            return []
+
+        # ------------------------------------------------------------------
+        # Disjointness mode
+        # ------------------------------------------------------------------
+
+        mode = str(
+            disjoint or "vertex"
+        ).strip().lower()
+
+        aliases = {
+            "vertex": "vertex",
+            "vertices": "vertex",
+            "node": "vertex",
+            "nodes": "vertex",
+            "vertex-disjoint": "vertex",
+            "vertex_disjoint": "vertex",
+
+            "edge": "edge",
+            "edges": "edge",
+            "edge-disjoint": "edge",
+            "edge_disjoint": "edge",
+        }
+
+        mode = aliases.get(mode)
+
+        if mode is None:
+            if not silent:
+                print(
+                    "TGraph.DisjointPaths - Error: "
+                    "disjoint must be either 'vertex' or 'edge'. "
+                    "Returning an empty list."
+                )
+            return []
+
+        # ------------------------------------------------------------------
+        # Maximum requested path count
+        # ------------------------------------------------------------------
+
+        if maxPaths is None:
+
+            flow_limit = None
+
+        else:
+
+            if isinstance(maxPaths, bool):
+                if not silent:
+                    print(
+                        "TGraph.DisjointPaths - Error: "
+                        "maxPaths must be a positive integer or None. "
+                        "Returning an empty list."
+                    )
+                return []
+
+            try:
+                value = float(maxPaths)
+            except Exception:
+                if not silent:
+                    print(
+                        "TGraph.DisjointPaths - Error: "
+                        "maxPaths must be a positive integer or None. "
+                        "Returning an empty list."
+                    )
+                return []
+
+            if (
+                not math.isfinite(value)
+                or value <= 0.0
+                or value != int(value)
+            ):
+                if not silent:
+                    print(
+                        "TGraph.DisjointPaths - Error: "
+                        "maxPaths must be a positive integer or None. "
+                        "Returning an empty list."
+                    )
+                return []
+
+            flow_limit = float(
+                int(value)
+            )
+
+        try:
+            flow_tolerance = abs(
+                float(tolerance)
+            )
+        except Exception:
+            flow_tolerance = 1e-12
+
+        flow_tolerance = max(
+            flow_tolerance,
+            1e-15,
+        )
+
+        # ------------------------------------------------------------------
+        # Costs
+        # ------------------------------------------------------------------
+
+        edge_costs = {}
+        vertex_costs = {}
+
+        if optimize:
+
+            costs = TGraph._FlowCosts(
+                graph,
+                source_index,
+                target_index,
+                edgeKey=edgeKey,
+                vertexKey=vertexKey,
+                silent=silent,
+            )
+
+            if not isinstance(costs, dict):
+                return []
+
+            edge_costs = costs.get(
+                "edge_costs",
+                {},
+            )
+
+            vertex_costs = costs.get(
+                "vertex_costs",
+                {},
+            )
+
+        # ------------------------------------------------------------------
+        # Build transformed network
+        # ------------------------------------------------------------------
+
+        if mode == "vertex":
+
+            network = TGraph._VertexDisjointFlowNetwork(
+                graph,
+                source_index,
+                target_index,
+                vertexCapacity=1.0,
+                edgeCapacity=1.0,
+                edgeCosts=edge_costs,
+                vertexCosts=vertex_costs,
+                silent=silent,
+            )
+
+        else:
+
+            network = TGraph._EdgeDisjointFlowNetwork(
+                graph,
+                source_index,
+                target_index,
+                edgeCosts=edge_costs,
+                vertexCosts=vertex_costs,
+                maxFlow=flow_limit,
+                silent=silent,
+            )
+
+        if not isinstance(network, dict):
+            return []
+
+        # ------------------------------------------------------------------
+        # Solve
+        #
+        # optimize=False:
+        #     maximum cardinality only
+        #
+        # optimize=True:
+        #     maximum cardinality first, minimum total cost second
+        # ------------------------------------------------------------------
+
+        if optimize:
+
+            result = TGraph._MinimumCostFlowEngine(
+                nodes=network.get(
+                    "nodes",
+                    [],
+                ),
+                arcs=network.get(
+                    "arcs",
+                    [],
+                ),
+                source=network.get(
+                    "source",
+                    source_index,
+                ),
+                sink=network.get(
+                    "sink",
+                    target_index,
+                ),
+                maxFlow=flow_limit,
+                tolerance=flow_tolerance,
+            )
+
+        else:
+
+            result = TGraph._MaximumFlowEngine(
+                nodes=network.get(
+                    "nodes",
+                    [],
+                ),
+                arcs=network.get(
+                    "arcs",
+                    [],
+                ),
+                source=network.get(
+                    "source",
+                    source_index,
+                ),
+                sink=network.get(
+                    "sink",
+                    target_index,
+                ),
+                maxFlow=flow_limit,
+                tolerance=flow_tolerance,
+            )
+
+        # ------------------------------------------------------------------
+        # Decompose and collapse
+        # ------------------------------------------------------------------
+
+        transformed_paths = TGraph._FlowPaths(
+            result,
+            tolerance=flow_tolerance,
+        )
+
+        paths = TGraph._CollapseFlowPaths(
+            transformed_paths,
+            network,
+        )
+
+        return paths
+
+    @staticmethod
     def Distance(graph: "TGraph", vertexA: Any, vertexB: Any, distanceType: str = "topological",
                  mode: str = "out", mantissa: int = 6, silent: bool = False) -> Optional[float]:
         """
@@ -14094,6 +20027,77 @@ class TGraph:
             copy=copy,
         )
         return edges[0] if edges else None
+
+    @staticmethod
+    def EdgeConnectivity(
+        graph: "TGraph",
+        source: Any,
+        target: Any,
+        snapEndpoints: bool = True,
+        tolerance: float = 1e-12,
+        silent: bool = False,
+    ) -> int:
+        """
+        Returns the local edge connectivity between source and target.
+
+        This is the maximum number of source-target paths that do not share
+        a physical graph edge. Paths may share intermediate vertices.
+
+        Parameters
+        ----------
+        graph : TGraph
+            The input TGraph.
+        source : Any
+            The source vertex index or vertex-like input.
+        target : Any
+            The target vertex index or vertex-like input.
+        snapEndpoints : bool , optional
+            If True, unresolved vertex-like inputs are snapped to the nearest
+            active TGraph vertex. Default is True.
+        tolerance : float , optional
+            Numerical tolerance used by the maximum-flow calculation.
+            Default is 1e-12.
+        silent : bool , optional
+            If True, suppresses error messages. Default is False.
+
+        Returns
+        -------
+        int
+            The local edge connectivity. Returns 0 if the request is invalid
+            or no source-target path exists.
+        """
+        result = TGraph.MinimumCut(
+            graph,
+            source,
+            target,
+            cut="edge",
+            snapEndpoints=snapEndpoints,
+            tolerance=tolerance,
+            silent=silent,
+        )
+
+        if not isinstance(
+            result,
+            dict,
+        ):
+            return 0
+
+        try:
+            value = float(
+                result.get(
+                    "value",
+                    0.0,
+                )
+            )
+        except Exception:
+            return 0
+
+        if value <= 0.0:
+            return 0
+
+        return int(
+            round(value)
+        )
 
     def EdgeDictionary(
         self,
@@ -17138,66 +23142,76 @@ class TGraph:
         return max(seq) if seq else 0
 
     @staticmethod
-    def MaximumFlow(graph: "TGraph", source: Any, sink: Any, capacityKey: str = "capacity",
-                    defaultCapacity: float = 1.0, silent: bool = False) -> float:
+    def MaximumFlow(
+        graph: "TGraph",
+        source: Any,
+        sink: Any,
+        capacityKey: str = "capacity",
+        defaultCapacity: float = 1.0,
+        silent: bool = False,
+    ) -> float:
         """
         Returns the maximum flow between two vertices of the input TGraph.
 
+        The method constructs an internal capacitated flow network and computes the
+        maximum source-to-sink flow using the reusable TGraph flow engine.
+
         Parameters
         ----------
-        graph : 'TGraph'
+        graph : TGraph
             The input TGraph.
         source : Any
-            The input source vertex, vertex index, or source identifier.
+            The source vertex index or TGraph vertex record.
         sink : Any
-            The input sink value.
+            The sink vertex index or TGraph vertex record.
         capacityKey : str , optional
-            The dictionary key to use. Default is 'capacity'.
+            The edge dictionary key containing the capacity value.
+            Default is "capacity".
         defaultCapacity : float , optional
-            The input default capacity value. Default is 1.0.
+            The capacity assigned to edges for which capacityKey is absent or invalid.
+            Default is 1.0.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
         float
-            The resulting maximum flow value.
+            The maximum flow value.
         """
         if not isinstance(graph, TGraph):
+            if not silent:
+                print("TGraph.MaximumFlow - Error: The input graph is not a valid TGraph. Returning 0.")
             return 0.0
-        s=TGraph.VertexIndex(graph,source); t=TGraph.VertexIndex(graph,sink)
-        if s is None or t is None:
+
+        source_index = TGraph.VertexIndex(graph, source)
+        sink_index = TGraph.VertexIndex(graph, sink)
+
+        if source_index is None or sink_index is None:
+            if not silent:
+                print("TGraph.MaximumFlow - Error: Could not resolve the source or sink vertex. Returning 0.")
             return 0.0
-        cap={}
-        for e in graph._edges:
-            if not e.get("active",True): continue
-            u,v=e.get("src"),e.get("dst")
-            d=e.get("dictionary",{})
-            c=float(d.get(capacityKey, defaultCapacity) or defaultCapacity)
-            cap[(u,v)]=cap.get((u,v),0.0)+c
-            cap.setdefault((v,u),0.0)
-            if not e.get("directed", graph._directed):
-                cap[(v,u)]=cap.get((v,u),0.0)+c
-                cap.setdefault((u,v),cap.get((u,v),0.0))
-        from collections import deque as _deque
-        flow=0.0
-        while True:
-            parent={s:None}
-            q=_deque([s])
-            while q and t not in parent:
-                u=q.popleft()
-                for (a,b),c in list(cap.items()):
-                    if a==u and c>1e-12 and b not in parent:
-                        parent[b]=u; q.append(b)
-            if t not in parent: break
-            inc=float('inf'); v=t
-            while v!=s:
-                u=parent[v]; inc=min(inc,cap[(u,v)]); v=u
-            v=t
-            while v!=s:
-                u=parent[v]; cap[(u,v)]-=inc; cap[(v,u)]=cap.get((v,u),0.0)+inc; v=u
-            flow+=inc
-        return flow
+
+        if source_index == sink_index:
+            return 0.0
+
+        network = TGraph._FlowNetwork(
+            graph,
+            capacityKey=capacityKey,
+            defaultCapacity=defaultCapacity,
+            silent=silent,
+        )
+
+        if not isinstance(network, dict):
+            return 0.0
+
+        result = TGraph._MaximumFlowEngine(
+            nodes=network.get("nodes", []),
+            arcs=network.get("arcs", []),
+            source=source_index,
+            sink=sink_index,
+        )
+
+        return float(result.get("value", 0.0))
 
     @staticmethod
     def Merge(graphA: "TGraph", graphB: "TGraph", silent: bool = False) -> Optional["TGraph"]:
@@ -27838,6 +33852,77 @@ class TGraph:
         except Exception:
             return None
         return None
+
+    @staticmethod
+    def VertexConnectivity(
+        graph: "TGraph",
+        source: Any,
+        target: Any,
+        snapEndpoints: bool = True,
+        tolerance: float = 1e-12,
+        silent: bool = False,
+    ) -> int:
+        """
+        Returns the local vertex connectivity between source and target.
+
+        This is the maximum number of internally vertex-disjoint source-target
+        paths. The source and target themselves may be shared by all paths.
+
+        Parameters
+        ----------
+        graph : TGraph
+            The input TGraph.
+        source : Any
+            The source vertex index or vertex-like input.
+        target : Any
+            The target vertex index or vertex-like input.
+        snapEndpoints : bool , optional
+            If True, unresolved vertex-like inputs are snapped to the nearest
+            active TGraph vertex. Default is True.
+        tolerance : float , optional
+            Numerical tolerance used by the maximum-flow calculation.
+            Default is 1e-12.
+        silent : bool , optional
+            If True, suppresses error messages. Default is False.
+
+        Returns
+        -------
+        int
+            The local vertex connectivity. Returns 0 if the request is invalid
+            or no source-target path exists.
+        """
+        result = TGraph.MinimumCut(
+            graph,
+            source,
+            target,
+            cut="vertex",
+            snapEndpoints=snapEndpoints,
+            tolerance=tolerance,
+            silent=silent,
+        )
+
+        if not isinstance(
+            result,
+            dict,
+        ):
+            return 0
+
+        try:
+            value = float(
+                result.get(
+                    "value",
+                    0.0,
+                )
+            )
+        except Exception:
+            return 0
+
+        if value <= 0.0:
+            return 0
+
+        return int(
+            round(value)
+        )
 
     @staticmethod
     def VertexDegree(graph: "TGraph", vertex: Any, mode: str = "all", silent: bool = False) -> Optional[int]:
