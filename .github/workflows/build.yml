@@ -233,23 +233,24 @@ jobs:
 
   deploy-docs:
     runs-on: ubuntu-latest
-    name: Consider & Deploy Documentation on GH Pages
+    name: Deploy Documentation on GH Pages
     needs:
       - prepare-build-info
-      - publish-pypi-release
       - build-docs
-    if: ${{ startsWith(needs.prepare-build-info.outputs.tagname, 'v') && github.event_name != 'pull_request' && needs.prepare-build-info.outputs.branchname == 'main' }}
+    if: ${{ github.event_name == 'push' && needs.prepare-build-info.outputs.branchname == 'main' }}
     steps:
-      - name: Download docs artifacts
+      - name: Download docs artifact
         uses: actions/download-artifact@v7
         with:
+          name: docs
           path: docs/build/html/
-      - name: Display new structure of downloaded files
+
+      - name: Display generated documentation
         run: |
           find ./docs/build/html/ -type f
+
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v4
-        #if: github.ref == 'refs/heads/main'
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: docs/build/html

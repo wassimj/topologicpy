@@ -16,8 +16,7 @@ build:
 sphinx:
   configuration: docs/source/conf.py
 
-formats:
-  - all
+formats: all
 
 python:
   install:
@@ -26,5 +25,4 @@ python:
       path: .
 
 submodules:
-  include:
-    - all
+  include: all
