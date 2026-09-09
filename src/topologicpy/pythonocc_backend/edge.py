@@ -122,6 +122,31 @@ def _tangent_at_raw_parameter(edge, curve, parameter):
     except Exception:
         return None
 
+def _normal_at_raw_parameter(edge, curve, parameter):
+    """Return the unit principal normal at an OCCT curve parameter, or None at zero curvature."""
+    if not isinstance(edge, Edge):
+        return None
+    try:
+        from OCC.Core.gp import gp_Pnt, gp_Vec
+        point = gp_Pnt()
+        d1 = gp_Vec()
+        d2 = gp_Vec()
+        curve.D2(float(parameter), point, d1, d2)
+        tx, ty, tz = float(d1.X()), float(d1.Y()), float(d1.Z())
+        tmag = math.sqrt(tx*tx + ty*ty + tz*tz)
+        if tmag <= 1.0e-15:
+            return None
+        tx, ty, tz = tx/tmag, ty/tmag, tz/tmag
+        ax, ay, az = float(d2.X()), float(d2.Y()), float(d2.Z())
+        projection = ax*tx + ay*ty + az*tz
+        nx, ny, nz = ax - projection*tx, ay - projection*ty, az - projection*tz
+        nmag = math.sqrt(nx*nx + ny*ny + nz*nz)
+        if nmag <= 1.0e-15:
+            return None
+        return [nx/nmag, ny/nmag, nz/nmag]
+    except Exception:
+        return None
+
 def _wrap_shape_like(source, shape):
     """Wrap an OCCT edge while preserving backend metadata from the source."""
     if not isinstance(source, Edge) or _is_null_shape(shape):
@@ -500,26 +525,66 @@ class Edge(Topology):
 
     @staticmethod
     def Reverse(edge, tolerance: float = 0.0001, silent: bool = False):
-        """Returns a new Edge with start and end swapped."""
+        """
+        Returns an Edge with the reverse topological orientation of the input Edge.
+
+        The underlying OCCT curve geometry is preserved exactly. No reconstruction
+        from the Edge endpoints is performed.
+
+        Parameters
+        ----------
+        edge : Edge
+            The input Edge.
+        tolerance : float , optional
+            The desired tolerance. This parameter is accepted for API compatibility.
+            Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed.
+            Default is False.
+
+        Returns
+        -------
+        Edge
+            The reversed Edge, or None if the Edge cannot be reversed while
+            preserving its geometry.
+
+        """
         if not isinstance(edge, Edge):
             return None
-        return Edge.ByStartVertexEndVertex(edge.end, edge.start)
+
+        if _is_null_shape(getattr(edge, "shape", None)):
+            return None
+
+        try:
+            shape = edge.shape.Reversed()
+
+            if _is_null_shape(shape):
+                return None
+
+            result = _wrap_shape_like(edge, shape)
+
+            if isinstance(result, Edge):
+                return result
+
+        except Exception:
+            pass
+
+        return None
 
     def Direction(self, mantissa: int = 6):
-        """Returns the direction vector [dx, dy, dz] of the edge."""
-        import math
-
-        dx = self.end.x - self.start.x
-        dy = self.end.y - self.start.y
-        dz = self.end.z - self.start.z
-        mag = math.sqrt(dx * dx + dy * dy + dz * dz)
-        if mag == 0:
-            return [0, 0, 0]
-        return [
-            round(dx / mag, mantissa),
-            round(dy / mag, mantissa),
-            round(dz / mag, mantissa),
-        ]
+        """Return the unit chord direction from the oriented start to end Vertex."""
+        if not isinstance(self.start, Vertex) or not isinstance(self.end, Vertex):
+            return None
+        dx = float(self.end.x) - float(self.start.x)
+        dy = float(self.end.y) - float(self.start.y)
+        dz = float(self.end.z) - float(self.start.z)
+        magnitude = math.sqrt(dx * dx + dy * dy + dz * dz)
+        if magnitude <= 0.0:
+            return None
+        result = [dx / magnitude, dy / magnitude, dz / magnitude]
+        if mantissa is None:
+            return result
+        return [round(value, int(mantissa)) for value in result]
 
     def VertexByParameter(self, u: float = 0.0):
         """Return a Vertex at normalized parameter u along the actual OCCT curve."""
@@ -1055,6 +1120,86 @@ class EdgeUtility:
             return None
 
     @staticmethod
+    def PointAtDistance(edge, distance: float = 0.0, origin=None, tolerance: float = 0.0001):
+        """Return a Vertex at signed curvilinear distance from an origin on the Edge.
+
+        Closed edges wrap around their periodic path. Open curved edges are never
+        extrapolated beyond their finite domain; open linear edges may be extended.
+        """
+        if not isinstance(edge, Edge):
+            return None
+        if not isinstance(origin, Vertex):
+            origin = edge.start
+        if not isinstance(origin, Vertex):
+            return None
+        try:
+            requested_distance = float(distance)
+            tol = max(abs(float(tolerance)), 1.0e-12)
+        except Exception:
+            return None
+        if abs(requested_distance) <= tol:
+            return origin
+
+        normalized_origin = EdgeUtility.ParameterAtPoint(edge, origin, tolerance=tol)
+        if normalized_origin is None:
+            return None
+        bounds = _oriented_parameter_bounds(edge)
+        if bounds is None:
+            return None
+        curve, start_parameter, end_parameter = bounds
+        denominator = end_parameter - start_parameter
+        if abs(denominator) <= 1.0e-15:
+            return None
+        raw_origin = start_parameter + normalized_origin * denominator
+        parameter_orientation = 1.0 if denominator >= 0.0 else -1.0
+        closed = EdgeUtility.IsClosed(edge, tolerance=tol)
+
+        # On a closed edge reduce arbitrarily large travel distances to one period.
+        effective_distance = requested_distance
+        if closed:
+            total_length = EdgeUtility.Length(edge, tolerance=tol)
+            if total_length is None or total_length <= tol:
+                return None
+            effective_distance = math.fmod(requested_distance, total_length)
+            if abs(effective_distance) <= tol:
+                return origin
+
+        try:
+            from OCC.Core.GeomAdaptor import GeomAdaptor_Curve
+            from OCC.Core.GCPnts import GCPnts_AbscissaPoint
+            adaptor = GeomAdaptor_Curve(curve)
+            solver = GCPnts_AbscissaPoint(
+                tol,
+                adaptor,
+                effective_distance * parameter_orientation,
+                raw_origin,
+            )
+            if solver.IsDone():
+                parameter_value = float(solver.Parameter())
+                normalized = (parameter_value - start_parameter) / denominator
+                if closed:
+                    normalized = normalized % 1.0
+                    parameter_value = start_parameter + normalized * denominator
+                    return _point_at_raw_parameter(curve, parameter_value)
+                if -tol <= normalized <= 1.0 + tol:
+                    return _point_at_raw_parameter(curve, parameter_value)
+        except Exception:
+            pass
+
+        if closed:
+            return None
+        # Extrapolation beyond a finite edge is exact only for linear geometry.
+        if not EdgeUtility.IsLinear(edge, tolerance=tol):
+            return None
+        tangent = _tangent_at_raw_parameter(edge, curve, raw_origin)
+        if tangent is None:
+            return None
+        return Vertex.ByCoordinates(
+            float(origin.x) + tangent[0] * requested_distance,
+            float(origin.y) + tangent[1] * requested_distance,
+            float(origin.z) + tangent[2] * requested_distance,
+        )
+
     def TangentAtParameter(edge, parameter: float = 0.5):
         """Return the oriented unit tangent vector at normalized parameter u."""
         if not isinstance(edge, Edge):
@@ -1098,59 +1243,14 @@ class EdgeUtility:
 
     @staticmethod
     def NormalAtParameter(edge, parameter):
-        """
-        Not part of the guide's minimum checklist and not called by the
-        topologicpy algorithm layer (verified: zero call sites). Best-effort
-        real implementation for direct Core callers: uses the edge's real
-        OCCT curve (straight or, for Edge.ByCurve-built edges, a B-spline) via
-        GeomLProp_CLProps to get the tangent at the given [0, 1] parameter,
-        then returns any unit vector perpendicular to that tangent (a 1-D
-        curve alone does not define a unique normal/binormal frame).
-        """
-        import math
-
+        """Return the principal unit normal of the actual OCCT curve, or None at zero curvature."""
         if not isinstance(edge, Edge):
             return None
-
-        try:
-            from OCC.Core.BRep import BRep_Tool
-            from OCC.Core.GeomLProp import GeomLProp_CLProps
-
-            curve, first, last = BRep_Tool.Curve(edge.shape)
-            u = first + (last - first) * float(parameter)
-            props = GeomLProp_CLProps(curve, u, 1, 1e-9)
-            if not props.IsTangentDefined():
-                return None
-
-            from OCC.Core.gp import gp_Dir
-
-            tangent_dir = gp_Dir()
-            props.Tangent(tangent_dir)
-            tx, ty, tz = (
-                tangent_dir.X(),
-                tangent_dir.Y(),
-                tangent_dir.Z(),
-            )
-        except Exception:
-            tx = edge.end.x - edge.start.x
-            ty = edge.end.y - edge.start.y
-            tz = edge.end.z - edge.start.z
-            mag = math.sqrt(tx * tx + ty * ty + tz * tz)
-            if mag == 0:
-                return None
-            tx, ty, tz = tx / mag, ty / mag, tz / mag
-
-        # Any vector not parallel to the tangent, made perpendicular via
-        # Gram-Schmidt, then normalized.
-        helper = (0.0, 0.0, 1.0) if abs(tz) < 0.9 else (1.0, 0.0, 0.0)
-        dot = tx * helper[0] + ty * helper[1] + tz * helper[2]
-        nx = helper[0] - dot * tx
-        ny = helper[1] - dot * ty
-        nz = helper[2] - dot * tz
-        mag = math.sqrt(nx * nx + ny * ny + nz * nz)
-        if mag == 0:
+        raw = _raw_parameter(edge, parameter)
+        if raw is None:
             return None
-        return [nx / mag, ny / mag, nz / mag]
+        curve, parameter_value = raw
+        return _normal_at_raw_parameter(edge, curve, parameter_value)
 
     @staticmethod
     def Trim(edge, parameterA: float = 0.0, parameterB: float = 1.0):

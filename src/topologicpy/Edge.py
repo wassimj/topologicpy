@@ -904,6 +904,28 @@ class Edge():
         return edge
 
     @staticmethod
+    def ByCurve(controlPoints,
+                degree: int = 3,
+                isPeriodic: bool = False,
+                tolerance: float = 0.0001,
+                silent: bool = False):
+        """Creates a non-rational B-spline edge using the input vertices as control points.
+
+        This is a convenience wrapper around :meth:`Edge.ByNurbsParameters`.
+        The curve is not a polyline: it remains one topological Edge backed by
+        one continuous B-spline curve.
+        """
+        return Edge.ByNurbsParameters(
+            controlPoints=controlPoints,
+            weights=None,
+            knots=None,
+            isRational=False,
+            isPeriodic=isPeriodic,
+            degree=degree,
+            tolerance=tolerance,
+            silent=silent,
+        )
+
     def ByOffset2D(edge, offset: float = 1.0, tolerance: float = 0.0001):
         """
         Creates an edge offset from the input edge in the XY plane.
@@ -1431,40 +1453,72 @@ class Edge():
         return return_edge
     
     @staticmethod
-    def Direction(edge, mantissa: int = 6) -> list:
+    def Direction(edge, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False) -> list:
         """
-        Returns the direction of the input edge expressed as a list of three numbers.
+        Returns the unit chord direction of the input edge.
+
+        For a curved edge, the direction is defined by the vector from its oriented start vertex to its oriented
+        end vertex. It is therefore a global chord direction rather than a local curve tangent. A closed edge has
+        a degenerate chord and therefore has no global chord direction.
 
         Parameters
         ----------
         edge : topologic_core.Edge
             The input edge.
         mantissa : int , optional
-            The number of decimal places to round the result to. Default is 6.
+            The number of decimal places to round the result to. If None, full
+            available precision is returned. Default is 6.
+        tolerance : float , optional
+            The desired tolerance used to detect a degenerate chord. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
         list
-            The direction of the input edge.
+            The unit chord direction of the input edge, or None if the chord is degenerate.
 
         """
+        import math
         from topologicpy.Vertex import Vertex
-        from topologicpy.Vector import Vector
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(edge, "Edge"):
-            print("Edge.Direction - Error: The input edge parameter is not a valid topologic edge. Returning None.")
+            if not silent:
+                print("Edge.Direction - Error: The input edge parameter is not a valid topologic edge. Returning None.")
             return None
-        sv = Edge.StartVertex(edge)
-        ev = Edge.EndVertex(edge)
-        x = Vertex.X(ev, mantissa=mantissa) - Vertex.X(sv, mantissa=mantissa)
-        y = Vertex.Y(ev, mantissa=mantissa) - Vertex.Y(sv, mantissa=mantissa)
-        z = Vertex.Z(ev, mantissa=mantissa) - Vertex.Z(sv, mantissa=mantissa)
-        uvec = Vector.Normalize([x,y,z])
-        x = round(uvec[0], mantissa)
-        y = round(uvec[1], mantissa)
-        z = round(uvec[2], mantissa)
-        return [x, y, z]
+        try:
+            tolerance = float(tolerance)
+        except Exception:
+            if not silent:
+                print("Edge.Direction - Error: The input tolerance parameter is not a valid number. Returning None.")
+            return None
+        if not math.isfinite(tolerance) or tolerance <= 0.0:
+            if not silent:
+                print("Edge.Direction - Error: The input tolerance parameter must be greater than zero. Returning None.")
+            return None
+        if mantissa is not None:
+            try:
+                mantissa = int(mantissa)
+            except Exception:
+                if not silent:
+                    print("Edge.Direction - Error: The input mantissa parameter is not a valid integer. Returning None.")
+                return None
+
+        sv = Edge.StartVertex(edge, silent=True)
+        ev = Edge.EndVertex(edge, silent=True)
+        if not Topology.IsInstance(sv, "Vertex") or not Topology.IsInstance(ev, "Vertex"):
+            return None
+        x1, y1, z1 = Vertex.Coordinates(sv, mantissa=None)
+        x2, y2, z2 = Vertex.Coordinates(ev, mantissa=None)
+        dx, dy, dz = x2 - x1, y2 - y1, z2 - z1
+        magnitude = math.sqrt(dx * dx + dy * dy + dz * dz)
+        if magnitude <= tolerance:
+            if not silent:
+                print("Edge.Direction - Error: The input edge has a degenerate start-to-end chord. Returning None.")
+            return None
+        result = [dx / magnitude, dy / magnitude, dz / magnitude]
+        return result if mantissa is None else [round(value, mantissa) for value in result]
     
     @staticmethod
     def EndVertex(edge, silent: bool = False):
@@ -1554,18 +1608,28 @@ class Edge():
     @staticmethod
     def Extend(edge, distance: float = 1.0, bothSides: bool = True, reverse: bool = False, tolerance: float = 0.0001, silent: bool = False):
         """
-        Extends the input edge by the input distance.
+        Extends a geometrically linear edge by the input distance.
+
+        This method is intended only for geometrically linear edges. Curved edges
+        are not modified and will cause the method to return None.
+
+        If bothSides is True, half of the input distance is added to each end of
+        the edge. Otherwise, the end vertex is extended unless reverse is True, in
+        which case the start vertex is extended. The dictionary of the input edge
+        is transferred to the returned edge.
 
         Parameters
         ----------
         edge : topologic_core.Edge
             The input edge.
         distance : float , optional
-            The offset distance. Default is 1.
+            The total distance by which to extend the edge. Default is 1.0.
         bothSides : bool , optional
-            If set to True, the edge will be extended by half the distance at each end. Default is False.
+            If set to True, the extension is distributed equally between both ends.
+            Default is True.
         reverse : bool , optional
-            If set to True, the edge will be extended from its start vertex. Otherwise, it will be extended from its end vertex. Default is False.
+            If bothSides is False and reverse is True, extend the start vertex.
+            Default is False.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
@@ -1574,29 +1638,79 @@ class Edge():
         Returns
         -------
         topologic_core.Edge
-            The extended edge.
-
+            The extended edge, or None if the operation cannot be completed.
         """
+        import math
+        from topologicpy.Vertex import Vertex
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(edge, "Edge"):
-            print("Edge.Extend - Error: The input edge parameter is not a valid topologic edge. Returning None.")
+            if not silent:
+                print("Edge.Extend - Error: The input edge parameter is not a valid topologic edge. Returning None.")
             return None
-        distance = abs(distance)
+        try:
+            tolerance = float(tolerance)
+        except Exception:
+            if not silent:
+                print("Edge.Extend - Error: The input tolerance parameter is not a valid number. Returning None.")
+            return None
+        if not math.isfinite(tolerance) or tolerance <= 0.0:
+            if not silent:
+                print("Edge.Extend - Error: The input tolerance parameter must be greater than zero. Returning None.")
+            return None
+        if not Edge.IsLinear(edge, tolerance=tolerance, silent=True):
+            if not silent:
+                print("Edge.Extend - Error: The input edge is curved. This method only supports geometrically linear edges. Returning None.")
+            return None
+        try:
+            distance = abs(float(distance))
+        except Exception:
+            if not silent:
+                print("Edge.Extend - Error: The input distance parameter is not a valid number. Returning None.")
+            return None
+        if not math.isfinite(distance):
+            if not silent:
+                print("Edge.Extend - Error: The input distance parameter must be finite. Returning None.")
+            return None
         if distance <= tolerance:
             return edge
-        sv = Edge.StartVertex(edge)
-        ev = Edge.EndVertex(edge)
+
+        start = Edge.StartVertex(edge, silent=True)
+        end = Edge.EndVertex(edge, silent=True)
+        direction = Edge.Direction(edge, mantissa=None, tolerance=tolerance, silent=True)
+        if not Topology.IsInstance(start, "Vertex") or not Topology.IsInstance(end, "Vertex") or direction is None:
+            if not silent:
+                print("Edge.Extend - Error: Could not determine valid edge endpoints or direction. Returning None.")
+            return None
+
+        sx, sy, sz = Vertex.Coordinates(start, mantissa=None)
+        ex, ey, ez = Vertex.Coordinates(end, mantissa=None)
+        dx, dy, dz = direction
+
         if bothSides:
-            sve = Edge.VertexByDistance(edge, distance=-distance*0.5, origin=sv, tolerance=tolerance)
-            eve = Edge.VertexByDistance(edge, distance=distance*0.5, origin=ev, tolerance=tolerance)
+            d = 0.5 * distance
+            new_start = Vertex.ByCoordinates(sx - dx*d, sy - dy*d, sz - dz*d)
+            new_end = Vertex.ByCoordinates(ex + dx*d, ey + dy*d, ez + dz*d)
         elif reverse:
-            sve = Edge.VertexByDistance(edge, distance=-distance, origin=sv, tolerance=tolerance)
-            eve = Edge.EndVertex(edge)
+            new_start = Vertex.ByCoordinates(sx - dx*distance, sy - dy*distance, sz - dz*distance)
+            new_end = end
         else:
-            sve = Edge.StartVertex(edge)
-            eve = Edge.VertexByDistance(edge, distance=distance, origin=ev, tolerance=tolerance)
-        return Edge.ByVertices([sve, eve], tolerance=tolerance, silent=silent)
+            new_start = start
+            new_end = Vertex.ByCoordinates(ex + dx*distance, ey + dy*distance, ez + dz*distance)
+
+        result = Edge.ByStartVertexEndVertex(new_start, new_end, tolerance=tolerance, silent=True)
+        if not Topology.IsInstance(result, "Edge"):
+            if not silent:
+                print("Edge.Extend - Error: Could not create the extended edge. Returning None.")
+            return None
+        try:
+            dictionary = Topology.Dictionary(edge, silent=True)
+            updated = Topology.SetDictionary(result, dictionary, silent=True)
+            if Topology.IsInstance(updated, "Edge"):
+                result = updated
+        except Exception:
+            pass
+        return result
 
     @staticmethod
     def ExtendToEdge(edgeA, edgeB, mantissa: int = 6, step: bool = True, tolerance: float = 0.0001, silent: bool = False):
@@ -1708,6 +1822,629 @@ class Edge():
         return Cluster.ByTopologies([Edge.StartVertex(edge), Edge.EndVertex(edge)])
     
     @staticmethod
+    def Helix(
+        origin=None,
+        radius: float = 0.5,
+        height: float = 1.0,
+        turns: float = 1.0,
+        sides: int = 16,
+        clockwise: bool = False,
+        direction: list = [0, 0, 1],
+        placement: str = "center",
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
+        """
+        Creates a single smooth helical Edge.
+
+        The helix is represented as one cubic B-spline Edge composed internally
+        of tangent-matched cubic Bezier spans. The curve closely approximates the
+        analytic circular helix while remaining one topological Edge.
+
+        Unlike circles, ellipses, parabolas, and hyperbolas, a circular helix does
+        not have an exact finite NURBS representation.
+
+        In its canonical orientation, the helix has its axis along the positive
+        Z-axis and starts at (radius, 0, 0).
+
+        Parameters
+        ----------
+        origin : topologic_core.Vertex , optional
+            The placement origin. If None, the global origin is used.
+            Default is None.
+        radius : float , optional
+            The radius of the helix. Default is 0.5.
+        height : float , optional
+            The total height of the helix measured along its axis.
+            Default is 1.0.
+        turns : float , optional
+            The number of complete turns. Fractional turns are permitted.
+            Default is 1.0.
+        sides : int , optional
+            The number of cubic curve spans per complete turn. Increasing this
+            value improves geometric accuracy without increasing the number of
+            topological Edges. Default is 16.
+        clockwise : bool , optional
+            If set to True, the helix rotates clockwise when viewed along its
+            positive axis. Otherwise, it rotates counter-clockwise.
+            Default is False.
+        direction : list , optional
+            The direction of the helix axis. Default is [0, 0, 1].
+        placement : str , optional
+            Specifies which canonical location is placed at the input origin.
+            Valid options are "center", "base", "bottom", "start", and "end".
+            "base" and "bottom" refer to the centre of the base circle.
+            Default is "center".
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed.
+            Default is False.
+
+        Returns
+        -------
+        topologic_core.Edge
+            The created helical Edge, or None if it cannot be created.
+
+        """
+        import math
+
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
+
+        if origin is None:
+            origin = Vertex.Origin()
+
+        if not Topology.IsInstance(origin, "Vertex"):
+            if not silent:
+                print("Edge.Helix - Error: The input origin parameter is not a valid vertex. Returning None.")
+            return None
+
+        try:
+            radius = abs(float(radius))
+            height = abs(float(height))
+            turns = abs(float(turns))
+            sides = int(math.floor(abs(float(sides))))
+            tolerance = float(tolerance)
+        except Exception:
+            if not silent:
+                print("Edge.Helix - Error: One or more numerical parameters are invalid. Returning None.")
+            return None
+
+        if not all(
+            math.isfinite(value)
+            for value in [
+                radius,
+                height,
+                turns,
+                tolerance,
+            ]
+        ):
+            if not silent:
+                print("Edge.Helix - Error: One or more numerical parameters are not finite. Returning None.")
+            return None
+
+        if tolerance <= 0.0:
+            if not silent:
+                print("Edge.Helix - Error: The input tolerance parameter must be greater than zero. Returning None.")
+            return None
+
+        if radius <= tolerance:
+            if not silent:
+                print("Edge.Helix - Error: The radius must be greater than the input tolerance. Returning None.")
+            return None
+
+        if height <= tolerance:
+            if not silent:
+                print("Edge.Helix - Error: The height must be greater than the input tolerance. Returning None.")
+            return None
+
+        if turns <= 0.0:
+            if not silent:
+                print("Edge.Helix - Error: The number of turns must be greater than zero. Returning None.")
+            return None
+
+        if sides < 4:
+            if not silent:
+                print("Edge.Helix - Error: The sides parameter must be at least 4. Returning None.")
+            return None
+
+        if not isinstance(direction, (list, tuple)) or len(direction) != 3:
+            if not silent:
+                print("Edge.Helix - Error: The input direction parameter is not a valid 3D vector. Returning None.")
+            return None
+
+        try:
+            direction = [
+                float(direction[0]),
+                float(direction[1]),
+                float(direction[2]),
+            ]
+        except Exception:
+            if not silent:
+                print("Edge.Helix - Error: The input direction parameter is not numerical. Returning None.")
+            return None
+
+        magnitude = math.sqrt(
+            sum(value * value for value in direction)
+        )
+
+        if not math.isfinite(magnitude) or magnitude <= tolerance:
+            if not silent:
+                print("Edge.Helix - Error: The input direction vector has zero magnitude. Returning None.")
+            return None
+
+        direction = [
+            value / magnitude
+            for value in direction
+        ]
+
+        if not isinstance(placement, str):
+            if not silent:
+                print("Edge.Helix - Error: The input placement parameter is not a valid string. Returning None.")
+            return None
+
+        placement = placement.lower()
+
+        if placement == "bottom":
+            placement = "base"
+
+        if placement not in [
+            "center",
+            "base",
+            "start",
+            "end",
+        ]:
+            if not silent:
+                print("Edge.Helix - Error: The placement must be center, base, bottom, start, or end. Returning None.")
+            return None
+
+        orientation = -1.0 if bool(clockwise) else 1.0
+
+        theta_total = (
+            orientation
+            * 2.0
+            * math.pi
+            * turns
+        )
+
+        # Number of cubic spans. "sides" controls approximation resolution,
+        # not topological segmentation.
+        span_count = max(
+            1,
+            int(
+                math.ceil(
+                    turns * sides
+                )
+            ),
+        )
+
+        dz_dtheta = height / theta_total
+
+        control_points = []
+
+        for i in range(span_count):
+            theta0 = (
+                theta_total
+                * float(i)
+                / float(span_count)
+            )
+
+            theta1 = (
+                theta_total
+                * float(i + 1)
+                / float(span_count)
+            )
+
+            delta = theta1 - theta0
+
+            z0 = (
+                height
+                * float(i)
+                / float(span_count)
+            )
+
+            z1 = (
+                height
+                * float(i + 1)
+                / float(span_count)
+            )
+
+            p0 = [
+                radius * math.cos(theta0),
+                radius * math.sin(theta0),
+                z0,
+            ]
+
+            p3 = [
+                radius * math.cos(theta1),
+                radius * math.sin(theta1),
+                z1,
+            ]
+
+            tangent0 = [
+                -radius * math.sin(theta0),
+                radius * math.cos(theta0),
+                dz_dtheta,
+            ]
+
+            tangent1 = [
+                -radius * math.sin(theta1),
+                radius * math.cos(theta1),
+                dz_dtheta,
+            ]
+
+            p1 = [
+                p0[j] + delta * tangent0[j] / 3.0
+                for j in range(3)
+            ]
+
+            p2 = [
+                p3[j] - delta * tangent1[j] / 3.0
+                for j in range(3)
+            ]
+
+            if i == 0:
+                control_points.append(
+                    Vertex.ByCoordinates(*p0)
+                )
+
+            control_points.append(
+                Vertex.ByCoordinates(*p1)
+            )
+
+            control_points.append(
+                Vertex.ByCoordinates(*p2)
+            )
+
+            control_points.append(
+                Vertex.ByCoordinates(*p3)
+            )
+
+        # Piecewise cubic Bezier representation as one B-spline Edge.
+        #
+        # Each internal knot has multiplicity 3, producing independent cubic
+        # Bezier spans while preserving the single topological Edge.
+        knots = [0.0] * 4
+
+        for i in range(1, span_count):
+            knot = (
+                float(i)
+                / float(span_count)
+            )
+
+            knots.extend([
+                knot,
+                knot,
+                knot,
+            ])
+
+        knots.extend([1.0] * 4)
+
+        edge = Edge.ByNurbsParameters(
+            controlPoints=control_points,
+            weights=None,
+            knots=knots,
+            isRational=False,
+            isPeriodic=False,
+            degree=3,
+            tolerance=tolerance,
+            silent=True,
+        )
+
+        if not Topology.IsInstance(edge, "Edge"):
+            if not silent:
+                print("Edge.Helix - Error: Could not create the helical edge. Returning None.")
+            return None
+
+        if placement == "center":
+            source_origin = Vertex.ByCoordinates(
+                0.0,
+                0.0,
+                height * 0.5,
+            )
+
+        elif placement == "base":
+            source_origin = Vertex.Origin()
+
+        elif placement == "start":
+            source_origin = Edge.StartVertex(
+                edge,
+                silent=True,
+            )
+
+        else:
+            source_origin = Edge.EndVertex(
+                edge,
+                silent=True,
+            )
+
+        edge = Topology.OrientAndPlace(
+            edge,
+            originA=source_origin,
+            originB=origin,
+            dirA=[0, 0, 1],
+            dirB=direction,
+            tolerance=tolerance,
+            silent=True,
+        )
+
+        if not Topology.IsInstance(edge, "Edge"):
+            if not silent:
+                print("Edge.Helix - Error: Could not orient and place the helix. Returning None.")
+            return None
+
+        return edge
+
+    def Hyperbola(
+        origin=None,
+        a: float = 1.0,
+        b: float = 0.5,
+        fromParameter: float = -1.0,
+        toParameter: float = 1.0,
+        branch: str = "right",
+        direction: list = [0, 0, 1],
+        placement: str = "center",
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
+        """
+        Creates a single exact hyperbolic Edge.
+
+        In its canonical orientation, the hyperbola lies in the XY plane and is
+        defined by:
+
+            x^2 / a^2 - y^2 / b^2 = 1
+
+        The right branch is parametrically defined by:
+
+            x = a*cosh(u)
+            y = b*sinh(u)
+
+        and the left branch is its reflection across the Y-axis.
+
+        The resulting curve is represented exactly as a rational quadratic
+        Bezier/NURBS curve.
+
+        Parameters
+        ----------
+        origin : topologic_core.Vertex , optional
+            The placement origin. If None, the global origin is used.
+            Default is None.
+        a : float , optional
+            The semi-transverse axis length. Default is 1.0.
+        b : float , optional
+            The semi-conjugate axis length. Default is 0.5.
+        fromParameter : float , optional
+            The starting hyperbolic parameter. Default is -1.0.
+        toParameter : float , optional
+            The ending hyperbolic parameter. Default is 1.0.
+        branch : str , optional
+            The branch of the hyperbola. Valid options are "right" and "left".
+            Default is "right".
+        direction : list , optional
+            The normal vector of the plane containing the hyperbola.
+            Default is [0, 0, 1].
+        placement : str , optional
+            Specifies which canonical location is placed at the input origin.
+            Valid options are "center", "vertex", "start", and "end".
+            Default is "center".
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed.
+            Default is False.
+
+        Returns
+        -------
+        topologic_core.Edge
+            The created exact hyperbolic Edge, or None if it cannot be created.
+
+        """
+        import math
+
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
+
+        if origin is None:
+            origin = Vertex.Origin()
+
+        if not Topology.IsInstance(origin, "Vertex"):
+            if not silent:
+                print("Edge.Hyperbola - Error: The input origin parameter is not a valid vertex. Returning None.")
+            return None
+
+        try:
+            a = abs(float(a))
+            b = abs(float(b))
+            fromParameter = float(fromParameter)
+            toParameter = float(toParameter)
+            tolerance = float(tolerance)
+        except Exception:
+            if not silent:
+                print("Edge.Hyperbola - Error: One or more numerical parameters are invalid. Returning None.")
+            return None
+
+        if not all(
+            math.isfinite(value)
+            for value in [
+                a,
+                b,
+                fromParameter,
+                toParameter,
+                tolerance,
+            ]
+        ):
+            if not silent:
+                print("Edge.Hyperbola - Error: One or more numerical parameters are not finite. Returning None.")
+            return None
+
+        if tolerance <= 0.0:
+            if not silent:
+                print("Edge.Hyperbola - Error: The input tolerance parameter must be greater than zero. Returning None.")
+            return None
+
+        if a <= tolerance or b <= tolerance:
+            if not silent:
+                print("Edge.Hyperbola - Error: The a and b parameters must be greater than the input tolerance. Returning None.")
+            return None
+
+        if abs(toParameter - fromParameter) <= 1.0e-12:
+            if not silent:
+                print("Edge.Hyperbola - Error: The fromParameter and toParameter values must be different. Returning None.")
+            return None
+
+        if not isinstance(branch, str):
+            if not silent:
+                print("Edge.Hyperbola - Error: The input branch parameter is not a valid string. Returning None.")
+            return None
+
+        branch = branch.lower()
+
+        if branch not in ["right", "left"]:
+            if not silent:
+                print("Edge.Hyperbola - Error: The branch must be right or left. Returning None.")
+            return None
+
+        if not isinstance(direction, (list, tuple)) or len(direction) != 3:
+            if not silent:
+                print("Edge.Hyperbola - Error: The input direction parameter is not a valid 3D vector. Returning None.")
+            return None
+
+        try:
+            direction = [
+                float(direction[0]),
+                float(direction[1]),
+                float(direction[2]),
+            ]
+        except Exception:
+            if not silent:
+                print("Edge.Hyperbola - Error: The input direction parameter is not numerical. Returning None.")
+            return None
+
+        magnitude = math.sqrt(
+            sum(value * value for value in direction)
+        )
+
+        if not math.isfinite(magnitude) or magnitude <= tolerance:
+            if not silent:
+                print("Edge.Hyperbola - Error: The input direction vector has zero magnitude. Returning None.")
+            return None
+
+        direction = [
+            value / magnitude
+            for value in direction
+        ]
+
+        if not isinstance(placement, str):
+            if not silent:
+                print("Edge.Hyperbola - Error: The input placement parameter is not a valid string. Returning None.")
+            return None
+
+        placement = placement.lower()
+
+        if placement not in [
+            "center",
+            "vertex",
+            "start",
+            "end",
+        ]:
+            if not silent:
+                print("Edge.Hyperbola - Error: The placement must be center, vertex, start, or end. Returning None.")
+            return None
+
+        sign = 1.0 if branch == "right" else -1.0
+
+        # Convert the natural hyperbolic parameter u to the rational conic
+        # parameter t = tanh(u / 2).
+        t0 = math.tanh(0.5 * fromParameter)
+        t1 = math.tanh(0.5 * toParameter)
+
+        w0 = 1.0 - t0 * t0
+        w1 = 1.0 - t0 * t1
+        w2 = 1.0 - t1 * t1
+
+        if min(w0, w1, w2) <= 1.0e-14:
+            if not silent:
+                print("Edge.Hyperbola - Error: The requested parameter range is too large for a numerically stable finite hyperbola segment. Returning None.")
+            return None
+
+        # Homogeneous quadratic Bezier control points for the rational
+        # parameterization:
+        #
+        # x = a * (1 + t^2) / (1 - t^2)
+        # y = 2*b*t / (1 - t^2)
+        #
+        # reflected in X for the left branch.
+        p0 = Vertex.ByCoordinates(
+            sign * a * (1.0 + t0 * t0) / w0,
+            2.0 * b * t0 / w0,
+            0.0,
+        )
+
+        p1 = Vertex.ByCoordinates(
+            sign * a * (1.0 + t0 * t1) / w1,
+            b * (t0 + t1) / w1,
+            0.0,
+        )
+
+        p2 = Vertex.ByCoordinates(
+            sign * a * (1.0 + t1 * t1) / w2,
+            2.0 * b * t1 / w2,
+            0.0,
+        )
+
+        edge = Edge.Bezier(
+            [p0, p1, p2],
+            weights=[w0, w1, w2],
+            tolerance=tolerance,
+            silent=True,
+        )
+
+        if not Topology.IsInstance(edge, "Edge"):
+            if not silent:
+                print("Edge.Hyperbola - Error: Could not create the hyperbolic edge. Returning None.")
+            return None
+
+        if placement == "center":
+            source_origin = Vertex.Origin()
+
+        elif placement == "vertex":
+            source_origin = Vertex.ByCoordinates(
+                sign * a,
+                0.0,
+                0.0,
+            )
+
+        elif placement == "start":
+            source_origin = Edge.StartVertex(
+                edge,
+                silent=True,
+            )
+
+        else:
+            source_origin = Edge.EndVertex(
+                edge,
+                silent=True,
+            )
+
+        edge = Topology.OrientAndPlace(
+            edge,
+            originA=source_origin,
+            originB=origin,
+            dirA=[0, 0, 1],
+            dirB=direction,
+            tolerance=tolerance,
+            silent=True,
+        )
+
+        if not Topology.IsInstance(edge, "Edge"):
+            if not silent:
+                print("Edge.Hyperbola - Error: Could not orient and place the hyperbola. Returning None.")
+            return None
+
+        return edge
+
     def Index(edge, edges: list, strict: bool = False, tolerance: float = 0.0001) -> int:
         """
         Returns index of the input edge in the input list of edges
@@ -2202,36 +2939,56 @@ class Edge():
         return are_lines_parallel(line1, line2, tolerance=tolerance)
 
     @staticmethod
-    def Length(edge, mantissa: int = 6) -> float:
+    def Length(edge, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False) -> float:
         """
-        Returns the length of the input edge.
+        Returns the geometric length of the input edge.
+
+        The length is evaluated by the active backend from the actual edge curve,
+        not from the start-to-end chord.
 
         Parameters
         ----------
         edge : topologic_core.Edge
             The input edge.
         mantissa : int , optional
-            The number of decimal places to round the result to. Default is 6.
+            The number of decimal places to round the result to. If None, full
+            available precision is returned. Default is 6.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
         float
-            The length of the input edge.
-
+            The geometric length of the input edge.
         """
+        import math
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(edge, "Edge"):
-            print("Edge.Length - Error: The input edge parameter is not a valid topologic edge. Returning None.")
+            if not silent:
+                print("Edge.Length - Error: The input edge parameter is not a valid topologic edge. Returning None.")
             return None
-        length = None
         try:
-            length = Core.EdgeUtility.Length(edge)
-        except:
+            tolerance = float(tolerance)
+        except Exception:
+            tolerance = 0.0001
+        try:
+            length = Core.EdgeUtility.Length(edge, tolerance)
+        except TypeError:
+            try:
+                length = Core.EdgeUtility.Length(edge)
+            except Exception:
+                length = None
+        except Exception:
             length = None
-        if length == None:
-            print("Edge.Length - Error: Could not compute the length of the input edge parameter. Returning None.")
-        return round(length, mantissa)
+        if not isinstance(length, (int, float)) or not math.isfinite(float(length)):
+            if not silent:
+                print("Edge.Length - Error: Could not compute the length of the input edge. Returning None.")
+            return None
+        value = float(length)
+        return value if mantissa is None else round(value, int(mantissa))
 
     @staticmethod
     def Line(origin= None, length: float = 1, direction: list = [1,0,0], placement: str ="center", tolerance: float = 0.0001):
@@ -2296,171 +3053,136 @@ class Edge():
             return None
     
     @staticmethod
-    def Normal(edge, angle: float = 0.0):
+    def NormalAtParameter(edge, u: float = 0.5, angle: float = 0.0, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False) -> list:
+        """Returns a deterministic unit normal vector to the actual edge curve.
+
+        For a genuinely curved edge, the principal normal supplied by the active
+        backend is used when defined. For a straight edge, or at zero curvature,
+        the historical TopologicPy transverse-normal convention is used: an XY
+        edge receives its left-hand in-plane normal. ``angle`` rotates the normal
+        about the local tangent.
         """
-        Returns the normal (perpendicular) vector to the input edge.
-
-        Parameters
-        ----------
-        edge : topologic_core.Edge
-            The input edge.
-        angle : float , optional
-            The desired rotational offset angle in degrees for the normal edge. This rotates the normal edge
-            by the angle value around the axis defined by the input edge. Default is 0.0.
-
-        Returns
-        -------
-        list
-            The normal (perpendicular ) vector to the input edge.
-
-        """
+        import math
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(edge, "Edge"):
-            print("Edge.Normal - Error: The input edge parameter is not a valid edge. Returning None.")
+            if not silent:
+                print("Edge.NormalAtParameter - Error: The input edge is invalid. Returning None.")
             return None
-        normal_edge = Edge.NormalEdge(edge, length=1.0, u=0.5, angle=angle)
-        return Edge.Direction(normal_edge)
+        try:
+            u = max(0.0, min(1.0, float(u)))
+            angle = float(angle)
+        except Exception:
+            if not silent:
+                print("Edge.NormalAtParameter - Error: The input u or angle parameter is not numerical. Returning None.")
+            return None
+
+        tangent = Edge.TangentAtParameter(edge, u=u, mantissa=None, tolerance=tolerance, silent=True)
+        if tangent is None:
+            return None
+        tx, ty, tz = [float(value) for value in tangent[:3]]
+
+        normal = None
+        if not Edge.IsLinear(edge, tolerance=tolerance, silent=True):
+            try:
+                if Core.HasAttribute("EdgeUtility", "NormalAtParameter"):
+                    normal = Core.EdgeUtility.NormalAtParameter(edge, u)
+            except Exception:
+                normal = None
+            if normal is None:
+                du = max(1.0e-6, min(1.0e-3, abs(float(tolerance))*10.0))
+                ta = Edge.TangentAtParameter(edge, u=max(0.0, u-du), mantissa=None, tolerance=tolerance, silent=True)
+                tb = Edge.TangentAtParameter(edge, u=min(1.0, u+du), mantissa=None, tolerance=tolerance, silent=True)
+                if ta is not None and tb is not None:
+                    normal = [float(tb[i])-float(ta[i]) for i in range(3)]
+
+        try:
+            magnitude = math.sqrt(sum(float(value)*float(value) for value in normal[:3])) if normal is not None else 0.0
+        except Exception:
+            magnitude = 0.0
+        if magnitude <= max(abs(float(tolerance)), 1.0e-12):
+            if abs(tx) <= tolerance and abs(ty) <= tolerance:
+                normal = [1.0, 0.0, 0.0]
+            elif abs(tz) <= tolerance:
+                normal = [-ty, tx, 0.0]
+            else:
+                normal = [ty, -tx, 0.0]
+
+        try:
+            nx, ny, nz = [float(value) for value in normal[:3]]
+            magnitude = math.sqrt(nx*nx + ny*ny + nz*nz)
+            if magnitude <= max(abs(float(tolerance)), 1.0e-12):
+                return None
+            nx, ny, nz = nx/magnitude, ny/magnitude, nz/magnitude
+            if abs(angle) > tolerance:
+                radians = math.radians(angle)
+                c = math.cos(radians)
+                s = math.sin(radians)
+                dot = tx*nx + ty*ny + tz*nz
+                nx, ny, nz = (
+                    nx*c + (ty*nz-tz*ny)*s + tx*dot*(1-c),
+                    ny*c + (tz*nx-tx*nz)*s + ty*dot*(1-c),
+                    nz*c + (tx*ny-ty*nx)*s + tz*dot*(1-c),
+                )
+            result = [nx, ny, nz]
+            return result if mantissa is None else [round(value, mantissa) for value in result]
+        except Exception:
+            return None
+
+    def Normal(edge, angle: float = 0.0, tolerance: float = 0.0001, silent: bool = False):
+        """Returns a deterministic unit normal at the midpoint of the actual edge curve."""
+        return Edge.NormalAtParameter(edge, u=0.5, angle=angle, tolerance=tolerance, silent=silent)
 
     @staticmethod
     def NormalEdge(edge, length: float = 1.0, u: float = 0.5, angle: float = 0.0, tolerance: float = 0.0001, silent: bool = False):
-        """
-        Returns the normal (perpendicular) vector to the input edge as an edge.
-
-        Parameters
-        ----------
-        edge : topologic_core.Edge
-            The input edge.
-        length : float , optional
-            The desired length of the normal edge. Default is 1.0.
-        u : float , optional
-            The desired u parameter placement of the normal edge. A value of 0.0 places the normal edge
-            at the start vertex of the input edge, a value of 0.5 places the normal edge
-            at the midpoint of the input edge, and a value of 1.0 places the normal edge
-            at the end vertex of the input edge. Default is 0.5
-        angle : float , optional
-            The desired rotational offset angle in degrees for the normal edge. This rotates the normal edge
-            by the angle value around the axis defined by the input edge. Default is 0.0.
-        tolerance : float , optional
-            The desired tolerance. Default is 0.0001.
-        silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
-        
-        Returns
-        -------
-        topologic_core.Edge
-            The normal (perpendicular) vector to the input edge as an edge.
-
-        """
-        import numpy as np
-        from numpy.linalg import norm
-        from topologicpy.Core import Core
+        """Creates a straight edge along the local normal of the actual input curve at parameter ``u``."""
         from topologicpy.Vertex import Vertex
         from topologicpy.Topology import Topology
-
-
-
-        def calculate_normal(start_vertex, end_vertex):
-            start_vertex = np.array([float(x) for x in start_vertex])
-            end_vertex = np.array([float(x) for x in end_vertex])
-
-            # Calculate the direction vector of the edge
-            direction_vector = end_vertex - start_vertex
-            
-            # Check if the edge is vertical (only Z component)
-            if np.isclose(direction_vector[0], 0) and np.isclose(direction_vector[1], 0):
-                # Choose an arbitrary perpendicular vector in the X-Y plane, e.g., [1, 0, 0]
-                normal_vector = np.array([1.0, 0.0, 0.0])
-            elif np.isclose(direction_vector[2], 0):
-                # The edge lies in the X-Y plane; compute a perpendicular in the X-Y plane
-                normal_vector = np.array([-direction_vector[1], direction_vector[0], 0.0])
-            else:
-                # Otherwise, calculate the normal by crossing with the Z-axis
-                z_axis = np.array([0, 0, 1])
-                normal_vector = np.cross(direction_vector, z_axis)
-
-            # Check if the normal vector is effectively zero before normalization
-            if np.isclose(norm(normal_vector), 0):
-                return normal_vector
-    
-            # Normalize the normal vector
-            normal_vector /= norm(normal_vector)  
-            return normal_vector
-
-        def calculate_normal_line(start_vertex, end_vertex):
-            # Calculate the normal vector of the line
-            normal_vector = calculate_normal(start_vertex, end_vertex)
-
-            # Calculate the new end vertex for the normal line to have a length of 1
-            normal_end_vertex = np.array(start_vertex) + normal_vector
-
-            # Return the start and end vertices of the normal line
-            return start_vertex, normal_end_vertex
-
         if not Topology.IsInstance(edge, "Edge"):
-            if not silent:
-                print("Edge.NormalEdge - Error: The input edge parameter is not a valid edge. Returning None.")
+            if not silent: print("Edge.NormalEdge - Error: The input edge is invalid. Returning None.")
             return None
-        if length <= 0.0:
-            if not silent:
-                print("Edge.NormalEdge - Error: The input length parameter is not a positive number greater than zero. Returning None.")
+        if not isinstance(length,(int,float)) or float(length) <= tolerance:
+            if not silent: print("Edge.NormalEdge - Error: The length must be greater than tolerance. Returning None.")
             return None
-
-        # Get start and end vertex coordinates
-        start_vertex = Vertex.Coordinates(Edge.StartVertex(edge))
-        end_vertex = Vertex.Coordinates(Edge.EndVertex(edge))
-
-        # Calculate the normal line
-        normal_line_start, normal_line_end = calculate_normal_line(start_vertex, end_vertex)
-        # Create the normal edge in Topologic
-        sv = Vertex.ByCoordinates(list(normal_line_start))
-        ev = Vertex.ByCoordinates(list(normal_line_end))
-        
-        # Create an edge from the start to the end of the normal vector
-        normal_edge = Edge.ByVertices([sv, ev], tolerance=tolerance, silent=silent)
-        if normal_edge == None:
-            if not silent:
-                print("Edge.NormalEdge - Error: Could not create edge. Returning None.")
-            return None
-        # Set the length of the normal edge
-        normal_edge = Edge.SetLength(normal_edge, length, bothSides=False, tolerance=tolerance)
-
-        # Rotate the normal edge around the input edge by the specified angle
-        edge_direction = Edge.Direction(edge)
-        x, y, z = edge_direction
-        normal_edge = Topology.Rotate(normal_edge, origin=Edge.StartVertex(normal_edge), axis=[x, y, z], angle=angle)
-
-        # Translate the normal edge along the edge direction according to the u parameter
-        dist = Edge.Length(edge) * u
-        normal_edge = Topology.TranslateByDirectionDistance(normal_edge, edge_direction, dist)
-
-        return normal_edge
+        origin=Edge.VertexByParameter(edge,u=u,tolerance=tolerance,silent=True)
+        normal=Edge.NormalAtParameter(edge,u=u,angle=angle,mantissa=None,tolerance=tolerance,silent=True)
+        if not Topology.IsInstance(origin,"Vertex") or normal is None: return None
+        x,y,z=Vertex.Coordinates(origin,mantissa=None)
+        end=Vertex.ByCoordinates(x+normal[0]*length,y+normal[1]*length,z+normal[2]*length)
+        return Edge.ByStartVertexEndVertex(origin,end,tolerance=tolerance,silent=silent)
 
     @staticmethod
     def Normalize(edge, useEndVertex: bool = False, tolerance: float = 0.0001, silent: bool = False):
         """
-        Creates a normalized edge that has the same direction as the input edge, but a length of 1.
+        Returns a geometrically linear edge of unit length.
+
+        This method is intended only for geometrically linear edges. Curved edges
+        are not modified and will cause the method to return None.
+
+        By default, the start vertex of the input edge remains fixed. If
+        useEndVertex is True, the end vertex remains fixed instead.
 
         Parameters
         ----------
         edge : topologic_core.Edge
             The input edge.
         useEndVertex : bool , optional
-            If True, the normalized edge end vertex will be placed at the end vertex
-            of the input edge. Otherwise, the normalized edge start vertex will be
-            placed at the start vertex of the input edge. Default is False.
+            If set to False, the start vertex remains fixed. If set to True, the
+            end vertex remains fixed. Default is False.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
+            If set to True, error and warning messages are suppressed.
+            Default is False.
 
         Returns
         -------
         topologic_core.Edge
-            The normalized edge.
+            A unit-length edge, or None if the input edge is curved or the
+            operation cannot be completed.
 
         """
-        from topologicpy.Vertex import Vertex
+        import math
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(edge, "Edge"):
@@ -2468,43 +3190,248 @@ class Edge():
                 print("Edge.Normalize - Error: The input edge parameter is not a valid topologic edge. Returning None.")
             return None
 
-        direction = Edge.Direction(edge)
-        if not isinstance(direction, list) or len(direction) != 3:
+        try:
+            tolerance = float(tolerance)
+        except Exception:
             if not silent:
-                print("Edge.Normalize - Error: Could not compute a valid edge direction. Returning None.")
+                print("Edge.Normalize - Error: The input tolerance parameter is not a valid number. Returning None.")
             return None
 
-        if not useEndVertex:
-            sv = Edge.StartVertex(edge, silent=True)
-            if not Topology.IsInstance(sv, "Vertex"):
-                if not silent:
-                    print("Edge.Normalize - Error: Could not retrieve a valid start vertex. Returning None.")
-                return None
+        if not math.isfinite(tolerance) or tolerance <= 0.0:
+            if not silent:
+                print("Edge.Normalize - Error: The input tolerance parameter must be greater than zero. Returning None.")
+            return None
 
-            x, y, z = Vertex.Coordinates(sv)
-            ev = Vertex.ByCoordinates(
-                x + direction[0],
-                y + direction[1],
-                z + direction[2],
-            )
+        if not Edge.IsLinear(edge, tolerance=tolerance, silent=True):
+            if not silent:
+                print("Edge.Normalize - Error: The input edge is curved. This method only supports geometrically linear edges. Returning None.")
+            return None
 
-        else:
-            ev = Edge.EndVertex(edge, silent=True)
-            if not Topology.IsInstance(ev, "Vertex"):
-                if not silent:
-                    print("Edge.Normalize - Error: Could not retrieve a valid end vertex. Returning None.")
-                return None
-
-            x, y, z = Vertex.Coordinates(ev)
-            sv = Vertex.ByCoordinates(
-                x - direction[0],
-                y - direction[1],
-                z - direction[2],
-            )
-
-        return Edge.ByVertices([sv, ev], tolerance=tolerance, silent=silent)
+        return Edge.SetLength(
+            edge,
+            length=1.0,
+            bothSides=False,
+            reverse=bool(useEndVertex),
+            tolerance=tolerance,
+            silent=silent,
+        )
 
     @staticmethod
+    def Parabola(
+        origin=None,
+        focalLength: float = 0.5,
+        fromParameter: float = -1.0,
+        toParameter: float = 1.0,
+        direction: list = [0, 0, 1],
+        placement: str = "vertex",
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
+        """
+        Creates a single exact parabolic Edge.
+
+        In its canonical orientation, the parabola lies in the XY plane, has its
+        vertex at the global origin, opens in the positive Y direction, and is
+        defined parametrically by:
+
+            x = 2*f*t
+            y = f*t^2
+
+        where f is the focal length and t is the curve parameter.
+
+        The resulting parabola is represented exactly as a quadratic Bezier curve.
+
+        Parameters
+        ----------
+        origin : topologic_core.Vertex , optional
+            The placement origin of the parabola. If None, the global origin is
+            used. Default is None.
+        focalLength : float , optional
+            The focal length of the parabola. Default is 0.5.
+        fromParameter : float , optional
+            The starting parametric value. Default is -1.0.
+        toParameter : float , optional
+            The ending parametric value. Default is 1.0.
+        direction : list , optional
+            The normal vector of the plane containing the parabola.
+            Default is [0, 0, 1].
+        placement : str , optional
+            Specifies which canonical point is placed at the input origin.
+            The options are "vertex", "start", and "end". Default is "vertex".
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed.
+            Default is False.
+
+        Returns
+        -------
+        topologic_core.Edge
+            The created exact parabolic Edge, or None if it cannot be created.
+
+        """
+        import math
+
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
+
+        if origin is None:
+            origin = Vertex.Origin()
+
+        if not Topology.IsInstance(origin, "Vertex"):
+            if not silent:
+                print("Edge.Parabola - Error: The input origin parameter is not a valid vertex. Returning None.")
+            return None
+
+        try:
+            focalLength = abs(float(focalLength))
+            fromParameter = float(fromParameter)
+            toParameter = float(toParameter)
+            tolerance = float(tolerance)
+        except Exception:
+            if not silent:
+                print("Edge.Parabola - Error: One or more numerical parameters are invalid. Returning None.")
+            return None
+
+        if not all(
+            math.isfinite(value)
+            for value in [
+                focalLength,
+                fromParameter,
+                toParameter,
+                tolerance,
+            ]
+        ):
+            if not silent:
+                print("Edge.Parabola - Error: One or more numerical parameters are not finite. Returning None.")
+            return None
+
+        if tolerance <= 0.0:
+            if not silent:
+                print("Edge.Parabola - Error: The input tolerance parameter must be greater than zero. Returning None.")
+            return None
+
+        if focalLength <= tolerance:
+            if not silent:
+                print("Edge.Parabola - Error: The focal length must be greater than the input tolerance. Returning None.")
+            return None
+
+        if abs(toParameter - fromParameter) <= 1.0e-12:
+            if not silent:
+                print("Edge.Parabola - Error: The fromParameter and toParameter values must be different. Returning None.")
+            return None
+
+        if not isinstance(direction, (list, tuple)) or len(direction) != 3:
+            if not silent:
+                print("Edge.Parabola - Error: The input direction parameter is not a valid 3D vector. Returning None.")
+            return None
+
+        try:
+            direction = [
+                float(direction[0]),
+                float(direction[1]),
+                float(direction[2]),
+            ]
+        except Exception:
+            if not silent:
+                print("Edge.Parabola - Error: The input direction parameter is not numerical. Returning None.")
+            return None
+
+        magnitude = math.sqrt(
+            sum(value * value for value in direction)
+        )
+
+        if not math.isfinite(magnitude) or magnitude <= tolerance:
+            if not silent:
+                print("Edge.Parabola - Error: The input direction vector has zero magnitude. Returning None.")
+            return None
+
+        direction = [
+            value / magnitude
+            for value in direction
+        ]
+
+        if not isinstance(placement, str):
+            if not silent:
+                print("Edge.Parabola - Error: The input placement parameter is not a valid string. Returning None.")
+            return None
+
+        placement = placement.lower()
+
+        if placement not in ["vertex", "start", "end"]:
+            if not silent:
+                print("Edge.Parabola - Error: The placement must be vertex, start, or end. Returning None.")
+            return None
+
+        t0 = fromParameter
+        t1 = toParameter
+        f = focalLength
+
+        # Exact quadratic Bezier representation of:
+        #
+        # x = 2*f*t
+        # y = f*t^2
+        #
+        # over t0 <= t <= t1.
+        p0 = Vertex.ByCoordinates(
+            2.0 * f * t0,
+            f * t0 * t0,
+            0.0,
+        )
+
+        p1 = Vertex.ByCoordinates(
+            f * (t0 + t1),
+            f * t0 * t1,
+            0.0,
+        )
+
+        p2 = Vertex.ByCoordinates(
+            2.0 * f * t1,
+            f * t1 * t1,
+            0.0,
+        )
+
+        edge = Edge.Bezier(
+            [p0, p1, p2],
+            tolerance=tolerance,
+            silent=True,
+        )
+
+        if not Topology.IsInstance(edge, "Edge"):
+            if not silent:
+                print("Edge.Parabola - Error: Could not create the parabolic edge. Returning None.")
+            return None
+
+        if placement == "vertex":
+            source_origin = Vertex.Origin()
+        elif placement == "start":
+            source_origin = Edge.StartVertex(
+                edge,
+                silent=True,
+            )
+        else:
+            source_origin = Edge.EndVertex(
+                edge,
+                silent=True,
+            )
+
+        edge = Topology.OrientAndPlace(
+            edge,
+            originA=source_origin,
+            originB=origin,
+            dirA=[0, 0, 1],
+            dirB=direction,
+            tolerance=tolerance,
+            silent=True,
+        )
+
+        if not Topology.IsInstance(edge, "Edge"):
+            if not silent:
+                print("Edge.Parabola - Error: Could not orient and place the parabola. Returning None.")
+            return None
+
+        return edge
+
     def ParameterAtVertex(edge, vertex, mantissa: int = 6, silent: bool = False, tolerance: float = 0.0001) -> float:
         """
         Returns the normalized curve parameter of a vertex lying on the input edge.
@@ -2593,7 +3520,11 @@ class Edge():
     @staticmethod
     def Reverse(edge, tolerance: float = 0.0001, silent: bool = False):
         """
-        Creates an edge that has the reverse direction of the input edge.
+        Creates an edge with the reverse orientation of the input edge.
+
+        The geometry of the input edge is preserved. Native backend reversal is
+        preferred. Endpoint reconstruction is permitted only for a geometrically
+        linear edge when no native reversal exists. The input dictionary is retained.
 
         Parameters
         ----------
@@ -2607,50 +3538,186 @@ class Edge():
         Returns
         -------
         topologic_core.Edge
-            The reversed edge.
-
+            The reversed edge, or None if reversal cannot be performed without
+            altering its geometry.
         """
+        import math
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(edge, "Edge"):
             if not silent:
                 print("Edge.Reverse - Error: The input edge parameter is not a valid topologic edge. Returning None.")
             return None
-        return Edge.ByVertices([Edge.EndVertex(edge), Edge.StartVertex(edge)], tolerance=tolerance, silent=silent)
+        try:
+            tolerance = float(tolerance)
+        except Exception:
+            if not silent:
+                print("Edge.Reverse - Error: The input tolerance parameter is not a valid number. Returning None.")
+            return None
+        if not math.isfinite(tolerance) or tolerance <= 0.0:
+            if not silent:
+                print("Edge.Reverse - Error: The input tolerance parameter must be greater than zero. Returning None.")
+            return None
+
+        result = None
+        try:
+            if Core.HasAttribute("Edge", "Reverse"):
+                try:
+                    result = Core.Edge.Reverse(edge, tolerance=tolerance, silent=True)
+                except TypeError:
+                    result = Core.Edge.Reverse(edge)
+        except Exception:
+            result = None
+
+        # Generic kernel-native orientation reversal. This is exposed by
+        # TopologicCore and preserves the underlying OCCT/NURBS curve exactly.
+        if not Topology.IsInstance(result, "Edge"):
+            try:
+                candidate = Core.InstanceCall(edge, "Reversed")
+                if Topology.IsInstance(candidate, "Edge"):
+                    result = candidate
+            except Exception:
+                pass
+
+        # Some backends expose Reversed directly on their topology objects even
+        # when it is not routed through a backend namespace.
+        if not Topology.IsInstance(result, "Edge"):
+            try:
+                candidate = edge.Reversed()
+                if Topology.IsInstance(candidate, "Edge"):
+                    result = candidate
+            except Exception:
+                pass
+
+        # A backend-native parameter trim is another exact reversal route.
+        if not Topology.IsInstance(result, "Edge"):
+            try:
+                result = Edge.TrimByParameters(
+                    edge,
+                    uA=1.0,
+                    uB=0.0,
+                    tolerance=tolerance,
+                    silent=True,
+                )
+            except Exception:
+                result = None
+
+        if not Topology.IsInstance(result, "Edge") and Edge.IsLinear(edge, tolerance=tolerance, silent=True):
+            result = Edge.ByStartVertexEndVertex(
+                Edge.EndVertex(edge, silent=True),
+                Edge.StartVertex(edge, silent=True),
+                tolerance=tolerance,
+                silent=True,
+            )
+
+        if not Topology.IsInstance(result, "Edge"):
+            if not silent:
+                print("Edge.Reverse - Error: The active backend could not reverse the input edge without altering its geometry. Returning None.")
+            return None
+        try:
+            updated = Topology.SetDictionary(result, Topology.Dictionary(edge, silent=True), silent=True)
+            if Topology.IsInstance(updated, "Edge"):
+                result = updated
+        except Exception:
+            pass
+        return result
     
     @staticmethod
-    def SetLength(edge , length: float = 1.0, bothSides: bool = True, reverse: bool = False, tolerance: float = 0.0001):
+    def SetLength(edge, length: float = 1.0, bothSides: bool = True, reverse: bool = False, tolerance: float = 0.0001, silent: bool = False):
         """
-        Returns an edge with the new length in the same direction as the input edge.
+        Returns a geometrically linear edge with the requested length.
+
+        This method is intended only for geometrically linear edges. Curved edges
+        are not modified and will cause the method to return None. The input edge
+        dictionary is transferred to the returned edge.
 
         Parameters
         ----------
         edge : topologic_core.Edge
             The input edge.
         length : float , optional
-            The desired length of the edge. Default is 1.
+            The desired length of the returned edge. Default is 1.0.
         bothSides : bool , optional
-            If set to True, the edge will be offset symmetrically from each end. Default is True.
+            If True, preserve the midpoint. Default is True.
         reverse : bool , optional
-            If set to True, the edge will be offset from its start vertex. Otherwise, it will be offset from its end vertex. Default is False.
+            If bothSides is False and reverse is True, preserve the end vertex;
+            otherwise preserve the start vertex. Default is False.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
         topologic_core.Edge
-            The extended edge.
-
+            The resized edge, or None if the operation cannot be completed.
         """
+        import math
+        from topologicpy.Vertex import Vertex
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(edge, "Edge"):
-            print("Edge.SetLength - Error: The input edge parameter is not a valid topologic edge. Returning None.")
+            if not silent:
+                print("Edge.SetLength - Error: The input edge parameter is not a valid topologic edge. Returning None.")
             return None
-        distance = (length - Edge.Length(edge))
-        if distance > 0:
-            return Edge.Extend(edge=edge, distance=distance, bothSides=bothSides, reverse=reverse, tolerance=tolerance)
-        return Edge.Trim(edge=edge, distance=distance, bothSides=bothSides, reverse=reverse, tolerance=tolerance)
+        try:
+            tolerance = float(tolerance)
+        except Exception:
+            if not silent:
+                print("Edge.SetLength - Error: The input tolerance parameter is not a valid number. Returning None.")
+            return None
+        if not math.isfinite(tolerance) or tolerance <= 0.0:
+            if not silent:
+                print("Edge.SetLength - Error: The input tolerance parameter must be greater than zero. Returning None.")
+            return None
+        if not Edge.IsLinear(edge, tolerance=tolerance, silent=True):
+            if not silent:
+                print("Edge.SetLength - Error: The input edge is curved. This method only supports geometrically linear edges. Returning None.")
+            return None
+        try:
+            length = float(length)
+        except Exception:
+            if not silent:
+                print("Edge.SetLength - Error: The input length parameter is not a valid number. Returning None.")
+            return None
+        if not math.isfinite(length) or length <= tolerance:
+            if not silent:
+                print("Edge.SetLength - Error: The input length parameter must be greater than the input tolerance. Returning None.")
+            return None
+
+        start = Edge.StartVertex(edge, silent=True)
+        end = Edge.EndVertex(edge, silent=True)
+        direction = Edge.Direction(edge, mantissa=None, tolerance=tolerance, silent=True)
+        if not Topology.IsInstance(start, "Vertex") or not Topology.IsInstance(end, "Vertex") or direction is None:
+            return None
+        sx, sy, sz = Vertex.Coordinates(start, mantissa=None)
+        ex, ey, ez = Vertex.Coordinates(end, mantissa=None)
+        dx, dy, dz = direction
+
+        if bothSides:
+            mx, my, mz = 0.5*(sx+ex), 0.5*(sy+ey), 0.5*(sz+ez)
+            h = 0.5*length
+            new_start = Vertex.ByCoordinates(mx-dx*h, my-dy*h, mz-dz*h)
+            new_end = Vertex.ByCoordinates(mx+dx*h, my+dy*h, mz+dz*h)
+        elif reverse:
+            new_end = end
+            new_start = Vertex.ByCoordinates(ex-dx*length, ey-dy*length, ez-dz*length)
+        else:
+            new_start = start
+            new_end = Vertex.ByCoordinates(sx+dx*length, sy+dy*length, sz+dz*length)
+
+        result = Edge.ByStartVertexEndVertex(new_start, new_end, tolerance=tolerance, silent=True)
+        if not Topology.IsInstance(result, "Edge"):
+            if not silent:
+                print("Edge.SetLength - Error: Could not create the resized edge. Returning None.")
+            return None
+        try:
+            updated = Topology.SetDictionary(result, Topology.Dictionary(edge, silent=True), silent=True)
+            if Topology.IsInstance(updated, "Edge"):
+                result = updated
+        except Exception:
+            pass
+        return result
 
     @staticmethod
     def Spread(edgeA, edgeB, mantissa: int = 6, bracket: bool = False) -> float:
@@ -2810,52 +3877,202 @@ class Edge():
     @staticmethod
     def Trim(edge, distance: float = 0.0, bothSides: bool = True, reverse: bool = False, tolerance: float = 0.0001, silent: bool = False):
         """
-        Trims the input edge by the input distance.
+        Trims the input edge by a geometric distance while preserving its geometry.
+
+        The input distance represents the total amount removed from the edge. If
+        bothSides is True, half of the distance is removed from each end. Otherwise,
+        the distance is removed from the end of the edge unless reverse is True, in
+        which case it is removed from the start.
+
+        For curved edges, distances are measured along the actual curve rather than
+        along the chord between its endpoints. The underlying curve geometry is
+        preserved. If the active backend cannot trim a curved edge exactly, None is
+        returned rather than replacing or approximating the curve.
 
         Parameters
         ----------
         edge : topologic_core.Edge
             The input edge.
         distance : float , optional
-            The offset distance. Default is 0.
+            The total geometric distance to remove from the edge. Negative values
+            are treated as positive. Default is 0.0.
         bothSides : bool , optional
-            If set to True, the edge will be trimmed by half the distance at each end. Default is False.
+            If set to True, half of the input distance is removed from each end of
+            the edge. Default is True.
         reverse : bool , optional
-            If set to True, the edge will be trimmed from its start vertex. Otherwise, it will be trimmed from its end vertex. Default is False.
+            If bothSides is False and reverse is True, the distance is removed from
+            the start of the edge instead of the end. Default is False.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
+            If set to True, error and warning messages are suppressed.
+            Default is False.
 
         Returns
         -------
         topologic_core.Edge
-            The trimmed edge.
+            The trimmed edge, or None if the operation cannot be completed without
+            altering the curve geometry.
 
         """
+        import math
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(edge, "Edge"):
-            print("Edge.Trim - Error: The input edge parameter is not a valid topologic edge. Returning None.")
+            if not silent:
+                print("Edge.Trim - Error: The input edge parameter is not a valid topologic edge. Returning None.")
             return None
-        distance = abs(distance)
-        if distance == 0:
-            return edge
+
+        try:
+            tolerance = float(tolerance)
+        except Exception:
+            if not silent:
+                print("Edge.Trim - Error: The input tolerance parameter is not a valid number. Returning None.")
+            return None
+
+        if not math.isfinite(tolerance) or tolerance <= 0.0:
+            if not silent:
+                print("Edge.Trim - Error: The input tolerance parameter must be greater than zero. Returning None.")
+            return None
+
+        try:
+            distance = abs(float(distance))
+        except Exception:
+            if not silent:
+                print("Edge.Trim - Error: The input distance parameter is not a valid number. Returning None.")
+            return None
+
+        if not math.isfinite(distance):
+            if not silent:
+                print("Edge.Trim - Error: The input distance parameter must be a finite number. Returning None.")
+            return None
+
         if distance <= tolerance:
-            print("Edge.Trim - Warning: The input distance parameter is less than or equal to the input tolerance parameter. Returning the input edge.")
             return edge
-        sv = Edge.StartVertex(edge)
-        ev = Edge.EndVertex(edge)
+
+        length = Edge.Length(
+            edge,
+            mantissa=None,
+            tolerance=tolerance,
+            silent=True,
+        )
+
+        if length is None or length <= tolerance:
+            if not silent:
+                print("Edge.Trim - Error: Could not determine a valid length for the input edge. Returning None.")
+            return None
+
+        if length - distance <= tolerance:
+            if not silent:
+                print("Edge.Trim - Error: The input distance leaves an edge shorter than or equal to the input tolerance. Returning None.")
+            return None
+
+        start = Edge.StartVertex(edge, silent=True)
+        end = Edge.EndVertex(edge, silent=True)
+
+        if not Topology.IsInstance(start, "Vertex") or not Topology.IsInstance(end, "Vertex"):
+            if not silent:
+                print("Edge.Trim - Error: Could not determine the start or end vertex of the input edge. Returning None.")
+            return None
+
         if bothSides:
-            sve = Edge.VertexByDistance(edge, distance=distance*0.5, origin=sv, tolerance=tolerance)
-            eve = Edge.VertexByDistance(edge, distance=-distance*0.5, origin=ev, tolerance=tolerance)
+            trim_distance = 0.5 * distance
+
+            vertexA = Edge.VertexByDistance(
+                edge,
+                distance=trim_distance,
+                origin=start,
+                mantissa=None,
+                tolerance=tolerance,
+                silent=True,
+            )
+
+            vertexB = Edge.VertexByDistance(
+                edge,
+                distance=-trim_distance,
+                origin=end,
+                mantissa=None,
+                tolerance=tolerance,
+                silent=True,
+            )
+
         elif reverse:
-            sve = Edge.VertexByDistance(edge, distance=distance, origin=sv, tolerance=tolerance)
-            eve = Edge.EndVertex(edge)
+            vertexA = Edge.VertexByDistance(
+                edge,
+                distance=distance,
+                origin=start,
+                mantissa=None,
+                tolerance=tolerance,
+                silent=True,
+            )
+
+            vertexB = end
+
         else:
-            sve = Edge.StartVertex(edge)
-            eve = Edge.VertexByDistance(edge, distance=-distance, origin=ev, tolerance=tolerance)
-        return Edge.ByVertices([sve, eve], tolerance=tolerance, silent=silent)
+            vertexA = start
+
+            vertexB = Edge.VertexByDistance(
+                edge,
+                distance=-distance,
+                origin=end,
+                mantissa=None,
+                tolerance=tolerance,
+                silent=True,
+            )
+
+        if not Topology.IsInstance(vertexA, "Vertex") or not Topology.IsInstance(vertexB, "Vertex"):
+            if not silent:
+                print("Edge.Trim - Error: Could not determine the trimming vertices. Returning None.")
+            return None
+
+        # Linear edges can be reconstructed exactly and avoid an unnecessary
+        # parameter lookup.
+        if Edge.IsLinear(edge, tolerance=tolerance, silent=True):
+            result = Edge.ByStartVertexEndVertex(
+                vertexA,
+                vertexB,
+                tolerance=tolerance,
+                silent=silent,
+            )
+            if Topology.IsInstance(result, "Edge"):
+                try:
+                    updated = Topology.SetDictionary(result, Topology.Dictionary(edge, silent=True), silent=True)
+                    if Topology.IsInstance(updated, "Edge"):
+                        result = updated
+                except Exception:
+                    pass
+            return result
+
+        # For curves, obtain the native curve parameters corresponding to the
+        # required arc-length positions and trim the actual curve.
+        uA = Edge.ParameterAtVertex(
+            edge,
+            vertexA,
+            mantissa=None,
+            tolerance=tolerance,
+            silent=True,
+        )
+
+        uB = Edge.ParameterAtVertex(
+            edge,
+            vertexB,
+            mantissa=None,
+            tolerance=tolerance,
+            silent=True,
+        )
+
+        if uA is None or uB is None:
+            if not silent:
+                print("Edge.Trim - Error: Could not determine the curve parameters at the trimming vertices. Returning None.")
+            return None
+
+        return Edge.TrimByParameters(
+            edge,
+            uA=uA,
+            uB=uB,
+            tolerance=tolerance,
+            silent=silent,
+        )
 
     @staticmethod
     def TrimByEdge(edgeA, edgeB, reverse: bool = False, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
@@ -3057,49 +4274,191 @@ class Edge():
         return None
 
     @staticmethod
-    def VertexByDistance(edge, distance: float = 0.0, origin= None, mantissa: int = 6, tolerance: float = 0.0001):
-        """
-        Creates a vertex along the input edge offset by the input distance from the input origin.
+    def VertexByDistance(edge, distance: float = 0.0, origin=None, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
+        """Returns a vertex at signed curvilinear distance from an origin on an edge.
+
+        Native arc-length evaluation is preferred. Linear edges may be extended
+        beyond their endpoints. Curved open edges are evaluated only within their
+        actual finite domain. Closed edges wrap around their closed path.
 
         Parameters
         ----------
         edge : topologic_core.Edge
             The input edge.
         distance : float , optional
-            The offset distance. Default is 0.
+            Signed curvilinear distance measured in the orientation of the edge.
+            Default is 0.0.
         origin : topologic_core.Vertex , optional
-            The origin of the offset distance. If set to None, the origin will be set to the start vertex of the input edge. Default is None.
+            A vertex lying on the edge from which distance is measured. If None,
+            the start vertex is used. Default is None.
         mantissa : int , optional
-            The desired length of the mantissa. Default is 6
+            The number of decimal places to round returned coordinates to. If None,
+            full available precision is returned. Default is 6.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
         topologic_core.Vertex
-            The created vertex.
-
+            The resulting vertex, or None if the requested position cannot be
+            evaluated without extrapolating an open curved edge.
         """
+        import math
         from topologicpy.Vertex import Vertex
-        from topologicpy.Vector import Vector
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(edge, "Edge"):
-            print("Edge.TrimByEdge2D - Error: The input edge parameter is not a valid topologic edge. Returning None.")
+            if not silent:
+                print("Edge.VertexByDistance - Error: The input edge is invalid. Returning None.")
             return None
         if not Topology.IsInstance(origin, "Vertex"):
-            origin = Edge.StartVertex(edge)
+            origin = Edge.StartVertex(edge, silent=True)
         if not Topology.IsInstance(origin, "Vertex"):
-            print("Edge.TrimByEdge2D - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
             return None
-        sv = Edge.StartVertex(edge)
-        ev = Edge.EndVertex(edge)
-        vx = Vertex.X(ev, mantissa=mantissa) - Vertex.X(sv, mantissa=mantissa)
-        vy = Vertex.Y(ev, mantissa=mantissa) - Vertex.Y(sv, mantissa=mantissa)
-        vz = Vertex.Z(ev, mantissa=mantissa) - Vertex.Z(sv, mantissa=mantissa)
-        vector = Vector.Normalize([vx, vy, vz])
-        vector = Vector.Multiply(vector, distance, tolerance=tolerance)
-        return Vertex.ByCoordinates(Vertex.X(origin, mantissa=mantissa)+vector[0], Vertex.Y(origin, mantissa=mantissa)+vector[1], Vertex.Z(origin, mantissa=mantissa)+vector[2])
+        try:
+            distance = float(distance)
+            tolerance = abs(float(tolerance))
+        except Exception:
+            return None
+        if abs(distance) <= tolerance:
+            return origin
+
+        try:
+            if Core.HasAttribute("EdgeUtility", "PointAtDistance"):
+                vertex = Core.EdgeUtility.PointAtDistance(edge, distance, origin, tolerance)
+                if Topology.IsInstance(vertex, "Vertex"):
+                    coordinates = Vertex.Coordinates(vertex, mantissa=None)
+                    if mantissa is None:
+                        return vertex
+                    return Vertex.ByCoordinates(*[round(value, mantissa) for value in coordinates])
+            elif Core.HasAttribute("EdgeUtility", "VertexAtDistance"):
+                vertex = Core.EdgeUtility.VertexAtDistance(edge, distance, origin)
+                if Topology.IsInstance(vertex, "Vertex"):
+                    coordinates = Vertex.Coordinates(vertex, mantissa=None)
+                    if mantissa is None:
+                        return vertex
+                    return Vertex.ByCoordinates(*[round(value, mantissa) for value in coordinates])
+        except Exception:
+            pass
+
+        if Edge.IsLinear(edge, tolerance=tolerance, silent=True):
+            direction = Edge.Direction(edge, mantissa=None, tolerance=tolerance, silent=True)
+            if direction is None:
+                return None
+            if Edge.ParameterAtVertex(edge, origin, mantissa=None, tolerance=tolerance, silent=True) is None:
+                return None
+            x, y, z = Vertex.Coordinates(origin, mantissa=None)
+            coordinates = [x + direction[0]*distance, y + direction[1]*distance, z + direction[2]*distance]
+            if mantissa is not None:
+                coordinates = [round(value, mantissa) for value in coordinates]
+            return Vertex.ByCoordinates(*coordinates)
+
+        u0 = Edge.ParameterAtVertex(edge, origin, mantissa=None, tolerance=tolerance, silent=True)
+        if u0 is None:
+            return None
+        closed = bool(Edge.IsClosed(edge, tolerance=tolerance, silent=True))
+        effective_distance = distance
+        if closed:
+            total_length = Edge.Length(edge, mantissa=None, tolerance=tolerance, silent=True)
+            if total_length is None or total_length <= tolerance:
+                return None
+            effective_distance = math.fmod(distance, total_length)
+            if abs(effective_distance) <= tolerance:
+                return origin
+
+        sign = 1.0 if effective_distance > 0.0 else -1.0
+        target = abs(effective_distance)
+
+        def _point_coordinates(u):
+            vertex = Edge.VertexByParameter(edge, u=u, tolerance=tolerance, silent=True)
+            if not Topology.IsInstance(vertex, "Vertex"):
+                return None
+            coordinates = Vertex.Coordinates(vertex, mantissa=None)
+            if not isinstance(coordinates, (list, tuple)) or len(coordinates) != 3:
+                return None
+            try:
+                return [float(value) for value in coordinates]
+            except Exception:
+                return None
+
+        def arc_length(a, b):
+            """Adaptive polyline integration of curve length over [a,b]."""
+            if abs(b-a) <= 1.0e-15:
+                return 0.0
+            p0 = _point_coordinates(a)
+            p1 = _point_coordinates(b)
+            if p0 is None or p1 is None:
+                return None
+
+            # The integration tolerance is intentionally tighter than the public
+            # geometric tolerance because this routine is also used to invert
+            # arc length back to a curve parameter.
+            length_tol = max(1.0e-10, tolerance * 0.005)
+            max_depth = 18
+
+            def recurse(u0, q0, u1, q1, depth):
+                um = 0.5 * (u0 + u1)
+                qm = _point_coordinates(um)
+                if qm is None:
+                    return None
+                chord = math.dist(q0, q1)
+                split = math.dist(q0, qm) + math.dist(qm, q1)
+                if depth >= max_depth or abs(split - chord) <= length_tol * max(1.0, split):
+                    return split
+                left = recurse(u0, q0, um, qm, depth + 1)
+                if left is None:
+                    return None
+                right = recurse(um, qm, u1, q1, depth + 1)
+                if right is None:
+                    return None
+                return left + right
+
+            return recurse(a, p0, b, p1, 0)
+
+        def solve_between(a, b, requested):
+            available = arc_length(a, b)
+            if available is None or requested > available + tolerance:
+                return None
+            low, high = 0.0, 1.0
+            solve_tol = max(1.0e-9, tolerance * 0.01)
+            for _ in range(56):
+                fraction = 0.5 * (low + high)
+                candidate = a + fraction * (b - a)
+                length_now = arc_length(a, candidate)
+                if length_now is None:
+                    return None
+                if abs(length_now - requested) <= solve_tol:
+                    return candidate
+                if length_now < requested:
+                    low = fraction
+                else:
+                    high = fraction
+            return a + 0.5 * (low + high) * (b - a)
+
+        limit = 1.0 if sign > 0.0 else 0.0
+        available = arc_length(u0, limit)
+        if available is None:
+            return None
+        if target <= available + tolerance:
+            candidate = solve_between(u0, limit, target)
+        elif closed:
+            remainder = target - available
+            wrap_start, wrap_end = (0.0, 1.0) if sign > 0.0 else (1.0, 0.0)
+            candidate = solve_between(wrap_start, wrap_end, remainder)
+        else:
+            return None
+
+        if candidate is None:
+            return None
+        vertex = Edge.VertexByParameter(edge, u=candidate, tolerance=tolerance, silent=True)
+        if not Topology.IsInstance(vertex, "Vertex"):
+            return None
+        if mantissa is None:
+            return vertex
+        coordinates = Vertex.Coordinates(vertex, mantissa=None)
+        return Vertex.ByCoordinates(*[round(value, mantissa) for value in coordinates])
     
     @staticmethod
     def VertexByParameter(edge, u: float = 0.0, tolerance: float = 0.0001, silent: bool = False):
