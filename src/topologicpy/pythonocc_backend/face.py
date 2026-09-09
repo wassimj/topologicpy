@@ -1200,42 +1200,28 @@ class Face(Topology):
 class FaceUtility:
     @staticmethod
     def Area(face):
-        if not isinstance(face, Face):
+        """Return the exact OCCT surface area of a Face, including trimming."""
+        occ_face = _as_occ_face(face)
+        if occ_face is None:
             return None
+        try:
+            from OCC.Core.GProp import GProp_GProps
 
-        external = face.ExternalBoundary()
+            props = GProp_GProps()
 
-        if not isinstance(external, Wire):
-            return 0.0
+            # pythonocc-core has exposed SurfaceProperties in two forms across
+            # releases. Support both without falling back to polygonal area.
+            try:
+                from OCC.Core.BRepGProp import brepgprop
+                brepgprop.SurfaceProperties(occ_face, props)
+            except (ImportError, AttributeError):
+                from OCC.Core.BRepGProp import brepgprop_SurfaceProperties
+                brepgprop_SurfaceProperties(occ_face, props)
 
-        vertices = external.Vertices()
-
-        if len(vertices) < 3:
-            return 0.0
-
-        nx = ny = nz = 0.0
-
-        for i, v in enumerate(vertices):
-            w = vertices[(i + 1) % len(vertices)]
-
-            nx += (v.y - w.y) * (v.z + w.z)
-            ny += (v.z - w.z) * (v.x + w.x)
-            nz += (v.x - w.x) * (v.y + w.y)
-
-        area = 0.5 * math.sqrt(
-            nx * nx
-            + ny * ny
-            + nz * nz
-        )
-
-        for wire in face.InternalBoundaries():
-            if isinstance(wire, Wire):
-                tmp_face = Face.ByWire(wire)
-
-                if tmp_face is not None:
-                    area -= FaceUtility.Area(tmp_face) or 0.0
-
-        return abs(area)
+            value = float(props.Mass())
+            return value if math.isfinite(value) else None
+        except Exception:
+            return None
 
     @staticmethod
     def NormalAtParameters(face, u=0.5, v=0.5):

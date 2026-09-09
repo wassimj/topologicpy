@@ -19,6 +19,43 @@ from __future__ import annotations
 from topologicpy.Core import Core
     
 class Cell():
+    def _NativeCell(methodName: str, *args, silent: bool = False, **kwargs):
+        """Call a PythonOCC-only native Cell constructor without silent approximation."""
+        from topologicpy.Topology import Topology
+        try:
+            if Topology._IsTopologicCoreBackend():
+                if not silent:
+                    print(f"Cell.{methodName[2:] if methodName.startswith('By') else methodName} - Error: polyhedron=False requires the PythonOCC backend. Returning None.")
+                return None
+        except Exception:
+            return None
+        method = getattr(Core.Cell, methodName, None)
+        if not callable(method):
+            if not silent:
+                print(f"Cell.{methodName[2:] if methodName.startswith('By') else methodName} - Error: Native backend constructor is unavailable. Returning None.")
+            return None
+        try:
+            return method(*args, **kwargs)
+        except Exception:
+            return None
+
+    def _PlaceNativeCell(cell, origin=None, direction=[0, 0, 1], sourceOrigin=None, tolerance: float = 0.0001, silent: bool = False):
+        """Orient and place a canonical native Cell using TopologicPy transforms."""
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
+        if not Topology.IsInstance(cell, "Cell"):
+            return None
+        if not Topology.IsInstance(origin, "Vertex"):
+            origin = Vertex.Origin()
+        if sourceOrigin is None:
+            sourceOrigin = [0.0, 0.0, 0.0]
+        if not Topology.IsInstance(sourceOrigin, "Vertex"):
+            try:
+                sourceOrigin = Vertex.ByCoordinates(sourceOrigin[0], sourceOrigin[1], sourceOrigin[2])
+            except Exception:
+                return None
+        return Topology.OrientAndPlace(cell, originA=sourceOrigin, originB=origin, dirA=[0, 0, 1], dirB=direction, transferDictionaries=False, tolerance=tolerance, silent=silent)
+
     @staticmethod
     def Area(cell, mantissa: int = 6):
         """
@@ -355,7 +392,7 @@ class Cell():
         return Cell.ByFaces(faces, planarize=planarize, transferDictionaries=transferDictionaries, tolerance=tolerance, silent=silent)
     
     @staticmethod
-    def ByOffset(cell, offset: float = 1.0, tolerance: float = 0.0001):
+    def ByOffset(cell, offset: float = 1.0, tolerance: float = 0.0001, silent: bool = False, polyhedron: bool = True):
         """
         Creates an offset cell from the input cell.
 
@@ -374,6 +411,14 @@ class Cell():
             The created offset topology. WARNING: This method may fail to create a cell if the offset creates self-intersecting faces. Always check the type being returned by this method.
 
         """
+        if not polyhedron:
+            from topologicpy.Topology import Topology
+            if not Topology.IsInstance(cell, "Cell"):
+                if not silent: print("Cell.ByOffset - Error: Invalid Cell. Returning None.")
+                return None
+            result = Cell._NativeCell("ByOffset", cell, offset=offset, tolerance=tolerance, silent=silent)
+            if result is None and not silent: print("Cell.ByOffset - Error: Native offset failed. Returning None.")
+            return result
         from topologicpy.Face import Face
         from topologicpy.Topology import Topology
         from topologicpy.Vector import Vector
@@ -477,7 +522,8 @@ class Cell():
                         wSides: int = 1,
                         reverse: bool = False,
                         tolerance: float = 0.0001,
-                        silent: bool = False):
+                        silent: bool = False,
+                        polyhedron: bool = True):
         """
         Creates a cell by thickening the input face.
 
@@ -515,12 +561,15 @@ class Cell():
         topologic_core.Cell
             The created cell, or None on failure.
         """
+        if not polyhedron:
+            result = Cell._NativeCell("ByThickenedFace", face, thickness=thickness, bothSides=bothSides, reverse=reverse, tolerance=tolerance, silent=silent)
+            if result is None and not silent: print("Cell.ByThickenedFace - Error: Native thickening failed. Returning None.")
+            return result
         import math
         from topologicpy.Topology import Topology
         from topologicpy.Face import Face
         from topologicpy.Edge import Edge
         from topologicpy.Wire import Wire
-        from topologicpy.Cell import Cell
         from topologicpy.Vertex import Vertex
 
         # -----------------------------
@@ -698,7 +747,7 @@ class Cell():
 
     @staticmethod
     def ByThickenedShell(shell, direction: list = [0, 0, 1], thickness: float = 1.0, bothSides: bool = True, reverse: bool = False,
-                            planarize: bool = False, tolerance: float = 0.0001, silent: bool = False):
+                            planarize: bool = False, tolerance: float = 0.0001, silent: bool = False, polyhedron: bool = True):
         """
         Creates a cell by thickening the input shell. The shell must be open.
 
@@ -725,6 +774,10 @@ class Cell():
             The created cell.
 
         """
+        if not polyhedron:
+            result = Cell._NativeCell("ByThickenedShell", shell, thickness=thickness, bothSides=bothSides, reverse=reverse, tolerance=tolerance, silent=silent)
+            if result is None and not silent: print("Cell.ByThickenedShell - Error: Native thickening failed. Returning None.")
+            return result
         from topologicpy.Edge import Edge
         from topologicpy.Wire import Wire
         from topologicpy.Face import Face
@@ -762,7 +815,8 @@ class Cell():
                 planarize: bool = False,
                 mantissa: int = 6,
                 tolerance: float = 0.0001,
-                silent: bool = False):
+                silent: bool = False,
+                polyhedron: bool = True):
         """
         Creates a cell by lofting through the input list of wires.
 
@@ -802,6 +856,34 @@ class Cell():
         from topologicpy.Face import Face
         from topologicpy.Shell import Shell
         from topologicpy.Topology import Topology
+
+        # Exact curve-preserving loft path. The existing faceted path below is
+        # deliberately left untouched and remains the default.
+        if not polyhedron:
+            if close:
+                if not silent:
+                    print("Cell.ByWires - Error: close=True is not supported for curve-preserving solid lofts. Returning None.")
+                return None
+            if not isinstance(wires, (list, tuple)):
+                if not silent:
+                    print("Cell.ByWires - Error: The input wires parameter is not a valid list. Returning None.")
+                return None
+            native_wires = [wire for wire in wires if Topology.IsInstance(wire, "Wire")]
+            if len(native_wires) < 2:
+                if not silent:
+                    print("Cell.ByWires - Error: At least two valid Wires are required. Returning None.")
+                return None
+            for wire in native_wires:
+                if not Wire.IsClosed(wire, tolerance=tolerance, silent=True):
+                    if not silent:
+                        print("Cell.ByWires - Error: All section Wires must be closed. Returning None.")
+                    return None
+            result = Cell._NativeCell("ByWires", native_wires, tolerance=tolerance, silent=silent)
+            if not Topology.IsInstance(result, "Cell"):
+                if not silent:
+                    print("Cell.ByWires - Error: Native curve-preserving loft failed. Returning None.")
+                return None
+            return result
 
         def _coords(v):
             return [Vertex.X(v), Vertex.Y(v), Vertex.Z(v)]
@@ -1163,7 +1245,7 @@ class Cell():
         return cell
 
     @staticmethod
-    def ByWiresCluster(cluster, close: bool = False, triangulate: bool = True, planarize: bool = False, tolerance: float = 0.0001):
+    def ByWiresCluster(cluster, close: bool = False, triangulate: bool = True, planarize: bool = False, tolerance: float = 0.0001, silent: bool = False, polyhedron: bool = True):
         """
         Creates a cell by lofting through the input cluster of wires.
 
@@ -1192,10 +1274,11 @@ class Cell():
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(cluster, "Cluster"):
-            print("Cell.ByWiresCluster - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
+            if not silent:
+                print("Cell.ByWiresCluster - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
         wires = Topology.Wires(cluster)
-        return Cell.ByWires(wires, close=close, triangulate=triangulate, planarize=planarize, tolerance=tolerance)
+        return Cell.ByWires(wires, close=close, triangulate=triangulate, planarize=planarize, tolerance=tolerance, silent=silent, polyhedron=polyhedron)
 
     @staticmethod
     def Capsule(origin = None,
@@ -1207,7 +1290,8 @@ class Cell():
                 direction: list = [0, 0, 1],
                 placement: str = "center",
                 tolerance: float = 0.0001,
-                silent: bool = False):
+                silent: bool = False,
+                polyhedron: bool = True):
         """
         Creates a capsule shape. A capsule is a cylinder with hemispherical ends.
 
@@ -1244,6 +1328,24 @@ class Cell():
         """
         from topologicpy.Topology import Topology
         from topologicpy.Vertex import Vertex
+
+        if not polyhedron:
+            if not Topology.IsInstance(origin, "Vertex"):
+                origin = Vertex.Origin()
+            capsule = Cell._NativeCell("ByCapsule", radius=radius, height=height, tolerance=tolerance, silent=silent)
+            if not Topology.IsInstance(capsule, "Cell"):
+                return None
+            p = str(placement).lower().strip()
+            source = [0.0, 0.0, 0.0]
+            if p == "bottom":
+                source = [0.0, 0.0, -0.5*float(height)]
+            elif p == "lowerleft":
+                source = [-abs(float(radius)), -abs(float(radius)), -0.5*float(height)]
+            elif p != "center":
+                if not silent:
+                    print('Cell.Capsule - Error: placement must be "center", "bottom", or "lowerleft". Returning None.')
+                return None
+            return Cell._PlaceNativeCell(capsule, origin, direction, source, tolerance, silent)
 
         if not Topology.IsInstance(origin, "Vertex"):
             origin = Vertex.ByCoordinates(0, 0, 0)
@@ -1459,7 +1561,7 @@ class Cell():
     
     @staticmethod
     def Cone(origin = None, baseRadius: float = 0.5, topRadius: float = 0, height: float = 1, uSides: int = 16, vSides: int = 1, direction: list = [0, 0, 1],
-                 dirZ: float = 1, placement: str = "center", mantissa: int = 6, tolerance: float = 0.0001):
+                 dirZ: float = 1, placement: str = "center", mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False, polyhedron: bool = True):
         """
         Creates a cone.
 
@@ -1498,6 +1600,25 @@ class Cell():
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
         import math
+
+        if not polyhedron:
+            if not Topology.IsInstance(origin, "Vertex"):
+                origin = Vertex.Origin()
+            cone = Cell._NativeCell("ByCone", baseRadius=baseRadius, topRadius=topRadius, height=height, tolerance=tolerance, silent=silent)
+            if not Topology.IsInstance(cone, "Cell"):
+                return None
+            p = str(placement).lower().strip()
+            r = max(abs(float(baseRadius)), abs(float(topRadius)))
+            source = [0.0, 0.0, 0.0]
+            if p == "bottom":
+                source = [0.0, 0.0, -0.5*float(height)]
+            elif p == "lowerleft":
+                source = [-r, -r, -0.5*float(height)]
+            elif p != "center":
+                if not silent:
+                    print('Cell.Cone - Error: placement must be "center", "bottom", or "lowerleft". Returning None.')
+                return None
+            return Cell._PlaceNativeCell(cone, origin, direction, source, tolerance, silent)
 
         def createCone(baseWire, topWire, baseVertex, topVertex, tolerance=0.0001):
             if baseWire == None and topWire == None:
@@ -2050,7 +2171,7 @@ class Cell():
     
     @staticmethod
     def Cylinder(origin = None, radius: float = 0.5, height: float = 1, uSides: int = 16, vSides: int = 1, direction: list = [0, 0, 1],
-                     placement: str = "center", mantissa: int = 6, tolerance: float = 0.0001):
+                     placement: str = "center", mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False, polyhedron: bool = True):
         """
         Creates a cylinder.
 
@@ -2087,6 +2208,24 @@ class Cell():
         from topologicpy.CellComplex import CellComplex
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
+
+        if not polyhedron:
+            if not Topology.IsInstance(origin, "Vertex"):
+                origin = Vertex.Origin()
+            cylinder = Cell._NativeCell("ByCylinder", radius=radius, height=height, tolerance=tolerance, silent=silent)
+            if not Topology.IsInstance(cylinder, "Cell"):
+                return None
+            p = str(placement).lower().strip()
+            source = [0.0, 0.0, 0.0]
+            if p == "bottom":
+                source = [0.0, 0.0, -0.5*float(height)]
+            elif p == "lowerleft":
+                source = [-float(radius), -float(radius), -0.5*float(height)]
+            elif p != "center":
+                if not silent:
+                    print('Cell.Cylinder - Error: placement must be "center", "bottom", or "lowerleft". Returning None.')
+                return None
+            return Cell._PlaceNativeCell(cylinder, origin, direction, source, tolerance, silent)
 
         if not Topology.IsInstance(origin, "Vertex"):
             origin = Vertex.ByCoordinates(0, 0, 0)
@@ -5391,7 +5530,7 @@ class Cell():
     
     @staticmethod
     def Sphere(origin= None, radius: float = 0.5, uSides: int = 16, vSides: int = 8, direction: list = [0, 0, 1],
-                   placement: str = "center", tolerance: float = 0.0001, silent: bool = False):
+                   placement: str = "center", tolerance: float = 0.0001, silent: bool = False, polyhedron: bool = True):
         """
         Creates an approximation of a sphere using a UV grid of triangular faces.
 
@@ -5427,6 +5566,25 @@ class Cell():
         from topologicpy.Face import Face
         from topologicpy.Cell import Cell
         from topologicpy.Topology import Topology
+
+        if not polyhedron:
+            if not Topology.IsInstance(origin, "Vertex"):
+                origin = Vertex.Origin()
+            sphere = Cell._NativeCell("BySphere", radius=radius, tolerance=tolerance, silent=silent)
+            if not Topology.IsInstance(sphere, "Cell"):
+                return None
+            p = str(placement).lower().strip()
+            r = abs(float(radius))
+            source = [0.0, 0.0, 0.0]
+            if p == "bottom":
+                source = [0.0, 0.0, -r]
+            elif p == "lowerleft":
+                source = [-r, -r, -r]
+            elif p != "center":
+                if not silent:
+                    print('Cell.Sphere - Error: placement must be "center", "bottom", or "lowerleft". Returning None.')
+                return None
+            return Cell._PlaceNativeCell(sphere, origin, direction, source, tolerance, silent)
 
         # Validate inputs
         if radius <= 0 or uSides < 3 or vSides < 2:
@@ -5716,7 +5874,8 @@ class Cell():
               direction: list = [0, 0, 1],
               placement: str = "center",
               tolerance: float = 0.0001,
-              silent: bool = False):
+              silent: bool = False,
+              polyhedron: bool = True):
         """
         Creates a torus.
 
@@ -5757,6 +5916,26 @@ class Cell():
         from topologicpy.Shell import Shell
         from topologicpy.Cell import Cell
         from topologicpy.Topology import Topology
+        if not polyhedron:
+            if not Topology.IsInstance(origin, "Vertex"):
+                origin = Vertex.Origin()
+            torus = Cell._NativeCell("ByTorus", majorRadius=majorRadius, minorRadius=minorRadius, tolerance=tolerance, silent=silent)
+            if not Topology.IsInstance(torus, "Cell"):
+                return None
+            p = str(placement).lower().strip()
+            extent = abs(float(majorRadius)) + abs(float(minorRadius))
+            minor = abs(float(minorRadius))
+            source = [0.0, 0.0, 0.0]
+            if p == "bottom":
+                source = [0.0, 0.0, -minor]
+            elif p == "lowerleft":
+                source = [-extent, -extent, -minor]
+            elif p != "center":
+                if not silent:
+                    print('Cell.Torus - Error: placement must be "center", "bottom", or "lowerleft". Returning None.')
+                return None
+            return Cell._PlaceNativeCell(torus, origin, direction, source, tolerance, silent)
+
         
 
         # --- Validation ---
@@ -6232,7 +6411,7 @@ class Cell():
         return vertices
 
     @staticmethod
-    def Volume(cell, mantissa: int = 6) -> float:
+    def Volume(cell, mantissa: int = 6, silent: bool = False) -> float:
         """
         Returns the volume of the input cell.
 
@@ -6242,6 +6421,8 @@ class Cell():
             The input cell.
         manitssa: int , optional
             The number of decimal places to round the result to. Default is 6.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -6252,13 +6433,16 @@ class Cell():
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(cell, "Cell"):
-            print("Cell.Volume - Error: The input cell parameter is not a valid topologic cell. Returning None.")
+            if not silent:
+                print("Cell.Volume - Error: The input cell parameter is not a valid topologic cell. Returning None.")
             return None
         volume = None
         try:
-            volume = round(Core.CellUtility.Volume(cell), mantissa)
+            raw_volume = Core.CellUtility.Volume(cell)
+            volume = float(raw_volume) if mantissa is None else round(float(raw_volume), int(mantissa))
         except:
-            print("Cell.Volume - Error: Could not compute the volume of the input cell. Returning None.")
+            if not silent:
+                print("Cell.Volume - Error: Could not compute the volume of the input cell. Returning None.")
             volume = None
         return volume
 

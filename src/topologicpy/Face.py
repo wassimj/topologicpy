@@ -223,7 +223,7 @@ class Face():
         return round((Vector.Angle(dirA, dirB)), mantissa)
 
     @staticmethod
-    def Area(face, mantissa: int = 6) -> float:
+    def Area(face, mantissa: int = 6, silent: bool = False) -> float:
         """
         Returns the area of the input face.
 
@@ -232,7 +232,11 @@ class Face():
         face : topologic_core.Face
             The input face.
         mantissa : int , optional
-            The number of decimal places to round the result to. Default is 6.
+            The number of decimal places to round the result to. If None, the
+            value is returned without rounding. Default is 6.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed.
+            Default is False.
 
         Returns
         -------
@@ -243,14 +247,19 @@ class Face():
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(face, "Face"):
-            print("Face.Area - Warning: The input face parameter is not a valid topologic face. Returning None.")
+            if not silent:
+                print("Face.Area - Error: The input face parameter is not a valid topologic face. Returning None.")
             return None
-        area = None
         try:
-            area = round(Core.FaceUtility.Area(face), mantissa)
-        except:
-            area = None
-        return area
+            area = Core.FaceUtility.Area(face)
+            if area is None:
+                return None
+            area = float(area)
+            return round(area, int(mantissa)) if mantissa is not None else area
+        except Exception:
+            if not silent:
+                print("Face.Area - Error: Could not compute the area of the input face. Returning None.")
+            return None
 
     @staticmethod
     def BoundingRectangle(topology, optimize: int = 0, tolerance: float = 0.0001):
