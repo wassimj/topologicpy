@@ -351,6 +351,62 @@ class Edge(Topology):
         )
 
     @staticmethod
+    def ByNurbsParameters(
+        controlPoints,
+        weights=None,
+        knots=None,
+        isRational: bool = False,
+        isPeriodic: bool = False,
+        degree: int = 3,
+    ):
+        """Create an exact OCCT B-spline/NURBS Edge from expanded parameters."""
+        vertices = [v for v in (controlPoints or []) if isinstance(v, Vertex)]
+        if len(vertices) < 2:
+            return None
+
+        try:
+            degree = int(degree)
+        except Exception:
+            return None
+        if degree < 1 or degree >= len(vertices):
+            return None
+
+        if weights is None:
+            weights = [1.0] * len(vertices)
+        try:
+            weights = [float(value) for value in weights]
+        except Exception:
+            return None
+        if len(weights) != len(vertices):
+            return None
+        if any(not math.isfinite(value) or value <= 0.0 for value in weights):
+            return None
+        if not bool(isRational):
+            weights = [1.0] * len(vertices)
+
+        if knots is None:
+            if bool(isPeriodic):
+                knots = [float(i) for i in range(len(vertices) + 1)]
+            else:
+                interior = len(vertices) - degree - 1
+                knots = [0.0] * (degree + 1)
+                if interior > 0:
+                    knots += [
+                        float(i) / float(interior + 1)
+                        for i in range(1, interior + 1)
+                    ]
+                knots += [1.0] * (degree + 1)
+
+        return EdgeUtility.ByNurbsCurve(
+            vertices,
+            knots,
+            weights,
+            degree,
+            bool(isPeriodic),
+            bool(isRational),
+        )
+
+    @staticmethod
     def ByOcctShape(
         shape,
         dictionary=None,
@@ -599,6 +655,61 @@ def _segment_segment_intersection(
 
 class EdgeUtility:
     @staticmethod
+    def Arc(
+        radius: float = 0.5,
+        fromAngle: float = 0.0,
+        toAngle: float = 180.0,
+        tolerance: float = 0.0001,
+    ):
+        """Create an exact open circular arc in the XY plane using native OCCT geometry."""
+        try:
+            radius = abs(float(radius))
+            fromAngle = float(fromAngle)
+            toAngle = float(toAngle)
+            tolerance = abs(float(tolerance))
+        except Exception:
+            return None
+
+        if not all(math.isfinite(value) for value in (radius, fromAngle, toAngle, tolerance)):
+            return None
+        if tolerance <= 0.0 or radius <= tolerance:
+            return None
+
+        while toAngle < fromAngle:
+            toAngle += 360.0
+        sweep = toAngle - fromAngle
+        if sweep <= 1.0e-12 or sweep >= 360.0 - 1.0e-12:
+            return None
+
+        chord_length = 2.0 * radius * abs(math.sin(math.radians(sweep) * 0.5))
+        if chord_length <= tolerance:
+            return None
+
+        try:
+            from OCC.Core.gp import gp_Ax2, gp_Circ, gp_Dir, gp_Pnt
+            from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakeEdge
+
+            axis = gp_Ax2(
+                gp_Pnt(0.0, 0.0, 0.0),
+                gp_Dir(0.0, 0.0, 1.0),
+                gp_Dir(1.0, 0.0, 0.0),
+            )
+            circle = gp_Circ(axis, radius)
+            maker = BRepBuilderAPI_MakeEdge(
+                circle,
+                math.radians(fromAngle),
+                math.radians(toAngle),
+            )
+            if not maker.IsDone():
+                return None
+            shape = maker.Edge()
+            if _is_null_shape(shape):
+                return None
+            return Edge.ByOcctShape(shape)
+        except Exception:
+            return None
+
+    @staticmethod
     def ByCircle(
         centerPoint,
         radius,
@@ -684,6 +795,111 @@ class EdgeUtility:
 
             return Edge.ByOcctShape(shape)
 
+        except Exception:
+            return None
+
+    @staticmethod
+    def ByNurbsCurve(
+        controlPoints,
+        knots,
+        weights,
+        degree: int = 3,
+        isPeriodic: bool = False,
+        isRational: bool = False,
+    ):
+        """Create one exact OCCT B-spline/NURBS Edge from an expanded knot vector."""
+        vertices = [v for v in (controlPoints or []) if isinstance(v, Vertex)]
+        if len(vertices) < 2:
+            return None
+
+        try:
+            degree = int(degree)
+            expanded_knots = [float(value) for value in knots]
+            weights = [float(value) for value in weights]
+        except Exception:
+            return None
+
+        if degree < 1 or degree >= len(vertices):
+            return None
+        if len(weights) != len(vertices):
+            return None
+        if any(not math.isfinite(value) or value <= 0.0 for value in weights):
+            return None
+        if not bool(isRational):
+            weights = [1.0] * len(vertices)
+        if any(not math.isfinite(value) for value in expanded_knots):
+            return None
+        if any(expanded_knots[i] > expanded_knots[i + 1] for i in range(len(expanded_knots) - 1)):
+            return None
+
+        unique_knots = []
+        multiplicities = []
+        for value in expanded_knots:
+            if unique_knots and value == unique_knots[-1]:
+                multiplicities[-1] += 1
+            else:
+                unique_knots.append(value)
+                multiplicities.append(1)
+
+        if len(unique_knots) < 2:
+            return None
+
+        if bool(isPeriodic):
+            valid = (
+                multiplicities[0] == multiplicities[-1]
+                and all(1 <= mult <= degree for mult in multiplicities)
+                and sum(multiplicities) - multiplicities[0] == len(vertices)
+            )
+        else:
+            valid = (
+                sum(multiplicities) == len(vertices) + degree + 1
+                and all(1 <= mult <= degree for mult in multiplicities[1:-1])
+                and 1 <= multiplicities[0] <= degree + 1
+                and 1 <= multiplicities[-1] <= degree + 1
+            )
+        if not valid:
+            return None
+
+        try:
+            from OCC.Core.gp import gp_Pnt
+            from OCC.Core.TColgp import TColgp_Array1OfPnt
+            from OCC.Core.TColStd import TColStd_Array1OfInteger, TColStd_Array1OfReal
+            from OCC.Core.Geom import Geom_BSplineCurve
+            from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakeEdge
+
+            poles = TColgp_Array1OfPnt(1, len(vertices))
+            weight_array = TColStd_Array1OfReal(1, len(vertices))
+            for index, (vertex, weight) in enumerate(zip(vertices, weights), start=1):
+                poles.SetValue(
+                    index,
+                    gp_Pnt(float(vertex.x), float(vertex.y), float(vertex.z)),
+                )
+                weight_array.SetValue(index, float(weight))
+
+            knot_array = TColStd_Array1OfReal(1, len(unique_knots))
+            mult_array = TColStd_Array1OfInteger(1, len(unique_knots))
+            for index, (knot, multiplicity) in enumerate(
+                zip(unique_knots, multiplicities), start=1
+            ):
+                knot_array.SetValue(index, float(knot))
+                mult_array.SetValue(index, int(multiplicity))
+
+            curve = Geom_BSplineCurve(
+                poles,
+                weight_array,
+                knot_array,
+                mult_array,
+                degree,
+                bool(isPeriodic),
+                True,
+            )
+            maker = BRepBuilderAPI_MakeEdge(curve)
+            if not maker.IsDone():
+                return None
+            shape = maker.Edge()
+            if _is_null_shape(shape):
+                return None
+            return Edge.ByOcctShape(shape)
         except Exception:
             return None
 

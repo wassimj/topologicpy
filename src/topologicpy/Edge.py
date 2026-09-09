@@ -116,6 +116,367 @@ class Edge():
         return round(ang, mantissa)
 
     @staticmethod
+    def Arc(
+        origin=None,
+        radius: float = 0.5,
+        fromAngle: float = 0.0,
+        toAngle: float = 180.0,
+        direction: list = [0, 0, 1],
+        placement: str = "center",
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
+        """
+        Creates a single open circular arc Edge.
+
+        The arc is constructed as an exact curve rather than as a polyline
+        approximation. Angles are measured in degrees counter-clockwise from the
+        positive local X-axis when viewed along the positive local Z-axis.
+
+        The input direction defines the normal of the plane containing the arc.
+        The resulting topology is always a single open Edge. A complete 360-degree
+        circle cannot be created using this method.
+
+        Parameters
+        ----------
+        origin : topologic_core.Vertex , optional
+            The placement origin of the arc. If None, the global origin is used.
+            The interpretation of the origin depends on the input placement
+            parameter. Default is None.
+        radius : float , optional
+            The radius of the arc. Default is 0.5.
+        fromAngle : float , optional
+            The angle in degrees at which the arc starts. Default is 0.0.
+        toAngle : float , optional
+            The angle in degrees at which the arc ends. If this value is less than
+            fromAngle, 360 degrees are added until a positive counter-clockwise
+            sweep is obtained. The resulting sweep must be greater than zero and
+            less than 360 degrees. Default is 180.0.
+        direction : list , optional
+            The vector representing the normal to the plane of the arc.
+            Default is [0, 0, 1].
+        placement : str , optional
+            The placement of the input origin relative to the arc. The options are
+            "center", "start", and "end". If set to "center", the centre of the
+            underlying circle is placed at the origin. If set to "start", the start
+            vertex of the arc is placed at the origin. If set to "end", the end
+            vertex of the arc is placed at the origin. It is case insensitive.
+            Default is "center".
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed.
+            Default is False.
+
+        Returns
+        -------
+        topologic_core.Edge
+            The created open circular arc.
+
+        """
+        import math
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
+
+        # Validate tolerance.
+        try:
+            tolerance = float(tolerance)
+        except Exception:
+            if not silent:
+                print("Edge.Arc - Error: The input tolerance parameter is not a valid number. Returning None.")
+            return None
+
+        if not math.isfinite(tolerance) or tolerance <= 0.0:
+            if not silent:
+                print("Edge.Arc - Error: The input tolerance parameter must be greater than zero. Returning None.")
+            return None
+
+        # Validate origin.
+        if origin is None:
+            origin = Vertex.Origin()
+        elif not Topology.IsInstance(origin, "Vertex"):
+            if not silent:
+                print("Edge.Arc - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
+            return None
+
+        # Validate radius.
+        try:
+            radius = abs(float(radius))
+        except Exception:
+            if not silent:
+                print("Edge.Arc - Error: The input radius parameter is not a valid number. Returning None.")
+            return None
+
+        if not math.isfinite(radius) or radius <= tolerance:
+            if not silent:
+                print("Edge.Arc - Error: The input radius parameter must be greater than the input tolerance. Returning None.")
+            return None
+
+        # Validate angles.
+        try:
+            fromAngle = float(fromAngle)
+            toAngle = float(toAngle)
+        except Exception:
+            if not silent:
+                print("Edge.Arc - Error: The input fromAngle or toAngle parameter is not a valid number. Returning None.")
+            return None
+
+        if not math.isfinite(fromAngle) or not math.isfinite(toAngle):
+            if not silent:
+                print("Edge.Arc - Error: The input fromAngle and toAngle parameters must be finite numbers. Returning None.")
+            return None
+
+        while toAngle < fromAngle:
+            toAngle += 360.0
+
+        sweep = toAngle - fromAngle
+
+        if sweep <= 1.0e-12:
+            if not silent:
+                print("Edge.Arc - Error: The angular sweep must be greater than zero. Returning None.")
+            return None
+
+        if sweep >= 360.0 - 1.0e-12:
+            if not silent:
+                print("Edge.Arc - Error: The angular sweep must be less than 360 degrees. Returning None.")
+            return None
+
+        # An open Edge must have distinguishable start and end vertices.
+        chord_length = 2.0 * radius * abs(
+            math.sin(math.radians(sweep) * 0.5)
+        )
+
+        if chord_length <= tolerance:
+            if not silent:
+                print("Edge.Arc - Error: The arc start and end vertices are closer than the input tolerance. Returning None.")
+            return None
+
+        # Validate direction.
+        if not isinstance(direction, (list, tuple)) or len(direction) != 3:
+            if not silent:
+                print("Edge.Arc - Error: The input direction parameter is not a valid 3D vector. Returning None.")
+            return None
+
+        try:
+            dx = float(direction[0])
+            dy = float(direction[1])
+            dz = float(direction[2])
+        except Exception:
+            if not silent:
+                print("Edge.Arc - Error: The input direction parameter is not numerical. Returning None.")
+            return None
+
+        if not all(math.isfinite(value) for value in [dx, dy, dz]):
+            if not silent:
+                print("Edge.Arc - Error: The input direction parameter must contain finite numbers. Returning None.")
+            return None
+
+        magnitude = math.sqrt(dx * dx + dy * dy + dz * dz)
+
+        if magnitude <= tolerance:
+            if not silent:
+                print("Edge.Arc - Error: The input direction vector has zero magnitude. Returning None.")
+            return None
+
+        direction = [
+            dx / magnitude,
+            dy / magnitude,
+            dz / magnitude,
+        ]
+
+        # Validate placement.
+        if not isinstance(placement, str):
+            if not silent:
+                print("Edge.Arc - Error: The input placement parameter is not a valid string. Returning None.")
+            return None
+
+        placement = placement.lower()
+
+        if placement not in ["center", "start", "end"]:
+            if not silent:
+                print("Edge.Arc - Error: The input placement string is not one of center, start, or end. Returning None.")
+            return None
+
+        # Prefer a native backend implementation.
+        arc = None
+
+        try:
+            if Core.HasAttribute("EdgeUtility", "Arc"):
+                arc = Core.EdgeUtility.Arc(
+                    radius,
+                    fromAngle,
+                    toAngle,
+                    tolerance,
+                )
+        except Exception:
+            arc = None
+
+        # TopologicCore currently exposes ByNurbsCurve but not Arc.
+        if not Topology.IsInstance(arc, "Edge"):
+            arc = Edge._ArcByNurbs(
+                radius=radius,
+                fromAngle=fromAngle,
+                toAngle=toAngle,
+                tolerance=tolerance,
+                silent=True,
+            )
+
+        if not Topology.IsInstance(arc, "Edge"):
+            if not silent:
+                print("Edge.Arc - Error: Could not create the circular arc. Returning None.")
+            return None
+
+        # Select the canonical placement anchor.
+        if placement == "center":
+            source_origin = Vertex.Origin()
+        elif placement == "start":
+            source_origin = Edge.StartVertex(arc, silent=True)
+        else:
+            source_origin = Edge.EndVertex(arc, silent=True)
+
+        if not Topology.IsInstance(source_origin, "Vertex"):
+            if not silent:
+                print("Edge.Arc - Error: Could not determine the placement origin of the arc. Returning None.")
+            return None
+
+        # Orient and place in one affine transformation. This preserves the curve.
+        arc = Topology.OrientAndPlace(
+            arc,
+            originA=source_origin,
+            originB=origin,
+            dirA=[0, 0, 1],
+            dirB=direction,
+            tolerance=tolerance,
+            silent=True,
+        )
+
+        if not Topology.IsInstance(arc, "Edge"):
+            if not silent:
+                print("Edge.Arc - Error: Could not orient and place the circular arc. Returning None.")
+            return None
+
+        return arc
+
+    @staticmethod
+    def _ArcByNurbs(
+        radius: float = 0.5,
+        fromAngle: float = 0.0,
+        toAngle: float = 180.0,
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
+        """
+        Creates an exact open circular arc as a rational quadratic NURBS.
+
+        This internal fallback is used when the active backend does not expose a
+        native circular-arc constructor. The arc is created in the XY plane,
+        centred at the global origin. Public :meth:`Edge.Arc` subsequently handles
+        placement and orientation.
+
+        Parameters
+        ----------
+        radius : float , optional
+            The radius of the arc. Default is 0.5.
+        fromAngle : float , optional
+            The start angle of the arc in degrees. Default is 0.0.
+        toAngle : float , optional
+            The end angle of the arc in degrees. Default is 180.0.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed.
+            Default is False.
+
+        Returns
+        -------
+        topologic_core.Edge
+            The created open circular arc, or None if it cannot be created.
+
+        """
+        import math
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
+
+        try:
+            radius = abs(float(radius))
+            fromAngle = float(fromAngle)
+            toAngle = float(toAngle)
+            tolerance = abs(float(tolerance))
+        except Exception:
+            if not silent:
+                print("Edge._ArcByNurbs - Error: One or more input parameters are invalid. Returning None.")
+            return None
+
+        if not all(math.isfinite(value) for value in [radius, fromAngle, toAngle, tolerance]):
+            if not silent:
+                print("Edge._ArcByNurbs - Error: One or more input parameters are not finite. Returning None.")
+            return None
+
+        if tolerance <= 0.0 or radius <= tolerance:
+            if not silent:
+                print("Edge._ArcByNurbs - Error: The input radius must be greater than the input tolerance. Returning None.")
+            return None
+
+        while toAngle < fromAngle:
+            toAngle += 360.0
+
+        sweep = toAngle - fromAngle
+        if sweep <= 1.0e-12 or sweep >= 360.0 - 1.0e-12:
+            if not silent:
+                print("Edge._ArcByNurbs - Error: The angular sweep must be greater than zero and less than 360 degrees. Returning None.")
+            return None
+
+        span_count = max(1, int(math.ceil(sweep / 90.0)))
+        span_angle = sweep / float(span_count)
+        controlPoints = []
+        weights = []
+
+        for i in range(span_count):
+            a0 = math.radians(fromAngle + i * span_angle)
+            a1 = math.radians(fromAngle + (i + 1) * span_angle)
+            am = 0.5 * (a0 + a1)
+            weight = math.cos(0.5 * (a1 - a0))
+            if weight <= 0.0:
+                if not silent:
+                    print("Edge._ArcByNurbs - Error: Could not compute a valid rational arc representation. Returning None.")
+                return None
+
+            p0 = Vertex.ByCoordinates(radius * math.cos(a0), radius * math.sin(a0), 0.0)
+            p1 = Vertex.ByCoordinates((radius / weight) * math.cos(am), (radius / weight) * math.sin(am), 0.0)
+            p2 = Vertex.ByCoordinates(radius * math.cos(a1), radius * math.sin(a1), 0.0)
+
+            if i == 0:
+                controlPoints.append(p0)
+                weights.append(1.0)
+            controlPoints.append(p1)
+            weights.append(weight)
+            controlPoints.append(p2)
+            weights.append(1.0)
+
+        knots = [0.0, 0.0, 0.0]
+        for i in range(1, span_count):
+            knot = float(i) / float(span_count)
+            knots.extend([knot, knot])
+        knots.extend([1.0, 1.0, 1.0])
+
+        arc = Edge.ByNurbsParameters(
+            controlPoints=controlPoints,
+            weights=weights,
+            knots=knots,
+            isRational=True,
+            isPeriodic=False,
+            degree=2,
+            tolerance=tolerance,
+            silent=True,
+        )
+
+        if not Topology.IsInstance(arc, "Edge"):
+            if not silent:
+                print("Edge._ArcByNurbs - Error: Could not create the circular arc. Returning None.")
+            return None
+        return arc
+
+    @staticmethod
     def Bisect(edgeA, edgeB, length: float = 1.0, placement: int = 0, tolerance: float = 0.0001, silent: bool = False):
         """
         Creates a bisecting edge between edgeA and edgeB.
@@ -252,6 +613,188 @@ class Edge():
         edge = Edge.SetLength(edge, length, bothSides=False)
         if not Topology.IsInstance(edge, "Edge"):
             print("Edge.ByFaceNormal - Error: Could not create an edge. Returning None.")
+            return None
+        return edge
+
+    @staticmethod
+    def ByNurbsParameters(controlPoints,
+                          weights=None,
+                          knots=None,
+                          isRational: bool = False,
+                          isPeriodic: bool = False,
+                          degree: int = 3,
+                          tolerance: float = 0.0001,
+                          silent: bool = False):
+        """
+        Creates an edge from exact NURBS/B-spline parameters.
+
+        Parameters
+        ----------
+        controlPoints : list
+            The control vertices (poles) of the curve.
+        weights : list , optional
+            One positive weight per control point. If None, all weights are 1.0.
+        knots : list , optional
+            Expanded nondecreasing knot vector. Repeated knots are repeated in
+            the list. If None, a uniform expanded knot vector is generated.
+        isRational : bool , optional
+            If True, construct a rational NURBS curve. Default is False.
+        isPeriodic : bool , optional
+            If True, request a periodic B-spline/NURBS curve. Default is False.
+        degree : int , optional
+            Curve degree. Default is 3.
+        tolerance : float , optional
+            Geometric tolerance used for input validation. Default is 0.0001.
+        silent : bool , optional
+            If True, suppress diagnostics. Default is False.
+
+        Returns
+        -------
+        topologic_core.Edge
+            The created edge, or None on failure.
+        """
+        import math
+        from topologicpy.Topology import Topology
+        from topologicpy.Helper import Helper
+
+        try:
+            tolerance = float(tolerance)
+        except Exception:
+            if not silent:
+                print("Edge.ByNurbsParameters - Error: The input tolerance is invalid. Returning None.")
+            return None
+        if not math.isfinite(tolerance) or tolerance <= 0.0:
+            if not silent:
+                print("Edge.ByNurbsParameters - Error: The input tolerance must be greater than zero. Returning None.")
+            return None
+
+        try:
+            controlPoints = Helper.Flatten(controlPoints)
+        except Exception:
+            controlPoints = controlPoints if isinstance(controlPoints, list) else []
+        controlPoints = [v for v in controlPoints if Topology.IsInstance(v, "Vertex")]
+        if len(controlPoints) < 2:
+            if not silent:
+                print("Edge.ByNurbsParameters - Error: Fewer than two valid control points were supplied. Returning None.")
+            return None
+
+        try:
+            degree = int(degree)
+        except Exception:
+            if not silent:
+                print("Edge.ByNurbsParameters - Error: The input degree is invalid. Returning None.")
+            return None
+        if degree < 1 or degree >= len(controlPoints):
+            if not silent:
+                print("Edge.ByNurbsParameters - Error: Degree must be at least 1 and smaller than the number of control points. Returning None.")
+            return None
+
+        isRational = bool(isRational)
+        isPeriodic = bool(isPeriodic)
+
+        if weights is None:
+            weights = [1.0] * len(controlPoints)
+        try:
+            weights = [float(value) for value in weights]
+        except Exception:
+            weights = []
+        if (
+            len(weights) != len(controlPoints)
+            or any(not math.isfinite(value) or value <= 0.0 for value in weights)
+        ):
+            if not silent:
+                print("Edge.ByNurbsParameters - Error: The weights must contain one finite positive value per control point. Returning None.")
+            return None
+        if not isRational:
+            weights = [1.0] * len(controlPoints)
+
+        if knots is None:
+            if isPeriodic:
+                # A simple uniform periodic OCCT B-spline with n poles uses n+1
+                # unique knots of multiplicity 1.
+                knots = [float(i) for i in range(len(controlPoints) + 1)]
+            else:
+                interior = len(controlPoints) - degree - 1
+                knots = [0.0] * (degree + 1)
+                if interior > 0:
+                    knots += [float(i) / float(interior + 1) for i in range(1, interior + 1)]
+                knots += [1.0] * (degree + 1)
+        try:
+            knots = [float(value) for value in knots]
+        except Exception:
+            knots = []
+
+        if any(not math.isfinite(value) for value in knots):
+            if not silent:
+                print("Edge.ByNurbsParameters - Error: The knot vector contains a non-finite value. Returning None.")
+            return None
+        if any(knots[i] > knots[i + 1] for i in range(len(knots) - 1)):
+            if not silent:
+                print("Edge.ByNurbsParameters - Error: The knot vector is not nondecreasing. Returning None.")
+            return None
+        if len(knots) < 2 or abs(knots[-1] - knots[0]) <= 1.0e-15:
+            if not silent:
+                print("Edge.ByNurbsParameters - Error: The knot vector has zero parameter range. Returning None.")
+            return None
+
+        # Validate expanded knot multiplicities against the OCCT B-spline rules.
+        unique_knots = []
+        multiplicities = []
+        for value in knots:
+            if unique_knots and value == unique_knots[-1]:
+                multiplicities[-1] += 1
+            else:
+                unique_knots.append(value)
+                multiplicities.append(1)
+        if isPeriodic:
+            valid_knots = (
+                multiplicities[0] == multiplicities[-1]
+                and all(1 <= m <= degree for m in multiplicities)
+                and sum(multiplicities) - multiplicities[0] == len(controlPoints)
+            )
+        else:
+            valid_knots = (
+                sum(multiplicities) == len(controlPoints) + degree + 1
+                and all(1 <= m <= degree for m in multiplicities[1:-1])
+                and 1 <= multiplicities[0] <= degree + 1
+                and 1 <= multiplicities[-1] <= degree + 1
+            )
+        if not valid_knots:
+            if not silent:
+                print("Edge.ByNurbsParameters - Error: The knot multiplicities are incompatible with the control points, degree, and periodicity. Returning None.")
+            return None
+
+        edge = None
+        try:
+            if Core.HasAttribute("EdgeUtility", "ByNurbsCurve"):
+                edge = Core.EdgeUtility.ByNurbsCurve(
+                    controlPoints,
+                    knots,
+                    weights,
+                    degree,
+                    isPeriodic,
+                    isRational,
+                )
+        except Exception:
+            edge = None
+
+        if not Topology.IsInstance(edge, "Edge"):
+            try:
+                if Core.HasAttribute("Edge", "ByNurbsParameters"):
+                    edge = Core.Edge.ByNurbsParameters(
+                        controlPoints,
+                        weights,
+                        knots,
+                        isRational,
+                        isPeriodic,
+                        degree,
+                    )
+            except Exception:
+                edge = None
+
+        if not Topology.IsInstance(edge, "Edge"):
+            if not silent:
+                print("Edge.ByNurbsParameters - Error: The active backend could not construct the NURBS edge. Returning None.")
             return None
         return edge
 
