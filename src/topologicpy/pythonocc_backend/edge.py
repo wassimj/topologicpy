@@ -11,7 +11,7 @@ from .topology import (
 )
 from .vertex import Vertex
 from .occ_utils import make_occ_edge
-from .helpers import distance3, same_vertex
+from .helpers import same_vertex
 
 
 @dataclass(eq=False, init=False)
@@ -384,8 +384,8 @@ class Edge(Topology):
         return round(t, mantissa)
 
     def Length(self):
-        """Returns the length of the edge."""
-        return distance3(self.start, self.end)
+        """Returns the exact geometric length of the edge."""
+        return EdgeUtility.Length(self)
 
     def Intersect(self, otherTopology, transferDictionary: bool = False):
         """
@@ -505,14 +505,99 @@ def _segment_segment_intersection(
 
 class EdgeUtility:
     @staticmethod
-    def Length(edge):
-        if (
-            isinstance(edge, Edge)
-            and isinstance(edge.start, Vertex)
-            and isinstance(edge.end, Vertex)
-        ):
-            return distance3(edge.start, edge.end)
-        return None
+    def IsClosed(edge, tolerance: float = 0.0001):
+        """Returns True if the input Edge is topologically closed."""
+        if not isinstance(edge, Edge):
+            return False
+        if _is_null_shape(getattr(edge, "shape", None)):
+            return False
+        try:
+            from OCC.Core.BRep import BRep_Tool
+            return bool(BRep_Tool.IsClosed(edge.shape))
+        except Exception:
+            return False
+
+    @staticmethod
+    def IsLinear(edge, tolerance: float = 0.0001):
+        """Returns True if the actual OCCT edge geometry is one straight segment."""
+        import math
+
+        if not isinstance(edge, Edge) or _is_null_shape(getattr(edge, "shape", None)):
+            return False
+
+        try:
+            tolerance = max(abs(float(tolerance)), 1.0e-12)
+        except Exception:
+            tolerance = 0.0001
+
+        try:
+            from OCC.Core.BRepAdaptor import BRepAdaptor_Curve
+            from OCC.Core.GeomAbs import GeomAbs_Line, GeomAbs_BSplineCurve, GeomAbs_BezierCurve
+
+            adaptor = BRepAdaptor_Curve(edge.shape)
+            curve_type = adaptor.GetType()
+            if curve_type == GeomAbs_Line:
+                return True
+            if curve_type == GeomAbs_BSplineCurve:
+                curve = adaptor.BSpline()
+            elif curve_type == GeomAbs_BezierCurve:
+                curve = adaptor.Bezier()
+            else:
+                return False
+
+            count = int(curve.NbPoles())
+            if count < 2:
+                return False
+
+            first = curve.Pole(1)
+            last = curve.Pole(count)
+            ax, ay, az = float(first.X()), float(first.Y()), float(first.Z())
+            dx = float(last.X()) - ax
+            dy = float(last.Y()) - ay
+            dz = float(last.Z()) - az
+            chord = math.sqrt(dx * dx + dy * dy + dz * dz)
+            if chord <= tolerance:
+                return False
+
+            # A straight Bezier/B-spline must have collinear control poles.
+            for i in range(2, count):
+                pole = curve.Pole(i)
+                px = float(pole.X()) - ax
+                py = float(pole.Y()) - ay
+                pz = float(pole.Z()) - az
+                cx = py * dz - pz * dy
+                cy = pz * dx - px * dz
+                cz = px * dy - py * dx
+                if math.sqrt(cx * cx + cy * cy + cz * cz) / chord > tolerance:
+                    return False
+
+            # Collinear poles alone are insufficient: a curve can double back
+            # along the same line. Exact curve length must also equal the chord.
+            curve_length = EdgeUtility.Length(edge, tolerance=tolerance)
+            return bool(
+                curve_length is not None
+                and abs(float(curve_length) - chord) <= tolerance
+            )
+        except Exception:
+            return False
+
+    @staticmethod
+    def Length(edge, tolerance: float = 0.0001):
+        """Returns the exact geometric length of an Edge."""
+        import math
+
+        if not isinstance(edge, Edge) or _is_null_shape(getattr(edge, "shape", None)):
+            return None
+        try:
+            from OCC.Core.GProp import GProp_GProps
+            from OCC.Core.BRepGProp import brepgprop
+
+            properties = GProp_GProps()
+            brepgprop.LinearProperties(edge.shape, properties)
+            value = float(properties.Mass())
+            return value if math.isfinite(value) else None
+        except Exception:
+            return None
 
     @staticmethod
     def PointAtParameter(edge, parameter):

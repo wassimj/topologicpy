@@ -945,6 +945,82 @@ class Edge():
         return Vertex.ByCoordinates(x,y,0)
 
     @staticmethod
+    def IsClosed(edge, tolerance: float = 0.0001, silent: bool = False) -> bool:
+        """
+        Returns True if the input edge is closed. Returns False otherwise.
+
+        A closed edge has no distinct topological start and end boundary. Native
+        backend closure detection is preferred when available. If the active
+        backend does not expose such a query, closure is determined from the start
+        and end vertices.
+
+        Parameters
+        ----------
+        edge : topologic_core.Edge
+            The input edge.
+        tolerance : float , optional
+            The desired tolerance used by the fallback closure test. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        bool
+            True if the input edge is closed. False otherwise.
+
+        """
+        import math
+        from topologicpy.Topology import Topology
+        from topologicpy.Vertex import Vertex
+
+        if not Topology.IsInstance(edge, "Edge"):
+            if not silent:
+                print("Edge.IsClosed - Error: The input edge parameter is not a valid topologic edge. Returning None.")
+            return None
+
+        try:
+            tolerance = float(tolerance)
+        except Exception:
+            if not silent:
+                print("Edge.IsClosed - Error: The input tolerance parameter is not a valid number. Returning None.")
+            return None
+
+        if not math.isfinite(tolerance) or tolerance <= 0.0:
+            if not silent:
+                print("Edge.IsClosed - Error: The input tolerance parameter must be greater than zero. Returning None.")
+            return None
+
+        # Prefer native backend topology.
+        try:
+            if Core.HasAttribute("EdgeUtility", "IsClosed"):
+                try:
+                    result = Core.EdgeUtility.IsClosed(edge, tolerance)
+                except TypeError:
+                    result = Core.EdgeUtility.IsClosed(edge)
+                if isinstance(result, bool):
+                    return result
+        except Exception:
+            pass
+
+        start = Edge.StartVertex(edge, silent=True)
+        end = Edge.EndVertex(edge, silent=True)
+
+        if not Topology.IsInstance(start, "Vertex") or not Topology.IsInstance(end, "Vertex"):
+            if not silent:
+                print("Edge.IsClosed - Error: Could not determine the start or end vertex of the input edge. Returning None.")
+            return None
+
+        try:
+            if Topology.IsSame(start, end, silent=True):
+                return True
+        except Exception:
+            pass
+
+        # Some backends may return separate wrappers for the same geometric
+        # boundary vertex, so use coincidence as a conservative fallback.
+        return bool(Vertex.IsCoincident(start, end, tolerance=tolerance, silent=True))
+
+    @staticmethod
     def IsCollinear(edgeA, edgeB, mantissa: int = 6, tolerance: float = 0.0001):
         """
         Return True if the two input edges are collinear. Returns False otherwise.
@@ -1083,6 +1159,101 @@ class Edge():
         
         # Check for coplanarity
         return np.isclose(scalar_triple_product, 0, atol=tolerance)
+
+    @staticmethod
+    def IsLinear(edge, tolerance: float = 0.0001, silent: bool = False) -> bool:
+        """
+        Returns True if the input edge is geometrically linear. Returns False otherwise.
+
+        An edge is considered linear if its actual geometry follows one straight
+        segment within the specified tolerance. Native backend classification is
+        preferred. If unavailable, the method compares the exact edge length with
+        the Euclidean distance between its endpoints.
+
+        Parameters
+        ----------
+        edge : topologic_core.Edge
+            The input edge.
+        tolerance : float , optional
+            The desired tolerance used to determine if the edge is geometrically
+            linear. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        bool
+            True if the input edge is geometrically linear. False otherwise.
+
+        """
+        import math
+        from topologicpy.Topology import Topology
+        from topologicpy.Vertex import Vertex
+
+        if not Topology.IsInstance(edge, "Edge"):
+            if not silent:
+                print("Edge.IsLinear - Error: The input edge parameter is not a valid topologic edge. Returning None.")
+            return None
+
+        try:
+            tolerance = float(tolerance)
+        except Exception:
+            if not silent:
+                print("Edge.IsLinear - Error: The input tolerance parameter is not a valid number. Returning None.")
+            return None
+
+        if not math.isfinite(tolerance) or tolerance <= 0.0:
+            if not silent:
+                print("Edge.IsLinear - Error: The input tolerance parameter must be greater than zero. Returning None.")
+            return None
+
+        # Prefer a backend-native geometric classification when available.
+        try:
+            if Core.HasAttribute("EdgeUtility", "IsLinear"):
+                try:
+                    result = Core.EdgeUtility.IsLinear(edge, tolerance)
+                except TypeError:
+                    result = Core.EdgeUtility.IsLinear(edge)
+                if isinstance(result, bool):
+                    return result
+        except Exception:
+            pass
+
+        # Backend-neutral fallback: a non-degenerate rectifiable curve is one
+        # straight segment iff its curve length equals its endpoint chord length.
+        start = Edge.StartVertex(edge, silent=True)
+        end = Edge.EndVertex(edge, silent=True)
+        if not Topology.IsInstance(start, "Vertex") or not Topology.IsInstance(end, "Vertex"):
+            return False
+
+        a = Vertex.Coordinates(start, mantissa=None)
+        b = Vertex.Coordinates(end, mantissa=None)
+        if not isinstance(a, (list, tuple)) or not isinstance(b, (list, tuple)) or len(a) < 3 or len(b) < 3:
+            return False
+
+        chord_length = math.sqrt(sum((float(b[i]) - float(a[i])) ** 2 for i in range(3)))
+        if chord_length <= tolerance:
+            return False
+
+        curve_length = None
+        try:
+            try:
+                curve_length = Core.EdgeUtility.Length(edge, tolerance)
+            except TypeError:
+                curve_length = Core.EdgeUtility.Length(edge)
+        except Exception:
+            curve_length = None
+
+        if curve_length is None:
+            return False
+        try:
+            curve_length = float(curve_length)
+        except Exception:
+            return False
+        if not math.isfinite(curve_length):
+            return False
+
+        return bool(abs(curve_length - chord_length) <= tolerance)
 
     @staticmethod
     def IsParallel(edgeA, edgeB, mantissa: int = 6, tolerance: float = 0.0001):
