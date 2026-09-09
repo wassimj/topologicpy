@@ -508,6 +508,239 @@ class Edge():
         return Edge.ByStartVertexEndVertex(vertexList[0], vertexList[-1], tolerance=tolerance)
 
     @staticmethod
+    def Circle(
+        origin=None,
+        radius: float = 0.5,
+        direction: list = [0, 0, 1],
+        placement: str = "center",
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
+        """
+        Creates a single closed circular Edge.
+
+        The circle is constructed as an exact closed curve rather than as a
+        polyline approximation. It is initially defined in a local XY plane and
+        oriented such that its positive local Z-axis aligns with the input
+        direction.
+
+        The seam of the closed Edge is located on the positive local X-axis.
+
+        Parameters
+        ----------
+        origin : topologic_core.Vertex , optional
+            The placement origin of the circle. If None, the global origin is
+            used. The interpretation of this origin depends on the input
+            placement parameter. Default is None.
+        radius : float , optional
+            The radius of the circle. Default is 0.5.
+        direction : list , optional
+            The vector representing the normal to the plane of the circle.
+            Default is [0, 0, 1].
+        placement : str , optional
+            The placement of the input origin relative to the circle. The options
+            are "center", "lowerleft", "upperleft", "lowerright", and
+            "upperright". These correspond to the centre or a corner of the
+            circle's local bounding square. It is case insensitive.
+            Default is "center".
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed.
+            Default is False.
+
+        Returns
+        -------
+        topologic_core.Edge
+            The created closed circular Edge.
+
+        """
+        import math
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
+        from topologicpy.Vector import Vector
+
+        # Validate tolerance.
+        try:
+            tolerance = float(tolerance)
+        except Exception:
+            if not silent:
+                print("Edge.Circle - Error: The input tolerance parameter is not a valid number. Returning None.")
+            return None
+
+        if not math.isfinite(tolerance) or tolerance <= 0.0:
+            if not silent:
+                print("Edge.Circle - Error: The input tolerance parameter must be greater than zero. Returning None.")
+            return None
+
+        # Validate origin.
+        if origin is None:
+            origin = Vertex.Origin()
+
+        if not Topology.IsInstance(origin, "Vertex"):
+            if not silent:
+                print("Edge.Circle - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
+            return None
+
+        # Validate radius.
+        try:
+            radius = abs(float(radius))
+        except Exception:
+            if not silent:
+                print("Edge.Circle - Error: The input radius parameter is not a valid number. Returning None.")
+            return None
+
+        if not math.isfinite(radius) or radius <= tolerance:
+            if not silent:
+                print("Edge.Circle - Error: The input radius parameter must be greater than the input tolerance. Returning None.")
+            return None
+
+        # Validate direction.
+        if not isinstance(direction, (list, tuple)) or len(direction) != 3:
+            if not silent:
+                print("Edge.Circle - Error: The input direction parameter is not a valid 3D vector. Returning None.")
+            return None
+
+        try:
+            dx = float(direction[0])
+            dy = float(direction[1])
+            dz = float(direction[2])
+        except Exception:
+            if not silent:
+                print("Edge.Circle - Error: The input direction parameter is not numerical. Returning None.")
+            return None
+
+        if not all(math.isfinite(value) for value in [dx, dy, dz]):
+            if not silent:
+                print("Edge.Circle - Error: The input direction parameter must contain finite numbers. Returning None.")
+            return None
+
+        magnitude = math.sqrt(dx * dx + dy * dy + dz * dz)
+
+        if magnitude <= tolerance:
+            if not silent:
+                print("Edge.Circle - Error: The input direction vector has zero magnitude. Returning None.")
+            return None
+
+        direction = [
+            dx / magnitude,
+            dy / magnitude,
+            dz / magnitude,
+        ]
+
+        # Validate placement.
+        if not isinstance(placement, str):
+            if not silent:
+                print("Edge.Circle - Error: The input placement parameter is not a valid string. Returning None.")
+            return None
+
+        placement = placement.lower()
+
+        valid_placements = [
+            "center",
+            "lowerleft",
+            "upperleft",
+            "lowerright",
+            "upperright",
+        ]
+
+        if placement not in valid_placements:
+            if not silent:
+                print("Edge.Circle - Error: The input placement parameter is not a recognized string. Returning None.")
+            return None
+
+        # Determine the offset from the input placement origin to the centre of
+        # the circle in the canonical local XY plane.
+        if placement == "center":
+            offset = [0.0, 0.0, 0.0]
+        elif placement == "lowerleft":
+            offset = [radius, radius, 0.0]
+        elif placement == "upperleft":
+            offset = [radius, -radius, 0.0]
+        elif placement == "lowerright":
+            offset = [-radius, radius, 0.0]
+        else:  # upperright
+            offset = [-radius, -radius, 0.0]
+
+        # Compute the rotation from the canonical +Z normal to the requested
+        # circle normal. This lets us construct the circle directly in its final
+        # orientation rather than transforming the resulting Edge afterwards.
+        matrix = Vector.TransformationMatrix(
+            [0, 0, 1],
+            direction,
+        )
+
+        if matrix is None:
+            if not silent:
+                print("Edge.Circle - Error: Could not determine the circle orientation. Returning None.")
+            return None
+
+        # Rotate the local centre offset.
+        ox = (
+            matrix[0][0] * offset[0] +
+            matrix[0][1] * offset[1] +
+            matrix[0][2] * offset[2]
+        )
+        oy = (
+            matrix[1][0] * offset[0] +
+            matrix[1][1] * offset[1] +
+            matrix[1][2] * offset[2]
+        )
+        oz = (
+            matrix[2][0] * offset[0] +
+            matrix[2][1] * offset[1] +
+            matrix[2][2] * offset[2]
+        )
+
+        px, py, pz = Vertex.Coordinates(origin, mantissa=None)
+
+        center = Vertex.ByCoordinates(
+            px + ox,
+            py + oy,
+            pz + oz,
+        )
+
+        if not Topology.IsInstance(center, "Vertex"):
+            if not silent:
+                print("Edge.Circle - Error: Could not determine the centre of the circle. Returning None.")
+            return None
+
+        # The canonical local +X direction is transformed by the same rotation.
+        # This provides a stable location for the seam/parameter zero.
+        xAxis = [
+            matrix[0][0],
+            matrix[1][0],
+            matrix[2][0],
+        ]
+
+        try:
+            if not Core.HasAttribute("EdgeUtility", "ByCircle"):
+                if not silent:
+                    print("Edge.Circle - Error: The active backend does not support circular edges. Returning None.")
+                return None
+
+            circle = Core.EdgeUtility.ByCircle(
+                center,
+                radius,
+                xAxis[0],
+                xAxis[1],
+                xAxis[2],
+                direction[0],
+                direction[1],
+                direction[2],
+            )
+
+        except Exception:
+            circle = None
+
+        if not Topology.IsInstance(circle, "Edge"):
+            if not silent:
+                print("Edge.Circle - Error: Could not create the circular edge. Returning None.")
+            return None
+
+        return circle
+
+    @staticmethod
     def Connection(edgeA, edgeB, tolerance: float = 0.0001, silent: bool = False):
         """
         Returns the edge representing the connection between the first input edge to the second input edge using the two closest vertices.

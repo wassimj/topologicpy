@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import math
+
 from dataclasses import dataclass
 from typing import Optional
 
@@ -596,6 +598,95 @@ def _segment_segment_intersection(
 
 
 class EdgeUtility:
+    @staticmethod
+    def ByCircle(
+        centerPoint,
+        radius,
+        xAxisX,
+        xAxisY,
+        xAxisZ,
+        normalX,
+        normalY,
+        normalZ
+    ):
+        """
+        Creates a single closed circular Edge using native OCCT circle geometry.
+
+        This method mirrors the signature of ``topologic_core.EdgeUtility.ByCircle``.
+        The input X-axis fixes the seam/zero-parameter direction and the normal
+        fixes the circle plane orientation.
+        """
+        if not isinstance(centerPoint, Vertex):
+            return None
+
+        try:
+            radius = abs(float(radius))
+            xAxisX = float(xAxisX)
+            xAxisY = float(xAxisY)
+            xAxisZ = float(xAxisZ)
+            normalX = float(normalX)
+            normalY = float(normalY)
+            normalZ = float(normalZ)
+        except Exception:
+            return None
+
+        values = [
+            radius,
+            xAxisX, xAxisY, xAxisZ,
+            normalX, normalY, normalZ,
+        ]
+        if not all(math.isfinite(value) for value in values):
+            return None
+        if radius <= 0.0:
+            return None
+
+        x_magnitude = math.sqrt(
+            xAxisX * xAxisX + xAxisY * xAxisY + xAxisZ * xAxisZ
+        )
+        normal_magnitude = math.sqrt(
+            normalX * normalX + normalY * normalY + normalZ * normalZ
+        )
+        if x_magnitude <= 0.0 or normal_magnitude <= 0.0:
+            return None
+
+        # gp_Ax2 requires the X direction not to be parallel to the main axis.
+        cx = xAxisY * normalZ - xAxisZ * normalY
+        cy = xAxisZ * normalX - xAxisX * normalZ
+        cz = xAxisX * normalY - xAxisY * normalX
+        cross_magnitude = math.sqrt(cx * cx + cy * cy + cz * cz)
+        if cross_magnitude <= 1.0e-12:
+            return None
+
+        try:
+            from OCC.Core.gp import gp_Ax2, gp_Circ, gp_Dir, gp_Pnt
+            from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakeEdge
+
+            axis = gp_Ax2(
+                gp_Pnt(
+                    float(centerPoint.x),
+                    float(centerPoint.y),
+                    float(centerPoint.z),
+                ),
+                gp_Dir(normalX, normalY, normalZ),
+                gp_Dir(xAxisX, xAxisY, xAxisZ),
+            )
+
+            # Use the gp_Circ overload directly. This is both simpler and more
+            # robust across pythonocc versions than routing through Geom_Circle.
+            circle = gp_Circ(axis, radius)
+            maker = BRepBuilderAPI_MakeEdge(circle)
+            if not maker.IsDone():
+                return None
+
+            shape = maker.Edge()
+            if _is_null_shape(shape):
+                return None
+
+            return Edge.ByOcctShape(shape)
+
+        except Exception:
+            return None
+
     @staticmethod
     def IsClosed(edge, tolerance: float = 0.0001):
         """Returns True if the input Edge is topologically closed."""
