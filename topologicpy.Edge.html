@@ -246,7 +246,7 @@
 <td><p>Creates a normalized edge that has the same direction as the input edge, but a length of 1.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.ParameterAtVertex" title="topologicpy.Edge.Edge.ParameterAtVertex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ParameterAtVertex</span></code></a>(edge, vertex[, mantissa, ...])</p></td>
-<td><p>Returns the <em>u</em> parameter along the input edge based on the location of the input vertex.</p></td>
+<td><p>Returns the normalized curve parameter of a vertex lying on the input edge.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Quadrance" title="topologicpy.Edge.Edge.Quadrance"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Quadrance</span></code></a>(edge[, mantissa])</p></td>
 <td><p>Returns the quadrance of the input edge.</p></td>
@@ -263,19 +263,22 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.StartVertex" title="topologicpy.Edge.Edge.StartVertex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">StartVertex</span></code></a>(edge[, silent])</p></td>
 <td><p>Returns the start vertex of the input edge.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Trim" title="topologicpy.Edge.Edge.Trim"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Trim</span></code></a>(edge[, distance, bothSides, reverse, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.TangentAtParameter" title="topologicpy.Edge.Edge.TangentAtParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TangentAtParameter</span></code></a>(edge[, u, mantissa, ...])</p></td>
+<td><p>Returns the unit tangent vector to the actual edge curve at normalized parameter <em>u</em>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Trim" title="topologicpy.Edge.Edge.Trim"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Trim</span></code></a>(edge[, distance, bothSides, reverse, ...])</p></td>
 <td><p>Trims the input edge by the input distance.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.TrimByEdge" title="topologicpy.Edge.Edge.TrimByEdge"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TrimByEdge</span></code></a>(edgeA, edgeB[, reverse, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.TrimByEdge" title="topologicpy.Edge.Edge.TrimByEdge"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TrimByEdge</span></code></a>(edgeA, edgeB[, reverse, ...])</p></td>
 <td><p>Trims the first input edge by the second input edge.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.VertexByDistance" title="topologicpy.Edge.Edge.VertexByDistance"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VertexByDistance</span></code></a>(edge[, distance, origin, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.VertexByDistance" title="topologicpy.Edge.Edge.VertexByDistance"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VertexByDistance</span></code></a>(edge[, distance, origin, ...])</p></td>
 <td><p>Creates a vertex along the input edge offset by the input distance from the input origin.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.VertexByParameter" title="topologicpy.Edge.Edge.VertexByParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VertexByParameter</span></code></a>(edge[, u])</p></td>
-<td><p>Creates a vertex along the input edge offset by the input <em>u</em> parameter.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.VertexByParameter" title="topologicpy.Edge.Edge.VertexByParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VertexByParameter</span></code></a>(edge[, u, tolerance, silent])</p></td>
+<td><p>Creates a vertex at normalized parameter <em>u</em> on the actual edge curve.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Vertices" title="topologicpy.Edge.Edge.Vertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Vertices</span></code></a>(edge[, silent])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Vertices" title="topologicpy.Edge.Edge.Vertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Vertices</span></code></a>(edge[, silent])</p></td>
 <td><p>Returns the list of vertices of the input edge.</p></td>
 </tr>
 </tbody>
@@ -990,8 +993,8 @@ placed at the start vertex of the input edge. Default is False.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Edge.Edge.ParameterAtVertex">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ParameterAtVertex</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">edge</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertex</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#topologicpy.Edge.Edge.ParameterAtVertex" title="Permalink to this definition"></a></dt>
-<dd><p>Returns the <em>u</em> parameter along the input edge based on the location of the input vertex.</p>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ParameterAtVertex</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">edge</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertex</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#topologicpy.Edge.Edge.ParameterAtVertex" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the normalized curve parameter of a vertex lying on the input edge.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
@@ -1003,11 +1006,13 @@ placed at the start vertex of the input edge. Default is False.</p>
 </dd>
 <dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance used to determine whether the vertex lies on the edge. Default is 0.0001.</p>
+</dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>float</dt><dd><p>The <em>u</em> parameter along the input edge based on the location of the input vertex.</p>
+<dt>float</dt><dd><p>The normalized parameter in the range [0, 1], or None if the vertex is not on the edge.</p>
 </dd>
 </dl>
 </dd>
@@ -1148,6 +1153,34 @@ placed at the start vertex of the input edge. Default is False.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Edge.Edge.TangentAtParameter">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">TangentAtParameter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">edge</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">u</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="headerlink" href="#topologicpy.Edge.Edge.TangentAtParameter" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the unit tangent vector to the actual edge curve at normalized parameter <em>u</em>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>edge</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The input edge.</p>
+</dd>
+<dt><strong>u</strong><span class="classifier">float , optional</span></dt><dd><p>The normalized parameter along the edge. Default is 0.5.</p>
+</dd>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. If set to None, no rounding is applied. Default is 6.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>list</dt><dd><p>The unit tangent vector [x, y, z], or None if it cannot be evaluated.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Edge.Edge.Trim">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Trim</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">edge</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">distance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bothSides</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reverse</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Edge.Edge.Trim" title="Permalink to this definition"></a></dt>
 <dd><p>Trims the input edge by the input distance.</p>
@@ -1235,20 +1268,24 @@ placed at the start vertex of the input edge. Default is False.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Edge.Edge.VertexByParameter">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">VertexByParameter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">edge</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">u</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Edge.Edge.VertexByParameter" title="Permalink to this definition"></a></dt>
-<dd><p>Creates a vertex along the input edge offset by the input <em>u</em> parameter.</p>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">VertexByParameter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">edge</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">u</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Edge.Edge.VertexByParameter" title="Permalink to this definition"></a></dt>
+<dd><p>Creates a vertex at normalized parameter <em>u</em> on the actual edge curve.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>edge</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The input edge.</p>
 </dd>
-<dt><strong>u</strong><span class="classifier">float , optional</span></dt><dd><p>The <em>u</em> parameter along the input topologic Edge. A parameter of 0 returns the start vertex. A parameter of 1 returns the end vertex. Default is 0.</p>
+<dt><strong>u</strong><span class="classifier">float , optional</span></dt><dd><p>The normalized parameter along the edge. A parameter of 0 returns the start vertex and 1 returns the end vertex. Default is 0.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Vertex</dt><dd><p>The created vertex.</p>
+<dt>topologic_core.Vertex</dt><dd><p>The created vertex, or None if the parameter cannot be evaluated.</p>
 </dd>
 </dl>
 </dd>
