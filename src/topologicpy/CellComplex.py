@@ -1218,24 +1218,37 @@ class CellComplex():
         return CellComplex.ByFaces(faces, transferDictionaries=transferDictionaries, tolerance=tolerance, silent=silent)
 
     @staticmethod
-    def ByWires(wires: list, triangulate: bool = True, tolerance: float = 0.0001):
+    def ByWires(wires: list,
+                triangulate: bool = True,
+                tolerance: float = 0.0001,
+                polyhedron: bool = True,
+                silent: bool = False):
         """
-        Creates a cellcomplex by lofting through the input wires.
+        Creates a CellComplex by lofting through the input Wires.
+
+        When ``polyhedron`` is True, the existing faceted construction is used.
+        When ``polyhedron`` is False, the section curves are preserved and each
+        interval is constructed natively by the PythonOCC backend.
 
         Parameters
         ----------
         wires : list
-            The input list of wires. The list should contain a minimum of two wires. All wires must have the same number of edges.
+            The ordered input list of Wires. A minimum of two valid Wires is required.
         triangulate : bool , optional
-            If set to True, the faces will be triangulated. Default is True.
+            If ``polyhedron`` is True, specifies whether generated Faces are
+            triangulated. Default is True.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
+        polyhedron : bool , optional
+            If True, uses the historical faceted construction. If False, requests
+            an exact curve-preserving PythonOCC CellComplex. Default is True.
+        silent : bool , optional
+            If True, suppresses error and warning messages. Default is False.
 
         Returns
         -------
         topologic_core.CellComplex
-            The created cellcomplex.
-
+            The created CellComplex, or None on failure.
         """
         from topologicpy.Edge import Edge
         from topologicpy.Wire import Wire
@@ -1243,12 +1256,40 @@ class CellComplex():
         from topologicpy.Topology import Topology
 
         if not isinstance(wires, list):
-            print("CellComplex.ByFaces - Error: The input wires parameter is not a valid list. Returning None.")
+            if not silent:
+                print("CellComplex.ByWires - Error: The input wires parameter is not a valid list. Returning None.")
             return None
         wires = [x for x in wires if Topology.IsInstance(x, "Wire")]
         if len(wires) < 2:
-            print("CellComplex.ByWires - Error: The input wires parameter contains less than two valid wires. Returning None.")
+            if not silent:
+                print("CellComplex.ByWires - Error: The input wires parameter contains fewer than two valid Wires. Returning None.")
             return None
+
+        # Exact curve-preserving path. Leave the historical faceted path below untouched.
+        if not polyhedron:
+            try:
+                if Topology._IsTopologicCoreBackend():
+                    if not silent:
+                        print("CellComplex.ByWires - Error: polyhedron=False requires the PythonOCC backend. Returning None.")
+                    return None
+            except Exception:
+                return None
+            method = getattr(Core.CellComplex, "ByWires", None)
+            if not callable(method):
+                if not silent:
+                    print("CellComplex.ByWires - Error: Native backend constructor is unavailable. Returning None.")
+                return None
+            try:
+                result = method(wires, tolerance=tolerance)
+            except Exception:
+                result = None
+            if not Topology.IsInstance(result, "CellComplex"):
+                if not silent:
+                    print("CellComplex.ByWires - Error: Could not create a curve-preserving CellComplex. Returning None.")
+                return None
+            return result
+
+        # Historical v0.9.68 faceted construction (kept intentionally intact).
         faces = [Face.ByWire(wires[0], tolerance=tolerance), Face.ByWire(wires[-1], tolerance=tolerance)]
         if triangulate == True:
             triangles = []
@@ -1273,17 +1314,11 @@ class CellComplex():
             w1_edges = Topology.Edges(wire1)
             w2_edges = Topology.Edges(wire2)
             if len(w1_edges) != len(w2_edges):
-                print("CellComplex.ByWires - Error: The input wires parameter contains wires with different number of edges. Returning None.")
+                if not silent:
+                    print("CellComplex.ByWires - Error: The input wires parameter contains wires with different number of edges. Returning None.")
                 return None
 
             def _bridge(v_a, v_b):
-                # One bridge edge between the two rings. The edge builders in
-                # different backends are inconsistent about whether they raise
-                # or return None on failure, so treat BOTH identically -- this
-                # is what prevents the old try/except fallbacks from appending
-                # TWO faces for a single ring-edge pair (which over-built the
-                # loft soup and made BOPAlgo_MakerVolume emit a spurious extra
-                # open shell on closed lofts like CellComplex.Torus).
                 try:
                     be = Edge.ByStartVertexEndVertex(v_a, v_b, tolerance=tolerance, silent=True)
                 except Exception:
@@ -1317,32 +1352,25 @@ class CellComplex():
         return CellComplex.ByFaces(faces, tolerance=tolerance)
 
     @staticmethod
-    def ByWiresCluster(cluster, triangulate: bool = True, tolerance: float = 0.0001):
-        """
-        Creates a cellcomplex by lofting through the wires in the input cluster.
-
-        Parameters
-        ----------
-        cluster : topologic_core.Cluster
-            The input cluster of wires.
-        triangulate : bool , optional
-            If set to True, the faces will be triangulated. Default is True.
-        tolerance : float , optional
-            The desired tolerance. Default is 0.0001.
-
-        Returns
-        -------
-        topologic_core.CellComplex
-            The created cellcomplex.
-
-        """
+    def ByWiresCluster(cluster,
+                       triangulate: bool = True,
+                       tolerance: float = 0.0001,
+                       polyhedron: bool = True,
+                       silent: bool = False):
+        """Creates a CellComplex by lofting through Wires in the input Cluster."""
         from topologicpy.Topology import Topology
-
         if not Topology.IsInstance(cluster, "Cluster"):
-            print("CellComplex.ByWiresCluster - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
+            if not silent:
+                print("CellComplex.ByWiresCluster - Error: The input cluster parameter is not a valid Cluster. Returning None.")
             return None
         wires = Topology.Wires(cluster)
-        return CellComplex.ByWires(wires, triangulate=triangulate, tolerance=tolerance)
+        return CellComplex.ByWires(
+            wires,
+            triangulate=triangulate,
+            tolerance=tolerance,
+            polyhedron=polyhedron,
+            silent=silent,
+        )
 
     @staticmethod
     def Cells(cellComplex) -> list:
@@ -2170,7 +2198,7 @@ class CellComplex():
         return CellComplex.ByCells([tetrahedron]+subdivided_tetrahedra)
     
     @staticmethod
-    def Torus(origin= None,
+    def Torus(origin=None,
               majorRadius: float = 0.5,
               minorRadius: float = 0.125,
               uSides: int = 16,
@@ -2178,49 +2206,74 @@ class CellComplex():
               direction: list = [0, 0, 1],
               placement: str = "center",
               tolerance: float = 0.0001,
-              silent: bool = False):
+              silent: bool = False,
+              polyhedron: bool = True):
+        """Creates a toroidal CellComplex.
+
+        ``polyhedron=True`` preserves the existing faceted v0.9.68 construction.
+        ``polyhedron=False`` creates exact OCCT toroidal sectors on PythonOCC.
         """
-        Creates a torus.
-
-        Parameters
-        ----------
-        origin : topologic_core.Vertex , optional
-            The origin location of the torus. Default is None which results in the torus being placed at (0, 0, 0).
-        majorRadius : float , optional
-            The major radius of the torus. Default is 0.5.
-        minorRadius : float , optional
-            The minor radius of the torus. Default is 0.1.
-        uSides : int , optional
-            The number of sides along the longitude of the torus. Default is 16.
-        vSides : int , optional
-            The number of sides along the latitude of the torus. Default is 8.
-        direction : list , optional
-            The vector representing the up direction of the torus. Default is [0, 0, 1].
-        placement : str , optional
-            The description of the placement of the origin of the torus. This can be "bottom", "center", or "lowerleft". It is case insensitive. Default is "center".
-        tolerance : float , optional
-            The desired tolerance. Default is 0.0001.
-        silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
-
-        Returns
-        -------
-        topologic_core.Cell
-            The created torus.
-
-        """
-        
         from topologicpy.Vertex import Vertex
         from topologicpy.Wire import Wire
         from topologicpy.Face import Face
         from topologicpy.Cell import Cell
         from topologicpy.Topology import Topology
-        
+
         if not Topology.IsInstance(origin, "Vertex"):
             origin = Vertex.ByCoordinates(0, 0, 0)
         if not Topology.IsInstance(origin, "Vertex"):
-            print("Cell.Torus - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
+            if not silent:
+                print("CellComplex.Torus - Error: The input origin parameter is not a valid Vertex. Returning None.")
             return None
+
+        if not polyhedron:
+            try:
+                if Topology._IsTopologicCoreBackend():
+                    if not silent:
+                        print("CellComplex.Torus - Error: polyhedron=False requires the PythonOCC backend. Returning None.")
+                    return None
+            except Exception:
+                return None
+            method = getattr(Core.CellComplex, "ByTorus", None)
+            if not callable(method):
+                if not silent:
+                    print("CellComplex.Torus - Error: Native backend constructor is unavailable. Returning None.")
+                return None
+            try:
+                torus = method(
+                    majorRadius=majorRadius,
+                    minorRadius=minorRadius,
+                    uSides=uSides,
+                    tolerance=tolerance,
+                    silent=silent,
+                )
+            except Exception:
+                torus = None
+            if not Topology.IsInstance(torus, "CellComplex"):
+                if not silent:
+                    print("CellComplex.Torus - Error: Could not create an exact toroidal CellComplex. Returning None.")
+                return None
+
+            xOffset = yOffset = zOffset = 0.0
+            if str(placement).lower() == "bottom":
+                zOffset = -float(minorRadius)
+            elif str(placement).lower() == "lowerleft":
+                extent = float(majorRadius) + float(minorRadius)
+                xOffset = -extent
+                yOffset = -extent
+                zOffset = -float(minorRadius)
+            return Topology.OrientAndPlace(
+                torus,
+                originA=Vertex.ByCoordinates(xOffset, yOffset, zOffset),
+                originB=origin,
+                dirA=[0, 0, 1],
+                dirB=direction,
+                transferDictionaries=False,
+                tolerance=tolerance,
+                silent=silent,
+            )
+
+        # Historical v0.9.68 faceted construction (kept intentionally intact).
         c = Wire.Circle(origin=Vertex.Origin(), radius=minorRadius, sides=vSides, fromAngle=0, toAngle=360, close=False, direction=[0, 1, 0], placement="center")
         c = Face.ByWire(c)
         c = Topology.Translate(c, abs(majorRadius-minorRadius), 0, 0)
@@ -2228,7 +2281,7 @@ class CellComplex():
         if Topology.Type(torus) == Topology.TypeID("Shell"):
             faces = Topology.Faces(torus)
             torus = CellComplex.ByFaces(faces)
-        
+
         xOffset = 0
         yOffset = 0
         zOffset = 0
@@ -2281,36 +2334,36 @@ class CellComplex():
         return vertices
 
     @staticmethod
-    def Volume(cellComplex, mantissa: int = 6) -> float:
-        """
-        Returns the volume of the input cellComplex.
-
-        Parameters
-        ----------
-        cellComplex : topologic_core.CellComplex
-            The input cellComplex.
-        manitssa: int , optional
-            The number of decimal places to round the result to. Default is 6.
-
-        Returns
-        -------
-        float
-            The volume of the input cellComplex.
-
-        """
+    def Volume(cellComplex, mantissa: int = 6, silent: bool = False) -> float:
+        """Returns the total volume of the input CellComplex."""
         from topologicpy.Cell import Cell
         from topologicpy.Topology import Topology
-        
+
         if not Topology.IsInstance(cellComplex, "CellComplex"):
-            print("CellComplex.Volume - Error: The input cellcomplex parameter is not a valid topologic cellcomplex. Returning None.")
+            if not silent:
+                print("CellComplex.Volume - Error: The input cellComplex parameter is not a valid CellComplex. Returning None.")
             return None
         cells = CellComplex.Cells(cellComplex)
-        volume = 0
+        if not isinstance(cells, list) or len(cells) == 0:
+            if not silent:
+                print("CellComplex.Volume - Error: Could not retrieve any Cells. Returning None.")
+            return None
+        total = 0.0
         for cell in cells:
-            volume = Cell.Volume(cell)
-            if not volume == None:
-                volume += Cell.Volume(cell)
-        return round(volume, mantissa)
+            value = Cell.Volume(cell, mantissa=None, silent=True)
+            if value is None:
+                if not silent:
+                    print("CellComplex.Volume - Error: Could not compute the volume of one or more Cells. Returning None.")
+                return None
+            total += float(value)
+        if mantissa is None:
+            return float(total)
+        try:
+            return round(total, int(mantissa))
+        except Exception:
+            if not silent:
+                print("CellComplex.Volume - Error: The input mantissa parameter is invalid. Returning None.")
+            return None
     
     @staticmethod
     def Voronoi(vertices: list = None, cell= None, tolerance: float = 0.0001):

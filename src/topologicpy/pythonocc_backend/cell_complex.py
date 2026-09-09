@@ -1,14 +1,20 @@
 from __future__ import annotations
 
+import math
+
 from dataclasses import dataclass, field
 from .topology import Topology, _downward_wrappers
 from .cell import Cell
+from .wire import Wire
 from .cluster import Cluster
 from .helpers import unique_by_uuid
 
 try:
     from OCC.Core.BOPAlgo import BOPAlgo_CellsBuilder, BOPAlgo_MakerVolume
     from OCC.Core.BRepAlgoAPI import BRepAlgoAPI_Fuse
+    from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_Transform
+    from OCC.Core.BRepPrimAPI import BRepPrimAPI_MakeTorus
+    from OCC.Core.gp import gp_Ax1, gp_Dir, gp_Pnt, gp_Trsf
     from OCC.Core.TopAbs import (
         TopAbs_VERTEX,
         TopAbs_EDGE,
@@ -25,6 +31,12 @@ except Exception:  # pragma: no cover - allows import without PythonOCC
     BOPAlgo_CellsBuilder = None
     BOPAlgo_MakerVolume = None
     BRepAlgoAPI_Fuse = None
+    BRepBuilderAPI_Transform = None
+    BRepPrimAPI_MakeTorus = None
+    gp_Ax1 = None
+    gp_Dir = None
+    gp_Pnt = None
+    gp_Trsf = None
 
     TopAbs_VERTEX = None
     TopAbs_EDGE = None
@@ -255,6 +267,68 @@ class CellComplex(Topology):
         if cell is None:
             return None
         return CellComplex.ByCells([cell], tolerance)
+
+
+    @staticmethod
+    def ByWires(wires, tolerance: float = 0.0001):
+        """Create an exact curve-preserving CellComplex from consecutive section Wires."""
+        if not isinstance(wires, (list, tuple)):
+            return None
+        wire_list = [wire for wire in wires if isinstance(wire, Wire)]
+        if len(wire_list) < 2:
+            return None
+        try:
+            tolerance = abs(float(tolerance))
+        except Exception:
+            return None
+        if tolerance <= 0.0:
+            return None
+        cells = []
+        for i in range(len(wire_list)-1):
+            cell = Cell.ByWires([wire_list[i], wire_list[i+1]], tolerance=tolerance)
+            if not isinstance(cell, Cell):
+                return None
+            cells.append(cell)
+        return CellComplex.ByCells(cells, tolerance=tolerance)
+
+    @staticmethod
+    def ByTorus(majorRadius=0.5, minorRadius=0.125, uSides=16, tolerance=0.0001, silent=False):
+        """Build an exact toroidal CellComplex subdivided into OCCT torus sectors."""
+        try:
+            majorRadius=float(majorRadius); minorRadius=float(minorRadius)
+            uSides=int(uSides); tolerance=abs(float(tolerance))
+        except Exception:
+            return None
+        if majorRadius <= tolerance or minorRadius <= tolerance or minorRadius >= majorRadius or uSides < 3:
+            return None
+        if any(x is None for x in (BRepPrimAPI_MakeTorus, BRepBuilderAPI_Transform, gp_Ax1, gp_Dir, gp_Pnt, gp_Trsf)):
+            return None
+        step = 2.0*math.pi/float(uSides)
+        try:
+            maker=BRepPrimAPI_MakeTorus(majorRadius, minorRadius, step)
+            sector=maker.Shape()
+        except Exception:
+            return None
+        if _is_null_shape(sector):
+            return None
+        axis=gp_Ax1(gp_Pnt(0.0,0.0,0.0), gp_Dir(0.0,0.0,1.0))
+        cells=[]
+        for i in range(uSides):
+            try:
+                if i == 0:
+                    shape=sector
+                else:
+                    trsf=gp_Trsf(); trsf.SetRotation(axis, step*float(i))
+                    shape=BRepBuilderAPI_Transform(sector, trsf, True).Shape()
+            except Exception:
+                return None
+            if _is_null_shape(shape):
+                return None
+            cell=Topology.ByOcctShape(shape)
+            if not isinstance(cell, Cell):
+                return None
+            cells.append(cell)
+        return CellComplex.ByCells(cells, tolerance=tolerance)
 
     def Cells(self, hostTopology=None, cells=None):
         result = []
