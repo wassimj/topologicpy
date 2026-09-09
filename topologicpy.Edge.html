@@ -272,13 +272,16 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.TrimByEdge" title="topologicpy.Edge.Edge.TrimByEdge"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TrimByEdge</span></code></a>(edgeA, edgeB[, reverse, ...])</p></td>
 <td><p>Trims the first input edge by the second input edge.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.VertexByDistance" title="topologicpy.Edge.Edge.VertexByDistance"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VertexByDistance</span></code></a>(edge[, distance, origin, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.TrimByParameters" title="topologicpy.Edge.Edge.TrimByParameters"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TrimByParameters</span></code></a>(edge[, uA, uB, tolerance, ...])</p></td>
+<td><p>Returns the portion of the input edge between two normalized curve parameters.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.VertexByDistance" title="topologicpy.Edge.Edge.VertexByDistance"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VertexByDistance</span></code></a>(edge[, distance, origin, ...])</p></td>
 <td><p>Creates a vertex along the input edge offset by the input distance from the input origin.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.VertexByParameter" title="topologicpy.Edge.Edge.VertexByParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VertexByParameter</span></code></a>(edge[, u, tolerance, silent])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.VertexByParameter" title="topologicpy.Edge.Edge.VertexByParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VertexByParameter</span></code></a>(edge[, u, tolerance, silent])</p></td>
 <td><p>Creates a vertex at normalized parameter <em>u</em> on the actual edge curve.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Vertices" title="topologicpy.Edge.Edge.Vertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Vertices</span></code></a>(edge[, silent])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Vertices" title="topologicpy.Edge.Edge.Vertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Vertices</span></code></a>(edge[, silent])</p></td>
 <td><p>Returns the list of vertices of the input edge.</p></td>
 </tr>
 </tbody>
@@ -1232,6 +1235,44 @@ placed at the start vertex of the input edge. Default is False.</p>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
 <dt>topologic_core.Edge</dt><dd><p>The trimmed edge.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Edge.Edge.TrimByParameters">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">TrimByParameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">edge</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">uA</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">uB</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Edge.Edge.TrimByParameters" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the portion of the input edge between two normalized curve parameters.</p>
+<p>Parameters are normalized to the range [0, 1], where 0 is the start of
+the edge and 1 is the end. If <code class="docutils literal notranslate"><span class="pre">uA</span></code> is greater than <code class="docutils literal notranslate"><span class="pre">uB</span></code>, the returned
+edge is oriented from <code class="docutils literal notranslate"><span class="pre">uA</span></code> toward <code class="docutils literal notranslate"><span class="pre">uB</span></code>.</p>
+<p>The active backend’s native trimming operation is preferred so curved
+geometry is preserved exactly. If native trimming is unavailable, a
+geometrically linear edge is reconstructed exactly from its evaluated
+endpoints. Curved edges are never silently converted to line segments or
+approximated by this method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>edge</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The input edge.</p>
+</dd>
+<dt><strong>uA</strong><span class="classifier">float , optional</span></dt><dd><p>The normalized parameter corresponding to the start of the returned
+edge. Default is 0.0.</p>
+</dd>
+<dt><strong>uB</strong><span class="classifier">float , optional</span></dt><dd><p>The normalized parameter corresponding to the end of the returned
+edge. Default is 1.0.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>topologic_core.Edge</dt><dd><p>The trimmed edge, or None if the operation fails.</p>
 </dd>
 </dl>
 </dd>
