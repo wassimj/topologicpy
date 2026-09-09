@@ -37,6 +37,18 @@ except:
 
 class Face():
     @staticmethod
+    def _UseNativeFaceBackend() -> bool:
+        """Returns True when the active TopologicPy core backend is PythonOCC."""
+        from topologicpy.Topology import Topology
+        try:
+            return not bool(Topology._IsTopologicCoreBackend())
+        except Exception:
+            try:
+                return Core.Backend().__class__.__name__ == "PythonOCCBackend"
+            except Exception:
+                return False
+
+    @staticmethod
     def _EnsurePrimitivePositiveZ(face, tolerance: float = 0.0001, silent: bool = False):
         """
         Ensures that a planar primitive created in the XY plane has a +Z normal.
@@ -355,6 +367,416 @@ class Face():
             if not silent:
                 print("Face.ByEdgesCluster - Error: Could not create face from edges. Returning None.")
             return None
+        return face
+
+    @staticmethod
+    def ByNurbsParameters(
+        controlPoints,
+        weights=None,
+        uKnots=None,
+        vKnots=None,
+        isRational: bool = False,
+        isUPeriodic: bool = False,
+        isVPeriodic: bool = False,
+        uDegree: int = 3,
+        vDegree: int = 3,
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
+        """
+        Creates a Face from exact NURBS/B-spline surface parameters.
+
+        The control points are supplied as a rectangular two-dimensional grid:
+
+            controlPoints[u][v]
+
+        where the first index varies in the U direction and the second index
+        varies in the V direction.
+
+        The returned topology is a single Face whose underlying geometry is a
+        genuine B-spline/NURBS surface. It is not a triangulated or polygonal
+        approximation.
+
+        Parameters
+        ----------
+        controlPoints : list
+            A rectangular two-dimensional list of control vertices arranged as
+            ``controlPoints[u][v]``.
+        weights : list , optional
+            A rectangular two-dimensional list of positive weights having the same
+            dimensions as controlPoints. If None, all weights are set to 1.0.
+            Default is None.
+        uKnots : list , optional
+            The expanded nondecreasing knot vector in the U direction. Repeated
+            knots are repeated in the list. If None, an appropriate uniform knot
+            vector is generated. Default is None.
+        vKnots : list , optional
+            The expanded nondecreasing knot vector in the V direction. Repeated
+            knots are repeated in the list. If None, an appropriate uniform knot
+            vector is generated. Default is None.
+        isRational : bool , optional
+            If True, the supplied weights are used to construct a rational NURBS
+            surface. If False, all weights are treated as 1.0. Default is False.
+        isUPeriodic : bool , optional
+            If True, the surface is periodic in the U direction. Default is False.
+        isVPeriodic : bool , optional
+            If True, the surface is periodic in the V direction. Default is False.
+        uDegree : int , optional
+            The B-spline degree in the U direction. Default is 3.
+        vDegree : int , optional
+            The B-spline degree in the V direction. Default is 3.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed.
+            Default is False.
+
+        Returns
+        -------
+        topologic_core.Face
+            The created NURBS/B-spline Face, or None if construction fails.
+
+        """
+        import math
+
+        from topologicpy.Topology import Topology
+
+        # TopologicCore's current Python bindings do not expose
+        # Face.ByNurbsParameters.
+        if not Face._UseNativeFaceBackend():
+            if not silent:
+                print(
+                    "Face.ByNurbsParameters - Error: The TopologicCore backend "
+                    "does not support NURBS surface construction. Returning None."
+                )
+            return None
+
+        # ------------------------------------------------------------------
+        # Tolerance.
+        # ------------------------------------------------------------------
+
+        try:
+            tolerance = float(tolerance)
+        except Exception:
+            if not silent:
+                print("Face.ByNurbsParameters - Error: The input tolerance parameter is not a valid number. Returning None.")
+            return None
+
+        if not math.isfinite(tolerance) or tolerance <= 0.0:
+            if not silent:
+                print("Face.ByNurbsParameters - Error: The input tolerance parameter must be greater than zero. Returning None.")
+            return None
+
+        # ------------------------------------------------------------------
+        # Control-point grid.
+        # ------------------------------------------------------------------
+
+        if not isinstance(controlPoints, (list, tuple)) or len(controlPoints) < 2:
+            if not silent:
+                print("Face.ByNurbsParameters - Error: The input controlPoints parameter must contain at least two U rows. Returning None.")
+            return None
+
+        controlPoints = [
+            list(row) if isinstance(row, (list, tuple)) else None
+            for row in controlPoints
+        ]
+
+        if any(row is None for row in controlPoints):
+            if not silent:
+                print("Face.ByNurbsParameters - Error: The input controlPoints parameter is not a valid two-dimensional list. Returning None.")
+            return None
+
+        nU = len(controlPoints)
+        nV = len(controlPoints[0])
+
+        if nV < 2:
+            if not silent:
+                print("Face.ByNurbsParameters - Error: The input controlPoints parameter must contain at least two V columns. Returning None.")
+            return None
+
+        if any(len(row) != nV for row in controlPoints):
+            if not silent:
+                print("Face.ByNurbsParameters - Error: The input controlPoints grid must be rectangular. Returning None.")
+            return None
+
+        for row in controlPoints:
+            for vertex in row:
+                if not Topology.IsInstance(vertex, "Vertex"):
+                    if not silent:
+                        print("Face.ByNurbsParameters - Error: One or more control points are not valid vertices. Returning None.")
+                    return None
+
+        # ------------------------------------------------------------------
+        # Degrees.
+        # ------------------------------------------------------------------
+
+        try:
+            uDegree = int(uDegree)
+            vDegree = int(vDegree)
+        except Exception:
+            if not silent:
+                print("Face.ByNurbsParameters - Error: The input degree parameters are invalid. Returning None.")
+            return None
+
+        if uDegree < 1 or uDegree >= nU:
+            if not silent:
+                print("Face.ByNurbsParameters - Error: uDegree must be at least 1 and smaller than the number of U control points. Returning None.")
+            return None
+
+        if vDegree < 1 or vDegree >= nV:
+            if not silent:
+                print("Face.ByNurbsParameters - Error: vDegree must be at least 1 and smaller than the number of V control points. Returning None.")
+            return None
+
+        isRational = bool(isRational)
+        isUPeriodic = bool(isUPeriodic)
+        isVPeriodic = bool(isVPeriodic)
+
+        # ------------------------------------------------------------------
+        # Weights.
+        # ------------------------------------------------------------------
+
+        if weights is None:
+            weights = [
+                [1.0] * nV
+                for _ in range(nU)
+            ]
+        else:
+            if not isinstance(weights, (list, tuple)) or len(weights) != nU:
+                if not silent:
+                    print("Face.ByNurbsParameters - Error: The weights grid must have the same dimensions as the controlPoints grid. Returning None.")
+                return None
+
+            converted_weights = []
+
+            for row in weights:
+                if not isinstance(row, (list, tuple)) or len(row) != nV:
+                    if not silent:
+                        print("Face.ByNurbsParameters - Error: The weights grid must have the same dimensions as the controlPoints grid. Returning None.")
+                    return None
+
+                try:
+                    converted_row = [
+                        float(value)
+                        for value in row
+                    ]
+                except Exception:
+                    if not silent:
+                        print("Face.ByNurbsParameters - Error: One or more weights are not numerical. Returning None.")
+                    return None
+
+                if any(
+                    not math.isfinite(value) or value <= 0.0
+                    for value in converted_row
+                ):
+                    if not silent:
+                        print("Face.ByNurbsParameters - Error: All weights must be finite positive numbers. Returning None.")
+                    return None
+
+                converted_weights.append(converted_row)
+
+            weights = converted_weights
+
+        if not isRational:
+            weights = [
+                [1.0] * nV
+                for _ in range(nU)
+            ]
+
+        # ------------------------------------------------------------------
+        # Knot helpers.
+        # ------------------------------------------------------------------
+
+        def default_knots(pole_count, degree, periodic):
+            if periodic:
+                return [
+                    float(i)
+                    for i in range(pole_count + 1)
+                ]
+
+            interior_count = pole_count - degree - 1
+
+            result = [0.0] * (degree + 1)
+
+            if interior_count > 0:
+                result.extend(
+                    float(i) / float(interior_count + 1)
+                    for i in range(1, interior_count + 1)
+                )
+
+            result.extend(
+                [1.0] * (degree + 1)
+            )
+
+            return result
+
+        def validate_knots(
+            knots,
+            pole_count,
+            degree,
+            periodic,
+            label
+        ):
+            try:
+                knots = [
+                    float(value)
+                    for value in knots
+                ]
+            except Exception:
+                if not silent:
+                    print(f"Face.ByNurbsParameters - Error: The {label} knot vector contains invalid values. Returning None.")
+                return None
+
+            if len(knots) < 2:
+                if not silent:
+                    print(f"Face.ByNurbsParameters - Error: The {label} knot vector is invalid. Returning None.")
+                return None
+
+            if any(
+                not math.isfinite(value)
+                for value in knots
+            ):
+                if not silent:
+                    print(f"Face.ByNurbsParameters - Error: The {label} knot vector contains non-finite values. Returning None.")
+                return None
+
+            if any(
+                knots[i] > knots[i + 1]
+                for i in range(len(knots) - 1)
+            ):
+                if not silent:
+                    print(f"Face.ByNurbsParameters - Error: The {label} knot vector must be nondecreasing. Returning None.")
+                return None
+
+            if abs(knots[-1] - knots[0]) <= 1.0e-15:
+                if not silent:
+                    print(f"Face.ByNurbsParameters - Error: The {label} knot vector has zero parameter range. Returning None.")
+                return None
+
+            unique_knots = []
+            multiplicities = []
+
+            for value in knots:
+                if unique_knots and value == unique_knots[-1]:
+                    multiplicities[-1] += 1
+                else:
+                    unique_knots.append(value)
+                    multiplicities.append(1)
+
+            if periodic:
+                valid = (
+                    multiplicities[0] == multiplicities[-1]
+                    and all(
+                        1 <= multiplicity <= degree
+                        for multiplicity in multiplicities
+                    )
+                    and (
+                        sum(multiplicities)
+                        - multiplicities[0]
+                        == pole_count
+                    )
+                )
+            else:
+                valid = (
+                    sum(multiplicities)
+                    == pole_count + degree + 1
+                    and all(
+                        1 <= multiplicity <= degree
+                        for multiplicity in multiplicities[1:-1]
+                    )
+                    and 1 <= multiplicities[0] <= degree + 1
+                    and 1 <= multiplicities[-1] <= degree + 1
+                )
+
+            if not valid:
+                if not silent:
+                    print(
+                        f"Face.ByNurbsParameters - Error: The {label} knot "
+                        "multiplicities are incompatible with the control points, "
+                        "degree, and periodicity. Returning None."
+                    )
+                return None
+
+            return knots
+
+        if uKnots is None:
+            uKnots = default_knots(
+                nU,
+                uDegree,
+                isUPeriodic,
+            )
+
+        if vKnots is None:
+            vKnots = default_knots(
+                nV,
+                vDegree,
+                isVPeriodic,
+            )
+
+        uKnots = validate_knots(
+            uKnots,
+            nU,
+            uDegree,
+            isUPeriodic,
+            "U",
+        )
+
+        if uKnots is None:
+            return None
+
+        vKnots = validate_knots(
+            vKnots,
+            nV,
+            vDegree,
+            isVPeriodic,
+            "V",
+        )
+
+        if vKnots is None:
+            return None
+
+        # ------------------------------------------------------------------
+        # Delegate construction to the active backend.
+        # ------------------------------------------------------------------
+
+        face = None
+
+        try:
+            face = Core.Face.ByNurbsParameters(
+                controlPoints,
+                weights,
+                uKnots,
+                vKnots,
+                isRational,
+                isUPeriodic,
+                isVPeriodic,
+                uDegree,
+                vDegree,
+                tolerance,
+            )
+        except TypeError:
+            try:
+                face = Core.Face.ByNurbsParameters(
+                    controlPoints,
+                    weights,
+                    uKnots,
+                    vKnots,
+                    isRational,
+                    isUPeriodic,
+                    isVPeriodic,
+                    uDegree,
+                    vDegree,
+                )
+            except Exception:
+                face = None
+        except Exception:
+            face = None
+
+        if not Topology.IsInstance(face, "Face"):
+            if not silent:
+                print("Face.ByNurbsParameters - Error: The active backend could not construct the NURBS surface. Returning None.")
+            return None
+
         return face
 
     @staticmethod
@@ -2283,6 +2705,428 @@ class Face():
         return edges
 
     @staticmethod
+    def CurvatureAtParameters(
+        face,
+        u: float = 0.5,
+        v: float = 0.5,
+        mantissa: int = 6,
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ) -> dict:
+        """
+        Returns the local surface curvature properties of the input Face at the
+        specified normalized U and V parameters.
+
+        Principal curvatures are signed relative to the oriented normal of the
+        Face. Reversing the Face therefore reverses the signs of the principal and
+        mean curvatures while leaving Gaussian curvature unchanged.
+
+        Parameters
+        ----------
+        face : topologic_core.Face
+            The input face.
+        u : float , optional
+            The normalized U parameter. Default is 0.5.
+        v : float , optional
+            The normalized V parameter. Default is 0.5.
+        mantissa : int , optional
+            The number of decimal places to round numerical results to. If None,
+            no rounding is applied. Default is 6.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed.
+            Default is False.
+
+        Returns
+        -------
+        dict
+            A dictionary containing:
+
+            - ``maximum``: maximum principal curvature.
+            - ``minimum``: minimum principal curvature.
+            - ``mean``: mean curvature.
+            - ``gaussian``: Gaussian curvature.
+            - ``maximumDirection``: maximum principal-curvature direction.
+            - ``minimumDirection``: minimum principal-curvature direction.
+            - ``isUmbilic``: True when the two principal curvatures coincide.
+
+        """
+        import math
+
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(face, "Face"):
+            if not silent:
+                print("Face.CurvatureAtParameters - Error: The input face parameter is not a valid face. Returning None.")
+            return None
+
+        try:
+            u = float(u)
+            v = float(v)
+            tolerance = abs(float(tolerance))
+        except Exception:
+            if not silent:
+                print("Face.CurvatureAtParameters - Error: One or more numerical parameters are invalid. Returning None.")
+            return None
+
+        if not all(
+            math.isfinite(value)
+            for value in [u, v, tolerance]
+        ):
+            return None
+
+        if tolerance <= 0.0:
+            return None
+
+        if not 0.0 <= u <= 1.0 or not 0.0 <= v <= 1.0:
+            if not silent:
+                print("Face.CurvatureAtParameters - Error: The u and v parameters must be between 0 and 1. Returning None.")
+            return None
+
+        # ------------------------------------------------------------------
+        # Native backend implementation.
+        # ------------------------------------------------------------------
+
+        result = None
+
+        try:
+            result = Core.FaceUtility.CurvatureAtParameters(
+                face,
+                u,
+                v,
+                tolerance,
+            )
+        except Exception:
+            result = None
+
+        # ------------------------------------------------------------------
+        # TopologicCore fallback.
+        # ------------------------------------------------------------------
+
+        if not isinstance(result, dict):
+
+            try:
+                import numpy as np
+            except Exception:
+                if not silent:
+                    print("Face.CurvatureAtParameters - Error: NumPy is required for the legacy curvature fallback. Returning None.")
+                return None
+
+            h = min(
+                1.0e-2,
+                max(
+                    1.0e-4,
+                    math.sqrt(tolerance) * 0.1,
+                ),
+            )
+
+            def offsets(parameter):
+                if (
+                    parameter - h >= 0.0
+                    and parameter + h <= 1.0
+                ):
+                    return [-h, 0.0, h]
+
+                if parameter + 2.0 * h <= 1.0:
+                    return [0.0, h, 2.0 * h]
+
+                if parameter - 2.0 * h >= 0.0:
+                    return [-2.0 * h, -h, 0.0]
+
+                return None
+
+            u_offsets = offsets(u)
+            v_offsets = offsets(v)
+
+            if u_offsets is None or v_offsets is None:
+                return None
+
+            matrix = []
+            coordinates = []
+
+            for du in u_offsets:
+                for dv in v_offsets:
+                    vertex = Face.VertexByParameters(
+                        face,
+                        u=u + du,
+                        v=v + dv,
+                        tolerance=tolerance,
+                        silent=True,
+                    )
+
+                    if not Topology.IsInstance(vertex, "Vertex"):
+                        continue
+
+                    xyz = Vertex.Coordinates(
+                        vertex,
+                        mantissa=None,
+                    )
+
+                    matrix.append([
+                        1.0,
+                        du,
+                        dv,
+                        0.5 * du * du,
+                        du * dv,
+                        0.5 * dv * dv,
+                    ])
+
+                    coordinates.append(xyz)
+
+            if len(matrix) < 6:
+                if not silent:
+                    print("Face.CurvatureAtParameters - Error: Could not obtain enough surface samples. Returning None.")
+                return None
+
+            try:
+                A = np.asarray(
+                    matrix,
+                    dtype=float,
+                )
+
+                P = np.asarray(
+                    coordinates,
+                    dtype=float,
+                )
+
+                coefficients, _, _, _ = np.linalg.lstsq(
+                    A,
+                    P,
+                    rcond=None,
+                )
+
+                Su = coefficients[1]
+                Sv = coefficients[2]
+                Suu = coefficients[3]
+                Suv = coefficients[4]
+                Svv = coefficients[5]
+
+            except Exception:
+                return None
+
+            normal = Face.NormalAtParameters(
+                face,
+                u=u,
+                v=v,
+                outputType="xyz",
+                mantissa=None,
+                tolerance=tolerance,
+                silent=True,
+            )
+
+            if (
+                not isinstance(normal, (list, tuple))
+                or len(normal) != 3
+            ):
+                return None
+
+            N = np.asarray(
+                normal,
+                dtype=float,
+            )
+
+            normal_length = float(
+                np.linalg.norm(N)
+            )
+
+            if normal_length <= tolerance:
+                return None
+
+            N /= normal_length
+
+            # First fundamental form.
+            E = float(np.dot(Su, Su))
+            F = float(np.dot(Su, Sv))
+            G = float(np.dot(Sv, Sv))
+
+            determinant = E * G - F * F
+
+            if determinant <= 1.0e-20:
+                if not silent:
+                    print("Face.CurvatureAtParameters - Error: The surface is singular at the requested parameters. Returning None.")
+                return None
+
+            # Second fundamental form.
+            e = float(np.dot(N, Suu))
+            f = float(np.dot(N, Suv))
+            g = float(np.dot(N, Svv))
+
+            gaussian = (
+                e * g - f * f
+            ) / determinant
+
+            mean = (
+                E * g
+                - 2.0 * F * f
+                + G * e
+            ) / (
+                2.0 * determinant
+            )
+
+            discriminant = max(
+                0.0,
+                mean * mean - gaussian,
+            )
+
+            root = math.sqrt(discriminant)
+
+            maximum = mean + root
+            minimum = mean - root
+
+            scale = max(
+                1.0,
+                abs(maximum),
+                abs(minimum),
+            )
+
+            is_umbilic = (
+                abs(maximum - minimum)
+                <= 1.0e-7 * scale
+            )
+
+            maximum_direction = None
+            minimum_direction = None
+
+            if not is_umbilic:
+                try:
+                    first_form = np.array(
+                        [
+                            [E, F],
+                            [F, G],
+                        ],
+                        dtype=float,
+                    )
+
+                    second_form = np.array(
+                        [
+                            [e, f],
+                            [f, g],
+                        ],
+                        dtype=float,
+                    )
+
+                    shape_operator = np.linalg.solve(
+                        first_form,
+                        second_form,
+                    )
+
+                    eigenvalues, eigenvectors = np.linalg.eig(
+                        shape_operator
+                    )
+
+                    pairs = []
+
+                    for index in range(2):
+                        value = float(
+                            np.real(eigenvalues[index])
+                        )
+
+                        coefficients_2d = np.real(
+                            eigenvectors[:, index]
+                        )
+
+                        direction = (
+                            coefficients_2d[0] * Su
+                            + coefficients_2d[1] * Sv
+                        )
+
+                        direction_length = float(
+                            np.linalg.norm(direction)
+                        )
+
+                        if direction_length <= tolerance:
+                            continue
+
+                        direction /= direction_length
+
+                        pairs.append(
+                            (
+                                value,
+                                [
+                                    float(direction[0]),
+                                    float(direction[1]),
+                                    float(direction[2]),
+                                ],
+                            )
+                        )
+
+                    pairs.sort(
+                        key=lambda item: item[0],
+                        reverse=True,
+                    )
+
+                    if len(pairs) == 2:
+                        maximum_direction = pairs[0][1]
+                        minimum_direction = pairs[1][1]
+
+                except Exception:
+                    pass
+
+            result = {
+                "maximum": float(maximum),
+                "minimum": float(minimum),
+                "mean": float(mean),
+                "gaussian": float(gaussian),
+                "maximumDirection": maximum_direction,
+                "minimumDirection": minimum_direction,
+                "isUmbilic": bool(is_umbilic),
+            }
+
+        # ------------------------------------------------------------------
+        # Normalize and round output.
+        # ------------------------------------------------------------------
+
+        required_keys = [
+            "maximum",
+            "minimum",
+            "mean",
+            "gaussian",
+        ]
+
+        if any(
+            key not in result
+            for key in required_keys
+        ):
+            if not silent:
+                print("Face.CurvatureAtParameters - Error: Could not determine the surface curvature. Returning None.")
+            return None
+
+        for key in required_keys:
+            try:
+                result[key] = float(result[key])
+            except Exception:
+                return None
+
+        if mantissa is not None:
+            mantissa = int(mantissa)
+
+            for key in required_keys:
+                result[key] = round(
+                    result[key],
+                    mantissa,
+                )
+
+            for key in [
+                "maximumDirection",
+                "minimumDirection",
+            ]:
+                direction = result.get(key)
+
+                if isinstance(direction, (list, tuple)):
+                    result[key] = [
+                        round(float(value), mantissa)
+                        for value in direction
+                    ]
+
+        result["isUmbilic"] = bool(
+            result.get("isUmbilic", False)
+        )
+
+        return result
+
+    @staticmethod
     def Einstein(origin= None, radius: float = 0.5, direction: list = [0, 0, 1],
                  placement: str = "center", tolerance: float = 0.0001):
         """
@@ -2689,6 +3533,185 @@ class Face():
 
 
 
+
+    @staticmethod
+    def IsPlanar(
+        face,
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ) -> bool:
+        """
+        Returns True if the input Face lies on a plane. Returns False otherwise.
+
+        The active backend is queried first for an exact/native planarity test.
+        If one is not available, the underlying surface is sampled in normalized
+        UV space and tested against the tangent plane at its parametric centre.
+
+        This method tests the actual supporting surface rather than merely testing
+        whether the boundary vertices happen to be coplanar.
+
+        Parameters
+        ----------
+        face : topologic_core.Face
+            The input face.
+        tolerance : float , optional
+            The desired geometric tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed.
+            Default is False.
+
+        Returns
+        -------
+        bool
+            True if the Face is planar. False if it is non-planar. None if
+            planarity cannot be determined.
+
+        """
+        import math
+
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(face, "Face"):
+            if not silent:
+                print("Face.IsPlanar - Error: The input face parameter is not a valid face. Returning None.")
+            return None
+
+        try:
+            tolerance = abs(float(tolerance))
+        except Exception:
+            if not silent:
+                print("Face.IsPlanar - Error: The input tolerance parameter is not a valid number. Returning None.")
+            return None
+
+        if not math.isfinite(tolerance) or tolerance <= 0.0:
+            if not silent:
+                print("Face.IsPlanar - Error: The input tolerance parameter must be greater than zero. Returning None.")
+            return None
+
+        # ------------------------------------------------------------------
+        # Prefer a native backend test.
+        # ------------------------------------------------------------------
+
+        try:
+            result = Core.FaceUtility.IsPlanar(
+                face,
+                tolerance,
+            )
+        except Exception:
+            result = None
+
+        if result is not None:
+            return bool(result)
+
+        # ------------------------------------------------------------------
+        # Backend-neutral fallback.
+        #
+        # Test points on the actual underlying parametric surface against the
+        # tangent plane at its parametric centre. Testing only boundary vertices
+        # would incorrectly classify a bulging NURBS patch with planar boundary
+        # vertices as planar.
+        # ------------------------------------------------------------------
+
+        center = Face.VertexByParameters(
+            face,
+            u=0.5,
+            v=0.5,
+            tolerance=tolerance,
+            silent=True,
+        )
+
+        normal = Face.NormalAtParameters(
+            face,
+            u=0.5,
+            v=0.5,
+            outputType="xyz",
+            mantissa=None,
+            tolerance=tolerance,
+            silent=True,
+        )
+
+        if (
+            not Topology.IsInstance(center, "Vertex")
+            or not isinstance(normal, (list, tuple))
+            or len(normal) != 3
+        ):
+            if not silent:
+                print("Face.IsPlanar - Error: Could not determine a reference tangent plane. Returning None.")
+            return None
+
+        center_xyz = Vertex.Coordinates(
+            center,
+            mantissa=None,
+        )
+
+        try:
+            normal = [
+                float(normal[0]),
+                float(normal[1]),
+                float(normal[2]),
+            ]
+
+            magnitude = math.sqrt(
+                sum(value * value for value in normal)
+            )
+
+            if magnitude <= tolerance:
+                return None
+
+            normal = [
+                value / magnitude
+                for value in normal
+            ]
+
+        except Exception:
+            return None
+
+        parameters = [
+            0.0,
+            0.25,
+            0.5,
+            0.75,
+            1.0,
+        ]
+
+        valid_samples = 0
+
+        for u in parameters:
+            for v in parameters:
+                vertex = Face.VertexByParameters(
+                    face,
+                    u=u,
+                    v=v,
+                    tolerance=tolerance,
+                    silent=True,
+                )
+
+                if not Topology.IsInstance(vertex, "Vertex"):
+                    continue
+
+                xyz = Vertex.Coordinates(
+                    vertex,
+                    mantissa=None,
+                )
+
+                distance = abs(
+                    (xyz[0] - center_xyz[0]) * normal[0]
+                    + (xyz[1] - center_xyz[1]) * normal[1]
+                    + (xyz[2] - center_xyz[2]) * normal[2]
+                )
+
+                valid_samples += 1
+
+                if distance > tolerance:
+                    return False
+
+        if valid_samples < 3:
+            if not silent:
+                print("Face.IsPlanar - Error: Could not obtain enough surface samples to determine planarity. Returning None.")
+            return None
+
+        return True
 
     @staticmethod
     def InternalVertex(face, tolerance: float = 0.0001, silent: bool = False):
@@ -5509,43 +6532,296 @@ class Face():
         return return_normal
     
     @staticmethod
-    def NormalEdge(face, length: float = 1.0, tolerance: float = 0.0001, silent: bool = False):
+    def NormalAtParameters(
+        face,
+        u: float = 0.5,
+        v: float = 0.5,
+        outputType: str = "xyz",
+        mantissa: int = 6,
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
         """
-        Returns the normal vector to the input face as an edge with the desired input length. A normal vector of a face is a vector perpendicular to it.
+        Returns the oriented unit normal vector to the input Face at the specified
+        normalized U and V parameters.
+
+        This method evaluates the actual underlying surface and therefore supports
+        planar, analytic, B-spline, and NURBS surfaces.
+
+        Parameters
+        ----------
+        face : topologic_core.Face
+            The input face.
+        u : float , optional
+            The normalized U parameter in the range 0 to 1. Default is 0.5.
+        v : float , optional
+            The normalized V parameter in the range 0 to 1. Default is 0.5.
+        outputType : str , optional
+            Any subset or permutation of "xyz". Default is "xyz".
+        mantissa : int , optional
+            The number of decimal places to round the result to. If None, no
+            rounding is applied. Default is 6.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed.
+            Default is False.
+
+        Returns
+        -------
+        list
+            The requested normal-vector components.
+
+        """
+        import math
+
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(face, "Face"):
+            if not silent:
+                print("Face.NormalAtParameters - Error: The input face parameter is not a valid face. Returning None.")
+            return None
+
+        try:
+            u = float(u)
+            v = float(v)
+            tolerance = float(tolerance)
+        except Exception:
+            if not silent:
+                print("Face.NormalAtParameters - Error: One or more numerical parameters are invalid. Returning None.")
+            return None
+
+        if not all(
+            math.isfinite(value)
+            for value in [u, v, tolerance]
+        ):
+            if not silent:
+                print("Face.NormalAtParameters - Error: One or more numerical parameters are not finite. Returning None.")
+            return None
+
+        if tolerance <= 0.0:
+            if not silent:
+                print("Face.NormalAtParameters - Error: The input tolerance parameter must be greater than zero. Returning None.")
+            return None
+
+        if u < 0.0 or u > 1.0:
+            if not silent:
+                print("Face.NormalAtParameters - Error: The input u parameter must be between 0 and 1. Returning None.")
+            return None
+
+        if v < 0.0 or v > 1.0:
+            if not silent:
+                print("Face.NormalAtParameters - Error: The input v parameter must be between 0 and 1. Returning None.")
+            return None
+
+        normal = None
+
+        try:
+            normal = Core.FaceUtility.NormalAtParameters(
+                face,
+                u,
+                v,
+                tolerance,
+            )
+        except TypeError:
+            try:
+                normal = Core.FaceUtility.NormalAtParameters(
+                    face,
+                    u,
+                    v,
+                )
+            except Exception:
+                normal = None
+        except Exception:
+            normal = None
+
+        if not isinstance(normal, (list, tuple)) or len(normal) < 3:
+            if not silent:
+                print("Face.NormalAtParameters - Error: Could not evaluate the surface normal. Returning None.")
+            return None
+
+        try:
+            normal = [
+                float(normal[0]),
+                float(normal[1]),
+                float(normal[2]),
+            ]
+        except Exception:
+            return None
+
+        magnitude = math.sqrt(
+            sum(
+                value * value
+                for value in normal
+            )
+        )
+
+        if not math.isfinite(magnitude) or magnitude <= tolerance:
+            if not silent:
+                print("Face.NormalAtParameters - Error: The surface normal is undefined at the requested parameters. Returning None.")
+            return None
+
+        normal = [
+            value / magnitude
+            for value in normal
+        ]
+
+        if mantissa is not None:
+            try:
+                mantissa = int(mantissa)
+            except Exception:
+                if not silent:
+                    print("Face.NormalAtParameters - Error: The input mantissa parameter is not a valid integer. Returning None.")
+                return None
+
+            normal = [
+                round(value, mantissa)
+                for value in normal
+            ]
+
+        output = str(outputType).lower()
+
+        mapping = {
+            "x": normal[0],
+            "y": normal[1],
+            "z": normal[2],
+        }
+
+        result = [
+            mapping[axis]
+            for axis in output
+            if axis in mapping
+        ]
+
+        if len(result) < 1:
+            if not silent:
+                print("Face.NormalAtParameters - Error: The input outputType parameter does not contain x, y, or z. Returning None.")
+            return None
+
+        return result
+
+    @staticmethod
+    def NormalEdge(
+        face,
+        length: float = 1.0,
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
+        """
+        Returns an Edge representing the local surface normal of the input Face.
+
+        The normal is evaluated at an internal vertex of the Face. For a curved
+        Face, the corresponding local U and V parameters are used to obtain the
+        actual surface normal at that point.
 
         Parameters
         ----------
         face : topologic_core.Face
             The input face.
         length : float , optional
-            The desired length of the normal edge. Default is 1.
+            The desired length of the normal edge. Default is 1.0.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
+            If set to True, error and warning messages are suppressed.
+            Default is False.
 
         Returns
         -------
         topologic_core.Edge
-            The created normal edge to the input face. This is computed at the approximate center of the face.
+            The created normal Edge, or None if it cannot be created.
 
         """
+        import math
+
         from topologicpy.Edge import Edge
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(face, "Face"):
             if not silent:
-                print("Face.NormalEdge - Error: The input face parameter is not a valid face. Retuning None.")
+                print("Face.NormalEdge - Error: The input face parameter is not a valid face. Returning None.")
             return None
-        if length <= tolerance:
+
+        try:
+            length = float(length)
+            tolerance = float(tolerance)
+        except Exception:
             if not silent:
-                print("Face.NormalEdge - Error: The input length parameter is less than or equal to the input tolerance. Retuning None.")
+                print("Face.NormalEdge - Error: One or more numerical parameters are invalid. Returning None.")
             return None
-        iv = Face.InternalVertex(face)
-        u, v = Face.VertexParameters(face, iv)
-        vec = Face.Normal(face)
-        ev = Topology.TranslateByDirectionDistance(iv, vec, length)
-        return Edge.ByVertices([iv, ev], tolerance=tolerance, silent=silent)
+
+        if (
+            not math.isfinite(length)
+            or not math.isfinite(tolerance)
+            or tolerance <= 0.0
+            or length <= tolerance
+        ):
+            if not silent:
+                print("Face.NormalEdge - Error: The input length must be greater than the input tolerance. Returning None.")
+            return None
+
+        vertex = Face.InternalVertex(
+            face,
+            tolerance=tolerance,
+            silent=True,
+        )
+
+        if not Topology.IsInstance(vertex, "Vertex"):
+            if not silent:
+                print("Face.NormalEdge - Error: Could not determine an internal vertex of the input face. Returning None.")
+            return None
+
+        parameters = Face.VertexParameters(
+            face,
+            vertex,
+            outputType="uv",
+            mantissa=None,
+            tolerance=tolerance,
+            silent=True,
+        )
+
+        if (
+            not isinstance(parameters, (list, tuple))
+            or len(parameters) < 2
+        ):
+            if not silent:
+                print("Face.NormalEdge - Error: Could not determine the surface parameters of the internal vertex. Returning None.")
+            return None
+
+        u = float(parameters[0])
+        v = float(parameters[1])
+
+        normal = Face.NormalAtParameters(
+            face,
+            u=u,
+            v=v,
+            outputType="xyz",
+            mantissa=None,
+            tolerance=tolerance,
+            silent=True,
+        )
+
+        if not isinstance(normal, list) or len(normal) != 3:
+            if not silent:
+                print("Face.NormalEdge - Error: Could not determine the local surface normal. Returning None.")
+            return None
+
+        end_vertex = Topology.TranslateByDirectionDistance(
+            vertex,
+            normal,
+            length,
+        )
+
+        if not Topology.IsInstance(end_vertex, "Vertex"):
+            if not silent:
+                print("Face.NormalEdge - Error: Could not create the end vertex. Returning None.")
+            return None
+
+        return Edge.ByVertices(
+            [vertex, end_vertex],
+            tolerance=tolerance,
+            silent=silent,
+        )
 
     @staticmethod
     def NorthArrow(origin= None, radius: float = 0.5, sides: int = 16, direction: list = [0, 0, 1], northAngle: float = 0.0,
@@ -6274,6 +7550,372 @@ class Face():
         return Face._PrimitiveFaceByWire(wire, origin=origin, direction=direction, tolerance=tolerance, silent=silent)
 
     @staticmethod
+    def TangentAtParameters(
+        face,
+        u: float = 0.5,
+        v: float = 0.5,
+        axis: str = "u",
+        outputType: str = "xyz",
+        mantissa: int = 6,
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ) -> list:
+        """
+        Returns one parametric tangent direction of the input Face at the specified
+        normalized parameters.
+
+        Parameters
+        ----------
+        face : topologic_core.Face
+            The input face.
+        u : float , optional
+            The normalized U parameter. Default is 0.5.
+        v : float , optional
+            The normalized V parameter. Default is 0.5.
+        axis : str , optional
+            The requested parametric direction. Valid values are "u" and "v".
+            Default is "u".
+        outputType : str , optional
+            Any subset or permutation of "xyz". Default is "xyz".
+        mantissa : int , optional
+            The number of decimal places to round the result to. If None, no
+            rounding is applied. Default is 6.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed.
+            Default is False.
+
+        Returns
+        -------
+        list
+            The requested unit tangent direction.
+
+        """
+        if not isinstance(axis, str):
+            if not silent:
+                print("Face.TangentAtParameters - Error: The input axis parameter is not a valid string. Returning None.")
+            return None
+
+        axis = axis.lower()
+
+        if axis not in ["u", "v"]:
+            if not silent:
+                print("Face.TangentAtParameters - Error: The input axis parameter must be either 'u' or 'v'. Returning None.")
+            return None
+
+        tangents = Face.TangentsAtParameters(
+            face,
+            u=u,
+            v=v,
+            outputType=outputType,
+            mantissa=mantissa,
+            tolerance=tolerance,
+            silent=silent,
+        )
+
+        if not isinstance(tangents, dict):
+            return None
+
+        return tangents.get(axis)
+
+    @staticmethod
+    def TangentsAtParameters(
+        face,
+        u: float = 0.5,
+        v: float = 0.5,
+        outputType: str = "xyz",
+        mantissa: int = 6,
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ) -> dict:
+        """
+        Returns the U and V parametric tangent directions of the input Face at the
+        specified normalized parameters.
+
+        The U tangent points in the direction of increasing U and the V tangent
+        points in the direction of increasing V. The two tangent directions are
+        not necessarily orthogonal on a general parametric surface.
+
+        These are parametric surface directions. Reversing the topological
+        orientation of a Face does not reverse its U or V parameter directions.
+
+        Parameters
+        ----------
+        face : topologic_core.Face
+            The input face.
+        u : float , optional
+            The normalized U parameter. Default is 0.5.
+        v : float , optional
+            The normalized V parameter. Default is 0.5.
+        outputType : str , optional
+            Any subset or permutation of "xyz". Default is "xyz".
+        mantissa : int , optional
+            The number of decimal places to round the result to. If None, no
+            rounding is applied. Default is 6.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed.
+            Default is False.
+
+        Returns
+        -------
+        dict
+            A dictionary with keys ``u`` and ``v`` containing the corresponding
+            unit tangent directions.
+
+        """
+        import math
+
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(face, "Face"):
+            if not silent:
+                print("Face.TangentsAtParameters - Error: The input face parameter is not a valid face. Returning None.")
+            return None
+
+        try:
+            u = float(u)
+            v = float(v)
+            tolerance = abs(float(tolerance))
+        except Exception:
+            if not silent:
+                print("Face.TangentsAtParameters - Error: One or more numerical parameters are invalid. Returning None.")
+            return None
+
+        if not all(
+            math.isfinite(value)
+            for value in [u, v, tolerance]
+        ):
+            return None
+
+        if tolerance <= 0.0:
+            return None
+
+        if not 0.0 <= u <= 1.0 or not 0.0 <= v <= 1.0:
+            if not silent:
+                print("Face.TangentsAtParameters - Error: The u and v parameters must be between 0 and 1. Returning None.")
+            return None
+
+        tangents = None
+
+        # ------------------------------------------------------------------
+        # Native differential-geometry path.
+        # ------------------------------------------------------------------
+
+        try:
+            tangents = Core.FaceUtility.TangentsAtParameters(
+                face,
+                u,
+                v,
+                tolerance,
+            )
+        except Exception:
+            tangents = None
+
+        if isinstance(tangents, dict):
+            tangent_u = tangents.get("u")
+            tangent_v = tangents.get("v")
+
+        elif (
+            isinstance(tangents, (list, tuple))
+            and len(tangents) >= 2
+        ):
+            tangent_u = tangents[0]
+            tangent_v = tangents[1]
+
+        else:
+            tangent_u = None
+            tangent_v = None
+
+        # ------------------------------------------------------------------
+        # TopologicCore fallback: numerically differentiate the actual surface.
+        # ------------------------------------------------------------------
+
+        if tangent_u is None or tangent_v is None:
+
+            h = min(
+                1.0e-3,
+                max(
+                    1.0e-7,
+                    tolerance * 0.1,
+                ),
+            )
+
+            def coordinates(uu, vv):
+                vertex = Face.VertexByParameters(
+                    face,
+                    u=uu,
+                    v=vv,
+                    tolerance=tolerance,
+                    silent=True,
+                )
+
+                if not Topology.IsInstance(vertex, "Vertex"):
+                    return None
+
+                return Vertex.Coordinates(
+                    vertex,
+                    mantissa=None,
+                )
+
+            def subtract(a, b):
+                return [
+                    a[i] - b[i]
+                    for i in range(3)
+                ]
+
+            def derivative(parameter, axis):
+                if parameter - h >= 0.0 and parameter + h <= 1.0:
+                    if axis == "u":
+                        p0 = coordinates(u - h, v)
+                        p1 = coordinates(u + h, v)
+                    else:
+                        p0 = coordinates(u, v - h)
+                        p1 = coordinates(u, v + h)
+
+                    if p0 is None or p1 is None:
+                        return None
+
+                    scale = 2.0 * h
+                    return [
+                        (p1[i] - p0[i]) / scale
+                        for i in range(3)
+                    ]
+
+                if parameter + 2.0 * h <= 1.0:
+                    if axis == "u":
+                        p0 = coordinates(u, v)
+                        p1 = coordinates(u + h, v)
+                        p2 = coordinates(u + 2.0 * h, v)
+                    else:
+                        p0 = coordinates(u, v)
+                        p1 = coordinates(u, v + h)
+                        p2 = coordinates(u, v + 2.0 * h)
+
+                    if p0 is None or p1 is None or p2 is None:
+                        return None
+
+                    scale = 2.0 * h
+                    return [
+                        (
+                            -3.0 * p0[i]
+                            + 4.0 * p1[i]
+                            - p2[i]
+                        ) / scale
+                        for i in range(3)
+                    ]
+
+                if parameter - 2.0 * h >= 0.0:
+                    if axis == "u":
+                        p0 = coordinates(u, v)
+                        p1 = coordinates(u - h, v)
+                        p2 = coordinates(u - 2.0 * h, v)
+                    else:
+                        p0 = coordinates(u, v)
+                        p1 = coordinates(u, v - h)
+                        p2 = coordinates(u, v - 2.0 * h)
+
+                    if p0 is None or p1 is None or p2 is None:
+                        return None
+
+                    scale = 2.0 * h
+                    return [
+                        (
+                            3.0 * p0[i]
+                            - 4.0 * p1[i]
+                            + p2[i]
+                        ) / scale
+                        for i in range(3)
+                    ]
+
+                return None
+
+            tangent_u = derivative(
+                u,
+                "u",
+            )
+
+            tangent_v = derivative(
+                v,
+                "v",
+            )
+
+        def normalize(vector):
+            if (
+                not isinstance(vector, (list, tuple))
+                or len(vector) < 3
+            ):
+                return None
+
+            try:
+                vector = [
+                    float(vector[0]),
+                    float(vector[1]),
+                    float(vector[2]),
+                ]
+            except Exception:
+                return None
+
+            magnitude = math.sqrt(
+                sum(value * value for value in vector)
+            )
+
+            if not math.isfinite(magnitude) or magnitude <= 1.0e-15:
+                return None
+
+            return [
+                value / magnitude
+                for value in vector
+            ]
+
+        tangent_u = normalize(tangent_u)
+        tangent_v = normalize(tangent_v)
+
+        if tangent_u is None or tangent_v is None:
+            if not silent:
+                print("Face.TangentsAtParameters - Error: Could not determine the surface tangents. Returning None.")
+            return None
+
+        output = str(outputType).lower()
+
+        def filter_vector(vector):
+            mapping = {
+                "x": vector[0],
+                "y": vector[1],
+                "z": vector[2],
+            }
+
+            result = [
+                mapping[axis]
+                for axis in output
+                if axis in mapping
+            ]
+
+            if mantissa is not None:
+                result = [
+                    round(value, int(mantissa))
+                    for value in result
+                ]
+
+            return result
+
+        tangent_u = filter_vector(tangent_u)
+        tangent_v = filter_vector(tangent_v)
+
+        if not tangent_u or not tangent_v:
+            if not silent:
+                print("Face.TangentsAtParameters - Error: The input outputType parameter is invalid. Returning None.")
+            return None
+
+        return {
+            "u": tangent_u,
+            "v": tangent_v,
+        }
+
+    @staticmethod
     def Triangulate(face, mode: int = 0, meshSize: float = None, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False) -> list:
         """
         Triangulates the input face and returns a list of faces.
@@ -6636,35 +8278,45 @@ class Face():
         return Face._PrimitiveFaceByWire(t_shape_wire, origin=origin, direction=direction, tolerance=tolerance, silent=silent)
 
     @staticmethod
-    def VertexByParameters(face, u: float = 0.5, v: float = 0.5):
+    def VertexByParameters(face, u: float = 0.5, v: float = 0.5, tolerance: float = 0.0001, silent: bool = False):
         """
-        Creates a vertex at the *u* and *v* parameters of the input face.
+        Creates a vertex at normalized ``u`` and ``v`` parameters of the input face.
 
         Parameters
         ----------
         face : topologic_core.Face
             The input face.
         u : float , optional
-            The *u* parameter of the input face. Default is 0.5.
+            The normalized u parameter. Default is 0.5.
         v : float , optional
-            The *v* parameter of the input face. Default is 0.5.
+            The normalized v parameter. Default is 0.5.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
-        vertex : topologic vertex
+        topologic_core.Vertex
             The created vertex.
-
         """
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(face, "Face"):
+            if not silent:
+                print("Face.VertexByParameters - Error: The input face parameter is not a valid face. Returning None.")
             return None
-        return Core.FaceUtility.VertexAtParameters(face, u, v)
+        try:
+            return Core.FaceUtility.VertexAtParameters(face, float(u), float(v))
+        except Exception:
+            if not silent:
+                print("Face.VertexByParameters - Error: Could not evaluate the face parameters. Returning None.")
+            return None
     
     @staticmethod
-    def VertexParameters(face, vertex, outputType: str = "uv", mantissa: int = 6) -> list:
+    def VertexParameters(face, vertex, outputType: str = "uv", mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False) -> list:
         """
-        Returns the *u* and *v* parameters of the input face at the location of the input vertex.
+        Returns normalized face parameters at the location of the input vertex.
 
         Parameters
         ----------
@@ -6672,34 +8324,46 @@ class Face():
             The input face.
         vertex : topologic_core.Vertex
             The input vertex.
-        outputType : string , optional
-            The string defining the desired output. This can be any subset or permutation of "uv". It is case insensitive. Default is "uv".
+        outputType : str , optional
+            Any subset or permutation of "uv". Default is "uv".
         mantissa : int , optional
             The number of decimal places to round the result to. Default is 6.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
         list
-            The list of *u* and/or *v* as specified by the outputType input.
-
+            The requested normalized parameters.
         """
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(face, "Face"):
+            if not silent:
+                print("Face.VertexParameters - Error: The input face parameter is not a valid face. Returning None.")
             return None
         if not Topology.IsInstance(vertex, "Vertex"):
+            if not silent:
+                print("Face.VertexParameters - Error: The input vertex parameter is not a valid vertex. Returning None.")
             return None
-        params = Core.FaceUtility.ParametersAtVertex(face, vertex)
-        u = round(params[0], mantissa)
-        v = round(params[1], mantissa)
-        outputType = list(outputType.lower())
-        returnResult = []
-        for param in outputType:
-            if param == "u":
-                returnResult.append(u)
-            elif param == "v":
-                returnResult.append(v)
-        return returnResult
+        try:
+            params = Core.FaceUtility.ParametersAtVertex(face, vertex, tolerance)
+        except TypeError:
+            try:
+                params = Core.FaceUtility.ParametersAtVertex(face, vertex)
+            except Exception:
+                params = None
+        except Exception:
+            params = None
+        if not isinstance(params, (list, tuple)) or len(params) < 2:
+            return None
+        u, v = float(params[0]), float(params[1])
+        if mantissa is not None:
+            u, v = round(u, mantissa), round(v, mantissa)
+        mapping = {"u": u, "v": v}
+        return [mapping[item] for item in str(outputType).lower() if item in mapping]
 
     @staticmethod
     def Vertices(face) -> list:

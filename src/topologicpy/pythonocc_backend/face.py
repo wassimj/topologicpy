@@ -6,6 +6,7 @@ import math
 from .topology import (
     Topology,
     _downward_wrappers,
+    _shape_from_topology,
     _is_null_shape,
     TopAbs_VERTEX,
     TopAbs_EDGE,
@@ -16,6 +17,149 @@ from .edge import Edge
 from .occ_utils import make_occ_face
 from .helpers import unique_by_uuid, edge_key
 
+
+def _face_tolerance(value=0.0001) -> float:
+    """Return a finite positive geometric tolerance."""
+    try:
+        value = abs(float(value))
+    except Exception:
+        value = 0.0001
+    if not math.isfinite(value) or value <= 0.0:
+        return 1.0e-12
+    return value
+
+
+def _as_occ_face(face):
+    """Return an OCCT TopoDS_Face for a backend Face, or None."""
+    if not isinstance(face, Face):
+        return None
+    shape = _shape_from_topology(face)
+    if _is_null_shape(shape):
+        return None
+    try:
+        from OCC.Core.TopoDS import topods
+        return topods.Face(shape)
+    except Exception:
+        return None
+
+
+def _surface_and_bounds(face):
+    """Return (surface, u0, u1, v0, v1) for a backend Face."""
+    occ_face = _as_occ_face(face)
+    if occ_face is None:
+        return None
+    try:
+        from OCC.Core.BRep import BRep_Tool
+        from OCC.Core.BRepAdaptor import BRepAdaptor_Surface
+
+        surface = BRep_Tool.Surface(occ_face)
+        if surface is None:
+            return None
+        adaptor = BRepAdaptor_Surface(occ_face, True)
+        u0 = float(adaptor.FirstUParameter())
+        u1 = float(adaptor.LastUParameter())
+        v0 = float(adaptor.FirstVParameter())
+        v1 = float(adaptor.LastVParameter())
+        values = (u0, u1, v0, v1)
+        if not all(math.isfinite(value) for value in values):
+            return None
+        return surface, u0, u1, v0, v1
+    except Exception:
+        return None
+
+
+def _normalized_to_raw(face, u, v):
+    """Map TopologicPy normalized UV parameters to native surface parameters."""
+    data = _surface_and_bounds(face)
+    if data is None:
+        return None
+    surface, u0, u1, v0, v1 = data
+    try:
+        un = float(u)
+        vn = float(v)
+    except Exception:
+        return None
+    raw_u = u0 + un * (u1 - u0)
+    raw_v = v0 + vn * (v1 - v0)
+    return surface, raw_u, raw_v, u0, u1, v0, v1
+
+
+def _normalized_vector(values, tolerance=1.0e-12):
+    """Return a normalized 3D vector, or None if its magnitude is too small."""
+    try:
+        vector = [
+            float(values[0]),
+            float(values[1]),
+            float(values[2]),
+        ]
+    except Exception:
+        return None
+
+    if not all(math.isfinite(value) for value in vector):
+        return None
+
+    magnitude = math.sqrt(
+        sum(value * value for value in vector)
+    )
+
+    if magnitude <= _face_tolerance(tolerance):
+        return None
+
+    return [
+        value / magnitude
+        for value in vector
+    ]
+
+
+def _expanded_knot_data(values):
+    """
+    Convert an expanded knot vector to OCCT unique knots and multiplicities.
+
+    Returns
+    -------
+    tuple
+        ``(unique_knots, multiplicities)``, or None for invalid input.
+    """
+    if not isinstance(values, (list, tuple)):
+        return None
+
+    try:
+        expanded = [
+            float(value)
+            for value in values
+        ]
+    except Exception:
+        return None
+
+    if len(expanded) < 2:
+        return None
+
+    if any(
+        not math.isfinite(value)
+        for value in expanded
+    ):
+        return None
+
+    if any(
+        expanded[index] > expanded[index + 1]
+        for index in range(len(expanded) - 1)
+    ):
+        return None
+
+    unique_knots = []
+    multiplicities = []
+
+    for value in expanded:
+        if unique_knots and value == unique_knots[-1]:
+            multiplicities[-1] += 1
+        else:
+            unique_knots.append(value)
+            multiplicities.append(1)
+
+    if len(unique_knots) < 2:
+        return None
+
+    return unique_knots, multiplicities
 
 @dataclass(eq=False)
 class Face(Topology):
@@ -302,6 +446,407 @@ class Face(Topology):
             pass
 
         return result
+
+    @staticmethod
+    def ByNurbsParameters(
+        controlPoints,
+        weights,
+        uKnots,
+        vKnots,
+        isRational,
+        isUPeriodic,
+        isVPeriodic,
+        uDegree,
+        vDegree,
+        tolerance: float = 0.0001,
+    ):
+        """
+        Creates a Face from exact OCCT B-spline/NURBS surface parameters.
+
+        The control-point and weight grids use the convention:
+
+            controlPoints[u][v]
+            weights[u][v]
+
+        The knot vectors are supplied in expanded form. Repeated knot values
+        therefore appear repeatedly in the input lists and are converted here
+        to OCCT's unique-knot plus multiplicity representation.
+
+        Parameters
+        ----------
+        controlPoints : list
+            Rectangular two-dimensional grid of backend Vertex objects.
+        weights : list
+            Rectangular two-dimensional grid of positive weights.
+        uKnots : list
+            Expanded knot vector in the U direction.
+        vKnots : list
+            Expanded knot vector in the V direction.
+        isRational : bool
+            If True, construct a rational NURBS surface.
+        isUPeriodic : bool
+            If True, the surface is periodic in U.
+        isVPeriodic : bool
+            If True, the surface is periodic in V.
+        uDegree : int
+            Degree in the U direction.
+        vDegree : int
+            Degree in the V direction.
+        tolerance : float , optional
+            Geometric tolerance used when creating the OCCT Face.
+            Default is 0.0001.
+
+        Returns
+        -------
+        Face
+            The created backend Face, or None on failure.
+
+        """
+        try:
+            tolerance = _face_tolerance(tolerance)
+
+            uDegree = int(uDegree)
+            vDegree = int(vDegree)
+
+            isRational = bool(isRational)
+            isUPeriodic = bool(isUPeriodic)
+            isVPeriodic = bool(isVPeriodic)
+
+        except Exception:
+            return None
+
+        if not isinstance(controlPoints, (list, tuple)):
+            return None
+
+        controlPoints = [
+            list(row)
+            for row in controlPoints
+            if isinstance(row, (list, tuple))
+        ]
+
+        if len(controlPoints) < 2:
+            return None
+
+        nU = len(controlPoints)
+        nV = len(controlPoints[0])
+
+        if nV < 2:
+            return None
+
+        if any(
+            len(row) != nV
+            for row in controlPoints
+        ):
+            return None
+
+        if any(
+            not isinstance(vertex, Vertex)
+            for row in controlPoints
+            for vertex in row
+        ):
+            return None
+
+        if (
+            uDegree < 1
+            or uDegree >= nU
+            or vDegree < 1
+            or vDegree >= nV
+        ):
+            return None
+
+        if not isinstance(weights, (list, tuple)):
+            return None
+
+        if len(weights) != nU:
+            return None
+
+        try:
+            weight_values = [
+                [
+                    float(value)
+                    for value in row
+                ]
+                for row in weights
+            ]
+        except Exception:
+            return None
+
+        if any(
+            len(row) != nV
+            for row in weight_values
+        ):
+            return None
+
+        if any(
+            not math.isfinite(value)
+            or value <= 0.0
+            for row in weight_values
+            for value in row
+        ):
+            return None
+
+        if not isRational:
+            weight_values = [
+                [1.0] * nV
+                for _ in range(nU)
+            ]
+
+        # Expanded knot vectors -> OCCT unique knots + multiplicities.
+        u_data = _expanded_knot_data(uKnots)
+        v_data = _expanded_knot_data(vKnots)
+
+        if u_data is None or v_data is None:
+            return None
+
+        unique_u_knots, u_multiplicities = u_data
+        unique_v_knots, v_multiplicities = v_data
+
+        # ------------------------------------------------------------------
+        # Validate OCCT pole/knot relationships.
+        # ------------------------------------------------------------------
+
+        if isUPeriodic:
+            valid_u = (
+                u_multiplicities[0] == u_multiplicities[-1]
+                and all(
+                    1 <= multiplicity <= uDegree
+                    for multiplicity in u_multiplicities
+                )
+                and (
+                    sum(u_multiplicities)
+                    - u_multiplicities[0]
+                    == nU
+                )
+            )
+        else:
+            valid_u = (
+                sum(u_multiplicities)
+                == nU + uDegree + 1
+                and all(
+                    1 <= multiplicity <= uDegree
+                    for multiplicity in u_multiplicities[1:-1]
+                )
+                and 1 <= u_multiplicities[0] <= uDegree + 1
+                and 1 <= u_multiplicities[-1] <= uDegree + 1
+            )
+
+        if isVPeriodic:
+            valid_v = (
+                v_multiplicities[0] == v_multiplicities[-1]
+                and all(
+                    1 <= multiplicity <= vDegree
+                    for multiplicity in v_multiplicities
+                )
+                and (
+                    sum(v_multiplicities)
+                    - v_multiplicities[0]
+                    == nV
+                )
+            )
+        else:
+            valid_v = (
+                sum(v_multiplicities)
+                == nV + vDegree + 1
+                and all(
+                    1 <= multiplicity <= vDegree
+                    for multiplicity in v_multiplicities[1:-1]
+                )
+                and 1 <= v_multiplicities[0] <= vDegree + 1
+                and 1 <= v_multiplicities[-1] <= vDegree + 1
+            )
+
+        if not valid_u or not valid_v:
+            return None
+
+        try:
+            from OCC.Core.gp import gp_Pnt
+
+            from OCC.Core.TColgp import (
+                TColgp_Array2OfPnt,
+            )
+
+            from OCC.Core.TColStd import (
+                TColStd_Array1OfInteger,
+                TColStd_Array1OfReal,
+                TColStd_Array2OfReal,
+            )
+
+            from OCC.Core.Geom import (
+                Geom_BSplineSurface,
+            )
+
+            from OCC.Core.BRepBuilderAPI import (
+                BRepBuilderAPI_MakeFace,
+            )
+
+        except Exception:
+            return None
+
+        # ------------------------------------------------------------------
+        # Poles.
+        # ------------------------------------------------------------------
+
+        try:
+            poles = TColgp_Array2OfPnt(
+                1,
+                nU,
+                1,
+                nV,
+            )
+
+            for u_index in range(nU):
+                for v_index in range(nV):
+                    vertex = controlPoints[u_index][v_index]
+
+                    poles.SetValue(
+                        u_index + 1,
+                        v_index + 1,
+                        gp_Pnt(
+                            float(vertex.x),
+                            float(vertex.y),
+                            float(vertex.z),
+                        ),
+                    )
+
+        except Exception:
+            return None
+
+        # ------------------------------------------------------------------
+        # Unique knot arrays and multiplicities.
+        # ------------------------------------------------------------------
+
+        try:
+            occ_u_knots = TColStd_Array1OfReal(
+                1,
+                len(unique_u_knots),
+            )
+
+            occ_u_mults = TColStd_Array1OfInteger(
+                1,
+                len(u_multiplicities),
+            )
+
+            for index, value in enumerate(
+                unique_u_knots,
+                start=1,
+            ):
+                occ_u_knots.SetValue(
+                    index,
+                    value,
+                )
+
+            for index, value in enumerate(
+                u_multiplicities,
+                start=1,
+            ):
+                occ_u_mults.SetValue(
+                    index,
+                    int(value),
+                )
+
+            occ_v_knots = TColStd_Array1OfReal(
+                1,
+                len(unique_v_knots),
+            )
+
+            occ_v_mults = TColStd_Array1OfInteger(
+                1,
+                len(v_multiplicities),
+            )
+
+            for index, value in enumerate(
+                unique_v_knots,
+                start=1,
+            ):
+                occ_v_knots.SetValue(
+                    index,
+                    value,
+                )
+
+            for index, value in enumerate(
+                v_multiplicities,
+                start=1,
+            ):
+                occ_v_mults.SetValue(
+                    index,
+                    int(value),
+                )
+
+        except Exception:
+            return None
+
+        # ------------------------------------------------------------------
+        # Construct the exact native surface.
+        # ------------------------------------------------------------------
+
+        try:
+            if isRational:
+                occ_weights = TColStd_Array2OfReal(
+                    1,
+                    nU,
+                    1,
+                    nV,
+                )
+
+                for u_index in range(nU):
+                    for v_index in range(nV):
+                        occ_weights.SetValue(
+                            u_index + 1,
+                            v_index + 1,
+                            weight_values[u_index][v_index],
+                        )
+
+                surface = Geom_BSplineSurface(
+                    poles,
+                    occ_weights,
+                    occ_u_knots,
+                    occ_v_knots,
+                    occ_u_mults,
+                    occ_v_mults,
+                    uDegree,
+                    vDegree,
+                    isUPeriodic,
+                    isVPeriodic,
+                )
+
+            else:
+                surface = Geom_BSplineSurface(
+                    poles,
+                    occ_u_knots,
+                    occ_v_knots,
+                    occ_u_mults,
+                    occ_v_mults,
+                    uDegree,
+                    vDegree,
+                    isUPeriodic,
+                    isVPeriodic,
+                )
+
+        except Exception:
+            return None
+
+        # Build a Face using the natural finite UV bounds of the B-spline
+        # surface. No tessellation is introduced.
+        try:
+            maker = BRepBuilderAPI_MakeFace(
+                surface,
+                tolerance,
+            )
+
+            if not maker.IsDone():
+                return None
+
+            occ_face = maker.Face()
+
+            if occ_face is None or occ_face.IsNull():
+                return None
+
+            return Face.ByOcctShape(
+                occ_face
+            )
+
+        except Exception:
+            return None
 
     @staticmethod
     def ByOcctShape(
@@ -784,6 +1329,157 @@ class FaceUtility:
             return None
 
     @staticmethod
+    def CurvatureAtParameters(
+        face,
+        u=0.5,
+        v=0.5,
+        tolerance: float = 0.0001
+    ):
+        """
+        Returns native OCCT surface-curvature properties at normalized parameters.
+
+        Signed principal and mean curvatures respect the topological orientation
+        of the Face. Gaussian curvature is orientation-independent.
+        """
+        mapped = _normalized_to_raw(
+            face,
+            u,
+            v,
+        )
+
+        if mapped is None:
+            return None
+
+        surface, raw_u, raw_v, _, _, _, _ = mapped
+
+        tol = _face_tolerance(
+            tolerance
+        )
+
+        try:
+            from OCC.Core.GeomLProp import GeomLProp_SLProps
+            from OCC.Core.TopAbs import TopAbs_REVERSED
+            from OCC.Core.gp import gp_Dir
+
+            properties = GeomLProp_SLProps(
+                surface,
+                raw_u,
+                raw_v,
+                2,
+                tol,
+            )
+
+            if not properties.IsCurvatureDefined():
+                return None
+
+            maximum = float(
+                properties.MaxCurvature()
+            )
+
+            minimum = float(
+                properties.MinCurvature()
+            )
+
+            mean = float(
+                properties.MeanCurvature()
+            )
+
+            gaussian = float(
+                properties.GaussianCurvature()
+            )
+
+            is_umbilic = bool(
+                properties.IsUmbilic()
+            )
+
+            maximum_direction = None
+            minimum_direction = None
+
+            try:
+                max_dir = gp_Dir(
+                    1.0,
+                    0.0,
+                    0.0,
+                )
+
+                min_dir = gp_Dir(
+                    0.0,
+                    1.0,
+                    0.0,
+                )
+
+                properties.CurvatureDirections(
+                    max_dir,
+                    min_dir,
+                )
+
+                maximum_direction = [
+                    float(max_dir.X()),
+                    float(max_dir.Y()),
+                    float(max_dir.Z()),
+                ]
+
+                minimum_direction = [
+                    float(min_dir.X()),
+                    float(min_dir.Y()),
+                    float(min_dir.Z()),
+                ]
+
+            except Exception:
+                maximum_direction = None
+                minimum_direction = None
+
+            occ_face = _as_occ_face(
+                face
+            )
+
+            # Changing Face orientation reverses the normal. Principal and mean
+            # curvature signs therefore reverse. Since kmax >= kmin, negation
+            # also swaps which principal curvature is the maximum.
+            if (
+                occ_face is not None
+                and occ_face.Orientation() == TopAbs_REVERSED
+            ):
+                old_maximum = maximum
+                old_minimum = minimum
+
+                maximum = -old_minimum
+                minimum = -old_maximum
+
+                mean = -mean
+
+                maximum_direction, minimum_direction = (
+                    minimum_direction,
+                    maximum_direction,
+                )
+
+            values = [
+                maximum,
+                minimum,
+                mean,
+                gaussian,
+            ]
+
+            if not all(
+                math.isfinite(value)
+                for value in values
+            ):
+                return None
+
+            return {
+                "maximum": maximum,
+                "minimum": minimum,
+                "mean": mean,
+                "gaussian": gaussian,
+                "maximumDirection": maximum_direction,
+                "minimumDirection": minimum_direction,
+                "isUmbilic": is_umbilic,
+            }
+
+        except Exception:
+            return None
+
+    @staticmethod
     def Edges(face):
         if isinstance(face, Face):
             return face.Edges()
@@ -893,6 +1589,79 @@ class FaceUtility:
             return state in (TopAbs_IN, TopAbs_ON)
         except Exception:
             return False
+
+    @staticmethod
+    def TangentsAtParameters(
+        face,
+        u=0.5,
+        v=0.5,
+        tolerance: float = 0.0001
+    ):
+        """
+        Returns the normalized U and V parametric tangent directions at normalized
+        surface parameters.
+        """
+        mapped = _normalized_to_raw(
+            face,
+            u,
+            v,
+        )
+
+        if mapped is None:
+            return None
+
+        surface, raw_u, raw_v, _, _, _, _ = mapped
+
+        tol = _face_tolerance(
+            tolerance
+        )
+
+        try:
+            from OCC.Core.GeomLProp import GeomLProp_SLProps
+
+            properties = GeomLProp_SLProps(
+                surface,
+                raw_u,
+                raw_v,
+                1,
+                tol,
+            )
+
+            derivative_u = properties.D1U()
+            derivative_v = properties.D1V()
+
+            tangent_u = [
+                float(derivative_u.X()),
+                float(derivative_u.Y()),
+                float(derivative_u.Z()),
+            ]
+
+            tangent_v = [
+                float(derivative_v.X()),
+                float(derivative_v.Y()),
+                float(derivative_v.Z()),
+            ]
+
+            tangent_u = _normalized_vector(
+                tangent_u,
+                tolerance=tol,
+            )
+
+            tangent_v = _normalized_vector(
+                tangent_v,
+                tolerance=tol,
+            )
+
+            if tangent_u is None or tangent_v is None:
+                return None
+
+            return [
+                tangent_u,
+                tangent_v,
+            ]
+
+        except Exception:
+            return None
 
     @staticmethod
     def Triangulate(face, deflection, outputFaces):
@@ -1277,6 +2046,50 @@ class FaceUtility:
         )
 
         return 0
+
+    @staticmethod
+    def IsPlanar(
+        face,
+        tolerance: float = 0.0001
+    ):
+        """
+        Returns True when the actual supporting surface of the input Face is
+        geometrically planar.
+
+        This test recognizes planar B-spline and Bezier surfaces as planar; it
+        does not rely only on the OCCT surface type.
+        """
+        occ_face = _as_occ_face(face)
+
+        if occ_face is None:
+            return None
+
+        tol = _face_tolerance(
+            tolerance
+        )
+
+        try:
+            from OCC.Core.BRep import BRep_Tool
+            from OCC.Core.GeomLib import GeomLib_IsPlanarSurface
+
+            surface = BRep_Tool.Surface(
+                occ_face
+            )
+
+            if surface is None:
+                return None
+
+            checker = GeomLib_IsPlanarSurface(
+                surface,
+                tol,
+            )
+
+            return bool(
+                checker.IsPlanar()
+            )
+
+        except Exception:
+            return None
 
     @staticmethod
     def InternalVertex(face, tolerance=0.0001):
