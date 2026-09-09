@@ -826,113 +826,443 @@ class Wire():
     #             wire = Wire.OrientEdges(wire, Wire.StartVertex(wire), tolerance=tolerance)
     #     return wire
     @staticmethod
+    def _OrderedEdges(wire, startVertex=None, tolerance: float = 0.0001, silent: bool = False):
+        """Returns the edges of a simple wire in oriented head-to-tail traversal order.
+
+        Existing edge geometry is preserved. If an edge must be reversed, ``Edge.Reverse``
+        is used; if the active backend cannot reverse that edge exactly, the method returns
+        ``None`` rather than rebuilding the edge from its endpoints.
+        """
+        from topologicpy.Edge import Edge
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(wire, "Wire"):
+            if not silent:
+                print("Wire._OrderedEdges - Error: The input wire parameter is not a valid wire. Returning None.")
+            return None
+        try:
+            tol = max(abs(float(tolerance)), 1.0e-12)
+        except Exception:
+            tol = 0.0001
+
+        edges = Wire.Edges(wire, silent=True) or []
+        edges = [e for e in edges if Topology.IsInstance(e, "Edge")]
+        if not edges:
+            return None
+
+        representatives = []
+        adjacency = {}
+        edge_nodes = []
+
+        def node_index(vertex):
+            for i, rep in enumerate(representatives):
+                if Vertex.IsCoincident(vertex, rep, tolerance=tol, silent=True):
+                    return i
+            representatives.append(vertex)
+            return len(representatives) - 1
+
+        for i, edge in enumerate(edges):
+            a_v = Edge.StartVertex(edge, silent=True)
+            b_v = Edge.EndVertex(edge, silent=True)
+            if not Topology.IsInstance(a_v, "Vertex") or not Topology.IsInstance(b_v, "Vertex"):
+                return None
+            a = node_index(a_v)
+            b = node_index(b_v)
+            edge_nodes.append((a, b))
+            adjacency.setdefault(a, []).append(i)
+            adjacency.setdefault(b, []).append(i)
+
+        # A simple manifold path/cycle has degree <= 2 everywhere.
+        if any(len(indices) > 2 for indices in adjacency.values()):
+            return None
+
+        open_nodes = [node for node, indices in adjacency.items() if len(indices) == 1]
+        if len(open_nodes) not in (0, 2):
+            return None
+        closed = len(open_nodes) == 0
+
+        start_node = None
+        if Topology.IsInstance(startVertex, "Vertex"):
+            for i, rep in enumerate(representatives):
+                if Vertex.IsCoincident(startVertex, rep, tolerance=tol, silent=True):
+                    start_node = i
+                    break
+            if start_node is None or (not closed and start_node not in open_nodes):
+                return None
+        elif closed:
+            # Keep the stored first edge's orientation as the seam/direction hint.
+            start_node = edge_nodes[0][0]
+        else:
+            # Prefer the endpoint whose sole incident edge is already oriented away from it.
+            first, second = open_nodes
+            first_edge = edges[adjacency[first][0]]
+            second_edge = edges[adjacency[second][0]]
+            first_forward = Vertex.IsCoincident(
+                Edge.StartVertex(first_edge, silent=True), representatives[first], tolerance=tol, silent=True
+            )
+            second_forward = Vertex.IsCoincident(
+                Edge.StartVertex(second_edge, silent=True), representatives[second], tolerance=tol, silent=True
+            )
+            if first_forward and not second_forward:
+                start_node = first
+            elif second_forward and not first_forward:
+                start_node = second
+            else:
+                # Deterministic fallback only; this does not change edge geometry.
+                start_node = min(open_nodes)
+
+        ordered = []
+        used = set()
+        current = start_node
+
+        while len(used) < len(edges):
+            candidates = [i for i in adjacency.get(current, []) if i not in used]
+            if not candidates:
+                break
+
+            # At a closed-wire seam there may be two candidates. Prefer the one already
+            # oriented away from the current node so the stored direction is retained.
+            selected = candidates[0]
+            if len(candidates) > 1:
+                forward = [i for i in candidates if edge_nodes[i][0] == current]
+                if forward:
+                    selected = forward[0]
+
+            source = edges[selected]
+            a, b = edge_nodes[selected]
+            if a == current:
+                oriented = source
+                nxt = b
+            elif b == current:
+                oriented = Edge.Reverse(source, tolerance=tol, silent=True)
+                nxt = a
+            else:
+                return None
+
+            if not Topology.IsInstance(oriented, "Edge"):
+                if not silent:
+                    print("Wire._OrderedEdges - Error: An edge could not be reversed without altering its geometry. Returning None.")
+                return None
+
+            ordered.append(oriented)
+            used.add(selected)
+            current = nxt
+
+        if len(used) != len(edges):
+            return None
+        if closed and current != start_node:
+            return None
+        if not closed and current not in open_nodes:
+            return None
+        return ordered
+
+    @staticmethod
+    def _EdgeLengthByParameters(edge, uA: float = 0.0, uB: float = 1.0, tolerance: float = 0.0001):
+        """Returns curve length between two normalized edge parameters.
+
+        Exact backend trimming is used when available. Otherwise a geometry-query-only
+        adaptive polyline integration is used. The fallback never reconstructs topology.
+        """
+        import math
+        from topologicpy.Edge import Edge
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(edge, "Edge"):
+            return None
+        try:
+            a = float(uA)
+            b = float(uB)
+            tol = max(abs(float(tolerance)), 1.0e-12)
+        except Exception:
+            return None
+        if not (math.isfinite(a) and math.isfinite(b)):
+            return None
+        a = max(0.0, min(1.0, a))
+        b = max(0.0, min(1.0, b))
+        if abs(b - a) <= 1.0e-15:
+            return 0.0
+
+        # Exact path where the backend can trim curves.
+        try:
+            part = Edge.TrimByParameters(edge, uA=a, uB=b, tolerance=tol, silent=True)
+            if Topology.IsInstance(part, "Edge"):
+                value = Edge.Length(part, mantissa=None, tolerance=tol, silent=True)
+                if value is not None:
+                    return float(value)
+        except Exception:
+            pass
+
+        # Linear edges are exact under normalized interpolation.
+        try:
+            if Edge.IsLinear(edge, tolerance=tol, silent=True):
+                total = Edge.Length(edge, mantissa=None, tolerance=tol, silent=True)
+                return None if total is None else abs(b-a) * float(total)
+        except Exception:
+            pass
+
+        def xyz(u):
+            v = Edge.VertexByParameter(edge, u=u, tolerance=tol, silent=True)
+            if not Topology.IsInstance(v, "Vertex"):
+                return None
+            c = Vertex.Coordinates(v, mantissa=None)
+            if not isinstance(c, (list, tuple)) or len(c) < 3:
+                return None
+            try:
+                return (float(c[0]), float(c[1]), float(c[2]))
+            except Exception:
+                return None
+
+        def dist(p, q):
+            return math.sqrt((p[0]-q[0])**2 + (p[1]-q[1])**2 + (p[2]-q[2])**2)
+
+        p0 = xyz(a)
+        p1 = xyz(b)
+        if p0 is None or p1 is None:
+            return None
+
+        # Adaptive chord refinement. This is used only for measurement on backends
+        # lacking exact curved trimming; it never changes the edge itself.
+        target_error = max(tol * 0.01, 1.0e-10)
+
+        def integrate(x0, x1, q0, q1, depth):
+            xm = 0.5 * (x0 + x1)
+            qm = xyz(xm)
+            if qm is None:
+                return None
+            chord = dist(q0, q1)
+            split = dist(q0, qm) + dist(qm, q1)
+            if depth <= 0 or abs(split - chord) <= target_error:
+                return split
+            left = integrate(x0, xm, q0, qm, depth-1)
+            if left is None:
+                return None
+            right = integrate(xm, x1, qm, q1, depth-1)
+            if right is None:
+                return None
+            return left + right
+
+        return integrate(a, b, p0, p1, 18)
+
+    @staticmethod
+    def _DistanceFromStart(wire, vertex, tolerance: float = 0.0001, silent: bool = False):
+        """Returns curvilinear distance from the traversal start to a vertex on a simple wire."""
+        from topologicpy.Edge import Edge
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(vertex, "Vertex"):
+            return None
+        edges = Wire._OrderedEdges(wire, tolerance=tolerance, silent=silent)
+        if not isinstance(edges, list) or not edges:
+            return None
+
+        accumulated = 0.0
+        for edge in edges:
+            edge_length = Edge.Length(edge, mantissa=None, tolerance=tolerance, silent=True)
+            if edge_length is None:
+                return None
+            edge_length = float(edge_length)
+            u = Edge.ParameterAtVertex(edge, vertex, mantissa=None, tolerance=tolerance, silent=True)
+            if u is not None:
+                try:
+                    u = max(0.0, min(1.0, float(u)))
+                except Exception:
+                    return None
+                if u <= 1.0e-12:
+                    return accumulated
+                if u >= 1.0 - 1.0e-12:
+                    return accumulated + edge_length
+                local = Wire._EdgeLengthByParameters(edge, 0.0, u, tolerance=tolerance)
+                return None if local is None else accumulated + float(local)
+            accumulated += edge_length
+        return None
+
+    @staticmethod
+    def _VertexAtDistanceFromStart(wire, distance: float, tolerance: float = 0.0001, silent: bool = False):
+        """Returns a vertex at curvilinear distance from the traversal start of a simple wire."""
+        from topologicpy.Edge import Edge
+        from topologicpy.Topology import Topology
+
+        try:
+            distance = float(distance)
+            tol = max(abs(float(tolerance)), 1.0e-12)
+        except Exception:
+            return None
+        edges = Wire._OrderedEdges(wire, tolerance=tol, silent=silent)
+        if not isinstance(edges, list) or not edges:
+            return None
+
+        lengths = []
+        total = 0.0
+        for edge in edges:
+            length = Edge.Length(edge, mantissa=None, tolerance=tol, silent=True)
+            if length is None:
+                return None
+            length = float(length)
+            lengths.append(length)
+            total += length
+
+        if total <= tol or distance < -tol or distance > total + tol:
+            return None
+        distance = max(0.0, min(total, distance))
+        if distance <= tol:
+            return Edge.StartVertex(edges[0], silent=True)
+        if abs(distance-total) <= tol:
+            return Edge.EndVertex(edges[-1], silent=True)
+
+        accumulated = 0.0
+        for edge, length in zip(edges, lengths):
+            if distance <= accumulated + length + tol:
+                local = max(0.0, min(length, distance-accumulated))
+                if local <= tol:
+                    return Edge.StartVertex(edge, silent=True)
+                if abs(local-length) <= tol:
+                    return Edge.EndVertex(edge, silent=True)
+                return Edge.VertexByDistance(
+                    edge,
+                    distance=local,
+                    origin=Edge.StartVertex(edge, silent=True),
+                    mantissa=None,
+                    tolerance=tol,
+                    silent=True,
+                )
+            accumulated += length
+        return None
+
+    @staticmethod
+    def IsPolyline(wire, tolerance: float = 0.0001, silent: bool = False) -> bool:
+        """Returns True if every constituent edge is geometrically linear."""
+        from topologicpy.Edge import Edge
+        from topologicpy.Topology import Topology
+        if not Topology.IsInstance(wire, "Wire"):
+            if not silent:
+                print("Wire.IsPolyline - Error: The input wire parameter is not a valid wire. Returning None.")
+            return None
+        try:
+            tol = float(tolerance)
+        except Exception:
+            return None
+        if tol <= 0:
+            return None
+        edges = Wire.Edges(wire, silent=True) or []
+        if not edges:
+            return None
+        return all(bool(Edge.IsLinear(edge, tolerance=tol, silent=True)) for edge in edges)
+
+    @staticmethod
     def ByEdges(edges: list, orient: bool = False, transferDictionaries: bool = False, tolerance: float = 0.0001, silent: bool = False):
-        """
-        Creates a wire from the input list of edges.
-
-        Parameters
-        ----------
-        edges : list
-            The input list of edges.
-        orient : bool , optional
-            If set to True the edges are oriented head to tail. Otherwise, they are not. Default is False.
-        transferDictionaries : bool , optional
-            If set to True, any dictionaries in the edges are transferred to the edges of the created Wire.
-            Otherwise, they are not. Default is False.
-        tolerance : float , optional
-            The desired tolerance. Default is 0.0001.
-        silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
-
-        Returns
-        -------
-        topologic_core.Wire
-            The created wire.
-
-        """
+        """Creates a wire from edges while preserving the constituent edge geometry."""
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
         from topologicpy.Edge import Edge
         from topologicpy.Vertex import Vertex
         from topologicpy.Dictionary import Dictionary
-        import inspect
-
-        def edgesMatch(e1, e2, tolerance=0.0001):
-            """
-            Returns True if the two edges have the same end vertices
-            within tolerance, regardless of orientation.
-            """
-            s1 = Edge.StartVertex(e1)
-            e1v = Edge.EndVertex(e1)
-            s2 = Edge.StartVertex(e2)
-            e2v = Edge.EndVertex(e2)
-
-            forward_match = Vertex.Distance(s1, s2) <= tolerance and Vertex.Distance(e1v, e2v) <= tolerance
-            reverse_match = Vertex.Distance(s1, e2v) <= tolerance and Vertex.Distance(e1v, s2) <= tolerance
-            return forward_match or reverse_match
 
         if not isinstance(edges, list):
             return None
-
-        edgeList = [x for x in edges if Topology.IsInstance(x, "Edge")]
-        if len(edgeList) == 0:
+        edge_list = [e for e in edges if Topology.IsInstance(e, "Edge")]
+        if not edge_list:
             if not silent:
                 print("Wire.ByEdges - Error: The input edges list does not contain any valid edges. Returning None.")
-                curframe = inspect.currentframe()
-                calframe = inspect.getouterframes(curframe, 2)
-                print('caller name:', calframe[1][3])
             return None
+        try:
+            tol = max(abs(float(tolerance)), 1.0e-12)
+        except Exception:
+            tol = 0.0001
 
-        if len(edgeList) == 1:
-            wire = Core.Wire.ByEdges(edgeList)
-        else:
-            wire = Topology.SelfMerge(Cluster.ByTopologies(edgeList), tolerance=tolerance)
+        def construct(source_edges):
+            result = None
+            # Prefer the backend wire constructor. It preserves actual curve geometry
+            # and, on the PythonOCC backend, the first edge gives a stable direction hint.
+            try:
+                result = Core.Wire.ByEdges(source_edges, tol)
+            except TypeError:
+                try:
+                    result = Core.Wire.ByEdges(source_edges)
+                except Exception:
+                    result = None
+            except Exception:
+                result = None
+            if Topology.IsInstance(result, "Wire"):
+                return result
+            try:
+                result = Topology.SelfMerge(Cluster.ByTopologies(source_edges), tolerance=tol)
+            except Exception:
+                result = None
+            return result if Topology.IsInstance(result, "Wire") else None
 
+        wire = construct(edge_list)
         if not Topology.IsInstance(wire, "Wire"):
             if not silent:
                 print("Wire.ByEdges - Error: The operation failed. Returning None.")
-                curframe = inspect.currentframe()
-                calframe = inspect.getouterframes(curframe, 2)
-                print('caller name:', calframe[1][3])
             return None
 
-        # Transfer dictionaries from input edges to resulting wire edges
-        resultEdges = Topology.Edges(wire)
-        if resultEdges and len(resultEdges) > 0:
-            newEdges = []
-            for resultEdge in resultEdges:
-                updatedEdge = resultEdge
-                for sourceEdge in edgeList:
-                    if edgesMatch(resultEdge, sourceEdge, tolerance=tolerance):
-                        d = Topology.Dictionary(sourceEdge)
-                        if d:
-                            updatedEdge = Topology.SetDictionary(updatedEdge, d)
+        # Preserve historical dictionary transfer behavior, but match actual topology
+        # before falling back to endpoint equivalence (important for arcs sharing endpoints).
+        result_edges = Wire.Edges(wire, silent=True) or []
+        updated_edges = []
+        changed = False
+        for result_edge in result_edges:
+            source = None
+            for candidate in edge_list:
+                try:
+                    if Topology.IsSame(result_edge, candidate):
+                        source = candidate
                         break
-                newEdges.append(updatedEdge)
+                except Exception:
+                    pass
+            if source is None:
+                rs = Edge.StartVertex(result_edge, silent=True)
+                re = Edge.EndVertex(result_edge, silent=True)
+                for candidate in edge_list:
+                    cs = Edge.StartVertex(candidate, silent=True)
+                    ce = Edge.EndVertex(candidate, silent=True)
+                    if all(Topology.IsInstance(v, "Vertex") for v in (rs, re, cs, ce)):
+                        same = (Vertex.Distance(rs, cs) <= tol and Vertex.Distance(re, ce) <= tol)
+                        rev = (Vertex.Distance(rs, ce) <= tol and Vertex.Distance(re, cs) <= tol)
+                        if same or rev:
+                            source = candidate
+                            break
+            updated = result_edge
+            if source is not None:
+                d = Topology.Dictionary(source, silent=True)
+                if d:
+                    candidate = Topology.SetDictionary(updated, d, silent=True)
+                    if Topology.IsInstance(candidate, "Edge"):
+                        updated = candidate
+                        changed = True
+            updated_edges.append(updated)
 
-            rebuiltWire = Core.Wire.ByEdges(newEdges)
-            if Topology.IsInstance(rebuiltWire, "Wire"):
-                wire = rebuiltWire
+        if changed and len(updated_edges) == len(result_edges):
+            rebuilt = construct(updated_edges)
+            if Topology.IsInstance(rebuilt, "Wire"):
+                wire = rebuilt
 
-        if Wire.IsManifold(wire):
-            if orient == True:
-                wire = Wire.OrientEdges(wire, Wire.StartVertex(wire), tolerance=tolerance)
-        
         if transferDictionaries:
-            wire_edges = Topology.Edges(wire)
-            source_cluster = Cluster.ByTopologies(edges)
+            source_cluster = Cluster.ByTopologies(edge_list)
+            for wire_edge in Wire.Edges(wire, silent=True) or []:
+                internal = Topology.InternalVertex(wire_edge, tolerance=tol, silent=True)
+                if not Topology.IsInstance(internal, "Vertex") or source_cluster is None:
+                    continue
+                enclosing = Vertex.EnclosingEdges(internal, source_cluster, exclusive=False, tolerance=tol, silent=True)
+                if isinstance(enclosing, list) and enclosing:
+                    dictionaries = [Topology.Dictionary(e, silent=True) for e in enclosing]
+                    merged = Dictionary.ByMergedDictionaries(dictionaries, silent=True)
+                    if merged:
+                        Topology.SetDictionary(wire_edge, merged, silent=True)
 
-            for wire_edge in wire_edges:
-                internal_vertex = Topology.InternalVertex(wire_edge, tolerance=tolerance)
-                enclosing_edges = Vertex.EnclosingEdges(internal_vertex,
-                                                        source_cluster,
-                                                        exclusive=False,
-                                                        tolerance=tolerance)
-
-                if isinstance(enclosing_edges, list) and len(enclosing_edges) > 0:
-                    dictionaries = [Topology.Dictionary(edge) for edge in enclosing_edges]
-                    merged_dictionary = Dictionary.ByMergedDictionaries(dictionaries, silent=True)
-                    Topology.SetDictionary(wire_edge, merged_dictionary)
+        if orient and Wire.IsManifold(wire, tolerance=tol, silent=True):
+            desired_start = Edge.StartVertex(edge_list[0], silent=True)
+            oriented = Wire.OrientEdges(
+                wire,
+                desired_start,
+                transferDictionaries=transferDictionaries,
+                tolerance=tol,
+                silent=True,
+            )
+            if Topology.IsInstance(oriented, "Wire"):
+                wire = oriented
         return wire
     
     @staticmethod
@@ -3722,7 +4052,7 @@ class Wire():
         return resultWires
 
     @staticmethod
-    def Edges(wire) -> list:
+    def Edges(wire, silent: bool = False) -> list:
         """
         Returns the edges of the input wire.
 
@@ -3730,6 +4060,8 @@ class Wire():
         ----------
         wire : topologic_core.Wire
             The input wire.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -3738,6 +4070,8 @@ class Wire():
 
         """
         if not Topology.IsInstance(wire, "Wire"):
+            if not silent:
+                print("Wire.Edges - Error: The input wire parameter is not a valid wire. Returning None.")
             return None
         edges = []
         # _ = wire.Edges(None, edges) # H to Core
@@ -5622,63 +5956,60 @@ class Wire():
         return Wire.ByVertices(reversed_vertices, close=Wire.IsClosed(wire), silent=silent, tolerance=tolerance)
 
     @staticmethod
-    def IsClosed(wire) -> bool:
-        """
-        Returns True if the input wire is closed. Returns False otherwise.
-
-        Parameters
-        ----------
-        wire : topologic_core.Wire
-            The input wire.
-
-        Returns
-        -------
-        bool
-            True if the input wire is closed. False otherwise.
-
-        """
-        status = None
-        if wire:
-            if Topology.IsInstance(wire, "Wire"):
-                # status = wire.IsClosed() # H to Core
-                status = Core.InstanceCall(wire, "IsClosed")
-        return status
+    def IsClosed(wire, tolerance: float = 0.0001, silent: bool = False) -> bool:
+        """Returns True if the input wire is closed."""
+        if not Topology.IsInstance(wire, "Wire"):
+            return None
+        try:
+            return bool(Core.InstanceCall(wire, "IsClosed"))
+        except Exception:
+            try:
+                return bool(Core.WireUtility.IsClosed(wire, tolerance))
+            except TypeError:
+                try:
+                    return bool(Core.WireUtility.IsClosed(wire))
+                except Exception:
+                    pass
+            except Exception:
+                pass
+        if not silent:
+            print("Wire.IsClosed - Error: Could not determine whether the input wire is closed. Returning None.")
+        return None
     
     @staticmethod
-    def IsManifold(wire, silent: bool = False) -> bool:
-        """
-        Returns True if the input wire is manifold. Returns False otherwise. A manifold wire is one where its vertices have a degree of 1 or 2.
-
-        Parameters
-        ----------
-        wire : topologic_core.Wire
-            The input wire.
-        silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
-
-        Returns
-        -------
-        bool
-            True if the input wire is manifold. False otherwise.
-        
-        """
+    def IsManifold(wire, silent: bool = False, tolerance: float = 0.0001) -> bool:
+        """Returns True when no coincident wire vertex has degree greater than two."""
+        from topologicpy.Edge import Edge
         from topologicpy.Vertex import Vertex
         from topologicpy.Topology import Topology
-        import inspect
 
         if not Topology.IsInstance(wire, "Wire"):
             if not silent:
-                print("Wire.IsManifold - Error: The input wire parameter is not a valid topologic wire. Returning None.")
-                curframe = inspect.currentframe()
-                calframe = inspect.getouterframes(curframe, 2)
-                print('caller name:', calframe[1][3])
+                print("Wire.IsManifold - Error: The input wire parameter is not a valid wire. Returning None.")
             return None
-        
-        vertices = Topology.Vertices(wire)
-        for v in vertices:
-            if Vertex.Degree(v, hostTopology=wire) > 2:
-                return False
-        return True
+        try:
+            tol = max(abs(float(tolerance)), 1.0e-12)
+        except Exception:
+            tol = 0.0001
+        reps = []
+        degrees = []
+        for edge in Wire.Edges(wire, silent=True) or []:
+            for v in (Edge.StartVertex(edge, silent=True), Edge.EndVertex(edge, silent=True)):
+                if not Topology.IsInstance(v, "Vertex"):
+                    continue
+                idx = None
+                for i, rep in enumerate(reps):
+                    if Vertex.IsCoincident(v, rep, tolerance=tol, silent=True):
+                        idx = i
+                        break
+                if idx is None:
+                    reps.append(v)
+                    degrees.append(1)
+                else:
+                    degrees[idx] += 1
+                    if degrees[idx] > 2:
+                        return False
+        return bool(reps)
 
     @staticmethod
     def IsSimilar(wireA, wireB, angTolerance: float = 0.1, tolerance: float = 0.0001) -> bool:
@@ -6038,39 +6369,23 @@ class Wire():
         return lattice
 
     @staticmethod
-    def Length(wire, mantissa: int = 6) -> float:
-        """
-        Returns the length of the input wire.
-
-        Parameters
-        ----------
-        wire : topologic_core.Wire
-            The input wire.
-        mantissa : int , optional
-            The number of decimal places to round the result to. Default is 6.
-
-        Returns
-        -------
-        float
-            The length of the input wire. Test
-
-        """
+    def Length(wire, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False) -> float:
+        """Returns the sum of the actual geometric lengths of the wire edges."""
         from topologicpy.Edge import Edge
-
-        if not wire:
-            return None
         if not Topology.IsInstance(wire, "Wire"):
             return None
-        totalLength = None
+        total = 0.0
         try:
-            edges = Topology.Edges(wire)
-            totalLength = 0
-            for anEdge in edges:
-                totalLength = totalLength + Edge.Length(anEdge)
-            totalLength = round(totalLength, mantissa)
-        except:
-            totalLength = None
-        return totalLength
+            for edge in Wire.Edges(wire, silent=True) or []:
+                value = Edge.Length(edge, mantissa=None, tolerance=tolerance, silent=True)
+                if value is None:
+                    return None
+                total += float(value)
+            return float(total) if mantissa is None else round(total, int(mantissa))
+        except Exception:
+            if not silent:
+                print("Wire.Length - Error: Could not calculate the length of the input wire. Returning None.")
+            return None
 
     @staticmethod
     def Line(origin= None,
@@ -6505,80 +6820,28 @@ class Wire():
         return return_normal
     
     @staticmethod
-    def OrientEdges(wire, vertexA, transferDictionaries = False, tolerance=0.0001):
-        """
-        Returns a correctly oriented head-to-tail version of the input wire. The input wire must be manifold.
-
-        Parameters
-        ----------
-        wire : topologic_core.Wire
-            The input wire.
-        vertexA : topologic_core.Vertex
-            The desired start vertex of the wire.
-        transferDictionaries : bool , optional
-            If set to True, the dictionaries of the original wire are transfered to the new wire. Otherwise, they are not. Default is False.
-        tolerance : float, optional
-            The desired tolerance. Default is 0.0001.
-
-        Returns
-        -------
-        topologic_core.Wire
-            The oriented wire.
-
-        """
-        from topologicpy.Vertex import Vertex
-        from topologicpy.Edge import Edge
-        from topologicpy.Dictionary import Dictionary
+    def OrientEdges(wire, vertexA, transferDictionaries: bool = False, tolerance: float = 0.0001, silent: bool = False):
+        """Returns a head-to-tail wire beginning at ``vertexA`` without flattening curves."""
         from topologicpy.Topology import Topology
-
-        if not Topology.IsInstance(wire, "Wire"):
-            print("Wire.OrientEdges - Error: The input wire parameter is not a valid wire. Returning None.")
+        if not Topology.IsInstance(wire, "Wire") or not Topology.IsInstance(vertexA, "Vertex"):
             return None
-        if not Topology.IsInstance(vertexA, "Vertex"):
-            print("Wire.OrientEdges - Error: The input vertexA parameter is not a valid vertex. Returning None.")
+        if not Wire.IsManifold(wire, tolerance=tolerance, silent=True):
             return None
-        if not Wire.IsManifold(wire):
-            print("Wire.OrientEdges - Error: The input wire parameter is not a manifold wire. Returning None.")
+        ordered = Wire._OrderedEdges(wire, startVertex=vertexA, tolerance=tolerance, silent=True)
+        if not isinstance(ordered, list):
+            if not silent:
+                print("Wire.OrientEdges - Error: Could not orient all edges without altering their geometry. Returning None.")
             return None
-        oriented_edges = []
-        remaining_edges = Topology.Edges(wire)
-        original_vertices = Topology.Vertices(wire)
+        result = Wire.ByEdges(ordered, orient=False, transferDictionaries=transferDictionaries, tolerance=tolerance, silent=True)
+        if not Topology.IsInstance(result, "Wire"):
+            return None
         if transferDictionaries:
-            edge_selectors = []
-            for i, e_s in enumerate(remaining_edges):
-                s = Topology.Centroid(e_s)
-                d = Topology.Dictionary(e_s)
-                s = Topology.SetDictionary(s, d)
-                edge_selectors.append(s)
-
-        current_vertex = vertexA
-        while remaining_edges:
-            next_edge = None
-            for edge in remaining_edges:
-                if Vertex.Distance(Edge.StartVertex(edge), current_vertex) <= tolerance:
-                    next_edge = edge
-                    break
-                elif Vertex.Distance(Edge.EndVertex(edge), current_vertex) <= tolerance:
-                    next_edge = Edge.Reverse(edge)
-                    break
-
-            if next_edge:
-                oriented_edges.append(next_edge)
-                remaining_edges.remove(next_edge)
-                current_vertex = Edge.EndVertex(next_edge)
-            else:
-                # Unable to find a next edge connected to the current vertex
-                break
-        vertices = [Edge.StartVertex(oriented_edges[0])]
-        for i, edge in enumerate(oriented_edges):
-            vertices.append(Edge.EndVertex(edge))
-            
-        return_wire = Wire.ByVertices(vertices, close=Wire.IsClosed(wire), tolerance=tolerance)
-        if transferDictionaries:
-            return_wire = Topology.TransferDictionariesBySelectors(return_wire, selectors=edge_selectors, tranEdges=True)
-            return_wire = Topology.TransferDictionariesBySelectors(return_wire, selectors=original_vertices, tranVertices=True)
-        return_wire = Topology.SetDictionary(return_wire, Topology.Dictionary(wire), silent=True)
-        return return_wire
+            d = Topology.Dictionary(wire, silent=True)
+            if d:
+                candidate = Topology.SetDictionary(result, d, silent=True)
+                if Topology.IsInstance(candidate, "Wire"):
+                    result = candidate
+        return result
 
     @staticmethod
     def Planarize(wire, origin= None, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
@@ -6970,55 +7233,42 @@ class Wire():
         return representation
 
     @staticmethod
-    def Reverse(wire, transferDictionaries = False, tolerance: float = 0.0001, silent: bool = False):
-        """
-        Creates a wire that has the reverse direction of the input wire.
-
-        Parameters
-        ----------
-        wire : topologic_core.Wire
-            The input wire.
-        transferDictionaries : bool , optional
-            If set to True the dictionaries of the input wire are transferred to the new wire. Othwerwise, they are not. Default is False.
-        tolerance : float , optional
-            The desired tolerance. Default is 0.0001.
-        silent : bool, optional
-            If set to True, error and warning messages are suppressed. Default is False.
-
-        Returns
-        -------
-        topologic_core.Wire
-            The reversed wire.
-
-        """
+    def Reverse(wire, transferDictionaries: bool = False, tolerance: float = 0.0001, silent: bool = False):
+        """Reverses wire traversal while preserving each edge's actual geometry."""
+        from topologicpy.Edge import Edge
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(wire, "Wire"):
             if not silent:
                 print("Wire.Reverse - Error: The input wire parameter is not a valid wire. Returning None.")
             return None
-        if not Wire.IsManifold(wire):
-            if not silent:
-                print("Wire.Reverse - Error: The input wire parameter is not a manifold wire. Returning None.")
+        ordered = Wire._OrderedEdges(wire, tolerance=tolerance, silent=True)
+        if not isinstance(ordered, list):
             return None
-        
-        original_vertices = Topology.Vertices(wire)
-        edges = Topology.Edges(wire)
+        reversed_edges = []
+        for source in reversed(ordered):
+            edge = Edge.Reverse(source, tolerance=tolerance, silent=True)
+            if not Topology.IsInstance(edge, "Edge"):
+                if not silent:
+                    print("Wire.Reverse - Error: An edge could not be reversed without altering its geometry. Returning None.")
+                return None
+            if transferDictionaries:
+                d = Topology.Dictionary(source, silent=True)
+                if d:
+                    candidate = Topology.SetDictionary(edge, d, silent=True)
+                    if Topology.IsInstance(candidate, "Edge"):
+                        edge = candidate
+            reversed_edges.append(edge)
+        result = Wire.ByEdges(reversed_edges, orient=False, transferDictionaries=transferDictionaries, tolerance=tolerance, silent=True)
+        if not Topology.IsInstance(result, "Wire"):
+            return None
         if transferDictionaries:
-            edge_selectors = []
-            for i, e_s in enumerate(edges):
-                s = Topology.Centroid(e_s)
-                d = Topology.Dictionary(e_s)
-                s = Topology.SetDictionary(s, d)
-                edge_selectors.append(s)
-        vertices = Topology.Vertices(wire)
-        vertices.reverse()
-        return_wire = Wire.ByVertices(vertices, close=Wire.IsClosed(wire), tolerance=tolerance, silent=silent)
-        if transferDictionaries:
-            return_wire = Topology.TransferDictionariesBySelectors(return_wire, selectors=edge_selectors, tranEdges=True)
-            return_wire = Topology.TransferDictionariesBySelectors(return_wire, selectors=original_vertices, tranVertices=True)
-        return_wire = Topology.SetDictionary(return_wire, Topology.Dictionary(wire), silent=silent)
-        return return_wire
+            d = Topology.Dictionary(wire, silent=True)
+            if d:
+                candidate = Topology.SetDictionary(result, d, silent=True)
+                if Topology.IsInstance(candidate, "Wire"):
+                    result = candidate
+        return result
 
     @staticmethod
     def Ribbon(wire,
@@ -8647,314 +8897,96 @@ class Wire():
         return t_shape
 
     @staticmethod
-    def VertexDistance(wire, vertex, origin= None, mantissa: int = 6, tolerance: float = 0.0001):
-        """
-        Returns the distance, computed along the input wire of the input vertex from the input origin vertex.
-
-        Parameters
-        ----------
-        wire : topologic_core.Wire
-            The input wire.
-        vertex : topologic_core.Vertex
-            The input vertex
-        origin : topologic_core.Vertex , optional
-            The origin of the offset distance. If set to None, the origin will be set to the start vertex of the input wire. Default is None.
-        mantissa : int , optional
-            The number of decimal places to round the result to. Default is 6.
-        tolerance : float , optional
-            The desired tolerance. Default is 0.0001.
-        
-        Returns
-        -------
-        float
-            The distance of the input vertex from the input origin along the input wire.
-
-        """
-        from topologicpy.Vertex import Vertex
+    def VertexDistance(wire, vertex, origin=None, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
+        """Returns curvilinear distance along a simple wire between ``origin`` and ``vertex``."""
         from topologicpy.Edge import Edge
+        from topologicpy.Topology import Topology
+        if not Topology.IsInstance(wire, "Wire") or not Topology.IsInstance(vertex, "Vertex"):
+            return None
+        ordered = Wire._OrderedEdges(wire, tolerance=tolerance, silent=True)
+        if not isinstance(ordered, list) or not ordered:
+            return None
+        if not Topology.IsInstance(origin, "Vertex"):
+            origin = Edge.StartVertex(ordered[0], silent=True)
+        d1 = Wire._DistanceFromStart(wire, vertex, tolerance=tolerance, silent=True)
+        d0 = Wire._DistanceFromStart(wire, origin, tolerance=tolerance, silent=True)
+        if d1 is None or d0 is None:
+            return None
+        value = abs(float(d1)-float(d0))
+        return value if mantissa is None else round(value, int(mantissa))
+
+    @staticmethod
+    def VertexByDistance(wire, distance: float = 0.0, origin=None, tolerance: float = 0.0001, silent: bool = False):
+        """Creates a vertex at signed curvilinear distance along an open simple wire."""
+        import math
+        from topologicpy.Edge import Edge
+        from topologicpy.Vertex import Vertex
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(wire, "Wire"):
-            print("Wire.VertexDistance - Error: The input wire parameter is not a valid topologic wire. Returning None.")
             return None
-        if not Topology.IsInstance(vertex, "Vertex"):
-            print("Wire.VertexDistance - Error: The input vertex parameter is not a valid topologic vertex. Returning None.")
+        try:
+            distance = float(distance)
+            tol = max(abs(float(tolerance)), 1.0e-12)
+        except Exception:
             return None
-        wire_length = Wire.Length(wire)
-        if wire_length <= tolerance:
-            print("Wire.VertexDistance: The input wire parameter is a degenerate topologic wire. Returning None.")
+        if not math.isfinite(distance):
             return None
+        if not Wire.IsManifold(wire, tolerance=tol, silent=True) or Wire.IsClosed(wire, tolerance=tol, silent=True):
+            return None
+        ordered = Wire._OrderedEdges(wire, tolerance=tol, silent=True)
+        if not isinstance(ordered, list) or not ordered:
+            return None
+        total = Wire.Length(wire, mantissa=None, tolerance=tol, silent=True)
+        if total is None or float(total) <= tol:
+            return None
+        total = float(total)
+        start = Edge.StartVertex(ordered[0], silent=True)
+        end = Edge.EndVertex(ordered[-1], silent=True)
         if not Topology.IsInstance(origin, "Vertex"):
-            origin = Wire.StartVertex(wire)
-        if not Topology.IsInstance(origin, "Vertex"):
-            print("Wire.VertexDistance - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
+            origin = start
+        origin_distance = Wire._DistanceFromStart(wire, origin, tolerance=tol, silent=True)
+        if origin_distance is None:
             return None
-        if not Vertex.IsInternal(vertex, wire, tolerance=tolerance):
-            print("Wire.VertexDistance: The input vertex parameter is not internal to the input wire parameter. Returning None.")
-            return None
-        
-        def distance_from_start(wire, v):
-            total_distance = 0.0
-            found = False
-            # Iterate over the edges of the wire
-            for edge in Wire.Edges(wire):
-                if Vertex.IsInternal(v, edge, tolerance=tolerance):
-                    total_distance += Vertex.Distance(Edge.StartVertex(edge), v)
-                    found = True
-                    break
-                total_distance += Edge.Length(edge)
-            if found == False:
-                return None
-            return total_distance
-        
-        d1 = distance_from_start(wire, vertex)
-        d2 = distance_from_start(wire, origin)
-        if d1 == None:
-            print("Wire.VertexDistance - Error: The input vertex parameter is not internal to the input wire parameter. Returning None.")
-            return None
-        if d2 == None:
-            print("Wire.VertexDistance - Error: The input origin parameter is not internal to the input wire parameter. Returning None.")
-            return None
-        return round(abs(d2-d1), mantissa)
-
-    @staticmethod
-    def VertexByDistance(wire, distance: float = 0.0, origin= None, tolerance = 0.0001):
-        """
-        Creates a vertex along the input wire offset by the input distance from the input origin.
-
-        Parameters
-        ----------
-        wire : topologic_core.Wire
-            The input wire.
-        distance : float , optional
-            The offset distance. Default is 0.
-        origin : topologic_core.Vertex , optional
-            The origin of the offset distance. If set to None, the origin will be set to the start vertex of the input edge. Default is None.
-        tolerance : float , optional
-            The desired tolerance. Default is 0.0001.
-        
-        Returns
-        -------
-        topologic_core.Vertex
-            The created vertex.
-
-        """
-        from topologicpy.Vertex import Vertex
-
-        def compute_u(u):
-            def count_decimal_places(number):
-                try:
-                    # Convert the number to a string to analyze decimal places
-                    num_str = str(number)
-                    # Split the number into integer and decimal parts
-                    integer_part, decimal_part = num_str.split('.')
-                    # Return the length of the decimal part
-                    return len(decimal_part)
-                except ValueError:
-                    # If there's no decimal part, return 0
-                    return 0
-            dp = count_decimal_places(u)
-            u = -(int(u) - u)
-            return round(u,dp)
-
-        if not Topology.IsInstance(wire, "Wire"):
-            print("Wire.VertexByDistance - Error: The input wire parameter is not a valid topologic wire. Returning None.")
-            return None
-        wire_length = Wire.Length(wire)
-        if wire_length <= tolerance:
-            print("Wire.VertexByDistance: The input wire parameter is a degenerate topologic wire. Returning None.")
-            return None
-        if abs(distance) <= tolerance:
-            return Wire.StartVertex(wire)
-        if abs(distance - wire_length) <= tolerance:
-            return Wire.EndVertex(wire)
-        if not Wire.IsManifold(wire):
-            print("Wire.VertexAtParameter - Error: The input wire parameter is non-manifold. Returning None.")
-            return None
-        if not Topology.IsInstance(origin, "Vertex"):
-            origin = Wire.StartVertex(wire)
-        if not Topology.IsInstance(origin, "Vertex"):
-            print("Wire.VertexByDistance - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
-            return None
-        if not Vertex.IsInternal(origin, wire, tolerance=tolerance):
-            print("Wire.VertexByDistance - Error: The input origin parameter is not internal to the input wire parameter. Returning None.")
-            return None
-        if Vertex.Distance(Wire.StartVertex(wire), origin) <= tolerance:
-            u = distance/wire_length
-        elif Vertex.Distance(Wire.EndVertex(wire), origin) <= tolerance:
-            u = 1 - distance/wire_length
+        if Vertex.IsCoincident(origin, end, tolerance=tol, silent=True):
+            target = total - distance
         else:
-            d = Wire.VertexDistance(wire, origin) + distance
-            u = d/wire_length
-
-        return Wire.VertexByParameter(wire, u=compute_u(u))
+            target = float(origin_distance) + distance
+        if target < -tol or target > total + tol:
+            return None
+        return Wire._VertexAtDistanceFromStart(wire, max(0.0, min(total, target)), tolerance=tol, silent=silent)
     
 
 
     @staticmethod
-    def ParameterAtVertex(wire, vertex, mantissa : int = 6, tolerance: float = 0.0001, silent: bool = False):
-        """
-        Returns the u-parameter of a vertex located on a manifold wire.
-        u ranges from 0.0 (start) to 1.0 (end).
-
-        Parameters
-        ----------
-        wire : topologic_core.Wire
-            The input wire.
-        vertex : topologic_core.Vertex
-            A vertex that lies somewhere on the wire.
-        mantissa : int , optional
-            The number of decimal places to round the result to. Default is 6.
-        tolerance : float, optional
-            Distance tolerance for matching the vertex to an edge. Default is 0.0001.
-        silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
-
-        Returns
-        -------
-        float or None
-            The global u-parameter ∈ [0, 1] of the vertex, or None on error.
-        """
+    def ParameterAtVertex(wire, vertex, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
+        """Returns the normalized global arc-length parameter of a vertex on a simple wire."""
         from topologicpy.Topology import Topology
-        from topologicpy.Vertex import Vertex
-        from topologicpy.Edge import Edge
-        from topologicpy.Wire import Wire
-
-        # --- Input validation ----------------------------------------------------
-        if not Topology.IsInstance(wire, "Wire"):
-            if not silent:
-                print("Wire.ParameterAtVertex - Error: Input wire is not a valid wire. Returning None.")
+        if not Topology.IsInstance(wire, "Wire") or not Topology.IsInstance(vertex, "Vertex"):
             return None
-
-        if not Topology.IsInstance(vertex, "Vertex"):
-            if not silent:
-                print("Wire.ParameterAtVertex - Error: Input vertex is not a valid wertex. Returning None.")
+        total = Wire.Length(wire, mantissa=None, tolerance=tolerance, silent=True)
+        distance = Wire._DistanceFromStart(wire, vertex, tolerance=tolerance, silent=True)
+        if total is None or float(total) <= tolerance or distance is None:
             return None
-
-        if not Wire.IsManifold(wire):
-            if not silent:
-                print("Wire.ParameterAtVertex - Error: Input wire is non-manifold. Returning None.")
-            return None
-
-        # --- Prepare wire edges ---------------------------------------------------
-        edges = Wire.Edges(wire)
-        if not edges:
-            if not silent:
-                print("Wire.ParameterAtVertex - Error: Wire has no edges. Returning None.")
-            return None
-
-        edge_lengths = [Edge.Length(e) for e in edges]
-        total_length = sum(edge_lengths)
-        if total_length == 0:
-            if not silent:
-                print("Wire.ParameterAtVertex - Error: Wire has zero length. Returning None.")
-            return None
-
-        # --- Special cases: endpoint vertices ------------------------------------
-        if Vertex.Distance(vertex, Wire.StartVertex(wire)) <= tolerance:
-            return 0.0
-        if Vertex.Distance(vertex, Wire.EndVertex(wire)) <= tolerance:
-            return 1.0
-
-        # --- Locate the edge containing the vertex -------------------------------
-        accumulated = 0.0
-
-        for edge, e_length in zip(edges, edge_lengths):
-
-            # Check if vertex lies on this edge
-            d = Vertex.Distance(vertex, edge)
-            if d <= tolerance:
-
-                # Compute local parameter on this edge
-                sv = Edge.StartVertex(edge)
-                ev = Edge.EndVertex(edge)
-
-                # Local distances
-                dist_sv = Vertex.Distance(sv, vertex)
-                dist_ev = Vertex.Distance(ev, vertex)
-
-                if dist_sv + dist_ev == 0:
-                    local_u = 0.0
-                else:
-                    local_u = dist_sv / (dist_sv + dist_ev)
-
-                # Global parameter u
-                global_u = (accumulated + local_u * e_length) / total_length
-                return round(global_u, mantissa)
-
-            accumulated += e_length
-
-        if not silent:
-            print("Wire.ParameterAtVertex - Error: Vertex does not appear to lie on the wire. Returning None.")
-        return None
+        value = max(0.0, min(1.0, float(distance)/float(total)))
+        return value if mantissa is None else round(value, int(mantissa))
 
     @staticmethod
-    def VertexByParameter(wire, u: float = 0):
-        """
-        Creates a vertex along the input wire offset by the input *u* parameter. The wire must be manifold.
-
-        Parameters
-        ----------
-        wire : topologic_core.Wire
-            The input wire.
-        u : float , optional
-            The *u* parameter along the input topologic Wire. A parameter of 0 returns the start vertex. A parameter of 1 returns the end vertex. Default is 0.
-
-        Returns
-        -------
-        topologic_core.Vertex
-            The vertex at the input u parameter
-
-        """
-        from topologicpy.Edge import Edge
-
+    def VertexByParameter(wire, u: float = 0.0, tolerance: float = 0.0001, silent: bool = False):
+        """Creates a vertex at a normalized global arc-length parameter on a simple wire."""
+        from topologicpy.Topology import Topology
         if not Topology.IsInstance(wire, "Wire"):
-            print("Wire.VertexByParameter - Error: The input wire parameter is not a valid topologic wire. Returning None.")
             return None
-        if u < 0 or u > 1:
-            print("Wire.VertexByParameter - Error: The input u parameter is not within the valid range of [0, 1]. Returning None.")
+        try:
+            u = float(u)
+        except Exception:
             return None
-        if not Wire.IsManifold(wire):
-            print("Wire.VertexByParameter - Error: The input wire parameter is non-manifold. Returning None.")
+        if u < 0.0 or u > 1.0:
             return None
-        
-        if u == 0:
-            return Wire.StartVertex(wire)
-        if u == 1:
-            return Wire.EndVertex(wire)
-        
-        edges = Wire.Edges(wire)
-        total_length = 0.0
-        edge_lengths = []
-        
-        # Compute the total length of the wire
-        for edge in edges:
-            e_length = Edge.Length(edge)
-            edge_lengths.append(e_length)
-            total_length += e_length
-
-        # Initialize variables for tracking the current edge and accumulated length
-        current_edge = None
-        accumulated_length = 0.0
-
-        # Iterate over the lines to find the appropriate segment
-        for i, edge in enumerate(edges):
-            edge_length = edge_lengths[i]
-
-            # Check if the desired point is on this line
-            if u * total_length <= accumulated_length + edge_length:
-                current_edge = edge
-                break
-            else:
-                accumulated_length += edge_length
-
-        # Calculate the residual u value for the current line
-        residual_u = (u * total_length - accumulated_length) / Edge.Length(current_edge)
-
-        # Compute the point at the parameter on the current line
-        vertex = Edge.VertexByParameter(current_edge, residual_u)
-
-        return vertex
+        total = Wire.Length(wire, mantissa=None, tolerance=tolerance, silent=True)
+        if total is None or float(total) <= tolerance:
+            return None
+        return Wire._VertexAtDistanceFromStart(wire, u*float(total), tolerance=tolerance, silent=silent)
 
     @staticmethod
     def Vertices(wire) -> list:
