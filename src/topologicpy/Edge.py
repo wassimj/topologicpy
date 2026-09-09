@@ -477,6 +477,111 @@ class Edge():
         return arc
 
     @staticmethod
+    def Bezier(
+        controlPoints,
+        weights=None,
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
+        """
+        Creates a single exact Bezier curve Edge.
+
+        The Bezier curve is represented as a clamped B-spline/NURBS curve.
+        If weights are supplied, a rational Bezier curve is created; otherwise
+        a non-rational Bezier curve is created. The degree is one less than the
+        number of control points.
+
+        Parameters
+        ----------
+        controlPoints : list
+            The control vertices of the Bezier curve. At least two valid
+            vertices must be supplied.
+        weights : list , optional
+            One finite positive weight per control point. If supplied, a
+            rational Bezier curve is created. Default is None.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed.
+            Default is False.
+
+        Returns
+        -------
+        topologic_core.Edge
+            The created Bezier Edge, or None if the curve cannot be created.
+        """
+        import math
+        from topologicpy.Topology import Topology
+
+        try:
+            tolerance = float(tolerance)
+        except Exception:
+            if not silent:
+                print("Edge.Bezier - Error: The input tolerance parameter is not a valid number. Returning None.")
+            return None
+        if not math.isfinite(tolerance) or tolerance <= 0.0:
+            if not silent:
+                print("Edge.Bezier - Error: The input tolerance parameter must be greater than zero. Returning None.")
+            return None
+
+        if not isinstance(controlPoints, (list, tuple)):
+            if not silent:
+                print("Edge.Bezier - Error: The input controlPoints parameter is not a valid list. Returning None.")
+            return None
+        controlPoints = list(controlPoints)
+        if len(controlPoints) < 2:
+            if not silent:
+                print("Edge.Bezier - Error: At least two control points are required. Returning None.")
+            return None
+        if not all(Topology.IsInstance(vertex, "Vertex") for vertex in controlPoints):
+            if not silent:
+                print("Edge.Bezier - Error: One or more control points are not valid vertices. Returning None.")
+            return None
+
+        degree = len(controlPoints) - 1
+        is_rational = weights is not None
+        if weights is None:
+            weights = [1.0] * len(controlPoints)
+        else:
+            if not isinstance(weights, (list, tuple)):
+                if not silent:
+                    print("Edge.Bezier - Error: The input weights parameter is not a valid list. Returning None.")
+                return None
+            try:
+                weights = [float(value) for value in weights]
+            except Exception:
+                if not silent:
+                    print("Edge.Bezier - Error: One or more weights are not numerical. Returning None.")
+                return None
+            if len(weights) != len(controlPoints):
+                if not silent:
+                    print("Edge.Bezier - Error: The number of weights must equal the number of control points. Returning None.")
+                return None
+            if any(not math.isfinite(value) or value <= 0.0 for value in weights):
+                if not silent:
+                    print("Edge.Bezier - Error: All weights must be finite positive numbers. Returning None.")
+                return None
+
+        # A degree-p Bezier is exactly a clamped B-spline with only the two end
+        # knots, each repeated p+1 times.
+        knots = [0.0] * (degree + 1) + [1.0] * (degree + 1)
+        edge = Edge.ByNurbsParameters(
+            controlPoints=controlPoints,
+            weights=weights,
+            knots=knots,
+            isRational=is_rational,
+            isPeriodic=False,
+            degree=degree,
+            tolerance=tolerance,
+            silent=True,
+        )
+        if not Topology.IsInstance(edge, "Edge"):
+            if not silent:
+                print("Edge.Bezier - Error: Could not create the Bezier edge. Returning None.")
+            return None
+        return edge
+
+    @staticmethod
     def Bisect(edgeA, edgeB, length: float = 1.0, placement: int = 0, tolerance: float = 0.0001, silent: bool = False):
         """
         Creates a bisecting edge between edgeA and edgeB.
