@@ -2051,6 +2051,131 @@ class Edge():
         return edgeA
 
     @staticmethod
+    def TrimByParameters(
+        edge,
+        uA: float = 0.0,
+        uB: float = 1.0,
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
+        """
+        Returns the portion of the input edge between two normalized curve parameters.
+
+        Parameters are normalized to the range [0, 1], where 0 is the start of
+        the edge and 1 is the end. If ``uA`` is greater than ``uB``, the returned
+        edge is oriented from ``uA`` toward ``uB``.
+
+        The active backend's native trimming operation is preferred so curved
+        geometry is preserved exactly. If native trimming is unavailable, a
+        geometrically linear edge is reconstructed exactly from its evaluated
+        endpoints. Curved edges are never silently converted to line segments or
+        approximated by this method.
+
+        Parameters
+        ----------
+        edge : topologic_core.Edge
+            The input edge.
+        uA : float , optional
+            The normalized parameter corresponding to the start of the returned
+            edge. Default is 0.0.
+        uB : float , optional
+            The normalized parameter corresponding to the end of the returned
+            edge. Default is 1.0.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        topologic_core.Edge
+            The trimmed edge, or None if the operation fails.
+
+        """
+        import math
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(edge, "Edge"):
+            if not silent:
+                print("Edge.TrimByParameters - Error: The input edge parameter is not a valid topologic edge. Returning None.")
+            return None
+
+        try:
+            tolerance = abs(float(tolerance))
+        except Exception:
+            if not silent:
+                print("Edge.TrimByParameters - Error: The input tolerance parameter is not a valid number. Returning None.")
+            return None
+        if not math.isfinite(tolerance) or tolerance <= 0.0:
+            if not silent:
+                print("Edge.TrimByParameters - Error: The input tolerance parameter must be greater than zero. Returning None.")
+            return None
+
+        try:
+            uA = float(uA)
+            uB = float(uB)
+        except Exception:
+            if not silent:
+                print("Edge.TrimByParameters - Error: The input uA or uB parameter is not a valid number. Returning None.")
+            return None
+        if not math.isfinite(uA) or not math.isfinite(uB):
+            if not silent:
+                print("Edge.TrimByParameters - Error: The input uA and uB parameters must be finite numbers. Returning None.")
+            return None
+
+        if uA < -tolerance or uA > 1.0 + tolerance:
+            if not silent:
+                print("Edge.TrimByParameters - Error: The input uA parameter must be in the range [0, 1]. Returning None.")
+            return None
+        if uB < -tolerance or uB > 1.0 + tolerance:
+            if not silent:
+                print("Edge.TrimByParameters - Error: The input uB parameter must be in the range [0, 1]. Returning None.")
+            return None
+
+        uA = max(0.0, min(1.0, uA))
+        uB = max(0.0, min(1.0, uB))
+
+        if abs(uB - uA) <= 1.0e-12:
+            if not silent:
+                print("Edge.TrimByParameters - Error: The input parameters define a zero-length interval. Returning None.")
+            return None
+
+        if uA == 0.0 and uB == 1.0:
+            return edge
+
+        # Prefer exact backend-native trimming. This also handles a complete
+        # reversal (uA=1, uB=0) without reconstructing a curved edge from only
+        # its endpoints.
+        try:
+            if Core.HasAttribute("EdgeUtility", "Trim"):
+                result = Core.EdgeUtility.Trim(edge, uA, uB)
+                if Topology.IsInstance(result, "Edge"):
+                    length = Edge.Length(result, mantissa=12)
+                    if length is not None and length > tolerance:
+                        return result
+        except Exception:
+            pass
+
+        # Reconstructing from evaluated endpoints is exact for linear geometry.
+        if Edge.IsLinear(edge, tolerance=tolerance, silent=True):
+            vertexA = Edge.VertexByParameter(edge, u=uA, tolerance=tolerance, silent=True)
+            vertexB = Edge.VertexByParameter(edge, u=uB, tolerance=tolerance, silent=True)
+            if not Topology.IsInstance(vertexA, "Vertex") or not Topology.IsInstance(vertexB, "Vertex"):
+                if not silent:
+                    print("Edge.TrimByParameters - Error: Could not determine the trimmed edge vertices. Returning None.")
+                return None
+            return Edge.ByStartVertexEndVertex(
+                vertexA,
+                vertexB,
+                tolerance=tolerance,
+                silent=silent,
+            )
+
+        if not silent:
+            print("Edge.TrimByParameters - Error: The active backend could not trim the curved input edge exactly. Returning None.")
+        return None
+
+    @staticmethod
     def VertexByDistance(edge, distance: float = 0.0, origin= None, mantissa: int = 6, tolerance: float = 0.0001):
         """
         Creates a vertex along the input edge offset by the input distance from the input origin.

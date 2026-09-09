@@ -120,6 +120,18 @@ def _tangent_at_raw_parameter(edge, curve, parameter):
     except Exception:
         return None
 
+def _wrap_shape_like(source, shape):
+    """Wrap an OCCT edge while preserving backend metadata from the source."""
+    if not isinstance(source, Edge) or _is_null_shape(shape):
+        return None
+    return Edge.ByOcctShape(
+        shape,
+        dictionary=getattr(source, "dictionary", None),
+        contents=getattr(source, "contents", None),
+        contexts=getattr(source, "contexts", None),
+        apertures=getattr(source, "apertures", None),
+    )
+
 @dataclass(eq=False, init=False)
 class Edge(Topology):
     """
@@ -835,22 +847,40 @@ class EdgeUtility:
 
     @staticmethod
     def Trim(edge, parameterA: float = 0.0, parameterB: float = 1.0):
-        """
-        Not part of the guide's minimum checklist and not called by the
-        topologicpy algorithm layer (verified: zero call sites). Best-effort
-        real implementation for direct Core callers: returns a new Edge
-        between the points at parameterA and parameterB along the input
-        edge (straight chord between those two points, matching
-        EdgeUtility.PointAtParameter's own straight-line parametrization).
-        """
+        """Return a curve-preserving sub-edge between normalized parameters."""
         if not isinstance(edge, Edge):
             return None
 
-        pA = EdgeUtility.PointAtParameter(edge, parameterA)
-        pB = EdgeUtility.PointAtParameter(edge, parameterB)
-        if pA is None or pB is None:
+        bounds = _oriented_parameter_bounds(edge)
+        if bounds is None:
             return None
-        return Edge.ByStartVertexEndVertex(pA, pB)
+        curve, start_parameter, end_parameter = bounds
+
+        try:
+            u_a = float(parameterA)
+            u_b = float(parameterB)
+        except Exception:
+            return None
+
+        raw_a = start_parameter + u_a * (end_parameter - start_parameter)
+        raw_b = start_parameter + u_b * (end_parameter - start_parameter)
+        if abs(raw_a - raw_b) <= 1.0e-15:
+            return None
+
+        try:
+            from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakeEdge
+
+            lower = min(raw_a, raw_b)
+            upper = max(raw_a, raw_b)
+            maker = BRepBuilderAPI_MakeEdge(curve, lower, upper)
+            if not maker.IsDone():
+                return None
+            shape = maker.Edge()
+            if raw_a > raw_b:
+                shape = shape.Reversed()
+            return _wrap_shape_like(edge, shape)
+        except Exception:
+            return None
 
 
 # Edge -> Wire: find Wires in hostTopology containing this Edge.
