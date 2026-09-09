@@ -1624,9 +1624,9 @@ class Edge():
         return Edge.ByVertices([sv, ev], tolerance=tolerance, silent=silent)
 
     @staticmethod
-    def ParameterAtVertex(edge, vertex, mantissa: int = 6, silent: bool = False) -> float:
+    def ParameterAtVertex(edge, vertex, mantissa: int = 6, silent: bool = False, tolerance: float = 0.0001) -> float:
         """
-        Returns the *u* parameter along the input edge based on the location of the input vertex.
+        Returns the normalized curve parameter of a vertex lying on the input edge.
 
         Parameters
         ----------
@@ -1638,11 +1638,13 @@ class Edge():
             The number of decimal places to round the result to. Default is 6.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
+        tolerance : float , optional
+            The desired tolerance used to determine whether the vertex lies on the edge. Default is 0.0001.
 
         Returns
         -------
         float
-            The *u* parameter along the input edge based on the location of the input vertex.
+            The normalized parameter in the range [0, 1], or None if the vertex is not on the edge.
 
         """
         from topologicpy.Topology import Topology
@@ -1655,12 +1657,26 @@ class Edge():
             if not silent:
                 print("Edge.ParameterAtVertex - Error: The input vertex parameter is not a valid topologic vertex. Returning None.")
             return None
-        parameter = None
+
+        value = None
         try:
-            parameter = Core.EdgeUtility.ParameterAtPoint(edge, vertex)
-        except:
-            return None #Return silently because topologic C++ returns a runtime error if point is not on curve.
-        return round(parameter, mantissa)
+            if Core.HasAttribute("EdgeUtility", "ParameterAtVertex"):
+                value = Core.EdgeUtility.ParameterAtVertex(edge, vertex)
+            elif Core.HasAttribute("EdgeUtility", "ParameterAtPoint"):
+                try:
+                    value = Core.EdgeUtility.ParameterAtPoint(edge, vertex, tolerance)
+                except TypeError:
+                    value = Core.EdgeUtility.ParameterAtPoint(edge, vertex)
+        except Exception:
+            value = None
+
+        if value is None:
+            return None
+        try:
+            value = float(value)
+            return value if mantissa is None else round(value, mantissa)
+        except Exception:
+            return None
 
 
     @staticmethod
@@ -1838,6 +1854,79 @@ class Edge():
         return vert
 
     @staticmethod
+    def TangentAtParameter(edge, u: float = 0.5, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False) -> list:
+        """
+        Returns the unit tangent vector to the actual edge curve at normalized parameter *u*.
+
+        Parameters
+        ----------
+        edge : topologic_core.Edge
+            The input edge.
+        u : float , optional
+            The normalized parameter along the edge. Default is 0.5.
+        mantissa : int , optional
+            The number of decimal places to round the result to. If set to None, no rounding is applied. Default is 6.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        list
+            The unit tangent vector [x, y, z], or None if it cannot be evaluated.
+
+        """
+        import math
+        from topologicpy.Topology import Topology
+        from topologicpy.Vertex import Vertex
+
+        if not Topology.IsInstance(edge, "Edge"):
+            if not silent:
+                print("Edge.TangentAtParameter - Error: The input edge parameter is not a valid topologic edge. Returning None.")
+            return None
+        try:
+            u = max(0.0, min(1.0, float(u)))
+        except Exception:
+            if not silent:
+                print("Edge.TangentAtParameter - Error: The input u parameter is not numerical. Returning None.")
+            return None
+
+        tangent = None
+        try:
+            if Core.HasAttribute("EdgeUtility", "TangentAtParameter"):
+                tangent = Core.EdgeUtility.TangentAtParameter(edge, u)
+        except Exception:
+            tangent = None
+
+        if tangent is None:
+            # TopologicCore exposes exact point evaluation but no tangent query.
+            # Numerically differentiate the actual edge curve rather than using
+            # its endpoint chord, so the fallback remains valid for curves.
+            du = max(1.0e-6, min(1.0e-3, tolerance * 10.0))
+            ua = max(0.0, u - du)
+            ub = min(1.0, u + du)
+            if ub <= ua:
+                return None
+            va = Edge.VertexByParameter(edge, ua, tolerance=tolerance, silent=True)
+            vb = Edge.VertexByParameter(edge, ub, tolerance=tolerance, silent=True)
+            if not Topology.IsInstance(va, "Vertex") or not Topology.IsInstance(vb, "Vertex"):
+                return None
+            a = Vertex.Coordinates(va, mantissa=None)
+            b = Vertex.Coordinates(vb, mantissa=None)
+            tangent = [b[i] - a[i] for i in range(3)]
+
+        try:
+            values = [float(v) for v in tangent[:3]]
+            magnitude = math.sqrt(sum(v * v for v in values))
+            if magnitude <= tolerance:
+                return None
+            values = [v / magnitude for v in values]
+            return values if mantissa is None else [round(v, mantissa) for v in values]
+        except Exception:
+            return None
+
+    @staticmethod
     def Trim(edge, distance: float = 0.0, bothSides: bool = True, reverse: bool = False, tolerance: float = 0.0001, silent: bool = False):
         """
         Trims the input edge by the input distance.
@@ -2007,38 +2096,63 @@ class Edge():
         return Vertex.ByCoordinates(Vertex.X(origin, mantissa=mantissa)+vector[0], Vertex.Y(origin, mantissa=mantissa)+vector[1], Vertex.Z(origin, mantissa=mantissa)+vector[2])
     
     @staticmethod
-    def VertexByParameter(edge, u: float = 0.0):
+    def VertexByParameter(edge, u: float = 0.0, tolerance: float = 0.0001, silent: bool = False):
         """
-        Creates a vertex along the input edge offset by the input *u* parameter.
+        Creates a vertex at normalized parameter *u* on the actual edge curve.
 
         Parameters
         ----------
         edge : topologic_core.Edge
             The input edge.
         u : float , optional
-            The *u* parameter along the input topologic Edge. A parameter of 0 returns the start vertex. A parameter of 1 returns the end vertex. Default is 0.
+            The normalized parameter along the edge. A parameter of 0 returns the start vertex and 1 returns the end vertex. Default is 0.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
         topologic_core.Vertex
-            The created vertex.
+            The created vertex, or None if the parameter cannot be evaluated.
 
         """
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(edge, "Edge"):
-            print("Edge.VertexByParameter - Error: The input edge parameter is not a valid topologic edge. Returning None.")
+            if not silent:
+                print("Edge.VertexByParameter - Error: The input edge parameter is not a valid topologic edge. Returning None.")
             return None
+        try:
+            u = float(u)
+        except Exception:
+            if not silent:
+                print("Edge.VertexByParameter - Error: The input u parameter is not numerical. Returning None.")
+            return None
+        if u < -tolerance or u > 1.0 + tolerance:
+            if not silent:
+                print("Edge.VertexByParameter - Error: The input u parameter must be in the range [0, 1]. Returning None.")
+            return None
+
+        u = max(0.0, min(1.0, u))
+        if u == 0.0:
+            return Edge.StartVertex(edge, silent=True)
+        if u == 1.0:
+            return Edge.EndVertex(edge, silent=True)
+
         vertex = None
-        if u == 0:
-            vertex = Edge.StartVertex(edge)
-        elif u == 1:
-            vertex = Edge.EndVertex(edge)
-        else:
-            dir = Edge.Direction(edge)
-            edge_length = Edge.Length(edge)
-            dist = edge_length*u
-            vertex = Topology.TranslateByDirectionDistance(Edge.StartVertex(edge), direction=dir, distance=dist)
+        try:
+            if Core.HasAttribute("EdgeUtility", "VertexAtParameter"):
+                vertex = Core.EdgeUtility.VertexAtParameter(edge, u)
+            elif Core.HasAttribute("EdgeUtility", "PointAtParameter"):
+                vertex = Core.EdgeUtility.PointAtParameter(edge, u)
+        except Exception:
+            vertex = None
+
+        if not Topology.IsInstance(vertex, "Vertex"):
+            if not silent:
+                print("Edge.VertexByParameter - Error: The active backend could not evaluate the edge curve. Returning None.")
+            return None
         return vertex
 
     @staticmethod

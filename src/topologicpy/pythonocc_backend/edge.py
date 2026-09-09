@@ -14,6 +14,112 @@ from .occ_utils import make_occ_edge
 from .helpers import same_vertex
 
 
+
+def _curve_data(edge):
+    """Return the OCCT curve and its stored parameter bounds for an Edge."""
+    if not isinstance(edge, Edge) or _is_null_shape(getattr(edge, "shape", None)):
+        return None
+    try:
+        from OCC.Core.BRep import BRep_Tool
+
+        curve, first, last = BRep_Tool.Curve(edge.shape)
+        if curve is None:
+            return None
+        return curve, float(first), float(last)
+    except Exception:
+        return None
+
+
+def _oriented_parameter_bounds(edge):
+    """Return curve parameters corresponding to the topological start and end."""
+    data = _curve_data(edge)
+    if data is None:
+        return None
+    curve, first, last = data
+
+    # The geometric parameter interval is independent of topological orientation.
+    # Respect the OCCT edge orientation so normalized u=0 and u=1 always mean
+    # TopologicPy start and end respectively, including on reversed/closed edges.
+    try:
+        from OCC.Core.TopAbs import TopAbs_FORWARD, TopAbs_REVERSED
+
+        orientation = edge.shape.Orientation()
+        if orientation == TopAbs_REVERSED:
+            return curve, last, first
+        if orientation == TopAbs_FORWARD:
+            return curve, first, last
+    except Exception:
+        pass
+
+    # Conservative fallback for unusual INTERNAL/EXTERNAL orientations.
+    start = edge.start
+    if not isinstance(start, Vertex):
+        return None
+    try:
+        p_first = curve.Value(first)
+        p_last = curve.Value(last)
+        d_first2 = (
+            (float(start.x) - float(p_first.X())) ** 2
+            + (float(start.y) - float(p_first.Y())) ** 2
+            + (float(start.z) - float(p_first.Z())) ** 2
+        )
+        d_last2 = (
+            (float(start.x) - float(p_last.X())) ** 2
+            + (float(start.y) - float(p_last.Y())) ** 2
+            + (float(start.z) - float(p_last.Z())) ** 2
+        )
+        return (curve, first, last) if d_first2 <= d_last2 else (curve, last, first)
+    except Exception:
+        return None
+
+
+def _raw_parameter(edge, normalized_parameter):
+    """Map a normalized topological Edge parameter to the OCCT curve parameter."""
+    data = _oriented_parameter_bounds(edge)
+    if data is None:
+        return None
+    curve, start_parameter, end_parameter = data
+    try:
+        u = float(normalized_parameter)
+    except Exception:
+        return None
+    return curve, start_parameter + u * (end_parameter - start_parameter)
+
+
+def _point_at_raw_parameter(curve, parameter):
+    """Return a backend Vertex evaluated on an OCCT curve."""
+    try:
+        point = curve.Value(float(parameter))
+        return Vertex.ByCoordinates(float(point.X()), float(point.Y()), float(point.Z()))
+    except Exception:
+        return None
+
+
+def _tangent_at_raw_parameter(edge, curve, parameter):
+    """Return the unit tangent in the topological orientation of an Edge."""
+    import math
+
+    bounds = _oriented_parameter_bounds(edge)
+    if bounds is None:
+        return None
+    _, start_parameter, end_parameter = bounds
+    orientation = 1.0 if end_parameter >= start_parameter else -1.0
+    try:
+        from OCC.Core.gp import gp_Pnt, gp_Vec
+
+        point = gp_Pnt()
+        vector = gp_Vec()
+        curve.D1(float(parameter), point, vector)
+        x = float(vector.X()) * orientation
+        y = float(vector.Y()) * orientation
+        z = float(vector.Z()) * orientation
+        magnitude = math.sqrt(x * x + y * y + z * z)
+        if magnitude <= 0.0:
+            return None
+        return [x / magnitude, y / magnitude, z / magnitude]
+    except Exception:
+        return None
+
 @dataclass(eq=False, init=False)
 class Edge(Topology):
     """
@@ -346,42 +452,16 @@ class Edge(Topology):
         ]
 
     def VertexByParameter(self, u: float = 0.0):
-        """Creates a vertex at parameter u along the edge (0=start, 1=end)."""
-        if u == 0:
-            return self.start
-        elif u == 1:
-            return self.end
-        else:
-            return Vertex.ByCoordinates(
-                self.start.x + (self.end.x - self.start.x) * u,
-                self.start.y + (self.end.y - self.start.y) * u,
-                self.start.z + (self.end.z - self.start.z) * u,
-            )
+        """Return a Vertex at normalized parameter u along the actual OCCT curve."""
+        return EdgeUtility.PointAtParameter(self, u)
 
-    def ParameterAtVertex(
-        self,
-        vertex,
-        mantissa: int = 6,
-        tolerance: float = 0.0001,
-    ):
-        """Returns the parameter u at the given vertex location."""
-        if not isinstance(vertex, Vertex):
+    def ParameterAtVertex(self, vertex, mantissa: int = 6, tolerance: float = 0.0001):
+        """Return the normalized parameter of a Vertex lying on this Edge."""
+        try:
+            value = EdgeUtility.ParameterAtPoint(self, vertex, tolerance=tolerance)
+        except Exception:
             return None
-
-        length2 = (
-            (self.end.x - self.start.x) ** 2
-            + (self.end.y - self.start.y) ** 2
-            + (self.end.z - self.start.z) ** 2
-        )
-        if length2 == 0:
-            return 0
-
-        t = (
-            (vertex.x - self.start.x) * (self.end.x - self.start.x)
-            + (vertex.y - self.start.y) * (self.end.y - self.start.y)
-            + (vertex.z - self.start.z) * (self.end.z - self.start.z)
-        ) / length2
-        return round(t, mantissa)
+        return None if value is None else round(float(value), mantissa)
 
     def Length(self):
         """Returns the exact geometric length of the edge."""
@@ -601,49 +681,70 @@ class EdgeUtility:
 
     @staticmethod
     def PointAtParameter(edge, parameter):
+        """Return a Vertex at normalized parameter [0, 1] on the actual OCCT curve."""
         if not isinstance(edge, Edge):
             return None
-        parameter = float(parameter)
-        return Vertex.ByCoordinates(
-            edge.start.x + (edge.end.x - edge.start.x) * parameter,
-            edge.start.y + (edge.end.y - edge.start.y) * parameter,
-            edge.start.z + (edge.end.z - edge.start.z) * parameter,
-        )
+        try:
+            u = float(parameter)
+        except Exception:
+            return None
+        if u == 0.0:
+            return edge.start
+        if u == 1.0:
+            return edge.end
+        raw = _raw_parameter(edge, u)
+        if raw is None:
+            return None
+        curve, parameter_value = raw
+        return _point_at_raw_parameter(curve, parameter_value)
 
     @staticmethod
-    def ParameterAtPoint(edge, vertex):
+    def ParameterAtPoint(edge, vertex, tolerance: float = 0.0001):
+        """Return the normalized parameter of a Vertex on the trimmed OCCT Edge."""
         if not isinstance(edge, Edge) or not isinstance(vertex, Vertex):
             return None
+        bounds = _oriented_parameter_bounds(edge)
+        if bounds is None:
+            return None
+        curve, start_parameter, end_parameter = bounds
+        denominator = end_parameter - start_parameter
+        if abs(denominator) <= 1.0e-15:
+            return 0.0 if same_vertex(edge.start, vertex, tolerance=tolerance) else None
+        try:
+            from OCC.Core.gp import gp_Pnt
+            from OCC.Core.GeomAPI import GeomAPI_ProjectPointOnCurve
 
-        length2 = (
-            (edge.end.x - edge.start.x) ** 2
-            + (edge.end.y - edge.start.y) ** 2
-            + (edge.end.z - edge.start.z) ** 2
-        )
-        if length2 == 0:
-            return 0
+            point = gp_Pnt(float(vertex.x), float(vertex.y), float(vertex.z))
+            lower = min(start_parameter, end_parameter)
+            upper = max(start_parameter, end_parameter)
+            projection = GeomAPI_ProjectPointOnCurve(point, curve, lower, upper)
+            if projection.NbPoints() < 1:
+                return None
+            if float(projection.LowerDistance()) > abs(float(tolerance)):
+                return None
+            raw_parameter = float(projection.LowerDistanceParameter())
+            normalized = (raw_parameter - start_parameter) / denominator
+            eps = max(abs(float(tolerance)), 1.0e-12)
+            if normalized < -eps or normalized > 1.0 + eps:
+                return None
+            if abs(normalized) <= eps:
+                normalized = 0.0
+            elif abs(normalized - 1.0) <= eps:
+                normalized = 1.0
+            return max(0.0, min(1.0, normalized))
+        except Exception:
+            return None
 
-        t = (
-            (vertex.x - edge.start.x) * (edge.end.x - edge.start.x)
-            + (vertex.y - edge.start.y) * (edge.end.y - edge.start.y)
-            + (vertex.z - edge.start.z) * (edge.end.z - edge.start.z)
-        ) / length2
-
-        # Clamp to [0,1] and check if the vertex is on the edge segment.
-        # If the clamped projection is farther than tolerance from the
-        # vertex, the point is not on the edge.
-        t_clamped = max(0.0, min(1.0, t))
-        px = edge.start.x + t_clamped * (edge.end.x - edge.start.x)
-        py = edge.start.y + t_clamped * (edge.end.y - edge.start.y)
-        pz = edge.start.z + t_clamped * (edge.end.z - edge.start.z)
-        dist2 = (
-            (vertex.x - px) ** 2
-            + (vertex.y - py) ** 2
-            + (vertex.z - pz) ** 2
-        )
-        if dist2 > 1e-8:
-            raise RuntimeError("Vertex is not on the edge")
-        return t
+    @staticmethod
+    def TangentAtParameter(edge, parameter: float = 0.5):
+        """Return the oriented unit tangent vector at normalized parameter u."""
+        if not isinstance(edge, Edge):
+            return None
+        raw = _raw_parameter(edge, parameter)
+        if raw is None:
+            return None
+        curve, parameter_value = raw
+        return _tangent_at_raw_parameter(edge, curve, parameter_value)
 
     @staticmethod
     def Angle(edgeA, edgeB):
