@@ -173,11 +173,11 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.ByThickenedWire" title="topologicpy.Shell.Shell.ByThickenedWire"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByThickenedWire</span></code></a>(wire[, offsetA, offsetB, ...])</p></td>
 <td><p>Creates a shell by thickening the input wire.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.ByWires" title="topologicpy.Shell.Shell.ByWires"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByWires</span></code></a>(wires[, triangulate, tolerance, silent])</p></td>
-<td><p>Creates a shell by lofting through the input wires</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.ByWires" title="topologicpy.Shell.Shell.ByWires"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByWires</span></code></a>(wires[, triangulate, polyhedron, ...])</p></td>
+<td><p>Creates a shell by lofting through the input wires.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.ByWiresCluster" title="topologicpy.Shell.Shell.ByWiresCluster"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByWiresCluster</span></code></a>(cluster[, triangulate, ...])</p></td>
-<td><p>Creates a shell by lofting through the input cluster of wires</p></td>
+<td><p>Creates a shell by lofting through the input cluster of wires.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.Circle" title="topologicpy.Shell.Shell.Circle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Circle</span></code></a>([origin, radius, sides, fromAngle, ...])</p></td>
 <td><p>Creates a circle.</p></td>
@@ -379,14 +379,25 @@ Otherwise, they are not. Default is False.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Shell.Shell.ByWires">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByWires</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wires</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">triangulate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Shell.Shell.ByWires" title="Permalink to this definition"></a></dt>
-<dd><p>Creates a shell by lofting through the input wires</p>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByWires</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wires</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">triangulate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">polyhedron</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Shell.Shell.ByWires" title="Permalink to this definition"></a></dt>
+<dd><p>Creates a shell by lofting through the input wires.</p>
+<p>By default, the historical polyhedral loft is used. If <code class="docutils literal notranslate"><span class="pre">polyhedron</span></code>
+is set to <code class="docutils literal notranslate"><span class="pre">False</span></code>, the PythonOCC backend constructs a genuine
+curve-preserving ruled shell directly from the section wires. The
+TopologicCore backend does not expose an equivalent exact operation and
+therefore returns <code class="docutils literal notranslate"><span class="pre">None</span></code> for <code class="docutils literal notranslate"><span class="pre">polyhedron=False</span></code> rather than
+faceting or approximating the curves.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>wires</strong><span class="classifier">list</span></dt><dd><p>The input list of wires.</p>
+<dt><strong>wires</strong><span class="classifier">list</span></dt><dd><p>The ordered input list of wires.</p>
 </dd>
-<dt><strong>triangulate</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the faces will be triangulated. Default is True.</p>
+<dt><strong>triangulate</strong><span class="classifier">bool , optional</span></dt><dd><p>If <code class="docutils literal notranslate"><span class="pre">polyhedron</span></code> is True, specifies whether the side faces are
+triangulated. Default is True.</p>
+</dd>
+<dt><strong>polyhedron</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, uses the historical faceted/polyhedral loft. If False,
+constructs a curve-preserving ruled shell on the PythonOCC backend.
+Default is True.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
@@ -396,7 +407,8 @@ Otherwise, they are not. Default is False.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Shell</dt><dd><p>The creates shell.</p>
+<dt>topologic_core.Shell</dt><dd><p>The created shell, or None if exact curve-preserving construction
+is requested on an unsupported backend.</p>
 </dd>
 </dl>
 </dd>
@@ -405,14 +417,19 @@ Otherwise, they are not. Default is False.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Shell.Shell.ByWiresCluster">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByWiresCluster</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cluster</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">triangulate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Shell.Shell.ByWiresCluster" title="Permalink to this definition"></a></dt>
-<dd><p>Creates a shell by lofting through the input cluster of wires</p>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByWiresCluster</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cluster</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">triangulate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">polyhedron</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Shell.Shell.ByWiresCluster" title="Permalink to this definition"></a></dt>
+<dd><p>Creates a shell by lofting through the input cluster of wires.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>wires</strong><span class="classifier">topologic_core.Cluster</span></dt><dd><p>The input cluster of wires.</p>
+<dt><strong>cluster</strong><span class="classifier">topologic_core.Cluster</span></dt><dd><p>The input cluster of wires.</p>
 </dd>
-<dt><strong>triangulate</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the faces will be triangulated. Default is True.</p>
+<dt><strong>triangulate</strong><span class="classifier">bool , optional</span></dt><dd><p>If <code class="docutils literal notranslate"><span class="pre">polyhedron</span></code> is True, specifies whether the side faces are
+triangulated. Default is True.</p>
+</dd>
+<dt><strong>polyhedron</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, uses the historical faceted/polyhedral loft. If False,
+requests an exact curve-preserving ruled shell on the PythonOCC
+backend. Default is True.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
@@ -422,7 +439,7 @@ Otherwise, they are not. Default is False.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Shell</dt><dd><p>The creates shell.</p>
+<dt>topologic_core.Shell</dt><dd><p>The created shell.</p>
 </dd>
 </dl>
 </dd>
