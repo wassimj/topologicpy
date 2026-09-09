@@ -167,11 +167,17 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Angle" title="topologicpy.Edge.Edge.Angle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Angle</span></code></a>(edgeA, edgeB[, mantissa, bracket])</p></td>
 <td><p>Returns the angle in degrees between the two input edges.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Bisect" title="topologicpy.Edge.Edge.Bisect"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Bisect</span></code></a>(edgeA, edgeB[, length, placement, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Arc" title="topologicpy.Edge.Edge.Arc"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Arc</span></code></a>([origin, radius, fromAngle, toAngle, ...])</p></td>
+<td><p>Creates a single open circular arc Edge.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Bisect" title="topologicpy.Edge.Edge.Bisect"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Bisect</span></code></a>(edgeA, edgeB[, length, placement, ...])</p></td>
 <td><p>Creates a bisecting edge between edgeA and edgeB.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.ByFaceNormal" title="topologicpy.Edge.Edge.ByFaceNormal"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByFaceNormal</span></code></a>(face[, origin, length, tolerance])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.ByFaceNormal" title="topologicpy.Edge.Edge.ByFaceNormal"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByFaceNormal</span></code></a>(face[, origin, length, tolerance])</p></td>
 <td><p>Creates a straight edge representing the normal to the input face.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.ByNurbsParameters" title="topologicpy.Edge.Edge.ByNurbsParameters"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByNurbsParameters</span></code></a>(controlPoints[, weights, ...])</p></td>
+<td><p>Creates an edge from exact NURBS/B-spline parameters.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.ByOffset2D" title="topologicpy.Edge.Edge.ByOffset2D"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByOffset2D</span></code></a>(edge[, offset, tolerance])</p></td>
 <td><p>Creates an edge offset from the input edge in the XY plane.</p></td>
@@ -329,6 +335,58 @@ edge2 (Edge): The target 2D edge.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Edge.Edge.Arc">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Arc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fromAngle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">toAngle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">180.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[0,</span> <span class="pre">0,</span> <span class="pre">1]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">placement</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'center'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Edge.Edge.Arc" title="Permalink to this definition"></a></dt>
+<dd><p>Creates a single open circular arc Edge.</p>
+<p>The arc is constructed as an exact curve rather than as a polyline
+approximation. Angles are measured in degrees counter-clockwise from the
+positive local X-axis when viewed along the positive local Z-axis.</p>
+<p>The input direction defines the normal of the plane containing the arc.
+The resulting topology is always a single open Edge. A complete 360-degree
+circle cannot be created using this method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The placement origin of the arc. If None, the global origin is used.
+The interpretation of the origin depends on the input placement
+parameter. Default is None.</p>
+</dd>
+<dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The radius of the arc. Default is 0.5.</p>
+</dd>
+<dt><strong>fromAngle</strong><span class="classifier">float , optional</span></dt><dd><p>The angle in degrees at which the arc starts. Default is 0.0.</p>
+</dd>
+<dt><strong>toAngle</strong><span class="classifier">float , optional</span></dt><dd><p>The angle in degrees at which the arc ends. If this value is less than
+fromAngle, 360 degrees are added until a positive counter-clockwise
+sweep is obtained. The resulting sweep must be greater than zero and
+less than 360 degrees. Default is 180.0.</p>
+</dd>
+<dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>The vector representing the normal to the plane of the arc.
+Default is [0, 0, 1].</p>
+</dd>
+<dt><strong>placement</strong><span class="classifier">str , optional</span></dt><dd><p>The placement of the input origin relative to the arc. The options are
+“center”, “start”, and “end”. If set to “center”, the centre of the
+underlying circle is placed at the origin. If set to “start”, the start
+vertex of the arc is placed at the origin. If set to “end”, the end
+vertex of the arc is placed at the origin. It is case insensitive.
+Default is “center”.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed.
+Default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>topologic_core.Edge</dt><dd><p>The created open circular arc.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Edge.Edge.Bisect">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Bisect</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">edgeA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeB</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">length</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">placement</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Edge.Edge.Bisect" title="Permalink to this definition"></a></dt>
 <dd><p>Creates a bisecting edge between edgeA and edgeB.</p>
@@ -382,6 +440,41 @@ If set to any number other than 0, 1, or 2, the bisecting edge centroid will be 
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
 <dt><strong>edge</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The created edge.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Edge.Edge.ByNurbsParameters">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByNurbsParameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">controlPoints</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weights</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">knots</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">isRational</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">isPeriodic</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">degree</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Edge.Edge.ByNurbsParameters" title="Permalink to this definition"></a></dt>
+<dd><p>Creates an edge from exact NURBS/B-spline parameters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>controlPoints</strong><span class="classifier">list</span></dt><dd><p>The control vertices (poles) of the curve.</p>
+</dd>
+<dt><strong>weights</strong><span class="classifier">list , optional</span></dt><dd><p>One positive weight per control point. If None, all weights are 1.0.</p>
+</dd>
+<dt><strong>knots</strong><span class="classifier">list , optional</span></dt><dd><p>Expanded nondecreasing knot vector. Repeated knots are repeated in
+the list. If None, a uniform expanded knot vector is generated.</p>
+</dd>
+<dt><strong>isRational</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, construct a rational NURBS curve. Default is False.</p>
+</dd>
+<dt><strong>isPeriodic</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, request a periodic B-spline/NURBS curve. Default is False.</p>
+</dd>
+<dt><strong>degree</strong><span class="classifier">int , optional</span></dt><dd><p>Curve degree. Default is 3.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>Geometric tolerance used for input validation. Default is 0.0001.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, suppress diagnostics. Default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>topologic_core.Edge</dt><dd><p>The created edge, or None on failure.</p>
 </dd>
 </dl>
 </dd>
