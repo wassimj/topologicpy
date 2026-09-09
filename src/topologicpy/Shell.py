@@ -407,25 +407,38 @@ class Shell():
         return return_shell
 
     @staticmethod
-    def ByWires(wires: list, triangulate: bool = True, tolerance: float = 0.0001, silent: bool = False):
+    def ByWires(wires: list, triangulate: bool = True, polyhedron: bool = True, tolerance: float = 0.0001, silent: bool = False):
         """
-        Creates a shell by lofting through the input wires
-        
+        Creates a shell by lofting through the input wires.
+
+        By default, the historical polyhedral loft is used. If ``polyhedron``
+        is set to ``False``, the PythonOCC backend constructs a genuine
+        curve-preserving ruled shell directly from the section wires. The
+        TopologicCore backend does not expose an equivalent exact operation and
+        therefore returns ``None`` for ``polyhedron=False`` rather than
+        faceting or approximating the curves.
+
         Parameters
         ----------
         wires : list
-            The input list of wires.
+            The ordered input list of wires.
         triangulate : bool , optional
-            If set to True, the faces will be triangulated. Default is True.
+            If ``polyhedron`` is True, specifies whether the side faces are
+            triangulated. Default is True.
+        polyhedron : bool , optional
+            If True, uses the historical faceted/polyhedral loft. If False,
+            constructs a curve-preserving ruled shell on the PythonOCC backend.
+            Default is True.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
-       
+
         Returns
         -------
         topologic_core.Shell
-            The creates shell.
+            The created shell, or None if exact curve-preserving construction
+            is requested on an unsupported backend.
         """
         from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
@@ -437,6 +450,41 @@ class Shell():
         if not isinstance(wires, list):
             return None
         wireList = [x for x in wires if Topology.IsInstance(x, "Wire")]
+
+        # Exact curve-preserving ruled loft. Keep this completely separate from
+        # the historical polyhedral path below so the default behaviour remains
+        # unchanged.
+        if polyhedron is False:
+            if len(wireList) < 2:
+                if not silent:
+                    print("Shell.ByWires - Error: At least two valid wires are required. Returning None.")
+                return None
+            try:
+                is_topologic_core = bool(Topology._IsTopologicCoreBackend())
+            except Exception:
+                is_topologic_core = True
+            if is_topologic_core:
+                if not silent:
+                    print("Shell.ByWires - Error: The TopologicCore backend does not support exact curve-preserving shell loft construction. Returning None.")
+                return None
+            try:
+                shell = Core.Shell.ByWires(
+                    wireList,
+                    triangulate=triangulate,
+                    polyhedron=False,
+                    tolerance=tolerance,
+                    silent=silent,
+                )
+            except Exception:
+                shell = None
+            if Topology.IsInstance(shell, "Shell"):
+                return shell
+            if not silent:
+                print("Shell.ByWires - Error: Could not construct the curve-preserving shell. Returning None.")
+            return None
+
+        # Historical polyhedral loft. This block intentionally retains the
+        # current v0.9.68 implementation to minimise regression risk.
         faces = []
         for i in range(len(wireList)-1):
             wire1 = wireList[i]
@@ -543,16 +591,21 @@ class Shell():
         return shell
 
     @staticmethod
-    def ByWiresCluster(cluster, triangulate: bool = True, tolerance: float = 0.0001, silent: bool = False):
+    def ByWiresCluster(cluster, triangulate: bool = True, polyhedron: bool = True, tolerance: float = 0.0001, silent: bool = False):
         """
-        Creates a shell by lofting through the input cluster of wires
+        Creates a shell by lofting through the input cluster of wires.
 
         Parameters
         ----------
-        wires : topologic_core.Cluster
+        cluster : topologic_core.Cluster
             The input cluster of wires.
         triangulate : bool , optional
-            If set to True, the faces will be triangulated. Default is True.
+            If ``polyhedron`` is True, specifies whether the side faces are
+            triangulated. Default is True.
+        polyhedron : bool , optional
+            If True, uses the historical faceted/polyhedral loft. If False,
+            requests an exact curve-preserving ruled shell on the PythonOCC
+            backend. Default is True.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
@@ -561,8 +614,7 @@ class Shell():
         Returns
         -------
         topologic_core.Shell
-            The creates shell.
-
+            The created shell.
         """
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
@@ -572,7 +624,13 @@ class Shell():
         if not Topology.IsInstance(cluster, "Cluster"):
             return None
         wires = Cluster.Wires(cluster)
-        return Shell.ByWires(wires, triangulate=triangulate, tolerance=tolerance, silent=silent)
+        return Shell.ByWires(
+            wires,
+            triangulate=triangulate,
+            polyhedron=polyhedron,
+            tolerance=tolerance,
+            silent=silent,
+        )
 
     @staticmethod
     def Circle(origin= None, radius: float = 0.5, sides: int = 32, fromAngle: float = 0.0, toAngle: float = 360.0, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001):

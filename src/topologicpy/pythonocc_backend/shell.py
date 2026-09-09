@@ -483,15 +483,24 @@ class ShellUtility:
         return [w for w in getattr(merged, "topologies", []) or [] if Topology.IsInstance(w, "Wire")]
 
 
-def _shell_by_wires(wires, triangulate: bool = True, tolerance: float = 0.0001, silent: bool = False):
+def _shell_by_wires(
+    wires,
+    triangulate: bool = True,
+    polyhedron: bool = True,
+    tolerance: float = 0.0001,
+    silent: bool = False,
+):
     """
-    Backend CellComplex-style loft: connect consecutive profile Wires pairwise with side
-    faces (optionally triangulated). A smaller self-contained counterpart of
-    algorithm-layer Shell.ByWires for direct Core.Shell.ByWires callers.
+    Construct a shell from ordered profile wires.
+
+    ``polyhedron=True`` retains the historical backend faceted loft. With
+    ``polyhedron=False`` OCCT's ``BRepOffsetAPI_ThruSections`` is used to build
+    a ruled shell directly from the supplied wires so circular, B-spline and
+    NURBS section curves remain exact.
     """
     from .wire import Wire
 
-    if not isinstance(wires, list):
+    if not isinstance(wires, (list, tuple)):
         if not silent:
             print("Shell.ByWires - Error: The input wires parameter is not a valid list. Returning None.")
         return None
@@ -501,6 +510,92 @@ def _shell_by_wires(wires, triangulate: bool = True, tolerance: float = 0.0001, 
             print("Shell.ByWires - Error: At least two valid wires are required. Returning None.")
         return None
 
+    # Exact curve-preserving ruled loft.
+    if polyhedron is False:
+        import math
+
+        try:
+            tolerance = abs(float(tolerance))
+        except Exception:
+            if not silent:
+                print("Shell.ByWires - Error: The input tolerance parameter is not a valid number. Returning None.")
+            return None
+        if not math.isfinite(tolerance) or tolerance <= 0.0:
+            if not silent:
+                print("Shell.ByWires - Error: The input tolerance parameter must be greater than zero. Returning None.")
+            return None
+
+        try:
+            from OCC.Core.BRepOffsetAPI import BRepOffsetAPI_ThruSections
+            from OCC.Core.TopAbs import TopAbs_EDGE
+            from OCC.Core.TopExp import TopExp_Explorer
+            from OCC.Core.TopoDS import topods
+        except Exception:
+            if not silent:
+                print("Shell.ByWires - Error: Could not import the required OpenCascade loft classes. Returning None.")
+            return None
+
+        occ_wires = []
+        edge_count = None
+        for wire in wire_list:
+            shape = getattr(wire, "shape", None)
+            if shape is None:
+                return None
+            try:
+                if shape.IsNull():
+                    return None
+                occ_wire = topods.Wire(shape)
+                if occ_wire.IsNull():
+                    return None
+            except Exception:
+                return None
+
+            try:
+                explorer = TopExp_Explorer(occ_wire, TopAbs_EDGE)
+                count = 0
+                while explorer.More():
+                    count += 1
+                    explorer.Next()
+            except Exception:
+                return None
+            if count < 1:
+                return None
+            if edge_count is None:
+                edge_count = count
+            elif count != edge_count:
+                if not silent:
+                    print("Shell.ByWires - Error: Corresponding wires must contain the same number of edges. Returning None.")
+                return None
+            occ_wires.append(occ_wire)
+
+        try:
+            loft = BRepOffsetAPI_ThruSections(False, True, tolerance)
+            # The section wires already have explicit corresponding edge counts;
+            # do not let OCCT split them while seeking compatibility.
+            loft.CheckCompatibility(False)
+            for occ_wire in occ_wires:
+                loft.AddWire(occ_wire)
+            loft.Build()
+            if hasattr(loft, "IsDone") and not loft.IsDone():
+                return None
+            shape = loft.Shape()
+        except Exception:
+            return None
+
+        if shape is None:
+            return None
+        try:
+            if shape.IsNull():
+                return None
+        except Exception:
+            return None
+
+        result = Topology.ByOcctShape(shape)
+        if not isinstance(result, Shell):
+            return None
+        return result
+
+    # Historical faceted loft: intentionally unchanged from v0.9.68.
     faces = []
     for wire_a, wire_b in zip(wire_list[:-1], wire_list[1:]):
         edges_a = wire_a.Edges()
