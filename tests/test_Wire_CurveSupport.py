@@ -117,7 +117,7 @@ def test_reverse_linear_wire_on_both_backends():
     assert math.isclose(Wire.Length(rev, mantissa=None, silent=True), 2.0, abs_tol=1.0e-9)
 
 
-@pytest.mark.skipif(not IS_PYTHONOCC, reason="Exact curved-edge reversal is not exposed by the TopologicCore Python API.")
+@pytest.mark.pythonocc_only
 def test_reverse_mixed_curved_wire_preserves_geometry_pythonocc():
     wire, vertices, _ = _mixed_wire()
     rev = Wire.Reverse(wire, silent=True)

@@ -101,7 +101,7 @@ def test_curved_category_keys_are_always_present():
         assert isinstance(result[key], list)
 
 
-@pytest.mark.skipif(not IS_PYTHONOCC, reason="Exact NURBS-surface construction is PythonOCC-specific.")
+@pytest.mark.pythonocc_only
 def test_gently_curved_surface_retains_overall_vertical_classification():
     face = _gentle_vertical_nurbs_face()
     assert Topology.IsInstance(face, "Face")
@@ -115,7 +115,7 @@ def test_gently_curved_surface_retains_overall_vertical_classification():
     assert len(result["curvedFaces"]) == 0
 
 
-@pytest.mark.skipif(not IS_PYTHONOCC, reason="Exact NURBS-surface construction is PythonOCC-specific.")
+@pytest.mark.pythonocc_only
 def test_normal_spread_threshold_can_force_same_surface_into_curved_category():
     face = _gentle_vertical_nurbs_face()
     cluster = Cluster.ByTopologies([face], silent=True)
@@ -126,7 +126,7 @@ def test_normal_spread_threshold_can_force_same_surface_into_curved_category():
     assert face not in result["freeVerticalFaces"]
 
 
-@pytest.mark.skipif(not IS_PYTHONOCC, reason="Exact NURBS-surface construction is PythonOCC-specific.")
+@pytest.mark.pythonocc_only
 def test_strongly_curved_patch_is_classified_as_curved():
     face = _quarter_cylinder_face()
     assert Topology.IsInstance(face, "Face")
@@ -140,7 +140,7 @@ def test_strongly_curved_patch_is_classified_as_curved():
     assert face in result["curvedFaces"]
 
 
-@pytest.mark.skipif(not IS_PYTHONOCC, reason="Native curved Cell construction is PythonOCC-specific.")
+@pytest.mark.pythonocc_only
 def test_external_cylindrical_face_is_classified_as_external_curved():
     cell = Cell.Cylinder(
         radius=1.0,

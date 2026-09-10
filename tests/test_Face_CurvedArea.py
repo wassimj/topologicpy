@@ -73,7 +73,7 @@ def test_face_area_validation_respects_silent():
     assert Face.Area(None, silent=True) is None
 
 
-@pytest.mark.skipif(not IS_PYTHONOCC, reason="Exact NURBS curved-face area is PythonOCC-specific.")
+@pytest.mark.pythonocc_only
 def test_pythonocc_exact_quarter_cylinder_nurbs_area():
     radius = 2.0
     height = 3.0
@@ -87,7 +87,7 @@ def test_pythonocc_exact_quarter_cylinder_nurbs_area():
     assert math.isclose(area, expected, rel_tol=1.0e-8, abs_tol=1.0e-8)
 
 
-@pytest.mark.skipif(not IS_PYTHONOCC, reason="Exact curve-preserving Shell loft is PythonOCC-specific.")
+@pytest.mark.pythonocc_only
 def test_pythonocc_face_area_fixes_curved_shell_faces_that_previously_returned_zero():
     radius = 1.0
     height = 2.0

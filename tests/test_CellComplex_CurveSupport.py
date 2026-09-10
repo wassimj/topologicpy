@@ -40,14 +40,14 @@ def test_existing_faceted_bywires_still_constructs():
     assert len(CellComplex.Cells(cc)) >= 1
 
 
-@pytest.mark.skipif(IS_PYTHONOCC, reason="TopologicCore capability guard is backend-specific.")
+@pytest.mark.topologiccore_only
 def test_topologiccore_exact_cellcomplex_loft_is_explicitly_unsupported():
     wires=[_circle_wire(z) for z in (0.0,1.0,2.0)]
     assert CellComplex.ByWires(wires, polyhedron=False, silent=True) is None
     assert CellComplex.Torus(majorRadius=2, minorRadius=0.5, uSides=8, polyhedron=False, silent=True) is None
 
 
-@pytest.mark.skipif(not IS_PYTHONOCC, reason="Exact curved CellComplex loft is PythonOCC-specific.")
+@pytest.mark.pythonocc_only
 def test_pythonocc_exact_circle_loft_has_two_cells_shared_internal_face_and_exact_volume():
     r=1.0
     wires=[_circle_wire(z,r) for z in (0.0,1.0,2.0)]
@@ -64,7 +64,7 @@ def test_pythonocc_exact_circle_loft_has_two_cells_shared_internal_face_and_exac
     assert any(Face.IsPlanar(f,silent=True) is False for f in faces)
 
 
-@pytest.mark.skipif(not IS_PYTHONOCC, reason="Exact toroidal CellComplex is PythonOCC-specific.")
+@pytest.mark.pythonocc_only
 def test_pythonocc_exact_torus_cellcomplex_preserves_curvature_cells_and_volume():
     R=2.0; r=0.5; n=8
     cc=CellComplex.Torus(majorRadius=R, minorRadius=r, uSides=n, polyhedron=False, silent=True)

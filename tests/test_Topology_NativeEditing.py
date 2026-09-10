@@ -84,7 +84,7 @@ def test_remove_edit_validation_and_noop_are_non_throwing():
     assert Topology.RemoveEdges(wire, e0, tolerance="bad", silent=True) is None
 
 
-@pytest.mark.skipif(not IS_PYTHONOCC, reason="Exact curve preservation is PythonOCC-specific.")
+@pytest.mark.pythonocc_only
 def test_native_remove_edge_preserves_surviving_arc_exactly():
     wire, arc, tail, _ = _arc_tail_wire()
     expected_length = Edge.Length(arc, mantissa=None, silent=True)
@@ -105,7 +105,7 @@ def test_native_remove_edge_preserves_surviving_arc_exactly():
     )
 
 
-@pytest.mark.skipif(not IS_PYTHONOCC, reason="Exact curve preservation is PythonOCC-specific.")
+@pytest.mark.pythonocc_only
 def test_native_remove_vertex_preserves_surviving_arc_exactly():
     wire, arc, tail, tail_end = _arc_tail_wire()
     expected_length = Edge.Length(arc, mantissa=None, silent=True)
@@ -126,7 +126,7 @@ def test_native_remove_vertex_preserves_surviving_arc_exactly():
     )
 
 
-@pytest.mark.skipif(not IS_PYTHONOCC, reason="Exact curved-surface preservation is PythonOCC-specific.")
+@pytest.mark.pythonocc_only
 def test_native_remove_face_preserves_cylindrical_surface_exactly():
     cell = Cell.Cylinder(
         radius=1.5,
@@ -168,7 +168,7 @@ def test_native_remove_face_preserves_cylindrical_surface_exactly():
     )
 
 
-@pytest.mark.skipif(not IS_PYTHONOCC, reason="PythonOCC lightweight Cluster fallback is backend-specific.")
+@pytest.mark.pythonocc_only
 def test_shapeless_cluster_falls_back_without_losing_surviving_curve():
     arc_a = Edge.Arc(
         radius=1.0,

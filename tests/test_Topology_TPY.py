@@ -382,10 +382,7 @@ def test_tpy_aperture_relationship_roundtrip(tmp_path):
     )
 
 
-@pytest.mark.skipif(
-    not IS_PYTHONOCC,
-    reason="Exact curve preservation is PythonOCC-specific.",
-)
+@pytest.mark.pythonocc_only
 def test_tpy_exact_arc_roundtrip(tmp_path):
     arc = Edge.Arc(
         radius=3.0,
@@ -439,10 +436,7 @@ def test_tpy_exact_arc_roundtrip(tmp_path):
     )
 
 
-@pytest.mark.skipif(
-    not IS_PYTHONOCC,
-    reason="Exact NURBS preservation is PythonOCC-specific.",
-)
+@pytest.mark.pythonocc_only
 def test_tpy_exact_nurbs_face_roundtrip(tmp_path):
     w = 1.0 / math.sqrt(2.0)
 

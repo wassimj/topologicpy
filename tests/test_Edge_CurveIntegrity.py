@@ -113,7 +113,7 @@ def test_normal_and_normaledge_use_local_curve_frame():
     assert _close(_xyz(Edge.StartVertex(nedge, silent=True)), _xyz(Edge.VertexByParameter(arc, 0.5, silent=True)))
 
 
-@pytest.mark.skipif(not IS_PYTHONOCC, reason="Exact curve reversal is not exposed by the TopologicCore Python API.")
+@pytest.mark.pythonocc_only
 def test_reverse_preserves_curved_geometry_and_orientation():
     arc = Edge.Arc(radius=3.0, fromAngle=20.0, toAngle=140.0, silent=True)
     rev = Edge.Reverse(arc, silent=True)
@@ -147,7 +147,7 @@ def test_vertex_by_distance_wraps_on_closed_circle():
     assert _close(_xyz(quarter), _xyz(expected), tol=5.0e-5)
 
 
-@pytest.mark.skipif(not IS_PYTHONOCC, reason="Exact curved-edge trimming is not exposed by the TopologicCore Python API.")
+@pytest.mark.pythonocc_only
 def test_distance_trim_preserves_arc_and_exact_remaining_length():
     arc = Edge.Arc(radius=2.0, fromAngle=0.0, toAngle=180.0, silent=True)
     original = Edge.Length(arc, mantissa=None, silent=True)
@@ -187,7 +187,7 @@ def test_length_none_returns_unrounded_float_and_direction_handles_closed_edge()
     assert Edge.Direction(circle, mantissa=None, silent=True) is None
 
 
-@pytest.mark.skipif(not IS_PYTHONOCC, reason="Native OCCT curve inspection is PythonOCC-specific.")
+@pytest.mark.pythonocc_only
 def test_pythonocc_special_curves_are_native_bspline_edges():
     from OCC.Core.BRepAdaptor import BRepAdaptor_Curve
     from OCC.Core.GeomAbs import GeomAbs_BSplineCurve

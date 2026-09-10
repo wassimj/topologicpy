@@ -40,7 +40,7 @@ def test_cell_volume_none_returns_unrounded_float():
     assert value > 0.0
 
 
-@pytest.mark.skipif(IS_PYTHONOCC, reason="TopologicCore capability guard only.")
+@pytest.mark.topologiccore_only
 def test_topologiccore_exact_cell_paths_are_explicitly_unsupported():
     assert Cell.Cylinder(radius=1.0, height=2.0, polyhedron=False, silent=True) is None
     assert Cell.Sphere(radius=1.0, polyhedron=False, silent=True) is None
@@ -49,7 +49,7 @@ def test_topologiccore_exact_cell_paths_are_explicitly_unsupported():
     assert Cell.ByWires([w0,w1], polyhedron=False, silent=True) is None
 
 
-@pytest.mark.skipif(not IS_PYTHONOCC, reason="Exact smooth Cell construction is PythonOCC-specific.")
+@pytest.mark.pythonocc_only
 def test_pythonocc_exact_cylinder_volume_and_curved_face():
     r,h=1.25,3.0
     cell=Cell.Cylinder(radius=r,height=h,polyhedron=False,silent=True)
@@ -58,7 +58,7 @@ def test_pythonocc_exact_cylinder_volume_and_curved_face():
     assert math.isclose(Cell.Volume(cell,mantissa=None,silent=True), math.pi*r*r*h, rel_tol=1e-8, abs_tol=1e-8)
 
 
-@pytest.mark.skipif(not IS_PYTHONOCC, reason="Exact smooth Cell construction is PythonOCC-specific.")
+@pytest.mark.pythonocc_only
 def test_pythonocc_exact_cone_frustum_volume():
     r1,r2,h=1.5,0.5,2.0
     cell=Cell.Cone(baseRadius=r1,topRadius=r2,height=h,polyhedron=False,silent=True)
@@ -67,7 +67,7 @@ def test_pythonocc_exact_cone_frustum_volume():
     assert math.isclose(Cell.Volume(cell,mantissa=None,silent=True),expected,rel_tol=1e-8,abs_tol=1e-8)
 
 
-@pytest.mark.skipif(not IS_PYTHONOCC, reason="Exact smooth Cell construction is PythonOCC-specific.")
+@pytest.mark.pythonocc_only
 def test_pythonocc_exact_sphere_volume_and_curved_face():
     r=1.3
     cell=Cell.Sphere(radius=r,polyhedron=False,silent=True)
@@ -76,7 +76,7 @@ def test_pythonocc_exact_sphere_volume_and_curved_face():
     assert math.isclose(Cell.Volume(cell,mantissa=None,silent=True),4.0*math.pi*r**3/3.0,rel_tol=1e-8,abs_tol=1e-8)
 
 
-@pytest.mark.skipif(not IS_PYTHONOCC, reason="Exact smooth Cell construction is PythonOCC-specific.")
+@pytest.mark.pythonocc_only
 def test_pythonocc_exact_torus_volume():
     R,r=2.0,0.5
     cell=Cell.Torus(majorRadius=R,minorRadius=r,polyhedron=False,silent=True)
@@ -85,7 +85,7 @@ def test_pythonocc_exact_torus_volume():
     assert math.isclose(Cell.Volume(cell,mantissa=None,silent=True),2.0*math.pi**2*R*r*r,rel_tol=1e-8,abs_tol=1e-8)
 
 
-@pytest.mark.skipif(not IS_PYTHONOCC, reason="Exact smooth Cell construction is PythonOCC-specific.")
+@pytest.mark.pythonocc_only
 def test_pythonocc_exact_capsule_volume():
     r,h=0.5,3.0
     cell=Cell.Capsule(radius=r,height=h,polyhedron=False,silent=True)
@@ -94,7 +94,7 @@ def test_pythonocc_exact_capsule_volume():
     assert math.isclose(Cell.Volume(cell,mantissa=None,silent=True),expected,rel_tol=1e-7,abs_tol=1e-7)
 
 
-@pytest.mark.skipif(not IS_PYTHONOCC, reason="Exact smooth Cell construction is PythonOCC-specific.")
+@pytest.mark.pythonocc_only
 def test_pythonocc_curve_preserving_cell_loft():
     r,h=1.0,2.0
     w0=_circle_wire(0.0,r)
@@ -105,7 +105,7 @@ def test_pythonocc_curve_preserving_cell_loft():
     assert math.isclose(Cell.Volume(cell,mantissa=None,silent=True),math.pi*r*r*h,rel_tol=1e-7,abs_tol=1e-7)
 
 
-@pytest.mark.skipif(not IS_PYTHONOCC, reason="Native thickening is PythonOCC-specific.")
+@pytest.mark.pythonocc_only
 def test_pythonocc_native_thickened_circular_face_preserves_curvature():
     r,t=1.0,0.75
     wire=_circle_wire(0.0,r)

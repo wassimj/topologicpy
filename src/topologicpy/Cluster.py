@@ -147,7 +147,6 @@ class Cluster():
             vertices.append(Vertex.ByCoordinates(x_return[i], y_return[i], z_return[i]))
         return Cluster.ByTopologies(vertices)
     
-
     @staticmethod
     def ByFunction(topologies: list,
                 function: Callable,
@@ -420,309 +419,6 @@ class Cluster():
                     )
 
         return cluster
-
-    # @staticmethod
-    # def Topologies(cluster, tolerance: float = 0.0001, silent: bool = False) -> list:
-    #     """
-    #     Returns the topologies of the input cluster.
-
-    #     Parameters
-    #     ----------
-    #     cluster : topologic_core.Cluster
-    #         The input cluster.
-    #     tolerance : float , optional
-    #         The desired tolerance. Default is 0.0001.
-    #     silent : bool , optional
-    #         If set to True, error and warning messages are suppressed. Default is False.
-
-    #     Returns
-    #     -------
-    #     list
-    #         The list of cellComplexes.
-
-    #     """
-    #     from topologicpy.Topology import Topology
-
-    #     if not Topology.IsInstance(cluster, "Cluster"):
-    #         if not silent:
-    #             print("Cluster.Topologies - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
-    #         return None
-    #     topologies = []
-    #     topologies.extend(Cluster.CellComplexes(cluster, silent=silent))
-    #     topologies.extend(Cluster.FreeCells(cluster, tolerance=tolerance, silent=silent))
-    #     topologies.extend(Cluster.FreeShells(cluster, tolerance=tolerance, silent=silent))
-    #     topologies.extend(Cluster.FreeFaces(cluster, tolerance=tolerance, silent=silent))
-    #     topologies.extend(Cluster.FreeWires(cluster, tolerance=tolerance, silent=silent))
-    #     topologies.extend(Cluster.FreeEdges(cluster, tolerance=tolerance, silent=silent))
-    #     topologies.extend(Cluster.FreeVertices(cluster, tolerance=tolerance, silent=silent))
-    #     return topologies
-
-    @staticmethod
-    def Topologies(
-        cluster,
-        tolerance: float = 0.0001,
-        silent: bool = False
-    ) -> list:
-        """
-        Returns the top-level constituent topologies of the input cluster.
-
-        Parameters
-        ----------
-        cluster : topologic_core.Cluster
-            The input cluster.
-        tolerance : float , optional
-            The desired tolerance. Default is 0.0001.
-        silent : bool , optional
-            If set to True, error and warning messages are suppressed.
-            Default is False.
-
-        Returns
-        -------
-        list
-            The list of top-level constituent topologies.
-        """
-        from topologicpy.Topology import Topology
-
-        if not Topology.IsInstance(cluster, "Cluster"):
-            if not silent:
-                print(
-                    "Cluster.Topologies - Error: The input cluster parameter "
-                    "is not a valid cluster. Returning None."
-                )
-            return None
-
-        # ------------------------------------------------------------------
-        # Native direct-constituent query.
-        #
-        # The backends expose slightly different calling conventions:
-        #
-        #     Topologies()
-        #     Topologies(output)
-        #     Topologies(None, output)
-        #
-        # Try all of them. Some bindings can accept a call but return only a
-        # partial result, so do not stop at the first non-empty result. Keep
-        # the most complete successful result instead.
-        # ------------------------------------------------------------------
-
-        candidates = []
-
-        def add_candidate(values):
-            if not isinstance(values, list):
-                return
-
-            values = [
-                topology
-                for topology in values
-                if Topology.IsInstance(
-                    topology,
-                    "Topology"
-                )
-            ]
-
-            if values:
-                candidates.append(
-                    values
-                )
-
-        # Python-style return-list convention.
-        try:
-            result = Core.InstanceCall(
-                cluster,
-                "Topologies"
-            )
-
-            add_candidate(
-                result
-            )
-
-        except Exception:
-            pass
-
-        # Topologic-style host + output convention.
-        try:
-            output = []
-
-            result = Core.InstanceCall(
-                cluster,
-                "Topologies",
-                None,
-                output
-            )
-
-            add_candidate(
-                output
-            )
-
-            add_candidate(
-                result
-            )
-
-        except Exception:
-            pass
-
-        # Alternative output-list convention.
-        try:
-            output = []
-
-            result = Core.InstanceCall(
-                cluster,
-                "Topologies",
-                output
-            )
-
-            add_candidate(
-                output
-            )
-
-            add_candidate(
-                result
-            )
-
-        except Exception:
-            pass
-
-        if candidates:
-            # Prefer the most complete direct query.
-            candidate = max(
-                candidates,
-                key=len
-            )
-
-            # Remove duplicate wrappers without changing order.
-            topologies = []
-
-            for topology in candidate:
-                duplicate = False
-
-                for existing in topologies:
-                    try:
-                        if Topology.IsSame(
-                            topology,
-                            existing
-                        ):
-                            duplicate = True
-                            break
-                    except Exception:
-                        if topology is existing:
-                            duplicate = True
-                            break
-
-                if not duplicate:
-                    topologies.append(
-                        topology
-                    )
-
-            if topologies:
-                return topologies
-
-        # ------------------------------------------------------------------
-        # Compatibility fallback.
-        #
-        # If the active backend does not provide a usable direct-constituent
-        # query, reconstruct the top-level set from free topologies.
-        # ------------------------------------------------------------------
-
-        topologies = []
-
-        try:
-            result = Cluster.CellComplexes(
-                cluster,
-                silent=True
-            ) or []
-
-            topologies.extend(
-                result
-            )
-        except Exception:
-            pass
-
-        try:
-            result = Cluster.FreeCells(
-                cluster,
-                tolerance=tolerance,
-                silent=True
-            ) or []
-
-            topologies.extend(
-                result
-            )
-        except Exception:
-            pass
-
-        try:
-            result = Cluster.FreeShells(
-                cluster,
-                tolerance=tolerance,
-                silent=True
-            ) or []
-
-            topologies.extend(
-                result
-            )
-        except Exception:
-            pass
-
-        try:
-            result = Cluster.FreeFaces(
-                cluster,
-                tolerance=tolerance,
-                silent=True
-            ) or []
-
-            topologies.extend(
-                result
-            )
-        except Exception:
-            pass
-
-        try:
-            result = Cluster.FreeWires(
-                cluster,
-                tolerance=tolerance,
-                silent=True
-            ) or []
-
-            topologies.extend(
-                result
-            )
-        except Exception:
-            pass
-
-        try:
-            result = Cluster.FreeEdges(
-                cluster,
-                tolerance=tolerance,
-                silent=True
-            ) or []
-
-            topologies.extend(
-                result
-            )
-        except Exception:
-            pass
-
-        try:
-            result = Cluster.FreeVertices(
-                cluster,
-                tolerance=tolerance,
-                silent=True
-            ) or []
-
-            topologies.extend(
-                result
-            )
-        except Exception:
-            pass
-
-        return [
-            topology
-            for topology in topologies
-            if Topology.IsInstance(
-                topology,
-                "Topology"
-            )
-        ]
         
     @staticmethod
     def CellComplexes(cluster, silent: bool = False) -> list:
@@ -1004,7 +700,6 @@ class Cluster():
             edges = None
         return edges
 
-
     @staticmethod
     def ExternalBoundary(cluster, silent: bool = False):
         """
@@ -1095,329 +790,6 @@ class Cluster():
                 print("Cluster.Faces - Error: Could not fetch faces. Returning None.")
             faces = None
         return faces
-
-    @staticmethod
-    def FreeCells(cluster, tolerance: float = 0.0001, silent: bool = False) -> list:
-        """
-        Returns the free cells of the input cluster that are not part of a higher topology.
-
-        Parameters
-        ----------
-        cluster : topologic_core.Cluster
-            The input cluster.
-        tolerance : float , optional
-            The desired tolerance. Default is 0.0001.
-        silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
-
-        Returns
-        -------
-        list
-            The list of free cells.
-
-        """
-        from topologicpy.CellComplex import CellComplex
-        from topologicpy.Topology import Topology
-
-        if not Topology.IsInstance(cluster, "Cluster"):
-            if not silent:
-                print("Cluster.FreeCells - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
-            return None
-        allCells = Cluster.Cells(cluster)
-        if len(allCells) < 1:
-            return []
-        allCellsCluster = Cluster.ByTopologies(allCells)
-        freeCells = []
-        cellComplexes = Cluster.CellComplexes(cluster)
-        cellComplexesCells = []
-        for cellComplex in cellComplexes:
-            tempCells = CellComplex.Cells(cellComplex)
-            cellComplexesCells += tempCells
-        if len(cellComplexesCells) == 0:
-            return allCells
-        cellComplexesCluster = Cluster.ByTopologies(cellComplexesCells)
-        resultingCluster = Topology.Difference(allCellsCluster, cellComplexesCluster, tolerance=tolerance)
-        if resultingCluster == None:
-            return []
-        if Topology.IsInstance(resultingCluster, "Cell"):
-            return [resultingCluster]
-        result = Topology.SubTopologies(resultingCluster, subTopologyType="cell")
-        if result == None:
-            return [] #Make sure you return an empty list instead of None
-        return result
-    
-    @staticmethod
-    def FreeShells(cluster, tolerance: float = 0.0001, silent: bool = False) -> list:
-        """
-        Returns the free shells of the input cluster that are not part of a higher topology.
-
-        Parameters
-        ----------
-        cluster : topologic_core.Cluster
-            The input cluster.
-        tolerance : float, optional
-            The desired tolerance. Default is 0.0001.
-        silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
-
-        Returns
-        -------
-        list
-            The list of free shells.
-
-        """
-        from topologicpy.Cell import Cell
-        from topologicpy.Topology import Topology
-
-        if not Topology.IsInstance(cluster, "Cluster"):
-            if not silent:
-                print("Cluster.FreeShells - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
-            return None
-        allShells = Cluster.Shells(cluster)
-        if len(allShells) < 1:
-            return []
-        allShellsCluster = Cluster.ByTopologies(allShells)
-        cells = Cluster.Cells(cluster)
-        cellsShells = []
-        for cell in cells:
-            tempShells = Cell.Shells(cell)
-            cellsShells += tempShells
-        if len(cellsShells) == 0:
-            return allShells
-        cellsCluster = Cluster.ByTopologies(cellsShells)
-        resultingCluster = Topology.Difference(allShellsCluster, cellsCluster, tolerance=tolerance)
-        if resultingCluster == None:
-            return []
-        if Topology.IsInstance(resultingCluster, "Shell"):
-            return [resultingCluster]
-        result = Topology.SubTopologies(resultingCluster, subTopologyType="shell")
-        if result == None:
-            return [] #Make sure you return an empty list instead of None
-        return result
-    
-    @staticmethod
-    def FreeFaces(cluster, tolerance: float = 0.0001, silent: bool = False) -> list:
-        """
-        Returns the free faces of the input cluster that are not part of a higher topology.
-
-        Parameters
-        ----------
-        cluster : topologic_core.Cluster
-            The input cluster.
-        tolerance : float , optional
-            The desired tolerance. Default is 0.0001.
-        silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
-
-        Returns
-        -------
-        list
-            The list of free faces.
-
-        """
-        from topologicpy.Shell import Shell
-        from topologicpy.Topology import Topology
-
-        if not Topology.IsInstance(cluster, "Cluster"):
-            if not silent:
-                print("Cluster.FreeFaces - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
-            return None
-        allFaces = Cluster.Faces(cluster)
-        if len(allFaces) < 1:
-            return []
-        allFacesCluster = Cluster.ByTopologies(allFaces)
-        shells = Cluster.Shells(cluster)
-        shellFaces = []
-        for shell in shells:
-            tempFaces = Shell.Faces(shell)
-            shellFaces += tempFaces
-        if len(shellFaces) == 0:
-            return allFaces
-        shellCluster = Cluster.ByTopologies(shellFaces)
-        resultingCluster = Topology.Difference(allFacesCluster, shellCluster, tolerance=tolerance)
-        if resultingCluster == None:
-            return []
-        if Topology.IsInstance(resultingCluster, "Face"):
-            return [resultingCluster]
-        result = Topology.SubTopologies(resultingCluster, subTopologyType="face")
-        if result == None:
-            return [] #Make sure you return an empty list instead of None
-        return result
-
-    @staticmethod
-    def FreeWires(cluster, tolerance: float = 0.0001, silent: bool = False) -> list:
-        """
-        Returns the free wires of the input cluster that are not part of a higher topology.
-
-        Parameters
-        ----------
-        cluster : topologic_core.Cluster
-            The input cluster.
-        tolerance : float , optional
-            The desired tolerance. Default is 0.0001.
-        silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
-
-        Returns
-        -------
-        list
-            The list of free wires.
-
-        """
-        from topologicpy.Face import Face
-        from topologicpy.Topology import Topology
-
-        if not Topology.IsInstance(cluster, "Cluster"):
-            if not silent:
-                print("Cluster.FreeWires - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
-            return None
-        allWires = Cluster.Wires(cluster)
-        if len(allWires) < 1:
-            return []
-        allWiresCluster = Cluster.ByTopologies(allWires)
-        faces = Cluster.Faces(cluster)
-        facesWires = []
-        for face in faces:
-            tempWires = Face.Wires(face)
-            facesWires += tempWires
-        if len(facesWires) == 0:
-            return allWires
-        facesCluster = Cluster.ByTopologies(facesWires)
-        resultingCluster = Topology.Difference(allWiresCluster, facesCluster, tolerance=tolerance)
-        if resultingCluster == None:
-            return []
-        if Topology.IsInstance(resultingCluster, "Wire"):
-            return [resultingCluster]
-        result = Topology.SubTopologies(resultingCluster, subTopologyType="wire")
-        if not result:
-            return [] #Make sure you return an empty list instead of None
-        return result
-    
-    @staticmethod
-    def FreeEdges(cluster, tolerance: float = 0.0001, silent: bool = False) -> list:
-        """
-        Returns the free edges of the input cluster that are not part of a higher topology.
-
-        Parameters
-        ----------
-        cluster : topologic_core.Cluster
-            The input cluster.
-        tolerance : float, optional
-            The desired tolerance. Default is 0.0001.
-        silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
-
-        Returns
-        -------
-        list
-            The list of free edges.
-
-        """
-        from topologicpy.Wire import Wire
-        from topologicpy.Topology import Topology
-
-        if not Topology.IsInstance(cluster, "Cluster"):
-            if not silent:
-                print("Cluster.FreeEdges - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
-            return None
-        allEdges = Cluster.Edges(cluster)
-        if len(allEdges) < 1:
-            return []
-        allEdgesCluster = Cluster.ByTopologies(allEdges)
-        wires = Cluster.Wires(cluster)
-        wireEdges = []
-        for wire in wires:
-            tempEdges = Wire.Edges(wire)
-            wireEdges += tempEdges
-        if len(wireEdges) == 0:
-            return allEdges
-        wireCluster = Cluster.ByTopologies(wireEdges)
-        resultingCluster = Topology.Difference(allEdgesCluster, wireCluster, tolerance=tolerance)
-        if resultingCluster == None:
-            return []
-        if Topology.IsInstance(resultingCluster, "Edge"):
-            return [resultingCluster]
-        result = Topology.SubTopologies(resultingCluster, subTopologyType="edge")
-        if result == None:
-            return [] #Make sure you return an empty list instead of None
-        return result
-    
-    @staticmethod
-    def FreeVertices(cluster, tolerance: float = 0.0001, silent: bool = False) -> list:
-        """
-        Returns the free vertices of the input cluster that are not part of a higher topology.
-
-        Parameters
-        ----------
-        cluster : topologic_core.Cluster
-            The input cluster.
-        tolerance : float , optional
-            The desired tolerance. Default is 0.0001.
-        silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
-
-        Returns
-        -------
-        list
-            The list of free vertices.
-
-        """
-        from topologicpy.Edge import Edge
-        from topologicpy.Topology import Topology
-
-        if not Topology.IsInstance(cluster, "Cluster"):
-            if not silent:
-                print("Cluster.FreeVertices - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
-            return None
-        allVertices = Topology.Vertices(cluster)
-        if len(allVertices) < 1:
-            return []
-        allVerticesCluster = Cluster.ByTopologies(allVertices)
-        edges = Topology.Edges(cluster)
-        edgesVertices = []
-        for edge in edges:
-            tempVertices = Topology.Vertices(edge)
-            edgesVertices += tempVertices
-        if len(edgesVertices) == 0:
-            return allVertices
-        edgesCluster = Cluster.ByTopologies(edgesVertices)
-        resultingCluster = Topology.Difference(allVerticesCluster, edgesCluster, tolerance=tolerance)
-        if Topology.IsInstance(resultingCluster, "Vertex"):
-            return [resultingCluster]
-        if resultingCluster == None:
-            return []
-        result = Topology.SubTopologies(resultingCluster, subTopologyType="vertex")
-        if result == None:
-            return [] #Make sure you return an empty list instead of None
-        return result
-    
-    @staticmethod
-    def FreeTopologies(cluster, tolerance: float = 0.0001) -> list:
-        """
-        Returns the free topologies of the input cluster that are not part of a higher topology.
-
-        Parameters
-        ----------
-        cluster : topologic_core.Cluster
-            The input cluster.
-        tolerance : float , optional
-            The desired tolerance. Default is 0.0001.
-
-        Returns
-        -------
-        list
-            The list of free topologies.
-
-        """
-        topologies = Cluster.FreeVertices(cluster, tolerance=tolerance)
-        topologies += Cluster.FreeEdges(cluster, tolerance=tolerance)
-        topologies += Cluster.FreeWires(cluster, tolerance=tolerance)
-        topologies += Cluster.FreeFaces(cluster, tolerance=tolerance)
-        topologies += Cluster.FreeShells(cluster, tolerance=tolerance)
-        topologies += Cluster.FreeCells(cluster, tolerance=tolerance)
-        topologies += Cluster.CellComplexes(cluster)
-
-        return topologies
     
     @staticmethod
     def HighestType(cluster) -> int:
@@ -1464,21 +836,21 @@ class Cluster():
 
     @staticmethod
     def KMeans(topologies,
-                selectors=None,
-                keys=["x", "y", "z"],
-                k=4,
-                maxIterations=100,
-                centroidKey="k_centroid",
-                distanceMeasure: str = "euclidean",   # "euclidean", "sqeuclidean", "manhattan", "chebyshev", "cosine", "mahalanobis"
-                init: str = "kmeans++",              # "kmeans++" or "random"
-                nInit: int = 10,                     # best-of-n restarts (like sklearn)
-                tol: float = 1e-6,                   # convergence tolerance on centroid shift
-                standardize: bool = False,           # z-score standardization
-                normalize: bool = False,             # L2-normalize rows (useful for cosine / spherical k-means)
-                randomSeed: int = None,
-                mantissa: int = 6,
-                tolerance: float = 0.0001,
-                silent: bool = False):
+               selectors=None,
+               keys=["x", "y", "z"],
+               k=4,
+               maxIterations=100,
+               centroidKey="k_centroid",
+               distanceMeasure: str = "euclidean",   # "euclidean", "sqeuclidean", "manhattan", "chebyshev", "cosine", "mahalanobis"
+               init: str = "kmeans++",              # "kmeans++" or "random"
+               nInit: int = 10,                     # best-of-n restarts (like sklearn)
+               tol: float = 1e-6,                   # convergence tolerance on centroid shift
+               standardize: bool = False,           # z-score standardization
+               normalize: bool = False,             # L2-normalize rows (useful for cosine / spherical k-means)
+               randomSeed: int = None,
+               mantissa: int = 6,
+               tolerance: float = 0.0001,
+               silent: bool = False):
         """
         Clusters the input topologies using K-Means-like clustering.
 
@@ -1611,6 +983,19 @@ class Cluster():
             return None
 
         distanceMeasure = (distanceMeasure or "euclidean").strip().lower()
+        valid_distance_measures = {
+            "euclidean", "sqeuclidean", "manhattan",
+            "chebyshev", "cosine", "mahalanobis"
+        }
+        if distanceMeasure not in valid_distance_measures:
+            if not silent:
+                print(
+                    "Cluster.KMeans - Error: distanceMeasure must be one of "
+                    "'euclidean', 'sqeuclidean', 'manhattan', 'chebyshev', "
+                    "'cosine', or 'mahalanobis'. Returning None."
+                )
+            return None
+
         init = (init or "kmeans++").strip().lower()
         if init not in ["kmeans++", "random"]:
             init = "kmeans++"
@@ -1720,8 +1105,9 @@ class Cluster():
                 # We'll precompute inv covariance in outer scope for speed.
                 raise RuntimeError("Internal: mahalanobis handled via whitening.")
 
-            # Fallback
-            return _pairwise_distances(Xa, C)
+            # Unreachable after validation above. Keep an explicit failure
+            # rather than recursively redispatching an unsupported metric.
+            raise ValueError(f"Unsupported distance measure: {distanceMeasure}")
 
         # Mahalanobis via whitening
         if distanceMeasure == "mahalanobis":
@@ -1910,74 +1296,6 @@ class Cluster():
         return t_clusters
 
     @staticmethod
-    def MergeCells(cells, tolerance=0.0001):
-        """
-        Creates a cluster that contains cellComplexes where it can create them plus any additional free cells.
-
-        Parameters
-        ----------
-        cells : list
-            The input list of cells.
-        tolerance : float , optional
-            The desired tolerance. Default is 0.0001.
-
-        Returns
-        -------
-        topologic_core.Cluster
-            The created cluster with merged cells as possible.
-
-        """
-
-        from topologicpy.CellComplex import CellComplex
-        from topologicpy.Topology import Topology
-
-        def find_cell_complexes(cells, adjacency_test, tolerance=0.0001):
-            cell_complexes = []
-            remaining_cells = set(cells)
-
-            def explore_complex(cell_complex, remaining, tolerance=0.0001):
-                new_cells = set()
-                for cell in remaining:
-                    if any(adjacency_test(cell, existing_cell, tolerance=tolerance) for existing_cell in cell_complex):
-                        new_cells.add(cell)
-                return new_cells
-
-            while remaining_cells:
-                current_cell = remaining_cells.pop()
-                current_complex = {current_cell}
-                current_complex.update(explore_complex(current_complex, remaining_cells, tolerance=tolerance))
-                cell_complexes.append(current_complex)
-                remaining_cells -= current_complex
-
-            return cell_complexes
-
-        # Example adjacency test function (replace this with your actual implementation)
-        def adjacency_test(cell1, cell2, tolerance=0.0001):
-            return Topology.IsInstance(Topology.Merge(cell1, cell2, tolerance=tolerance), "CellComplex")
-
-        if not isinstance(cells, list):
-            print("Cluster.MergeCells - Error: The input cells parameter is not a valid list of cells. Returning None.")
-            return None
-        #cells = [cell for cell in cells if Topology.IsInstance(cell, "Cell")]
-        if len(cells) < 1:
-            print("Cluster.MergeCells - Error: The input cells parameter does not contain any valid cells. Returning None.")
-            return None
-        
-        complexes = find_cell_complexes(cells, adjacency_test)
-        cellComplexes = []
-        cells = []
-        for aComplex in complexes:
-            aComplex = list(aComplex)
-            if len(aComplex) > 1:
-                cc = CellComplex.ByCells(aComplex, silent=True)
-                if Topology.IsInstance(cc, "CellComplex"):
-                    cellComplexes.append(cc)
-            elif len(aComplex) == 1:
-                if Topology.IsInstance(aComplex[0], "Cell"):
-                    cells.append(aComplex[0])
-        return Cluster.ByTopologies(cellComplexes+cells)
-    
-    @staticmethod
     def MysticRose(wire= None, origin= None, radius: float = 0.5, sides: int = 16, perimeter: bool = True, direction: list = [0, 0, 1], placement:str = "center", tolerance: float = 0.0001, silent: bool = False):
         """
         Creates a mystic rose.
@@ -2065,70 +1383,37 @@ class Cluster():
         return shells
 
     @staticmethod
-    def Simplify(cluster):
+    def Simplify(cluster, tolerance: float = 0.0001, silent: bool = False):
         """
-        Simplifies the input cluster if possible. For example, if the cluster contains only one cell, that cell is returned.
+        Simplifies a Cluster only when it has exactly one direct constituent.
+
+        This method deliberately does not infer redundancy from vertex counts or
+        geometric coincidence. A multi-member Cluster is returned unchanged.
 
         Parameters
         ----------
         cluster : topologic_core.Cluster
-            The input cluster.
+            The input Cluster.
+        tolerance : float, optional
+            Reserved for backend-neutral hierarchy queries. Default is 0.0001.
+        silent : bool, optional
+            If True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
-        topologic_core.Topology or list
-            The simplification of the cluster.
-
+        topologic_core.Topology or None
+            The sole constituent when there is exactly one; otherwise the input Cluster.
         """
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(cluster, "Cluster"):
-            print("Cluster.Simplify - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
+            if not silent:
+                print("Cluster.Simplify - Error: The input cluster parameter is not a valid Cluster. Returning None.")
             return None
-        resultingTopologies = []
-        topCC = Topology.CellComplexes(cluster)
-        topCells = Topology.Cells(cluster)
-        topShells = Topology.Shells(cluster)
-        topFaces = Topology.Faces(cluster)
-        topWires = Topology.Wires(cluster)
-        topEdges = Topology.Edges(cluster)
-        topVertices = Topology.Vertices(cluster)
-        if len(topCC) == 1:
-            cc = topCC[0]
-            ccVertices = Topology.Vertices(cc)
-            if len(topVertices) == len(ccVertices):
-                resultingTopologies.append(cc)
-        if len(topCC) == 0 and len(topCells) == 1:
-            cell = topCells[0]
-            ccVertices = Topology.Vertices(cell)
-            if len(topVertices) == len(ccVertices):
-                resultingTopologies.append(cell)
-        if len(topCC) == 0 and len(topCells) == 0 and len(topShells) == 1:
-            shell = topShells[0]
-            ccVertices = Topology.Vertices(shell)
-            if len(topVertices) == len(ccVertices):
-                resultingTopologies.append(shell)
-        if len(topCC) == 0 and len(topCells) == 0 and len(topShells) == 0 and len(topFaces) == 1:
-            face = topFaces[0]
-            ccVertices = Topology.Vertices(face)
-            if len(topVertices) == len(ccVertices):
-                resultingTopologies.append(face)
-        if len(topCC) == 0 and len(topCells) == 0 and len(topShells) == 0 and len(topFaces) == 0 and len(topWires) == 1:
-            wire = topWires[0]
-            ccVertices = Topology.Vertices(wire)
-            if len(topVertices) == len(ccVertices):
-                resultingTopologies.append(wire)
-        if len(topCC) == 0 and len(topCells) == 0 and len(topShells) == 0 and len(topFaces) == 0 and len(topWires) == 0 and len(topEdges) == 1:
-            edge = topEdges[0]
-            ccVertices = Topology.Vertices(edge)
-            if len(topVertices) == len(ccVertices):
-                resultingTopologies.append(edge)
-        if len(topCC) == 0 and len(topCells) == 0 and len(topShells) == 0 and len(topFaces) == 0 and len(topWires) == 0 and len(topEdges) == 0 and len(topVertices) == 1:
-            vertex = topVertices[0]
-            resultingTopologies.append(vertex)
-        if len(resultingTopologies) == 1:
-            return resultingTopologies[0]
-        return cluster
+        topologies = Cluster.Topologies(cluster, tolerance=tolerance, silent=True)
+        if topologies is None:
+            return None
+        return topologies[0] if len(topologies) == 1 else cluster
 
     @staticmethod
     def Tripod(size: float = 1.0,
@@ -2263,4 +1548,398 @@ class Cluster():
             wires = None
         return wires
 
-    
+    @staticmethod
+    def _Query(cluster, methodName: str, silent: bool = False):
+        """Executes a backend collection query and returns the most complete valid result."""
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(cluster, "Cluster"):
+            if not silent:
+                print(f"Cluster.{methodName} - Error: The input cluster parameter is not a valid Cluster. Returning None.")
+            return None
+
+        candidates = []
+
+        def add(values):
+            if not isinstance(values, list):
+                return
+            clean = [item for item in values if Topology.IsInstance(item, "Topology")]
+            if clean or len(values) == 0:
+                candidates.append(clean)
+
+        # Canonical host/output-list convention.
+        try:
+            output = []
+            result = Core.InstanceCall(cluster, methodName, None, output)
+            add(output)
+            add(result)
+        except Exception:
+            pass
+
+        # Alternative output-list convention used by some bindings.
+        try:
+            output = []
+            result = Core.InstanceCall(cluster, methodName, output)
+            add(output)
+            add(result)
+        except Exception:
+            pass
+
+        # Python-style return-list convention.
+        try:
+            result = Core.InstanceCall(cluster, methodName)
+            add(result)
+        except Exception:
+            pass
+
+        if not candidates:
+            if not silent:
+                print(f"Cluster.{methodName} - Error: Could not query the backend. Returning None.")
+            return None
+
+        # Some bindings accept more than one calling convention but return a
+        # partial result for one of them. Prefer the most complete result.
+        result = max(candidates, key=len)
+
+        unique = []
+        for topology in result:
+            if not any(Cluster._IsSame(topology, existing) for existing in unique):
+                unique.append(topology)
+        return unique
+
+    @staticmethod
+    def _IsSame(topologyA, topologyB) -> bool:
+        """Backend-neutral topology identity comparison."""
+        from topologicpy.Topology import Topology
+        try:
+            return bool(Topology.IsSame(topologyA, topologyB, silent=True))
+        except TypeError:
+            try:
+                return bool(Topology.IsSame(topologyA, topologyB))
+            except Exception:
+                return topologyA is topologyB
+        except Exception:
+            return topologyA is topologyB
+
+    @staticmethod
+    def _ReconstructTopologies(cluster, silent: bool = False):
+        """
+        Reconstructs direct/top-level Cluster constituents from descendant queries.
+
+        This is a hierarchy/identity operation only. It deliberately avoids
+        geometric Boolean subtraction, which can discard independent direct
+        constituents that merely intersect higher-dimensional members.
+        """
+        from topologicpy.Topology import Topology
+
+        type_methods = [
+            ("CellComplex", "CellComplexes", "cellcomplex"),
+            ("Cell", "Cells", "cell"),
+            ("Shell", "Shells", "shell"),
+            ("Face", "Faces", "face"),
+            ("Wire", "Wires", "wire"),
+            ("Edge", "Edges", "edge"),
+            ("Vertex", "Vertices", "vertex"),
+        ]
+
+        selected = []
+
+        for type_name, method_name, sub_type in type_methods:
+            candidates = Cluster._Query(cluster, method_name, silent=True)
+            if candidates is None:
+                continue
+
+            for candidate in candidates:
+                if not Topology.IsInstance(candidate, type_name):
+                    continue
+
+                contained = False
+                for parent in selected:
+                    try:
+                        descendants = Topology.SubTopologies(
+                            parent,
+                            subTopologyType=sub_type,
+                            silent=True,
+                        ) or []
+                    except TypeError:
+                        try:
+                            descendants = Topology.SubTopologies(
+                                parent,
+                                subTopologyType=sub_type,
+                            ) or []
+                        except Exception:
+                            descendants = []
+                    except Exception:
+                        descendants = []
+
+                    if any(
+                        Cluster._IsSame(candidate, descendant)
+                        for descendant in descendants
+                    ):
+                        contained = True
+                        break
+
+                if not contained and not any(
+                    Cluster._IsSame(candidate, item)
+                    for item in selected
+                ):
+                    selected.append(candidate)
+
+        return selected if selected else []
+
+    @staticmethod
+    def _DirectOfType(cluster, typeName: str, tolerance: float = 0.0001, silent: bool = False):
+        """Returns direct Cluster constituents of the requested Topologic type."""
+        from topologicpy.Topology import Topology
+
+        topologies = Cluster.Topologies(
+            cluster,
+            tolerance=tolerance,
+            silent=silent,
+        )
+        if topologies is None:
+            return None
+
+        return [
+            topology
+            for topology in topologies
+            if Topology.IsInstance(topology, typeName)
+        ]
+
+    @staticmethod
+    def Topologies(cluster, tolerance: float = 0.0001, silent: bool = False) -> list:
+        """
+        Returns the direct, top-level constituent Topologies of a Cluster.
+
+        The method compares the backend's direct query with a hierarchy-only
+        reconstruction and keeps the more complete valid result. This avoids
+        Boolean reconstruction and protects heterogeneous Clusters containing
+        intersecting but independent members.
+        """
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(cluster, "Cluster"):
+            if not silent:
+                print("Cluster.Topologies - Error: The input cluster parameter is not a valid Cluster. Returning None.")
+            return None
+
+        direct_candidates = []
+
+        def add(values):
+            if not isinstance(values, list):
+                return
+            clean = [
+                item
+                for item in values
+                if Topology.IsInstance(item, "Topology")
+            ]
+            direct_candidates.append(clean)
+
+        try:
+            output = []
+            result = Core.InstanceCall(cluster, "Topologies", None, output)
+            add(output)
+            add(result)
+        except Exception:
+            pass
+
+        try:
+            output = []
+            result = Core.InstanceCall(cluster, "Topologies", output)
+            add(output)
+            add(result)
+        except Exception:
+            pass
+
+        try:
+            add(Core.InstanceCall(cluster, "Topologies"))
+        except Exception:
+            pass
+
+        direct = max(direct_candidates, key=len) if direct_candidates else []
+        reconstructed = Cluster._ReconstructTopologies(cluster, silent=True)
+
+        # A direct backend query can legally return an empty list for an empty
+        # Cluster. Otherwise, prefer the more complete hierarchy-preserving view.
+        candidate = reconstructed if len(reconstructed) > len(direct) else direct
+
+        unique = []
+        for topology in candidate:
+            if not any(Cluster._IsSame(topology, existing) for existing in unique):
+                unique.append(topology)
+
+        return unique
+
+    @staticmethod
+    def FreeCells(cluster, tolerance: float = 0.0001, silent: bool = False) -> list:
+        """Returns direct Cell constituents of the input Cluster."""
+        return Cluster._DirectOfType(cluster, "Cell", tolerance=tolerance, silent=silent)
+
+    @staticmethod
+    def FreeShells(cluster, tolerance: float = 0.0001, silent: bool = False) -> list:
+        """Returns direct Shell constituents of the input Cluster."""
+        return Cluster._DirectOfType(cluster, "Shell", tolerance=tolerance, silent=silent)
+
+    @staticmethod
+    def FreeFaces(cluster, tolerance: float = 0.0001, silent: bool = False) -> list:
+        """Returns direct Face constituents of the input Cluster."""
+        return Cluster._DirectOfType(cluster, "Face", tolerance=tolerance, silent=silent)
+
+    @staticmethod
+    def FreeWires(cluster, tolerance: float = 0.0001, silent: bool = False) -> list:
+        """Returns direct Wire constituents of the input Cluster."""
+        return Cluster._DirectOfType(cluster, "Wire", tolerance=tolerance, silent=silent)
+
+    @staticmethod
+    def FreeEdges(cluster, tolerance: float = 0.0001, silent: bool = False) -> list:
+        """Returns direct Edge constituents of the input Cluster."""
+        return Cluster._DirectOfType(cluster, "Edge", tolerance=tolerance, silent=silent)
+
+    @staticmethod
+    def FreeVertices(cluster, tolerance: float = 0.0001, silent: bool = False) -> list:
+        """Returns direct Vertex constituents of the input Cluster."""
+        return Cluster._DirectOfType(cluster, "Vertex", tolerance=tolerance, silent=silent)
+
+    @staticmethod
+    def FreeTopologies(cluster, tolerance: float = 0.0001, silent: bool = False) -> list:
+        """
+        Returns direct constituent Topologies of the Cluster.
+
+        No geometric Boolean subtraction is used.
+        """
+        return Cluster.Topologies(
+            cluster,
+            tolerance=tolerance,
+            silent=silent,
+        )
+
+    @staticmethod
+    def MergeCells(cells, tolerance: float = 0.0001, silent: bool = False):
+        """
+        Groups face-adjacent Cells into connected CellComplex components.
+
+        Connectivity is transitive and is found with a complete breadth-first
+        traversal. Shared-Face identity is tried first; Topology.Merge is used
+        only as a compatibility fallback for independently constructed but
+        coincident Cells.
+        """
+        from collections import deque
+        from topologicpy.CellComplex import CellComplex
+        from topologicpy.Topology import Topology
+
+        if not isinstance(cells, list):
+            if not silent:
+                print("Cluster.MergeCells - Error: cells must be a valid list. Returning None.")
+            return None
+
+        valid_cells = [
+            cell
+            for cell in cells
+            if Topology.IsInstance(cell, "Cell")
+        ]
+        if len(valid_cells) != len(cells) or not valid_cells:
+            if not silent:
+                print("Cluster.MergeCells - Error: cells must contain one or more valid Cells only. Returning None.")
+            return None
+
+        try:
+            tolerance = abs(float(tolerance))
+        except Exception:
+            tolerance = 0.0001
+
+        adjacency_cache = {}
+
+        def adjacent(i, j):
+            key = (min(i, j), max(i, j))
+            if key in adjacency_cache:
+                return adjacency_cache[key]
+
+            cell_a = valid_cells[i]
+            cell_b = valid_cells[j]
+
+            shared = None
+            try:
+                shared = Topology.SharedFaces(cell_a, cell_b, silent=True)
+            except TypeError:
+                try:
+                    shared = Topology.SharedFaces(cell_a, cell_b)
+                except Exception:
+                    shared = None
+            except Exception:
+                shared = None
+
+            if shared:
+                adjacency_cache[key] = True
+                return True
+
+            try:
+                merged = Topology.Merge(
+                    cell_a,
+                    cell_b,
+                    tolerance=tolerance,
+                    silent=True,
+                )
+            except TypeError:
+                try:
+                    merged = Topology.Merge(
+                        cell_a,
+                        cell_b,
+                        tolerance=tolerance,
+                    )
+                except Exception:
+                    merged = None
+            except Exception:
+                merged = None
+
+            value = Topology.IsInstance(merged, "CellComplex")
+            adjacency_cache[key] = bool(value)
+            return bool(value)
+
+        remaining = set(range(len(valid_cells)))
+        components = []
+
+        while remaining:
+            seed = remaining.pop()
+            component = [seed]
+            queue = deque([seed])
+
+            while queue:
+                current = queue.popleft()
+                neighbours = [
+                    index
+                    for index in list(remaining)
+                    if adjacent(current, index)
+                ]
+
+                for index in neighbours:
+                    remaining.remove(index)
+                    component.append(index)
+                    queue.append(index)
+
+            components.append(component)
+
+        output = []
+
+        for component in components:
+            component_cells = [
+                valid_cells[index]
+                for index in component
+            ]
+
+            if len(component_cells) == 1:
+                output.append(component_cells[0])
+                continue
+
+            cell_complex = CellComplex.ByCells(
+                component_cells,
+                tolerance=tolerance,
+                silent=True,
+            )
+
+            if Topology.IsInstance(cell_complex, "CellComplex"):
+                output.append(cell_complex)
+            else:
+                # Never discard Cells when a backend cannot assemble a component.
+                output.extend(component_cells)
+
+        return Cluster.ByTopologies(output, silent=silent)

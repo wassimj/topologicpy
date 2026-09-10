@@ -132,7 +132,7 @@ def test_surface_query_validation_does_not_raise():
     assert Face.IsPlanar(None, silent=True) is None
 
 
-@pytest.mark.skipif(IS_PYTHONOCC, reason="TopologicCore capability guard is specific to the TopologicCore backend.")
+@pytest.mark.topologiccore_only
 def test_topologiccore_nurbs_surface_construction_is_explicitly_unsupported():
     cps = [
         [Vertex.ByCoordinates(0, 0, 0), Vertex.ByCoordinates(0, 1, 0)],
@@ -141,7 +141,7 @@ def test_topologiccore_nurbs_surface_construction_is_explicitly_unsupported():
     assert Face.ByNurbsParameters(cps, uDegree=1, vDegree=1, silent=True) is None
 
 
-@pytest.mark.skipif(not IS_PYTHONOCC, reason="Exact NURBS-surface construction is PythonOCC-specific.")
+@pytest.mark.pythonocc_only
 def test_pythonocc_planar_bspline_surface_is_exact_and_planar():
     cps = [
         [Vertex.ByCoordinates(0, 0, 0), Vertex.ByCoordinates(0, 2, 0)],
@@ -166,7 +166,7 @@ def test_pythonocc_planar_bspline_surface_is_exact_and_planar():
     assert BRepAdaptor_Surface(face.shape, True).GetType() == GeomAbs_BSplineSurface
 
 
-@pytest.mark.skipif(not IS_PYTHONOCC, reason="Exact rational NURBS-surface construction is PythonOCC-specific.")
+@pytest.mark.pythonocc_only
 def test_pythonocc_rational_quarter_cylinder_geometry_and_planarity():
     face = _quarter_cylinder_nurbs()
     assert Topology.IsInstance(face, "Face")
@@ -183,7 +183,7 @@ def test_pythonocc_rational_quarter_cylinder_geometry_and_planarity():
     assert math.isclose(uv[1], 0.5, abs_tol=3.0e-6)
 
 
-@pytest.mark.skipif(not IS_PYTHONOCC, reason="Native differential geometry of a NURBS surface is PythonOCC-specific.")
+@pytest.mark.pythonocc_only
 def test_pythonocc_quarter_cylinder_normal_tangents_and_curvature():
     face = _quarter_cylinder_nurbs()
     assert Topology.IsInstance(face, "Face")
@@ -214,7 +214,7 @@ def test_pythonocc_quarter_cylinder_normal_tangents_and_curvature():
     assert curvature["isUmbilic"] is False
 
 
-@pytest.mark.skipif(not IS_PYTHONOCC, reason="Curved local normal edge is PythonOCC-specific in this tranche.")
+@pytest.mark.pythonocc_only
 def test_pythonocc_normaledge_uses_local_surface_normal():
     face = _quarter_cylinder_nurbs()
     normal_edge = Face.NormalEdge(face, length=0.5, silent=True)

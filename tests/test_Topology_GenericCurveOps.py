@@ -71,7 +71,7 @@ def test_transform_preserves_arc_geometry_and_start_end_direction():
     assert all(abs(a-b) <= 2e-6 for a,b in zip(start, [10.0, 22.0, 5.0]))
 
 
-@pytest.mark.skipif(not IS_PYTHONOCC, reason="Exact NURBS surfaces are PythonOCC-specific.")
+@pytest.mark.pythonocc_only
 def test_transform_preserves_nurbs_surface_and_area():
     face = _quarter_cylinder_face()
     assert Topology.IsInstance(face, "Face")
@@ -95,7 +95,7 @@ def test_transform_preserves_nurbs_surface_and_area():
     )
 
 
-@pytest.mark.skipif(not IS_PYTHONOCC, reason="Curved native Geometry/MeshData validation is PythonOCC-specific.")
+@pytest.mark.pythonocc_only
 def test_geometry_and_meshdata_tessellate_curved_face_without_failure():
     face = _quarter_cylinder_face()
     assert Topology.IsInstance(face, "Face")
@@ -111,7 +111,7 @@ def test_geometry_and_meshdata_tessellate_curved_face_without_failure():
     assert isinstance(mesh.get("faces"), list) and len(mesh["faces"]) >= 1
 
 
-@pytest.mark.skipif(not IS_PYTHONOCC, reason="Curved native triangulation validation is PythonOCC-specific.")
+@pytest.mark.pythonocc_only
 def test_triangulate_curved_face_intentionally_returns_planar_triangles():
     face = _quarter_cylinder_face()
     result = Topology.Triangulate(face, silent=True)

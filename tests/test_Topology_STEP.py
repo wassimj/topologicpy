@@ -72,10 +72,7 @@ def test_generic_save_rejects_unregistered_extension(tmp_path):
     )
 
 
-@pytest.mark.skipif(
-    not IS_PYTHONOCC,
-    reason="STEP BRep exchange is PythonOCC-specific.",
-)
+@pytest.mark.pythonocc_only
 def test_step_roundtrip_preserves_exact_arc_geometry(tmp_path):
     edge = Edge.Arc(
         radius=3.0,
@@ -134,10 +131,7 @@ def test_step_roundtrip_preserves_exact_arc_geometry(tmp_path):
     )
 
 
-@pytest.mark.skipif(
-    not IS_PYTHONOCC,
-    reason="STEP BRep exchange is PythonOCC-specific.",
-)
+@pytest.mark.pythonocc_only
 def test_step_roundtrip_preserves_nurbs_surface(tmp_path):
     # Exact rational quarter-cylinder patch.
     w = 1.0 / math.sqrt(2.0)
@@ -229,10 +223,7 @@ def test_step_roundtrip_preserves_nurbs_surface(tmp_path):
     )
 
 
-@pytest.mark.skipif(
-    not IS_PYTHONOCC,
-    reason="STEP BRep exchange is PythonOCC-specific.",
-)
+@pytest.mark.pythonocc_only
 def test_generic_save_load_routes_step_codec(tmp_path):
     cell = Cell.Cylinder(
         radius=1.25,
@@ -285,10 +276,7 @@ def test_generic_save_load_routes_step_codec(tmp_path):
     assert len(curved_faces) >= 1
 
 
-@pytest.mark.skipif(
-    not IS_PYTHONOCC,
-    reason="STEP BRep exchange is PythonOCC-specific.",
-)
+@pytest.mark.pythonocc_only
 def test_step_overwrite_contract(tmp_path):
     face = Face.Rectangle(
         width=2.0,

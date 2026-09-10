@@ -97,10 +97,7 @@ def test_onface_planar_explicit_values():
     assert u == [0.25, 0.5, 0.75]
 
 
-@pytest.mark.skipif(
-    not IS_PYTHONOCC,
-    reason="Exact curved surface fixture requires PythonOCC.",
-)
+@pytest.mark.pythonocc_only
 def test_onface_auto_switches_to_surface_grid_on_cylinder():
     face = _cylinder_face()
     assert Topology.IsInstance(face, "Face")
@@ -121,10 +118,7 @@ def test_onface_auto_switches_to_surface_grid_on_cylinder():
     assert all(_value(e, "grid_geometry") == "isocurve" for e in edges)
 
 
-@pytest.mark.skipif(
-    not IS_PYTHONOCC,
-    reason="Exact NURBS surface fixture requires PythonOCC.",
-)
+@pytest.mark.pythonocc_only
 def test_onface_nurbs_grid_contains_exact_curved_isocurves():
     face = _nurbs_face()
     assert Topology.IsInstance(face, "Face")
@@ -145,10 +139,7 @@ def test_onface_nurbs_grid_contains_exact_curved_isocurves():
     assert all(_value(e, "grid_geometry") == "isocurve" for e in edges)
 
 
-@pytest.mark.skipif(
-    not IS_PYTHONOCC,
-    reason="Exact curved surface fixture requires PythonOCC.",
-)
+@pytest.mark.pythonocc_only
 def test_onface_forced_planar_rejects_curved_face():
     assert Grid.OnFace(
         _cylinder_face(),

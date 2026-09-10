@@ -84,7 +84,7 @@ def test_edge_circle_validates_inputs():
     assert Edge.Circle(tolerance=0.0, silent=True) is None
 
 
-@pytest.mark.skipif(not IS_PYTHONOCC, reason="Native OCCT curve-type inspection is PythonOCC-specific.")
+@pytest.mark.pythonocc_only
 def test_pythonocc_circle_is_native_occt_circle():
     circle = Edge.Circle(radius=2.5, silent=True)
     assert Topology.IsInstance(circle, "Edge")

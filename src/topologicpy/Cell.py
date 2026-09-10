@@ -1469,9 +1469,9 @@ class Cell():
         from topologicpy.Face import Face
         from topologicpy.Topology import Topology
 
-        if 2*thickness >= radius:
+        if thickness >= radius:
             if not silent:
-                print("Cell.CHS - Error: Twice the thickness value is larger than or equal to the width value. Returning None.")
+                print("Cell.CHS - Error: The thickness value is larger than or equal to the outer radius value. Returning None.")
             return None
         if origin == None:
             origin = Vertex.Origin()
@@ -1509,14 +1509,15 @@ class Cell():
             yOffset = -radius
             zOffset = -height*0.5
         return_cell = Topology.OrientAndPlace(return_cell,
-                                           originA=Vertex.ByCoordinates(xOffset, yOffset, zOffset),
-                                           originB=origin,
-                                           dirA=[0, 0, 1],
-                                           dirB=direction,
-                                           transferDictionaries = False,
-                                           tolerance = tolerance,
-                                           silent = silent)
+                                            originA=Vertex.ByCoordinates(xOffset, yOffset, zOffset),
+                                            originB=origin,
+                                            dirA=[0, 0, 1],
+                                            dirB=direction,
+                                            transferDictionaries = False,
+                                            tolerance = tolerance,
+                                            silent = silent)
         return return_cell
+
 
     @staticmethod
     def Compactness(cell, reference = "sphere", mantissa: int = 6) -> float:

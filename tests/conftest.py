@@ -68,6 +68,18 @@ def pytest_addoption(parser):
 
 
 def pytest_configure(config):
+    config.addinivalue_line(
+        "markers",
+        "pythonocc_only: test requires the PythonOCC backend",
+    )
+    config.addinivalue_line(
+        "markers",
+        "topologiccore_only: test requires the TopologicCore backend",
+    )
+    config.addinivalue_line(
+        "markers",
+        "stress: computational stress/regression test",
+    )
     requested = _requested_backend(config)
     available = _available_backends()
 
@@ -155,8 +167,19 @@ def _exceptions():
 
 
 def pytest_collection_modifyitems(config, items):
-    """Apply the small, explicit set of known backend-specific exceptions."""
+    """Apply backend capability markers and the explicit known-defect list."""
     backend = getattr(config, "_topologicpy_backend", None)
+
+    for item in items:
+        if item.get_closest_marker("pythonocc_only") is not None and backend != "pythonocc":
+            item.add_marker(
+                pytest.mark.skip(reason="[topologic_core] requires PythonOCC exact/native capability")
+            )
+        if item.get_closest_marker("topologiccore_only") is not None and backend != "topologic_core":
+            item.add_marker(
+                pytest.mark.skip(reason="[pythonocc] TopologicCore capability-contract test")
+            )
+
     rules = _exceptions().get(backend, {})
 
     for item in items:

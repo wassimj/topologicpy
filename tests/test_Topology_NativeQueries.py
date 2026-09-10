@@ -74,7 +74,7 @@ def test_isplanar_handles_faces_and_higher_dimensional_topologies():
     assert Topology.IsPlanar(cell, silent=True) is False
 
 
-@pytest.mark.skipif(not IS_PYTHONOCC, reason="Exact NURBS-surface construction is PythonOCC-specific.")
+@pytest.mark.pythonocc_only
 def test_isplanar_detects_actual_curved_surface():
     face = _quarter_cylinder_face()
     assert Topology.IsInstance(face, "Face")
@@ -82,7 +82,7 @@ def test_isplanar_detects_actual_curved_surface():
     assert Topology.IsPlanar(face, silent=True) is False
 
 
-@pytest.mark.skipif(not IS_PYTHONOCC, reason="Exact native curved Shell construction is PythonOCC-specific.")
+@pytest.mark.pythonocc_only
 def test_isplanar_detects_curved_shell_even_when_vertices_are_insufficient():
     e0 = Edge.Circle(radius=1.0, silent=True)
     e1 = Topology.Translate(e0, z=2.0, silent=True)
@@ -95,10 +95,7 @@ def test_isplanar_detects_curved_shell_even_when_vertices_are_insufficient():
     assert Topology.IsPlanar(shell, silent=True) is False
 
 
-@pytest.mark.skipif(
-    not IS_PYTHONOCC,
-    reason="Exact curved-geometry copy preservation is PythonOCC-specific."
-)
+@pytest.mark.pythonocc_only
 def test_copy_and_deepcopy_preserve_curved_edge_geometry_and_direction():
     arc = Edge.Arc(
         radius=3.0,
@@ -148,7 +145,7 @@ def test_copy_and_deepcopy_preserve_curved_edge_geometry_and_direction():
         )
 
 
-@pytest.mark.skipif(not IS_PYTHONOCC, reason="OCCT-shape round-trip inspection is PythonOCC-specific.")
+@pytest.mark.pythonocc_only
 def test_occt_shape_roundtrip_preserves_nurbs_surface():
     face = _quarter_cylinder_face(radius=1.5, height=2.25)
     assert Topology.IsInstance(face, "Face")
@@ -167,7 +164,7 @@ def test_occt_shape_roundtrip_preserves_nurbs_surface():
     )
 
 
-@pytest.mark.skipif(not IS_PYTHONOCC, reason="Shapeless Cluster OCCT behavior is PythonOCC-specific.")
+@pytest.mark.pythonocc_only
 def test_occtshape_of_lightweight_cluster_returns_none_without_restructuring_cluster():
     face = Face.Rectangle(silent=True)
     cluster = Cluster.ByTopologies([face], silent=True)

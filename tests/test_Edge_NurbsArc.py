@@ -171,7 +171,7 @@ def test_edge_arc_validates_inputs():
     assert Edge.Arc(tolerance=0.0, silent=True) is None
 
 
-@pytest.mark.skipif(not IS_PYTHONOCC, reason="Native OCCT curve-type inspection is PythonOCC-specific.")
+@pytest.mark.pythonocc_only
 def test_pythonocc_nurbs_and_arc_use_native_curve_types():
     nurbs = _quarter_circle_nurbs(2.0)
     arc = Edge.Arc(radius=2.0, fromAngle=0.0, toAngle=90.0, silent=True)

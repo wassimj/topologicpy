@@ -138,7 +138,7 @@ def test_remove_coplanar_faces_still_merges_adjacent_planar_faces():
     assert math.isclose(Face.Area(faces[0], mantissa=None, silent=True), 2.0, rel_tol=1e-6, abs_tol=1e-6)
 
 
-@pytest.mark.skipif(not IS_PYTHONOCC, reason="Exact curved Shell construction is PythonOCC-specific.")
+@pytest.mark.pythonocc_only
 def test_remove_coplanar_faces_preserves_and_unifies_cylindrical_surfaces():
     shell_a = Shell.ByWires(
         [_circle_wire(0.0), _circle_wire(1.0)],

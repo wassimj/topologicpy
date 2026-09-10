@@ -87,7 +87,7 @@ def test_open_vertices_of_open_linear_wire_are_endpoints():
     assert len(open_vertices) == 2
 
 
-@pytest.mark.skipif(not IS_PYTHONOCC, reason="Exact NURBS-surface construction is PythonOCC-specific.")
+@pytest.mark.pythonocc_only
 def test_internal_vertex_on_curved_nurbs_face_is_internal():
     face = _quarter_cylinder_face()
     assert Topology.IsInstance(face, "Face")
@@ -96,7 +96,7 @@ def test_internal_vertex_on_curved_nurbs_face_is_internal():
     assert Vertex.IsInternal(result, face, tolerance=1.0e-4, silent=True)
 
 
-@pytest.mark.skipif(not IS_PYTHONOCC, reason="Exact curved Shell construction is PythonOCC-specific.")
+@pytest.mark.pythonocc_only
 def test_open_edges_of_exact_cylindrical_shell_remain_curved():
     shell = Shell.ByWires(
         [_circle_wire(0.0, 1.0), _circle_wire(2.0, 1.0)],
@@ -111,7 +111,7 @@ def test_open_edges_of_exact_cylindrical_shell_remain_curved():
     assert all(Edge.IsLinear(edge, silent=True) is False for edge in open_edges)
 
 
-@pytest.mark.skipif(not IS_PYTHONOCC, reason="Exact curved-boundary inspection is PythonOCC-specific.")
+@pytest.mark.pythonocc_only
 def test_external_boundary_of_circular_face_preserves_circle():
     face = Face.ByWire(_circle_wire(0.0, 2.0), silent=True)
     assert Topology.IsInstance(face, "Face")
@@ -130,7 +130,7 @@ def test_external_boundary_of_circular_face_preserves_circle():
     )
 
 
-@pytest.mark.skipif(not IS_PYTHONOCC, reason="Native curve-to-topology distance query is PythonOCC-specific.")
+@pytest.mark.pythonocc_only
 def test_shortest_edge_to_circle_uses_actual_curve_not_topological_vertices():
     center = Vertex.ByCoordinates(0.0, 0.0, 0.0)
     circle = Edge.Circle(radius=2.5, silent=True)

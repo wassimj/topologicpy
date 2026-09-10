@@ -8407,7 +8407,7 @@ class Face():
         return return_faces
 
     @staticmethod
-    def TrimByWire(face, wire, reverse: bool = False):
+    def TrimByWire(face, wire, reverse: bool = False, tolerance: float = 0.0001, silent: bool = False):
         """
         Trims the input face by the input wire.
 
@@ -8416,26 +8416,49 @@ class Face():
         face : topologic_core.Face
             The input face.
         wire : topologic_core.Wire
-            The input wire.
+            The trimming wire.
         reverse : bool , optional
-            If set to True, the effect of the trim will be reversed. Default is False.
+            If True, the complementary part of the face is returned. Default is False.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
         topologic_core.Face
             The resulting trimmed face.
-
         """
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(face, "Face"):
+            if not silent:
+                print("Face.TrimByWire - Error: The input face parameter is not a valid face. Returning None.")
             return None
         if not Topology.IsInstance(wire, "Wire"):
             return face
-        trimmed_face = Core.FaceUtility.TrimByWire(face, wire, False)
+
+        if Face._UseNativeFaceBackend():
+            try:
+                result = Core.FaceUtility.TrimByWire(face, wire, reverse, tolerance)
+            except TypeError:
+                result = None
+            except Exception:
+                result = None
+            if Topology.IsInstance(result, "Face"):
+                return result
+
+        try:
+            trimmed = Core.FaceUtility.TrimByWire(face, wire, False)
+        except Exception:
+            trimmed = None
+        if not Topology.IsInstance(trimmed, "Face"):
+            if not silent:
+                print("Face.TrimByWire - Error: Could not trim the input face. Returning None.")
+            return None
         if reverse:
-            trimmed_face = Topology.Difference(face, trimmed_face)
-        return trimmed_face
+            trimmed = Topology.Difference(face, trimmed, tolerance=tolerance, silent=silent)
+        return trimmed
     
     @staticmethod
     def TShape(origin=None,

@@ -1,59 +1,119 @@
-# TopologicPy shared public API test suite
+# TopologicPy canonical test suite
 
-This is one backend-neutral public API test suite for TopologicPy.
+This directory is the single canonical public-API test suite for TopologicPy.
+It replaces both the former current and donor test trees.
 
-## Backend policy
+## Principles
 
-- The tests do **not** require `topologic_core` specifically.
-- The tests do **not** require PythonOCC specifically.
-- Plain `pytest` automatically selects an installed backend.
-- Automatic selection prefers `pythonocc-core`, then falls back to `topologic_core`.
-- If only one backend is installed, only that backend is used.
-- If both are installed, plain `pytest` uses PythonOCC; `run_backends.py` runs the same suite once against each installed backend in separate processes.
-- If a backend is requested explicitly but is not installed, pytest reports a clear configuration error rather than silently testing a different engine.
-- Backend-specific known defects are isolated in `backend_exceptions.json` rather than embedded in ordinary public API tests.
+1. **One suite, both backends.** The same tests are collected for PythonOCC and
+   TopologicCore. Backend-specific exact/native capabilities use centralized
+   markers rather than separate test trees.
+2. **Current API is authoritative.** Historical donor tests are retained only
+   when they still express a valid current contract.
+3. **No silent geometric approximation.** PythonOCC exact curve/NURBS tests
+   assert preservation of exact geometry. TopologicCore capability tests assert
+   explicit unsupported behavior where appropriate.
+4. **Public contracts first.** Tests should prefer TopologicPy public methods and
+   semantic/topological invariants over backend implementation details.
+5. **Regressions stay permanent.** The production-risk Slice, WireByPath,
+   shapeless-Cluster, periodic seam, native editing, STEP/TPY, and curved-grid
+   cases are retained explicitly.
 
-## Normal CI invocation
+## Backend selection
 
-If the CI environment contains one backend, this is sufficient:
-
-```bash
-python -m pytest tests -n auto
-```
-
-The installed engine is detected automatically.
-
-To run the shared suite against **every backend that is actually installed**:
+Plain pytest selects the first installed backend, preferring PythonOCC:
 
 ```bash
-python tests/run_backends.py -n auto
+python -m pytest tests
 ```
 
-A missing optional backend is reported as unavailable and skipped.
-
-## Explicit backend runs
-
-Use these only when CI intentionally provisions that backend:
+Run every installed backend in isolated subprocesses:
 
 ```bash
-python -m pytest tests --backend pythonocc -n auto
-python -m pytest tests --backend topologic_core -n auto
+python tests/run_backends.py
 ```
 
-or:
+Explicit runs:
 
 ```bash
-python tests/run_backends.py --only pythonocc -n auto
-python tests/run_backends.py --only topologic_core -n auto
+python -m pytest tests --backend pythonocc
+python -m pytest tests --backend topologic_core
 ```
 
-## Design rules
+`-n auto` may be added when pytest-xdist is installed.
 
-- One canonical set of public API tests.
-- No PythonOCC-specific test tree.
-- No TopologicCore-specific test tree.
-- No backend parity tests in the normal public API suite.
-- No direct tests of underscore-prefixed TopologicPy implementation helpers.
-- Public API tests should assert TopologicPy behaviour and topology semantics, not concrete backend object types.
-- Tests that modify `Core.SetBackend` are isolated; the selected session backend is restored after every test.
-- Frozen backend-specific exceptions live only in `backend_exceptions.json`.
+## Backend capability markers
+
+Use:
+
+```python
+@pytest.mark.pythonocc_only
+```
+
+for exact/native PythonOCC capability tests, and:
+
+```python
+@pytest.mark.topologiccore_only
+```
+
+for tests of an intentionally TopologicCore-specific fallback contract.
+
+Do not compute backend-specific `skipif` expressions at module import time.
+The root `conftest.py` applies these markers after backend selection, preventing
+collection-order/backend-environment errors.
+
+Known backend **defects**, as opposed to intentional capability differences,
+remain centralized in `backend_exceptions.json`.
+
+## Test layers
+
+- `test_<Module>.py`: broad public API contracts.
+- focused `*_Curve*`, `*_Native*`, `*_STEP`, `*_TPY`, `*_Tessellate`, and
+  `*_regressions` modules: high-value exactness/regression contracts.
+- `stress_tests/`: backend-neutral deterministic stress tests.
+
+## Donor decisions
+
+Restored from donor because broad coverage was missing:
+
+- Cell
+- Cluster
+- Shell
+- Topology
+- Plotly
+- CellComplex regressions
+- stress tests
+- advanced public STEP cases
+- high-level curved Wire constructors
+- selected Face curved operations
+- selected meshing regressions
+
+Deliberately not restored:
+
+- old `Grid.Square`, `Rectangular`, `ByDivisions`, `Structural`, `TileLayout`,
+  and `Vertices` tests: `Grid.OnFace` is now the only public Grid method;
+- `Edge.AdjacentEdges` donor test: that convenience API was intentionally not
+  restored;
+- old `SemanticManager` / `Content` tests: that architecture was intentionally
+  abandoned; current Topology/Aperture relationship tests are authoritative;
+- stale `Topology.RemoveCoplanarFaces(..., polyhedron=...)`: the public method
+  intentionally uses the mature shapeless-container-aware path and has no
+  `polyhedron` argument;
+- private STEP codec-helper tests and private mesh-helper implementation tests.
+
+## Critical permanent sentinels
+
+The suite must continue to protect:
+
+- `test_Topology_SliceGridRegression.py`;
+- `test_TGraph_WireByPathDirection.py`;
+- native RemoveEdges/RemoveVertices/RemoveFaces exactness;
+- periodic seam-aware OpenEdges;
+- curved/NURBS Face differential geometry and area;
+- exact curved Shell/Cell/CellComplex construction;
+- STEP exact BREP exchange;
+- TPY BREP + dictionary + Content/Aperture persistence;
+- `Grid.OnFace` exact surface isocurves under PythonOCC.
+
+The external production floor-plan Slice checkpoint remains **2184 Faces** and
+should be rerun manually at major topology-kernel milestones.

@@ -94,7 +94,7 @@ def test_bezier_validates_inputs():
     assert Edge.Bezier([p0, p1], tolerance=0.0, silent=True) is None
 
 
-@pytest.mark.skipif(not IS_PYTHONOCC, reason="Native OCCT curve-type inspection is PythonOCC-specific.")
+@pytest.mark.pythonocc_only
 def test_pythonocc_bezier_is_native_bspline_curve():
     from OCC.Core.BRepAdaptor import BRepAdaptor_Curve
     from OCC.Core.GeomAbs import GeomAbs_BSplineCurve

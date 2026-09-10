@@ -147,10 +147,7 @@ def test_tessellate_box_produces_surface_triangles_only():
     assert mesh["cells"] == []
 
 
-@pytest.mark.skipif(
-    not IS_PYTHONOCC,
-    reason="Exact curved tessellation is PythonOCC-specific.",
-)
+@pytest.mark.pythonocc_only
 def test_tessellate_exact_cylindrical_shell_preserves_curved_surface():
     c0 = Edge.Circle(
         radius=1.0,
@@ -231,10 +228,7 @@ def test_tessellate_exact_cylindrical_shell_preserves_curved_surface():
         )
 
 
-@pytest.mark.skipif(
-    not IS_PYTHONOCC,
-    reason="Exact curved tessellation is PythonOCC-specific.",
-)
+@pytest.mark.pythonocc_only
 def test_tessellate_welding_reduces_or_preserves_vertex_count():
     cell = Cell.Cylinder(
         radius=1.0,

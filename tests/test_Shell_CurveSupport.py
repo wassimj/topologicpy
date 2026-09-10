@@ -94,7 +94,7 @@ def test_topologiccore_exact_curve_preserving_loft_is_explicitly_unsupported():
     assert Shell.ByWires([w0, w1], polyhedron=False, silent=True) is None
 
 
-@pytest.mark.skipif(not IS_PYTHONOCC, reason="Exact ruled curve-preserving loft is PythonOCC-specific.")
+@pytest.mark.pythonocc_only
 def test_pythonocc_curve_preserving_circle_loft_is_nonplanar_and_exact_area():
     radius = 1.0
     height = 2.0
@@ -120,7 +120,7 @@ def test_pythonocc_curve_preserving_circle_loft_is_nonplanar_and_exact_area():
     assert len(curved) >= 2
 
 
-@pytest.mark.skipif(not IS_PYTHONOCC, reason="Exact ruled curve-preserving loft is PythonOCC-specific.")
+@pytest.mark.pythonocc_only
 def test_pythonocc_curve_preserving_loft_retains_radial_surface_geometry():
     radius = 1.5
     height = 3.0
@@ -136,7 +136,7 @@ def test_pythonocc_curve_preserving_loft_retains_radial_surface_geometry():
     assert 0.0 <= z <= height
 
 
-@pytest.mark.skipif(not IS_PYTHONOCC, reason="Exact ruled curve-preserving loft is PythonOCC-specific.")
+@pytest.mark.pythonocc_only
 def test_pythonocc_bywirescluster_forwards_curve_preserving_mode():
     w0 = _circle_wire(z=0.0, radius=1.0)
     w1 = _circle_wire(z=1.0, radius=1.0)
