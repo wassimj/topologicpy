@@ -275,91 +275,150 @@ class Cluster():
         return clusters
 
     @staticmethod
-    def ByTopologies(*topologies, transferDictionaries: bool = False, silent=False):
+    def ByTopologies(*topologies, transferDictionaries: bool = False, silent: bool = False):
         """
-        Creates a topologic Cluster from the input list of topologies. The input can be individual topologies each as an input argument or a list of topologies stored in one input argument.
+        Creates a topologic Cluster from the input topologies.
+
+        The input can be individual topologies supplied as separate arguments or
+        a list of topologies supplied as one argument.
+
+        If a single topology is supplied directly, that topology is returned
+        unchanged. If a list is supplied, a Cluster is created even when the list
+        contains only one valid topology.
 
         Parameters
         ----------
         *topologies : topologic_core.Topology
-            One or more instances of `topologic_core.Topology` to be processed.
+            One or more topologies, or a list of topologies, to be processed.
         transferDictionaries : bool , optional
-            If set to True, the dictionaries from the input topologies are merged and transferred to the cluster. Otherwise they are not. Default is False.
+            If set to True, the dictionaries from the input topologies are merged
+            and transferred to the resulting Cluster. Default is False.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
-        
+            If set to True, error and warning messages are suppressed.
+            Default is False.
+
         Returns
         -------
-        topologic_core.Cluster
-            The created topologic Cluster.
+        topologic_core.Topology
+            The created Cluster, or the original topology if a single topology
+            was supplied directly. Returns None if no valid topologies are found.
 
         """
         from topologicpy.Dictionary import Dictionary
-        from topologicpy.Topology import Topology
         from topologicpy.Helper import Helper
-        import inspect
-        
+        from topologicpy.Topology import Topology
+
         if len(topologies) == 0:
             if not silent:
-                print("Cluster.ByTopologies - Error: The input topologies parameter is an empty list. Returning None.")
-                print("Topologies:", topologies)
-                curframe = inspect.currentframe()
-                calframe = inspect.getouterframes(curframe, 2)
-                print('caller name:', calframe[1][3])
-                print('caller name:', calframe[1][2])
+                print("Cluster.ByTopologies - Error: No input topologies were provided. Returning None.")
             return None
+
+        # ------------------------------------------------------------------
+        # Preserve the historical singleton contract.
+        #
+        # Cluster.ByTopologies(face)
+        #     -> face
+        #
+        # Cluster.ByTopologies([face])
+        #     -> Cluster containing face
+        # ------------------------------------------------------------------
         if len(topologies) == 1:
-            topologies = topologies[0]
-            if isinstance(topologies, list):
-                if len(topologies) == 0:
-                    if not silent:
-                        print("Cluster.ByTopologies - Error: The input topologies parameter is an empty list. Returning None.")
-                        print("Topologies:", topologies)
-                        curframe = inspect.currentframe()
-                        calframe = inspect.getouterframes(curframe, 2)
-                        print('caller name:', calframe[1][3])
-                        print('caller name:', calframe[1][2])
-                    return None
-                else:
-                    topologyList = [x for x in topologies if Topology.IsInstance(x, "Topology")]
-                    if len(topologyList) == 0:
-                        if not silent:
-                            print("Cluster.ByTopologies - Error: The input topologies parameter does not contain any valid topologies. Returning None.")
-                            curframe = inspect.currentframe()
-                            calframe = inspect.getouterframes(curframe, 2)
-                            print('caller name:', calframe[1][3])
-                        return None
-            else:
+
+            item = topologies[0]
+
+            if not isinstance(item, list):
+                if Topology.IsInstance(item, "Topology"):
+                    return item
+
                 if not silent:
-                    print("Cluster.ByTopologies - Warning: The input topologies parameter contains only one topology. Returning the same topology.")
-                    curframe = inspect.currentframe()
-                    calframe = inspect.getouterframes(curframe, 2)
-                    print('caller name:', calframe[1][3])
-                return topologies
+                    print(
+                        "Cluster.ByTopologies - Error: "
+                        "The input parameter is not a valid topology. Returning None."
+                    )
+                return None
+
+            if len(item) == 0:
+                if not silent:
+                    print(
+                        "Cluster.ByTopologies - Error: "
+                        "The input topologies parameter is an empty list. Returning None."
+                    )
+                return None
+
+            topologyList = [
+                topology
+                for topology in item
+                if Topology.IsInstance(topology, "Topology")
+            ]
+
         else:
             topologyList = Helper.Flatten(list(topologies))
-            topologyList = [x for x in topologyList if Topology.IsInstance(x, "Topology")]
+            topologyList = [
+                topology
+                for topology in topologyList
+                if Topology.IsInstance(topology, "Topology")
+            ]
+
         if len(topologyList) == 0:
             if not silent:
-                print("Cluster.ByTopologies - Error: The input parameters do not contain any valid topologies. Returning None.")
-                curframe = inspect.currentframe()
-                calframe = inspect.getouterframes(curframe, 2)
-                print('caller name:', calframe[1][3])
+                print(
+                    "Cluster.ByTopologies - Error: "
+                    "The input parameters do not contain any valid topologies. "
+                    "Returning None."
+                )
             return None
-        cluster = Core.Cluster.ByTopologies(topologyList, False)
-        dictionaries = []
-        for t in topologyList:
-            d = Topology.Dictionary(t)
-            keys = Dictionary.Keys(d)
-            if isinstance(keys, list):
-                if len(keys) > 0:
-                    dictionaries.append(d)
-        if len(dictionaries) > 0:
-            if len(dictionaries) > 1:
-                d = Dictionary.ByMergedDictionaries(dictionaries, silent=silent)
-            else:
-                d = dictionaries[0]
-                cluster = Topology.SetDictionary(cluster, d)
+
+        try:
+            cluster = Core.Cluster.ByTopologies(topologyList, False)
+        except Exception as e:
+            if not silent:
+                print(
+                    "Cluster.ByTopologies - Error: "
+                    f"Could not create the Cluster. Returning None. ({e})"
+                )
+            return None
+
+        if not Topology.IsInstance(cluster, "Cluster"):
+            if not silent:
+                print(
+                    "Cluster.ByTopologies - Error: "
+                    "Could not create a valid Cluster. Returning None."
+                )
+            return None
+
+        # ------------------------------------------------------------------
+        # Transfer dictionaries only when explicitly requested.
+        # ------------------------------------------------------------------
+        if transferDictionaries:
+            dictionaries = []
+
+            for topology in topologyList:
+                dictionary = Topology.Dictionary(topology)
+
+                if dictionary is None:
+                    continue
+
+                keys = Dictionary.Keys(dictionary)
+
+                if isinstance(keys, list) and len(keys) > 0:
+                    dictionaries.append(dictionary)
+
+            if len(dictionaries) > 0:
+                if len(dictionaries) == 1:
+                    dictionary = dictionaries[0]
+                else:
+                    dictionary = Dictionary.ByMergedDictionaries(
+                        dictionaries,
+                        silent=silent
+                    )
+
+                if dictionary is not None:
+                    cluster = Topology.SetDictionary(
+                        cluster,
+                        dictionary,
+                        silent=silent
+                    )
+
         return cluster
 
     # @staticmethod

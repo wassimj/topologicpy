@@ -2742,6 +2742,224 @@ class Topology:
 
         return result
 
+    def RemoveCoplanarFacesNative(
+        self,
+        epsilon: float = 0.01,
+        polyhedron: bool = True,
+        tolerance: float = 0.0001,
+    ):
+        """
+        Removes redundant coplanar Face boundaries using
+        ShapeUpgrade_UnifySameDomain.
+
+        Parameters
+        ----------
+        epsilon : float , optional
+            Linear same-domain tolerance used when determining whether planar Faces
+            belong to the same plane. Default is 0.01.
+        polyhedron : bool , optional
+            If True, the input is assumed to contain planar Faces and the fast
+            native path is used directly. If False, every Edge belonging to a
+            non-planar Face is protected, preventing OCCT from merging curved,
+            analytic, Bezier, or BSpline/NURBS Faces. Default is True.
+        tolerance : float , optional
+            General linear tolerance. Default is 0.0001.
+
+        Returns
+        -------
+        tuple
+            ``(status, result)``.
+        """
+        type_name = (
+            _topology_type_name(self)
+            or ""
+        )
+
+        if type_name in (
+            "Vertex",
+            "Edge",
+            "Wire",
+            "Face",
+        ):
+            return True, self
+
+        shape = _shape_from_topology(self)
+
+        if _is_null_shape(shape):
+            return False, None
+
+        try:
+            epsilon = max(
+                abs(float(epsilon)),
+                1.0e-12,
+            )
+
+            tolerance = max(
+                abs(float(tolerance)),
+                1.0e-12,
+            )
+        except Exception:
+            return False, None
+
+        try:
+            from OCC.Core.BRepAdaptor import (
+                BRepAdaptor_Surface,
+            )
+            from OCC.Core.GeomAbs import (
+                GeomAbs_Plane,
+            )
+            from OCC.Core.ShapeUpgrade import (
+                ShapeUpgrade_UnifySameDomain,
+            )
+            from OCC.Core.TopTools import (
+                TopTools_MapOfShape,
+            )
+        except Exception:
+            return False, None
+
+        faces_before = (
+            _iter_occ_subshapes_unique(
+                shape,
+                TopAbs_FACE,
+            )
+            or []
+        )
+
+        if len(faces_before) < 2:
+            return True, self
+
+        try:
+            unifier = (
+                ShapeUpgrade_UnifySameDomain(
+                    shape,
+                    False,  # UnifyEdges
+                    True,   # UnifyFaces
+                    False,  # ConcatBSplines
+                )
+            )
+
+            unifier.SetSafeInputMode(
+                True
+            )
+
+            unifier.SetLinearTolerance(
+                max(
+                    epsilon,
+                    tolerance,
+                )
+            )
+
+            # ----------------------------------------------------------
+            # Curve/NURBS-preserving mode.
+            #
+            # Keep every Edge belonging to any non-planar Face. OCCT's
+            # KeepShape(edge) prevents the connected Faces from being
+            # unified across that Edge.
+            #
+            # A geometrically planar BSpline/NURBS Face is intentionally
+            # protected because its surface representation is still a
+            # BSpline surface rather than a Geom_Plane.
+            # ----------------------------------------------------------
+
+            if not bool(polyhedron):
+                protected_edges = (
+                    TopTools_MapOfShape()
+                )
+
+                for face_shape in faces_before:
+                    try:
+                        adaptor = (
+                            BRepAdaptor_Surface(
+                                topods_Face(
+                                    face_shape
+                                )
+                            )
+                        )
+
+                        is_plane = (
+                            adaptor.GetType()
+                            == GeomAbs_Plane
+                        )
+
+                    except Exception:
+                        is_plane = False
+
+                    if is_plane:
+                        continue
+
+                    face_edges = (
+                        _iter_occ_subshapes_unique(
+                            face_shape,
+                            TopAbs_EDGE,
+                        )
+                        or []
+                    )
+
+                    for edge_shape in face_edges:
+                        if protected_edges.Contains(
+                            edge_shape
+                        ):
+                            continue
+
+                        protected_edges.Add(
+                            edge_shape
+                        )
+
+                        unifier.KeepShape(
+                            edge_shape
+                        )
+
+            unifier.Build()
+
+            unified_shape = (
+                unifier.Shape()
+            )
+
+            if _is_null_shape(
+                unified_shape
+            ):
+                return False, None
+
+            faces_after = (
+                _iter_occ_subshapes_unique(
+                    unified_shape,
+                    TopAbs_FACE,
+                )
+                or []
+            )
+
+            if len(faces_after) >= len(
+                faces_before
+            ):
+                return True, self
+
+            result = Topology.ByOcctShape(unified_shape)
+            if result is None:
+                return False, None
+
+            try:
+                result.SetDictionary(Topology.GetDictionary(self))
+            except Exception:
+                try:
+                    result.dictionary = Topology.GetDictionary(self)
+                except Exception:
+                    pass
+
+            for attribute in ("contents", "contexts", "apertures"):
+                try:
+                    setattr(
+                        result,
+                        attribute,
+                        list(getattr(self, attribute, []) or []),
+                    )
+                except Exception:
+                    pass
+
+            return True, result
+
+        except Exception:
+            return False, None
+
     def Distance(
         self,
         otherTopology: Any,
@@ -5643,81 +5861,195 @@ class Topology:
     def RemoveCollinearEdgesNative(
         self,
         angTolerance: float = 0.1,
+        polyhedron: bool = True,
         tolerance: float = 0.0001,
     ):
         """
-        Conservative native collinear-edge removal.
+        Removes redundant collinear Edge boundaries using
+        ShapeUpgrade_UnifySameDomain.
+
+        Parameters
+        ----------
+        angTolerance : float , optional
+            Maximum angular deviation in degrees between linear Edges that may be
+            unified. Default is 0.1.
+        polyhedron : bool , optional
+            If True, the input is assumed to contain only linear Edge geometry and
+            the fast native path is used directly. If False, vertices incident to
+            curved Edges are protected so those curves cannot be merged or altered.
+            Default is True.
+        tolerance : float , optional
+            Linear tolerance used by OCCT when deciding whether Edge domains may be
+            unified. Default is 0.0001.
 
         Returns
         -------
         tuple
-            ``(status, result)``. ``status=False`` requests the public method
-            to use its legacy fallback.
-
-        Notes
-        -----
-        ShapeUpgrade_UnifySameDomain can also unify same-domain curved edges.
-        To preserve TopologicPy's "collinear" semantics, the native route is
-        used only when every OCCT edge is a straight line.
+            ``(status, result)``.
         """
-        type_name = _topology_type_name(self)
+        type_name = (
+            _topology_type_name(self)
+            or ""
+        )
 
-        if type_name in ("Vertex", "Edge"):
+        if type_name in (
+            "Vertex",
+            "Edge",
+        ):
             return True, self
 
-        # Preserve the mature Wire/Cluster/Aperture behavior. Edge unification
-        # is most useful and safest in BRep containers where face-edge
-        # incidence is explicit.
-        if type_name not in ("Face", "Shell", "Cell", "CellComplex"):
-            return False, None
-
         shape = _shape_from_topology(self)
+
         if _is_null_shape(shape):
             return False, None
 
         try:
-            from OCC.Core.BRepAdaptor import BRepAdaptor_Curve
-            from OCC.Core.GeomAbs import GeomAbs_Line
-            from OCC.Core.ShapeUpgrade import ShapeUpgrade_UnifySameDomain
-
-            edges = _iter_occ_subshapes_unique(shape, TopAbs_EDGE)
-            if not edges:
-                return True, self
-
-            for edge_shape in edges:
-                adaptor = BRepAdaptor_Curve(edge_shape)
-                if adaptor.GetType() != GeomAbs_Line:
-                    return False, None
-
-            unifier = ShapeUpgrade_UnifySameDomain(
-                shape,
-                True,   # UnifyEdges
-                False,  # UnifyFaces
-                False,  # ConcatBSplines
+            ang_tolerance = max(
+                abs(float(angTolerance)),
+                0.0,
             )
 
-            if hasattr(unifier, "SetLinearTolerance"):
-                unifier.SetLinearTolerance(
-                    max(abs(float(tolerance)), 1.0e-12)
-                )
+            tolerance = max(
+                abs(float(tolerance)),
+                1.0e-12,
+            )
+        except Exception:
+            return False, None
 
-            if hasattr(unifier, "SetAngularTolerance"):
-                unifier.SetAngularTolerance(
-                    math.radians(max(0.0, float(angTolerance)))
-                )
+        try:
+            from OCC.Core.BRepAdaptor import (
+                BRepAdaptor_Curve,
+            )
+            from OCC.Core.GeomAbs import (
+                GeomAbs_Line,
+            )
+            from OCC.Core.ShapeUpgrade import (
+                ShapeUpgrade_UnifySameDomain,
+            )
+            from OCC.Core.TopTools import (
+                TopTools_MapOfShape,
+            )
+        except Exception:
+            return False, None
 
-            unifier.Build()
-            unified_shape = unifier.Shape()
-
-            if _is_null_shape(unified_shape):
-                return False, None
-
-            unified_edges = _iter_occ_subshapes_unique(
-                unified_shape,
+        edges_before = (
+            _iter_occ_subshapes_unique(
+                shape,
                 TopAbs_EDGE,
             )
-            if len(unified_edges) >= len(edges):
+            or []
+        )
+
+        if len(edges_before) < 2:
+            return True, self
+
+        try:
+            unifier = (
+                ShapeUpgrade_UnifySameDomain(
+                    shape,
+                    True,   # UnifyEdges
+                    False,  # UnifyFaces
+                    False,  # ConcatBSplines
+                )
+            )
+
+            unifier.SetSafeInputMode(
+                True
+            )
+
+            unifier.SetLinearTolerance(
+                tolerance
+            )
+
+            unifier.SetAngularTolerance(
+                math.radians(
+                    ang_tolerance
+                )
+            )
+
+            # ----------------------------------------------------------
+            # Curve-preserving mode.
+            #
+            # Keep every vertex belonging to a non-linear Edge. OCCT's
+            # KeepShape(vertex) prevents connected Edges from being merged
+            # through that vertex.
+            #
+            # Thus:
+            #
+            # Line -- Line -- Arc -- Line -- Line
+            #
+            # can become:
+            #
+            # Line -------- Arc -------- Line
+            #
+            # while the Arc remains the exact original OCCT curve.
+            # ----------------------------------------------------------
+
+            if not bool(polyhedron):
+                protected_vertices = (
+                    TopTools_MapOfShape()
+                )
+
+                for edge_shape in edges_before:
+                    try:
+                        adaptor = BRepAdaptor_Curve(
+                            topods_Edge(edge_shape)
+                        )
+
+                        is_linear = (
+                            adaptor.GetType()
+                            == GeomAbs_Line
+                        )
+
+                    except Exception:
+                        is_linear = False
+
+                    if is_linear:
+                        continue
+
+                    vertices = (
+                        _iter_occ_subshapes_unique(
+                            edge_shape,
+                            TopAbs_VERTEX,
+                        )
+                        or []
+                    )
+
+                    for vertex_shape in vertices:
+                        if protected_vertices.Contains(
+                            vertex_shape
+                        ):
+                            continue
+
+                        protected_vertices.Add(
+                            vertex_shape
+                        )
+
+                        unifier.KeepShape(
+                            vertex_shape
+                        )
+
+            unifier.Build()
+
+            unified_shape = unifier.Shape()
+
+            if _is_null_shape(
+                unified_shape
+            ):
                 return False, None
+
+            edges_after = (
+                _iter_occ_subshapes_unique(
+                    unified_shape,
+                    TopAbs_EDGE,
+                )
+                or []
+            )
+
+            if len(edges_after) >= len(
+                edges_before
+            ):
+                return True, self
 
             result = Topology.ByOcctShape(unified_shape)
             if result is None:

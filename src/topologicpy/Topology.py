@@ -11259,12 +11259,678 @@ class Topology():
 
         return False
 
+    # @staticmethod
+    # def Decompose(
+    #     topology,
+    #     tiltAngle: float = 10.0,
+    #     tolerance: float = 0.0001,
+    #     silent: bool = False
+    # ) -> dict:
+    #     """
+    #     Decomposes the input topology into its logical components.
+
+    #     This method assumes:
+    #     1. The input topology is either a Cell, a CellComplex, or a Cluster
+    #     containing one or more Faces.
+    #     2. The positive Z direction [0, 0, 1] represents UP.
+
+    #     Parameters
+    #     ----------
+    #     topology : topologic_core.Topology
+    #         The input topology. This should be a Cell, CellComplex, or Cluster
+    #         containing one or more Faces.
+    #     tiltAngle : float , optional
+    #         The threshold tilt angle in degrees used to classify a Face as vertical,
+    #         horizontal, or inclined. The angle is measured from the nearest cardinal
+    #         direction. Default is 10.
+    #     tolerance : float , optional
+    #         The desired tolerance. Default is 0.0001.
+    #     silent : bool , optional
+    #         If set to True, error and warning messages are suppressed.
+    #         Default is False.
+
+    #     Returns
+    #     -------
+    #     dict
+    #         A dictionary containing the decomposed Cells, Faces, and Apertures.
+    #         The returned keys are:
+
+    #         - "cells"
+    #         - "externalVerticalFaces"
+    #         - "internalVerticalFaces"
+    #         - "topHorizontalFaces"
+    #         - "bottomHorizontalFaces"
+    #         - "internalHorizontalFaces"
+    #         - "externalInclinedFaces"
+    #         - "internalInclinedFaces"
+    #         - "externalVerticalApertures"
+    #         - "internalVerticalApertures"
+    #         - "topHorizontalApertures"
+    #         - "bottomHorizontalApertures"
+    #         - "internalHorizontalApertures"
+    #         - "externalInclinedApertures"
+    #         - "internalInclinedApertures"
+    #         - "freeVerticalFaces"
+    #         - "freeHorizontalFaces"
+    #         - "freeInclinedFaces"
+    #         - "freeVerticalApertures"
+    #         - "freeHorizontalApertures"
+    #         - "freeInclinedApertures"
+    #         - "verticalFaces"
+    #         - "horizontalFaces"
+    #         - "inclinedFaces"
+
+    #         Returns None if the input topology is invalid.
+    #     """
+    #     import math
+
+    #     from topologicpy.Vertex import Vertex
+    #     from topologicpy.Face import Face
+    #     from topologicpy.Topology import Topology
+
+    #     # -------------------------------------------------------------------------
+    #     # Validate input.
+    #     # -------------------------------------------------------------------------
+
+    #     if not Topology.IsInstance(topology, "topology"):
+    #         if not silent:
+    #             print(
+    #                 "Topology.Decompose - Error: "
+    #                 "The input topology parameter is not a valid topology. "
+    #                 "Returning None."
+    #             )
+    #         return None
+
+    #     topology_type = Topology.Type(topology)
+
+    #     if topology_type < 32:
+    #         if not silent:
+    #             print(
+    #                 "Topology.Decompose - Error: "
+    #                 "The input topology parameter is not a valid topologic Cell, "
+    #                 "CellComplex, or Cluster. Returning None."
+    #             )
+    #         return None
+
+    #     faces = Topology.Faces(topology, silent=True) or []
+
+    #     if len(faces) < 1:
+    #         if not silent:
+    #             print(
+    #                 "Topology.Decompose - Error: "
+    #                 "The input topology parameter does not contain any valid "
+    #                 "topologic Faces. Returning None."
+    #             )
+    #         return None
+
+    #     cells = Topology.Cells(topology, silent=True) or []
+
+    #     try:
+    #         tilt = abs(float(tiltAngle))
+    #     except Exception:
+    #         tilt = 10.0
+
+    #     try:
+    #         tol = abs(float(tolerance))
+    #     except Exception:
+    #         tol = 0.0001
+
+    #     # -------------------------------------------------------------------------
+    #     # Local aliases used repeatedly below.
+    #     # -------------------------------------------------------------------------
+
+    #     centroid_fn = Topology.Centroid
+    #     faces_fn = Topology.Faces
+    #     apertures_fn = Topology.Apertures
+    #     is_same_fn = Topology.IsSame
+    #     super_topologies_fn = Topology.SuperTopologies
+    #     coordinates_fn = Vertex.Coordinates
+    #     normal_fn = Face.Normal
+
+    #     # -------------------------------------------------------------------------
+    #     # Cache Face centroids.
+    #     #
+    #     # The original implementation computed every centroid once to obtain zMin
+    #     # and zMax, then recomputed selected Face centroids during classification.
+    #     # Here every Face centroid is calculated exactly once.
+    #     # -------------------------------------------------------------------------
+
+    #     centroid_xyz = []
+
+    #     for face in faces:
+    #         centroid = centroid_fn(face)
+
+    #         try:
+    #             xyz = coordinates_fn(
+    #                 centroid,
+    #                 outputType="xyz",
+    #                 mantissa=None,
+    #             )
+
+    #             centroid_xyz.append(
+    #                 (
+    #                     float(xyz[0]),
+    #                     float(xyz[1]),
+    #                     float(xyz[2]),
+    #                 )
+    #             )
+
+    #         except Exception:
+    #             # Preserve a robust fallback for older Vertex implementations.
+    #             centroid_xyz.append(
+    #                 (
+    #                     float(Vertex.X(centroid)),
+    #                     float(Vertex.Y(centroid)),
+    #                     float(Vertex.Z(centroid)),
+    #                 )
+    #             )
+
+    #     z_values = [xyz[2] for xyz in centroid_xyz]
+
+    #     z_min = min(z_values)
+    #     z_max = max(z_values)
+
+    #     # -------------------------------------------------------------------------
+    #     # Determine Face -> Cell incidence.
+    #     #
+    #     # The original method executes:
+    #     #
+    #     #     Topology.SuperTopologies(face, ..., topologyType="cell")
+    #     #
+    #     # for every Face. For large CellComplexes this repeatedly searches the same
+    #     # host topology.
+    #     #
+    #     # Instead:
+    #     #   1. extract the Cells once;
+    #     #   2. extract each Cell's Faces;
+    #     #   3. match those Faces to the already extracted host Faces;
+    #     #   4. count incidences.
+    #     #
+    #     # Object identity is attempted first and is essentially free.
+    #     #
+    #     # If a backend creates new wrapper objects for subtopologies, centroid
+    #     # buckets dramatically reduce the number of exact Topology.IsSame tests.
+    #     #
+    #     # If even one Cell Face cannot be matched, the method abandons the fast
+    #     # incidence result and falls back to SuperTopologies for all Faces. Thus the
+    #     # optimisation does not knowingly trade correctness for speed.
+    #     # -------------------------------------------------------------------------
+
+    #     face_count = len(faces)
+
+    #     if topology_type == 32:
+    #         # Every Face of a Cell is incident on exactly that Cell.
+    #         cell_counts = [1] * face_count
+
+    #     elif len(cells) == 0:
+    #         # A Cluster containing Faces but no Cells consists of free Faces.
+    #         cell_counts = [0] * face_count
+
+    #     else:
+    #         cell_counts = [0] * face_count
+
+    #         # Fastest possible lookup when the backend preserves wrapper identity.
+    #         face_by_identity = {
+    #             id(face): index
+    #             for index, face in enumerate(faces)
+    #         }
+
+    #         # Spatial buckets are used only as a candidate-generation mechanism.
+    #         # Topology.IsSame remains the final exact test.
+    #         bucket_size = max(tol, 1.0e-9)
+    #         inverse_bucket_size = 1.0 / bucket_size
+
+    #         def _bucket_key(x, y, z):
+    #             return (
+    #                 int(round(x * inverse_bucket_size)),
+    #                 int(round(y * inverse_bucket_size)),
+    #                 int(round(z * inverse_bucket_size)),
+    #             )
+
+    #         buckets = {}
+
+    #         for index, xyz in enumerate(centroid_xyz):
+    #             key = _bucket_key(
+    #                 xyz[0],
+    #                 xyz[1],
+    #                 xyz[2],
+    #             )
+
+    #             buckets.setdefault(key, []).append(index)
+
+    #         unmatched = False
+
+    #         for cell in cells:
+    #             cell_faces = faces_fn(
+    #                 cell,
+    #                 silent=True,
+    #             ) or []
+
+    #             for cell_face in cell_faces:
+
+    #                 # -------------------------------------------------------------
+    #                 # Fast path 1: identical Python wrapper.
+    #                 # -------------------------------------------------------------
+
+    #                 index = face_by_identity.get(
+    #                     id(cell_face)
+    #                 )
+
+    #                 if index is not None:
+    #                     cell_counts[index] += 1
+    #                     continue
+
+    #                 # -------------------------------------------------------------
+    #                 # Fast path 2: centroid bucket + exact IsSame.
+    #                 # -------------------------------------------------------------
+
+    #                 try:
+    #                     centroid = centroid_fn(cell_face)
+
+    #                     xyz = coordinates_fn(
+    #                         centroid,
+    #                         outputType="xyz",
+    #                         mantissa=None,
+    #                     )
+
+    #                     key = _bucket_key(
+    #                         float(xyz[0]),
+    #                         float(xyz[1]),
+    #                         float(xyz[2]),
+    #                     )
+
+    #                 except Exception:
+    #                     unmatched = True
+    #                     break
+
+    #                 matched = False
+
+    #                 # First test the exact bucket. This is overwhelmingly the
+    #                 # common case and avoids the 26 neighbouring lookups.
+    #                 candidates = buckets.get(
+    #                     key,
+    #                     ()
+    #                 )
+
+    #                 for candidate in candidates:
+    #                     try:
+    #                         same = is_same_fn(
+    #                             cell_face,
+    #                             faces[candidate],
+    #                             silent=True,
+    #                         )
+    #                     except TypeError:
+    #                         try:
+    #                             same = is_same_fn(
+    #                                 cell_face,
+    #                                 faces[candidate],
+    #                             )
+    #                         except Exception:
+    #                             same = False
+    #                     except Exception:
+    #                         same = False
+
+    #                     if same:
+    #                         cell_counts[candidate] += 1
+    #                         matched = True
+    #                         break
+
+    #                 # A centroid close to a quantisation boundary can fall into an
+    #                 # adjacent bucket despite representing the same topology.
+    #                 if not matched:
+    #                     kx, ky, kz = key
+
+    #                     for dx in (-1, 0, 1):
+    #                         if matched:
+    #                             break
+
+    #                         for dy in (-1, 0, 1):
+    #                             if matched:
+    #                                 break
+
+    #                             for dz in (-1, 0, 1):
+
+    #                                 if dx == 0 and dy == 0 and dz == 0:
+    #                                     continue
+
+    #                                 candidates = buckets.get(
+    #                                     (
+    #                                         kx + dx,
+    #                                         ky + dy,
+    #                                         kz + dz,
+    #                                     ),
+    #                                     (),
+    #                                 )
+
+    #                                 for candidate in candidates:
+    #                                     try:
+    #                                         same = is_same_fn(
+    #                                             cell_face,
+    #                                             faces[candidate],
+    #                                             silent=True,
+    #                                         )
+    #                                     except TypeError:
+    #                                         try:
+    #                                             same = is_same_fn(
+    #                                                 cell_face,
+    #                                                 faces[candidate],
+    #                                             )
+    #                                         except Exception:
+    #                                             same = False
+    #                                     except Exception:
+    #                                         same = False
+
+    #                                     if same:
+    #                                         cell_counts[candidate] += 1
+    #                                         matched = True
+    #                                         break
+
+    #                                 if matched:
+    #                                     break
+
+    #                 if not matched:
+    #                     unmatched = True
+    #                     break
+
+    #             if unmatched:
+    #                 break
+
+    #         # ---------------------------------------------------------------------
+    #         # Conservative correctness fallback.
+    #         # ---------------------------------------------------------------------
+
+    #         if unmatched:
+    #             cell_counts = []
+
+    #             for face in faces:
+    #                 super_cells = super_topologies_fn(
+    #                     face,
+    #                     hostTopology=topology,
+    #                     topologyType="cell",
+    #                 ) or []
+
+    #                 cell_counts.append(
+    #                     len(super_cells)
+    #                 )
+
+    #     # -------------------------------------------------------------------------
+    #     # Output containers.
+    #     # -------------------------------------------------------------------------
+
+    #     externalVerticalFaces = []
+    #     internalVerticalFaces = []
+
+    #     topHorizontalFaces = []
+    #     bottomHorizontalFaces = []
+    #     internalHorizontalFaces = []
+
+    #     externalInclinedFaces = []
+    #     internalInclinedFaces = []
+
+    #     externalVerticalApertures = []
+    #     internalVerticalApertures = []
+
+    #     topHorizontalApertures = []
+    #     bottomHorizontalApertures = []
+    #     internalHorizontalApertures = []
+
+    #     externalInclinedApertures = []
+    #     internalInclinedApertures = []
+
+    #     freeVerticalFaces = []
+    #     freeHorizontalFaces = []
+    #     freeInclinedFaces = []
+
+    #     freeVerticalApertures = []
+    #     freeHorizontalApertures = []
+    #     freeInclinedApertures = []
+
+    #     # -------------------------------------------------------------------------
+    #     # Face orientation classifier.
+    #     #
+    #     # This performs the same angular classification as the previous
+    #     # Face.Normal -> Vector.Angle -> round(..., 2) sequence, but avoids the
+    #     # additional Vector method call and its associated Python overhead.
+    #     # -------------------------------------------------------------------------
+
+    #     def _angle_code(face):
+
+    #         normal = normal_fn(face)
+
+    #         try:
+    #             nx = float(normal[0])
+    #             ny = float(normal[1])
+    #             nz = float(normal[2])
+
+    #             magnitude = math.sqrt(
+    #                 nx * nx +
+    #                 ny * ny +
+    #                 nz * nz
+    #             )
+
+    #             if magnitude <= 1.0e-15:
+    #                 return 3
+
+    #             cosine = nz / magnitude
+
+    #             if cosine > 1.0:
+    #                 cosine = 1.0
+    #             elif cosine < -1.0:
+    #                 cosine = -1.0
+
+    #             angle = round(
+    #                 math.degrees(
+    #                     math.acos(cosine)
+    #                 ),
+    #                 2,
+    #             )
+
+    #         except Exception:
+    #             return 3
+
+    #         if abs(angle - 90.0) < tilt:
+    #             return 0
+
+    #         if abs(angle) < tilt:
+    #             return 1
+
+    #         if abs(angle - 180.0) < tilt:
+    #             return 2
+
+    #         return 3
+
+    #     # -------------------------------------------------------------------------
+    #     # Classify Faces.
+    #     # -------------------------------------------------------------------------
+
+    #     for index, face in enumerate(faces):
+
+    #         code = _angle_code(face)
+    #         number_of_cells = cell_counts[index]
+    #         z = centroid_xyz[index][2]
+
+    #         # ---------------------------------------------------------------------
+    #         # Vertical.
+    #         # ---------------------------------------------------------------------
+
+    #         if code == 0:
+
+    #             if number_of_cells == 0:
+    #                 freeVerticalFaces.append(face)
+    #                 freeVerticalApertures.extend(
+    #                     apertures_fn(face) or []
+    #                 )
+
+    #             elif number_of_cells == 1:
+    #                 externalVerticalFaces.append(face)
+    #                 externalVerticalApertures.extend(
+    #                     apertures_fn(face) or []
+    #                 )
+
+    #             else:
+    #                 internalVerticalFaces.append(face)
+    #                 internalVerticalApertures.extend(
+    #                     apertures_fn(face) or []
+    #                 )
+
+    #         # ---------------------------------------------------------------------
+    #         # Horizontal, normal approximately +Z.
+    #         # ---------------------------------------------------------------------
+
+    #         elif code == 1:
+
+    #             if number_of_cells == 0:
+    #                 freeHorizontalFaces.append(face)
+    #                 freeHorizontalApertures.extend(
+    #                     apertures_fn(face) or []
+    #                 )
+
+    #             elif number_of_cells == 1:
+
+    #                 if abs(z - z_min) <= tol:
+    #                     bottomHorizontalFaces.append(face)
+    #                     bottomHorizontalApertures.extend(
+    #                         apertures_fn(face) or []
+    #                     )
+
+    #                 else:
+    #                     topHorizontalFaces.append(face)
+    #                     topHorizontalApertures.extend(
+    #                         apertures_fn(face) or []
+    #                     )
+
+    #             else:
+    #                 internalHorizontalFaces.append(face)
+    #                 internalHorizontalApertures.extend(
+    #                     apertures_fn(face) or []
+    #                 )
+
+    #         # ---------------------------------------------------------------------
+    #         # Horizontal, normal approximately -Z.
+    #         # ---------------------------------------------------------------------
+
+    #         elif code == 2:
+
+    #             if number_of_cells == 0:
+    #                 freeHorizontalFaces.append(face)
+    #                 freeHorizontalApertures.extend(
+    #                     apertures_fn(face) or []
+    #                 )
+
+    #             elif number_of_cells == 1:
+
+    #                 if abs(z - z_max) <= tol:
+    #                     topHorizontalFaces.append(face)
+    #                     topHorizontalApertures.extend(
+    #                         apertures_fn(face) or []
+    #                     )
+
+    #                 else:
+    #                     bottomHorizontalFaces.append(face)
+    #                     bottomHorizontalApertures.extend(
+    #                         apertures_fn(face) or []
+    #                     )
+
+    #             else:
+    #                 internalHorizontalFaces.append(face)
+    #                 internalHorizontalApertures.extend(
+    #                     apertures_fn(face) or []
+    #                 )
+
+    #         # ---------------------------------------------------------------------
+    #         # Inclined.
+    #         # ---------------------------------------------------------------------
+
+    #         else:
+
+    #             if number_of_cells == 0:
+    #                 freeInclinedFaces.append(face)
+    #                 freeInclinedApertures.extend(
+    #                     apertures_fn(face) or []
+    #                 )
+
+    #             elif number_of_cells == 1:
+    #                 externalInclinedFaces.append(face)
+    #                 externalInclinedApertures.extend(
+    #                     apertures_fn(face) or []
+    #                 )
+
+    #             else:
+    #                 internalInclinedFaces.append(face)
+    #                 internalInclinedApertures.extend(
+    #                     apertures_fn(face) or []
+    #                 )
+
+    #     # -------------------------------------------------------------------------
+    #     # Aggregate Face categories.
+    #     # -------------------------------------------------------------------------
+
+    #     verticalFaces = (
+    #         externalVerticalFaces +
+    #         internalVerticalFaces +
+    #         freeVerticalFaces
+    #     )
+
+    #     horizontalFaces = (
+    #         bottomHorizontalFaces +
+    #         topHorizontalFaces +
+    #         internalHorizontalFaces +
+    #         freeHorizontalFaces
+    #     )
+
+    #     inclinedFaces = (
+    #         externalInclinedFaces +
+    #         internalInclinedFaces +
+    #         freeInclinedFaces
+    #     )
+
+    #     # -------------------------------------------------------------------------
+    #     # Result.
+    #     # -------------------------------------------------------------------------
+
+    #     return {
+    #         "cells": cells,
+
+    #         "externalVerticalFaces": externalVerticalFaces,
+    #         "internalVerticalFaces": internalVerticalFaces,
+
+    #         "topHorizontalFaces": topHorizontalFaces,
+    #         "bottomHorizontalFaces": bottomHorizontalFaces,
+    #         "internalHorizontalFaces": internalHorizontalFaces,
+
+    #         "externalInclinedFaces": externalInclinedFaces,
+    #         "internalInclinedFaces": internalInclinedFaces,
+
+    #         "externalVerticalApertures": externalVerticalApertures,
+    #         "internalVerticalApertures": internalVerticalApertures,
+
+    #         "topHorizontalApertures": topHorizontalApertures,
+    #         "bottomHorizontalApertures": bottomHorizontalApertures,
+    #         "internalHorizontalApertures": internalHorizontalApertures,
+
+    #         "externalInclinedApertures": externalInclinedApertures,
+    #         "internalInclinedApertures": internalInclinedApertures,
+
+    #         "freeVerticalFaces": freeVerticalFaces,
+    #         "freeHorizontalFaces": freeHorizontalFaces,
+    #         "freeInclinedFaces": freeInclinedFaces,
+
+    #         "freeVerticalApertures": freeVerticalApertures,
+    #         "freeHorizontalApertures": freeHorizontalApertures,
+    #         "freeInclinedApertures": freeInclinedApertures,
+
+    #         "verticalFaces": verticalFaces,
+    #         "horizontalFaces": horizontalFaces,
+    #         "inclinedFaces": inclinedFaces,
+    #     }
+
     @staticmethod
     def Decompose(
         topology,
         tiltAngle: float = 10.0,
+        normalSpreadAngle: float = 30.0,
         tolerance: float = 0.0001,
-        silent: bool = False
+        silent: bool = False,
     ) -> dict:
         """
         Decomposes the input topology into its logical components.
@@ -11283,11 +11949,18 @@ class Topology():
             The threshold tilt angle in degrees used to classify a Face as vertical,
             horizontal, or inclined. The angle is measured from the nearest cardinal
             direction. Default is 10.
+        normalSpreadAngle : float , optional
+            The maximum angular deviation, in degrees, that sampled surface
+            normals may have from their mean normal before a non-planar Face is
+            classified as curved. Slightly curved Faces whose normals remain
+            coherent are still classified as vertical, horizontal, or inclined.
+            Default is 30.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
             If set to True, error and warning messages are suppressed.
             Default is False.
+        
 
         Returns
         -------
@@ -11375,6 +12048,16 @@ class Topology():
         except Exception:
             tol = 0.0001
 
+        try:
+            normal_spread = abs(float(normalSpreadAngle))
+        except Exception:
+            normal_spread = 30.0
+
+        if not math.isfinite(normal_spread):
+            normal_spread = 30.0
+
+        normal_spread = max(0.0, min(180.0, normal_spread))
+
         # -------------------------------------------------------------------------
         # Local aliases used repeatedly below.
         # -------------------------------------------------------------------------
@@ -11386,6 +12069,7 @@ class Topology():
         super_topologies_fn = Topology.SuperTopologies
         coordinates_fn = Vertex.Coordinates
         normal_fn = Face.Normal
+        normal_at_parameters_fn = Face.NormalAtParameters
 
         # -------------------------------------------------------------------------
         # Cache Face centroids.
@@ -11667,6 +12351,9 @@ class Topology():
         externalInclinedFaces = []
         internalInclinedFaces = []
 
+        externalCurvedFaces = []
+        internalCurvedFaces = []
+
         externalVerticalApertures = []
         internalVerticalApertures = []
 
@@ -11677,56 +12364,151 @@ class Topology():
         externalInclinedApertures = []
         internalInclinedApertures = []
 
+        externalCurvedApertures = []
+        internalCurvedApertures = []
+
         freeVerticalFaces = []
         freeHorizontalFaces = []
         freeInclinedFaces = []
+        freeCurvedFaces = []
 
         freeVerticalApertures = []
         freeHorizontalApertures = []
         freeInclinedApertures = []
+        freeCurvedApertures = []
 
         # -------------------------------------------------------------------------
         # Face orientation classifier.
         #
-        # This performs the same angular classification as the previous
-        # Face.Normal -> Vector.Angle -> round(..., 2) sequence, but avoids the
-        # additional Vector method call and its associated Python overhead.
+        # The previous implementation classified every Face from one normal at the
+        # parametric centre. That is fast and correct for planar Faces, but a curved
+        # surface can have a locally misleading centre normal.
+        #
+        # The revised classifier preserves the fast behaviour as much as possible:
+        #   1. evaluate the centre normal;
+        #   2. evaluate only two diagonal probe normals;
+        #   3. if those probes are effectively aligned with the centre normal,
+        #      classify immediately from the centre normal;
+        #   4. otherwise sample a 3 x 3 interior UV grid and calculate the mean
+        #      normal and its angular spread.
+        #
+        # A non-planar surface is still classified as vertical, horizontal, or
+        # inclined when its normals have a coherent overall direction. Only when
+        # the sampled normals deviate from their mean by more than
+        # normalSpreadAngle is the Face classified as curved.
+        #
+        # Codes:
+        #   0 = vertical
+        #   1 = horizontal, mean normal approximately +Z
+        #   2 = horizontal, mean normal approximately -Z
+        #   3 = inclined
+        #   4 = curved / no reliable overall orientation
         # -------------------------------------------------------------------------
 
-        def _angle_code(face):
-
-            normal = normal_fn(face)
-
+        def _unit_normal(normal):
             try:
                 nx = float(normal[0])
                 ny = float(normal[1])
                 nz = float(normal[2])
-
-                magnitude = math.sqrt(
-                    nx * nx +
-                    ny * ny +
-                    nz * nz
-                )
-
-                if magnitude <= 1.0e-15:
-                    return 3
-
-                cosine = nz / magnitude
-
-                if cosine > 1.0:
-                    cosine = 1.0
-                elif cosine < -1.0:
-                    cosine = -1.0
-
-                angle = round(
-                    math.degrees(
-                        math.acos(cosine)
-                    ),
-                    2,
-                )
-
             except Exception:
+                return None
+
+            magnitude = math.sqrt(nx * nx + ny * ny + nz * nz)
+
+            if not math.isfinite(magnitude) or magnitude <= 1.0e-15:
+                return None
+
+            return (
+                nx / magnitude,
+                ny / magnitude,
+                nz / magnitude,
+            )
+
+        def _normal_at(face, u=0.5, v=0.5):
+            # Use the backend utility directly first. This avoids the validation
+            # and formatting overhead of the public Face method inside the tight
+            # Decompose loop.
+            normal = None
+
+            try:
+                normal = Core.FaceUtility.NormalAtParameters(
+                    face,
+                    u,
+                    v,
+                    tol,
+                )
+            except TypeError:
+                try:
+                    normal = Core.FaceUtility.NormalAtParameters(
+                        face,
+                        u,
+                        v,
+                    )
+                except Exception:
+                    normal = None
+            except Exception:
+                normal = None
+
+            unit = _unit_normal(normal)
+
+            if unit is not None:
+                return unit
+
+            # Conservative public-API fallback for backends whose utility
+            # signature differs.
+            try:
+                normal = normal_at_parameters_fn(
+                    face,
+                    u=u,
+                    v=v,
+                    outputType="xyz",
+                    mantissa=None,
+                    tolerance=tol,
+                    silent=True,
+                )
+            except Exception:
+                normal = None
+
+            unit = _unit_normal(normal)
+
+            if unit is not None:
+                return unit
+
+            # Preserve the previous centre-normal fallback.
+            if abs(u - 0.5) <= 1.0e-12 and abs(v - 0.5) <= 1.0e-12:
+                try:
+                    return _unit_normal(normal_fn(face))
+                except Exception:
+                    pass
+
+            return None
+
+        def _angle_between(normal_a, normal_b):
+            dot = (
+                normal_a[0] * normal_b[0]
+                + normal_a[1] * normal_b[1]
+                + normal_a[2] * normal_b[2]
+            )
+
+            if dot > 1.0:
+                dot = 1.0
+            elif dot < -1.0:
+                dot = -1.0
+
+            return math.degrees(math.acos(dot))
+
+        def _code_from_normal(normal):
+            if normal is None:
                 return 3
+
+            nz = normal[2]
+
+            if nz > 1.0:
+                nz = 1.0
+            elif nz < -1.0:
+                nz = -1.0
+
+            angle = math.degrees(math.acos(nz))
 
             if abs(angle - 90.0) < tilt:
                 return 0
@@ -11738,6 +12520,93 @@ class Topology():
                 return 2
 
             return 3
+
+        def _angle_code(face):
+            centre = _normal_at(face, 0.5, 0.5)
+
+            if centre is None:
+                return 3
+
+            # Two inexpensive probes catch curvature in either parametric
+            # direction for the overwhelming majority of surfaces. If they agree
+            # closely with the centre normal, avoid the full sampling pass.
+            probe_points = (
+                (0.25, 0.25),
+                (0.75, 0.75),
+            )
+
+            probe_normals = []
+
+            for u, v in probe_points:
+                normal = _normal_at(face, u, v)
+                if normal is not None:
+                    probe_normals.append(normal)
+
+            # A very small angular variation is treated as effectively planar for
+            # classification purposes. This threshold is intentionally unrelated
+            # to tiltAngle and normalSpreadAngle.
+            probe_angle = 1.0
+
+            if len(probe_normals) == 2:
+                max_probe_deviation = max(
+                    _angle_between(centre, normal)
+                    for normal in probe_normals
+                )
+
+                if max_probe_deviation <= probe_angle:
+                    return _code_from_normal(centre)
+
+            # Surface is measurably non-planar or inconclusive. Sample an interior
+            # 3 x 3 grid. Interior parameters avoid trimmed-boundary singularities.
+            sample_parameters = (
+                0.15,
+                0.5,
+                0.85,
+            )
+
+            normals = []
+
+            for u in sample_parameters:
+                for v in sample_parameters:
+                    if abs(u - 0.5) <= 1.0e-12 and abs(v - 0.5) <= 1.0e-12:
+                        normal = centre
+                    else:
+                        normal = _normal_at(face, u, v)
+
+                    if normal is not None:
+                        normals.append(normal)
+
+            # If the backend cannot provide enough samples, preserve the previous
+            # behaviour rather than forcing the Face into the curved category.
+            if len(normals) < 3:
+                return _code_from_normal(centre)
+
+            sx = sum(normal[0] for normal in normals)
+            sy = sum(normal[1] for normal in normals)
+            sz = sum(normal[2] for normal in normals)
+
+            magnitude = math.sqrt(sx * sx + sy * sy + sz * sz)
+
+            # A near-zero resultant means the normals cancel each other and no
+            # meaningful overall orientation exists.
+            if magnitude <= 1.0e-12:
+                return 4
+
+            mean_normal = (
+                sx / magnitude,
+                sy / magnitude,
+                sz / magnitude,
+            )
+
+            max_deviation = max(
+                _angle_between(mean_normal, normal)
+                for normal in normals
+            )
+
+            if max_deviation > normal_spread:
+                return 4
+
+            return _code_from_normal(mean_normal)
 
         # -------------------------------------------------------------------------
         # Classify Faces.
@@ -11838,6 +12707,30 @@ class Topology():
                     )
 
             # ---------------------------------------------------------------------
+            # Curved / no reliable overall orientation.
+            # ---------------------------------------------------------------------
+
+            elif code == 4:
+
+                if number_of_cells == 0:
+                    freeCurvedFaces.append(face)
+                    freeCurvedApertures.extend(
+                        apertures_fn(face) or []
+                    )
+
+                elif number_of_cells == 1:
+                    externalCurvedFaces.append(face)
+                    externalCurvedApertures.extend(
+                        apertures_fn(face) or []
+                    )
+
+                else:
+                    internalCurvedFaces.append(face)
+                    internalCurvedApertures.extend(
+                        apertures_fn(face) or []
+                    )
+
+            # ---------------------------------------------------------------------
             # Inclined.
             # ---------------------------------------------------------------------
 
@@ -11884,6 +12777,12 @@ class Topology():
             freeInclinedFaces
         )
 
+        curvedFaces = (
+            externalCurvedFaces +
+            internalCurvedFaces +
+            freeCurvedFaces
+        )
+
         # -------------------------------------------------------------------------
         # Result.
         # -------------------------------------------------------------------------
@@ -11901,6 +12800,9 @@ class Topology():
             "externalInclinedFaces": externalInclinedFaces,
             "internalInclinedFaces": internalInclinedFaces,
 
+            "externalCurvedFaces": externalCurvedFaces,
+            "internalCurvedFaces": internalCurvedFaces,
+
             "externalVerticalApertures": externalVerticalApertures,
             "internalVerticalApertures": internalVerticalApertures,
 
@@ -11911,17 +12813,23 @@ class Topology():
             "externalInclinedApertures": externalInclinedApertures,
             "internalInclinedApertures": internalInclinedApertures,
 
+            "externalCurvedApertures": externalCurvedApertures,
+            "internalCurvedApertures": internalCurvedApertures,
+
             "freeVerticalFaces": freeVerticalFaces,
             "freeHorizontalFaces": freeHorizontalFaces,
             "freeInclinedFaces": freeInclinedFaces,
+            "freeCurvedFaces": freeCurvedFaces,
 
             "freeVerticalApertures": freeVerticalApertures,
             "freeHorizontalApertures": freeHorizontalApertures,
             "freeInclinedApertures": freeInclinedApertures,
+            "freeCurvedApertures": freeCurvedApertures,
 
             "verticalFaces": verticalFaces,
             "horizontalFaces": horizontalFaces,
             "inclinedFaces": inclinedFaces,
+            "curvedFaces": curvedFaces,
         }
 
     @staticmethod
@@ -16488,26 +17396,73 @@ class Topology():
         return None
 
     @staticmethod
-    def RemoveCollinearEdges(topology, angTolerance: float = 0.1, tolerance: float = 0.0001, silent: bool = False):
+    def RemoveCollinearEdges(topology, angTolerance: float = 0.1, polyhedron: bool = True, tolerance: float = 0.0001, silent: bool = False):
         """
         Removes collinear edges from the input topology.
 
-        On the PythonOCC backend, a conservative native fast path is attempted
-        for topologies whose edges are all linear. Unsupported or ambiguous
-        cases fall back to the preserved legacy implementation.
+        On PythonOCC, ``polyhedron=False`` protects curved Edges while still
+        allowing redundant adjacent linear Edges to be unified. On TopologicCore,
+        mixed curved/linear topology is conservatively left unchanged when
+        ``polyhedron=False`` because its legacy reconstruction path can flatten
+        curved geometry.
+
+        Parameters
+        ----------
+        topology : topologic_core.Topology
+            The input topology.
+        angTolerance : float , optional
+            The desired angular tolerance. Default is 0.1.
+        polyhedron : bool , optional
+            If True, the input is assumed to contain only linear Edge geometry.
+            If False, curved Edges are protected. Default is True.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        topologic_core.Topology
+            The input topology with redundant collinear Edges removed.
         """
-        if Topology.IsInstance(topology, "Topology"):
+        from topologicpy.Edge import Edge
+
+        if not Topology.IsInstance(topology, "Topology"):
+            if not silent:
+                print("Topology.RemoveCollinearEdges - Error: The input topology parameter is not a valid topology. Returning None.")
+            return None
+
+        if not isinstance(polyhedron, bool):
+            if not silent:
+                print("Topology.RemoveCollinearEdges - Error: The input polyhedron parameter is not a valid boolean. Returning None.")
+            return None
+
+        if not Topology._IsTopologicCoreBackend():
             try:
                 status, result = Core.InstanceCall(
                     topology,
                     "RemoveCollinearEdgesNative",
                     angTolerance,
+                    polyhedron,
                     tolerance,
                 )
                 if status is True:
                     return result
             except Exception:
                 pass
+
+            # Never drop into a reconstruction-based fallback after a failed
+            # curve-preserving request.
+            if polyhedron is False:
+                return topology
+
+        if Topology._IsTopologicCoreBackend() and polyhedron is False:
+            try:
+                for edge in Topology.Edges(topology) or []:
+                    if Edge.IsLinear(edge, silent=True) is not True:
+                        return topology
+            except Exception:
+                return topology
 
         return Topology._LegacyRemoveCollinearEdges_BackendV2(
             topology,
@@ -16684,6 +17639,7 @@ class Topology():
         -------
         topologic_core.Topology
             The input topology with adjacent coplanar faces merged.
+
         """
 
         if not Topology.IsInstance(
@@ -16745,7 +17701,7 @@ class Topology():
             return topology
 
         # ------------------------------------------------------------------
-        # Legacy TopologicCore implementation
+        # TopologicCore implementation
         # ------------------------------------------------------------------
 
         from topologicpy.Vertex import Vertex
