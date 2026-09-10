@@ -5647,7 +5647,87 @@ class Topology:
         return len(self.SuperTopologies(hostTopology, super_type) or [])
 
     def OpenEdgesNative(self):
-        return [e for e in (Topology.Edges(self) or []) if e.DegreeNative(self) < 2]
+        """
+        Returns the geometrically open boundary edges of this topology.
+
+        Periodic OCCT faces can contain seam edges. A seam edge may have only
+        one distinct adjacent Face while occurring twice on that Face with
+        opposite co-edge orientations. Such an edge is not a true open
+        boundary and is therefore excluded.
+
+        Returns
+        -------
+        list
+            The open boundary Edges.
+        """
+        edges = Topology.Edges(self) or []
+
+        if len(edges) == 0:
+            return []
+
+        try:
+            from OCC.Core.BRep import BRep_Tool
+            from OCC.Core.TopoDS import topods
+        except Exception:
+            return [
+                edge
+                for edge in edges
+                if edge.DegreeNative(self) < 2
+            ]
+
+        result = []
+
+        for edge in edges:
+            try:
+                degree = edge.DegreeNative(self)
+            except Exception:
+                degree = 0
+
+            if degree >= 2:
+                continue
+
+            is_seam = False
+
+            if degree == 1:
+                try:
+                    faces = edge.SuperTopologies(
+                        self,
+                        "Face"
+                    ) or []
+                except Exception:
+                    faces = []
+
+                edge_shape = getattr(
+                    edge,
+                    "shape",
+                    None
+                )
+
+                if edge_shape is not None:
+                    for face in faces:
+                        face_shape = getattr(
+                            face,
+                            "shape",
+                            None
+                        )
+
+                        if face_shape is None:
+                            continue
+
+                        try:
+                            if BRep_Tool.IsClosed(
+                                topods.Edge(edge_shape),
+                                topods.Face(face_shape)
+                            ):
+                                is_seam = True
+                                break
+                        except Exception:
+                            continue
+
+            if not is_seam:
+                result.append(edge)
+
+        return result
 
     def OpenFacesNative(self):
         return [f for f in (Topology.Faces(self) or []) if f.DegreeNative(self) < 1]

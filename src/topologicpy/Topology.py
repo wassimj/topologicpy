@@ -15013,18 +15013,76 @@ class Topology():
                     print("Topology.Inherit - Warning: Could not find a source for target number: "+str(i+1)+". Consider increasing the tolerance value.")
         return targets
 
+    # @staticmethod
+    # def InternalVertex(topology, timeout: int = 30, tolerance: float = 0.0001, silent: bool = False):
+    #     """
+    #     Returns a vertex guaranteed to be inside the input topology.
+
+    #     Parameters
+    #     ----------
+    #     topology : topologic_core.Topology
+    #         The input topology.
+    #     timeout : int , optional
+    #         The amount of seconds to wait before timing out. Default is 30 seconds.
+    #     tolerance : float , ptional
+    #         The desired tolerance. Default is 0.0001.
+    #     silent : bool , optional
+    #         If set to True, error and warning messages are suppressed. Default is False.
+
+    #     Returns
+    #     -------
+    #     topologic_core.Vertex
+    #         A vertex guaranteed to be inside the input topology.
+
+    #     """
+    #     import concurrent.futures
+    #     import time
+    #     # Wrapper function with timeout. The backend implementations
+    #     # (CellUtility/FaceUtility.InternalVertex) are synchronous and normally
+    #     # return in milliseconds; the original 30s cap fired spuriously under
+    #     # full-suite load (thread/GC contention during the ~2min run),
+    #     # returning None and breaking InternalVertex. Keep a generous floor
+    #     # to guard against genuine pathological-geometry hangs without
+    #     # penalising legitimate calls.
+    #     def run_with_timeout(func, topology, tolerance=0.0001, silent=False, timeout=300):
+    #         with concurrent.futures.ThreadPoolExecutor() as executor:
+    #             future = executor.submit(func, topology, tolerance=tolerance, silent=silent)
+    #             try:
+    #                 result = future.result(timeout=timeout)
+    #                 return result
+    #             except concurrent.futures.TimeoutError:
+    #                 return None
+
+    #     result = run_with_timeout(Topology._InternalVertex, topology=topology, tolerance=tolerance, silent=silent, timeout=max(timeout, 300))  # Generous floor; caller may still lower it
+    #     if result is None:
+    #         # Handle failure case (e.g., try a different solution)
+    #         if not silent:
+    #             print("Topology.InternalVertex - Warning: Operation took too long. Returning None")
+    #         return None
+    #     return result
+
     @staticmethod
-    def InternalVertex(topology, timeout: int = 30, tolerance: float = 0.0001, silent: bool = False):
+    def InternalVertex(
+        topology,
+        timeout: int = 30,
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
         """
-        Returns a vertex guaranteed to be inside the input topology.
+        Returns a vertex guaranteed to be internal to the input topology.
+
+        The timeout parameter is retained for backward API compatibility but is
+        not used. Python threads cannot safely interrupt a blocking topology-kernel
+        operation; the previous thread-based timeout therefore did not provide a
+        reliable hard timeout.
 
         Parameters
         ----------
         topology : topologic_core.Topology
             The input topology.
         timeout : int , optional
-            The amount of seconds to wait before timing out. Default is 30 seconds.
-        tolerance : float , ptional
+            Retained for backward compatibility. It has no effect. Default is 30.
+        tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
@@ -15032,33 +15090,57 @@ class Topology():
         Returns
         -------
         topologic_core.Vertex
-            A vertex guaranteed to be inside the input topology.
-
+            An internal Vertex, or None if one cannot be computed.
         """
-        import concurrent.futures
-        import time
-        # Wrapper function with timeout. The backend implementations
-        # (CellUtility/FaceUtility.InternalVertex) are synchronous and normally
-        # return in milliseconds; the original 30s cap fired spuriously under
-        # full-suite load (thread/GC contention during the ~2min run),
-        # returning None and breaking InternalVertex. Keep a generous floor
-        # to guard against genuine pathological-geometry hangs without
-        # penalising legitimate calls.
-        def run_with_timeout(func, topology, tolerance=0.0001, silent=False, timeout=300):
-            with concurrent.futures.ThreadPoolExecutor() as executor:
-                future = executor.submit(func, topology, tolerance=tolerance, silent=silent)
-                try:
-                    result = future.result(timeout=timeout)
-                    return result
-                except concurrent.futures.TimeoutError:
-                    return None
-
-        result = run_with_timeout(Topology._InternalVertex, topology=topology, tolerance=tolerance, silent=silent, timeout=max(timeout, 300))  # Generous floor; caller may still lower it
-        if result is None:
-            # Handle failure case (e.g., try a different solution)
+        if not Topology.IsInstance(topology, "Topology"):
             if not silent:
-                print("Topology.InternalVertex - Warning: Operation took too long. Returning None")
+                print(
+                    "Topology.InternalVertex - Error: The input topology parameter "
+                    "is not a valid topology. Returning None."
+                )
             return None
+
+        try:
+            tolerance = abs(float(tolerance))
+        except Exception:
+            if not silent:
+                print(
+                    "Topology.InternalVertex - Error: The tolerance parameter is "
+                    "not a valid number. Returning None."
+                )
+            return None
+
+        if tolerance <= 0.0:
+            if not silent:
+                print(
+                    "Topology.InternalVertex - Error: The tolerance parameter must "
+                    "be greater than zero. Returning None."
+                )
+            return None
+
+        try:
+            result = Topology._InternalVertex(
+                topology,
+                tolerance=tolerance,
+                silent=True,
+            )
+        except Exception as error:
+            if not silent:
+                print(
+                    "Topology.InternalVertex - Error: Could not compute an internal "
+                    "vertex. Returning None."
+                )
+                print("Error:", error)
+            return None
+
+        if not Topology.IsInstance(result, "Vertex"):
+            if not silent:
+                print(
+                    "Topology.InternalVertex - Error: Could not compute an internal "
+                    "vertex. Returning None."
+                )
+            return None
+
         return result
 
     @staticmethod

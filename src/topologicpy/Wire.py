@@ -7605,19 +7605,71 @@ class Wire():
         from topologicpy.Topology import Topology
 
         def perpendicular_distance(point, line_start, line_end):
-            # Calculate the perpendicular distance from a point to a line segment
-            x0 = Vertex.X(point)
-            y0 = Vertex.Y(point)
-            x1 = Vertex.X(line_start)
-            y1 = Vertex.Y(line_start)
-            x2 = Vertex.X(line_end)
-            y2 = Vertex.Y(line_end)
+            """
+            Returns the perpendicular distance from a point to the infinite
+            line defined by line_start and line_end.
 
-            numerator = abs((y2 - y1) * x0 - (x2 - x1) * y0 + x2 * y1 - y2 * x1)
-            denominator = Vertex.Distance(line_start, line_end)
+            If the two line vertices are coincident, the distance to the
+            coincident point is returned instead.
+            """
+            import math
+
+            p = Vertex.Coordinates(
+                point,
+                mantissa=None
+            )
+            a = Vertex.Coordinates(
+                line_start,
+                mantissa=None
+            )
+            b = Vertex.Coordinates(
+                line_end,
+                mantissa=None
+            )
+
+            if p is None or a is None or b is None:
+                return float("inf")
+
+            ab = [
+                b[0] - a[0],
+                b[1] - a[1],
+                b[2] - a[2],
+            ]
+
+            ap = [
+                p[0] - a[0],
+                p[1] - a[1],
+                p[2] - a[2],
+            ]
+
+            denominator = math.sqrt(
+                ab[0] * ab[0]
+                + ab[1] * ab[1]
+                + ab[2] * ab[2]
+            )
+
+            # Degenerate baseline: treat it as a point.
+            if denominator <= 1.0e-12:
+                return math.sqrt(
+                    ap[0] * ap[0]
+                    + ap[1] * ap[1]
+                    + ap[2] * ap[2]
+                )
+
+            cross = [
+                ap[1] * ab[2] - ap[2] * ab[1],
+                ap[2] * ab[0] - ap[0] * ab[2],
+                ap[0] * ab[1] - ap[1] * ab[0],
+            ]
+
+            numerator = math.sqrt(
+                cross[0] * cross[0]
+                + cross[1] * cross[1]
+                + cross[2] * cross[2]
+            )
 
             return numerator / denominator
-
+        
         def douglas_peucker(wire, tolerance=0.0001):
             if isinstance(wire, list):
                 points = wire
@@ -8035,7 +8087,7 @@ class Wire():
         """
         def get_squircle(a=1, b=1, radius=0.5, sides=100):
             import numpy as np
-            t = np.linspace(0, 2*np.pi, sides)
+            t = np.linspace(0, 2*np.pi, sides, endpoint=False)
             x = (np.abs(np.cos(t))**(1/a)) * np.sign(np.cos(t))
             y = (np.abs(np.sin(t))**(1/b)) * np.sign(np.sin(t))
             return x*radius, y*radius

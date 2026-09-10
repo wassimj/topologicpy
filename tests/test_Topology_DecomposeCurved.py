@@ -107,7 +107,7 @@ def test_gently_curved_surface_retains_overall_vertical_classification():
     assert Topology.IsInstance(face, "Face")
     assert Face.IsPlanar(face, silent=True) is False
 
-    cluster = Cluster.ByTopologies(face, silent=True)
+    cluster = Cluster.ByTopologies([face], silent=True)
     result = Topology.Decompose(cluster, normalSpreadAngle=30.0, silent=True)
 
     assert face in result["freeVerticalFaces"]
@@ -118,7 +118,7 @@ def test_gently_curved_surface_retains_overall_vertical_classification():
 @pytest.mark.skipif(not IS_PYTHONOCC, reason="Exact NURBS-surface construction is PythonOCC-specific.")
 def test_normal_spread_threshold_can_force_same_surface_into_curved_category():
     face = _gentle_vertical_nurbs_face()
-    cluster = Cluster.ByTopologies(face, silent=True)
+    cluster = Cluster.ByTopologies([face], silent=True)
 
     result = Topology.Decompose(cluster, normalSpreadAngle=3.0, silent=True)
 
@@ -132,7 +132,7 @@ def test_strongly_curved_patch_is_classified_as_curved():
     assert Topology.IsInstance(face, "Face")
     assert Face.IsPlanar(face, silent=True) is False
 
-    cluster = Cluster.ByTopologies(face, silent=True)
+    cluster = Cluster.ByTopologies([face], silent=True)
     result = Topology.Decompose(cluster, normalSpreadAngle=30.0, silent=True)
 
     assert face in result["freeCurvedFaces"]
