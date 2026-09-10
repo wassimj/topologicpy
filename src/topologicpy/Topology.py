@@ -10037,6 +10037,49 @@ class Topology():
                             silent=silent)
         pdf_file.close()
         return topologies
+
+    @staticmethod
+    def BySTEPPath(
+        path,
+        unit: str = "MM",
+        silent: bool = False,
+    ):
+        """
+        Creates a topology from neutral STEP BREP geometry.
+
+        Parameters
+        ----------
+        path : str or os.PathLike
+            The input STEP path.
+        unit : str , optional
+            Coordinate unit used when importing. Default is ``"MM"``.
+        silent : bool , optional
+            If True, error and warning messages are suppressed.
+            Default is False.
+
+        Returns
+        -------
+        topologicpy.Topology
+            The imported topology, or None if import fails.
+        """
+        try:
+            from topologicpy.io.step import (
+                STEPCodec,
+            )
+
+        except Exception:
+            if not silent:
+                print(
+                    "Topology.BySTEPPath - Error: The STEP codec could not be "
+                    "loaded. Returning None."
+                )
+            return None
+
+        return STEPCodec.load(
+            path,
+            unit=unit,
+            silent=silent,
+        )
     
     @staticmethod
     def ByXYZFile(file,
@@ -14115,6 +14158,79 @@ class Topology():
             if not silent:
                 print(f"Topology.ExportToJSON - Error: Could not create a new file at the following location: {path}. Returning None.")
             return None
+
+    @staticmethod
+    def ExportToSTEP(
+        topology,
+        path,
+        overwrite: bool = False,
+        schema: str = "AP242DIS",
+        unit: str = "MM",
+        assembly="auto",
+        tolerance=None,
+        silent: bool = False,
+    ) -> bool:
+        """
+        Exports a topology to neutral STEP BREP geometry.
+
+        STEP is a tolerance-based CAD interchange format rather than
+        TopologicPy-native semantic persistence. Analytic curves, Bezier/
+        BSpline/NURBS curves and surfaces are transferred as BRep geometry
+        without tessellation, subject to the capabilities of the STEP
+        translator. TopologicPy dictionaries, Contents, Apertures, Contexts,
+        and stable subtopology identity are not guaranteed to survive.
+
+        Parameters
+        ----------
+        topology : topologicpy.Topology
+            The input topology.
+        path : str or os.PathLike
+            The output STEP path.
+        overwrite : bool , optional
+            If True, an existing file may be overwritten. Default is False.
+        schema : str , optional
+            STEP schema. Default is ``"AP242DIS"``.
+        unit : str , optional
+            STEP length unit. Default is ``"MM"``.
+        assembly : bool, int, or str , optional
+            STEP assembly mode. Accepted values are False, True, 0, 1, 2,
+            or ``"off"``, ``"on"``, ``"auto"``. Default is ``"auto"``.
+        tolerance : float , optional
+            STEP writer tolerance. Default is None.
+        silent : bool , optional
+            If True, error and warning messages are suppressed.
+            Default is False.
+
+        Returns
+        -------
+        bool
+            True if the STEP file was written successfully, otherwise False.
+        """
+        try:
+            from topologicpy.io.step import (
+                STEPCodec,
+            )
+
+        except Exception:
+            if not silent:
+                print(
+                    "Topology.ExportToSTEP - Error: The STEP codec could not "
+                    "be loaded. Returning False."
+                )
+            return False
+
+        return bool(
+            STEPCodec.save(
+                topology,
+                path,
+                overwrite=overwrite,
+                schema=schema,
+                unit=unit,
+                assembly=assembly,
+                tolerance=tolerance,
+                silent=silent,
+            )
+        )
     
     @staticmethod
     def ExportToOBJ(*topologies,
@@ -16347,6 +16463,61 @@ class Topology():
                 max_faces.append(faces[i])
         return max_faces
 
+    @staticmethod
+    def Load(
+        path,
+        silent: bool = False,
+    ):
+        """
+        Loads a topology using the codec selected by the input extension.
+
+        Parameters
+        ----------
+        path : str or os.PathLike
+            The input path. The filename extension selects the codec.
+        silent : bool , optional
+            If True, error and warning messages are suppressed.
+            Default is False.
+
+        Returns
+        -------
+        topologicpy.Topology
+            The loaded topology, or None if loading fails.
+        """
+        try:
+            from topologicpy.io import (
+                codec_for_path,
+            )
+
+            codec = codec_for_path(
+                path
+            )
+
+        except Exception:
+            codec = None
+
+        if codec is None:
+            if not silent:
+                print(
+                    "Topology.Load - Error: No serialization or exchange "
+                    "codec is registered for the input path. Returning None."
+                )
+            return None
+
+        try:
+            return codec.load(
+                path,
+                silent=silent,
+            )
+
+        except Exception as exc:
+            if not silent:
+                print(
+                    "Topology.Load - Error: The selected codec failed: "
+                    f"{exc}. Returning None."
+                )
+            return None
+    
     @staticmethod
     def LongestEdges(topology, removeCoplanarFaces: bool = False, epsilon: float = 0.001, tolerance: float = 0.0001, silent: bool = False):
         """
@@ -20170,6 +20341,85 @@ class Topology():
         roll, pitch, yaw = quaternion_to_euler(quaternion)
         return_topology = Topology.RotateByEulerAngles(topology=topology, origin=origin, roll=roll, pitch=pitch, yaw=yaw,  transferDictionaries=transferDictionaries, angTolerance=angTolerance, tolerance=tolerance, silent=silent)
         return return_topology
+
+    @staticmethod
+    def Save(
+        topology,
+        path,
+        overwrite: bool = False,
+        silent: bool = False,
+    ) -> bool:
+        """
+        Saves a topology using the codec selected by the output extension.
+
+        At present, the unified TopologicPy persistence registry supports
+        neutral STEP BREP exchange through ``.step`` and ``.stp``.
+
+        Parameters
+        ----------
+        topology : topologicpy.Topology
+            The input topology.
+        path : str or os.PathLike
+            The output path. The filename extension selects the codec.
+        overwrite : bool , optional
+            If True, an existing file may be overwritten. Default is False.
+        silent : bool , optional
+            If True, error and warning messages are suppressed.
+            Default is False.
+
+        Returns
+        -------
+        bool
+            True if the topology was saved successfully, otherwise False.
+        """
+        if not Topology.IsInstance(
+            topology,
+            "Topology",
+        ):
+            if not silent:
+                print(
+                    "Topology.Save - Error: The input topology parameter is "
+                    "not a valid topology. Returning False."
+                )
+            return False
+
+        try:
+            from topologicpy.io import (
+                codec_for_path,
+            )
+
+            codec = codec_for_path(
+                path
+            )
+
+        except Exception:
+            codec = None
+
+        if codec is None:
+            if not silent:
+                print(
+                    "Topology.Save - Error: No serialization or exchange "
+                    "codec is registered for the output path. Returning False."
+                )
+            return False
+
+        try:
+            return bool(
+                codec.save(
+                    topology,
+                    path,
+                    overwrite=overwrite,
+                    silent=silent,
+                )
+            )
+
+        except Exception as exc:
+            if not silent:
+                print(
+                    "Topology.Save - Error: The selected codec failed: "
+                    f"{exc}. Returning False."
+                )
+            return False
     
     @staticmethod
     def Scale(topology, origin=None, x=1, y=1, z=1, transferDictionaries: bool = True, silent: bool = False):
