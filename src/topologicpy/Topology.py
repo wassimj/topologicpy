@@ -24555,6 +24555,209 @@ class Topology():
         return return_topology
 
     @staticmethod
+    def Tessellate(
+        topology,
+        quality: str = "medium",
+        linearDeflection: float = None,
+        angularDeflection: float = None,
+        relative: bool = True,
+        parallel: bool = True,
+        weld: bool = True,
+        weldTolerance: float = 0.0001,
+        remesh: bool = True,
+        mantissa: int = 6,
+        silent: bool = False,
+    ):
+        """
+        Tessellates the input topology into an indexed triangular surface mesh.
+
+        Unlike :meth:`Topology.Triangulate`, this method returns mesh data and
+        does not reconstruct Topologic Faces. Under the PythonOCC backend, the
+        actual OCCT BRep is tessellated directly, so analytic, Bezier, and
+        BSpline/NURBS geometry is preserved until the tessellation step.
+
+        Parameters
+        ----------
+        topology : topologicpy.Topology
+            The input topology.
+        quality : str , optional
+            Relative quality preset: ``"coarse"``, ``"medium"``, or
+            ``"fine"``. Default is ``"medium"``.
+        linearDeflection : float , optional
+            Maximum linear deviation. If ``relative`` is True, the value is
+            interpreted as a fraction of the topology bounding-box diagonal.
+            If None, the selected quality preset is used.
+        angularDeflection : float , optional
+            Maximum angular deflection in degrees. If None, the selected
+            quality preset is used.
+        relative : bool , optional
+            If True, ``linearDeflection`` is interpreted relative to the
+            topology bounding-box diagonal. Default is True.
+        parallel : bool , optional
+            If True, OCCT may tessellate Faces in parallel. Default is True.
+        weld : bool , optional
+            If True, coincident tessellation vertices are shared.
+            Default is True.
+        weldTolerance : float , optional
+            Coordinate tolerance used when welding vertices.
+            Default is 0.0001.
+        remesh : bool , optional
+            If True, cached OCCT triangulations are cleared before remeshing.
+            Default is True.
+        mantissa : int , optional
+            Number of decimal places retained in returned coordinates.
+            Default is 6.
+        silent : bool , optional
+            If True, error and warning messages are suppressed.
+            Default is False.
+
+        Returns
+        -------
+        dict
+            Mesh data with keys ``schema``, ``vertices``, ``faces``,
+            ``cells``, and ``metadata``. ``faces`` contains triangles only
+            and ``cells`` is empty. Compatibility aliases ``verts``, ``tris``,
+            ``quads``, and ``tets`` are also returned.
+        """
+        if not Topology.IsInstance(topology, "Topology"):
+            if not silent:
+                print(
+                    "Topology.Tessellate - Error: The input topology parameter "
+                    "is not a valid topology. Returning None."
+                )
+            return None
+
+        if not isinstance(quality, str):
+            if not silent:
+                print(
+                    "Topology.Tessellate - Error: The input quality parameter "
+                    "is not a valid string. Returning None."
+                )
+            return None
+
+        quality = quality.strip().lower()
+
+        if quality not in ("coarse", "medium", "fine"):
+            if not silent:
+                print(
+                    "Topology.Tessellate - Error: quality must be 'coarse', "
+                    "'medium', or 'fine'. Returning None."
+                )
+            return None
+
+        try:
+            weldTolerance = max(
+                abs(float(weldTolerance)),
+                1.0e-12,
+            )
+            mantissa = max(
+                0,
+                int(mantissa),
+            )
+        except Exception:
+            if not silent:
+                print(
+                    "Topology.Tessellate - Error: Invalid weldTolerance or "
+                    "mantissa. Returning None."
+                )
+            return None
+
+        if linearDeflection is not None:
+            try:
+                linearDeflection = abs(
+                    float(linearDeflection)
+                )
+            except Exception:
+                linearDeflection = 0.0
+
+            if linearDeflection <= 0.0:
+                if not silent:
+                    print(
+                        "Topology.Tessellate - Error: linearDeflection must be "
+                        "greater than zero. Returning None."
+                    )
+                return None
+
+        if angularDeflection is not None:
+            try:
+                angularDeflection = abs(
+                    float(angularDeflection)
+                )
+            except Exception:
+                angularDeflection = 0.0
+
+            if (
+                angularDeflection <= 0.0
+                or angularDeflection >= 180.0
+            ):
+                if not silent:
+                    print(
+                        "Topology.Tessellate - Error: angularDeflection must be "
+                        "between 0 and 180 degrees. Returning None."
+                    )
+                return None
+
+        if Topology._IsTopologicCoreBackend():
+            try:
+                from topologicpy._tessellation import (
+                    tessellate_topologic_core,
+                )
+
+                return tessellate_topologic_core(
+                    topology,
+                    quality=quality,
+                    linearDeflection=linearDeflection,
+                    angularDeflection=angularDeflection,
+                    relative=relative,
+                    parallel=parallel,
+                    weld=weld,
+                    weldTolerance=weldTolerance,
+                    remesh=remesh,
+                    mantissa=mantissa,
+                    silent=silent,
+                )
+
+            except Exception as exc:
+                if not silent:
+                    print(
+                        "Topology.Tessellate - Error: TopologicCore "
+                        f"tessellation failed: {exc}. Returning None."
+                    )
+                return None
+
+        try:
+            result = Core.InstanceCall(
+                topology,
+                "Tessellate",
+                quality,
+                linearDeflection,
+                angularDeflection,
+                bool(relative),
+                bool(parallel),
+                bool(weld),
+                weldTolerance,
+                bool(remesh),
+                mantissa,
+            )
+        except Exception as exc:
+            if not silent:
+                print(
+                    "Topology.Tessellate - Error: PythonOCC tessellation "
+                    f"failed: {exc}. Returning None."
+                )
+            return None
+
+        if not isinstance(result, dict):
+            if not silent:
+                print(
+                    "Topology.Tessellate - Error: The backend returned invalid "
+                    "mesh data. Returning None."
+                )
+            return None
+
+        return result
+
+    @staticmethod
     def Touches(
         topologyA,
         topologyB,

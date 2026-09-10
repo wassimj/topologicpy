@@ -7301,6 +7301,549 @@ class Topology:
         except Exception:
             return None
 
+    def Tessellate(
+        self,
+        quality="medium",
+        linearDeflection=None,
+        angularDeflection=None,
+        relative=True,
+        parallel=True,
+        weld=True,
+        weldTolerance=0.0001,
+        remesh=True,
+        mantissa=6,
+    ):
+        """
+        Returns an indexed triangular tessellation of this topology.
+
+        The underlying OCCT BRep is meshed directly. Analytic, Bezier, and
+        BSpline/NURBS geometry therefore remains exact until OCCT performs the
+        tessellation.
+        """
+        shape = _shape_from_topology(self)
+
+        if _is_null_shape(shape):
+            return None
+
+        if not isinstance(
+            quality,
+            str,
+        ):
+            return None
+
+        quality_name = (
+            quality.strip().lower()
+        )
+
+        presets = {
+            "coarse": {
+                "linear": 0.0200,
+                "angle": 25.0,
+            },
+            "medium": {
+                "linear": 0.0100,
+                "angle": 15.0,
+            },
+            "fine": {
+                "linear": 0.0025,
+                "angle": 8.0,
+            },
+        }
+
+        if quality_name not in presets:
+            return None
+
+        try:
+            precision = max(
+                0,
+                int(mantissa),
+            )
+
+            weld_tolerance = max(
+                abs(float(weldTolerance)),
+                1.0e-12,
+            )
+
+        except Exception:
+            return None
+
+        # --------------------------------------------------------------
+        # Resolve the topology scale.
+        # --------------------------------------------------------------
+
+        diagonal = None
+
+        try:
+            from OCC.Core.Bnd import Bnd_Box
+            from OCC.Core.BRepBndLib import (
+                brepbndlib,
+            )
+
+            bbox = Bnd_Box()
+
+            brepbndlib.AddOptimal(
+                shape,
+                bbox,
+                False,
+                False,
+            )
+
+            if not bbox.IsVoid():
+                (
+                    xmin,
+                    ymin,
+                    zmin,
+                    xmax,
+                    ymax,
+                    zmax,
+                ) = bbox.Get()
+
+                dx = float(xmax) - float(xmin)
+                dy = float(ymax) - float(ymin)
+                dz = float(zmax) - float(zmin)
+
+                diagonal = math.sqrt(
+                    dx * dx
+                    + dy * dy
+                    + dz * dz
+                )
+
+        except Exception:
+            diagonal = None
+
+        if (
+            diagonal is None
+            or not math.isfinite(diagonal)
+            or diagonal <= 1.0e-12
+        ):
+            diagonal = 1.0
+
+        # --------------------------------------------------------------
+        # Linear deflection.
+        #
+        # TopologicPy resolves relative deflection against the whole
+        # topology bounding-box diagonal rather than relying on OCCT's
+        # per-edge relative-deflection semantics.
+        # --------------------------------------------------------------
+
+        if linearDeflection is None:
+            linear = max(
+                diagonal
+                * presets[quality_name]["linear"],
+                1.0e-12,
+            )
+
+        else:
+            try:
+                value = abs(
+                    float(linearDeflection)
+                )
+            except Exception:
+                return None
+
+            if (
+                not math.isfinite(value)
+                or value <= 0.0
+            ):
+                return None
+
+            if bool(relative):
+                linear = max(
+                    diagonal * value,
+                    1.0e-12,
+                )
+            else:
+                linear = value
+
+        # --------------------------------------------------------------
+        # Angular deflection.
+        # --------------------------------------------------------------
+
+        try:
+            angle_deg = (
+                presets[quality_name]["angle"]
+                if angularDeflection is None
+                else abs(
+                    float(
+                        angularDeflection
+                    )
+                )
+            )
+        except Exception:
+            return None
+
+        if (
+            not math.isfinite(angle_deg)
+            or angle_deg <= 0.0
+            or angle_deg >= 180.0
+        ):
+            return None
+
+        try:
+            from OCC.Core.BRepMesh import (
+                BRepMesh_IncrementalMesh,
+            )
+            from OCC.Core.TopAbs import (
+                TopAbs_FACE,
+                TopAbs_REVERSED,
+            )
+            from OCC.Core.TopExp import (
+                TopExp_Explorer,
+            )
+
+        except Exception:
+            return None
+
+        # --------------------------------------------------------------
+        # Clear cached triangulation when requested.
+        #
+        # Support both older module-style and newer static-class
+        # pythonocc BRepTools bindings.
+        # --------------------------------------------------------------
+
+        if bool(remesh):
+            cleaned = False
+
+            try:
+                from OCC.Core.BRepTools import (
+                    breptools,
+                )
+
+                if hasattr(
+                    breptools,
+                    "Clean",
+                ):
+                    try:
+                        breptools.Clean(
+                            shape,
+                            True,
+                        )
+                    except TypeError:
+                        breptools.Clean(
+                            shape
+                        )
+
+                    cleaned = True
+
+            except Exception:
+                pass
+
+            if not cleaned:
+                try:
+                    from OCC.Core.BRepTools import (
+                        BRepTools,
+                    )
+
+                    if hasattr(
+                        BRepTools,
+                        "Clean_s",
+                    ):
+                        try:
+                            BRepTools.Clean_s(
+                                shape,
+                                True,
+                            )
+                        except TypeError:
+                            BRepTools.Clean_s(
+                                shape
+                            )
+
+                        cleaned = True
+
+                    elif hasattr(
+                        BRepTools,
+                        "Clean",
+                    ):
+                        try:
+                            BRepTools.Clean(
+                                shape,
+                                True,
+                            )
+                        except TypeError:
+                            BRepTools.Clean(
+                                shape
+                            )
+
+                        cleaned = True
+
+                except Exception:
+                    pass
+
+        # --------------------------------------------------------------
+        # Mesh once at the requested quality.
+        # --------------------------------------------------------------
+
+        try:
+            mesher = BRepMesh_IncrementalMesh(
+                shape,
+                float(linear),
+                False,
+                math.radians(
+                    float(angle_deg)
+                ),
+                bool(parallel),
+            )
+
+            if (
+                hasattr(
+                    mesher,
+                    "IsDone",
+                )
+                and not mesher.IsDone()
+            ):
+                return None
+
+        except Exception:
+            return None
+
+        vertices = []
+        faces = []
+        face_sources = []
+
+        buckets = {}
+        inv_tolerance = (
+            1.0 / weld_tolerance
+        )
+
+        def add_point(coords):
+            point = [
+                round(
+                    float(value),
+                    precision,
+                )
+                for value in coords
+            ]
+
+            if not bool(weld):
+                vertices.append(point)
+                return len(vertices) - 1
+
+            key = tuple(
+                int(
+                    math.floor(
+                        value * inv_tolerance
+                    )
+                )
+                for value in point
+            )
+
+            for dx in (-1, 0, 1):
+                for dy in (-1, 0, 1):
+                    for dz in (-1, 0, 1):
+                        neighbor = (
+                            key[0] + dx,
+                            key[1] + dy,
+                            key[2] + dz,
+                        )
+
+                        for index in buckets.get(
+                            neighbor,
+                            [],
+                        ):
+                            existing = (
+                                vertices[index]
+                            )
+
+                            if (
+                                abs(
+                                    existing[0]
+                                    - point[0]
+                                )
+                                <= weld_tolerance
+                                and abs(
+                                    existing[1]
+                                    - point[1]
+                                )
+                                <= weld_tolerance
+                                and abs(
+                                    existing[2]
+                                    - point[2]
+                                )
+                                <= weld_tolerance
+                            ):
+                                return index
+
+            index = len(vertices)
+
+            vertices.append(point)
+
+            buckets.setdefault(
+                key,
+                [],
+            ).append(index)
+
+            return index
+
+        explorer = TopExp_Explorer(
+            shape,
+            TopAbs_FACE,
+        )
+
+        source_index = 0
+
+        while explorer.More():
+            try:
+                face_shape = topods_Face(
+                    explorer.Current()
+                )
+            except Exception:
+                explorer.Next()
+                source_index += 1
+                continue
+
+            triangulation, location = (
+                Topology._TriangulationForFaceNative(
+                    face_shape
+                )
+            )
+
+            if triangulation is not None:
+                transform = None
+
+                try:
+                    if (
+                        location is not None
+                        and not location.IsIdentity()
+                    ):
+                        transform = (
+                            location.Transformation()
+                        )
+                except Exception:
+                    transform = None
+
+                reversed_face = (
+                    face_shape.Orientation()
+                    == TopAbs_REVERSED
+                )
+
+                def coords_at(
+                    node_index,
+                ):
+                    point = (
+                        triangulation.Node(
+                            int(node_index)
+                        )
+                    )
+
+                    if transform is not None:
+                        try:
+                            point = (
+                                point.Transformed(
+                                    transform
+                                )
+                            )
+                        except Exception:
+                            point.Transform(
+                                transform
+                            )
+
+                    return [
+                        float(point.X()),
+                        float(point.Y()),
+                        float(point.Z()),
+                    ]
+
+                for triangle_index in range(
+                    1,
+                    int(
+                        triangulation.NbTriangles()
+                    )
+                    + 1,
+                ):
+                    triangle = (
+                        triangulation.Triangle(
+                            triangle_index
+                        )
+                    )
+
+                    n1, n2, n3 = (
+                        triangle.Get()
+                    )
+
+                    if reversed_face:
+                        n2, n3 = n3, n2
+
+                    indices = [
+                        add_point(
+                            coords_at(n1)
+                        ),
+                        add_point(
+                            coords_at(n2)
+                        ),
+                        add_point(
+                            coords_at(n3)
+                        ),
+                    ]
+
+                    if len(set(indices)) == 3:
+                        faces.append(indices)
+                        face_sources.append(
+                            source_index
+                        )
+
+            explorer.Next()
+            source_index += 1
+
+        # --------------------------------------------------------------
+        # Topologies below Face dimension.
+        # --------------------------------------------------------------
+
+        if len(faces) == 0:
+            try:
+                for vertex in (
+                    Topology.Vertices(self)
+                    or []
+                ):
+                    if hasattr(
+                        vertex,
+                        "x",
+                    ):
+                        add_point(
+                            [
+                                vertex.x,
+                                vertex.y,
+                                vertex.z,
+                            ]
+                        )
+            except Exception:
+                pass
+
+        metadata = {
+            "source": "occt",
+            "quality": quality_name,
+            "linearDeflection": float(
+                linear
+            ),
+            "angularDeflection": float(
+                angle_deg
+            ),
+            "relative": bool(relative),
+            "parallel": bool(parallel),
+            "weld": bool(weld),
+            "weldTolerance": float(
+                weld_tolerance
+            ),
+            "remesh": bool(remesh),
+            "vertexCount": len(vertices),
+            "faceCount": len(faces),
+            "triangleCount": len(faces),
+            "quadCount": 0,
+            "cellCount": 0,
+        }
+
+        return {
+            "schema": "topologicpy.mesh/1",
+            "vertices": vertices,
+            "faces": faces,
+            "cells": [],
+            "metadata": metadata,
+            "faceSources": face_sources,
+            "verts": vertices,
+            "tris": faces,
+            "quads": [],
+            "tets": [],
+        }
+
     def _GeometryDataNative(self, triangulate_faces: bool = False, mesh_all_faces: bool = False, mantissa: int = 6, tolerance: float = 0.0001):
         """
         Shared extraction engine used by Geometry, MeshData, and Triangulate.
