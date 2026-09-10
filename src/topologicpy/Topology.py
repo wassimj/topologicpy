@@ -9630,29 +9630,82 @@ class Topology():
             silent=True,
         )
 
+    # @staticmethod
+    # def ByOCCTShape(occtShape, ontology: bool = False, silent: bool = False):
+    #     """
+    #     Creates a topology from the input OCCT shape. See https://dev.opencascade.org/doc/overview/html/occt_user_guides__modeling_data.html.
+
+    #     Parameters
+    #     ----------
+    #     occtShape : topologic_core.TopoDS_Shape
+    #         The inoput OCCT Shape.
+
+    #     Returns
+    #     -------
+    #     topologic_core.Topology
+    #         The created topology.
+
+    #     """
+    #     topology = Core.Topology.ByOcctShape(occtShape, "")
+    #     if not Topology.IsInstance(topology, "topology"):
+    #         if not silent:
+    #             print("Topology.ByOCCTShape - Error: Could not create the topology. Returning None")
+    #         return None
+    #     return Topology._OntologyAnnotate(topology, ontology=ontology, generatedBy="Topology.ByOOCTShape", annotateSubtopologies=True, silent=True)
+
     @staticmethod
     def ByOCCTShape(occtShape, ontology: bool = False, silent: bool = False):
         """
-        Creates a topology from the input OCCT shape. See https://dev.opencascade.org/doc/overview/html/occt_user_guides__modeling_data.html.
+        Creates a topology from the input OCCT shape.
 
         Parameters
         ----------
-        occtShape : topologic_core.TopoDS_Shape
-            The inoput OCCT Shape.
+        occtShape : object
+            The input OCCT shape.
+        ontology : bool , optional
+            If set to True, ontology metadata is added to the returned topology.
+            Default is False.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default
+            is False.
 
         Returns
         -------
         topologic_core.Topology
-            The created topology.
-
+            The created topology, or None if the shape cannot be wrapped.
         """
-        topology = Core.Topology.ByOcctShape(occtShape, "")
-        if not Topology.IsInstance(topology, "topology"):
+        try:
+            if Topology._IsTopologicCoreBackend():
+                # topologic_core.Topology.ByOcctShape expects the historic GUID
+                # argument in addition to the native shape.
+                topology = Core.Call("Topology", "ByOcctShape", occtShape, "")
+            else:
+                topology = Core.Call("Topology", "ByOcctShape", occtShape)
+        except Exception as error:
             if not silent:
-                print("Topology.ByOCCTShape - Error: Could not create the topology. Returning None")
+                print(
+                    "Topology.ByOCCTShape - Error: Could not create a topology "
+                    "from the input OCCT shape. Returning None."
+                )
+                print("Error:", error)
             return None
-        return Topology._OntologyAnnotate(topology, ontology=ontology, generatedBy="Topology.ByOOCTShape", annotateSubtopologies=True, silent=True)
 
+        if not Topology.IsInstance(topology, "Topology"):
+            if not silent:
+                print(
+                    "Topology.ByOCCTShape - Error: Could not create a valid "
+                    "topology from the input OCCT shape. Returning None."
+                )
+            return None
+
+        return Topology._OntologyAnnotate(
+            topology,
+            ontology=ontology,
+            generatedBy="Topology.ByOCCTShape",
+            annotateSubtopologies=True,
+            silent=True,
+        )
+    
     @staticmethod
     def ByPDFFile(file,
                   wires=False,
@@ -10375,54 +10428,123 @@ class Topology():
         
         return Topology.SubTopologies(topology=topology, subTopologyType="cell")
     
+    # @staticmethod
+    # def CenterOfMass(topology, silent: bool = False):
+    #     """
+    #     Returns the center of mass of the input topology. See https://en.wikipedia.org/wiki/Center_of_mass.
+
+    #     Parameters
+    #     ----------
+    #     topology : topologic_core.Topology
+    #         The input topology.
+    #     silent : bool , optional
+    #         If set to True, error and warning messages are suppressed. Default is False.
+
+    #     Returns
+    #     -------
+    #     topologic_core.Vertex
+    #         The center of mass of the input topology.
+
+    #     """
+    #     if not Topology.IsInstance(topology, "Topology"):
+    #         if not silent:
+    #             print("Topology.CenterofMass - Error: the input topology parameter is not a valid topology. Returning None.")
+    #         return None
+    #     # return topology.CenterOfMass() # H to Core
+    #     return Core.InstanceCall(topology, 'CenterOfMass')
+
     @staticmethod
     def CenterOfMass(topology, silent: bool = False):
         """
-        Returns the center of mass of the input topology. See https://en.wikipedia.org/wiki/Center_of_mass.
+        Returns the geometric center of mass of the input topology.
 
         Parameters
         ----------
         topology : topologic_core.Topology
             The input topology.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
+            If set to True, error and warning messages are suppressed. Default
+            is False.
 
         Returns
         -------
         topologic_core.Vertex
-            The center of mass of the input topology.
-
+            The center of mass, or None if it cannot be computed.
         """
         if not Topology.IsInstance(topology, "Topology"):
             if not silent:
-                print("Topology.CenterofMass - Error: the input topology parameter is not a valid topology. Returning None.")
+                print(
+                    "Topology.CenterOfMass - Error: The input topology parameter "
+                    "is not a valid topology. Returning None."
+                )
             return None
-        # return topology.CenterOfMass() # H to Core
-        return Core.InstanceCall(topology, 'CenterOfMass')
+
+        try:
+            result = Core.InstanceCall(topology, "CenterOfMass")
+        except Exception as error:
+            if not silent:
+                print(
+                    "Topology.CenterOfMass - Error: The backend operation failed. "
+                    "Returning None."
+                )
+                print("Error:", error)
+            return None
+
+        if not Topology.IsInstance(result, "Vertex"):
+            if not silent:
+                print(
+                    "Topology.CenterOfMass - Error: The backend did not return a "
+                    "valid Vertex. Returning None."
+                )
+            return None
+
+        return result
     
+    # @staticmethod
+    # def Centroid(topology, silent: bool = False):
+    #     """
+    #     Returns the true geometric centroid of the input topology. This is an alias for Topology.CenterOfMass().
+
+    #     Parameters
+    #     ----------
+    #     topology : topologic_core.Topology
+    #         The input topology.
+    #     silent : bool , optional
+    #         If set to True, error and warning messages are suppressed. Default is False.
+
+    #     Returns
+    #     -------
+    #     topologic_core.Vertex or None
+    #         The centroid of the input topology.
+    #     """
+
+    #     if not Topology.IsInstance(topology, "topology"):
+    #         if not silent:
+    #             print("Topology.Centroid - Error: the input topology parameter is not a valid topology. Returning None.")
+    #         return None
+    #     return Topology.CenterOfMass(topology)
+
     @staticmethod
     def Centroid(topology, silent: bool = False):
         """
-        Returns the true geometric centroid of the input topology. This is an alias for Topology.CenterOfMass().
+        Returns the geometric centroid of the input topology.
+
+        This is an alias for :meth:`Topology.CenterOfMass`.
 
         Parameters
         ----------
         topology : topologic_core.Topology
             The input topology.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
+            If set to True, error and warning messages are suppressed. Default
+            is False.
 
         Returns
         -------
-        topologic_core.Vertex or None
-            The centroid of the input topology.
+        topologic_core.Vertex
+            The centroid, or None if it cannot be computed.
         """
-
-        if not Topology.IsInstance(topology, "topology"):
-            if not silent:
-                print("Topology.Centroid - Error: the input topology parameter is not a valid topology. Returning None.")
-            return None
-        return Topology.CenterOfMass(topology)
+        return Topology.CenterOfMass(topology, silent=silent)
     
     @staticmethod
     def Cleanup(topology=None, silent: bool = False):
@@ -12833,6 +12955,31 @@ class Topology():
         }
 
     @staticmethod
+    def DeepCopy(topology, silent: bool = False):
+        """
+        Returns an independent deep copy of the input topology.
+
+        This is a convenience alias for ``Topology.Copy(topology, deep=True)``.
+        On PythonOCC, native OCCT geometry and subtopology dictionaries are
+        copied through the backend's exact shape-copy mapping. On TopologicCore,
+        the existing serialized deep-copy fallback is used.
+
+        Parameters
+        ----------
+        topology : topologic_core.Topology
+            The input topology.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default
+            is False.
+
+        Returns
+        -------
+        topologic_core.Topology
+            An independent deep copy, or None if copying fails.
+        """
+        return Topology.Copy(topology, deep=True, silent=silent)
+    
+    @staticmethod
     def Degree(topology, hostTopology, silent: bool = False):
         """
         Returns the number of immediate supertopologies that use the input topology.
@@ -15231,39 +15378,230 @@ class Topology():
 
         return False
     
+    # @staticmethod
+    # def IsPlanar(topology, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
+    #     """
+    #     Returns True if all vertices of the input topology are coplanar. Returns False otherwise.
+
+    #     Parameters
+    #     ----------
+    #     topology : topologic_core.Topology
+    #         The input topology.
+    #     mantissa : int, optional
+    #         The desired length of the mantissa. Default is 6.
+    #     tolerance : float, optional
+    #         The desired tolerance. Default is 0.0001.
+    #     silent : bool, optional
+    #         If set to True, error and warning messages are suppressed. Default is False.
+
+    #     Returns
+    #     -------
+    #     bool
+    #         True if all vertices of the input topology are coplanar. False otherwise.
+    #     """
+    #     if not Topology.IsInstance(topology, "Topology"):
+    #         if not silent:
+    #             print("Topology.IsPlanar - Error: The input topology parameter is not a valid topology. Returning None.")
+    #         return None
+    #     if not Topology._IsTopologicCoreBackend():
+    #         try:
+    #             result = Core.InstanceCall(topology, "IsPlanarNative", mantissa, tolerance)
+    #             if isinstance(result, bool):
+    #                 return result
+    #         except Exception:
+    #             pass
+    #     return Topology._LegacyIsPlanar_BackendV1(topology, mantissa=mantissa, tolerance=tolerance, silent=silent)
+
     @staticmethod
-    def IsPlanar(topology, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
+    def IsPlanar(
+        topology,
+        mantissa: int = 6,
+        tolerance: float = 0.0001,
+        silent: bool = False,
+    ):
         """
-        Returns True if all vertices of the input topology are coplanar. Returns False otherwise.
+        Returns True if the complete geometry of the input topology is planar.
+
+        Unlike a vertex-only coplanarity test, this method also samples curved
+        Edges and checks the actual supporting surfaces of Faces. Therefore a
+        planar arc returns True, while a helix or cylindrical Face returns
+        False even when its topological vertices alone would be insufficient to
+        reveal the curvature.
 
         Parameters
         ----------
         topology : topologic_core.Topology
             The input topology.
-        mantissa : int, optional
-            The desired length of the mantissa. Default is 6.
-        tolerance : float, optional
-            The desired tolerance. Default is 0.0001.
-        silent : bool, optional
-            If set to True, error and warning messages are suppressed. Default is False.
+        mantissa : int , optional
+            The number of decimal places used when collecting sample-point
+            coordinates. Default is 6.
+        tolerance : float , optional
+            The geometric coplanarity tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default
+            is False.
 
         Returns
         -------
         bool
-            True if all vertices of the input topology are coplanar. False otherwise.
+            True if the complete topology lies in one plane, False otherwise.
+            Returns None if the input or parameters are invalid.
         """
+        import math
+
+        from topologicpy.Edge import Edge
+        from topologicpy.Face import Face
+        from topologicpy.Vertex import Vertex
+
         if not Topology.IsInstance(topology, "Topology"):
             if not silent:
-                print("Topology.IsPlanar - Error: The input topology parameter is not a valid topology. Returning None.")
+                print(
+                    "Topology.IsPlanar - Error: The input topology parameter is "
+                    "not a valid topology. Returning None."
+                )
             return None
-        if not Topology._IsTopologicCoreBackend():
+
+        try:
+            mantissa = int(mantissa)
+            tolerance = abs(float(tolerance))
+        except Exception:
+            if not silent:
+                print(
+                    "Topology.IsPlanar - Error: The mantissa and tolerance "
+                    "parameters are not valid. Returning None."
+                )
+            return None
+
+        if not math.isfinite(tolerance) or tolerance <= 0.0:
+            if not silent:
+                print(
+                    "Topology.IsPlanar - Error: The tolerance parameter must be "
+                    "a positive finite number. Returning None."
+                )
+            return None
+
+        # An actual Face surface must itself be planar. This catches curved
+        # surfaces whose boundary vertices happen to lie in a plane.
+        faces = Topology.Faces(topology, silent=True) or []
+        for face in faces:
+            planar = Face.IsPlanar(face, tolerance=tolerance, silent=True)
+            if planar is False:
+                return False
+            if planar is None:
+                # If the exact surface query is unavailable, continue with the
+                # sampled geometry test below rather than failing immediately.
+                pass
+
+        sample_points = []
+
+        def add_vertex(vertex):
+            if not Topology.IsInstance(vertex, "Vertex"):
+                return
             try:
-                result = Core.InstanceCall(topology, "IsPlanarNative", mantissa, tolerance)
-                if isinstance(result, bool):
-                    return result
+                xyz = Vertex.Coordinates(vertex, mantissa=mantissa)
+                if isinstance(xyz, list) and len(xyz) == 3:
+                    sample_points.append(tuple(float(v) for v in xyz))
             except Exception:
                 pass
-        return Topology._LegacyIsPlanar_BackendV1(topology, mantissa=mantissa, tolerance=tolerance, silent=silent)
+
+        # Start with all explicit topology vertices.
+        for vertex in Topology.Vertices(topology, silent=True) or []:
+            add_vertex(vertex)
+
+        # Curved edges require interior samples. Linear edges contribute no
+        # information beyond their endpoints.
+        edges = Topology.Edges(topology, silent=True) or []
+        for edge in edges:
+            is_linear = Edge.IsLinear(edge, tolerance=tolerance, silent=True)
+            if is_linear is False:
+                for u in (0.125, 0.25, 0.5, 0.75, 0.875):
+                    vertex = Edge.VertexByParameter(
+                        edge,
+                        u=u,
+                        tolerance=tolerance,
+                        silent=True,
+                    )
+                    add_vertex(vertex)
+
+        # Deduplicate sample points at the requested tolerance. Rounding alone
+        # is not sufficient when mantissa is high relative to tolerance.
+        unique = []
+        tol2 = tolerance * tolerance
+        for point in sample_points:
+            duplicate = False
+            for other in unique:
+                dx = point[0] - other[0]
+                dy = point[1] - other[1]
+                dz = point[2] - other[2]
+                if dx * dx + dy * dy + dz * dz <= tol2:
+                    duplicate = True
+                    break
+            if not duplicate:
+                unique.append(point)
+
+        if len(unique) <= 3:
+            return True
+
+        p0 = unique[0]
+
+        # Find a second distinct point.
+        p1 = None
+        for point in unique[1:]:
+            dx = point[0] - p0[0]
+            dy = point[1] - p0[1]
+            dz = point[2] - p0[2]
+            if dx * dx + dy * dy + dz * dz > tol2:
+                p1 = point
+                break
+
+        if p1 is None:
+            return True
+
+        ax = p1[0] - p0[0]
+        ay = p1[1] - p0[1]
+        az = p1[2] - p0[2]
+
+        # Find a third point not collinear with p0/p1.
+        normal = None
+        for point in unique[1:]:
+            bx = point[0] - p0[0]
+            by = point[1] - p0[1]
+            bz = point[2] - p0[2]
+
+            nx = ay * bz - az * by
+            ny = az * bx - ax * bz
+            nz = ax * by - ay * bx
+            cross_magnitude = math.sqrt(nx * nx + ny * ny + nz * nz)
+            line_magnitude = math.sqrt(ax * ax + ay * ay + az * az)
+
+            # Perpendicular distance of this point from the p0-p1 line.
+            if line_magnitude > 1.0e-15 and cross_magnitude / line_magnitude > tolerance:
+                normal = (nx, ny, nz)
+                break
+
+        # Collinear geometry is planar by definition.
+        if normal is None:
+            return True
+
+        nx, ny, nz = normal
+        magnitude = math.sqrt(nx * nx + ny * ny + nz * nz)
+        if magnitude <= 1.0e-15:
+            return True
+
+        nx /= magnitude
+        ny /= magnitude
+        nz /= magnitude
+
+        for point in unique:
+            distance = abs(
+                nx * (point[0] - p0[0])
+                + ny * (point[1] - p0[1])
+                + nz * (point[2] - p0[2])
+            )
+            if distance > tolerance:
+                return False
+
+        return True
     
     @staticmethod
     def IsSame(topologyA, topologyB, silent: bool = False):
@@ -16764,34 +17102,83 @@ class Topology():
 
         return "".join(obj_parts), "".join(mtl_parts)
     
+    # @staticmethod
+    # def OCCTShape(topology, silent: bool = False):
+    #     """
+    #     Returns the occt shape of the input topology.
+
+    #     Parameters
+    #     ----------
+    #     topology : topologic_core.Topology
+    #         The input topology.
+    #     silent : bool , optional
+    #         If set to True, error and warning messages are suppressed. Default is False.
+
+    #     Returns
+    #     -------
+    #     topologic_core.TopoDS_Shape
+    #         The OCCT Shape.
+
+    #     """
+    #     if not Topology.IsInstance(topology, "Topology"):
+    #         print("Topology.OCCTShape - Error: the input topology parameter is not a valid topology. Returning None.")
+    #         return None
+    #     topology_type = Topology.TypeAsString(topology)
+    #     if not topology_type.lower() in ["vertex", "edge", "wire", "face", "shell", "cell", "cellcomplex", "cluster"]:
+    #         if not silent:
+    #             print("Topology.OCCTShape - Error: The input topology parameter does not have an OCCTShape. Returning None.")
+    #         return None
+    #     return Core.InstanceCall(topology, 'GetOcctShape')
+
     @staticmethod
     def OCCTShape(topology, silent: bool = False):
         """
-        Returns the occt shape of the input topology.
+        Returns the OCCT shape of the input topology.
 
         Parameters
         ----------
         topology : topologic_core.Topology
             The input topology.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
+            If set to True, error and warning messages are suppressed. Default
+            is False.
 
         Returns
         -------
-        topologic_core.TopoDS_Shape
-            The OCCT Shape.
-
+        object
+            The underlying OCCT shape, or None if one cannot be retrieved.
         """
         if not Topology.IsInstance(topology, "Topology"):
-            print("Topology.OCCTShape - Error: the input topology parameter is not a valid topology. Returning None.")
-            return None
-        topology_type = Topology.TypeAsString(topology)
-        if not topology_type.lower() in ["vertex", "edge", "wire", "face", "shell", "cell", "cellcomplex", "cluster"]:
             if not silent:
-                print("Topology.OCCTShape - Error: The input topology parameter does not have an OCCTShape. Returning None.")
+                print(
+                    "Topology.OCCTShape - Error: The input topology parameter is "
+                    "not a valid topology. Returning None."
+                )
             return None
-        return Core.InstanceCall(topology, 'GetOcctShape')
 
+        try:
+            shape = Core.InstanceCall(topology, "GetOcctShape")
+        except Exception as error:
+            if not silent:
+                print(
+                    "Topology.OCCTShape - Error: Could not retrieve the OCCT "
+                    "shape. Returning None."
+                )
+                print("Error:", error)
+            return None
+
+        # PythonOCC lightweight aggregate wrappers such as Cluster may
+        # intentionally have no single native shape.
+        if shape is None:
+            if not silent:
+                print(
+                    "Topology.OCCTShape - Warning: The input topology does not "
+                    "have a single OCCT shape. Returning None."
+                )
+            return None
+
+        return shape
+    
     @staticmethod
     def OntologyClass(topology, defaultValue=None, silent: bool = False):
         """
