@@ -15060,7 +15060,8 @@ class Topology():
     #             print("Topology.InternalVertex - Warning: Operation took too long. Returning None")
     #         return None
     #     return result
-
+    #
+    
     @staticmethod
     def InternalVertex(
         topology,
