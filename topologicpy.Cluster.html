@@ -168,7 +168,7 @@
 <td><p>Clusters the list of input topologies based on an input evaluation function.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.ByTopologies" title="topologicpy.Cluster.Cluster.ByTopologies"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByTopologies</span></code></a>(*topologies[, ...])</p></td>
-<td><p>Creates a topologic Cluster from the input list of topologies.</p></td>
+<td><p>Creates a topologic Cluster from the input topologies.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.CellComplexes" title="topologicpy.Cluster.Cluster.CellComplexes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CellComplexes</span></code></a>(cluster[, silent])</p></td>
 <td><p>Returns the cellComplexes of the input cluster.</p></td>
@@ -330,22 +330,30 @@ return the same or equivalent value from the evaluation function.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Cluster.Cluster.ByTopologies">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByTopologies</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">topologies</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transferDictionaries</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Cluster.Cluster.ByTopologies" title="Permalink to this definition"></a></dt>
-<dd><p>Creates a topologic Cluster from the input list of topologies. The input can be individual topologies each as an input argument or a list of topologies stored in one input argument.</p>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByTopologies</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">topologies</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transferDictionaries</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Cluster.Cluster.ByTopologies" title="Permalink to this definition"></a></dt>
+<dd><p>Creates a topologic Cluster from the input topologies.</p>
+<p>The input can be individual topologies supplied as separate arguments or
+a list of topologies supplied as one argument.</p>
+<p>If a single topology is supplied directly, that topology is returned
+unchanged. If a list is supplied, a Cluster is created even when the list
+contains only one valid topology.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>*topologies</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>One or more instances of <cite>topologic_core.Topology</cite> to be processed.</p>
+<dt><strong>*topologies</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>One or more topologies, or a list of topologies, to be processed.</p>
 </dd>
-<dt><strong>transferDictionaries</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the dictionaries from the input topologies are merged and transferred to the cluster. Otherwise they are not. Default is False.</p>
+<dt><strong>transferDictionaries</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the dictionaries from the input topologies are merged
+and transferred to the resulting Cluster. Default is False.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed.
+Default is False.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Cluster</dt><dd><p>The created topologic Cluster.</p>
+<dt>topologic_core.Topology</dt><dd><p>The created Cluster, or the original topology if a single topology
+was supplied directly. Returns None if no valid topologies are found.</p>
 </dd>
 </dl>
 </dd>
