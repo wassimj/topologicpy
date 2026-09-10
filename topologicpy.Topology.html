@@ -660,16 +660,16 @@
 <td><p>Removes coplanar faces in the input topology.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.RemoveEdges" title="topologicpy.Topology.Topology.RemoveEdges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveEdges</span></code></a>(topology[, edges, tolerance, silent])</p></td>
-<td><p>Removes the input list of edges from the input topology.</p></td>
+<td><p>Removes the specified Edges from the input topology.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.RemoveFaces" title="topologicpy.Topology.Topology.RemoveFaces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveFaces</span></code></a>(topology[, faces, tolerance, silent])</p></td>
-<td><p>Removes the input list of faces from the input topology.</p></td>
+<td><p>Removes the specified Faces from the input topology.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.RemoveFacesBySelectors" title="topologicpy.Topology.Topology.RemoveFacesBySelectors"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveFacesBySelectors</span></code></a>(topology[, ...])</p></td>
 <td><p>Removes faces that contain the input list of selectors (vertices) from the input topology</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.RemoveVertices" title="topologicpy.Topology.Topology.RemoveVertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveVertices</span></code></a>(topology[, vertices, ...])</p></td>
-<td><p>Removes the input list of vertices from the input topology.</p></td>
+<td><p>Removes the specified Vertices from the input topology.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ReplaceVertices" title="topologicpy.Topology.Topology.ReplaceVertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ReplaceVertices</span></code></a>(topology[, verticesA, ...])</p></td>
 <td><p>Replaces vertices in the first input list with the corresponding vertices in the second input list and rebuilds the input topology.</p></td>
@@ -4168,24 +4168,30 @@ Default is False.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Topology.Topology.RemoveEdges">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RemoveEdges</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edges</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.RemoveEdges" title="Permalink to this definition"></a></dt>
-<dd><p>Removes the input list of edges from the input topology.</p>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RemoveEdges</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edges</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.RemoveEdges" title="Permalink to this definition"></a></dt>
+<dd><p>Removes the specified Edges from the input topology.</p>
+<p>Edges bounding Faces cause their incident Faces to be removed. Free
+Edges are removed directly. Under the PythonOCC backend, native OCCT
+editing is attempted first so surviving curves and surfaces remain
+exact. If native editing is unavailable (for example, for a lightweight
+shapeless Cluster), the established legacy fallback is used.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
+<dt><strong>topology</strong><span class="classifier">topologicpy.Topology</span></dt><dd><p>The input topology.</p>
 </dd>
-<dt><strong>edges</strong><span class="classifier">list</span></dt><dd><p>The input list of edges to remove.</p>
+<dt><strong>edges</strong><span class="classifier">topologicpy.Edge or list, optional</span></dt><dd><p>The Edge or list of Edges to remove. Default is None.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float, optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True, error and warning messages are suppressed.
+Default is False.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Topology</dt><dd><p>The input topology with the specified edges removed.</p>
+<dt>topologicpy.Topology</dt><dd><p>The resulting topology, or None if no topology remains.</p>
 </dd>
 </dl>
 </dd>
@@ -4194,24 +4200,29 @@ Default is False.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Topology.Topology.RemoveFaces">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RemoveFaces</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">faces</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.RemoveFaces" title="Permalink to this definition"></a></dt>
-<dd><p>Removes the input list of faces from the input topology.</p>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RemoveFaces</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">faces</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.RemoveFaces" title="Permalink to this definition"></a></dt>
+<dd><p>Removes the specified Faces from the input topology.</p>
+<p>Under the PythonOCC backend, native OCCT editing is attempted first so
+surviving analytic, Bezier, and BSpline/NURBS surfaces remain exact.
+If native editing is unavailable, the established legacy fallback is
+used.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
+<dt><strong>topology</strong><span class="classifier">topologicpy.Topology</span></dt><dd><p>The input topology.</p>
 </dd>
-<dt><strong>faces</strong><span class="classifier">list</span></dt><dd><p>The input list of faces to remove.</p>
+<dt><strong>faces</strong><span class="classifier">topologicpy.Face or list, optional</span></dt><dd><p>The Face or list of Faces to remove. Default is None.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float, optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True, error and warning messages are suppressed.
+Default is False.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Topology</dt><dd><p>The input topology with the specified faces removed.</p>
+<dt>topologicpy.Topology</dt><dd><p>The resulting topology, or None if no topology remains.</p>
 </dd>
 </dl>
 </dd>
@@ -4246,24 +4257,29 @@ Default is False.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Topology.Topology.RemoveVertices">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RemoveVertices</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertices</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.RemoveVertices" title="Permalink to this definition"></a></dt>
-<dd><p>Removes the input list of vertices from the input topology.</p>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RemoveVertices</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertices</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.RemoveVertices" title="Permalink to this definition"></a></dt>
+<dd><p>Removes the specified Vertices from the input topology.</p>
+<p>Removal cascades through incident Edges and Faces. Under the PythonOCC
+backend, native OCCT editing is attempted first so surviving curves and
+surfaces remain exact. If native editing is unavailable, the established
+legacy fallback is used.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
+<dt><strong>topology</strong><span class="classifier">topologicpy.Topology</span></dt><dd><p>The input topology.</p>
 </dd>
-<dt><strong>vertices</strong><span class="classifier">list</span></dt><dd><p>The input list of vertices to remove.</p>
+<dt><strong>vertices</strong><span class="classifier">topologicpy.Vertex or list, optional</span></dt><dd><p>The Vertex or list of Vertices to remove. Default is None.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float, optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True, error and warning messages are suppressed.
+Default is False.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Topology</dt><dd><p>The input topology with the specified vertices removed.</p>
+<dt>topologicpy.Topology</dt><dd><p>The resulting topology, or None if no topology remains.</p>
 </dd>
 </dl>
 </dd>
