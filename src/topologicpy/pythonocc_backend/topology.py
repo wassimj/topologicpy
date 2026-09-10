@@ -5890,47 +5890,887 @@ class Topology:
             except Exception: return cluster
         except Exception: return cluster
 
-    def RemoveFacesNative(self, faces, tolerance: float = 0.0001):
+    @staticmethod
+    def _NativeMatchingShapes(
+        hostShape,
+        candidates,
+        shapeType,
+        tolerance: float = 0.0001,
+    ):
+        """
+        Returns native OCCT subshapes of hostShape matching the supplied
+        candidates.
+
+        Matching is deliberately conservative:
+
+        1. OCCT topological identity (IsSame / IsPartner) is preferred.
+        2. If construction of the host has copied the underlying TShape,
+           geometric equivalence is used as a fallback.
+
+        The geometric fallback is type-specific and tolerance-aware:
+        Vertices are compared by native point distance; Edges by exact length
+        and several points sampled along the native curve in both possible
+        orientations; Faces by area, centre of mass, and boundary-vertex
+        signature.
+
+        This is necessary because constructors such as Wire.ByEdges may create
+        a new OCCT container whose constituent subshapes are geometrically
+        identical to the supplied TopologicPy objects but are no longer
+        IsSame() to them.
+        """
+        if _is_null_shape(hostShape):
+            return []
+
         try:
-            all_faces = Topology.Faces(self) or []
-            if not all_faces: return True, self
-            remaining = [f for f in all_faces if not Topology._SameAsAny(f, faces)]
-            if len(remaining) == len(all_faces): return True, self
-            return True, Topology._RebuildFromMembers(remaining, tolerance)
+            tolerance = max(abs(float(tolerance)), 1.0e-12)
+        except Exception:
+            tolerance = 0.0001
+
+        candidate_shapes = []
+
+        for candidate in candidates or []:
+            candidate_shape = _shape_from_topology(candidate)
+
+            if (
+                _is_null_shape(candidate_shape)
+                and hasattr(candidate, "ShapeType")
+            ):
+                candidate_shape = candidate
+
+            if _is_null_shape(candidate_shape):
+                continue
+
+            try:
+                if candidate_shape.ShapeType() != shapeType:
+                    continue
+            except Exception:
+                continue
+
+            candidate_shapes.append(candidate_shape)
+
+        if len(candidate_shapes) < 1:
+            return []
+
+        native_shapes = []
+
+        try:
+            if hostShape.ShapeType() == shapeType:
+                native_shapes.append(hostShape)
+        except Exception:
+            pass
+
+        native_shapes.extend(
+            _iter_occ_subshapes_unique(
+                hostShape,
+                shapeType,
+            )
+            or []
+        )
+
+        # --------------------------------------------------------------
+        # Small native helpers
+        # --------------------------------------------------------------
+
+        def _point_tuple(vertex_shape):
+            try:
+                from OCC.Core.BRep import BRep_Tool
+
+                point = BRep_Tool.Pnt(
+                    topods.Vertex(vertex_shape)
+                )
+
+                return (
+                    float(point.X()),
+                    float(point.Y()),
+                    float(point.Z()),
+                )
+            except Exception:
+                return None
+
+        def _distance_points(a, b):
+            if a is None or b is None:
+                return float("inf")
+
+            dx = a[0] - b[0]
+            dy = a[1] - b[1]
+            dz = a[2] - b[2]
+
+            return math.sqrt(
+                dx * dx
+                + dy * dy
+                + dz * dz
+            )
+
+        def _shape_center(shape):
+            try:
+                props = GProp_GProps()
+                st = shape.ShapeType()
+
+                if st == TopAbs_FACE:
+                    brepgprop.SurfaceProperties(
+                        shape,
+                        props,
+                    )
+                elif st == TopAbs_EDGE:
+                    brepgprop.LinearProperties(
+                        shape,
+                        props,
+                    )
+                else:
+                    return None
+
+                point = props.CentreOfMass()
+
+                return (
+                    float(point.X()),
+                    float(point.Y()),
+                    float(point.Z()),
+                )
+            except Exception:
+                return None
+
+        def _edge_length(edge_shape):
+            try:
+                props = GProp_GProps()
+
+                brepgprop.LinearProperties(
+                    topods.Edge(edge_shape),
+                    props,
+                )
+
+                return float(props.Mass())
+            except Exception:
+                return None
+
+        def _face_area(face_shape):
+            try:
+                props = GProp_GProps()
+
+                brepgprop.SurfaceProperties(
+                    topods.Face(face_shape),
+                    props,
+                )
+
+                return float(props.Mass())
+            except Exception:
+                return None
+
+        def _edge_samples(edge_shape):
+            try:
+                from OCC.Core.BRepAdaptor import BRepAdaptor_Curve
+
+                adaptor = BRepAdaptor_Curve(
+                    topods.Edge(edge_shape)
+                )
+
+                first = float(
+                    adaptor.FirstParameter()
+                )
+
+                last = float(
+                    adaptor.LastParameter()
+                )
+
+                if (
+                    not math.isfinite(first)
+                    or not math.isfinite(last)
+                ):
+                    return None
+
+                parameters = (
+                    0.0,
+                    0.125,
+                    0.25,
+                    0.5,
+                    0.75,
+                    0.875,
+                    1.0,
+                )
+
+                result = []
+
+                for u in parameters:
+                    parameter = (
+                        first
+                        + (last - first) * u
+                    )
+
+                    point = adaptor.Value(
+                        parameter
+                    )
+
+                    result.append(
+                        (
+                            float(point.X()),
+                            float(point.Y()),
+                            float(point.Z()),
+                        )
+                    )
+
+                return result
+
+            except Exception:
+                return None
+
+        def _vertex_signature(shape):
+            points = []
+
+            for vertex_shape in (
+                _iter_occ_subshapes_unique(
+                    shape,
+                    TopAbs_VERTEX,
+                )
+                or []
+            ):
+                point = _point_tuple(
+                    vertex_shape
+                )
+
+                if point is not None:
+                    points.append(point)
+
+            if len(points) < 1:
+                return []
+
+            scale = max(
+                tolerance,
+                1.0e-12,
+            )
+
+            return sorted(
+                (
+                    int(round(point[0] / scale)),
+                    int(round(point[1] / scale)),
+                    int(round(point[2] / scale)),
+                )
+                for point in points
+            )
+
+        def _same_identity(a, b):
+            try:
+                if a.IsSame(b):
+                    return True
+            except Exception:
+                pass
+
+            try:
+                if a.IsPartner(b):
+                    return True
+            except Exception:
+                pass
+
+            return False
+
+        def _same_vertex(a, b):
+            return (
+                _distance_points(
+                    _point_tuple(a),
+                    _point_tuple(b),
+                )
+                <= tolerance
+            )
+
+        def _same_edge(a, b):
+            length_a = _edge_length(a)
+            length_b = _edge_length(b)
+
+            if (
+                length_a is None
+                or length_b is None
+            ):
+                return False
+
+            length_scale = max(
+                1.0,
+                abs(length_a),
+                abs(length_b),
+            )
+
+            if (
+                abs(length_a - length_b)
+                > tolerance * length_scale
+            ):
+                return False
+
+            samples_a = _edge_samples(a)
+            samples_b = _edge_samples(b)
+
+            if (
+                samples_a is None
+                or samples_b is None
+                or len(samples_a) != len(samples_b)
+            ):
+                return False
+
+            direct_error = max(
+                _distance_points(pa, pb)
+                for pa, pb in zip(
+                    samples_a,
+                    samples_b,
+                )
+            )
+
+            reverse_error = max(
+                _distance_points(pa, pb)
+                for pa, pb in zip(
+                    samples_a,
+                    reversed(samples_b),
+                )
+            )
+
+            return (
+                min(
+                    direct_error,
+                    reverse_error,
+                )
+                <= tolerance
+            )
+
+        def _same_face(a, b):
+            area_a = _face_area(a)
+            area_b = _face_area(b)
+
+            if (
+                area_a is None
+                or area_b is None
+            ):
+                return False
+
+            area_scale = max(
+                1.0,
+                abs(area_a),
+                abs(area_b),
+            )
+
+            if (
+                abs(area_a - area_b)
+                > tolerance * area_scale
+            ):
+                return False
+
+            center_a = _shape_center(a)
+            center_b = _shape_center(b)
+
+            if (
+                center_a is None
+                or center_b is None
+                or _distance_points(
+                    center_a,
+                    center_b,
+                )
+                > tolerance
+            ):
+                return False
+
+            signature_a = _vertex_signature(a)
+            signature_b = _vertex_signature(b)
+
+            if (
+                signature_a
+                and signature_b
+                and signature_a != signature_b
+            ):
+                return False
+
+            return True
+
+        def _same_geometry(a, b):
+            if shapeType == TopAbs_VERTEX:
+                return _same_vertex(a, b)
+
+            if shapeType == TopAbs_EDGE:
+                return _same_edge(a, b)
+
+            if shapeType == TopAbs_FACE:
+                return _same_face(a, b)
+
+            return False
+
+        # --------------------------------------------------------------
+        # Match every host subshape against the supplied candidates.
+        #
+        # Keep host-side shapes in the result because ShapeBuild_ReShape
+        # must remove the subshape that actually belongs to hostShape,
+        # not an independently constructed coincident candidate.
+        # --------------------------------------------------------------
+
+        result = []
+
+        for native_shape in native_shapes:
+            matched = False
+
+            for candidate_shape in candidate_shapes:
+                if _same_identity(
+                    native_shape,
+                    candidate_shape,
+                ):
+                    matched = True
+                    break
+
+            if not matched:
+                for candidate_shape in candidate_shapes:
+                    if _same_geometry(
+                        native_shape,
+                        candidate_shape,
+                    ):
+                        matched = True
+                        break
+
+            if matched:
+                duplicate = False
+
+                for existing in result:
+                    if _same_identity(
+                        native_shape,
+                        existing,
+                    ):
+                        duplicate = True
+                        break
+
+                if not duplicate:
+                    result.append(
+                        native_shape
+                    )
+
+        return result
+
+    @staticmethod
+    def _NativeAncestors(
+        hostShape,
+        sourceShapes,
+        sourceType,
+        ancestorType,
+    ):
+        """
+        Returns the unique native OCCT ancestors of the supplied source
+        subshapes within hostShape.
+
+        This implementation deliberately avoids relying exclusively on
+        TopExp.MapShapesAndAncestors. The corresponding pythonocc binding has
+        varied between releases and can silently fail to populate the map.
+
+        Instead, the method enumerates candidate ancestors in the host and
+        checks whether each contains one of the supplied host-side source
+        subshapes by OCCT topological identity (IsSame / IsPartner).
+
+        Parameters
+        ----------
+        hostShape : OCC.Core.TopoDS.TopoDS_Shape
+            The host OCCT shape.
+        sourceShapes : list
+            Host-side OCCT source subshapes.
+        sourceType : OCC.Core.TopAbs.TopAbs_ShapeEnum
+            The source subshape type.
+        ancestorType : OCC.Core.TopAbs.TopAbs_ShapeEnum
+            The desired ancestor type.
+
+        Returns
+        -------
+        list
+            The unique matching ancestor OCCT shapes.
+        """
+        if _is_null_shape(hostShape) or not sourceShapes:
+            return []
+
+        source_shapes = [
+            shape
+            for shape in sourceShapes
+            if not _is_null_shape(shape)
+        ]
+
+        if len(source_shapes) < 1:
+            return []
+
+        def _same_shape(a, b):
+            try:
+                if a.IsSame(b):
+                    return True
+            except Exception:
+                pass
+
+            try:
+                if a.IsPartner(b):
+                    return True
+            except Exception:
+                pass
+
+            return False
+
+        def _append_unique(items, candidate):
+            for existing in items:
+                if _same_shape(
+                    existing,
+                    candidate,
+                ):
+                    return
+
+            items.append(candidate)
+
+        # --------------------------------------------------------------
+        # Enumerate candidate ancestors. TopExp_Explorer does not
+        # necessarily return the root shape when its type already equals
+        # ancestorType, so include hostShape explicitly in that case.
+        # --------------------------------------------------------------
+
+        ancestors = []
+
+        try:
+            if hostShape.ShapeType() == ancestorType:
+                ancestors.append(hostShape)
+        except Exception:
+            pass
+
+        for ancestor in (
+            _iter_occ_subshapes_unique(
+                hostShape,
+                ancestorType,
+            )
+            or []
+        ):
+            _append_unique(
+                ancestors,
+                ancestor,
+            )
+
+        if len(ancestors) < 1:
+            return []
+
+        # --------------------------------------------------------------
+        # An ancestor matches when one of its source-type subshapes is
+        # the same host-side OCCT subshape as one of sourceShapes.
+        #
+        # Include the ancestor itself when sourceType == ancestorType,
+        # although current removal paths normally query a lower type.
+        # --------------------------------------------------------------
+
+        result = []
+
+        for ancestor in ancestors:
+            contained_sources = []
+
+            try:
+                if ancestor.ShapeType() == sourceType:
+                    contained_sources.append(
+                        ancestor
+                    )
+            except Exception:
+                pass
+
+            contained_sources.extend(
+                _iter_occ_subshapes_unique(
+                    ancestor,
+                    sourceType,
+                )
+                or []
+            )
+
+            matched = False
+
+            for contained in contained_sources:
+                for source in source_shapes:
+                    if _same_shape(
+                        contained,
+                        source,
+                    ):
+                        matched = True
+                        break
+
+                if matched:
+                    break
+
+            if matched:
+                _append_unique(
+                    result,
+                    ancestor,
+                )
+
+        return result
+
+    def _FinalizeNativeEdit(self, editedShape, tolerance: float = 0.0001):
+        """
+        Wraps the result of a native topology-editing operation.
+
+        If deletion leaves an invalid higher-dimensional container, only the
+        container is reconstructed from surviving exact OCCT Faces, Edges, or
+        Vertices. The underlying curves and surfaces are not approximated.
+        """
+        if _is_null_shape(editedShape):
+            return None
+
+        try:
+            tolerance = max(abs(float(tolerance)), 1.0e-12)
+        except Exception:
+            tolerance = 0.0001
+
+        try:
+            dictionary = Topology.GetDictionary(self)
+        except Exception:
+            dictionary = getattr(self, "dictionary", {})
+
+        contents = list(getattr(self, "contents", []) or [])
+        contexts = list(getattr(self, "contexts", []) or [])
+        apertures = list(getattr(self, "apertures", []) or [])
+
+        def attach_metadata(result):
+            if result is None:
+                return None
+
+            try:
+                result.SetDictionary(dictionary)
+            except Exception:
+                try:
+                    result.dictionary = dictionary
+                except Exception:
+                    pass
+
+            for name, values in (
+                ("contents", contents),
+                ("contexts", contexts),
+                ("apertures", apertures),
+            ):
+                try:
+                    setattr(result, name, list(values))
+                except Exception:
+                    pass
+
+            return result
+
+        valid = True
+        if BRepCheck_Analyzer is not None:
+            try:
+                valid = bool(BRepCheck_Analyzer(editedShape, True, True).IsValid())
+            except Exception:
+                valid = True
+
+        if valid:
+            try:
+                result = Topology.ByOcctShape(
+                    editedShape,
+                    dictionary=dictionary,
+                    contents=contents,
+                    contexts=contexts,
+                    apertures=apertures,
+                )
+                if result is not None:
+                    return attach_metadata(result)
+            except Exception:
+                pass
+
+        try:
+            from .cluster import Cluster
+        except Exception:
+            Cluster = None
+
+        for shape_type in (TopAbs_FACE, TopAbs_EDGE, TopAbs_VERTEX):
+            native_shapes = _iter_occ_subshapes_unique(editedShape, shape_type) or []
+            if not native_shapes:
+                continue
+
+            wrappers = []
+            for native_shape in native_shapes:
+                try:
+                    wrapper = Topology.ByOcctShape(native_shape)
+                except Exception:
+                    wrapper = None
+                if wrapper is not None:
+                    wrappers.append(wrapper)
+
+            if not wrappers:
+                continue
+
+            if len(wrappers) == 1:
+                return attach_metadata(wrappers[0])
+
+            if Cluster is None:
+                return None
+
+            try:
+                cluster = Cluster.ByTopologies(wrappers)
+            except Exception:
+                cluster = None
+
+            if cluster is None:
+                return None
+
+            try:
+                result = cluster.SelfMerge(tolerance=tolerance)
+            except TypeError:
+                try:
+                    result = cluster.SelfMerge()
+                except Exception:
+                    result = cluster
+            except Exception:
+                result = cluster
+
+            return attach_metadata(result)
+
+        return None
+
+    def RemoveFacesNative(self, faces, tolerance: float = 0.0001):
+        """
+        Removes the specified Faces using OCCT ShapeBuild_ReShape while
+        preserving surviving analytic and BSpline/NURBS surfaces exactly.
+        """
+        shape = _shape_from_topology(self)
+        if _is_null_shape(shape):
+            return False, None
+
+        try:
+            tolerance = max(abs(float(tolerance)), 1.0e-12)
+        except Exception:
+            return False, None
+
+        matching_faces = Topology._NativeMatchingShapes(shape, faces, TopAbs_FACE, tolerance)
+        if not matching_faces:
+            return True, self
+
+        try:
+            from OCC.Core.ShapeBuild import ShapeBuild_ReShape
+
+            reshaper = ShapeBuild_ReShape()
+            for face_shape in matching_faces:
+                reshaper.Remove(face_shape)
+
+            edited_shape = reshaper.Apply(shape)
+            result = self._FinalizeNativeEdit(edited_shape, tolerance=tolerance)
+            return True, result
+
         except Exception:
             return False, None
 
     def RemoveEdgesNative(self, edges, tolerance: float = 0.0001):
+        """
+        Removes the specified Edges using native OCCT topology editing.
+
+        Edges incident to Faces remove those incident Faces, preserving the
+        established cascading-removal semantics. Free Edges are removed
+        directly. Surviving curve geometry remains exact.
+        """
+        shape = _shape_from_topology(self)
+        if _is_null_shape(shape):
+            return False, None
+
         try:
-            all_edges = Topology.Edges(self) or []
-            if not all_edges: return True, self
-            matching = [e for e in all_edges if Topology._SameAsAny(e, edges)]
-            if not matching: return True, self
-            all_faces = Topology.Faces(self) or []
-            if all_faces:
-                remove_faces = []
-                for edge in matching:
-                    remove_faces.extend(edge.SuperTopologies(self, "face") or [])
-                return self.RemoveFacesNative(_deduplicate_by_identity(remove_faces), tolerance)
-            remaining = [e for e in all_edges if not Topology._SameAsAny(e, matching)]
-            return True, Topology._RebuildFromMembers(remaining, tolerance)
+            tolerance = max(abs(float(tolerance)), 1.0e-12)
+        except Exception:
+            return False, None
+
+        matching_edges = Topology._NativeMatchingShapes(shape, edges, TopAbs_EDGE, tolerance)
+        if not matching_edges:
+            return True, self
+
+        try:
+            from OCC.Core.ShapeBuild import ShapeBuild_ReShape
+            from OCC.Core.TopTools import TopTools_MapOfShape
+        except Exception:
+            return False, None
+
+        incident_faces = Topology._NativeAncestors(
+            shape,
+            matching_edges,
+            TopAbs_EDGE,
+            TopAbs_FACE,
+        )
+
+        remove_shapes = []
+        seen = TopTools_MapOfShape()
+
+        for remove_shape in list(incident_faces) + list(matching_edges):
+            try:
+                if seen.Contains(remove_shape):
+                    continue
+                seen.Add(remove_shape)
+            except Exception:
+                pass
+            remove_shapes.append(remove_shape)
+
+        try:
+            reshaper = ShapeBuild_ReShape()
+            for remove_shape in remove_shapes:
+                reshaper.Remove(remove_shape)
+
+            edited_shape = reshaper.Apply(shape)
+            result = self._FinalizeNativeEdit(edited_shape, tolerance=tolerance)
+            return True, result
+
         except Exception:
             return False, None
 
     def RemoveVerticesNative(self, vertices, tolerance: float = 0.0001):
+        """
+        Removes the specified Vertices using native OCCT topology editing.
+
+        Removal cascades through incident Edges and then incident Faces,
+        preserving the established TopologicPy semantics while retaining exact
+        surviving curve and surface geometry.
+        """
+        shape = _shape_from_topology(self)
+        if _is_null_shape(shape):
+            return False, None
+
         try:
-            all_vertices = Topology.Vertices(self) or []
-            if not all_vertices: return True, self
-            matching = [v for v in all_vertices if Topology._SameAsAny(v, vertices)]
-            if not matching: return True, self
-            all_edges = Topology.Edges(self) or []
-            if all_edges:
-                remove_edges = []
-                for vertex in matching:
-                    remove_edges.extend(vertex.SuperTopologies(self, "edge") or [])
-                return self.RemoveEdgesNative(_deduplicate_by_identity(remove_edges), tolerance)
-            remaining = [v for v in all_vertices if not Topology._SameAsAny(v, matching)]
-            return True, Topology._RebuildFromMembers(remaining, tolerance)
+            tolerance = max(abs(float(tolerance)), 1.0e-12)
+        except Exception:
+            return False, None
+
+        matching_vertices = Topology._NativeMatchingShapes(
+            shape,
+            vertices,
+            TopAbs_VERTEX,
+            tolerance,
+        )
+        if not matching_vertices:
+            return True, self
+
+        try:
+            from OCC.Core.ShapeBuild import ShapeBuild_ReShape
+            from OCC.Core.TopTools import TopTools_MapOfShape
+        except Exception:
+            return False, None
+
+        incident_edges = Topology._NativeAncestors(
+            shape,
+            matching_vertices,
+            TopAbs_VERTEX,
+            TopAbs_EDGE,
+        )
+
+        incident_faces = (
+            Topology._NativeAncestors(
+                shape,
+                incident_edges,
+                TopAbs_EDGE,
+                TopAbs_FACE,
+            )
+            if incident_edges
+            else []
+        )
+
+        remove_shapes = []
+        seen = TopTools_MapOfShape()
+
+        for remove_shape in (
+            list(incident_faces)
+            + list(incident_edges)
+            + list(matching_vertices)
+        ):
+            try:
+                if seen.Contains(remove_shape):
+                    continue
+                seen.Add(remove_shape)
+            except Exception:
+                pass
+            remove_shapes.append(remove_shape)
+
+        try:
+            reshaper = ShapeBuild_ReShape()
+            for remove_shape in remove_shapes:
+                reshaper.Remove(remove_shape)
+
+            edited_shape = reshaper.Apply(shape)
+            result = self._FinalizeNativeEdit(edited_shape, tolerance=tolerance)
+            return True, result
+
         except Exception:
             return False, None
 

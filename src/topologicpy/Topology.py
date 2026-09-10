@@ -15061,7 +15061,7 @@ class Topology():
     #         return None
     #     return result
     #
-    
+
     @staticmethod
     def InternalVertex(
         topology,
@@ -18393,80 +18393,227 @@ class Topology():
 
         return result
 
+    # @staticmethod
+    # def RemoveEdges(topology, edges: list = [], tolerance: float = 0.0001, silent: bool = False):
+    #     """
+    #     Removes the input list of edges from the input topology.
+
+    #     Parameters
+    #     ----------
+    #     topology : topologic_core.Topology
+    #         The input topology.
+    #     edges : list
+    #         The input list of edges to remove.
+    #     tolerance : float, optional
+    #         The desired tolerance. Default is 0.0001.
+    #     silent : bool, optional
+    #         If set to True, error and warning messages are suppressed. Default is False.
+
+    #     Returns
+    #     -------
+    #     topologic_core.Topology
+    #         The input topology with the specified edges removed.
+    #     """
+    #     if not Topology.IsInstance(topology, "Topology"):
+    #         if not silent:
+    #             print("Topology.RemoveEdges - Error: The input topology parameter is not a valid topology. Returning None.")
+    #         return None
+    #     edges = [e for e in edges if Topology.IsInstance(e, "Edge")]
+    #     if len(edges) < 1:
+    #         return topology
+    #     if not Topology._IsTopologicCoreBackend():
+    #         try:
+    #             status, result = Core.InstanceCall(topology, "RemoveEdgesNative", edges, tolerance)
+    #             if status is True:
+    #                 return result
+    #         except Exception:
+    #             pass
+    #     return Topology._LegacyRemoveEdges_BackendV1(topology, edges=edges, tolerance=tolerance, silent=silent)
+
+    # @staticmethod
+    # def RemoveFaces(topology, faces: list = [], tolerance: float = 0.0001, silent: bool = False):
+    #     """
+    #     Removes the input list of faces from the input topology.
+
+    #     Parameters
+    #     ----------
+    #     topology : topologic_core.Topology
+    #         The input topology.
+    #     faces : list
+    #         The input list of faces to remove.
+    #     tolerance : float, optional
+    #         The desired tolerance. Default is 0.0001.
+    #     silent : bool, optional
+    #         If set to True, error and warning messages are suppressed. Default is False.
+
+    #     Returns
+    #     -------
+    #     topologic_core.Topology
+    #         The input topology with the specified faces removed.
+    #     """
+    #     if not Topology.IsInstance(topology, "Topology"):
+    #         if not silent:
+    #             print("Topology.RemoveFaces - Error: The input topology parameter is not a valid topology. Returning None.")
+    #         return None
+    #     faces = [f for f in faces if Topology.IsInstance(f, "Face")]
+    #     if len(faces) < 1:
+    #         return topology
+    #     if not Topology._IsTopologicCoreBackend():
+    #         try:
+    #             status, result = Core.InstanceCall(topology, "RemoveFacesNative", faces, tolerance)
+    #             if status is True:
+    #                 return result
+    #         except Exception:
+    #             pass
+    #     return Topology._LegacyRemoveFaces_BackendV1(topology, faces=faces, tolerance=tolerance, silent=silent)
+
     @staticmethod
-    def RemoveEdges(topology, edges: list = [], tolerance: float = 0.0001, silent: bool = False):
+    def RemoveEdges(topology, edges=None, tolerance: float = 0.0001, silent: bool = False):
         """
-        Removes the input list of edges from the input topology.
+        Removes the specified Edges from the input topology.
+
+        Edges bounding Faces cause their incident Faces to be removed. Free
+        Edges are removed directly. Under the PythonOCC backend, native OCCT
+        editing is attempted first so surviving curves and surfaces remain
+        exact. If native editing is unavailable (for example, for a lightweight
+        shapeless Cluster), the established legacy fallback is used.
 
         Parameters
         ----------
-        topology : topologic_core.Topology
+        topology : topologicpy.Topology
             The input topology.
-        edges : list
-            The input list of edges to remove.
+        edges : topologicpy.Edge or list, optional
+            The Edge or list of Edges to remove. Default is None.
         tolerance : float, optional
             The desired tolerance. Default is 0.0001.
         silent : bool, optional
-            If set to True, error and warning messages are suppressed. Default is False.
+            If set to True, error and warning messages are suppressed.
+            Default is False.
 
         Returns
         -------
-        topologic_core.Topology
-            The input topology with the specified edges removed.
+        topologicpy.Topology
+            The resulting topology, or None if no topology remains.
         """
         if not Topology.IsInstance(topology, "Topology"):
             if not silent:
                 print("Topology.RemoveEdges - Error: The input topology parameter is not a valid topology. Returning None.")
             return None
-        edges = [e for e in edges if Topology.IsInstance(e, "Edge")]
+
+        if edges is None:
+            return topology
+
+        if not isinstance(edges, (list, tuple)):
+            edges = [edges]
+
+        edges = [
+            edge for edge in edges
+            if Topology.IsInstance(edge, "Edge")
+        ]
+
         if len(edges) < 1:
             return topology
+
+        try:
+            tolerance = max(abs(float(tolerance)), 1.0e-12)
+        except Exception:
+            if not silent:
+                print("Topology.RemoveEdges - Error: The input tolerance parameter is not a valid number. Returning None.")
+            return None
+
         if not Topology._IsTopologicCoreBackend():
             try:
-                status, result = Core.InstanceCall(topology, "RemoveEdgesNative", edges, tolerance)
+                status, result = Core.InstanceCall(
+                    topology,
+                    "RemoveEdgesNative",
+                    edges,
+                    tolerance,
+                )
                 if status is True:
                     return result
             except Exception:
                 pass
-        return Topology._LegacyRemoveEdges_BackendV1(topology, edges=edges, tolerance=tolerance, silent=silent)
+
+        return Topology._LegacyRemoveEdges_BackendV1(
+            topology,
+            edges=edges,
+            tolerance=tolerance,
+            silent=silent,
+        )
 
     @staticmethod
-    def RemoveFaces(topology, faces: list = [], tolerance: float = 0.0001, silent: bool = False):
+    def RemoveFaces(topology, faces=None, tolerance: float = 0.0001, silent: bool = False):
         """
-        Removes the input list of faces from the input topology.
+        Removes the specified Faces from the input topology.
+
+        Under the PythonOCC backend, native OCCT editing is attempted first so
+        surviving analytic, Bezier, and BSpline/NURBS surfaces remain exact.
+        If native editing is unavailable, the established legacy fallback is
+        used.
 
         Parameters
         ----------
-        topology : topologic_core.Topology
+        topology : topologicpy.Topology
             The input topology.
-        faces : list
-            The input list of faces to remove.
+        faces : topologicpy.Face or list, optional
+            The Face or list of Faces to remove. Default is None.
         tolerance : float, optional
             The desired tolerance. Default is 0.0001.
         silent : bool, optional
-            If set to True, error and warning messages are suppressed. Default is False.
+            If set to True, error and warning messages are suppressed.
+            Default is False.
 
         Returns
         -------
-        topologic_core.Topology
-            The input topology with the specified faces removed.
+        topologicpy.Topology
+            The resulting topology, or None if no topology remains.
         """
         if not Topology.IsInstance(topology, "Topology"):
             if not silent:
                 print("Topology.RemoveFaces - Error: The input topology parameter is not a valid topology. Returning None.")
             return None
-        faces = [f for f in faces if Topology.IsInstance(f, "Face")]
+
+        if faces is None:
+            return topology
+
+        if not isinstance(faces, (list, tuple)):
+            faces = [faces]
+
+        faces = [
+            face for face in faces
+            if Topology.IsInstance(face, "Face")
+        ]
+
         if len(faces) < 1:
             return topology
+
+        try:
+            tolerance = max(abs(float(tolerance)), 1.0e-12)
+        except Exception:
+            if not silent:
+                print("Topology.RemoveFaces - Error: The input tolerance parameter is not a valid number. Returning None.")
+            return None
+
         if not Topology._IsTopologicCoreBackend():
             try:
-                status, result = Core.InstanceCall(topology, "RemoveFacesNative", faces, tolerance)
+                status, result = Core.InstanceCall(
+                    topology,
+                    "RemoveFacesNative",
+                    faces,
+                    tolerance,
+                )
                 if status is True:
                     return result
             except Exception:
                 pass
-        return Topology._LegacyRemoveFaces_BackendV1(topology, faces=faces, tolerance=tolerance, silent=silent)
-    
+
+        return Topology._LegacyRemoveFaces_BackendV1(
+            topology,
+            faces=faces,
+            tolerance=tolerance,
+            silent=silent,
+        )
+
     @staticmethod
     def RemoveFacesBySelectors(topology, selectors: list = [], tolerance: float = 0.0001, silent: bool = False):
         """
@@ -18515,45 +18662,118 @@ class Topology():
             return topology
         return Topology.RemoveFaces(topology, faces = to_remove, silent=silent)
 
+    # @staticmethod
+    # def RemoveVertices(topology, vertices: list = [], tolerance: float = 0.0001, silent: bool = False):
+    #     """
+    #     Removes the input list of vertices from the input topology.
+
+    #     Parameters
+    #     ----------
+    #     topology : topologic_core.Topology
+    #         The input topology.
+    #     vertices : list
+    #         The input list of vertices to remove.
+    #     tolerance : float, optional
+    #         The desired tolerance. Default is 0.0001.
+    #     silent : bool, optional
+    #         If set to True, error and warning messages are suppressed. Default is False.
+
+    #     Returns
+    #     -------
+    #     topologic_core.Topology
+    #         The input topology with the specified vertices removed.
+    #     """
+    #     if not Topology.IsInstance(topology, "Topology"):
+    #         if not silent:
+    #             print("Topology.RemoveVertices - Error: The input topology parameter is not a valid topology. Returning None.")
+    #         return None
+    #     vertices = [v for v in vertices if Topology.IsInstance(v, "Vertex")]
+    #     if len(vertices) < 1:
+    #         if not silent:
+    #             print("Topology.RemoveFacesBySelectors - Warning: The input vertices parameter does not contain any valid selectors. Returning the input topology.")
+    #         return topology
+    #     if not Topology._IsTopologicCoreBackend():
+    #         try:
+    #             status, result = Core.InstanceCall(topology, "RemoveVerticesNative", vertices, tolerance)
+    #             if status is True:
+    #                 return result
+    #         except Exception:
+    #             pass
+    #     return Topology._LegacyRemoveVertices_BackendV1(topology, vertices=vertices, tolerance=tolerance, silent=silent)
+
     @staticmethod
-    def RemoveVertices(topology, vertices: list = [], tolerance: float = 0.0001, silent: bool = False):
+    def RemoveVertices(topology, vertices=None, tolerance: float = 0.0001, silent: bool = False):
         """
-        Removes the input list of vertices from the input topology.
+        Removes the specified Vertices from the input topology.
+
+        Removal cascades through incident Edges and Faces. Under the PythonOCC
+        backend, native OCCT editing is attempted first so surviving curves and
+        surfaces remain exact. If native editing is unavailable, the established
+        legacy fallback is used.
 
         Parameters
         ----------
-        topology : topologic_core.Topology
+        topology : topologicpy.Topology
             The input topology.
-        vertices : list
-            The input list of vertices to remove.
+        vertices : topologicpy.Vertex or list, optional
+            The Vertex or list of Vertices to remove. Default is None.
         tolerance : float, optional
             The desired tolerance. Default is 0.0001.
         silent : bool, optional
-            If set to True, error and warning messages are suppressed. Default is False.
+            If set to True, error and warning messages are suppressed.
+            Default is False.
 
         Returns
         -------
-        topologic_core.Topology
-            The input topology with the specified vertices removed.
+        topologicpy.Topology
+            The resulting topology, or None if no topology remains.
         """
         if not Topology.IsInstance(topology, "Topology"):
             if not silent:
                 print("Topology.RemoveVertices - Error: The input topology parameter is not a valid topology. Returning None.")
             return None
-        vertices = [v for v in vertices if Topology.IsInstance(v, "Vertex")]
-        if len(vertices) < 1:
-            if not silent:
-                print("Topology.RemoveFacesBySelectors - Warning: The input vertices parameter does not contain any valid selectors. Returning the input topology.")
+
+        if vertices is None:
             return topology
+
+        if not isinstance(vertices, (list, tuple)):
+            vertices = [vertices]
+
+        vertices = [
+            vertex for vertex in vertices
+            if Topology.IsInstance(vertex, "Vertex")
+        ]
+
+        if len(vertices) < 1:
+            return topology
+
+        try:
+            tolerance = max(abs(float(tolerance)), 1.0e-12)
+        except Exception:
+            if not silent:
+                print("Topology.RemoveVertices - Error: The input tolerance parameter is not a valid number. Returning None.")
+            return None
+
         if not Topology._IsTopologicCoreBackend():
             try:
-                status, result = Core.InstanceCall(topology, "RemoveVerticesNative", vertices, tolerance)
+                status, result = Core.InstanceCall(
+                    topology,
+                    "RemoveVerticesNative",
+                    vertices,
+                    tolerance,
+                )
                 if status is True:
                     return result
             except Exception:
                 pass
-        return Topology._LegacyRemoveVertices_BackendV1(topology, vertices=vertices, tolerance=tolerance, silent=silent)
 
+        return Topology._LegacyRemoveVertices_BackendV1(
+            topology,
+            vertices=vertices,
+            tolerance=tolerance,
+            silent=silent,
+        )
+    
     @staticmethod
     def ReplaceVertices(
         topology,
