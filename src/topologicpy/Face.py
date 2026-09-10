@@ -378,6 +378,270 @@ class Face():
             return None
         return face
 
+    def ByMesh(
+            mesh,
+            triangulateQuads: bool = False,
+            quadSplit: str = "shortest",
+            tolerance: float = 0.0001,
+            silent: bool = False,
+        ) -> list:
+            """
+            Creates faces from indexed mesh data.
+    
+            The mesh is expected to use the canonical TopologicPy mesh schema:
+    
+                {
+                    "vertices": [[x, y, z], ...],
+                    "faces": [[i, j, k], [i, j, k, l], ...]
+                }
+    
+            The transitional aliases ``verts``, ``tris``, and ``quads`` are also
+            accepted. Triangular elements always create triangular faces. Quad
+            elements create four-sided faces unless ``triangulateQuads`` is True,
+            in which case each quad is split into two triangles.
+    
+            Parameters
+            ----------
+            mesh : dict
+                The input indexed mesh data.
+            triangulateQuads : bool , optional
+                If True, quad elements are split into triangles. Default is False.
+            quadSplit : str , optional
+                Controls the diagonal used when triangulating quads. Supported
+                values are "shortest", "02", and "13". "02" connects local quad
+                vertices 0 and 2; "13" connects 1 and 3. Default is "shortest".
+            tolerance : float , optional
+                The desired tolerance. Default is 0.0001.
+            silent : bool , optional
+                If True, error and warning messages are suppressed. Default is False.
+    
+            Returns
+            -------
+            list
+                The created list of triangular and/or quadrilateral faces, or None
+                if the mesh data is invalid or any requested face cannot be created.
+    
+            """
+            import math
+    
+            from topologicpy.Vertex import Vertex
+            from topologicpy.Topology import Topology
+    
+            if not isinstance(mesh, dict):
+                if not silent:
+                    print("Face.ByMesh - Error: The input mesh parameter is not a valid dictionary. Returning None.")
+                return None
+    
+            coordinates = mesh.get("vertices", mesh.get("verts", None))
+            elements = mesh.get("faces", None)
+    
+            if elements is None:
+                triangles = mesh.get("tris", []) or []
+                quads = mesh.get("quads", []) or []
+    
+                if isinstance(triangles, (list, tuple)) and isinstance(quads, (list, tuple)):
+                    elements = list(triangles) + list(quads)
+    
+            if not isinstance(coordinates, (list, tuple)) or not isinstance(elements, (list, tuple)):
+                if not silent:
+                    print("Face.ByMesh - Error: The mesh must contain valid 'vertices' and 'faces' lists. Returning None.")
+                return None
+    
+            if len(coordinates) < 3 or len(elements) < 1:
+                if not silent:
+                    print("Face.ByMesh - Error: The input mesh does not contain enough vertices or faces. Returning None.")
+                return None
+    
+            try:
+                tol = abs(float(tolerance))
+            except Exception:
+                tol = 0.0
+    
+            if tol <= 0.0:
+                if not silent:
+                    print("Face.ByMesh - Error: The input tolerance parameter must be greater than zero. Returning None.")
+                return None
+    
+            if not isinstance(quadSplit, str):
+                if not silent:
+                    print("Face.ByMesh - Error: The input quadSplit parameter is not a valid string. Returning None.")
+                return None
+    
+            split_mode = quadSplit.strip().lower().replace("-", "").replace("_", "")
+            aliases = {
+                "shortest": "shortest",
+                "02": "02",
+                "0to2": "02",
+                "13": "13",
+                "1to3": "13",
+            }
+            split_mode = aliases.get(split_mode)
+    
+            if split_mode is None:
+                if not silent:
+                    print("Face.ByMesh - Error: quadSplit must be 'shortest', '02', or '13'. Returning None.")
+                return None
+    
+            xyz = []
+            vertices = []
+    
+            for index, coords in enumerate(coordinates):
+                if not isinstance(coords, (list, tuple)) or len(coords) < 3:
+                    if not silent:
+                        print(f"Face.ByMesh - Error: Mesh vertex #{index} is not a valid 3D coordinate. Returning None.")
+                    return None
+    
+                try:
+                    point = [
+                        float(coords[0]),
+                        float(coords[1]),
+                        float(coords[2]),
+                    ]
+                except Exception:
+                    if not silent:
+                        print(f"Face.ByMesh - Error: Mesh vertex #{index} contains non-numeric coordinates. Returning None.")
+                    return None
+    
+                if not all(math.isfinite(value) for value in point):
+                    if not silent:
+                        print(f"Face.ByMesh - Error: Mesh vertex #{index} contains non-finite coordinates. Returning None.")
+                    return None
+    
+                vertex = Vertex.ByCoordinates(
+                    point[0],
+                    point[1],
+                    point[2],
+                )
+    
+                if not Topology.IsInstance(vertex, "Vertex"):
+                    if not silent:
+                        print(f"Face.ByMesh - Error: Could not create mesh vertex #{index}. Returning None.")
+                    return None
+    
+                xyz.append(point)
+                vertices.append(vertex)
+    
+            def diagonal_squared(i, j):
+                a = xyz[i]
+                b = xyz[j]
+    
+                return (
+                    (a[0] - b[0]) ** 2
+                    + (a[1] - b[1]) ** 2
+                    + (a[2] - b[2]) ** 2
+                )
+    
+            def make_face(indices):
+                created = Face.ByVertices(
+                    [vertices[index] for index in indices],
+                    tolerance=tol,
+                    silent=True,
+                )
+    
+                if Topology.IsInstance(created, "Face"):
+                    return created
+    
+                return None
+    
+            result = []
+            vertex_count = len(vertices)
+    
+            for element_index, element in enumerate(elements):
+                if not isinstance(element, (list, tuple)) or len(element) not in (3, 4):
+                    if not silent:
+                        print(
+                            f"Face.ByMesh - Error: Mesh face #{element_index} must contain "
+                            "exactly 3 or 4 vertex indices. Returning None."
+                        )
+                    return None
+    
+                try:
+                    indices = [int(value) for value in element]
+                except Exception:
+                    if not silent:
+                        print(
+                            f"Face.ByMesh - Error: Mesh face #{element_index} contains "
+                            "invalid indices. Returning None."
+                        )
+                    return None
+    
+                if (
+                    any(index < 0 or index >= vertex_count for index in indices)
+                    or len(set(indices)) != len(indices)
+                ):
+                    if not silent:
+                        print(
+                            f"Face.ByMesh - Error: Mesh face #{element_index} contains "
+                            "invalid or repeated indices. Returning None."
+                        )
+                    return None
+    
+                if len(indices) == 3:
+                    created = make_face(indices)
+    
+                    if created is None:
+                        if not silent:
+                            print(
+                                f"Face.ByMesh - Error: Could not create triangular mesh "
+                                f"face #{element_index}. Returning None."
+                            )
+                        return None
+    
+                    result.append(created)
+                    continue
+    
+                if not triangulateQuads:
+                    created = make_face(indices)
+    
+                    if created is None:
+                        if not silent:
+                            print(
+                                f"Face.ByMesh - Error: Could not create quadrilateral mesh "
+                                f"face #{element_index}. The quad may be non-planar; set "
+                                "triangulateQuads=True to split it. Returning None."
+                            )
+                        return None
+    
+                    result.append(created)
+                    continue
+    
+                if split_mode == "shortest":
+                    if (
+                        diagonal_squared(indices[0], indices[2])
+                        <= diagonal_squared(indices[1], indices[3])
+                    ):
+                        split = "02"
+                    else:
+                        split = "13"
+                else:
+                    split = split_mode
+    
+                if split == "02":
+                    triangle_indices = (
+                        [indices[0], indices[1], indices[2]],
+                        [indices[0], indices[2], indices[3]],
+                    )
+                else:
+                    triangle_indices = (
+                        [indices[0], indices[1], indices[3]],
+                        [indices[1], indices[2], indices[3]],
+                    )
+    
+                for triangle in triangle_indices:
+                    created = make_face(triangle)
+    
+                    if created is None:
+                        if not silent:
+                            print(
+                                f"Face.ByMesh - Error: Could not triangulate mesh quad "
+                                f"#{element_index}. Returning None."
+                            )
+                        return None
+    
+                    result.append(created)
+    
+            return result
+
     @staticmethod
     def ByNurbsParameters(
         controlPoints,
