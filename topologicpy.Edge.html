@@ -170,44 +170,50 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Arc" title="topologicpy.Edge.Edge.Arc"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Arc</span></code></a>([origin, radius, fromAngle, toAngle, ...])</p></td>
 <td><p>Creates a single open circular arc Edge.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Bezier" title="topologicpy.Edge.Edge.Bezier"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Bezier</span></code></a>(controlPoints[, weights, tolerance, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.ArcByVertices" title="topologicpy.Edge.Edge.ArcByVertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ArcByVertices</span></code></a>(startVertex, middleVertex, ...)</p></td>
+<td><p>Creates one exact circular arc Edge through three input vertices.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Bezier" title="topologicpy.Edge.Edge.Bezier"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Bezier</span></code></a>(controlPoints[, weights, tolerance, ...])</p></td>
 <td><p>Creates a single exact Bezier curve Edge.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Bisect" title="topologicpy.Edge.Edge.Bisect"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Bisect</span></code></a>(edgeA, edgeB[, length, placement, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Bisect" title="topologicpy.Edge.Edge.Bisect"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Bisect</span></code></a>(edgeA, edgeB[, length, placement, ...])</p></td>
 <td><p>Creates a bisecting edge between edgeA and edgeB.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.ByCurve" title="topologicpy.Edge.Edge.ByCurve"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByCurve</span></code></a>(controlPoints[, degree, isPeriodic, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.ByCurve" title="topologicpy.Edge.Edge.ByCurve"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByCurve</span></code></a>(controlPoints[, degree, isPeriodic, ...])</p></td>
 <td><p>Creates a non-rational B-spline edge using the input vertices as control points.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.ByFaceNormal" title="topologicpy.Edge.Edge.ByFaceNormal"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByFaceNormal</span></code></a>(face[, origin, length, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.ByFaceNormal" title="topologicpy.Edge.Edge.ByFaceNormal"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByFaceNormal</span></code></a>(face[, origin, length, tolerance])</p></td>
 <td><p>Creates a straight edge representing the normal to the input face.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.ByNurbsParameters" title="topologicpy.Edge.Edge.ByNurbsParameters"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByNurbsParameters</span></code></a>(controlPoints[, weights, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.ByNurbsParameters" title="topologicpy.Edge.Edge.ByNurbsParameters"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByNurbsParameters</span></code></a>(controlPoints[, weights, ...])</p></td>
 <td><p>Creates an edge from exact NURBS/B-spline parameters.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.ByOffset2D" title="topologicpy.Edge.Edge.ByOffset2D"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByOffset2D</span></code></a>([offset, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.ByOffset2D" title="topologicpy.Edge.Edge.ByOffset2D"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByOffset2D</span></code></a>([offset, tolerance])</p></td>
 <td><p>Creates an edge offset from the input edge in the XY plane.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.ByOriginDirectionLength" title="topologicpy.Edge.Edge.ByOriginDirectionLength"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByOriginDirectionLength</span></code></a>([origin, direction, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.ByOriginDirectionLength" title="topologicpy.Edge.Edge.ByOriginDirectionLength"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByOriginDirectionLength</span></code></a>([origin, direction, ...])</p></td>
 <td><p>Creates a straight edge from the input parameters.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.ByStartVertexEndVertex" title="topologicpy.Edge.Edge.ByStartVertexEndVertex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByStartVertexEndVertex</span></code></a>(vertexA, vertexB[, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.ByStartVertexEndVertex" title="topologicpy.Edge.Edge.ByStartVertexEndVertex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByStartVertexEndVertex</span></code></a>(vertexA, vertexB[, ...])</p></td>
 <td><p>Creates a straight edge that connects the input vertices.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.ByVertices" title="topologicpy.Edge.Edge.ByVertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByVertices</span></code></a>(*vertices[, tolerance, silent])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.ByVertices" title="topologicpy.Edge.Edge.ByVertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByVertices</span></code></a>(*vertices[, tolerance, silent])</p></td>
 <td><p>Creates a straight edge that connects the input list of vertices.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.ByVerticesCluster" title="topologicpy.Edge.Edge.ByVerticesCluster"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByVerticesCluster</span></code></a>(cluster[, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.ByVerticesCluster" title="topologicpy.Edge.Edge.ByVerticesCluster"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByVerticesCluster</span></code></a>(cluster[, tolerance])</p></td>
 <td><p>Creates a straight edge that connects the input cluster of vertices.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Circle" title="topologicpy.Edge.Edge.Circle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Circle</span></code></a>([origin, radius, direction, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Circle" title="topologicpy.Edge.Edge.Circle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Circle</span></code></a>([origin, radius, direction, ...])</p></td>
 <td><p>Creates a single closed circular Edge.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Connection" title="topologicpy.Edge.Edge.Connection"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Connection</span></code></a>(edgeA, edgeB[, tolerance, silent])</p></td>
-<td><p>Returns the edge representing the connection between the first input edge to the second input edge using the two closest vertices.</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Connection" title="topologicpy.Edge.Edge.Connection"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Connection</span></code></a>(edgeA, edgeB[, tolerance, silent])</p></td>
+<td><p>Returns the shortest straight Edge connecting the two input Edges.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Direction" title="topologicpy.Edge.Edge.Direction"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Direction</span></code></a>(edge[, mantissa, tolerance, silent])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Direction" title="topologicpy.Edge.Edge.Direction"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Direction</span></code></a>(edge[, mantissa, tolerance, silent])</p></td>
 <td><p>Returns the unit chord direction of the input edge.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Ellipse" title="topologicpy.Edge.Edge.Ellipse"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Ellipse</span></code></a>([origin, inputMode, width, length, ...])</p></td>
+<td><p>Creates one exact elliptical Edge over the requested angular interval.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.EndVertex" title="topologicpy.Edge.Edge.EndVertex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EndVertex</span></code></a>(edge[, silent])</p></td>
 <td><p>Returns the end vertex of the input edge.</p></td>
@@ -224,91 +230,100 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.ExternalBoundary" title="topologicpy.Edge.Edge.ExternalBoundary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExternalBoundary</span></code></a>(edge[, tolerance, silent])</p></td>
 <td><p>Returns the external boundary (cluster of end vertices) of the input edge.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Helix" title="topologicpy.Edge.Edge.Helix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Helix</span></code></a>([origin, radius, height, turns, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.GoldenSpiral" title="topologicpy.Edge.Edge.GoldenSpiral"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GoldenSpiral</span></code></a>([width, maxIterations, ...])</p></td>
+<td><p>Creates one exact golden-rectangle spiral Edge.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Helix" title="topologicpy.Edge.Edge.Helix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Helix</span></code></a>([origin, radius, height, turns, ...])</p></td>
 <td><p>Creates a single smooth helical Edge.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Hyperbola" title="topologicpy.Edge.Edge.Hyperbola"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Hyperbola</span></code></a>([a, b, fromParameter, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Hyperbola" title="topologicpy.Edge.Edge.Hyperbola"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Hyperbola</span></code></a>([a, b, fromParameter, ...])</p></td>
 <td><p>Creates a single exact hyperbolic Edge.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Index" title="topologicpy.Edge.Edge.Index"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Index</span></code></a>(edges[, strict, tolerance])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Index" title="topologicpy.Edge.Edge.Index"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Index</span></code></a>(edges[, strict, tolerance])</p></td>
 <td><p>Returns index of the input edge in the input list of edges</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Intersect2D" title="topologicpy.Edge.Edge.Intersect2D"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Intersect2D</span></code></a>(edgeA, edgeB[, silent, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Intersect2D" title="topologicpy.Edge.Edge.Intersect2D"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Intersect2D</span></code></a>(edgeA, edgeB[, silent, ...])</p></td>
 <td><p>Returns the intersection vertex of the two input edges.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.IsClosed" title="topologicpy.Edge.Edge.IsClosed"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsClosed</span></code></a>(edge[, tolerance, silent])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.IsClosed" title="topologicpy.Edge.Edge.IsClosed"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsClosed</span></code></a>(edge[, tolerance, silent])</p></td>
 <td><p>Returns True if the input edge is closed.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.IsCollinear" title="topologicpy.Edge.Edge.IsCollinear"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsCollinear</span></code></a>(edgeA, edgeB[, mantissa, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.IsCollinear" title="topologicpy.Edge.Edge.IsCollinear"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsCollinear</span></code></a>(edgeA, edgeB[, mantissa, tolerance])</p></td>
 <td><p>Return True if the two input edges are collinear.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.IsCoplanar" title="topologicpy.Edge.Edge.IsCoplanar"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsCoplanar</span></code></a>(edgeA, edgeB[, mantissa, tolerance])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.IsCoplanar" title="topologicpy.Edge.Edge.IsCoplanar"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsCoplanar</span></code></a>(edgeA, edgeB[, mantissa, tolerance])</p></td>
 <td><p>Return True if the two input edges are coplanar.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.IsLinear" title="topologicpy.Edge.Edge.IsLinear"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsLinear</span></code></a>(edge[, tolerance, silent])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.IsLinear" title="topologicpy.Edge.Edge.IsLinear"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsLinear</span></code></a>(edge[, tolerance, silent])</p></td>
 <td><p>Returns True if the input edge is geometrically linear.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.IsParallel" title="topologicpy.Edge.Edge.IsParallel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsParallel</span></code></a>(edgeA, edgeB[, mantissa, tolerance])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.IsParallel" title="topologicpy.Edge.Edge.IsParallel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsParallel</span></code></a>(edgeA, edgeB[, mantissa, tolerance])</p></td>
 <td><p>Return True if the two input edges are parallel.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Length" title="topologicpy.Edge.Edge.Length"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Length</span></code></a>(edge[, mantissa, tolerance, silent])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Length" title="topologicpy.Edge.Edge.Length"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Length</span></code></a>(edge[, mantissa, tolerance, silent])</p></td>
 <td><p>Returns the geometric length of the input edge.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Line" title="topologicpy.Edge.Edge.Line"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Line</span></code></a>([origin, length, direction, placement, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Line" title="topologicpy.Edge.Edge.Line"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Line</span></code></a>([origin, length, direction, placement, ...])</p></td>
 <td><p>Creates a straight edge (line) using the input parameters.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Normal" title="topologicpy.Edge.Edge.Normal"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Normal</span></code></a>([angle, tolerance, silent])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Normal" title="topologicpy.Edge.Edge.Normal"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Normal</span></code></a>([angle, tolerance, silent])</p></td>
 <td><p>Returns a deterministic unit normal at the midpoint of the actual edge curve.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.NormalAtParameter" title="topologicpy.Edge.Edge.NormalAtParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NormalAtParameter</span></code></a>(edge[, u, angle, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.NormalAtParameter" title="topologicpy.Edge.Edge.NormalAtParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NormalAtParameter</span></code></a>(edge[, u, angle, ...])</p></td>
 <td><p>Returns a deterministic unit normal vector to the actual edge curve.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.NormalEdge" title="topologicpy.Edge.Edge.NormalEdge"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NormalEdge</span></code></a>(edge[, length, u, angle, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.NormalEdge" title="topologicpy.Edge.Edge.NormalEdge"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NormalEdge</span></code></a>(edge[, length, u, angle, ...])</p></td>
 <td><p>Creates a straight edge along the local normal of the actual input curve at parameter <code class="docutils literal notranslate"><span class="pre">u</span></code>.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Normalize" title="topologicpy.Edge.Edge.Normalize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Normalize</span></code></a>(edge[, useEndVertex, tolerance, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Normalize" title="topologicpy.Edge.Edge.Normalize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Normalize</span></code></a>(edge[, useEndVertex, tolerance, ...])</p></td>
 <td><p>Returns a geometrically linear edge of unit length.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Parabola" title="topologicpy.Edge.Edge.Parabola"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Parabola</span></code></a>([origin, focalLength, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Parabola" title="topologicpy.Edge.Edge.Parabola"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Parabola</span></code></a>([origin, focalLength, ...])</p></td>
 <td><p>Creates a single exact parabolic Edge.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.ParameterAtVertex" title="topologicpy.Edge.Edge.ParameterAtVertex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ParameterAtVertex</span></code></a>(vertex[, mantissa, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.ParameterAtVertex" title="topologicpy.Edge.Edge.ParameterAtVertex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ParameterAtVertex</span></code></a>(vertex[, mantissa, ...])</p></td>
 <td><p>Returns the normalized curve parameter of a vertex lying on the input edge.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Quadrance" title="topologicpy.Edge.Edge.Quadrance"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Quadrance</span></code></a>(edge[, mantissa])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Quadrance" title="topologicpy.Edge.Edge.Quadrance"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Quadrance</span></code></a>(edge[, mantissa])</p></td>
 <td><p>Returns the quadrance of the input edge.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Reverse" title="topologicpy.Edge.Edge.Reverse"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Reverse</span></code></a>(edge[, tolerance, silent])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Reverse" title="topologicpy.Edge.Edge.Reverse"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Reverse</span></code></a>(edge[, tolerance, silent])</p></td>
 <td><p>Creates an edge with the reverse orientation of the input edge.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.SetLength" title="topologicpy.Edge.Edge.SetLength"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetLength</span></code></a>(edge[, length, bothSides, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.SetLength" title="topologicpy.Edge.Edge.SetLength"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetLength</span></code></a>(edge[, length, bothSides, ...])</p></td>
 <td><p>Returns a geometrically linear edge with the requested length.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Spiral" title="topologicpy.Edge.Edge.Spiral"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Spiral</span></code></a>([origin, radiusA, radiusB, height, ...])</p></td>
+<td><p>Creates one smooth cubic B-spline Edge approximating an Archimedean spatial spiral.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Spread" title="topologicpy.Edge.Edge.Spread"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Spread</span></code></a>(edgeA, edgeB[, mantissa, bracket])</p></td>
 <td><p>Returns the spread between the two input edges.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.StartVertex" title="topologicpy.Edge.Edge.StartVertex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">StartVertex</span></code></a>(edge[, silent])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Squircle" title="topologicpy.Edge.Edge.Squircle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Squircle</span></code></a>([origin, radius, a, b, direction, ...])</p></td>
+<td><p>Creates one closed cubic B-spline Edge approximating a squircle/superellipse.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.StartVertex" title="topologicpy.Edge.Edge.StartVertex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">StartVertex</span></code></a>(edge[, silent])</p></td>
 <td><p>Returns the start vertex of the input edge.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.TangentAtParameter" title="topologicpy.Edge.Edge.TangentAtParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TangentAtParameter</span></code></a>(edge[, u, mantissa, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.TangentAtParameter" title="topologicpy.Edge.Edge.TangentAtParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TangentAtParameter</span></code></a>(edge[, u, mantissa, ...])</p></td>
 <td><p>Returns the unit tangent vector to the actual edge curve at normalized parameter <em>u</em>.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Trim" title="topologicpy.Edge.Edge.Trim"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Trim</span></code></a>(edge[, distance, bothSides, reverse, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Trim" title="topologicpy.Edge.Edge.Trim"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Trim</span></code></a>(edge[, distance, bothSides, reverse, ...])</p></td>
 <td><p>Trims the input edge by a geometric distance while preserving its geometry.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.TrimByEdge" title="topologicpy.Edge.Edge.TrimByEdge"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TrimByEdge</span></code></a>(edgeA, edgeB[, reverse, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.TrimByEdge" title="topologicpy.Edge.Edge.TrimByEdge"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TrimByEdge</span></code></a>(edgeA, edgeB[, reverse, ...])</p></td>
 <td><p>Trims the first input edge by the second input edge.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.TrimByParameters" title="topologicpy.Edge.Edge.TrimByParameters"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TrimByParameters</span></code></a>(edge[, uA, uB, tolerance, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.TrimByParameters" title="topologicpy.Edge.Edge.TrimByParameters"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TrimByParameters</span></code></a>(edge[, uA, uB, tolerance, ...])</p></td>
 <td><p>Returns the portion of the input edge between two normalized curve parameters.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.VertexByDistance" title="topologicpy.Edge.Edge.VertexByDistance"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VertexByDistance</span></code></a>(edge[, distance, origin, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.VertexByDistance" title="topologicpy.Edge.Edge.VertexByDistance"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VertexByDistance</span></code></a>(edge[, distance, origin, ...])</p></td>
 <td><p>Returns a vertex at signed curvilinear distance from an origin on an edge.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.VertexByParameter" title="topologicpy.Edge.Edge.VertexByParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VertexByParameter</span></code></a>(edge[, u, tolerance, silent])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.VertexByParameter" title="topologicpy.Edge.Edge.VertexByParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VertexByParameter</span></code></a>(edge[, u, tolerance, silent])</p></td>
 <td><p>Creates a vertex at normalized parameter <em>u</em> on the actual edge curve.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Vertices" title="topologicpy.Edge.Edge.Vertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Vertices</span></code></a>(edge[, silent])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Vertices" title="topologicpy.Edge.Edge.Vertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Vertices</span></code></a>(edge[, silent])</p></td>
 <td><p>Returns the list of vertices of the input edge.</p></td>
 </tr>
 </tbody>
@@ -398,6 +413,34 @@ Default is False.</p>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
 <dt>topologic_core.Edge</dt><dd><p>The created open circular arc.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Edge.Edge.ArcByVertices">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ArcByVertices</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">startVertex</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">middleVertex</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">endVertex</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Edge.Edge.ArcByVertices" title="Permalink to this definition"></a></dt>
+<dd><p>Creates one exact circular arc Edge through three input vertices.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>startVertex</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The start vertex of the arc.</p>
+</dd>
+<dt><strong>middleVertex</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>A vertex that lies on the desired arc between start and end.</p>
+</dd>
+<dt><strong>endVertex</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The end vertex of the arc.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>topologic_core.Edge</dt><dd><p>The exact circular arc Edge, or None if the three vertices are invalid or collinear.</p>
 </dd>
 </dl>
 </dd>
@@ -693,23 +736,31 @@ Default is False.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Edge.Edge.Connection">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Connection</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">edgeA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeB</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Edge.Edge.Connection" title="Permalink to this definition"></a></dt>
-<dd><p>Returns the edge representing the connection between the first input edge to the second input edge using the two closest vertices.</p>
+<dd><p>Returns the shortest straight Edge connecting the two input Edges.</p>
+<p>When the active backend provides a native connection operation, closest
+points are computed from the complete edge geometries. This is important
+for curved Edges because the closest points need not be endpoint vertices.
+For backends without a native connection operation, the historical
+closest-endpoint construction is retained as a compatibility fallback.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>edgeA</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The first input edge. This edge will be extended to meet edgeB.</p>
+<dt><strong>edgeA</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The first input edge.</p>
 </dd>
-<dt><strong>edgeB</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The second input edge. This edge will be used to extend edgeA.</p>
+<dt><strong>edgeB</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The second input edge.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. If the minimum separation is less than or equal
+to this value, None is returned. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed.
+Default is False.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Edge or topologic_core.Wire</dt><dd><p>The connected edge. Since it is made of two edges, this method returns a Wire.</p>
+<dt>topologic_core.Edge</dt><dd><p>The shortest connecting Edge, or None if the input Edges intersect,
+touch within tolerance, or a connection cannot be created.</p>
 </dd>
 </dl>
 </dd>
@@ -740,6 +791,58 @@ available precision is returned. Default is 6.</p>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
 <dt>list</dt><dd><p>The unit chord direction of the input edge, or None if the chord is degenerate.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Edge.Edge.Ellipse">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Ellipse</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inputMode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">length</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">focalLength</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.866025</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eccentricity</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.866025</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">majorAxisLength</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">minorAxisLength</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fromAngle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">toAngle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">360.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[0,</span> <span class="pre">0,</span> <span class="pre">1]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">placement</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'center'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Edge.Edge.Ellipse" title="Permalink to this definition"></a></dt>
+<dd><p>Creates one exact elliptical Edge over the requested angular interval.</p>
+<p>A complete 360-degree ellipse is returned as one closed rational quadratic
+NURBS Edge. A partial ellipse is returned as one open exact rational quadratic
+NURBS Edge. Angles are measured counter-clockwise from the positive local
+X-axis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The placement origin. Default is the global origin.</p>
+</dd>
+<dt><strong>inputMode</strong><span class="classifier">int , optional</span></dt><dd><p>1 = width/length, 2 = focalLength/eccentricity,
+3 = focalLength/minorAxisLength, 4 = majorAxisLength/minorAxisLength.</p>
+</dd>
+<dt><strong>width</strong><span class="classifier">float , optional</span></dt><dd><p>Full local X width for mode 1. Default is 2.0.</p>
+</dd>
+<dt><strong>length</strong><span class="classifier">float , optional</span></dt><dd><p>Full local Y length for mode 1. Default is 1.0.</p>
+</dd>
+<dt><strong>focalLength</strong><span class="classifier">float , optional</span></dt><dd><p>Focal length for modes 2 and 3. Default is 0.866025.</p>
+</dd>
+<dt><strong>eccentricity</strong><span class="classifier">float , optional</span></dt><dd><p>Eccentricity for mode 2. Default is 0.866025.</p>
+</dd>
+<dt><strong>majorAxisLength</strong><span class="classifier">float , optional</span></dt><dd><p>Historical semi-axis input for mode 4. Default is 1.0.</p>
+</dd>
+<dt><strong>minorAxisLength</strong><span class="classifier">float , optional</span></dt><dd><p>Historical semi-axis input for modes 3 and 4. Default is 0.5.</p>
+</dd>
+<dt><strong>fromAngle</strong><span class="classifier">float , optional</span></dt><dd><p>Start angle in degrees. Default is 0.</p>
+</dd>
+<dt><strong>toAngle</strong><span class="classifier">float , optional</span></dt><dd><p>End angle in degrees. Values below fromAngle are advanced by 360 degrees.
+The sweep must be greater than zero and no greater than 360 degrees.</p>
+</dd>
+<dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>Ellipse-plane normal. Default is [0, 0, 1].</p>
+</dd>
+<dt><strong>placement</strong><span class="classifier">str , optional</span></dt><dd><p>“center” or “lowerleft”. Default is “center”.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>topologic_core.Edge</dt><dd><p>The exact elliptical Edge.</p>
 </dd>
 </dl>
 </dd>
@@ -881,6 +984,16 @@ Default is False.</p>
 </dl>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Edge.Edge.GoldenSpiral">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">GoldenSpiral</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">width</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxIterations</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clockwise</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">placement</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'center'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[0,</span> <span class="pre">0,</span> <span class="pre">1]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Edge.Edge.GoldenSpiral" title="Permalink to this definition"></a></dt>
+<dd><p>Creates one exact golden-rectangle spiral Edge.</p>
+<p>The geometry is the traditional golden-rectangle construction composed of
+quarter-circle arcs. All quarter-circle spans are stored in one rational
+quadratic NURBS Edge, so the result is a single topological Edge and each
+circular span is geometrically exact.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -1460,6 +1573,14 @@ otherwise preserve the start vertex. Default is False.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Edge.Edge.Spiral">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Spiral</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radiusA</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radiusB</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">turns</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clockwise</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reverse</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[0,</span> <span class="pre">0,</span> <span class="pre">1]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">placement</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'center'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">segmentsPerTurn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">12</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Edge.Edge.Spiral" title="Permalink to this definition"></a></dt>
+<dd><p>Creates one smooth cubic B-spline Edge approximating an Archimedean spatial spiral.</p>
+<p><code class="docutils literal notranslate"><span class="pre">segmentsPerTurn</span></code> controls the internal cubic approximation only. It does not
+create multiple topological Edges; the result is always one Edge.</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Edge.Edge.Spread">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Spread</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">edgeA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeB</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bracket</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#topologicpy.Edge.Edge.Spread" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the spread between the two input edges.</p>
@@ -1494,6 +1615,15 @@ otherwise preserve the start vertex. Default is False.</p>
 </dl>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Edge.Edge.Squircle">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Squircle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">a</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[0,</span> <span class="pre">0,</span> <span class="pre">1]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">placement</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'center'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">segments</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Edge.Edge.Squircle" title="Permalink to this definition"></a></dt>
+<dd><p>Creates one closed cubic B-spline Edge approximating a squircle/superellipse.</p>
+<p><code class="docutils literal notranslate"><span class="pre">segments</span></code> controls the internal cubic approximation only. The result is
+always one topological Edge. When <code class="docutils literal notranslate"><span class="pre">a</span> <span class="pre">==</span> <span class="pre">b</span> <span class="pre">==</span> <span class="pre">1</span></code> an exact circular Edge is
+returned instead.</p>
 </dd></dl>
 
 <dl class="py method">

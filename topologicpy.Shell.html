@@ -165,7 +165,7 @@
 <td><p>Creates a shell from an input list of disjointed faces.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.ByFaces" title="topologicpy.Shell.Shell.ByFaces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByFaces</span></code></a>(faces[, transferDictionaries, ...])</p></td>
-<td><p>Creates a shell from the input list of faces.</p></td>
+<td><p>Creates a Shell from the input list of Faces.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.ByFacesCluster" title="topologicpy.Shell.Shell.ByFacesCluster"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByFacesCluster</span></code></a>(cluster[, ...])</p></td>
 <td><p>Creates a shell from the input cluster of faces.</p></td>
@@ -174,7 +174,7 @@
 <td><p>Creates a shell by thickening the input wire.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.ByWires" title="topologicpy.Shell.Shell.ByWires"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByWires</span></code></a>(wires[, triangulate, polyhedron, ...])</p></td>
-<td><p>Creates a shell by lofting through the input wires.</p></td>
+<td><p>Creates a Shell by lofting through the input Wires.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.ByWiresCluster" title="topologicpy.Shell.Shell.ByWiresCluster"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByWiresCluster</span></code></a>(cluster[, triangulate, ...])</p></td>
 <td><p>Creates a shell by lofting through the input cluster of wires.</p></td>
@@ -182,14 +182,14 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.Circle" title="topologicpy.Shell.Shell.Circle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Circle</span></code></a>([origin, radius, sides, fromAngle, ...])</p></td>
 <td><p>Creates a circle.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.Delaunay" title="topologicpy.Shell.Shell.Delaunay"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Delaunay</span></code></a>(vertices[, face, mantissa, tolerance])</p></td>
-<td><p>Returns a delaunay partitioning of the input vertices.</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.Delaunay" title="topologicpy.Shell.Shell.Delaunay"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Delaunay</span></code></a>(vertices, face[, deflection, ...])</p></td>
+<td><p>Returns the intrinsic/geodesic Delaunay partition of the input Face.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.Edges" title="topologicpy.Shell.Shell.Edges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Edges</span></code></a>(shell)</p></td>
 <td><p>Returns the edges of the input shell.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.ExternalBoundary" title="topologicpy.Shell.Shell.ExternalBoundary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExternalBoundary</span></code></a>(shell[, tolerance, silent])</p></td>
-<td><p>Returns the external boundary of the input shell.</p></td>
+<td><p>Returns the longest external/free boundary Wire of the input Shell.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.Faces" title="topologicpy.Shell.Shell.Faces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Faces</span></code></a>(shell)</p></td>
 <td><p>Returns the faces of the input shell.</p></td>
@@ -225,13 +225,13 @@
 <td><p>Creates a pie shape.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.Planarize" title="topologicpy.Shell.Shell.Planarize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Planarize</span></code></a>(shell[, origin, mantissa, ...])</p></td>
-<td><p>Returns a planarized version of the input shell.</p></td>
+<td><p>Returns a planarized version of the input Shell while preserving curved Edge geometry whenever the active backend supports exact native projection.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.Rectangle" title="topologicpy.Shell.Shell.Rectangle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Rectangle</span></code></a>([origin, width, length, uSides, ...])</p></td>
 <td><p>Creates a rectangle.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.RemoveCollinearEdges" title="topologicpy.Shell.Shell.RemoveCollinearEdges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveCollinearEdges</span></code></a>(shell[, angTolerance, ...])</p></td>
-<td><p>Removes any collinear edges in the input shell.</p></td>
+<td><p>Removes redundant collinear linear Edges from the input Shell.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.Roof" title="topologicpy.Shell.Shell.Roof"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Roof</span></code></a>(face[, angle, epsilon, mantissa, tolerance])</p></td>
 <td><p>Creates a hipped roof through a straight skeleton. This method is contributed by 高熙鹏 xipeng gao &lt;<a class="reference external" href="mailto:gaoxipeng1998&#37;&#52;&#48;gmail&#46;com">gaoxipeng1998<span>&#64;</span>gmail<span>&#46;</span>com</a>&gt;</p></td>
@@ -240,7 +240,7 @@
 <td><p>Creates a face by merging the faces of the input shell.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.Simplify" title="topologicpy.Shell.Shell.Simplify"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Simplify</span></code></a>(shell[, simplifyBoundary, ...])</p></td>
-<td><p>Simplifies the input shell edges based on the Douglas Peucker algorithm. See <a class="reference external" href="https://en.wikipedia.org/wiki/Ramer%E2%80%93Douglas%E2%80%93Peucker_algorithm">https://en.wikipedia.org/wiki/Ramer%E2%80%93Douglas%E2%80%93Peucker_algorithm</a></p></td>
+<td><p>Simplifies a planar polyline Shell using the Douglas-Peucker algorithm.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.Skeleton" title="topologicpy.Shell.Shell.Skeleton"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Skeleton</span></code></a>(face[, tolerance])</p></td>
 <td><p>Creates a shell through a straight skeleton. This method is contributed by 高熙鹏 xipeng gao &lt;<a class="reference external" href="mailto:gaoxipeng1998&#37;&#52;&#48;gmail&#46;com">gaoxipeng1998<span>&#64;</span>gmail<span>&#46;</span>com</a>&gt;</p></td>
@@ -251,8 +251,8 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.Vertices" title="topologicpy.Shell.Shell.Vertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Vertices</span></code></a>(shell)</p></td>
 <td><p>Returns the vertices of the input shell.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.Voronoi" title="topologicpy.Shell.Shell.Voronoi"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Voronoi</span></code></a>(vertices[, face, mantissa, tolerance])</p></td>
-<td><p>Returns a voronoi partitioning of the input face based on the input vertices.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.Voronoi" title="topologicpy.Shell.Shell.Voronoi"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Voronoi</span></code></a>(vertices, face[, deflection, ...])</p></td>
+<td><p>Returns the intrinsic/geodesic Voronoi partition of the input Face.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.Wires" title="topologicpy.Shell.Shell.Wires"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Wires</span></code></a>(shell)</p></td>
 <td><p>Returns the wires of the input shell.</p></td>
@@ -299,25 +299,25 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Shell.Shell.ByFaces">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByFaces</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">faces</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transferDictionaries</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Shell.Shell.ByFaces" title="Permalink to this definition"></a></dt>
-<dd><p>Creates a shell from the input list of faces.</p>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByFaces</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">faces</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transferDictionaries</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Shell.Shell.ByFaces" title="Permalink to this definition"></a></dt>
+<dd><p>Creates a Shell from the input list of Faces.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>faces</strong><span class="classifier">list</span></dt><dd><p>The input list of faces.</p>
+<dt><strong>faces</strong><span class="classifier">list</span></dt><dd><p>The input list of Faces.</p>
 </dd>
-<dt><strong>transferDictionaries</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, any dictionaries in the faces are transferred to the faces of the created Shell.
-Otherwise, they are not. Default is False.</p>
+<dt><strong>transferDictionaries</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, dictionaries from the input Faces are transferred to the
+corresponding Faces of the created Shell. Default is False.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Shell</dt><dd><p>The created Shell.</p>
+<dt>topologic_core.Shell</dt><dd><p>The created Shell, or None if construction fails.</p>
 </dd>
 </dl>
 </dd>
@@ -380,34 +380,36 @@ Otherwise, they are not. Default is False.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Shell.Shell.ByWires">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByWires</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wires</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">triangulate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">polyhedron</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Shell.Shell.ByWires" title="Permalink to this definition"></a></dt>
-<dd><p>Creates a shell by lofting through the input wires.</p>
-<p>By default, the historical polyhedral loft is used. If <code class="docutils literal notranslate"><span class="pre">polyhedron</span></code>
-is set to <code class="docutils literal notranslate"><span class="pre">False</span></code>, the PythonOCC backend constructs a genuine
-curve-preserving ruled shell directly from the section wires. The
-TopologicCore backend does not expose an equivalent exact operation and
-therefore returns <code class="docutils literal notranslate"><span class="pre">None</span></code> for <code class="docutils literal notranslate"><span class="pre">polyhedron=False</span></code> rather than
-faceting or approximating the curves.</p>
+<dd><p>Creates a Shell by lofting through the input Wires.</p>
+<p><code class="docutils literal notranslate"><span class="pre">polyhedron=True</span></code> preserves the historical faceted loft. With the
+PythonOCC backend this mode is delegated to the native TopologicPy
+backend implementation; with TopologicCore the established public-API
+faceted fallback is retained.</p>
+<p><code class="docutils literal notranslate"><span class="pre">polyhedron=False</span></code> requests a genuine curve-preserving ruled Shell.
+On PythonOCC, OCCT lofts directly through the supplied section Wires so
+circular, B-spline, and NURBS Edges remain curved. TopologicCore does
+not expose an equivalent exact operation and therefore returns None
+rather than silently faceting the geometry.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>wires</strong><span class="classifier">list</span></dt><dd><p>The ordered input list of wires.</p>
+<dt><strong>wires</strong><span class="classifier">list</span></dt><dd><p>The ordered input list of Wires. At least two valid Wires are required.</p>
 </dd>
-<dt><strong>triangulate</strong><span class="classifier">bool , optional</span></dt><dd><p>If <code class="docutils literal notranslate"><span class="pre">polyhedron</span></code> is True, specifies whether the side faces are
+<dt><strong>triangulate</strong><span class="classifier">bool , optional</span></dt><dd><p>If <code class="docutils literal notranslate"><span class="pre">polyhedron</span></code> is True, specifies whether each faceted side is
 triangulated. Default is True.</p>
 </dd>
-<dt><strong>polyhedron</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, uses the historical faceted/polyhedral loft. If False,
-constructs a curve-preserving ruled shell on the PythonOCC backend.
-Default is True.</p>
+<dt><strong>polyhedron</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, construct the historical faceted/polyhedral loft. If False,
+construct a curve-preserving ruled Shell on PythonOCC. Default is True.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Shell</dt><dd><p>The created shell, or None if exact curve-preserving construction
+<dt>topologic_core.Shell</dt><dd><p>The created Shell, or None when construction fails or exact lofting
 is requested on an unsupported backend.</p>
 </dd>
 </dl>
@@ -482,24 +484,52 @@ backend. Default is True.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Shell.Shell.Delaunay">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Delaunay</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vertices</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">face</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Shell.Shell.Delaunay" title="Permalink to this definition"></a></dt>
-<dd><p>Returns a delaunay partitioning of the input vertices. The vertices must be coplanar. See <a class="reference external" href="https://en.wikipedia.org/wiki/Delaunay_triangulation">https://en.wikipedia.org/wiki/Delaunay_triangulation</a>.</p>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Delaunay</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vertices</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">face</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">deflection</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxIterations</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">convergence</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Shell.Shell.Delaunay" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the intrinsic/geodesic Delaunay partition of the input Face.</p>
+<p>The input Vertices are the Delaunay sites and must all lie on, or within
+<code class="docutils literal notranslate"><span class="pre">tolerance</span></code> of, the trimmed input Face. Distances are measured intrinsically
+on the Face, so the shortest paths are constrained by its outer boundary and
+any internal boundaries. The planar construction is therefore a special case
+of the general surface construction.</p>
+<p>On the PythonOCC backend the intrinsic metric is approximated with the
+Kimmel-Sethian Fast Marching Method on successively refined triangulations
+of the trimmed Face. Delaunay adjacency is derived strictly as the dual of
+the converged intrinsic Voronoi diagram; adjacent sites are connected by
+continuous steepest-descent traces through the piecewise-linear Fast
+Marching distance field. The resulting paths are chained and rebuilt as
+degree-1 B-spline p-curves on the original exact OCCT surface and used to
+split that Face. Thus the returned Shell contains subsets
+of the original analytic, B-spline, or NURBS surface rather than inheriting
+one topological Edge per temporary computational triangle.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>vertices</strong><span class="classifier">list</span></dt><dd><p>The input list of vertices.</p>
+<dt><strong>vertices</strong><span class="classifier">list</span></dt><dd><p>The input list of site Vertices. At least three are required.</p>
 </dd>
-<dt><strong>face</strong><span class="classifier">topologic_core.Face , optional</span></dt><dd><p>The input face. If specified, the delaunay triangulation is clipped to the face.</p>
+<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The trimmed surface domain on which the intrinsic Delaunay partition is
+computed.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
+<dt><strong>deflection</strong><span class="classifier">float , optional</span></dt><dd><p>Finest permitted linear deflection of the computational triangulation.
+Refinement starts coarser and approaches, but never goes below, this
+value. If None, a scale-aware target is selected automatically. Default
+is None.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
+<dt><strong>maxIterations</strong><span class="classifier">int , optional</span></dt><dd><p>Maximum number of surface-mesh refinement iterations. Default is 5.</p>
+</dd>
+<dt><strong>convergence</strong><span class="classifier">float , optional</span></dt><dd><p>Absolute geometric convergence criterion for successive intrinsic
+Voronoi boundaries from which the Delaunay dual is derived. Default is
+0.001.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired geometric tolerance. Default is 0.0001.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>shell</dt><dd><p>A shell representing the delaunay triangulation of the input vertices.</p>
+<dt>topologic_core.Shell</dt><dd><p>A Shell partitioning the exact input Face by intrinsic Delaunay geodesics,
+or None if the operation fails.</p>
 </dd>
 </dl>
 </dd>
@@ -529,25 +559,7 @@ backend. Default is True.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Shell.Shell.ExternalBoundary">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ExternalBoundary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shell</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Shell.Shell.ExternalBoundary" title="Permalink to this definition"></a></dt>
-<dd><p>Returns the external boundary of the input shell.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>shell</strong><span class="classifier">topologic_core.Shell</span></dt><dd><p>The input shell.</p>
-</dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
-</dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>topologic_core.Wire or topologic_core.Cluster</dt><dd><p>The external boundary of the input shell.</p>
-</dd>
-</dl>
-</dd>
-</dl>
+<dd><p>Returns the longest external/free boundary Wire of the input Shell.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -906,23 +918,33 @@ Wire, Cluster, or another valid topology returned by Topology.SelfMerge.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Shell.Shell.Planarize">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Planarize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shell</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Shell.Shell.Planarize" title="Permalink to this definition"></a></dt>
-<dd><p>Returns a planarized version of the input shell.</p>
+<dd><p>Returns a planarized version of the input Shell while preserving curved
+Edge geometry whenever the active backend supports exact native projection.</p>
+<p>Plane inference is face-based rather than edge-sampling-based. This is
+essential for closed analytic and NURBS Edges, which may expose only one
+topological Vertex and for which direct curve sampling can be unsafe in
+some PythonOCC builds.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>shell</strong><span class="classifier">topologic_core.Shell</span></dt><dd><p>The input shell.</p>
+<dt><strong>shell</strong><span class="classifier">topologic_core.Shell</span></dt><dd><p>The input Shell.</p>
 </dd>
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The desired origin of the plane unto which the planar shell will be projected. If set to None, the centroid of the input shell will be chosen. Default is None.</p>
+<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The desired origin of the target plane. If None, the centroid of the
+input Shell is used. Default is None.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places used when deriving the best-fit plane.
+Default is 6.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float, optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired geometric tolerance. Default is 0.0001.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Shell</dt><dd><p>The planarized shell.</p>
+<dt>topologic_core.Shell</dt><dd><p>The planarized Shell, or None if the operation cannot be completed
+without approximating curved geometry.</p>
 </dd>
 </dl>
 </dd>
@@ -965,28 +987,8 @@ Wire, Cluster, or another valid topology returned by Topology.SelfMerge.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Shell.Shell.RemoveCollinearEdges">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RemoveCollinearEdges</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shell</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angTolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Shell.Shell.RemoveCollinearEdges" title="Permalink to this definition"></a></dt>
-<dd><p>Removes any collinear edges in the input shell.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>shell</strong><span class="classifier">topologic_core.Shell</span></dt><dd><p>The input shell.</p>
-</dd>
-<dt><strong>angTolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired angular tolerance. Default is 0.1.</p>
-</dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
-</dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>topologic_core.Shell</dt><dd><p>The created shell without any collinear edges.</p>
-</dd>
-</dl>
-</dd>
-</dl>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RemoveCollinearEdges</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shell</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angTolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">polyhedron</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Shell.Shell.RemoveCollinearEdges" title="Permalink to this definition"></a></dt>
+<dd><p>Removes redundant collinear linear Edges from the input Shell.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -1047,30 +1049,10 @@ This algorithm depends on the polyskel code which is included in the library. Po
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Shell.Shell.Simplify">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Simplify</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shell</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">simplifyBoundary</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Shell.Shell.Simplify" title="Permalink to this definition"></a></dt>
-<dd><blockquote>
-<div><p>Simplifies the input shell edges based on the Douglas Peucker algorithm. See <a class="reference external" href="https://en.wikipedia.org/wiki/Ramer%E2%80%93Douglas%E2%80%93Peucker_algorithm">https://en.wikipedia.org/wiki/Ramer%E2%80%93Douglas%E2%80%93Peucker_algorithm</a>
-Part of this code was contributed by gaoxipeng. See <a class="reference external" href="https://github.com/wassimj/topologicpy/issues/35">https://github.com/wassimj/topologicpy/issues/35</a></p>
-</div></blockquote>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>shell</strong><span class="classifier">topologic_core.Shell</span></dt><dd><p>The input shell.</p>
-</dd>
-<dt><strong>simplifyBoundary</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the external boundary of the shell will be simplified as well. Otherwise, it will not be simplified. Default is True.</p>
-</dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. Default is 6</p>
-</dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001. Edges shorter than this length will be removed.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>topologic_core.Shell</dt><dd><p>The simplified shell.</p>
-</dd>
-</dl>
-</dd>
-</dl>
+<dd><p>Simplifies a planar polyline Shell using the Douglas-Peucker algorithm.</p>
+<p>This operation is intentionally limited to linear Edges. Curved Edges are
+rejected rather than silently replaced by chords. A tilted planar Shell is
+first rigidly flattened to XY, simplified there, and then restored.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -1154,28 +1136,21 @@ This algorithm depends on the polyskel code which is included in the library. Po
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Shell.Shell.Voronoi">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Voronoi</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vertices</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">face</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Shell.Shell.Voronoi" title="Permalink to this definition"></a></dt>
-<dd><p>Returns a voronoi partitioning of the input face based on the input vertices. The vertices must be coplanar and within the face. See <a class="reference external" href="https://en.wikipedia.org/wiki/Voronoi_diagram">https://en.wikipedia.org/wiki/Voronoi_diagram</a>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>vertices</strong><span class="classifier">list</span></dt><dd><p>The input list of vertices.</p>
-</dd>
-<dt><strong>face</strong><span class="classifier">topologic_core.Face , optional</span></dt><dd><p>The input face. If the face is not set an optimised bounding rectangle of the input vertices is used instead. Default is None.</p>
-</dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. Default is 6</p>
-</dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>shell</dt><dd><p>A shell representing the voronoi partitioning of the input face.</p>
-</dd>
-</dl>
-</dd>
-</dl>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Voronoi</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vertices</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">face</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">deflection</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxIterations</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">convergence</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Shell.Shell.Voronoi" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the intrinsic/geodesic Voronoi partition of the input Face.</p>
+<p>The sites must lie on, or within <code class="docutils literal notranslate"><span class="pre">tolerance</span></code> of, the trimmed input Face.
+Distances are shortest-path distances constrained to that Face, including its
+outer and internal boundaries. UV-coordinate Euclidean distance is never used
+as the metric.</p>
+<p>On PythonOCC, intrinsic distances are approximated with the Kimmel-Sethian
+Fast Marching Method on successively refined triangulations of the trimmed
+Face. <code class="docutils literal notranslate"><span class="pre">deflection</span></code> is interpreted as the finest permitted triangulation
+target; refinement starts coarser and never goes below it. Converged
+triangle-local interfaces are chained and reconstructed as degree-1 B-spline
+p-curves on the original OCCT surface before splitting, so the returned
+topology does not inherit one Edge per computational triangle. Analytic and NURBS surface geometry is retained.
+UV-coordinate Euclidean distance and mesh-edge Dijkstra are not used as the
+intrinsic metric.</p>
 </dd></dl>
 
 <dl class="py method">
