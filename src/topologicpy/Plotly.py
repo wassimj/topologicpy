@@ -136,7 +136,24 @@ class Plotly:
         Samples a TopologicPy Edge for rendering without changing its geometry.
 
         Linear Edges yield two points. Curved analytic/Bezier/NURBS Edges yield
-        ``samples + 1`` points evaluated on the original curve.
+        ``samples + 1`` points evaluated on the original curve. Degenerate
+        zero-length Edges are ignored.
+
+        Parameters
+        ----------
+        edge : topologicpy.Edge
+            The input Edge.
+        samples : int , optional
+            The number of sampling intervals for curved Edges. Default is 32.
+        mantissa : int , optional
+            The number of decimal places used for output coordinates. Default is 6.
+        tolerance : float , optional
+            The geometric tolerance. Default is 0.0001.
+
+        Returns
+        -------
+        list
+            The sampled XYZ coordinates.
         """
         from topologicpy.Edge import Edge
         from topologicpy.Topology import Topology
@@ -145,6 +162,7 @@ class Plotly:
             samples = max(4, int(samples))
         except Exception:
             samples = 32
+
         try:
             tolerance = max(abs(float(tolerance)), 1.0e-12)
         except Exception:
@@ -153,8 +171,37 @@ class Plotly:
         if not Topology.IsInstance(edge, "Edge"):
             return []
 
+        # OCCT solids such as spheres and cones can contain degenerate
+        # topological Edges at singularities. These have no useful renderable
+        # 3D curve and should simply be omitted.
         try:
-            is_linear = Edge.IsLinear(edge, silent=True)
+            length = Edge.Length(
+                edge,
+                mantissa=None,
+                tolerance=tolerance,
+                silent=True,
+            )
+        except TypeError:
+            try:
+                length = Edge.Length(edge)
+            except Exception:
+                length = None
+        except Exception:
+            length = None
+
+        if length is not None:
+            try:
+                if abs(float(length)) <= tolerance:
+                    return []
+            except Exception:
+                pass
+
+        try:
+            is_linear = Edge.IsLinear(
+                edge,
+                tolerance=tolerance,
+                silent=True,
+            )
         except TypeError:
             try:
                 is_linear = Edge.IsLinear(edge)
@@ -163,22 +210,41 @@ class Plotly:
         except Exception:
             is_linear = None
 
-        parameters = [0.0, 1.0] if is_linear is True else [i / float(samples) for i in range(samples + 1)]
+        parameters = (
+            [0.0, 1.0]
+            if is_linear is True
+            else [i / float(samples) for i in range(samples + 1)]
+        )
+
         points = []
+
         for parameter in parameters:
             try:
-                vertex = Edge.VertexByParameter(edge, parameter)
+                vertex = Edge.VertexByParameter(
+                    edge,
+                    parameter,
+                    tolerance=tolerance,
+                    silent=True,
+                )
             except Exception:
                 vertex = None
-            point = Plotly._vertex_coordinates(vertex, mantissa=mantissa)
+
+            point = Plotly._vertex_coordinates(
+                vertex,
+                mantissa=mantissa,
+            )
+
             if point is None:
                 continue
+
             if points:
                 dx = point[0] - points[-1][0]
                 dy = point[1] - points[-1][1]
                 dz = point[2] - points[-1][2]
-                if dx*dx + dy*dy + dz*dz <= tolerance*tolerance:
+
+                if dx * dx + dy * dy + dz * dz <= tolerance * tolerance:
                     continue
+
             points.append(point)
 
         if len(points) >= 2:
@@ -186,9 +252,27 @@ class Plotly:
 
         # Defensive endpoint fallback.
         try:
-            a = Plotly._vertex_coordinates(Edge.StartVertex(edge), mantissa=mantissa)
-            b = Plotly._vertex_coordinates(Edge.EndVertex(edge), mantissa=mantissa)
-            return [a, b] if a is not None and b is not None else []
+            a = Plotly._vertex_coordinates(
+                Edge.StartVertex(edge, silent=True),
+                mantissa=mantissa,
+            )
+            b = Plotly._vertex_coordinates(
+                Edge.EndVertex(edge, silent=True),
+                mantissa=mantissa,
+            )
+
+            if a is None or b is None:
+                return []
+
+            dx = b[0] - a[0]
+            dy = b[1] - a[1]
+            dz = b[2] - a[2]
+
+            if dx * dx + dy * dy + dz * dz <= tolerance * tolerance:
+                return []
+
+            return [a, b]
+
         except Exception:
             return []
 
