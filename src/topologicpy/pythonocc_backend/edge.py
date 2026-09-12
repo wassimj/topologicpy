@@ -969,6 +969,91 @@ class EdgeUtility:
             return None
 
     @staticmethod
+    def Connection(edgeA, edgeB, tolerance: float = 0.0001):
+        """
+        Returns the shortest straight Edge connecting two input Edges.
+
+        The closest points are computed from the complete OCCT edge geometries,
+        not merely from their endpoint vertices.
+
+        Parameters
+        ----------
+        edgeA : Edge
+            The first input Edge.
+        edgeB : Edge
+            The second input Edge.
+        tolerance : float , optional
+            The desired tolerance. If the minimum distance is less than or equal
+            to this value, None is returned because no non-degenerate connecting
+            Edge can be created. Default is 0.0001.
+
+        Returns
+        -------
+        Edge
+            The shortest straight connecting Edge, or None if the input Edges
+            intersect, touch, overlap, or the operation fails.
+
+        """
+        if not isinstance(edgeA, Edge) or not isinstance(edgeB, Edge):
+            return None
+
+        if _is_null_shape(getattr(edgeA, "shape", None)):
+            return None
+
+        if _is_null_shape(getattr(edgeB, "shape", None)):
+            return None
+
+        try:
+            tolerance = abs(float(tolerance))
+        except Exception:
+            return None
+
+        try:
+            from OCC.Core.BRepExtrema import BRepExtrema_DistShapeShape
+
+            extrema = BRepExtrema_DistShapeShape(
+                edgeA.shape,
+                edgeB.shape,
+            )
+
+            extrema.Perform()
+
+            if not extrema.IsDone() or extrema.NbSolution() < 1:
+                return None
+
+            distance = float(extrema.Value())
+
+            if not math.isfinite(distance) or distance <= tolerance:
+                return None
+
+            pointA = extrema.PointOnShape1(1)
+            pointB = extrema.PointOnShape2(1)
+
+            vertexA = Vertex.ByCoordinates(
+                float(pointA.X()),
+                float(pointA.Y()),
+                float(pointA.Z()),
+            )
+
+            vertexB = Vertex.ByCoordinates(
+                float(pointB.X()),
+                float(pointB.Y()),
+                float(pointB.Z()),
+            )
+
+            if not isinstance(vertexA, Vertex) or not isinstance(vertexB, Vertex):
+                return None
+
+            return Edge.ByStartVertexEndVertexTolerance(
+                vertexA,
+                vertexB,
+                tolerance=tolerance,
+            )
+
+        except Exception:
+            return None
+
+    @staticmethod
     def IsClosed(edge, tolerance: float = 0.0001):
         """Returns True if the input Edge is topologically closed."""
         if not isinstance(edge, Edge):

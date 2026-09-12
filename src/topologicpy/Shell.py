@@ -38,6 +38,27 @@ except:
 
 class Shell():
     @staticmethod
+    def _UseNativeShellBackend() -> bool:
+        """
+        Returns True when the active core backend is PythonOCC and exposes the
+        enhanced native Shell loft implementation.
+        """
+        from topologicpy.Topology import Topology
+
+        try:
+            if Topology._IsTopologicCoreBackend():
+                return False
+        except Exception:
+            return False
+
+        try:
+            return bool(Core.HasAttribute("Shell", "ByWires"))
+        except Exception:
+            # Older Core dispatchers may not expose HasAttribute for class
+            # factories even though PythonOCC is active.
+            return True
+
+    @staticmethod
     def ByDisjointFaces(externalBoundary,
                         faces,
                         maximumGap: float = 0.5,
@@ -256,27 +277,26 @@ class Shell():
         return None
 
     @staticmethod
-    def ByFaces(faces: list, transferDictionaries: bool = False, tolerance: float = 0.0001, silent=False):
+    def ByFaces(faces: list, transferDictionaries: bool = False, tolerance: float = 0.0001, silent: bool = False):
         """
-        Creates a shell from the input list of faces.
+        Creates a Shell from the input list of Faces.
 
         Parameters
         ----------
         faces : list
-            The input list of faces.
+            The input list of Faces.
         transferDictionaries : bool , optional
-            If set to True, any dictionaries in the faces are transferred to the faces of the created Shell.
-            Otherwise, they are not. Default is False.
+            If True, dictionaries from the input Faces are transferred to the
+            corresponding Faces of the created Shell. Default is False.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
+            If True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
         topologic_core.Shell
-            The created Shell.
-
+            The created Shell, or None if construction fails.
         """
         from topologicpy.Vertex import Vertex
         from topologicpy.Topology import Topology
@@ -284,42 +304,63 @@ class Shell():
         from topologicpy.Dictionary import Dictionary
 
         if not isinstance(faces, list):
-            return None
-        faceList = [x for x in faces if Topology.IsInstance(x, "Face")]
-        if len(faceList) == 0:
-            print("Shell.ByFaces - Error: The input faces list does not contain any valid faces. Returning None.")
-            return None
-        shell = Core.Shell.ByFaces(faceList, tolerance)
-        if Topology.IsInstance(shell, "Shell"):
-            return shell
-        elif shell is None:
             if not silent:
-                print("Shell.ByFaces - Error: Could not create shell. Returning None.")
+                print("Shell.ByFaces - Error: The input faces parameter is not a valid list. Returning None.")
             return None
-        elif TopologyIsInstance(shell, "topology"):
-            shell = Topology.SelfMerge(shell, tolerance=tolerance)
-            if Topology.IsInstance(shell, "Shell"):
-                return shell
-            else:
-                if not silent:
-                    print("Shell.ByFaces - Error: Could not create shell. Returning None.")
-                return None
-        
+
+        face_list = [face for face in faces if Topology.IsInstance(face, "Face")]
+        if len(face_list) == 0:
+            if not silent:
+                print("Shell.ByFaces - Error: The input faces list does not contain any valid Faces. Returning None.")
+            return None
+
+        try:
+            shell = Core.Shell.ByFaces(face_list, tolerance)
+        except Exception:
+            shell = None
+
+        if not Topology.IsInstance(shell, "Shell"):
+            if Topology.IsInstance(shell, "Topology"):
+                try:
+                    shell = Topology.SelfMerge(shell, tolerance=tolerance, silent=True)
+                except Exception:
+                    shell = None
+
+        if not Topology.IsInstance(shell, "Shell"):
+            if not silent:
+                print("Shell.ByFaces - Error: Could not create Shell. Returning None.")
+            return None
+
         if transferDictionaries:
-            shell_faces = Topology.Faces(shell)
-            source_cluster = Cluster.ByTopologies(faces)
+            # Use internal points as selectors rather than relying on wrapper
+            # identity. This remains valid when the backend sews/rebuilds the
+            # native Faces while constructing the Shell.
+            selectors = []
+            for face in face_list:
+                try:
+                    dictionary = Topology.Dictionary(face)
+                    selector = Topology.InternalVertex(face, tolerance=tolerance, silent=True)
+                    if Topology.IsInstance(selector, "Vertex"):
+                        selector = Topology.SetDictionary(selector, dictionary, silent=True)
+                        selectors.append(selector)
+                except Exception:
+                    continue
 
-            for shell_face in shell_faces:
-                internal_vertex = Topology.InternalVertex(shell_face, tolerance=tolerance)
-                enclosing_faces = Vertex.EnclosingFaces(internal_vertex,
-                                                        source_cluster,
-                                                        exclusive=False,
-                                                        tolerance=tolerance)
+            if selectors:
+                try:
+                    transferred = Topology.TransferDictionariesBySelectors(
+                        topology=shell,
+                        selectors=selectors,
+                        tranFaces=True,
+                        tolerance=tolerance,
+                    )
+                    if Topology.IsInstance(transferred, "Shell"):
+                        shell = transferred
+                except Exception:
+                    # Dictionary transfer is optional and must never invalidate
+                    # otherwise successful Shell construction.
+                    pass
 
-                if isinstance(enclosing_faces, list) and len(enclosing_faces) > 0:
-                    dictionaries = [Topology.Dictionary(face) for face in enclosing_faces]
-                    merged_dictionary = Dictionary.ByMergedDictionaries(dictionaries, silent=True)
-                    shell_face = Topology.SetDictionary(shell_face, merged_dictionary)
         return shell
 
     @staticmethod
@@ -409,35 +450,38 @@ class Shell():
     @staticmethod
     def ByWires(wires: list, triangulate: bool = True, polyhedron: bool = True, tolerance: float = 0.0001, silent: bool = False):
         """
-        Creates a shell by lofting through the input wires.
+        Creates a Shell by lofting through the input Wires.
 
-        By default, the historical polyhedral loft is used. If ``polyhedron``
-        is set to ``False``, the PythonOCC backend constructs a genuine
-        curve-preserving ruled shell directly from the section wires. The
-        TopologicCore backend does not expose an equivalent exact operation and
-        therefore returns ``None`` for ``polyhedron=False`` rather than
-        faceting or approximating the curves.
+        ``polyhedron=True`` preserves the historical faceted loft. With the
+        PythonOCC backend this mode is delegated to the native TopologicPy
+        backend implementation; with TopologicCore the established public-API
+        faceted fallback is retained.
+
+        ``polyhedron=False`` requests a genuine curve-preserving ruled Shell.
+        On PythonOCC, OCCT lofts directly through the supplied section Wires so
+        circular, B-spline, and NURBS Edges remain curved. TopologicCore does
+        not expose an equivalent exact operation and therefore returns None
+        rather than silently faceting the geometry.
 
         Parameters
         ----------
         wires : list
-            The ordered input list of wires.
+            The ordered input list of Wires. At least two valid Wires are required.
         triangulate : bool , optional
-            If ``polyhedron`` is True, specifies whether the side faces are
+            If ``polyhedron`` is True, specifies whether each faceted side is
             triangulated. Default is True.
         polyhedron : bool , optional
-            If True, uses the historical faceted/polyhedral loft. If False,
-            constructs a curve-preserving ruled shell on the PythonOCC backend.
-            Default is True.
+            If True, construct the historical faceted/polyhedral loft. If False,
+            construct a curve-preserving ruled Shell on PythonOCC. Default is True.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
+            If True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
         topologic_core.Shell
-            The created shell, or None if exact curve-preserving construction
+            The created Shell, or None when construction fails or exact lofting
             is requested on an unsupported backend.
         """
         from topologicpy.Vertex import Vertex
@@ -447,148 +491,113 @@ class Shell():
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
 
-        if not isinstance(wires, list):
+        if not isinstance(wires, (list, tuple)):
+            if not silent:
+                print("Shell.ByWires - Error: The input wires parameter is not a valid list. Returning None.")
             return None
-        wireList = [x for x in wires if Topology.IsInstance(x, "Wire")]
 
-        # Exact curve-preserving ruled loft. Keep this completely separate from
-        # the historical polyhedral path below so the default behaviour remains
-        # unchanged.
-        if polyhedron is False:
-            if len(wireList) < 2:
-                if not silent:
-                    print("Shell.ByWires - Error: At least two valid wires are required. Returning None.")
-                return None
-            try:
-                is_topologic_core = bool(Topology._IsTopologicCoreBackend())
-            except Exception:
-                is_topologic_core = True
-            if is_topologic_core:
-                if not silent:
-                    print("Shell.ByWires - Error: The TopologicCore backend does not support exact curve-preserving shell loft construction. Returning None.")
-                return None
+        wire_list = [wire for wire in wires if Topology.IsInstance(wire, "Wire")]
+        if len(wire_list) < 2:
+            if not silent:
+                print("Shell.ByWires - Error: At least two valid Wires are required. Returning None.")
+            return None
+
+        try:
+            tolerance = abs(float(tolerance))
+        except Exception:
+            if not silent:
+                print("Shell.ByWires - Error: The input tolerance parameter is not a valid number. Returning None.")
+            return None
+
+        if not math.isfinite(tolerance) or tolerance <= 0.0:
+            if not silent:
+                print("Shell.ByWires - Error: The input tolerance parameter must be greater than zero. Returning None.")
+            return None
+
+        # PythonOCC has one authoritative backend implementation for both
+        # faceted and exact curve-preserving lofts.
+        if Shell._UseNativeShellBackend():
             try:
                 shell = Core.Shell.ByWires(
-                    wireList,
-                    triangulate=triangulate,
-                    polyhedron=False,
+                    wire_list,
+                    triangulate=bool(triangulate),
+                    polyhedron=bool(polyhedron),
                     tolerance=tolerance,
                     silent=silent,
                 )
+            except TypeError:
+                # Compatibility with an intermediate backend signature that
+                # omitted keyword-only options.
+                try:
+                    shell = Core.Shell.ByWires(
+                        wire_list,
+                        bool(triangulate),
+                        bool(polyhedron),
+                        tolerance,
+                        silent,
+                    )
+                except Exception:
+                    shell = None
             except Exception:
                 shell = None
+
             if Topology.IsInstance(shell, "Shell"):
                 return shell
+
             if not silent:
-                print("Shell.ByWires - Error: Could not construct the curve-preserving shell. Returning None.")
+                mode = "faceted" if polyhedron else "curve-preserving"
+                print(f"Shell.ByWires - Error: Could not construct the {mode} Shell. Returning None.")
             return None
 
-        # Historical polyhedral loft. This block intentionally retains the
-        # current v0.9.68 implementation to minimise regression risk.
-        faces = []
-        for i in range(len(wireList)-1):
-            wire1 = wireList[i]
-            wire2 = wireList[i+1]
-            if Topology.Type(wire1) < Topology.TypeID("Edge") or Topology.Type(wire2) < Topology.TypeID("Edge"):
-                return None
-            if Topology.Type(wire1) == Topology.TypeID("Edge"):
-                w1_edges = [wire1]
-            else:
-                w1_edges = Topology.Edges(wire1)
-            if Topology.Type(wire2) == Topology.TypeID("Edge"):
-                w2_edges = [wire2]
-            else:
-                w2_edges = Topology.Edges(wire2)
-            if len(w1_edges) != len(w2_edges):
-                return None
-            if triangulate == True:
-                for j in range (len(w1_edges)):
-                    e1 = w1_edges[j]
-                    e2 = w2_edges[j]
-                    e3 = None
-                    e4 = None
-                    try:
-                        e3 = Edge.ByVertices([Edge.StartVertex(e1), Edge.StartVertex(e2)], tolerance=tolerance, silent=silent)
-                    except:
-                        e4 = Edge.ByVertices([Edge.EndVertex(e1), Edge.EndVertex(e2)], tolerance=tolerance, silent=silent)
-                        faces.append(Face.ByWire(Wire.ByEdges([e1, e2, e4], tolerance=tolerance), tolerance=tolerance))
-                    try:
-                        e4 = Edge.ByVertices([Edge.EndVertex(e1), Edge.EndVertex(e2)], tolerance=tolerance, silent=silent)
-                    except:
-                        e3 = Edge.ByVertices([Edge.StartVertex(e1), Edge.StartVertex(e2)], tolerance=tolerance, silent=silent)
-                        faces.append(Face.ByWire(Wire.ByEdges([e1, e2, e3],tolerance=tolerance), tolerance=tolerance))
-                    if e3 and e4:
-                        e5 = Edge.ByVertices([Edge.StartVertex(e1), Edge.EndVertex(e2)], tolerance=tolerance, silent=silent)
-                        faces.append(Face.ByWire(Wire.ByEdges([e1, e5, e4], tolerance=tolerance), tolerance=tolerance))
-                        faces.append(Face.ByWire(Wire.ByEdges([e2, e5, e3], tolerance=tolerance), tolerance=tolerance))
-                    elif e3:
-                        verts = [Edge.StartVertex(e1), Edge.EndVertex(e1), Edge.StartVertex(e3), Edge.EndVertex(e3), Edge.StartVertex(e2), Edge.EndVertex(e2)]
-                        verts = Vertex.Fuse(verts, tolerance=tolerance)
-                        w = Wire.ByVertices(verts, close=True)
-                        if Topology.IsInstance(w, "Wire"):
-                            faces.append(Face.ByWire(w, tolerance=tolerance))
-                        else:
-                            if not silent:
-                                print("Shell.ByWires - Warning: Could not create face.")
-                    elif e4:
-                        verts = [Edge.StartVertex(e1), Edge.EndVertex(e1), Edge.StartVertex(e4), Edge.EndVertex(e4), Edge.StartVertex(e2), Edge.EndVertex(e2)]
-                        verts = Vertex.Fuse(verts, tolerance=tolerance)
-                        w = Wire.ByVertices(verts, close=True)
-                        if Topology.IsInstance(w, "Wire"):
-                            faces.append(Face.ByWire(w, tolerance=tolerance))
-                        else:
-                            if not silent:
-                                print("Shell.ByWires - Warning: Could not create face.")
-            else:
-                for j in range (len(w1_edges)):
-                    e1 = w1_edges[j]
-                    e2 = w2_edges[j]
-                    e3 = None
-                    e4 = None
-                    try:
-                        e3 = Edge.ByVertices([Edge.StartVertex(e1), Edge.StartVertex(e2)], tolerance=tolerance, silent=silent)
-                    except:
-                        try:
-                            e4 = Edge.ByVertices([Edge.EndVertex(e1), Edge.EndVertex(e2)], tolerance=tolerance, silent=silent)
-                        except:
-                            pass
-                    try:
-                        e4 = Edge.ByVertices([Edge.EndVertex(e1), Edge.EndVertex(e2)], tolerance=tolerance, silent=silent)
-                    except:
-                        try:
-                            e3 = Edge.ByVertices([Edge.StartVertex(e1), Edge.StartVertex(e2)], tolerance=tolerance, silent=silent)
-                        except:
-                            pass
-                    if e3 and e4:
-                        try:
-                            faces.append(Face.ByWire(Wire.ByEdges([e1, e4, e2, e3], tolerance=tolerance), tolerance=tolerance))
-                        except:
-                            faces.append(Face.ByWire(Wire.ByEdges([e1, e3, e2, e4], tolerance=tolerance), tolerance=tolerance))
-                    elif e3:
-                        verts = [Edge.StartVertex(e1), Edge.EndVertex(e1), Edge.StartVertex(e3), Edge.EndVertex(e3), Edge.StartVertex(e2), Edge.EndVertex(e2)]
-                        verts = Vertex.Fuse(verts, tolerance=tolerance)
-                        w = Wire.ByVertices(verts, close=True)
-                        if Topology.IsInstance(w, "Wire"):
-                            faces.append(Face.ByWire(w, tolerance=tolerance))
-                        else:
-                            if not silent:
-                                print("Shell.ByWires - Warning: Could not create face.")
-                    elif e4:
-                        verts = [Edge.StartVertex(e1), Edge.EndVertex(e1), Edge.StartVertex(e4), Edge.EndVertex(e4), Edge.StartVertex(e2), Edge.EndVertex(e2)]
-                        verts = Vertex.Fuse(verts, tolerance=tolerance)
-                        w = Wire.ByVertices(verts, close=True)
-                        if Topology.IsInstance(w, "Wire"):
-                            faces.append(Face.ByWire(w, tolerance=tolerance))
-                        else:
-                            if not silent:
-                                print("Shell.ByWires - Warning: Could not create face.")
-
-        shell = Shell.ByFaces(faces, tolerance=tolerance, silent=silent)
-        if shell == None:
+        # TopologicCore has no exact ruled-curve loft in this API.
+        if polyhedron is False:
             if not silent:
-                print("Shell.ByWires - Warning: Could not create shell. Returning a cluster of faces instead.")
-            return Cluster.ByTopologies(faces)
-        return shell
+                print("Shell.ByWires - Error: The TopologicCore backend does not support exact curve-preserving Shell loft construction. Returning None.")
+            return None
+
+        # Historical TopologicCore faceted loft.
+        faces = []
+        for wire_a, wire_b in zip(wire_list[:-1], wire_list[1:]):
+            edges_a = Topology.Edges(wire_a)
+            edges_b = Topology.Edges(wire_b)
+
+            if not isinstance(edges_a, list) or not isinstance(edges_b, list):
+                return None
+            if len(edges_a) < 1 or len(edges_a) != len(edges_b):
+                if not silent:
+                    print("Shell.ByWires - Error: Corresponding Wires must contain the same number of Edges. Returning None.")
+                return None
+
+            for edge_a, edge_b in zip(edges_a, edges_b):
+                a0 = Edge.StartVertex(edge_a)
+                a1 = Edge.EndVertex(edge_a)
+                b0 = Edge.StartVertex(edge_b)
+                b1 = Edge.EndVertex(edge_b)
+
+                if triangulate:
+                    face_1 = Face.ByVertices([a0, a1, b1], tolerance=tolerance, silent=True)
+                    face_2 = Face.ByVertices([a0, b1, b0], tolerance=tolerance, silent=True)
+                    if Topology.IsInstance(face_1, "Face"):
+                        faces.append(face_1)
+                    if Topology.IsInstance(face_2, "Face"):
+                        faces.append(face_2)
+                else:
+                    face = Face.ByVertices([a0, a1, b1, b0], tolerance=tolerance, silent=True)
+                    if Topology.IsInstance(face, "Face"):
+                        faces.append(face)
+
+        if not faces:
+            if not silent:
+                print("Shell.ByWires - Error: Could not create any side Faces. Returning None.")
+            return None
+
+        shell = Shell.ByFaces(faces, tolerance=tolerance, silent=True)
+        if Topology.IsInstance(shell, "Shell"):
+            return shell
+
+        if not silent:
+            print("Shell.ByWires - Warning: Could not create a Shell. Returning a Cluster of Faces instead.")
+        return Cluster.ByTopologies(faces, silent=True)
 
     @staticmethod
     def ByWiresCluster(cluster, triangulate: bool = True, polyhedron: bool = True, tolerance: float = 0.0001, silent: bool = False):
@@ -664,87 +673,104 @@ class Shell():
         return Shell.Pie(origin=origin, radiusA=radius, radiusB=0, sides=sides, rings=1, fromAngle=fromAngle, toAngle=toAngle, direction=direction, placement=placement, tolerance=tolerance)
 
     @staticmethod
-    def Delaunay(vertices: list, face= None, mantissa: int = 6, tolerance: float = 0.0001):
+    def Delaunay(
+        vertices: list,
+        face,
+        deflection: float = None,
+        maxIterations: int = 5,
+        convergence: float = 0.001,
+        tolerance: float = 0.0001,
+        silent: bool = False,
+    ):
         """
-        Returns a delaunay partitioning of the input vertices. The vertices must be coplanar. See https://en.wikipedia.org/wiki/Delaunay_triangulation.
+        Returns the intrinsic/geodesic Delaunay partition of the input Face.
+
+        The input Vertices are the Delaunay sites and must all lie on, or within
+        ``tolerance`` of, the trimmed input Face. Distances are measured intrinsically
+        on the Face, so the shortest paths are constrained by its outer boundary and
+        any internal boundaries. The planar construction is therefore a special case
+        of the general surface construction.
+
+        On the PythonOCC backend the intrinsic metric is approximated with the
+        Kimmel-Sethian Fast Marching Method on successively refined triangulations
+        of the trimmed Face. Delaunay adjacency is derived strictly as the dual of
+        the converged intrinsic Voronoi diagram; adjacent sites are connected by
+        continuous steepest-descent traces through the piecewise-linear Fast
+        Marching distance field. The resulting paths are chained and rebuilt as
+        degree-1 B-spline p-curves on the original exact OCCT surface and used to
+        split that Face. Thus the returned Shell contains subsets
+        of the original analytic, B-spline, or NURBS surface rather than inheriting
+        one topological Edge per temporary computational triangle.
 
         Parameters
         ----------
         vertices : list
-            The input list of vertices.
-        face : topologic_core.Face , optional
-            The input face. If specified, the delaunay triangulation is clipped to the face.
-        mantissa : int , optional
-            The number of decimal places to round the result to. Default is 6.
+            The input list of site Vertices. At least three are required.
+        face : topologic_core.Face
+            The trimmed surface domain on which the intrinsic Delaunay partition is
+            computed.
+        deflection : float , optional
+            Finest permitted linear deflection of the computational triangulation.
+            Refinement starts coarser and approaches, but never goes below, this
+            value. If None, a scale-aware target is selected automatically. Default
+            is None.
+        maxIterations : int , optional
+            Maximum number of surface-mesh refinement iterations. Default is 5.
+        convergence : float , optional
+            Absolute geometric convergence criterion for successive intrinsic
+            Voronoi boundaries from which the Delaunay dual is derived. Default is
+            0.001.
         tolerance : float , optional
-            The desired tolerance. Default is 0.0001.
+            The desired geometric tolerance. Default is 0.0001.
+        silent : bool , optional
+            If True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
-        shell
-            A shell representing the delaunay triangulation of the input vertices.
-
+        topologic_core.Shell
+            A Shell partitioning the exact input Face by intrinsic Delaunay geodesics,
+            or None if the operation fails.
         """
-        from topologicpy.Vertex import Vertex
-        from topologicpy.Wire import Wire
-        from topologicpy.Face import Face
-        from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
-        from random import sample
-        from scipy.spatial import Delaunay as SCIDelaunay
-        
+
         if not isinstance(vertices, list):
+            if not silent:
+                print("Shell.Delaunay - Error: The input vertices parameter is not a valid list. Returning None.")
             return None
-        vertices = [x for x in vertices if Topology.IsInstance(x, "Vertex")]
-        if len(vertices) < 3:
+        if len(vertices) < 3 or any(not Topology.IsInstance(v, "Vertex") for v in vertices):
+            if not silent:
+                print("Shell.Delaunay - Error: At least three valid Vertices are required. Returning None.")
+            return None
+        if not Topology.IsInstance(face, "Face"):
+            if not silent:
+                print("Shell.Delaunay - Error: The input face parameter is not a valid Face. Returning None.")
+            return None
+        if Topology._IsTopologicCoreBackend():
+            if not silent:
+                print("Shell.Delaunay - Error: Intrinsic surface Delaunay currently requires the PythonOCC backend. Returning None.")
             return None
 
-        if Topology.IsInstance(face, "Face"):
-            # Flatten the face
-            origin = Topology.Centroid(face)
-            normal = Face.Normal(face, mantissa=mantissa)
-            flatFace = Topology.Flatten(face, origin=origin, direction=normal)
-            faceVertices = Topology.Vertices(face, silent=True)
-            vertices += faceVertices
+        try:
+            return Core.Shell.Delaunay(
+                vertices,
+                face,
+                deflection=deflection,
+                maxIterations=maxIterations,
+                convergence=convergence,
+                tolerance=tolerance,
+                silent=silent,
+            )
+        except TypeError:
+            try:
+                return Core.Shell.Delaunay(vertices, face, deflection, maxIterations, convergence, tolerance, silent)
+            except Exception:
+                pass
+        except Exception:
+            pass
 
-            # Create a cluster of the input vertices
-            verticesCluster = Cluster.ByTopologies(vertices)
-
-            # Flatten the cluster using the same transformations
-            verticesCluster = Topology.Flatten(verticesCluster, origin=origin, direction=normal)
-
-            vertices = Topology.Vertices(verticesCluster, silent=True)
-        points = []
-        for v in vertices:
-            points.append([Vertex.X(v, mantissa=mantissa), Vertex.Y(v, mantissa=mantissa)])
-        delaunay = SCIDelaunay(points)
-        simplices = delaunay.simplices
-
-        faces = []
-        for simplex in simplices:
-            tempTriangleVertices = []
-            tempTriangleVertices.append(vertices[simplex[0]])
-            tempTriangleVertices.append(vertices[simplex[1]])
-            tempTriangleVertices.append(vertices[simplex[2]])
-            tempFace = Face.ByWire(Wire.ByVertices(tempTriangleVertices), tolerance=tolerance)
-            faces.append(tempFace)
-
-        shell = Shell.ByFaces(faces, tolerance=tolerance)
-        if shell == None:
-            shell = Cluster.ByTopologies(faces)
-        
-        if Topology.IsInstance(face, "Face"):
-            edges = Topology.Edges(shell)
-            shell = Topology.Slice(flatFace, Cluster.ByTopologies(edges))
-            # Get the internal boundaries of the face
-            wires = Face.InternalBoundaries(flatFace)
-            ibList = []
-            if len(wires) > 0:
-                ibList = [Face.ByWire(w) for w in wires]
-                cluster = Cluster.ByTopologies(ibList)
-                shell = Topology.Difference(shell, cluster)
-            shell = Topology.Unflatten(shell, origin=origin, direction=normal)
-        return shell
+        if not silent:
+            print("Shell.Delaunay - Error: Could not construct the intrinsic Delaunay partition. Returning None.")
+        return None
 
     @staticmethod
     def Edges(shell) -> list:
@@ -776,24 +802,7 @@ class Shell():
 
     @staticmethod
     def ExternalBoundary(shell, tolerance: float = 0.0001, silent: bool = False):
-        """
-        Returns the external boundary of the input shell.
-
-        Parameters
-        ----------
-        shell : topologic_core.Shell
-            The input shell.
-        tolerance : float , optional
-            The desired tolerance. Default is 0.0001.
-        silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
-
-        Returns
-        -------
-        topologic_core.Wire or topologic_core.Cluster
-            The external boundary of the input shell.
-
-        """
+        """Returns the longest external/free boundary Wire of the input Shell."""
         from topologicpy.Wire import Wire
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
@@ -803,20 +812,38 @@ class Shell():
             if not silent:
                 print("Shell.ExternalBoundary - Error: The input shell parameter is not a valid Shell. Returning None.")
             return None
-        ebEdges = [ebEdge for ebEdge in Topology.Edges(shell) if len(Topology.SuperTopologies(ebEdge, shell, topologyType="face")) == 1]
-        if len(ebEdges) > 1:
+
+        # The PythonOCC backend has curve-aware edge incidence and measures true
+        # curve length when disjoint free-boundary wires must be ranked.
+        if not Topology._IsTopologicCoreBackend():
+            try:
+                result = Core.Shell.ExternalBoundary(shell, tolerance=tolerance, silent=True)
+                if Topology.IsInstance(result, "Wire"):
+                    return result
+            except Exception:
+                pass
+
+        ebEdges = [
+            edge for edge in (Topology.Edges(shell) or [])
+            if len(Topology.SuperTopologies(edge, shell, topologyType="face") or []) == 1
+        ]
+        if len(ebEdges) == 1:
+            result = Wire.ByEdges(ebEdges, tolerance=tolerance, silent=True)
+            if Topology.IsInstance(result, "Wire"):
+                return result
+        elif len(ebEdges) > 1:
             result = Topology.SelfMerge(Cluster.ByTopologies(ebEdges), tolerance=tolerance)
-            if Topology.IsInstance(result, "wire"):
+            if Topology.IsInstance(result, "Wire"):
                 wires = [result]
             else:
-                wires = Topology.Wires(result)
-            wires = [w for w in wires if Topology.IsInstance(w, "wire")]
+                wires = [w for w in (Topology.Wires(result) or []) if Topology.IsInstance(w, "Wire")]
             if len(wires) == 1:
                 return wires[0]
-            if len(wires) > 0:
+            if wires:
                 lengths = [Wire.Length(w) for w in wires]
                 wires = Helper.Sort(wires, lengths)
                 return wires[-1]
+
         if not silent:
             print("Shell.ExternalBoundary - Error: External boundary could not be found. Returning None.")
         return None
@@ -1529,7 +1556,7 @@ class Shell():
         
         if not Topology.IsInstance(shell, "shell"):
             if not silent:
-                print("Shell.IsClosed - Error: The input shell parameter is not a valid shell. Retruning None.")
+                print("Shell.IsClosed - Error: The input shell parameter is not a valid shell. Returning None.")
             return None
         # return shell.IsClosed() # H to Core
         return Core.InstanceCall(shell, "IsClosed")
@@ -1939,48 +1966,401 @@ class Shell():
         return shell
 
     @staticmethod
-    def Planarize(shell, origin= None, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
+    def Planarize(shell, origin=None, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
         """
-        Returns a planarized version of the input shell.
+        Returns a planarized version of the input Shell while preserving curved
+        Edge geometry whenever the active backend supports exact native projection.
+
+        Plane inference is face-based rather than edge-sampling-based. This is
+        essential for closed analytic and NURBS Edges, which may expose only one
+        topological Vertex and for which direct curve sampling can be unsafe in
+        some PythonOCC builds.
 
         Parameters
         ----------
         shell : topologic_core.Shell
-            The input shell.
+            The input Shell.
         origin : topologic_core.Vertex , optional
-            The desired origin of the plane unto which the planar shell will be projected. If set to None, the centroid of the input shell will be chosen. Default is None.
+            The desired origin of the target plane. If None, the centroid of the
+            input Shell is used. Default is None.
         mantissa : int , optional
-            The number of decimal places to round the result to. Default is 6.
-        tolerance : float, optional
-            The desired tolerance. Default is 0.0001.
+            The number of decimal places used when deriving the best-fit plane.
+            Default is 6.
+        tolerance : float , optional
+            The desired geometric tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
         topologic_core.Shell
-            The planarized shell.
-
+            The planarized Shell, or None if the operation cannot be completed
+            without approximating curved geometry.
         """
+        import math
+
         from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Wire import Wire
         from topologicpy.Face import Face
-        from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(shell, "Shell"):
-            print("Shell.Planarize - Error: The input wire parameter is not a valid topologic shell. Returning None.")
+            if not silent:
+                print("Shell.Planarize - Error: The input shell parameter is not a valid Shell. Returning None.")
             return None
+
+        try:
+            tolerance = max(abs(float(tolerance)), 1.0e-12)
+        except Exception:
+            if not silent:
+                print("Shell.Planarize - Error: The input tolerance parameter is invalid. Returning None.")
+            return None
+
+        faces = Shell.Faces(shell) or []
+        faces = [face for face in faces if Topology.IsInstance(face, "Face")]
+        if not faces:
+            if not silent:
+                print("Shell.Planarize - Error: The input Shell does not contain any valid Faces. Returning None.")
+            return None
+
+        try:
+            is_topologic_core = bool(Topology._IsTopologicCoreBackend())
+        except Exception:
+            is_topologic_core = True
+
+        # ------------------------------------------------------------------
+        # Fast path for an already-planar Shell.
+        #
+        # Do this BEFORE touching Edge curve geometry. A valid planar Face may
+        # be bounded by one closed circular/NURBS Edge with a single topological
+        # Vertex. Native FaceUtility planarity/coplanarity tests operate on the
+        # supporting surfaces directly and avoid unsafe curve evaluation.
+        # ------------------------------------------------------------------
+        if not is_topologic_core:
+            try:
+                all_planar = all(
+                    Core.FaceUtility.IsPlanar(face, tolerance) is True
+                    for face in faces
+                )
+                if all_planar:
+                    reference = faces[0]
+                    all_coplanar = all(
+                        Core.FaceUtility.IsCoplanar(reference, face, tolerance) is True
+                        for face in faces[1:]
+                    )
+                    if all_coplanar:
+                        return shell
+            except Exception:
+                # Failure to establish the fast path is not an operation failure;
+                # continue to the general best-fit-plane path below.
+                pass
+
+        # TopologicCore's exact curved-wire projection is unavailable. Preserve
+        # the established rule: never silently chord curved geometry.
+        if is_topologic_core:
+            for edge in Topology.Edges(shell) or []:
+                if Edge.IsLinear(edge, tolerance=tolerance, silent=True) is not True:
+                    if not silent:
+                        print("Shell.Planarize - Error: Curve-preserving Shell planarization requires the PythonOCC backend. Returning None.")
+                    return None
+
+        if not Topology.IsInstance(origin, "Vertex"):
+            origin = Topology.Centroid(shell)
         if not Topology.IsInstance(origin, "Vertex"):
             origin = Vertex.Origin()
         if not Topology.IsInstance(origin, "Vertex"):
-            print("Shell.Planarize - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
+            if not silent:
+                print("Shell.Planarize - Error: Could not determine a valid plane origin. Returning None.")
             return None
-        
-        vertices = Topology.Vertices(shell, silent=True)
-        plane_equation = Vertex.PlaneEquation(vertices, mantissa=mantissa)
-        rect = Face.RectangleByPlaneEquation(origin=origin , equation=plane_equation, tolerance=tolerance)
-        new_vertices = [Vertex.Project(v, rect, mantissa=mantissa) for v in vertices]
-        new_shell = Topology.ReplaceVertices(shell, verticesA=vertices, verticesB=new_vertices)
-        new_faces = Topology.Faces(new_shell)
-        return Topology.SelfMerge(Cluster.ByTopologies(new_faces), tolerance=tolerance)
+
+        # ------------------------------------------------------------------
+        # Best-fit plane samples from Face surfaces, never from Edge curves.
+        # Sampling is used only to infer the target plane and its finite extent.
+        # The output geometry is still created by projecting complete Wires.
+        # ------------------------------------------------------------------
+        sample_vertices = []
+        sample_keys = set()
+
+        def add_sample(vertex):
+            if not Topology.IsInstance(vertex, "Vertex"):
+                return
+            try:
+                xyz = Vertex.Coordinates(vertex, mantissa=None)
+                x, y, z = float(xyz[0]), float(xyz[1]), float(xyz[2])
+            except Exception:
+                return
+            key = (round(x, mantissa), round(y, mantissa), round(z, mantissa))
+            if key not in sample_keys:
+                sample_keys.add(key)
+                sample_vertices.append(vertex)
+
+        # Ordinary topology vertices are safe to include, but are not relied on.
+        for vertex in Topology.Vertices(shell, silent=True) or []:
+            add_sample(vertex)
+
+        uv_samples = (
+            (0.0, 0.0), (0.5, 0.0), (1.0, 0.0),
+            (0.0, 0.5), (0.5, 0.5), (1.0, 0.5),
+            (0.0, 1.0), (0.5, 1.0), (1.0, 1.0),
+            (0.25, 0.25), (0.75, 0.25), (0.25, 0.75), (0.75, 0.75),
+        )
+
+        for face in faces:
+            try:
+                add_sample(Topology.Centroid(face))
+            except Exception:
+                pass
+            for u, v in uv_samples:
+                try:
+                    add_sample(Face.VertexByParameters(face, u=u, v=v))
+                except Exception:
+                    pass
+
+        if len(sample_vertices) < 3:
+            if not silent:
+                print("Shell.Planarize - Error: Could not derive enough geometric samples from the input Faces. Returning None.")
+            return None
+
+        try:
+            equation = Vertex.PlaneEquation(
+                sample_vertices,
+                mantissa=mantissa,
+                tolerance=tolerance,
+                silent=True,
+            )
+        except TypeError:
+            equation = Vertex.PlaneEquation(sample_vertices, mantissa=mantissa)
+
+        if not isinstance(equation, dict):
+            if not silent:
+                print("Shell.Planarize - Error: Could not determine a best-fit projection plane. Returning None.")
+            return None
+
+        try:
+            normal = [
+                float(equation["a"]),
+                float(equation["b"]),
+                float(equation["c"]),
+            ]
+            magnitude = math.sqrt(sum(value * value for value in normal))
+            if not math.isfinite(magnitude) or magnitude <= tolerance:
+                raise ValueError
+            normal = [value / magnitude for value in normal]
+        except Exception:
+            if not silent:
+                print("Shell.Planarize - Error: Could not determine a valid projection-plane normal. Returning None.")
+            return None
+
+        try:
+            ox, oy, oz = Vertex.Coordinates(origin, mantissa=None)
+            max_distance = 0.0
+            for vertex in sample_vertices:
+                x, y, z = Vertex.Coordinates(vertex, mantissa=None)
+                distance = math.sqrt(
+                    (float(x) - float(ox)) ** 2
+                    + (float(y) - float(oy)) ** 2
+                    + (float(z) - float(oz)) ** 2
+                )
+                max_distance = max(max_distance, distance)
+            plane_size = max(1.0, 4.0 * max_distance, 1000.0 * tolerance)
+        except Exception:
+            plane_size = 1.0
+
+        receiving_face = Face.RectangleByPlaneEquation(
+            origin=origin,
+            width=plane_size,
+            length=plane_size,
+            equation=equation,
+            tolerance=tolerance,
+        )
+        if not Topology.IsInstance(receiving_face, "Face"):
+            if not silent:
+                print("Shell.Planarize - Error: Could not construct the receiving projection Face. Returning None.")
+            return None
+
+        def project_polyline_wire(wire):
+            source_edges = Wire._OrderedEdges(wire, tolerance=tolerance, silent=True)
+            if not isinstance(source_edges, list) or not source_edges:
+                return None
+
+            def project_vertex(vertex):
+                projected = Vertex.Project(
+                    vertex,
+                    receiving_face,
+                    direction=normal,
+                    mantissa=mantissa,
+                    tolerance=tolerance,
+                )
+                if Topology.IsInstance(projected, "Vertex"):
+                    return projected
+                return Vertex.Project(
+                    vertex,
+                    receiving_face,
+                    direction=[-normal[0], -normal[1], -normal[2]],
+                    mantissa=mantissa,
+                    tolerance=tolerance,
+                )
+
+            projected_edges = []
+            for edge in source_edges:
+                start = project_vertex(Edge.StartVertex(edge, silent=True))
+                end = project_vertex(Edge.EndVertex(edge, silent=True))
+                if not Topology.IsInstance(start, "Vertex") or not Topology.IsInstance(end, "Vertex"):
+                    return None
+                projected = Edge.ByStartVertexEndVertex(
+                    start,
+                    end,
+                    tolerance=tolerance,
+                    silent=True,
+                )
+                if not Topology.IsInstance(projected, "Edge"):
+                    return None
+                projected_edges.append(projected)
+
+            return Wire.ByEdges(
+                projected_edges,
+                orient=True,
+                tolerance=tolerance,
+                silent=True,
+            )
+
+        def project_wire(wire, source_face):
+            if not Topology.IsInstance(wire, "Wire"):
+                return None
+
+            # If this entire source Face already lies on the target plane, keep
+            # the original Wire. This is a surface-level test; no Edge sampling.
+            if not is_topologic_core and Topology.IsInstance(source_face, "Face"):
+                try:
+                    if (
+                        Core.FaceUtility.IsPlanar(source_face, tolerance) is True
+                        and Core.FaceUtility.IsCoplanar(source_face, receiving_face, tolerance) is True
+                    ):
+                        return wire
+                except Exception:
+                    pass
+
+            if not is_topologic_core:
+                # Use OCCT normal projection rather than BRepProj_Projection.
+                # On a planar receiving Face, normal projection is the required
+                # orthogonal projection and preserves analytic/B-spline curves.
+                try:
+                    from OCC.Core.BRepOffsetAPI import BRepOffsetAPI_NormalProjection
+                    from OCC.Core.TopAbs import TopAbs_EDGE, TopAbs_WIRE
+                    from OCC.Core.TopExp import TopExp_Explorer
+                    from OCC.Core.TopoDS import topods
+
+                    source_shape = getattr(wire, "shape", None)
+                    target_shape = getattr(receiving_face, "shape", None)
+                    if source_shape is not None and target_shape is not None:
+                        projector = BRepOffsetAPI_NormalProjection(target_shape)
+                        projector.Add(source_shape)
+                        projector.SetLimit(False)
+                        projector.Compute3d(True)
+                        projector.Build()
+
+                        if not hasattr(projector, "IsDone") or projector.IsDone():
+                            projected_shape = projector.Projection()
+                            if projected_shape is not None and not projected_shape.IsNull():
+                                projected_wires = []
+                                explorer = TopExp_Explorer(projected_shape, TopAbs_WIRE)
+                                while explorer.More():
+                                    occ_wire = topods.Wire(explorer.Current())
+                                    candidate = None
+                                    try:
+                                        if Core.HasAttribute("Wire", "ByOcctShape"):
+                                            candidate = Core.Wire.ByOcctShape(occ_wire)
+                                    except Exception:
+                                        candidate = None
+                                    if Topology.IsInstance(candidate, "Wire"):
+                                        projected_wires.append(candidate)
+                                    explorer.Next()
+
+                                if len(projected_wires) == 1:
+                                    return projected_wires[0]
+
+                                projected_edges = []
+                                if projected_wires:
+                                    for projected_wire in projected_wires:
+                                        projected_edges.extend(Wire.Edges(projected_wire, silent=True) or [])
+                                else:
+                                    explorer = TopExp_Explorer(projected_shape, TopAbs_EDGE)
+                                    while explorer.More():
+                                        occ_edge = topods.Edge(explorer.Current())
+                                        candidate = None
+                                        try:
+                                            if Core.HasAttribute("Edge", "ByOcctShape"):
+                                                candidate = Core.Edge.ByOcctShape(occ_edge)
+                                        except Exception:
+                                            candidate = None
+                                        if Topology.IsInstance(candidate, "Edge"):
+                                            projected_edges.append(candidate)
+                                        explorer.Next()
+
+                                if projected_edges:
+                                    merged = Wire.ByEdges(
+                                        projected_edges,
+                                        orient=True,
+                                        tolerance=tolerance,
+                                        silent=True,
+                                    )
+                                    if Topology.IsInstance(merged, "Wire"):
+                                        return merged
+                except Exception:
+                    pass
+
+            # Exact backend-neutral fallback only for straight-edge polylines.
+            if Wire.IsPolyline(wire, tolerance=tolerance, silent=True):
+                return project_polyline_wire(wire)
+            return None
+
+        new_faces = []
+        for face in faces:
+            external = Face.ExternalBoundary(face)
+            projected_external = project_wire(external, face)
+            if not Topology.IsInstance(projected_external, "Wire"):
+                if not silent:
+                    print("Shell.Planarize - Error: Could not project a Face boundary without approximating its curves. Returning None.")
+                return None
+
+            projected_internal = []
+            for wire in Face.InternalBoundaries(face) or []:
+                projected = project_wire(wire, face)
+                if not Topology.IsInstance(projected, "Wire"):
+                    if not silent:
+                        print("Shell.Planarize - Error: Could not project an internal Face boundary without approximating its curves. Returning None.")
+                    return None
+                projected_internal.append(projected)
+
+            try:
+                new_face = Face.ByWires(
+                    projected_external,
+                    projected_internal,
+                    tolerance=tolerance,
+                    silent=True,
+                )
+            except TypeError:
+                new_face = Face.ByWires(
+                    projected_external,
+                    projected_internal,
+                    tolerance=tolerance,
+                )
+
+            if not Topology.IsInstance(new_face, "Face"):
+                if not silent:
+                    print("Shell.Planarize - Error: Could not rebuild a projected Face. Returning None.")
+                return None
+            new_faces.append(new_face)
+
+        result = Shell.ByFaces(new_faces, tolerance=tolerance, silent=True)
+        if not Topology.IsInstance(result, "Shell"):
+            if not silent:
+                print("Shell.Planarize - Error: Could not rebuild the planarized Shell. Returning None.")
+            return None
+
+        return result
+
     
     @staticmethod
     def Rectangle(origin= None, width: float = 1.0, length: float = 1.0,
@@ -2044,43 +2424,45 @@ class Shell():
         return shell
 
     @staticmethod
-    def RemoveCollinearEdges(shell, angTolerance: float = 0.1, tolerance: float = 0.0001, silent: bool = False):
-        """
-        Removes any collinear edges in the input shell.
-
-        Parameters
-        ----------
-        shell : topologic_core.Shell
-            The input shell.
-        angTolerance : float , optional
-            The desired angular tolerance. Default is 0.1.
-        tolerance : float , optional
-            The desired tolerance. Default is 0.0001.
-        silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
-
-        Returns
-        -------
-        topologic_core.Shell
-            The created shell without any collinear edges.
-
-        """
-        from topologicpy.Face import Face
+    def RemoveCollinearEdges(
+        shell,
+        angTolerance: float = 0.1,
+        polyhedron: bool = True,
+        tolerance: float = 0.0001,
+        silent: bool = False,
+    ):
+        """Removes redundant collinear linear Edges from the input Shell."""
         from topologicpy.Topology import Topology
-        import inspect
-        
+
         if not Topology.IsInstance(shell, "Shell"):
             if not silent:
-                print("Shell.RemoveCollinearEdges - Error: The input shell parameter is not a valid shell. Returning None.")
-                curframe = inspect.currentframe()
-                calframe = inspect.getouterframes(curframe, 2)
-                print('caller name:', calframe[1][3])
+                print("Shell.RemoveCollinearEdges - Error: The input shell parameter is not a valid Shell. Returning None.")
             return None
-        faces = Shell.Faces(shell)
+        if not isinstance(polyhedron, bool):
+            if not silent:
+                print("Shell.RemoveCollinearEdges - Error: The input polyhedron parameter is not a valid boolean. Returning None.")
+            return None
+
         clean_faces = []
-        for face in faces:
-            clean_faces.append(Face.RemoveCollinearEdges(face, angTolerance=angTolerance, tolerance=tolerance))
-        return Shell.ByFaces(clean_faces, tolerance=tolerance)
+        for face in Shell.Faces(shell) or []:
+            clean_face = Topology.RemoveCollinearEdges(
+                face,
+                angTolerance=angTolerance,
+                polyhedron=polyhedron,
+                tolerance=tolerance,
+                silent=True,
+            )
+            if not Topology.IsInstance(clean_face, "Face"):
+                if polyhedron is False:
+                    clean_face = face
+                else:
+                    return None
+            clean_faces.append(clean_face)
+
+        result = Shell.ByFaces(clean_faces, tolerance=tolerance, silent=True)
+        if not Topology.IsInstance(result, "Shell") and not silent:
+            print("Shell.RemoveCollinearEdges - Error: Could not rebuild the Shell. Returning None.")
+        return result if Topology.IsInstance(result, "Shell") else None
     
     @staticmethod
     def Roof(face, angle: float = 45, epsilon: float = 0.01, mantissa: int = 6, tolerance: float = 0.001):
@@ -2219,7 +2601,7 @@ class Shell():
             return None
         ext_boundary = Shell.ExternalBoundary(shell, tolerance=tolerance)
         if Topology.IsInstance(ext_boundary, "Wire"):
-            f = Face.ByWire(Topology.RemoveCollinearEdges(ext_boundary, angTolerance), tolerance=tolerance) or Face.ByWire(Wire.Planarize(Topology.RemoveCollinearEdges(ext_boundary, angTolerance), tolerance=tolerance))
+            f = Face.ByWire(Topology.RemoveCollinearEdges(ext_boundary, angTolerance=angTolerance, polyhedron=False, tolerance=tolerance, silent=True), tolerance=tolerance) or Face.ByWire(Wire.Planarize(Topology.RemoveCollinearEdges(ext_boundary, angTolerance=angTolerance, polyhedron=False, tolerance=tolerance, silent=True), tolerance=tolerance))
             if not f:
                 print("FaceByPlanarShell - Error: The input Wire is not planar and could not be fixed. Returning None.")
                 return None
@@ -2231,9 +2613,9 @@ class Shell():
             areas = []
             for aWire in wires:
                 try:
-                    aFace = Face.ByWire(Topology.RemoveCollinearEdges(aWire, angTolerance))
+                    aFace = Face.ByWire(Topology.RemoveCollinearEdges(aWire, angTolerance=angTolerance, polyhedron=False, tolerance=tolerance, silent=True))
                 except:
-                    aFace = Face.ByWire(Wire.Planarize(Topology.RemoveCollinearEdges(aWire, angTolerance)))
+                    aFace = Face.ByWire(Wire.Planarize(Topology.RemoveCollinearEdges(aWire, angTolerance=angTolerance, polyhedron=False, tolerance=tolerance, silent=True)))
                 anArea = Face.Area(aFace)
                 faces.append(aFace)
                 areas.append(anArea)
@@ -2243,9 +2625,9 @@ class Shell():
             int_wires = []
             for int_boundary in int_boundaries:
                 temp_wires = Topology.Wires(int_boundary)
-                int_wires.append(Topology.RemoveCollinearEdges(temp_wires[0], angTolerance))
+                int_wires.append(Topology.RemoveCollinearEdges(temp_wires[0], angTolerance=angTolerance, polyhedron=False, tolerance=tolerance, silent=True))
             temp_wires = Topology.Wire(ext_boundary)
-            ext_wire = Topology.RemoveCollinearEdges(temp_wires[0], angTolerance)
+            ext_wire = Topology.RemoveCollinearEdges(temp_wires[0], angTolerance=angTolerance, polyhedron=False, tolerance=tolerance, silent=True)
             try:
                 return Face.ByWires(ext_wire, int_wires, tolerance=tolerance)
             except:
@@ -2256,156 +2638,156 @@ class Shell():
     @staticmethod
     def Simplify(shell, simplifyBoundary: bool = True, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
         """
-            Simplifies the input shell edges based on the Douglas Peucker algorithm. See https://en.wikipedia.org/wiki/Ramer%E2%80%93Douglas%E2%80%93Peucker_algorithm
-            Part of this code was contributed by gaoxipeng. See https://github.com/wassimj/topologicpy/issues/35
+        Simplifies a planar polyline Shell using the Douglas-Peucker algorithm.
 
-        Parameters
-        ----------
-        shell : topologic_core.Shell
-            The input shell.
-        simplifyBoundary : bool , optional
-            If set to True, the external boundary of the shell will be simplified as well. Otherwise, it will not be simplified. Default is True.
-        mantissa : int , optional
-            The desired length of the mantissa. Default is 6
-        tolerance : float , optional
-            The desired tolerance. Default is 0.0001. Edges shorter than this length will be removed.
-
-        Returns
-        -------
-        topologic_core.Shell
-            The simplified shell.
-
+        This operation is intentionally limited to linear Edges. Curved Edges are
+        rejected rather than silently replaced by chords. A tilted planar Shell is
+        first rigidly flattened to XY, simplified there, and then restored.
         """
         from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
         from topologicpy.Wire import Wire
         from topologicpy.Face import Face
-        from topologicpy.Shell import Shell
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
         from topologicpy.Helper import Helper
-        
+
         def perpendicular_distance(point, line_start, line_end):
-            # Calculate the perpendicular distance from a point to a line segment
             x0 = Vertex.X(point, mantissa=mantissa)
             y0 = Vertex.Y(point, mantissa=mantissa)
             x1 = Vertex.X(line_start, mantissa=mantissa)
             y1 = Vertex.Y(line_start, mantissa=mantissa)
             x2 = Vertex.X(line_end, mantissa=mantissa)
             y2 = Vertex.Y(line_end, mantissa=mantissa)
-
-            numerator = abs((y2 - y1) * x0 - (x2 - x1) * y0 + x2 * y1 - y2 * x1)
             denominator = Vertex.Distance(line_start, line_end)
+            if denominator is None or denominator <= tolerance:
+                return 0.0
+            numerator = abs((y2-y1)*x0 - (x2-x1)*y0 + x2*y1 - y2*x1)
+            return numerator/denominator
 
-            return numerator / denominator
-
-        def douglas_peucker(wire, tolerance=0.0001):
-            if isinstance(wire, list):
-                points = wire
-            else:
-                points = Topology.Vertices(wire, silent=True)
-                # points.insert(0, points.pop())
+        def douglas_peucker(wire, local_tolerance=0.0001):
+            points = wire if isinstance(wire, list) else (Topology.Vertices(wire, silent=True) or [])
             if len(points) <= 2:
                 return points
-
-            # Use the first and last points in the list as the starting and ending points
-            start_point = points[0]
-            end_point = points[-1]
-
-            # Find the point with the maximum distance
-            max_distance = 0
+            start_point, end_point = points[0], points[-1]
+            max_distance = 0.0
             max_index = 0
-
-            for i in range(1, len(points) - 1):
-                d = perpendicular_distance(points[i], start_point, end_point)
-                if d > max_distance:
-                    max_distance = d
+            for i in range(1, len(points)-1):
+                distance = perpendicular_distance(points[i], start_point, end_point)
+                if distance > max_distance:
+                    max_distance = distance
                     max_index = i
-
-            # If the maximum distance is less than the tolerance, no further simplification is needed
-            if max_distance <= tolerance:
+            if max_distance <= local_tolerance:
                 return [start_point, end_point]
+            first = douglas_peucker(points[:max_index+1], local_tolerance)
+            second = douglas_peucker(points[max_index:], local_tolerance)
+            return first[:-1] + second
 
-            # Recursively simplify
-            first_segment = douglas_peucker(points[:max_index + 1], tolerance=tolerance)
-            second_segment = douglas_peucker(points[max_index:], tolerance=tolerance)
-
-            # Merge the two simplified segments
-            return first_segment[:-1] + second_segment
         if not Topology.IsInstance(shell, "Shell"):
-            print("Shell.Simplify - Error: The input shell parameter is not a valid topologic shell. Returning None.")
+            if not silent:
+                print("Shell.Simplify - Error: The input shell parameter is not a valid Shell. Returning None.")
             return None
-        # Get the external boundary of the shell. This can be simplified as well, but might cause issues at the end.
-        # At this point, it is assumed to be left as is.
-        all_edges = Topology.Edges(shell)
-        if simplifyBoundary == False:
-            ext_boundary = Face.ByWire(Shell.ExternalBoundary(shell, tolerance=tolerance), tolerance=tolerance)
-            
-            # Get the internal edges of the shell.
-            i_edges = []
+        if any(Edge.IsLinear(edge, silent=True) is not True for edge in (Topology.Edges(shell) or [])):
+            if not silent:
+                print("Shell.Simplify - Error: The input Shell contains curved Edges. Douglas-Peucker simplification is defined here only for polylines. Returning None.")
+            return None
+
+        vertices = Topology.Vertices(shell, silent=True) or []
+        if len(vertices) < 3:
+            return shell
+        equation = Vertex.PlaneEquation(vertices, mantissa=mantissa)
+        if not isinstance(equation, dict):
+            return None
+        try:
+            normal = [float(equation["a"]), float(equation["b"]), float(equation["c"])]
+            mag = math.sqrt(sum(x*x for x in normal))
+            normal = [x/mag for x in normal]
+        except Exception:
+            return None
+        origin = Topology.Centroid(shell)
+        flat_shell = Topology.Flatten(shell, origin=origin, direction=normal)
+        if not Topology.IsInstance(flat_shell, "Shell"):
+            return None
+        flat_vertices = Topology.Vertices(flat_shell, silent=True) or []
+        z_values = [Vertex.Z(v, mantissa=mantissa) for v in flat_vertices]
+        if z_values and max(z_values)-min(z_values) > max(tolerance*10.0, 10.0**(-mantissa)):
+            if not silent:
+                print("Shell.Simplify - Error: The input Shell is not planar within tolerance. Returning None.")
+            return None
+
+        all_edges = Topology.Edges(flat_shell) or []
+        if simplifyBoundary is False:
+            boundary = Shell.ExternalBoundary(flat_shell, tolerance=tolerance, silent=True)
+            ext_boundary = Face.ByWire(boundary, tolerance=tolerance, silent=True) if Topology.IsInstance(boundary, "Wire") else None
+            if not Topology.IsInstance(ext_boundary, "Face"):
+                return None
+            internal_edges = []
             for edge in all_edges:
-                faces = Topology.SuperTopologies(edge, shell, topologyType="face")
-                if len(faces) > 1: # This means that the edge separates two faces so it is internal.
-                    i_edges.append(edge)
-            # Creat a Wire from the internal edges
-            wire = Topology.SelfMerge(Cluster.ByTopologies(i_edges), tolerance=tolerance)
+                faces = Topology.SuperTopologies(edge, flat_shell, topologyType="face") or []
+                if len(faces) > 1:
+                    internal_edges.append(edge)
+            wire = Topology.SelfMerge(Cluster.ByTopologies(internal_edges), tolerance=tolerance) if internal_edges else None
         else:
             wire = Topology.SelfMerge(Cluster.ByTopologies(all_edges), tolerance=tolerance)
-        # Split the wires at its junctions (where more than two edges meet at a vertex)
-        components = Wire.Split(wire)
-        separators = []
-        wires = []
+
+        if wire is None:
+            return shell
+        components = Wire.Split(wire) or []
+        separators, wires = [], []
         for component in components:
             if Topology.IsInstance(component, "Cluster"):
                 component = Topology.SelfMerge(component, tolerance=tolerance)
                 if Topology.IsInstance(component, "Cluster"):
                     separators.append(Cluster.FreeEdges(component, tolerance=tolerance))
                     wires.append(Cluster.FreeWires(component, tolerance=tolerance))
-                if Topology.IsInstance(component, "Edge"):
+                elif Topology.IsInstance(component, "Edge"):
                     separators.append(component)
-                if Topology.IsInstance(component, "Wire"):
+                elif Topology.IsInstance(component, "Wire"):
                     wires.append(component)
-            if Topology.IsInstance(component, "Edge"):
+            elif Topology.IsInstance(component, "Edge"):
                 separators.append(component)
-            if Topology.IsInstance(component, "Wire"):
+            elif Topology.IsInstance(component, "Wire"):
                 wires.append(component)
+
         wires = Helper.Flatten(wires)
         separators = Helper.Flatten(separators)
-        results = []
-        for w in wires:
-            temp_wire = Wire.ByVertices(douglas_peucker(w, tolerance=tolerance), close=False)
-            results.append(temp_wire)
-        # Make a Cluster out of the results
-        cluster = Cluster.ByTopologies(results)
-        # Get all the edges of the result
-        edges = Topology.Edges(cluster)
-        # Add them to the final edges
-        final_edges = edges + separators
-        # Make a Cluster out of the final set of edges
+        simplified = []
+        for wire_item in wires:
+            points = douglas_peucker(wire_item, local_tolerance=tolerance)
+            if len(points) >= 2:
+                temp_wire = Wire.ByVertices(points, close=False, tolerance=tolerance, silent=True)
+                if Topology.IsInstance(temp_wire, "Wire"):
+                    simplified.append(temp_wire)
+
+        final_edges = (Topology.Edges(Cluster.ByTopologies(simplified)) or []) + separators if simplified else separators
+        if not final_edges:
+            return shell
         cluster = Cluster.ByTopologies(final_edges)
-        if simplifyBoundary == False:
-            # Slice the external boundary of the shell by the cluster
+
+        if simplifyBoundary is False:
             final_result = Topology.Slice(ext_boundary, cluster, tolerance=tolerance)
         else:
-            br = Wire.BoundingRectangle(shell)
+            br = Wire.BoundingRectangle(flat_shell)
+            if not Topology.IsInstance(br, "Wire"):
+                return shell
             br = Topology.Scale(br, Topology.Centroid(br), 1.5, 1.5, 1.5)
-            br = Face.ByWire(br, tolerance=tolerance)
-            v = Face.VertexByParameters(br, 0.1, 0.1)
+            br = Face.ByWire(br, tolerance=tolerance, silent=True)
+            if not Topology.IsInstance(br, "Face"):
+                return shell
+            selector = Face.VertexByParameters(br, 0.1, 0.1)
             result = Topology.Slice(br, cluster, tolerance=tolerance)
-            faces = Topology.Faces(result)
             final_faces = []
-            for face in faces:
-                if not Vertex.IsInternal(v, face, tolerance=0.01):
+            for face in Topology.Faces(result) or []:
+                if not Vertex.IsInternal(selector, face, tolerance=0.01):
                     final_faces.append(face)
-            final_result = Shell.ByFaces(final_faces, tolerance=tolerance)
+            final_result = Shell.ByFaces(final_faces, tolerance=tolerance, silent=True)
+
         if not Topology.IsInstance(final_result, "Shell"):
-            # The Douglas-Peucker simplification path can fail under the
-            # pythonOCC backend (e.g. when Wire.BoundingRectangle/Slice of a
-            # simple single-face shell returns None). Fall back to a SelfMerged
-            # shell so the result is still a valid Shell.
             if not silent:
-                print("Shell.Simplify - Warning: simplification produced no shell; returning the input shell.")
-            return Topology.SelfMerge(shell, tolerance=tolerance, silent=silent) if Topology.IsInstance(shell, "Shell") else None
-        return final_result
+                print("Shell.Simplify - Warning: Simplification produced no Shell; returning the input Shell.")
+            return shell
+        restored = Topology.Unflatten(final_result, origin=origin, direction=normal)
+        return restored if Topology.IsInstance(restored, "Shell") else shell
 
     @staticmethod
     def Skeleton(face, tolerance: float = 0.001):
@@ -2556,118 +2938,73 @@ class Shell():
         return vertices
 
     @staticmethod
-    def Voronoi(vertices: list, face= None, mantissa: int = 6, tolerance: float = 0.0001):
+    def Voronoi(
+        vertices: list,
+        face,
+        deflection: float = None,
+        maxIterations: int = 5,
+        convergence: float = 0.001,
+        tolerance: float = 0.0001,
+        silent: bool = False,
+    ):
         """
-        Returns a voronoi partitioning of the input face based on the input vertices. The vertices must be coplanar and within the face. See https://en.wikipedia.org/wiki/Voronoi_diagram.
+        Returns the intrinsic/geodesic Voronoi partition of the input Face.
 
-        Parameters
-        ----------
-        vertices : list
-            The input list of vertices.
-        face : topologic_core.Face , optional
-            The input face. If the face is not set an optimised bounding rectangle of the input vertices is used instead. Default is None.
-        mantissa : int , optional
-            The desired length of the mantissa. Default is 6
-        tolerance : float , optional
-            The desired tolerance. Default is 0.0001.
-        
-        Returns
-        -------
-        shell
-            A shell representing the voronoi partitioning of the input face.
+        The sites must lie on, or within ``tolerance`` of, the trimmed input Face.
+        Distances are shortest-path distances constrained to that Face, including its
+        outer and internal boundaries. UV-coordinate Euclidean distance is never used
+        as the metric.
 
+        On PythonOCC, intrinsic distances are approximated with the Kimmel-Sethian
+        Fast Marching Method on successively refined triangulations of the trimmed
+        Face. ``deflection`` is interpreted as the finest permitted triangulation
+        target; refinement starts coarser and never goes below it. Converged
+        triangle-local interfaces are chained and reconstructed as degree-1 B-spline
+        p-curves on the original OCCT surface before splitting, so the returned
+        topology does not inherit one Edge per computational triangle. Analytic and NURBS surface geometry is retained.
+        UV-coordinate Euclidean distance and mesh-edge Dijkstra are not used as the
+        intrinsic metric.
         """
-        from topologicpy.Vertex import Vertex
-        from topologicpy.Edge import Edge
-        from topologicpy.Wire import Wire
-        from topologicpy.Face import Face
-        from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
-        from topologicpy.Dictionary import Dictionary
-        
-        if not Topology.IsInstance(face, "Face"):
-            cluster = Cluster.ByTopologies(vertices)
-            br = Wire.BoundingRectangle(cluster, optimize=5)
-            face = Face.ByWire(br, tolerance=tolerance)
+
         if not isinstance(vertices, list):
+            if not silent:
+                print("Shell.Voronoi - Error: The input vertices parameter is not a valid list. Returning None.")
             return None
-        vertices = [x for x in vertices if Topology.IsInstance(x, "Vertex")]
-        if len(vertices) < 2:
+        if len(vertices) < 2 or any(not Topology.IsInstance(v, "Vertex") for v in vertices):
+            if not silent:
+                print("Shell.Voronoi - Error: At least two valid Vertices are required. Returning None.")
+            return None
+        if not Topology.IsInstance(face, "Face"):
+            if not silent:
+                print("Shell.Voronoi - Error: The input face parameter is not a valid Face. Returning None.")
+            return None
+        if Topology._IsTopologicCoreBackend():
+            if not silent:
+                print("Shell.Voronoi - Error: Intrinsic surface Voronoi currently requires the PythonOCC backend. Returning None.")
             return None
 
-        # Flatten the input face
-        origin = Topology.Centroid(face)
-        normal = Face.Normal(face, mantissa=mantissa)
-        flatFace = Topology.Flatten(face, origin=origin, direction=normal)
-        eb = Face.ExternalBoundary(flatFace)
-        ibList = Face.InternalBoundaries(flatFace)
-        temp_verts = Topology.Vertices(eb, silent=True)
-        new_verts = [Vertex.ByCoordinates(Vertex.X(v, mantissa=mantissa), Vertex.Y(v, mantissa=mantissa), 0) for v in temp_verts]
-        eb = Wire.ByVertices(new_verts, close=True)
-        new_ibList = []
-        for ib in ibList:
-            temp_verts = Topology.Vertices(ib, silent=True)
-            new_verts = [Vertex.ByCoordinates(Vertex.X(v, mantissa=mantissa), Vertex.Y(v, mantissa=mantissa), 0) for v in temp_verts]
-            new_ibList.append(Wire.ByVertices(new_verts, close=True))
-        flatFace = Face.ByWires(eb, new_ibList)
+        try:
+            return Core.Shell.Voronoi(
+                vertices,
+                face,
+                deflection=deflection,
+                maxIterations=maxIterations,
+                convergence=convergence,
+                tolerance=tolerance,
+                silent=silent,
+            )
+        except TypeError:
+            try:
+                return Core.Shell.Voronoi(vertices, face, deflection, maxIterations, convergence, tolerance, silent)
+            except Exception:
+                pass
+        except Exception:
+            pass
 
-        # Create a cluster of the input vertices
-        verticesCluster = Cluster.ByTopologies(vertices)
-
-        # Flatten the cluster using the same transformations
-        verticesCluster = Topology.Flatten(verticesCluster, origin=origin, direction=normal)
-        flatVertices = Topology.Vertices(verticesCluster, silent=True)
-        flatVertices = [Vertex.ByCoordinates(Vertex.X(v, mantissa=mantissa), Vertex.Y(v, mantissa=mantissa), 0) for v in flatVertices]
-        points = []
-        for flatVertex in flatVertices:
-            points.append([Vertex.X(flatVertex, mantissa=mantissa), Vertex.Y(flatVertex, mantissa=mantissa)])
-
-        br = Wire.BoundingRectangle(flatFace)
-        br_vertices = Topology.Vertices(br, silent=True)
-        br_x = []
-        br_y = []
-        for br_v in br_vertices:
-            x, y = Vertex.Coordinates(br_v, outputType="xy")
-            br_x.append(x)
-            br_y.append(y)
-        min_x = min(br_x)
-        max_x = max(br_x)
-        min_y = min(br_y)
-        max_y = max(br_y)
-        br_width = abs(max_x - min_x)
-        br_length = abs(max_y - min_y)
-
-        points.append((-br_width*4, -br_length*4))
-        points.append((-br_width*4, br_length*4))
-        points.append((br_width*4, -br_length*4))
-        points.append((br_width*4, br_length*4))
-
-        voronoi = Voronoi(points, furthest_site=False)
-        voronoiVertices = []
-        for v in voronoi.vertices:
-            voronoiVertices.append(Vertex.ByCoordinates(v[0], v[1], 0))
-
-        faces = []
-        for region in voronoi.regions:
-            tempWire = []
-            if len(region) > 1 and not -1 in region:
-                for v in region:
-                    tempWire.append(Vertex.ByCoordinates(Vertex.X(voronoiVertices[v], mantissa=mantissa), Vertex.Y(voronoiVertices[v], mantissa=mantissa), 0))
-                temp_verts = []
-                for v in tempWire:
-                    if len(temp_verts) == 0:
-                        temp_verts.append(v)
-                    elif Vertex.Index(v, temp_verts, tolerance=tolerance) == None:
-                        temp_verts.append(v)
-                tempWire = temp_verts
-                temp_w = Wire.ByVertices(tempWire, close=True)
-                faces.append(Face.ByWire(Wire.ByVertices(tempWire, close=True), tolerance=tolerance))
-        shell = Shell.ByFaces(faces, tolerance=tolerance)
-        edges = Shell.Edges(shell)
-        edgesCluster = Cluster.ByTopologies(edges)
-        shell = Topology.Slice(flatFace,edgesCluster, tolerance=tolerance)
-        shell = Topology.Unflatten(shell, origin=origin, direction=normal)
-        return shell
+        if not silent:
+            print("Shell.Voronoi - Error: Could not construct the intrinsic Voronoi partition. Returning None.")
+        return None
 
     @staticmethod
     def Wires(shell) -> list:

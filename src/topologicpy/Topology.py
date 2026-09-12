@@ -25185,10 +25185,13 @@ class Topology():
                     )
                 return None
 
+        # PythonOCC tessellation is a Topology-level mesh service. Call the
+        # backend Topology implementation directly rather than using
+        # InstanceCall, which dispatches by the concrete input type and would
+        # incorrectly require type-specific tessellation methods.
         try:
-            result = Core.InstanceCall(
+            result = Core.Topology.Tessellate(
                 topology,
-                "Tessellate",
                 quality,
                 linearDeflection,
                 angularDeflection,

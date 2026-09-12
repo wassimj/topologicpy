@@ -31,7 +31,6 @@ from __future__ import annotations
 # REVISION: 2026-08-15 Boolean parity fix 004
 
 import copy
-import json
 import math
 import os
 import tempfile
@@ -1485,9 +1484,6 @@ def _make_occ_union(
 # both, round-tripping through a short-lived temp file since that is the one
 # entry point guaranteed to exist in every PythonOCC generation.
 
-_BREP_STRING_FORMAT = "topologicpy-pythonocc-brep-v1"
-
-
 
 def _ensure_compound_shape(topology: Any) -> Any:
     """
@@ -1597,18 +1593,6 @@ def _shape_from_brep_text(text: Any) -> Any:
                 os.remove(tmp_path)
             except Exception:
                 pass
-
-
-def _dictionary_to_json_safe(dictionary: Any) -> Any:
-    """Best-effort conversion of a backend dictionary into a JSON-serialisable dict."""
-    plain = _merge_backend_dictionaries(dictionary, None)
-    if not plain:
-        return None
-    try:
-        json.dumps(plain)
-    except Exception:
-        return None
-    return plain
 
 
 # -----------------------------------------------------------------------------
@@ -1922,69 +1906,70 @@ class Topology:
     @staticmethod
     def BREPString(topology: Any, version: int = 0) -> Optional[str]:
         """
-        Returns a raw OCCT BREP text representation of the topology's shape.
+        Returns the raw OCCT BREP string of the input topology.
 
-        This only round-trips OCCT geometry/topology; attached dictionaries are
-        not included here (see Topology.String for a dictionary-preserving
-        variant).
+        Parameters
+        ----------
+        topology : Topology
+            The input topology.
+        version : int, optional
+            Retained for API compatibility. The PythonOCC backend writes the
+            OCCT BREP format supported by the installed Open CASCADE version.
+
+        Returns
+        -------
+        str
+            The raw OCCT BREP string, or None if serialization fails.
+        """
+        return Topology.String(topology, version=version)
+
+    @staticmethod
+    def String(topology: Any, version: int = 0) -> Optional[str]:
+        """
+        Returns the raw OCCT BREP string of the input topology.
+
+        This method deliberately serializes only the OCCT topology/geometry.
+        It does not wrap the BREP text in JSON or include TopologicPy metadata.
+
+        Parameters
+        ----------
+        topology : Topology
+            The input topology.
+        version : int, optional
+            Retained for API compatibility. The PythonOCC backend writes the
+            OCCT BREP format supported by the installed Open CASCADE version.
+
+        Returns
+        -------
+        str
+            The raw OCCT BREP string, or None if serialization fails.
         """
         shape = _ensure_compound_shape(topology)
         return _shape_to_brep_text(shape)
 
     @staticmethod
-    def String(topology: Any, version: int = 0) -> Optional[str]:
-        """
-        Returns a textual serialization of the topology.
-
-        This is a small JSON envelope wrapping the raw BREP text plus (when
-        possible) the topology's attached dictionary, so that
-        Topology.ByString can round-trip both geometry and metadata. If the
-        dictionary cannot be safely converted to JSON it is dropped rather
-        than failing the whole call.
-        """
-        shape = _ensure_compound_shape(topology)
-        brep_text = _shape_to_brep_text(shape)
-        if brep_text is None:
-            return None
-
-        envelope = {
-            "format": _BREP_STRING_FORMAT,
-            "version": version,
-            "typeName": _topology_type_name(topology),
-            "brep": brep_text,
-            "dictionary": _dictionary_to_json_safe(Topology.Dictionary(topology)),
-        }
-        try:
-            return json.dumps(envelope)
-        except Exception:
-            return brep_text
-
-    @staticmethod
     def ByString(string: Any):
         """
-        Reconstructs a topology from a string produced by Topology.String or
-        Topology.BREPString (or a raw OCCT BREP text string from another
-        source).
+        Reconstructs a topology from a raw OCCT BREP string.
+
+        Parameters
+        ----------
+        string : str
+            The raw OCCT BREP string.
+
+        Returns
+        -------
+        Topology
+            The reconstructed topology, or None if deserialization fails.
         """
-        if not isinstance(string, str) or not string:
+        if not isinstance(string, str) or not string.strip():
             return None
 
-        brep_text = string
-        dictionary = None
-
-        try:
-            parsed = json.loads(string)
-            if isinstance(parsed, dict) and parsed.get("format") == _BREP_STRING_FORMAT:
-                brep_text = parsed.get("brep")
-                dictionary = parsed.get("dictionary")
-        except Exception:
-            pass
-
-        shape = _shape_from_brep_text(brep_text)
+        shape = _shape_from_brep_text(string)
         if shape is None:
             return None
 
-        return Topology.ByOcctShape(shape, dictionary=dictionary)
+        return Topology.ByOcctShape(shape)
 
     def _dispatch_subtopologies(
         self,
@@ -5890,7 +5875,6 @@ class Topology:
             except Exception: return cluster
         except Exception: return cluster
 
-    @staticmethod
     def _NativeMatchingShapes(
         hostShape,
         candidates,
@@ -6333,8 +6317,6 @@ class Topology:
                     )
 
         return result
-
-    @staticmethod
     def _NativeAncestors(
         hostShape,
         sourceShapes,
@@ -6485,7 +6467,6 @@ class Topology:
                 )
 
         return result
-
     def _FinalizeNativeEdit(self, editedShape, tolerance: float = 0.0001):
         """
         Wraps the result of a native topology-editing operation.

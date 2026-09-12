@@ -262,7 +262,7 @@ class Face():
             return None
 
     @staticmethod
-    def BoundingRectangle(topology, optimize: int = 0, tolerance: float = 0.0001):
+    def BoundingRectangle(topology, optimize: int = 0, tolerance: float = 0.0001, silent: bool = False):
         """
         Returns a face representing a bounding rectangle of the input topology. The returned face contains a dictionary with key "zrot" that represents rotations around the Z axis. If applied the resulting face will become axis-aligned.
 
@@ -274,6 +274,9 @@ class Face():
             If set to an integer from 1 (low optimization) to 10 (high optimization), the method will attempt to optimize the bounding rectangle so that it reduces its surface area. Default is 0 which will result in an axis-aligned bounding rectangle. Default is 0.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed.
+            Default is False.
         
         Returns
         -------
@@ -286,11 +289,13 @@ class Face():
 
         br_wire = Wire.BoundingRectangle(topology=topology, optimize=optimize, tolerance=tolerance)
         if not Topology.IsInstance(br_wire, "Wire"):
-            print("Face.BoundingRectangle - Warning: Could not create base wire. Returning None.")
+            if not silent:
+                print("Face.BoundingRectangle - Warning: Could not create base wire. Returning None.")
             return None
         br_face = Face.ByWire(br_wire)
         if not Topology.IsInstance(br_face, "Face"):
-            print("Face.BoundingRectangle - Warning: Could not create face from base wire. Returning None.")
+            if not silent:
+                print("Face.BoundingRectangle - Warning: Could not create face from base wire. Returning None.")
             return None
         br_face = Topology.SetDictionary(br_face, Topology.Dictionary(br_wire))
         return br_face

@@ -358,6 +358,162 @@ class Edge():
         return arc
 
     @staticmethod
+    def ArcByVertices(startVertex, middleVertex, endVertex, tolerance: float = 0.0001, silent: bool = False):
+        """
+        Creates one exact circular arc Edge through three input vertices.
+
+        Parameters
+        ----------
+        startVertex : topologic_core.Vertex
+            The start vertex of the arc.
+        middleVertex : topologic_core.Vertex
+            A vertex that lies on the desired arc between start and end.
+        endVertex : topologic_core.Vertex
+            The end vertex of the arc.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        topologic_core.Edge
+            The exact circular arc Edge, or None if the three vertices are invalid or collinear.
+        """
+        import math
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
+
+        if not all(Topology.IsInstance(v, "Vertex") for v in [startVertex, middleVertex, endVertex]):
+            if not silent:
+                print("Edge.ArcByVertices - Error: One or more input vertices are invalid. Returning None.")
+            return None
+        try:
+            tolerance = float(tolerance)
+        except Exception:
+            return None
+        if not math.isfinite(tolerance) or tolerance <= 0.0:
+            return None
+
+        def xyz(v):
+            return [float(x) for x in Vertex.Coordinates(v, mantissa=None)]
+
+        def sub(a, b):
+            return [a[i] - b[i] for i in range(3)]
+
+        def add(a, b):
+            return [a[i] + b[i] for i in range(3)]
+
+        def mul(a, s):
+            return [a[i] * s for i in range(3)]
+
+        def dot(a, b):
+            return sum(a[i] * b[i] for i in range(3))
+
+        def cross(a, b):
+            return [
+                a[1] * b[2] - a[2] * b[1],
+                a[2] * b[0] - a[0] * b[2],
+                a[0] * b[1] - a[1] * b[0],
+            ]
+
+        def mag(a):
+            return math.sqrt(dot(a, a))
+
+        A, B, C = xyz(startVertex), xyz(middleVertex), xyz(endVertex)
+        u = sub(B, A)
+        v = sub(C, A)
+        w = cross(u, v)
+        w2 = dot(w, w)
+        if w2 <= tolerance * tolerance:
+            if not silent:
+                print("Edge.ArcByVertices - Error: The three input vertices are collinear. Returning None.")
+            return None
+
+        u2 = dot(u, u)
+        v2 = dot(v, v)
+        offset = mul(add(mul(cross(v, w), u2), mul(cross(w, u), v2)), 1.0 / (2.0 * w2))
+        center = add(A, offset)
+        radius_vec = sub(A, center)
+        radius = mag(radius_vec)
+        if radius <= tolerance:
+            return None
+
+        normal = mul(w, 1.0 / mag(w))
+        axis_x = mul(radius_vec, 1.0 / radius)
+        axis_y = cross(normal, axis_x)
+        axis_y_mag = mag(axis_y)
+        if axis_y_mag <= tolerance:
+            return None
+        axis_y = mul(axis_y, 1.0 / axis_y_mag)
+
+        def angle_of(point, y_axis):
+            radial = sub(point, center)
+            a = math.atan2(dot(radial, y_axis), dot(radial, axis_x))
+            if a < 0.0:
+                a += 2.0 * math.pi
+            return a
+
+        middle_angle = angle_of(B, axis_y)
+        end_angle = angle_of(C, axis_y)
+        if not (1.0e-12 < middle_angle < end_angle - 1.0e-12):
+            axis_y = mul(axis_y, -1.0)
+            middle_angle = angle_of(B, axis_y)
+            end_angle = angle_of(C, axis_y)
+        if not (1.0e-12 < middle_angle < end_angle - 1.0e-12):
+            if not silent:
+                print("Edge.ArcByVertices - Error: Could not determine the circular sweep through the middle vertex. Returning None.")
+            return None
+
+        sweep = end_angle
+        span_count = max(1, int(math.ceil(math.degrees(sweep) / 90.0)))
+        span_angle = sweep / float(span_count)
+        control_points = []
+        weights = []
+
+        def point(angle, scale=1.0):
+            c = math.cos(angle) * scale
+            s = math.sin(angle) * scale
+            return Vertex.ByCoordinates(
+                center[0] + radius * (axis_x[0] * c + axis_y[0] * s),
+                center[1] + radius * (axis_x[1] * c + axis_y[1] * s),
+                center[2] + radius * (axis_x[2] * c + axis_y[2] * s),
+            )
+
+        for i in range(span_count):
+            a0 = i * span_angle
+            a1 = (i + 1) * span_angle
+            am = 0.5 * (a0 + a1)
+            weight = math.cos(0.5 * (a1 - a0))
+            if weight <= 0.0:
+                return None
+            p0 = point(a0)
+            p1 = point(am, 1.0 / weight)
+            p2 = point(a1)
+            if i == 0:
+                control_points.append(p0)
+                weights.append(1.0)
+            control_points.extend([p1, p2])
+            weights.extend([weight, 1.0])
+
+        knots = [0.0, 0.0, 0.0]
+        for i in range(1, span_count):
+            k = float(i) / float(span_count)
+            knots.extend([k, k])
+        knots.extend([1.0, 1.0, 1.0])
+
+        return Edge.ByNurbsParameters(
+            controlPoints=control_points,
+            weights=weights,
+            knots=knots,
+            isRational=True,
+            isPeriodic=False,
+            degree=2,
+            tolerance=tolerance,
+            silent=silent,
+        )
+
+    @staticmethod
     def _ArcByNurbs(
         radius: float = 0.5,
         fromAngle: float = 0.0,
@@ -1411,16 +1567,58 @@ class Edge():
         return circle
 
     @staticmethod
-    def Connection(edgeA, edgeB, tolerance: float = 0.0001, silent: bool = False):
+    def Ellipse(
+        origin=None,
+        inputMode: int = 1,
+        width: float = 2.0,
+        length: float = 1.0,
+        focalLength: float = 0.866025,
+        eccentricity: float = 0.866025,
+        majorAxisLength: float = 1.0,
+        minorAxisLength: float = 0.5,
+        fromAngle: float = 0.0,
+        toAngle: float = 360.0,
+        direction: list = [0, 0, 1],
+        placement: str = "center",
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
         """
-        Returns the edge representing the connection between the first input edge to the second input edge using the two closest vertices.
+        Creates one exact elliptical Edge over the requested angular interval.
+
+        A complete 360-degree ellipse is returned as one closed rational quadratic
+        NURBS Edge. A partial ellipse is returned as one open exact rational quadratic
+        NURBS Edge. Angles are measured counter-clockwise from the positive local
+        X-axis.
 
         Parameters
         ----------
-        edgeA : topologic_core.Edge
-            The first input edge. This edge will be extended to meet edgeB.
-        edgeB : topologic_core.Edge
-            The second input edge. This edge will be used to extend edgeA.
+        origin : topologic_core.Vertex , optional
+            The placement origin. Default is the global origin.
+        inputMode : int , optional
+            1 = width/length, 2 = focalLength/eccentricity,
+            3 = focalLength/minorAxisLength, 4 = majorAxisLength/minorAxisLength.
+        width : float , optional
+            Full local X width for mode 1. Default is 2.0.
+        length : float , optional
+            Full local Y length for mode 1. Default is 1.0.
+        focalLength : float , optional
+            Focal length for modes 2 and 3. Default is 0.866025.
+        eccentricity : float , optional
+            Eccentricity for mode 2. Default is 0.866025.
+        majorAxisLength : float , optional
+            Historical semi-axis input for mode 4. Default is 1.0.
+        minorAxisLength : float , optional
+            Historical semi-axis input for modes 3 and 4. Default is 0.5.
+        fromAngle : float , optional
+            Start angle in degrees. Default is 0.
+        toAngle : float , optional
+            End angle in degrees. Values below fromAngle are advanced by 360 degrees.
+            The sweep must be greater than zero and no greater than 360 degrees.
+        direction : list , optional
+            Ellipse-plane normal. Default is [0, 0, 1].
+        placement : str , optional
+            "center" or "lowerleft". Default is "center".
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
@@ -1428,29 +1626,241 @@ class Edge():
 
         Returns
         -------
-        topologic_core.Edge or topologic_core.Wire
-            The connected edge. Since it is made of two edges, this method returns a Wire.
+        topologic_core.Edge
+            The exact elliptical Edge.
+        """
+        import math
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
+
+        try:
+            tolerance = float(tolerance)
+            inputMode = int(inputMode)
+            width = abs(float(width))
+            length = abs(float(length))
+            focalLength = abs(float(focalLength))
+            eccentricity = abs(float(eccentricity))
+            majorAxisLength = abs(float(majorAxisLength))
+            minorAxisLength = abs(float(minorAxisLength))
+            fromAngle = float(fromAngle)
+            toAngle = float(toAngle)
+        except Exception:
+            if not silent:
+                print("Edge.Ellipse - Error: One or more input parameters are invalid. Returning None.")
+            return None
+
+        if not all(math.isfinite(v) for v in [tolerance, width, length, focalLength, eccentricity, majorAxisLength, minorAxisLength, fromAngle, toAngle]):
+            return None
+        if tolerance <= 0.0:
+            return None
+
+        if origin is None:
+            origin = Vertex.Origin()
+        if not Topology.IsInstance(origin, "Vertex"):
+            if not silent:
+                print("Edge.Ellipse - Error: The input origin parameter is not a valid vertex. Returning None.")
+            return None
+
+        if inputMode == 1:
+            if width <= tolerance or length <= tolerance:
+                return None
+            a, b = 0.5 * width, 0.5 * length
+        elif inputMode == 2:
+            if focalLength <= tolerance or eccentricity <= 0.0 or eccentricity >= 1.0:
+                return None
+            a = focalLength / eccentricity
+            b2 = a * a - focalLength * focalLength
+            if b2 <= tolerance * tolerance:
+                return None
+            b = math.sqrt(b2)
+        elif inputMode == 3:
+            if focalLength <= tolerance or minorAxisLength <= tolerance:
+                return None
+            b = minorAxisLength
+            a = math.sqrt(b * b + focalLength * focalLength)
+        elif inputMode == 4:
+            if majorAxisLength <= tolerance or minorAxisLength <= tolerance:
+                return None
+            a, b = majorAxisLength, minorAxisLength
+        else:
+            return None
+
+        while toAngle < fromAngle:
+            toAngle += 360.0
+        sweep = toAngle - fromAngle
+        if sweep <= 1.0e-12 or sweep > 360.0 + 1.0e-9:
+            if not silent:
+                print("Edge.Ellipse - Error: The angular sweep must be greater than zero and no greater than 360 degrees. Returning None.")
+            return None
+        if abs(sweep - 360.0) <= 1.0e-9:
+            sweep = 360.0
+            toAngle = fromAngle + 360.0
+
+        if not isinstance(direction, (list, tuple)) or len(direction) != 3:
+            return None
+        try:
+            direction = [float(v) for v in direction]
+        except Exception:
+            return None
+        magnitude = math.sqrt(sum(v * v for v in direction))
+        if magnitude <= tolerance:
+            return None
+        direction = [v / magnitude for v in direction]
+
+        placement = str(placement).lower()
+        if placement not in ["center", "lowerleft"]:
+            return None
+
+        span_count = max(1, int(math.ceil(sweep / 90.0)))
+        span_angle = sweep / float(span_count)
+        control_points = []
+        weights = []
+
+        def point(angle_radians, scale=1.0):
+            return Vertex.ByCoordinates(
+                a * math.cos(angle_radians) * scale,
+                b * math.sin(angle_radians) * scale,
+                0.0,
+            )
+
+        for i in range(span_count):
+            a0 = math.radians(fromAngle + i * span_angle)
+            a1 = math.radians(fromAngle + (i + 1) * span_angle)
+            am = 0.5 * (a0 + a1)
+            weight = math.cos(0.5 * (a1 - a0))
+            if weight <= 0.0:
+                return None
+            p0 = point(a0)
+            p1 = point(am, 1.0 / weight)
+            p2 = point(a1)
+            if i == 0:
+                control_points.append(p0)
+                weights.append(1.0)
+            control_points.extend([p1, p2])
+            weights.extend([weight, 1.0])
+
+        knots = [0.0, 0.0, 0.0]
+        for i in range(1, span_count):
+            k = float(i) / float(span_count)
+            knots.extend([k, k])
+        knots.extend([1.0, 1.0, 1.0])
+
+        ellipse = Edge.ByNurbsParameters(
+            controlPoints=control_points,
+            weights=weights,
+            knots=knots,
+            isRational=True,
+            isPeriodic=False,
+            degree=2,
+            tolerance=tolerance,
+            silent=True,
+        )
+        if not Topology.IsInstance(ellipse, "Edge"):
+            return None
+
+        source_origin = Vertex.Origin() if placement == "center" else Vertex.ByCoordinates(-a, -b, 0.0)
+        ellipse = Topology.OrientAndPlace(
+            ellipse,
+            originA=source_origin,
+            originB=origin,
+            dirA=[0, 0, 1],
+            dirB=direction,
+            tolerance=tolerance,
+            silent=True,
+        )
+        return ellipse if Topology.IsInstance(ellipse, "Edge") else None
+
+
+    @staticmethod
+    def Connection(edgeA, edgeB, tolerance: float = 0.0001, silent: bool = False):
+        """
+        Returns the shortest straight Edge connecting the two input Edges.
+
+        When the active backend provides a native connection operation, closest
+        points are computed from the complete edge geometries. This is important
+        for curved Edges because the closest points need not be endpoint vertices.
+        For backends without a native connection operation, the historical
+        closest-endpoint construction is retained as a compatibility fallback.
+
+        Parameters
+        ----------
+        edgeA : topologic_core.Edge
+            The first input edge.
+        edgeB : topologic_core.Edge
+            The second input edge.
+        tolerance : float , optional
+            The desired tolerance. If the minimum separation is less than or equal
+            to this value, None is returned. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed.
+            Default is False.
+
+        Returns
+        -------
+        topologic_core.Edge
+            The shortest connecting Edge, or None if the input Edges intersect,
+            touch within tolerance, or a connection cannot be created.
 
         """
+        import math
         from topologicpy.Vertex import Vertex
         from topologicpy.Helper import Helper
+        from topologicpy.Topology import Topology
 
-        sva = Edge.StartVertex(edgeA)
-        eva = Edge.EndVertex(edgeA)
-        svb = Edge.StartVertex(edgeB)
-        evb = Edge.EndVertex(edgeB)
-        v_list = [[sva, svb], [sva, evb], [eva, svb], [eva, evb]]
-        distances = []
-        for pair in v_list:
-            distances.append(Vertex.Distance(pair[0], pair[1]))
-        v_list = Helper.Sort(v_list, distances)
-        closest_pair = v_list[0]
-        return_edge = Edge.ByVertices(closest_pair, tolerance=tolerance, silent=silent)
-        if return_edge == None:
+        if not Topology.IsInstance(edgeA, "Edge"):
             if not silent:
-                print("Edge.ConnectToEdge - Warning: Could not connect the two edges. Returning None.")
+                print("Edge.Connection - Error: The input edgeA parameter is not a valid topologic edge. Returning None.")
+            return None
+        if not Topology.IsInstance(edgeB, "Edge"):
+            if not silent:
+                print("Edge.Connection - Error: The input edgeB parameter is not a valid topologic edge. Returning None.")
+            return None
+        try:
+            tolerance = float(tolerance)
+        except Exception:
+            if not silent:
+                print("Edge.Connection - Error: The input tolerance parameter is not a valid number. Returning None.")
+            return None
+        if not math.isfinite(tolerance) or tolerance <= 0.0:
+            if not silent:
+                print("Edge.Connection - Error: The input tolerance parameter must be greater than zero. Returning None.")
+            return None
+
+        # Prefer the native backend because it sees the complete underlying
+        # curve geometry rather than only the topological endpoints. If that
+        # operation is available, a None result is meaningful (the Edges touch
+        # or intersect within tolerance) and must not be replaced by the fallback.
+        try:
+            if Core.HasAttribute("EdgeUtility", "Connection"):
+                result = Core.EdgeUtility.Connection(edgeA, edgeB, tolerance)
+                if Topology.IsInstance(result, "Edge"):
+                    return result
+                return None
+        except Exception:
+            pass
+
+        # Compatibility fallback for backends that do not expose Connection.
+        sva = Edge.StartVertex(edgeA, silent=True)
+        eva = Edge.EndVertex(edgeA, silent=True)
+        svb = Edge.StartVertex(edgeB, silent=True)
+        evb = Edge.EndVertex(edgeB, silent=True)
+        vertices = [sva, eva, svb, evb]
+        if not all(Topology.IsInstance(vertex, "Vertex") for vertex in vertices):
+            if not silent:
+                print("Edge.Connection - Error: Could not determine the input edge vertices. Returning None.")
+            return None
+
+        pairs = [[sva, svb], [sva, evb], [eva, svb], [eva, evb]]
+        distances = [Vertex.Distance(pair[0], pair[1]) for pair in pairs]
+        pairs = Helper.Sort(pairs, distances)
+        closest_pair = pairs[0]
+        return_edge = Edge.ByVertices(closest_pair, tolerance=tolerance, silent=True)
+        if not Topology.IsInstance(return_edge, "Edge"):
+            if not silent:
+                print("Edge.Connection - Warning: Could not connect the two edges. Returning None.")
             return None
         return return_edge
+
     
     @staticmethod
     def Direction(edge, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False) -> list:
@@ -1821,6 +2231,196 @@ class Edge():
             return None
         return Cluster.ByTopologies([Edge.StartVertex(edge), Edge.EndVertex(edge)])
     
+    @staticmethod
+    def GoldenSpiral(
+        width: float = 1.0,
+        maxIterations: int = 10,
+        clockwise: bool = False,
+        origin=None,
+        placement: str = "center",
+        direction: list = [0, 0, 1],
+        mantissa: int = 6,
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
+        """
+        Creates one exact golden-rectangle spiral Edge.
+
+        The geometry is the traditional golden-rectangle construction composed of
+        quarter-circle arcs. All quarter-circle spans are stored in one rational
+        quadratic NURBS Edge, so the result is a single topological Edge and each
+        circular span is geometrically exact.
+        """
+        import math
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
+
+        try:
+            width = float(width)
+            maxIterations = int(maxIterations)
+            mantissa = int(mantissa)
+            tolerance = float(tolerance)
+        except Exception:
+            return None
+        if width <= tolerance or maxIterations <= 0 or tolerance <= 0.0:
+            return None
+        if origin is None:
+            origin = Vertex.Origin()
+        if not Topology.IsInstance(origin, "Vertex"):
+            return None
+        placement = str(placement).lower()
+        if placement not in ["center", "lowerleft", "lowerright", "upperleft", "upperright"]:
+            return None
+        if not isinstance(direction, (list, tuple)) or len(direction) != 3:
+            return None
+        try:
+            direction = [float(v) for v in direction]
+        except Exception:
+            return None
+        if math.sqrt(sum(v * v for v in direction)) <= tolerance:
+            return None
+
+        def rnd(v):
+            return round(float(v), mantissa)
+
+        phi = (1.0 + math.sqrt(5.0)) / 2.0
+        W0, H0 = 1.0, 1.0 / phi
+        rx, ry, rW, rH = -0.5 * W0, -0.5 * H0, W0, H0
+        side_cycle = ["left", "bottom", "right", "top"]
+        squares = []
+        for i in range(maxIterations):
+            if rW <= tolerance or rH <= tolerance:
+                break
+            side = side_cycle[i % 4]
+            if rW >= rH:
+                size = rH
+                if side == "right":
+                    sx, sy = rx + (rW - size), ry
+                    rW -= size
+                else:
+                    sx, sy = rx, ry
+                    rx += size
+                    rW -= size
+            else:
+                size = rW
+                if side == "top":
+                    sx, sy = rx, ry + (rH - size)
+                    rH -= size
+                else:
+                    sx, sy = rx, ry
+                    ry += size
+                    rH -= size
+            squares.append((sx, sy, size, side))
+        if not squares:
+            return None
+
+        def P(x, y):
+            return [rnd(x), rnd(y), 0.0]
+
+        spans = []
+        last_end = None
+        join_tol = max(tolerance, 10.0 ** (-max(1, mantissa)))
+        for sx, sy, size, side in squares:
+            bl = P(sx, sy)
+            br = P(sx + size, sy)
+            tr = P(sx + size, sy + size)
+            tl = P(sx, sy + size)
+            if side == "left":
+                p0, p2, center = tl, br, tr
+            elif side == "bottom":
+                p0, p2, center = bl, tr, tl
+            elif side == "right":
+                p0, p2, center = br, tl, bl
+            else:
+                p0, p2, center = tr, bl, br
+
+            if last_end is not None:
+                d0 = math.sqrt(sum((p0[j] - last_end[j]) ** 2 for j in range(3)))
+                d2 = math.sqrt(sum((p2[j] - last_end[j]) ** 2 for j in range(3)))
+                if d2 < d0:
+                    p0, p2 = p2, p0
+                p0 = list(last_end)
+
+            a0 = math.atan2(p0[1] - center[1], p0[0] - center[0])
+            target = math.atan2(p2[1] - center[1], p2[0] - center[0])
+            candidates = [a0 + math.pi / 2.0, a0 - math.pi / 2.0]
+            def angle_error(a):
+                d = a - target
+                while d <= -math.pi:
+                    d += 2.0 * math.pi
+                while d > math.pi:
+                    d -= 2.0 * math.pi
+                return abs(d)
+            a1 = min(candidates, key=angle_error)
+            am = 0.5 * (a0 + a1)
+            weight = math.cos(0.5 * (a1 - a0))
+            radius = math.sqrt((p0[0] - center[0]) ** 2 + (p0[1] - center[1]) ** 2)
+            if radius <= tolerance or weight <= 0.0:
+                return None
+            p1 = [
+                center[0] + radius * math.cos(am) / weight,
+                center[1] + radius * math.sin(am) / weight,
+                0.0,
+            ]
+            spans.append((p0, p1, p2, weight))
+            last_end = p2
+
+        control_points = []
+        weights = []
+        for i, (p0, p1, p2, weight) in enumerate(spans):
+            if i == 0:
+                control_points.append(Vertex.ByCoordinates(*p0))
+                weights.append(1.0)
+            control_points.extend([Vertex.ByCoordinates(*p1), Vertex.ByCoordinates(*p2)])
+            weights.extend([weight, 1.0])
+
+        count = len(spans)
+        knots = [0.0, 0.0, 0.0]
+        for i in range(1, count):
+            k = float(i) / float(count)
+            knots.extend([k, k])
+        knots.extend([1.0, 1.0, 1.0])
+
+        edge = Edge.ByNurbsParameters(
+            controlPoints=control_points,
+            weights=weights,
+            knots=knots,
+            isRational=True,
+            isPeriodic=False,
+            degree=2,
+            tolerance=tolerance,
+            silent=True,
+        )
+        if not Topology.IsInstance(edge, "Edge"):
+            return None
+
+        local_origin = Vertex.Origin()
+        if clockwise:
+            edge = Topology.Scale(edge, local_origin, 1.0, -1.0, 1.0)
+        edge = Topology.Scale(edge, local_origin, width, width, 1.0)
+        if not Topology.IsInstance(edge, "Edge"):
+            return None
+
+        W, H = width, width / phi
+        refs = {
+            "center": [0.0, 0.0, 0.0],
+            "lowerleft": [-0.5 * W, -0.5 * H, 0.0],
+            "lowerright": [0.5 * W, -0.5 * H, 0.0],
+            "upperleft": [-0.5 * W, 0.5 * H, 0.0],
+            "upperright": [0.5 * W, 0.5 * H, 0.0],
+        }
+        source_origin = Vertex.ByCoordinates(*refs[placement])
+        edge = Topology.OrientAndPlace(
+            edge,
+            originA=source_origin,
+            originB=origin,
+            dirA=[0, 0, 1],
+            dirB=direction,
+            tolerance=tolerance,
+            silent=True,
+        )
+        return edge if Topology.IsInstance(edge, "Edge") else None
+
     @staticmethod
     def Helix(
         origin=None,
@@ -2874,6 +3474,53 @@ class Edge():
         return bool(abs(curve_length - chord_length) <= tolerance)
 
     @staticmethod
+    def _IsLinear(edge, tolerance: float = 0.0001) -> bool:
+        """Returns True when the actual geometry is one straight segment.
+
+        Native backend classification is preferred. Otherwise, the method uses
+        the global geometric invariant that a curve is a straight segment only
+        when its actual curve length equals the Euclidean distance between its
+        endpoints within tolerance. This avoids classifying sampled-but-curved or
+        backtracking collinear geometry as linear.
+        """
+        import math
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(edge, "Edge"):
+            return False
+        try:
+            tolerance = max(abs(float(tolerance)), 1.0e-12)
+        except Exception:
+            tolerance = 0.0001
+
+        try:
+            if Core.HasAttribute("EdgeUtility", "IsLinear"):
+                try:
+                    result = Core.EdgeUtility.IsLinear(edge, tolerance)
+                except TypeError:
+                    result = Core.EdgeUtility.IsLinear(edge)
+                if isinstance(result, bool):
+                    return result
+        except Exception:
+            pass
+
+        start_vertex = Edge.StartVertex(edge, silent=True)
+        end_vertex = Edge.EndVertex(edge, silent=True)
+        if not Topology.IsInstance(start_vertex, "Vertex") or not Topology.IsInstance(end_vertex, "Vertex"):
+            return False
+        a = Vertex.Coordinates(start_vertex, mantissa=None)
+        b = Vertex.Coordinates(end_vertex, mantissa=None)
+        chord_length = math.sqrt(sum((b[i] - a[i]) ** 2 for i in range(3)))
+        if chord_length <= tolerance:
+            return False
+
+        curve_length = Edge.Length(edge, mantissa=None, tolerance=tolerance, silent=True)
+        if curve_length is None or not math.isfinite(float(curve_length)):
+            return False
+        return bool(abs(float(curve_length) - chord_length) <= tolerance)
+
+    @staticmethod
     def IsParallel(edgeA, edgeB, mantissa: int = 6, tolerance: float = 0.0001):
         """
         Return True if the two input edges are parallel. Returns False otherwise.
@@ -3764,6 +4411,265 @@ class Edge():
         v = Edge.Direction(edgeB, mantissa=15)
 
         return Vector.Spread(u, v, mantissa = mantissa, bracket = bracket)
+
+    @staticmethod
+    def Spiral(
+        origin=None,
+        radiusA: float = 0.05,
+        radiusB: float = 0.5,
+        height: float = 1.0,
+        turns: int = 10,
+        clockwise: bool = False,
+        reverse: bool = False,
+        direction: list = [0, 0, 1],
+        placement: str = "center",
+        segmentsPerTurn: int = 12,
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
+        """
+        Creates one smooth cubic B-spline Edge approximating an Archimedean spatial spiral.
+
+        ``segmentsPerTurn`` controls the internal cubic approximation only. It does not
+        create multiple topological Edges; the result is always one Edge.
+        """
+        import math
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
+
+        if origin is None:
+            origin = Vertex.Origin()
+        if not Topology.IsInstance(origin, "Vertex"):
+            return None
+        try:
+            radiusA = float(radiusA)
+            radiusB = float(radiusB)
+            height = float(height)
+            turns = int(turns)
+            segmentsPerTurn = int(segmentsPerTurn)
+            tolerance = float(tolerance)
+        except Exception:
+            return None
+        if radiusA <= 0.0 or radiusB <= 0.0 or abs(radiusA - radiusB) <= tolerance:
+            return None
+        if radiusB > radiusA:
+            radiusA, radiusB = radiusB, radiusA
+        if turns <= 0 or segmentsPerTurn < 4 or tolerance <= 0.0:
+            return None
+        placement = str(placement).lower()
+        if placement not in ["center", "lowerleft", "upperleft", "lowerright", "upperright"]:
+            return None
+        if not isinstance(direction, (list, tuple)) or len(direction) != 3:
+            return None
+        try:
+            direction = [float(v) for v in direction]
+        except Exception:
+            return None
+        if math.sqrt(sum(v * v for v in direction)) <= tolerance:
+            return None
+
+        total_angle = 2.0 * math.pi * float(turns)
+        radial_rate = (radiusB - radiusA) / total_angle
+        cw = -1.0 if clockwise else 1.0
+
+        def point(t):
+            radius = radiusA + radial_rate * t
+            u = t / total_angle
+            z = height * (1.0 - u) if reverse else height * u
+            return [cw * radius * math.cos(t), radius * math.sin(t), z]
+
+        def derivative(t):
+            radius = radiusA + radial_rate * t
+            dz = -height / total_angle if reverse else height / total_angle
+            return [
+                cw * (radial_rate * math.cos(t) - radius * math.sin(t)),
+                radial_rate * math.sin(t) + radius * math.cos(t),
+                dz,
+            ]
+
+        span_count = segmentsPerTurn * turns
+        boundaries = [total_angle * i / float(span_count) for i in range(span_count + 1)]
+        controls = []
+        sampled = []
+        for i, (t0, t1) in enumerate(zip(boundaries[:-1], boundaries[1:])):
+            dt = t1 - t0
+            p0, p3 = point(t0), point(t1)
+            d0, d1 = derivative(t0), derivative(t1)
+            p1 = [p0[j] + d0[j] * dt / 3.0 for j in range(3)]
+            p2 = [p3[j] - d1[j] * dt / 3.0 for j in range(3)]
+            if i == 0:
+                controls.append(Vertex.ByCoordinates(*p0))
+            controls.extend([Vertex.ByCoordinates(*p1), Vertex.ByCoordinates(*p2), Vertex.ByCoordinates(*p3)])
+            sampled.append(p0)
+        sampled.append(point(boundaries[-1]))
+
+        knots = [0.0] * 4
+        for i in range(1, span_count):
+            k = float(i) / float(span_count)
+            knots.extend([k, k, k])
+        knots.extend([1.0] * 4)
+        edge = Edge.ByNurbsParameters(
+            controlPoints=controls,
+            weights=[1.0] * len(controls),
+            knots=knots,
+            isRational=False,
+            isPeriodic=False,
+            degree=3,
+            tolerance=tolerance,
+            silent=True,
+        )
+        if not Topology.IsInstance(edge, "Edge"):
+            return None
+
+        xs = [p[0] for p in sampled]
+        ys = [p[1] for p in sampled]
+        refs = {
+            "center": [0.0, 0.0, 0.5 * height],
+            "lowerleft": [min(xs), min(ys), 0.0],
+            "upperleft": [min(xs), max(ys), 0.0],
+            "lowerright": [max(xs), min(ys), 0.0],
+            "upperright": [max(xs), max(ys), 0.0],
+        }
+        source_origin = Vertex.ByCoordinates(*refs[placement])
+        edge = Topology.OrientAndPlace(
+            edge,
+            originA=source_origin,
+            originB=origin,
+            dirA=[0, 0, 1],
+            dirB=direction,
+            tolerance=tolerance,
+            silent=True,
+        )
+        return edge if Topology.IsInstance(edge, "Edge") else None
+
+    @staticmethod
+    def Squircle(
+        origin=None,
+        radius: float = 0.5,
+        a: float = 2.0,
+        b: float = 2.0,
+        direction: list = [0, 0, 1],
+        placement: str = "center",
+        segments: int = 32,
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
+        """
+        Creates one closed cubic B-spline Edge approximating a squircle/superellipse.
+
+        ``segments`` controls the internal cubic approximation only. The result is
+        always one topological Edge. When ``a == b == 1`` an exact circular Edge is
+        returned instead.
+        """
+        import math
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
+
+        if origin is None:
+            origin = Vertex.Origin()
+        if not Topology.IsInstance(origin, "Vertex"):
+            return None
+        try:
+            radius = abs(float(radius))
+            a = float(a)
+            b = float(b)
+            segments = int(segments)
+            tolerance = float(tolerance)
+        except Exception:
+            return None
+        if radius <= tolerance or a <= 0.0 or b <= 0.0 or segments < 8 or tolerance <= 0.0:
+            return None
+        placement = str(placement).lower()
+        if placement not in ["center", "lowerleft", "upperleft", "lowerright", "upperright"]:
+            return None
+        if not isinstance(direction, (list, tuple)) or len(direction) != 3:
+            return None
+        try:
+            direction = [float(v) for v in direction]
+        except Exception:
+            return None
+        if math.sqrt(sum(v * v for v in direction)) <= tolerance:
+            return None
+
+        if abs(a - 1.0) <= 1.0e-12 and abs(b - 1.0) <= 1.0e-12:
+            return Edge.Circle(
+                origin=origin,
+                radius=radius,
+                direction=direction,
+                placement=placement,
+                tolerance=tolerance,
+                silent=silent,
+            )
+
+        def point(t):
+            c, s = math.cos(t), math.sin(t)
+            return [
+                math.copysign(abs(c) ** (1.0 / a), c) * radius,
+                math.copysign(abs(s) ** (1.0 / b), s) * radius,
+                0.0,
+            ]
+
+        h = 2.0 * math.pi / float(segments) * 1.0e-3
+        def tangent(t):
+            p0, p1 = point(t - h), point(t + h)
+            v = [p1[i] - p0[i] for i in range(3)]
+            m = math.sqrt(sum(x * x for x in v))
+            if m <= 1.0e-15:
+                return [0.0, 0.0, 0.0]
+            return [x / m for x in v]
+
+        controls = []
+        for i in range(segments):
+            t0 = 2.0 * math.pi * i / float(segments)
+            t1 = 2.0 * math.pi * (i + 1) / float(segments)
+            p0, p3 = point(t0), point(t1)
+            chord = math.sqrt(sum((p3[j] - p0[j]) ** 2 for j in range(3)))
+            if chord <= tolerance:
+                return None
+            d0, d1 = tangent(t0), tangent(t1)
+            handle = chord / 3.0
+            p1 = [p0[j] + d0[j] * handle for j in range(3)]
+            p2 = [p3[j] - d1[j] * handle for j in range(3)]
+            if i == 0:
+                controls.append(Vertex.ByCoordinates(*p0))
+            controls.extend([Vertex.ByCoordinates(*p1), Vertex.ByCoordinates(*p2), Vertex.ByCoordinates(*p3)])
+
+        knots = [0.0] * 4
+        for i in range(1, segments):
+            k = float(i) / float(segments)
+            knots.extend([k, k, k])
+        knots.extend([1.0] * 4)
+        edge = Edge.ByNurbsParameters(
+            controlPoints=controls,
+            weights=[1.0] * len(controls),
+            knots=knots,
+            isRational=False,
+            isPeriodic=False,
+            degree=3,
+            tolerance=tolerance,
+            silent=True,
+        )
+        if not Topology.IsInstance(edge, "Edge"):
+            return None
+
+        refs = {
+            "center": [0.0, 0.0, 0.0],
+            "lowerleft": [-radius, -radius, 0.0],
+            "upperleft": [-radius, radius, 0.0],
+            "lowerright": [radius, -radius, 0.0],
+            "upperright": [radius, radius, 0.0],
+        }
+        source_origin = Vertex.ByCoordinates(*refs[placement])
+        edge = Topology.OrientAndPlace(
+            edge,
+            originA=source_origin,
+            originB=origin,
+            dirA=[0, 0, 1],
+            dirB=direction,
+            tolerance=tolerance,
+            silent=True,
+        )
+        return edge if Topology.IsInstance(edge, "Edge") else None
 
     @staticmethod
     def StartVertex(edge, silent: bool = False):

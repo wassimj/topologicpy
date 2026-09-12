@@ -28,6 +28,7 @@ def _face_tolerance(value=0.0001) -> float:
         return 1.0e-12
     return value
 
+
 def _same_shape(shape_a, shape_b) -> bool:
     """Return True when two OCCT shapes reference the same topological entity."""
     if shape_a is None or shape_b is None:
@@ -37,8 +38,9 @@ def _same_shape(shape_a, shape_b) -> bool:
     except Exception:
         return False
 
+
 def _explore_shapes(shape, shape_type):
-    """Return OCCT subshapes of the requested type, preserving explorer order."""
+    """Return unique OCCT subshapes of the requested type in explorer order."""
     if _is_null_shape(shape):
         return []
     try:
@@ -46,7 +48,6 @@ def _explore_shapes(shape, shape_type):
         explorer = TopExp_Explorer(shape, shape_type)
     except Exception:
         return []
-
     result = []
     while explorer.More():
         current = explorer.Current()
@@ -54,6 +55,7 @@ def _explore_shapes(shape, shape_type):
             result.append(current)
         explorer.Next()
     return result
+
 
 def _wrap_metadata(source, result):
     """Copy wrapper-level metadata from source to result when possible."""
@@ -74,7 +76,7 @@ def _as_occ_face(face):
     """Return an OCCT TopoDS_Face for a backend Face, or None."""
     if not isinstance(face, Face):
         return None
-    shape = getattr(face, "shape", None)
+    shape = _shape_from_topology(face)
     if _is_null_shape(shape):
         return None
     try:
@@ -88,7 +90,7 @@ def _as_occ_wire(wire):
     """Return an OCCT TopoDS_Wire for a backend Wire, or None."""
     if not isinstance(wire, Wire):
         return None
-    shape = getattr(wire, "shape", None)
+    shape = _shape_from_topology(wire)
     if _is_null_shape(shape):
         return None
     try:
@@ -97,29 +99,81 @@ def _as_occ_wire(wire):
     except Exception:
         return None
 
-def _face_tolerance(value=0.0001) -> float:
-    """Return a finite positive geometric tolerance."""
+
+def _wire_area(occ_wire):
+    """Return the unsigned planar area enclosed by an OCCT wire when possible."""
+    if occ_wire is None:
+        return None
     try:
-        value = abs(float(value))
+        from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakeFace
+        from OCC.Core.GProp import GProp_GProps
+        from OCC.Core.BRepGProp import brepgprop
+        maker = BRepBuilderAPI_MakeFace(occ_wire, True)
+        if not maker.IsDone():
+            return None
+        props = GProp_GProps()
+        brepgprop.SurfaceProperties(maker.Face(), props)
+        value = abs(float(props.Mass()))
+        return value if math.isfinite(value) else None
     except Exception:
-        value = 0.0001
-    if not math.isfinite(value) or value <= 0.0:
-        return 1.0e-12
-    return value
-
-
-def _as_occ_face(face):
-    """Return an OCCT TopoDS_Face for a backend Face, or None."""
-    if not isinstance(face, Face):
         return None
-    shape = _shape_from_topology(face)
-    if _is_null_shape(shape):
+
+
+def _outer_wire_shape(face):
+    """Return the native external-boundary wire of a backend Face."""
+    occ_face = _as_occ_face(face)
+    if occ_face is None:
         return None
     try:
+        from OCC.Core.BRepTools import BRepTools
+        for name in ("OuterWire_s", "OuterWire"):
+            fn = getattr(BRepTools, name, None)
+            if callable(fn):
+                wire = fn(occ_face)
+                if wire is not None and not wire.IsNull():
+                    return wire
+    except Exception:
+        pass
+    try:
+        from OCC.Core.BRepTools import breptools
+        fn = getattr(breptools, "OuterWire", None)
+        if callable(fn):
+            wire = fn(occ_face)
+            if wire is not None and not wire.IsNull():
+                return wire
+    except Exception:
+        pass
+    try:
+        from OCC.Core.TopAbs import TopAbs_WIRE
         from OCC.Core.TopoDS import topods
-        return topods.Face(shape)
+        candidates = [topods.Wire(shape) for shape in _explore_shapes(occ_face, TopAbs_WIRE)]
     except Exception:
         return None
+    best = None
+    best_area = -1.0
+    for wire in candidates:
+        area = _wire_area(wire)
+        if area is not None and area > best_area:
+            best = wire
+            best_area = area
+    return best
+
+
+def _internal_wire_shapes(face):
+    """Return the native internal-boundary wires of a backend Face."""
+    occ_face = _as_occ_face(face)
+    if occ_face is None:
+        return []
+    outer = _outer_wire_shape(face)
+    try:
+        from OCC.Core.TopAbs import TopAbs_WIRE
+        from OCC.Core.TopoDS import topods
+        wires = [topods.Wire(shape) for shape in _explore_shapes(occ_face, TopAbs_WIRE)]
+    except Exception:
+        return []
+    if outer is None:
+        return wires[1:] if len(wires) > 1 else []
+    return [wire for wire in wires if not _same_shape(wire, outer)]
 
 
 def _surface_and_bounds(face):
@@ -130,7 +184,6 @@ def _surface_and_bounds(face):
     try:
         from OCC.Core.BRep import BRep_Tool
         from OCC.Core.BRepAdaptor import BRepAdaptor_Surface
-
         surface = BRep_Tool.Surface(occ_face)
         if surface is None:
             return None
@@ -139,8 +192,7 @@ def _surface_and_bounds(face):
         u1 = float(adaptor.LastUParameter())
         v0 = float(adaptor.FirstVParameter())
         v1 = float(adaptor.LastVParameter())
-        values = (u0, u1, v0, v1)
-        if not all(math.isfinite(value) for value in values):
+        if not all(math.isfinite(value) for value in (u0, u1, v0, v1)):
             return None
         return surface, u0, u1, v0, v1
     except Exception:
@@ -148,97 +200,72 @@ def _surface_and_bounds(face):
 
 
 def _normalized_to_raw(face, u, v):
-    """Map TopologicPy normalized UV parameters to native surface parameters."""
+    """Map normalized TopologicPy UV parameters to native surface parameters."""
     data = _surface_and_bounds(face)
     if data is None:
         return None
     surface, u0, u1, v0, v1 = data
     try:
-        un = float(u)
-        vn = float(v)
+        u = float(u)
+        v = float(v)
     except Exception:
         return None
-    raw_u = u0 + un * (u1 - u0)
-    raw_v = v0 + vn * (v1 - v0)
+    raw_u = u0 + u * (u1 - u0)
+    raw_v = v0 + v * (v1 - v0)
     return surface, raw_u, raw_v, u0, u1, v0, v1
 
 
+def _raw_to_normalized(face, raw_u, raw_v):
+    """Map native surface parameters to normalized TopologicPy UV parameters."""
+    data = _surface_and_bounds(face)
+    if data is None:
+        return None
+    _, u0, u1, v0, v1 = data
+    du = u1 - u0
+    dv = v1 - v0
+    if abs(du) <= 1.0e-30 or abs(dv) <= 1.0e-30:
+        return None
+    return [(float(raw_u) - u0) / du, (float(raw_v) - v0) / dv]
+
+
 def _normalized_vector(values, tolerance=1.0e-12):
-    """Return a normalized 3D vector, or None if its magnitude is too small."""
+    """Return a normalized finite 3D vector, or None if degenerate."""
     try:
-        vector = [
-            float(values[0]),
-            float(values[1]),
-            float(values[2]),
-        ]
+        vector = [float(values[0]), float(values[1]), float(values[2])]
     except Exception:
         return None
-
     if not all(math.isfinite(value) for value in vector):
         return None
-
-    magnitude = math.sqrt(
-        sum(value * value for value in vector)
-    )
-
+    magnitude = math.sqrt(sum(value * value for value in vector))
     if magnitude <= _face_tolerance(tolerance):
         return None
-
-    return [
-        value / magnitude
-        for value in vector
-    ]
+    return [value / magnitude for value in vector]
 
 
 def _expanded_knot_data(values):
-    """
-    Convert an expanded knot vector to OCCT unique knots and multiplicities.
-
-    Returns
-    -------
-    tuple
-        ``(unique_knots, multiplicities)``, or None for invalid input.
-    """
+    """Convert an expanded knot vector to unique knots and multiplicities."""
     if not isinstance(values, (list, tuple)):
         return None
-
     try:
-        expanded = [
-            float(value)
-            for value in values
-        ]
+        expanded = [float(value) for value in values]
     except Exception:
         return None
-
-    if len(expanded) < 2:
+    if len(expanded) < 2 or any(not math.isfinite(value) for value in expanded):
         return None
-
-    if any(
-        not math.isfinite(value)
-        for value in expanded
-    ):
+    if any(expanded[index] > expanded[index + 1] for index in range(len(expanded) - 1)):
         return None
-
-    if any(
-        expanded[index] > expanded[index + 1]
-        for index in range(len(expanded) - 1)
-    ):
-        return None
-
     unique_knots = []
     multiplicities = []
-
     for value in expanded:
         if unique_knots and value == unique_knots[-1]:
             multiplicities[-1] += 1
         else:
             unique_knots.append(value)
             multiplicities.append(1)
-
     if len(unique_knots) < 2:
         return None
-
     return unique_knots, multiplicities
+
 
 @dataclass(eq=False)
 class Face(Topology):
@@ -983,93 +1010,31 @@ class Face(Topology):
         )
 
     def ExternalBoundary(self):
-        """
-        Returns the external boundary wire of the face.
-
-        Returns
-        -------
-        Wire
-            The external boundary wire, or None if it cannot be determined.
-        """
+        """Return the external boundary Wire of this Face."""
         if _is_null_shape(getattr(self, "shape", None)):
             return self.external if isinstance(self.external, Wire) else None
-
-        try:
-            from OCC.Core.BRepTools import breptools
-            from OCC.Core.TopoDS import topods
-
-            occ_face = topods.Face(self.shape)
-            occ_wire = breptools.OuterWire(occ_face)
-
-            if occ_wire.IsNull():
-                return None
-
-            return Topology.ByOcctShape(occ_wire)
-
-        except Exception:
+        outer = _outer_wire_shape(self)
+        if outer is None:
             return None
+        return Wire.ByOcctShape(outer)
+
+
+    def Wire(self):
+        """Alias for ExternalBoundary."""
+        return self.ExternalBoundary()
 
     def InternalBoundaries(self, wires=None):
-        """
-        Returns the internal boundary wires of the face.
-
-        Parameters
-        ----------
-        wires : list , optional
-            If supplied, the resulting wires are appended to this list and the
-            method returns 0.
-
-        Returns
-        -------
-        list
-            The internal boundary wires.
-        """
+        """Return or populate the internal boundary Wires of this Face."""
         if _is_null_shape(getattr(self, "shape", None)):
-            result = list(getattr(self, "internals", []) or [])
-
+            result = [wire for wire in (getattr(self, "internals", []) or []) if isinstance(wire, Wire)]
         else:
-            result = []
-
-            try:
-                from OCC.Core.BRepTools import breptools
-                from OCC.Core.TopAbs import TopAbs_WIRE
-                from OCC.Core.TopExp import TopExp_Explorer
-                from OCC.Core.TopoDS import topods
-
-                occ_face = topods.Face(self.shape)
-                outer = breptools.OuterWire(occ_face)
-
-                explorer = TopExp_Explorer(
-                    occ_face,
-                    TopAbs_WIRE
-                )
-
-                while explorer.More():
-                    occ_wire = explorer.Current()
-
-                    is_external = (
-                        not outer.IsNull()
-                        and occ_wire.IsSame(outer)
-                    )
-
-                    if not is_external:
-                        wire = Topology.ByOcctShape(
-                            occ_wire
-                        )
-
-                        if isinstance(wire, Wire):
-                            result.append(wire)
-
-                    explorer.Next()
-
-            except Exception:
-                result = []
-
+            result = [Wire.ByOcctShape(shape) for shape in _internal_wire_shapes(self)]
+            result = [wire for wire in result if isinstance(wire, Wire)]
         if wires is not None:
             wires.extend(result)
             return 0
-
         return result
+
 
     def Edges(self, hostTopology=None, edges=None):
         """
@@ -1162,89 +1127,17 @@ class Face(Topology):
         return result
 
     def Wires(self, hostTopology=None, wires=None):
-        """
-        Returns the wires of the face with the external boundary first followed
-        by the internal boundaries.
-
-        Parameters
-        ----------
-        hostTopology : object , optional
-            Included for backend API compatibility.
-        wires : list , optional
-            If supplied, the resulting wires are appended to this list and the
-            method returns 0.
-
-        Returns
-        -------
-        list
-            The face wires.
-        """
-        if _is_null_shape(getattr(self, "shape", None)):
-            result = []
-
-            if isinstance(self.external, Wire):
-                result.append(self.external)
-
-            result.extend(
-                [
-                    wire
-                    for wire in (getattr(self, "internals", []) or [])
-                    if isinstance(wire, Wire)
-                ]
-            )
-
-        else:
-            result = []
-
-            try:
-                from OCC.Core.BRepTools import breptools
-                from OCC.Core.TopAbs import TopAbs_WIRE
-                from OCC.Core.TopExp import TopExp_Explorer
-                from OCC.Core.TopoDS import topods
-
-                occ_face = topods.Face(self.shape)
-                outer = breptools.OuterWire(occ_face)
-
-                external = None
-                internals = []
-
-                explorer = TopExp_Explorer(
-                    occ_face,
-                    TopAbs_WIRE
-                )
-
-                while explorer.More():
-                    occ_wire = explorer.Current()
-
-                    wire = Topology.ByOcctShape(
-                        occ_wire
-                    )
-
-                    if isinstance(wire, Wire):
-
-                        if (
-                            not outer.IsNull()
-                            and occ_wire.IsSame(outer)
-                        ):
-                            external = wire
-                        else:
-                            internals.append(wire)
-
-                    explorer.Next()
-
-                if external is not None:
-                    result.append(external)
-
-                result.extend(internals)
-
-            except Exception:
-                result = []
-
+        """Return the external boundary first, followed by internal boundaries."""
+        result = []
+        external = self.ExternalBoundary()
+        if isinstance(external, Wire):
+            result.append(external)
+        result.extend(self.InternalBoundaries() or [])
         if wires is not None:
             wires.extend(result)
             return 0
-
         return result
+
 
     def Faces(self, hostTopology=None, faces=None):
         result = [self]
@@ -1303,93 +1196,39 @@ class FaceUtility:
             return None
 
     @staticmethod
-    def NormalAtParameters(face, u=0.5, v=0.5):
-        """
-        Returns the unit normal vector of the input face at the specified
-        normalized UV parameters.
-
-        Parameters
-        ----------
-        face : Face
-            The input face.
-        u : float , optional
-            The normalized U parameter in the range [0, 1]. Default is 0.5.
-        v : float , optional
-            The normalized V parameter in the range [0, 1]. Default is 0.5.
-
-        Returns
-        -------
-        list
-            The normal vector [x, y, z], or None if the normal cannot be computed.
-        """
-        if not isinstance(face, Face):
+    def NormalAtParameters(face, u=0.5, v=0.5, tolerance: float = 0.0001):
+        """Return the oriented unit surface normal at normalized UV parameters."""
+        mapped = _normalized_to_raw(face, u, v)
+        if mapped is None:
             return None
-
-        shape = getattr(face, "shape", None)
-        if shape is None:
-            return None
-
+        surface, raw_u, raw_v, _, _, _, _ = mapped
+        tol = _face_tolerance(tolerance)
         try:
-            from OCC.Core.BRep import BRep_Tool
-            from OCC.Core.BRepGProp import BRepGProp_Face
             from OCC.Core.GeomLProp import GeomLProp_SLProps
             from OCC.Core.TopAbs import TopAbs_REVERSED
-
-            # Clamp normalized parameters.
-            u = max(0.0, min(1.0, float(u)))
-            v = max(0.0, min(1.0, float(v)))
-
-            # Get the actual parametric bounds of the trimmed face.
-            uMin, uMax, vMin, vMax = BRepGProp_Face(shape).Bounds()
-
-            # Map TopologicPy's normalized [0, 1] parameters onto the
-            # underlying OCCT surface parameter domain.
-            actualU = uMin + u * (uMax - uMin)
-            actualV = vMin + v * (vMax - vMin)
-
-            surface = BRep_Tool.Surface(shape)
-            if surface is None:
-                return None
-
-            props = GeomLProp_SLProps(
-                surface,
-                actualU,
-                actualV,
-                1,
-                1.0e-9,
-            )
-
+            props = GeomLProp_SLProps(surface, raw_u, raw_v, 1, tol)
             if not props.IsNormalDefined():
                 return None
-
             normal = props.Normal()
+            result = [float(normal.X()), float(normal.Y()), float(normal.Z())]
+            occ_face = _as_occ_face(face)
+            if occ_face is not None and occ_face.Orientation() == TopAbs_REVERSED:
+                result = [-value for value in result]
+            return _normalized_vector(result, tolerance=tol)
+        except Exception:
+            return None
 
-            nx = float(normal.X())
-            ny = float(normal.Y())
-            nz = float(normal.Z())
 
-            # GeomLProp returns the orientation of the underlying geometric
-            # surface. A reversed TopoDS_Face has the opposite topological normal.
-            if shape.Orientation() == TopAbs_REVERSED:
-                nx = -nx
-                ny = -ny
-                nz = -nz
-
-            length = math.sqrt(
-                nx * nx +
-                ny * ny +
-                nz * nz
-            )
-
-            if length <= 1.0e-12:
-                return None
-
-            return [
-                nx / length,
-                ny / length,
-                nz / length,
-            ]
-
+    @staticmethod
+    def Reverse(face):
+        """Return the same native Face with its orientation reversed."""
+        occ_face = _as_occ_face(face)
+        if occ_face is None:
+            return None
+        try:
+            from OCC.Core.TopoDS import topods
+            reversed_face = topods.Face(occ_face.Reversed())
+            return _wrap_metadata(face, Face.ByOcctShape(reversed_face))
         except Exception:
             return None
 
@@ -1550,110 +1389,141 @@ class FaceUtility:
             return face.Edges()
         return []
 
-    @staticmethod
-    def _uv_bounds(face):
-        """Returns (umin, umax, vmin, vmax) of the face's underlying surface, or None."""
-        if not isinstance(face, Face) or getattr(face, "shape", None) is None:
-            return None
-        try:
-            from OCC.Core.BRepTools import breptools
-            from OCC.Core.TopoDS import topods
-            occ_face = topods.Face(face.shape)
-            umin, umax, vmin, vmax = breptools.UVBounds(occ_face)
-            return (umin, umax, vmin, vmax)
-        except Exception:
-            return None
 
     @staticmethod
     def VertexAtParameters(face, u=0.5, v=0.5):
-        if not isinstance(face, Face) or getattr(face, "shape", None) is None:
+        """Return a Vertex at normalized UV parameters on the Face surface."""
+        mapped = _normalized_to_raw(face, u, v)
+        if mapped is None:
             return None
-        bounds = FaceUtility._uv_bounds(face)
-        if bounds is None:
-            return None
-        umin, umax, vmin, vmax = bounds
+        surface, raw_u, raw_v, _, _, _, _ = mapped
         try:
-            from OCC.Core.BRep import BRep_Tool
-            from OCC.Core.TopoDS import topods
-            from .vertex import Vertex
-
-            occ_face = topods.Face(face.shape)
-            surface = BRep_Tool.Surface(occ_face)
-            if surface is None:
-                return None
-
-            u_mapped = umin + float(u) * (umax - umin)
-            v_mapped = vmin + float(v) * (vmax - vmin)
-            pnt = surface.Value(u_mapped, v_mapped)
-            return Vertex.ByCoordinates(pnt.X(), pnt.Y(), pnt.Z())
+            point = surface.Value(raw_u, raw_v)
+            return Vertex.ByCoordinates(point.X(), point.Y(), point.Z())
         except Exception:
             return None
 
+
     @staticmethod
-    def ParametersAtVertex(face, vertex):
-        if not isinstance(face, Face) or getattr(face, "shape", None) is None:
+    def ParametersAtVertex(face, vertex, tolerance: float = 0.0001):
+        """Return normalized UV parameters of a Vertex on the Face surface."""
+        if not isinstance(vertex, Vertex):
             return None
-        if getattr(vertex, "x", None) is None:
+        occ_face = _as_occ_face(face)
+        if occ_face is None:
             return None
-        bounds = FaceUtility._uv_bounds(face)
-        if bounds is None:
-            return None
-        umin, umax, vmin, vmax = bounds
         try:
             from OCC.Core.BRep import BRep_Tool
-            from OCC.Core.TopoDS import topods
-            from OCC.Core.gp import gp_Pnt
             from OCC.Core.GeomAPI import GeomAPI_ProjectPointOnSurf
-
-            occ_face = topods.Face(face.shape)
+            from OCC.Core.gp import gp_Pnt
             surface = BRep_Tool.Surface(occ_face)
             if surface is None:
                 return None
-
-            pnt = gp_Pnt(float(vertex.x), float(vertex.y), float(vertex.z))
-            projector = GeomAPI_ProjectPointOnSurf(pnt, surface)
+            point = gp_Pnt(float(vertex.x), float(vertex.y), float(vertex.z))
+            projector = GeomAPI_ProjectPointOnSurf(point, surface)
             if projector.NbPoints() < 1:
                 return None
-            u_raw, v_raw = projector.LowerDistanceParameters()
-
-            u = (u_raw - umin) / (umax - umin) if (umax - umin) != 0 else 0.0
-            v = (v_raw - vmin) / (vmax - vmin) if (vmax - vmin) != 0 else 0.0
-            return [u, v]
+            if float(projector.LowerDistance()) > _face_tolerance(tolerance):
+                return None
+            raw_u, raw_v = projector.LowerDistanceParameters()
+            return _raw_to_normalized(face, raw_u, raw_v)
         except Exception:
             return None
 
+
     @staticmethod
-    def IsInside(face, vertex, tolerance=0.0001):
-        if not isinstance(face, Face) or getattr(face, "shape", None) is None:
+    def IsInside(face, vertex, tolerance: float = 0.0001):
+        """Return True when a Vertex lies in or on the trimmed Face.
+
+        The primary path uses OCCT's ``BRepClass_FaceClassifier`` directly
+        with the 3D point and the actual trimmed ``TopoDS_Face``. This avoids
+        separately projecting the point to the supporting surface and then
+        classifying the projected UV coordinates, which can be unreliable for
+        split spline/NURBS Faces carrying newly created p-curves.
+
+        The former UV-projection route is retained only as a compatibility
+        fallback for PythonOCC/OCCT builds that do not expose the 3D classifier
+        overload.
+        """
+        if not isinstance(vertex, Vertex):
             return False
-        if getattr(vertex, "x", None) is None:
+
+        occ_face = _as_occ_face(face)
+        if occ_face is None:
             return False
+
+        tol = _face_tolerance(tolerance)
+
+        try:
+            from OCC.Core.BRepClass import BRepClass_FaceClassifier
+            from OCC.Core.TopAbs import TopAbs_IN, TopAbs_ON
+            from OCC.Core.gp import gp_Pnt
+
+            point = gp_Pnt(
+                float(vertex.x),
+                float(vertex.y),
+                float(vertex.z),
+            )
+
+            classifier = BRepClass_FaceClassifier()
+
+            performed = False
+            # OCCT 7.8+ exposes optional use-bounding-box and gap-check
+            # arguments. Older PythonOCC bindings expose only (face, point, tol).
+            for args in (
+                (occ_face, point, tol, True, 0.1),
+                (occ_face, point, tol, True),
+                (occ_face, point, tol),
+            ):
+                try:
+                    classifier.Perform(*args)
+                    performed = True
+                    break
+                except TypeError:
+                    continue
+
+            if performed:
+                state = classifier.State()
+                return state in (TopAbs_IN, TopAbs_ON)
+
+        except Exception:
+            pass
+
+        # Compatibility fallback: project to the supporting surface and
+        # classify in UV. This is intentionally secondary because the direct
+        # 3D classifier above is more robust for trimmed spline/NURBS Faces.
         try:
             from OCC.Core.BRep import BRep_Tool
-            from OCC.Core.TopoDS import topods
-            from OCC.Core.gp import gp_Pnt, gp_Pnt2d
             from OCC.Core.GeomAPI import GeomAPI_ProjectPointOnSurf
             from OCC.Core.BRepTopAdaptor import BRepTopAdaptor_FClass2d
             from OCC.Core.TopAbs import TopAbs_IN, TopAbs_ON
+            from OCC.Core.gp import gp_Pnt, gp_Pnt2d
 
-            occ_face = topods.Face(face.shape)
             surface = BRep_Tool.Surface(occ_face)
             if surface is None:
                 return False
 
-            pnt = gp_Pnt(float(vertex.x), float(vertex.y), float(vertex.z))
-            projector = GeomAPI_ProjectPointOnSurf(pnt, surface)
+            point = gp_Pnt(
+                float(vertex.x),
+                float(vertex.y),
+                float(vertex.z),
+            )
+            projector = GeomAPI_ProjectPointOnSurf(point, surface)
             if projector.NbPoints() < 1:
                 return False
-            if projector.LowerDistance() > tolerance:
+            if float(projector.LowerDistance()) > tol:
                 return False
-            u_raw, v_raw = projector.LowerDistanceParameters()
 
-            classifier = BRepTopAdaptor_FClass2d(occ_face, tolerance)
-            state = classifier.Perform(gp_Pnt2d(u_raw, v_raw))
+            raw_u, raw_v = projector.LowerDistanceParameters()
+            classifier = BRepTopAdaptor_FClass2d(occ_face, tol)
+            state = classifier.Perform(
+                gp_Pnt2d(float(raw_u), float(raw_v))
+            )
             return state in (TopAbs_IN, TopAbs_ON)
+
         except Exception:
             return False
+
 
     @staticmethod
     def TangentsAtParameters(
@@ -2157,6 +2027,58 @@ class FaceUtility:
             return None
 
     @staticmethod
+    def IsCoplanar(faceA, faceB, tolerance: float = 0.0001):
+        """
+        Return True when two Faces lie on the same geometric plane.
+
+        The test is based on geometric planarity rather than only the native
+        OCCT surface type, so planar B-spline/NURBS and Bezier Faces are handled
+        correctly as well as native planar Faces.
+        """
+        if not isinstance(faceA, Face) or not isinstance(faceB, Face):
+            return None
+
+        tol = _face_tolerance(tolerance)
+
+        if FaceUtility.IsPlanar(faceA, tolerance=tol) is not True:
+            return False
+        if FaceUtility.IsPlanar(faceB, tolerance=tol) is not True:
+            return False
+
+        normal_a = FaceUtility.NormalAtParameters(faceA, 0.5, 0.5)
+        normal_b = FaceUtility.NormalAtParameters(faceB, 0.5, 0.5)
+
+        if normal_a is None or normal_b is None:
+            return None
+
+        try:
+            ax, ay, az = [float(value) for value in normal_a]
+            bx, by, bz = [float(value) for value in normal_b]
+
+            cx = ay * bz - az * by
+            cy = az * bx - ax * bz
+            cz = ax * by - ay * bx
+
+            if math.sqrt(cx * cx + cy * cy + cz * cz) > tol:
+                return False
+
+            point_a = FaceUtility.VertexAtParameters(faceA, 0.5, 0.5)
+            point_b = FaceUtility.VertexAtParameters(faceB, 0.5, 0.5)
+
+            if not isinstance(point_a, Vertex) or not isinstance(point_b, Vertex):
+                return None
+
+            dx = float(point_b.x) - float(point_a.x)
+            dy = float(point_b.y) - float(point_a.y)
+            dz = float(point_b.z) - float(point_a.z)
+
+            distance = abs(dx * ax + dy * ay + dz * az)
+            return distance <= tol
+
+        except Exception:
+            return None
+
+    @staticmethod
     def InternalVertex(face, tolerance=0.0001):
         if not isinstance(face, Face):
             return None
@@ -2591,27 +2513,13 @@ class FaceUtility:
 
 
 # ---------------------------------------------------------------------------
-# Explicit unsupported Face API
+# Compatibility API wiring
 # ---------------------------------------------------------------------------
-from .helpers import not_implemented as _not_implemented
 
 
-def _face_not_implemented(name, return_value=None):
-    def _method(*args, **kwargs):
-        return _not_implemented(f"Face.{name}", return_value)
-    return _method
 
 
-def _face_utility_not_implemented(name, return_value=None):
-    def _method(*args, **kwargs):
-        return _not_implemented(f"FaceUtility.{name}", return_value)
-    return _method
 
-
-# Face.ByWires is implemented above (wraps ByExternalBoundary + internal wires).
-# Face.ByExternalInternalBoundaries, FaceUtility.InternalVertex, FaceUtility.VertexAtParameters,
-# FaceUtility.ParametersAtVertex, FaceUtility.IsInside and FaceUtility.Triangulate are all
-# implemented above. Do NOT re-clobber them here.
 def _face_internal_vertex(self, tolerance=0.0001, silent=False):
     return FaceUtility.InternalVertex(self, tolerance=tolerance)
 
@@ -2621,87 +2529,7 @@ def _face_internal_vertex(self, tolerance=0.0001, silent=False):
 # staticmethod-wrapped lambda would break (see HANDOFF.md item 1).
 Face.InternalVertex = _face_internal_vertex
 
-def _adjacent_shells(face, hostTopology, output):
-    from .topology import Topology
-    from .helpers import same_vertex
 
-    if not isinstance(face, Face) or hostTopology is None:
-        return 1
-
-    result = []
-    fv_src = face.Vertices()
-    candidates = []
-
-    Topology.Shells(
-        hostTopology,
-        None,
-        candidates
-    )
-
-    for shell in candidates:
-
-        for shell_face in shell.Faces():
-
-            fv = shell_face.Vertices()
-
-            if (
-                len(fv) == len(fv_src)
-                and all(
-                    any(
-                        same_vertex(a, b)
-                        for b in fv_src
-                    )
-                    for a in fv
-                )
-            ):
-                result.append(shell)
-                break
-
-    if output is not None:
-        output.extend(result)
-
-    return 0
-
-def _adjacent_cells(face, hostTopology, output):
-    from .topology import Topology
-    from .helpers import same_vertex
-
-    if not isinstance(face, Face) or hostTopology is None:
-        return 1
-
-    result = []
-    fv_src = face.Vertices()
-    candidates = []
-
-    Topology.Cells(
-        hostTopology,
-        None,
-        candidates
-    )
-
-    for cell in candidates:
-
-        for cell_face in cell.Faces():
-
-            fv = cell_face.Vertices()
-
-            if (
-                len(fv) == len(fv_src)
-                and all(
-                    any(
-                        same_vertex(a, b)
-                        for b in fv_src
-                    )
-                    for a in fv
-                )
-            ):
-                result.append(cell)
-                break
-
-    if output is not None:
-        output.extend(result)
-
-    return 0
 
 
 def _make_adjacent(method_name):
@@ -2717,7 +2545,3 @@ FaceUtility.AdjacentVertices = _make_adjacent("Vertices")
 FaceUtility.AdjacentEdges = _make_adjacent("Edges")
 FaceUtility.AdjacentWires = _make_adjacent("Wires")
 FaceUtility.AdjacentCellComplexes = _make_adjacent("CellComplexes")
-
-
-
-
