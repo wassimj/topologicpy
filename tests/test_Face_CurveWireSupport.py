@@ -47,6 +47,10 @@ def test_face_circle_preserves_historical_faceted_default():
     assert Face.Area(face, mantissa=None) == pytest.approx(expected, rel=1.0e-8, abs=1.0e-8)
 
 
+@pytest.mark.skipif(
+    Topology._IsTopologicCoreBackend(),
+    reason="Requires exact PythonOCC/OCCT curve or surface support.",
+)
 def test_face_circle_exact_mode_preserves_curved_boundary():
     face = Face.Circle(radius=2.0, sides=4, polyline=False, tolerance=TOL, silent=True)
     assert Topology.IsInstance(face, "Face")
@@ -66,6 +70,10 @@ def test_face_bywire_preserves_exact_circle():
     assert Face.Area(face, mantissa=None) == pytest.approx(math.pi * 4.0, rel=1.0e-8, abs=1.0e-8)
 
 
+@pytest.mark.skipif(
+    Topology._IsTopologicCoreBackend(),
+    reason="Requires exact PythonOCC/OCCT curve or surface support.",
+)
 def test_face_ellipse_exact_mode_preserves_rational_curves():
     face = Face.Ellipse(width=4.0, length=2.0, sides=4, polyline=False, tolerance=TOL, silent=True)
     assert Topology.IsInstance(face, "Face")
@@ -75,6 +83,10 @@ def test_face_ellipse_exact_mode_preserves_rational_curves():
     assert Face.Area(face, mantissa=None) == pytest.approx(math.pi * 2.0 * 1.0, rel=1.0e-8, abs=1.0e-8)
 
 
+@pytest.mark.skipif(
+    Topology._IsTopologicCoreBackend(),
+    reason="Requires exact PythonOCC/OCCT curve or surface support.",
+)
 def test_face_bywires_preserves_curved_outer_and_inner_boundaries():
     outer = Wire.Circle(radius=3.0, sides=4, polyline=False, silent=True)
     inner = Wire.Ellipse(width=2.0, length=1.0, sides=4, polyline=False, silent=True)
@@ -117,6 +129,10 @@ def _nurbs_face():
     )
 
 
+@pytest.mark.skipif(
+    Topology._IsTopologicCoreBackend(),
+    reason="Requires exact PythonOCC/OCCT curve or surface support.",
+)
 def test_pythonocc_surface_evaluation_respects_face_location():
     face = _nurbs_face()
     assert Topology.IsInstance(face, "Face")
@@ -150,6 +166,10 @@ def test_pythonocc_surface_evaluation_respects_face_location():
     assert uv[1] == pytest.approx(v, abs=2.0e-6)
 
 
+@pytest.mark.skipif(
+    Topology._IsTopologicCoreBackend(),
+    reason="Requires exact PythonOCC/OCCT curve or surface support.",
+)
 def test_pythonocc_normaledge_uses_local_surface_normal():
     face = _nurbs_face()
     assert Topology.IsInstance(face, "Face")

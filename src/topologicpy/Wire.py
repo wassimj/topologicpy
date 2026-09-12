@@ -24,18 +24,185 @@ import math
 import itertools
 
 class Wire():
+    # @staticmethod
+    # def Arc(startVertex, middleVertex, endVertex, sides: int = 16, close: bool = True, polyline: bool = False, tolerance: float = 0.0001, silent: bool = False):
+    #     """Creates a circular-arc Wire through three vertices by delegating curve creation to Edge.ArcByVertices."""
+    #     from topologicpy.Edge import Edge
+    #     from topologicpy.Topology import Topology
+
+    #     edge = Edge.ArcByVertices(startVertex, middleVertex, endVertex, tolerance=tolerance, silent=silent)
+    #     if not Topology.IsInstance(edge, "Edge"):
+    #         return None
+    #     wire = Wire.ByEdge(edge, sides=sides, polyline=polyline, silent=silent)
+    #     if not Topology.IsInstance(wire, "Wire"):
+    #         return None
+    #     if close:
+    #         chord = Edge.ByStartVertexEndVertex(
+    #             Edge.EndVertex(edge, silent=True),
+    #             Edge.StartVertex(edge, silent=True),
+    #             tolerance=tolerance,
+    #             silent=True,
+    #         )
+    #         if Topology.IsInstance(chord, "Edge"):
+    #             edges = (Topology.Edges(wire, silent=True) or []) + [chord]
+    #             closed_wire = Wire.ByEdges(edges, orient=True, tolerance=tolerance, silent=True)
+    #             if Topology.IsInstance(closed_wire, "Wire"):
+    #                 wire = closed_wire
+    #     return wire
+
     @staticmethod
-    def Arc(startVertex, middleVertex, endVertex, sides: int = 16, close: bool = True, polyline: bool = False, tolerance: float = 0.0001, silent: bool = False):
-        """Creates a circular-arc Wire through three vertices by delegating curve creation to Edge.ArcByVertices."""
+    def Arc(
+        startVertex,
+        middleVertex,
+        endVertex,
+        sides: int = 16,
+        close: bool = True,
+        polyline: bool = False,
+        tolerance: float = 0.0001,
+        silent: bool = False,
+    ):
+        """
+        Creates a circular-arc Wire through three vertices.
+
+        In exact mode (``polyline=False``), the circular geometry is created as
+        an exact Edge and segmented topologically by ``Wire.ByEdge``. In
+        polyline mode, the arc is sampled analytically from the three input
+        points without first requiring an exact curved Edge. This preserves the
+        explicit approximation path on backends that do not support the exact
+        curve construction.
+        """
+        import math
+        import numpy as np
+
         from topologicpy.Edge import Edge
+        from topologicpy.Vertex import Vertex
         from topologicpy.Topology import Topology
 
-        edge = Edge.ArcByVertices(startVertex, middleVertex, endVertex, tolerance=tolerance, silent=silent)
+        if not Topology.IsInstance(startVertex, "Vertex"):
+            if not silent:
+                print("Wire.Arc - Error: The input startVertex is not a valid vertex. Returning None.")
+            return None
+        if not Topology.IsInstance(middleVertex, "Vertex"):
+            if not silent:
+                print("Wire.Arc - Error: The input middleVertex is not a valid vertex. Returning None.")
+            return None
+        if not Topology.IsInstance(endVertex, "Vertex"):
+            if not silent:
+                print("Wire.Arc - Error: The input endVertex is not a valid vertex. Returning None.")
+            return None
+
+        try:
+            sides = int(sides)
+            tolerance = abs(float(tolerance))
+        except Exception:
+            return None
+
+        if sides < 2 or tolerance <= 0.0:
+            if not silent:
+                print("Wire.Arc - Error: The number of sides must be at least 2 and tolerance must be positive. Returning None.")
+            return None
+
+        if bool(polyline):
+            try:
+                p1 = np.asarray(Vertex.Coordinates(startVertex, mantissa=None), dtype=float)
+                p2 = np.asarray(Vertex.Coordinates(middleVertex, mantissa=None), dtype=float)
+                p3 = np.asarray(Vertex.Coordinates(endVertex, mantissa=None), dtype=float)
+
+                a = p2 - p1
+                b = p3 - p1
+                normal = np.cross(a, b)
+                normal_sq = float(np.dot(normal, normal))
+                if normal_sq <= tolerance * tolerance:
+                    if not silent:
+                        print("Wire.Arc - Error: The three input vertices are collinear. Returning None.")
+                    return None
+
+                # Circumcenter in the plane of the three points.
+                center = p1 + (
+                    float(np.dot(a, a)) * np.cross(b, normal)
+                    + float(np.dot(b, b)) * np.cross(normal, a)
+                ) / (2.0 * normal_sq)
+
+                r1 = p1 - center
+                radius = float(np.linalg.norm(r1))
+                if radius <= tolerance:
+                    return None
+
+                n_hat = normal / math.sqrt(normal_sq)
+                x_hat = r1 / radius
+                y_hat = np.cross(n_hat, x_hat)
+                y_norm = float(np.linalg.norm(y_hat))
+                if y_norm <= tolerance:
+                    return None
+                y_hat /= y_norm
+
+                def angle_of(point):
+                    radial = point - center
+                    return math.atan2(
+                        float(np.dot(radial, y_hat)),
+                        float(np.dot(radial, x_hat)),
+                    ) % (2.0 * math.pi)
+
+                middle_angle = angle_of(p2)
+                end_angle = angle_of(p3)
+
+                # Choose the p1 -> p3 sweep that passes through p2.
+                if middle_angle <= end_angle + 1.0e-12:
+                    sweep = end_angle
+                else:
+                    sweep = end_angle - 2.0 * math.pi
+
+                vertices = [startVertex]
+                for i in range(1, sides):
+                    theta = sweep * float(i) / float(sides)
+                    point = center + radius * (
+                        math.cos(theta) * x_hat
+                        + math.sin(theta) * y_hat
+                    )
+                    vertex = Vertex.ByCoordinates(
+                        float(point[0]),
+                        float(point[1]),
+                        float(point[2]),
+                    )
+                    if not Topology.IsInstance(vertex, "Vertex"):
+                        return None
+                    vertices.append(vertex)
+                vertices.append(endVertex)
+
+                wire = Wire.ByVertices(
+                    vertices,
+                    close=bool(close),
+                    tolerance=tolerance,
+                    silent=True,
+                )
+            except Exception:
+                wire = None
+
+            if not Topology.IsInstance(wire, "Wire"):
+                if not silent:
+                    print("Wire.Arc - Error: Could not create the polygonal arc. Returning None.")
+                return None
+            return wire
+
+        edge = Edge.ArcByVertices(
+            startVertex,
+            middleVertex,
+            endVertex,
+            tolerance=tolerance,
+            silent=silent,
+        )
         if not Topology.IsInstance(edge, "Edge"):
             return None
-        wire = Wire.ByEdge(edge, sides=sides, polyline=polyline, silent=silent)
+
+        wire = Wire.ByEdge(
+            edge,
+            sides=sides,
+            polyline=False,
+            silent=silent,
+        )
         if not Topology.IsInstance(wire, "Wire"):
             return None
+
         if close:
             chord = Edge.ByStartVertexEndVertex(
                 Edge.EndVertex(edge, silent=True),
@@ -45,11 +212,16 @@ class Wire():
             )
             if Topology.IsInstance(chord, "Edge"):
                 edges = (Topology.Edges(wire, silent=True) or []) + [chord]
-                closed_wire = Wire.ByEdges(edges, orient=True, tolerance=tolerance, silent=True)
+                closed_wire = Wire.ByEdges(
+                    edges,
+                    orient=True,
+                    tolerance=tolerance,
+                    silent=True,
+                )
                 if Topology.IsInstance(closed_wire, "Wire"):
                     wire = closed_wire
-        return wire
 
+        return wire
     
     @staticmethod
     def ArcByEdge(edge, sagitta: float = 1, absolute: bool = True, sides: int = 16, close: bool = True, polyline: bool = False, tolerance: float = 0.0001, silent: bool = False):

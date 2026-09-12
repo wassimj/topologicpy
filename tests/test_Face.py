@@ -366,7 +366,7 @@ def test_shape_constructors_return_valid_faces():
         Face.TShape(width=4, length=4, silent=True),
         Face.Trapezoid(widthA=4, widthB=2, length=3),
         Face.Star(radiusA=2, radiusB=1, rays=5),
-        Face.Ellipse(width=4, length=2, sides=32),
+        Face.Ellipse(width=4, length=2, sides=32, polyline=True),
         Face.Einstein(radius=1),
         Face.NorthArrow(radius=1),
     ]

@@ -28580,6 +28580,264 @@ class Topology():
                                              silent = True)
         return unflat_topology
     
+    # @staticmethod
+    # def Union(
+    #     topologyA,
+    #     topologyB,
+    #     tranDict: bool = False,
+    #     tolerance: float = 0.0001,
+    #     silent: bool = False
+    # ):
+    #     """
+    #     Unions the input operand topologies.
+    #     See https://en.wikipedia.org/wiki/Boolean_operation.
+
+    #     Parameters
+    #     ----------
+    #     topologyA : topologic_core.Topology
+    #         The first input topology.
+    #     topologyB : topologic_core.Topology
+    #         The second input topology.
+    #     tranDict : bool , optional
+    #         If set to True the dictionaries of the operands are merged and
+    #         transferred to the result. Default is False.
+    #     tolerance : float , optional
+    #         The desired tolerance. Default is 0.0001.
+    #     silent : bool , optional
+    #         If set to True, error and warning messages are suppressed.
+    #         Default is False.
+
+    #     Returns
+    #     -------
+    #     topologic_core.Topology
+    #         The resultant topology.
+    #     """
+    #     from topologicpy.Vertex import Vertex
+    #     from topologicpy.Wire import Wire
+    #     from topologicpy.Face import Face
+    #     from topologicpy.Shell import Shell
+    #     from topologicpy.Cluster import Cluster
+
+    #     if (
+    #         not Topology.IsInstance(
+    #             topologyA,
+    #             "topology"
+    #         )
+    #         and not Topology.IsInstance(
+    #             topologyB,
+    #             "topology"
+    #         )
+    #     ):
+    #         if not silent:
+    #             print(
+    #                 "Topology.Union - Error: The inputs topologyA and topologyB "
+    #                 "are not valid topologies. Returning None."
+    #             )
+    #         return None
+
+    #     if not Topology.IsInstance(
+    #         topologyA,
+    #         "topology"
+    #     ):
+    #         if not silent:
+    #             print(
+    #                 "Topology.Union - Warning: The topologyA input parameter is "
+    #                 "not a valid topology. Returning topologyB."
+    #             )
+    #         return topologyB
+
+    #     if not Topology.IsInstance(
+    #         topologyB,
+    #         "topology"
+    #     ):
+    #         if not silent:
+    #             print(
+    #                 "Topology.Union - Warning: The topologyB input parameter is "
+    #                 "not a valid topology. Returning topologyA."
+    #             )
+    #         return topologyA
+
+    #     # --------------------------------------------------------------
+    #     # Normal backend path
+    #     #
+    #     # Trust the backend result. The special cases below exist solely
+    #     # to compensate for known TopologicCore Boolean behaviour.
+    #     # --------------------------------------------------------------
+
+    #     if not Topology._IsTopologicCoreBackend():
+    #         return Topology._Boolean(
+    #             topologyA,
+    #             topologyB,
+    #             operation="union",
+    #             tranDict=tranDict,
+    #             tolerance=tolerance,
+    #             silent=silent
+    #         )
+
+    #     # --------------------------------------------------------------
+    #     # Legacy TopologicCore Face / Face workaround
+    #     # --------------------------------------------------------------
+
+    #     if (
+    #         Topology.IsInstance(
+    #             topologyA,
+    #             "Face"
+    #         )
+    #         and Topology.IsInstance(
+    #             topologyB,
+    #             "Face"
+    #         )
+    #     ):
+    #         if Face.IsCoplanar(
+    #             topologyA,
+    #             topologyB
+    #         ):
+    #             topologyC = Topology._Boolean(
+    #                 topologyA,
+    #                 topologyB,
+    #                 operation="merge",
+    #                 tranDict=tranDict,
+    #                 tolerance=tolerance
+    #             )
+
+    #             if Topology.IsInstance(
+    #                 topologyC,
+    #                 "Cluster"
+    #             ):
+    #                 return topologyC
+
+    #             elif Topology.IsInstance(
+    #                 topologyC,
+    #                 "Shell"
+    #             ):
+    #                 eb_list = Shell.ExternalBoundary(
+    #                     topologyC
+    #                 )
+
+    #                 if Topology.IsInstance(
+    #                     eb_list,
+    #                     "Cluster"
+    #                 ):
+    #                     eb_list = Topology.Wires(
+    #                         eb_list
+    #                     )
+
+    #                 else:
+    #                     eb_list = [
+    #                         eb_list
+    #                     ]
+
+    #                 topologyA_wire = Face.ExternalBoundary(
+    #                     topologyA
+    #                 )
+
+    #                 topologyB_wire = Face.ExternalBoundary(
+    #                     topologyB
+    #                 )
+
+    #                 internal_boundaries = []
+    #                 found = False
+
+    #                 for eb in eb_list:
+    #                     v = Topology.Vertices(
+    #                         eb
+    #                     )[0]
+
+    #                     if found is False:
+    #                         if (
+    #                             Vertex.IsInternal(
+    #                                 v,
+    #                                 topologyA_wire,
+    #                                 tolerance=tolerance
+    #                             )
+    #                             or Vertex.IsInternal(
+    #                                 v,
+    #                                 topologyB_wire,
+    #                                 tolerance=tolerance
+    #                             )
+    #                         ):
+    #                             external_boundary = eb
+    #                             found = True
+
+    #                     else:
+    #                         internal_boundaries.append(
+    #                             eb
+    #                         )
+
+    #                 return Face.ByWires(
+    #                     external_boundary,
+    #                     internal_boundaries
+    #                 )
+
+    #     # --------------------------------------------------------------
+    #     # Legacy TopologicCore Edge / Wire workaround
+    #     # --------------------------------------------------------------
+
+    #     elif (
+    #         Topology.TypeAsString(
+    #             topologyA
+    #         ).lower() in [
+    #             "edge",
+    #             "wire"
+    #         ]
+    #         and Topology.TypeAsString(
+    #             topologyB
+    #         ).lower() in [
+    #             "edge",
+    #             "wire"
+    #         ]
+    #     ):
+    #         union = Topology.Merge(
+    #             topologyA,
+    #             topologyB
+    #         )
+
+    #         if Topology.IsInstance(
+    #             union,
+    #             "wire"
+    #         ):
+    #             union = Wire.RemoveCollinearEdges(
+    #                 union
+    #             )
+
+    #             return union
+
+    #         elif Topology.IsInstance(
+    #             union,
+    #             "cluster"
+    #         ):
+    #             wires = Cluster.Wires(
+    #                 union
+    #             )
+
+    #             final_topologies = Cluster.FreeEdges(
+    #                 union
+    #             )
+
+    #             for wire in wires:
+    #                 final_topologies.append(
+    #                     Wire.RemoveCollinearEdges(
+    #                         wire
+    #                     )
+    #                 )
+
+    #             return Cluster.ByTopologies(
+    #                 final_topologies
+    #             )
+
+    #     # --------------------------------------------------------------
+    #     # General TopologicCore Boolean Union
+    #     # --------------------------------------------------------------
+
+    #     return Topology._Boolean(
+    #         topologyA,
+    #         topologyB,
+    #         operation="union",
+    #         tranDict=tranDict,
+    #         tolerance=tolerance,
+    #         silent=silent
+    #     )
+
     @staticmethod
     def Union(
         topologyA,
@@ -28613,6 +28871,7 @@ class Topology():
             The resultant topology.
         """
         from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
         from topologicpy.Wire import Wire
         from topologicpy.Face import Face
         from topologicpy.Shell import Shell
@@ -28799,6 +29058,81 @@ class Topology():
                 union = Wire.RemoveCollinearEdges(
                     union
                 )
+
+                # TopologicCore may wrap a logically single Edge/Edge union as
+                # an open one-edge Wire. Preserve the historical public result
+                # type contract without changing Wire/Edge or Wire/Wire unions.
+                if (
+                    Topology.IsInstance(topologyA, "Edge")
+                    and Topology.IsInstance(topologyB, "Edge")
+                    and Topology.IsInstance(union, "Wire")
+                ):
+                    union_edges = Topology.Edges(
+                        union,
+                        silent=True
+                    ) or []
+
+                    if len(union_edges) == 1:
+                        return union_edges[0]
+
+                    # Conservative fallback for legacy kernels that keep the
+                    # collinear union split into multiple contiguous Edges.
+                    if len(union_edges) > 1:
+                        reference_edge = union_edges[0]
+                        try:
+                            all_collinear = all(
+                                Edge.IsCollinear(
+                                    reference_edge,
+                                    candidate,
+                                    tolerance=tolerance
+                                ) is True
+                                for candidate in union_edges[1:]
+                            )
+                        except Exception:
+                            all_collinear = False
+
+                        if all_collinear:
+                            vertices = Topology.Vertices(
+                                union,
+                                silent=True
+                            ) or []
+
+                            if len(vertices) >= 2:
+                                # Find the two extreme vertices. This is
+                                # independent of the Wire traversal direction.
+                                best_pair = None
+                                best_distance = -1.0
+                                for i in range(len(vertices) - 1):
+                                    for j in range(i + 1, len(vertices)):
+                                        try:
+                                            distance = Vertex.Distance(
+                                                vertices[i],
+                                                vertices[j],
+                                                mantissa=None,
+                                                silent=True
+                                            )
+                                        except TypeError:
+                                            distance = Vertex.Distance(
+                                                vertices[i],
+                                                vertices[j],
+                                                mantissa=None
+                                            )
+                                        except Exception:
+                                            distance = None
+
+                                        if distance is not None and float(distance) > best_distance:
+                                            best_distance = float(distance)
+                                            best_pair = (vertices[i], vertices[j])
+
+                                if best_pair is not None and best_distance > tolerance:
+                                    collapsed = Edge.ByStartVertexEndVertex(
+                                        best_pair[0],
+                                        best_pair[1],
+                                        tolerance=tolerance,
+                                        silent=True
+                                    )
+                                    if Topology.IsInstance(collapsed, "Edge"):
+                                        return collapsed
 
                 return union
 

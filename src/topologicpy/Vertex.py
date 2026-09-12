@@ -3661,74 +3661,197 @@ class Vertex():
         
         return Vertex.ByCoordinates(x, y, z)
 
+    # @staticmethod
+    # def Project(vertex, face, direction: bool = None, mantissa: int = 6):
+    #     """
+    #     Returns a vertex that is the projection of the input vertex unto the input face.
+
+    #     Parameters
+    #     ----------
+    #     vertex : topologic_core.Vertex
+    #         The input vertex to project unto the input face.
+    #     face : topologic_core.Face
+    #         The input face that receives the projection of the input vertex.
+    #     direction : vector, optional
+    #         The direction in which to project the input vertex unto the input face. If not specified, the direction of the projection is the normal of the input face. Default is None.
+    #     mantissa : int , optional
+    #         The length of the desired mantissa. Default is 6.
+
+    #     Returns
+    #     -------
+    #     topologic_core.Vertex
+    #         The projected vertex.
+
+    #     """
+    #     from topologicpy.Face import Face
+    #     from topologicpy.Topology import Topology
+        
+    #     def project_point_onto_plane(point, plane_coeffs, direction_vector):
+    #         """
+    #         Project a 3D point onto a plane defined by its coefficients and using a direction vector.
+
+    #         Parameters:
+    #             point (tuple or list): The 3D point coordinates (x, y, z).
+    #             plane_coeffs (tuple or list): The coefficients of the plane equation (a, b, c, d).
+    #             direction_vector (tuple or list): The direction vector (vx, vy, vz).
+
+    #         Returns:
+    #             tuple: The projected point coordinates (x_proj, y_proj, z_proj).
+    #         """
+    #         # Unpack point coordinates
+    #         x, y, z = point
+
+    #         # Unpack plane coefficients
+    #         a, b, c, d = plane_coeffs
+
+    #         # Unpack direction vector
+    #         vx, vy, vz = direction_vector
+
+    #         # Calculate the distance from the point to the plane
+    #         distance = (a * x + b * y + c * z + d) / (a * vx + b * vy + c * vz)
+
+    #         # Calculate the projected point coordinates
+    #         x_proj = x - distance * vx
+    #         y_proj = y - distance * vy
+    #         z_proj = z - distance * vz
+
+    #         return [x_proj, y_proj, z_proj]
+
+    #     if not Topology.IsInstance(vertex, "Vertex"):
+    #         return None
+    #     if not Topology.IsInstance(face, "Face"):
+    #         return None
+    #     eq = Face.PlaneEquation(face, mantissa= mantissa)
+    #     if eq is None:
+    #         return None
+    #     if direction == None or direction == []:
+    #         direction = Face.Normal(face)
+    #     pt = project_point_onto_plane(Vertex.Coordinates(vertex), [eq["a"], eq["b"], eq["c"], eq["d"]], direction)
+    #     return Vertex.ByCoordinates(pt[0], pt[1], pt[2])
+
     @staticmethod
-    def Project(vertex, face, direction: bool = None, mantissa: int = 6):
+    def Project(vertex, face, direction: list = None, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
         """
-        Returns a vertex that is the projection of the input vertex unto the input face.
+        Returns the projection of the input vertex onto the supporting geometry of
+        the input face. On the PythonOCC backend this operation is delegated to OCCT.
 
         Parameters
         ----------
         vertex : topologic_core.Vertex
-            The input vertex to project unto the input face.
+            The input vertex to project.
         face : topologic_core.Face
-            The input face that receives the projection of the input vertex.
-        direction : vector, optional
-            The direction in which to project the input vertex unto the input face. If not specified, the direction of the projection is the normal of the input face. Default is None.
+            The input face receiving the projection.
+        direction : list , optional
+            The projection direction. If None, normal/nearest-surface projection is
+            used. For a planar face an explicit direction intersects the infinite
+            supporting plane. Default is None.
         mantissa : int , optional
-            The length of the desired mantissa. Default is 6.
+            The number of decimal places to round the returned coordinates to. Default is 6.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
         topologic_core.Vertex
-            The projected vertex.
-
+            The projected vertex, or None if the projection cannot be computed.
         """
         from topologicpy.Face import Face
         from topologicpy.Topology import Topology
-        
-        def project_point_onto_plane(point, plane_coeffs, direction_vector):
-            """
-            Project a 3D point onto a plane defined by its coefficients and using a direction vector.
-
-            Parameters:
-                point (tuple or list): The 3D point coordinates (x, y, z).
-                plane_coeffs (tuple or list): The coefficients of the plane equation (a, b, c, d).
-                direction_vector (tuple or list): The direction vector (vx, vy, vz).
-
-            Returns:
-                tuple: The projected point coordinates (x_proj, y_proj, z_proj).
-            """
-            # Unpack point coordinates
-            x, y, z = point
-
-            # Unpack plane coefficients
-            a, b, c, d = plane_coeffs
-
-            # Unpack direction vector
-            vx, vy, vz = direction_vector
-
-            # Calculate the distance from the point to the plane
-            distance = (a * x + b * y + c * z + d) / (a * vx + b * vy + c * vz)
-
-            # Calculate the projected point coordinates
-            x_proj = x - distance * vx
-            y_proj = y - distance * vy
-            z_proj = z - distance * vz
-
-            return [x_proj, y_proj, z_proj]
+        import math
 
         if not Topology.IsInstance(vertex, "Vertex"):
+            if not silent:
+                print("Vertex.Project - Error: The input vertex parameter is not a valid vertex. Returning None.")
             return None
         if not Topology.IsInstance(face, "Face"):
+            if not silent:
+                print("Vertex.Project - Error: The input face parameter is not a valid face. Returning None.")
             return None
-        eq = Face.PlaneEquation(face, mantissa= mantissa)
-        if eq is None:
-            return None
-        if direction == None or direction == []:
-            direction = Face.Normal(face)
-        pt = project_point_onto_plane(Vertex.Coordinates(vertex), [eq["a"], eq["b"], eq["c"], eq["d"]], direction)
-        return Vertex.ByCoordinates(pt[0], pt[1], pt[2])
 
+        tol = abs(float(tolerance))
+        if direction is not None:
+            if not isinstance(direction, (list, tuple)) or len(direction) != 3:
+                if not silent:
+                    print("Vertex.Project - Error: The input direction parameter is not a valid 3D vector. Returning None.")
+                return None
+            try:
+                direction = [float(direction[0]), float(direction[1]), float(direction[2])]
+                if math.sqrt(sum(value * value for value in direction)) <= tol:
+                    if not silent:
+                        print("Vertex.Project - Error: The input direction vector has zero magnitude. Returning None.")
+                    return None
+            except Exception:
+                if not silent:
+                    print("Vertex.Project - Error: The input direction parameter is not a valid numerical vector. Returning None.")
+                return None
+
+        native_projection = Core.HasAttribute("VertexUtility", "DistanceToTopology")
+        if native_projection and Core.HasAttribute("Vertex", "Project"):
+            try:
+                projected = Core.Vertex.Project(vertex, face, direction, tol)
+            except TypeError:
+                try:
+                    projected = Core.Vertex.Project(vertex, face, direction)
+                except Exception:
+                    projected = None
+            except Exception:
+                projected = None
+
+            if Topology.IsInstance(projected, "Vertex"):
+                coords = Vertex.Coordinates(projected, mantissa=mantissa)
+                return Vertex.ByCoordinates(coords) if coords is not None else projected
+
+            # If the active backend exposes the native Project implementation,
+            # failure is authoritative; do not substitute a different numerical
+            # geometry model.
+            if Core.HasAttribute("VertexUtility", "DistanceToTopology"):
+                if not silent:
+                    print("Vertex.Project - Warning: The native backend could not project the vertex. Returning None.")
+                return None
+
+        # Legacy TopologicCore compatibility path.
+        if direction is None:
+            try:
+                direction = Face.Normal(face)
+            except Exception:
+                direction = None
+        if direction is None or len(direction) != 3:
+            if not silent:
+                print("Vertex.Project - Error: Could not determine a valid projection direction. Returning None.")
+            return None
+
+        try:
+            equation = Face.PlaneEquation(face, mantissa=max(12, mantissa if mantissa is not None else 12))
+        except Exception:
+            equation = None
+        if not isinstance(equation, dict):
+            if not silent:
+                print("Vertex.Project - Error: Could not determine the supporting plane of the input face. Returning None.")
+            return None
+
+        try:
+            a = float(equation["a"])
+            b = float(equation["b"])
+            c = float(equation["c"])
+            d = float(equation["d"])
+            dx, dy, dz = float(direction[0]), float(direction[1]), float(direction[2])
+            denominator = a*dx + b*dy + c*dz
+            if abs(denominator) <= tol:
+                if not silent:
+                    print("Vertex.Project - Warning: The projection direction is parallel to the face. Returning None.")
+                return None
+            x, y, z = Vertex.Coordinates(vertex, mantissa=None)
+            parameter = -(a*x + b*y + c*z + d) / denominator
+            coords = [x + parameter*dx, y + parameter*dy, z + parameter*dz]
+            if mantissa is not None:
+                coords = [round(float(value), mantissa) for value in coords]
+            return Vertex.ByCoordinates(coords)
+        except Exception:
+            if not silent:
+                print("Vertex.Project - Error: Could not project the input vertex. Returning None.")
+            return None
 
     @staticmethod
     def Quadrance(vertex, topology, includeCentroid: bool = True, mantissa: int = 6) -> float:
