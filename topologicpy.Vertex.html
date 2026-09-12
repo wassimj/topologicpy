@@ -269,8 +269,8 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vertex.Vertex.Point" title="topologicpy.Vertex.Vertex.Point"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Point</span></code></a>([x, y, z])</p></td>
 <td><p>Creates a point (vertex) using the input parameters</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vertex.Vertex.Project" title="topologicpy.Vertex.Vertex.Project"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Project</span></code></a>(vertex, face[, direction, mantissa])</p></td>
-<td><p>Returns a vertex that is the projection of the input vertex unto the input face.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vertex.Vertex.Project" title="topologicpy.Vertex.Vertex.Project"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Project</span></code></a>(vertex, face[, direction, mantissa, ...])</p></td>
+<td><p>Returns the projection of the input vertex onto the supporting geometry of the input face.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vertex.Vertex.Quadrance" title="topologicpy.Vertex.Vertex.Quadrance"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Quadrance</span></code></a>(vertex, topology[, ...])</p></td>
 <td><p>Returns the quadrance between the input vertex and the input topology.</p></td>
@@ -1257,24 +1257,31 @@ The keys in the dictionary are [“a”, “b”, “c”. “d”]</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Vertex.Vertex.Project">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Project</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vertex</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">face</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Vertex.Vertex.Project" title="Permalink to this definition"></a></dt>
-<dd><p>Returns a vertex that is the projection of the input vertex unto the input face.</p>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Project</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vertex</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">face</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Vertex.Vertex.Project" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the projection of the input vertex onto the supporting geometry of
+the input face. On the PythonOCC backend this operation is delegated to OCCT.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>vertex</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The input vertex to project unto the input face.</p>
+<dt><strong>vertex</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The input vertex to project.</p>
 </dd>
-<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input face that receives the projection of the input vertex.</p>
+<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input face receiving the projection.</p>
 </dd>
-<dt><strong>direction</strong><span class="classifier">vector, optional</span></dt><dd><p>The direction in which to project the input vertex unto the input face. If not specified, the direction of the projection is the normal of the input face. Default is None.</p>
+<dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>The projection direction. If None, normal/nearest-surface projection is
+used. For a planar face an explicit direction intersects the infinite
+supporting plane. Default is None.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The length of the desired mantissa. Default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the returned coordinates to. Default is 6.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Vertex</dt><dd><p>The projected vertex.</p>
+<dt>topologic_core.Vertex</dt><dd><p>The projected vertex, or None if the projection cannot be computed.</p>
 </dd>
 </dl>
 </dd>

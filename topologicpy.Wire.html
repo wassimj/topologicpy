@@ -162,7 +162,7 @@
 </colgroup>
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Arc" title="topologicpy.Wire.Wire.Arc"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Arc</span></code></a>(startVertex, middleVertex, endVertex[, ...])</p></td>
-<td><p>Creates a circular-arc Wire through three vertices by delegating curve creation to Edge.ArcByVertices.</p></td>
+<td><p>Creates a circular-arc Wire through three vertices.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.ArcByEdge" title="topologicpy.Wire.Wire.ArcByEdge"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ArcByEdge</span></code></a>(edge[, sagitta, absolute, sides, ...])</p></td>
 <td><p>Creates a circular-arc Wire from a linear chord Edge and a sagitta.</p></td>
@@ -402,7 +402,13 @@
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Wire.Wire.Arc">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Arc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">startVertex</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">middleVertex</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">endVertex</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sides</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">16</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">close</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">polyline</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Wire.Wire.Arc" title="Permalink to this definition"></a></dt>
-<dd><p>Creates a circular-arc Wire through three vertices by delegating curve creation to Edge.ArcByVertices.</p>
+<dd><p>Creates a circular-arc Wire through three vertices.</p>
+<p>In exact mode (<code class="docutils literal notranslate"><span class="pre">polyline=False</span></code>), the circular geometry is created as
+an exact Edge and segmented topologically by <code class="docutils literal notranslate"><span class="pre">Wire.ByEdge</span></code>. In
+polyline mode, the arc is sampled analytically from the three input
+points without first requiring an exact curved Edge. This preserves the
+explicit approximation path on backends that do not support the exact
+curve construction.</p>
 </dd></dl>
 
 <dl class="py method">
