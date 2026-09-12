@@ -207,10 +207,10 @@
 <td><p>Creates a face from the input cluster of vertices.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.ByWire" title="topologicpy.Face.Face.ByWire"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByWire</span></code></a>(wire[, tolerance, silent])</p></td>
-<td><p>Creates a face from the input closed wire.</p></td>
+<td><p>Creates a Face from the input closed Wire.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.ByWires" title="topologicpy.Face.Face.ByWires"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByWires</span></code></a>(externalBoundary[, ...])</p></td>
-<td><p>Creates a face from the input external boundary (closed wire) and the input list of internal boundaries (closed wires).</p></td>
+<td><p>Creates a Face from one closed external Wire and optional closed internal Wires.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.ByWiresCluster" title="topologicpy.Face.Face.ByWiresCluster"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByWiresCluster</span></code></a>(externalBoundary[, ...])</p></td>
 <td><p>Creates a face from the input external boundary (closed wire) and the input cluster of internal boundaries (closed wires).</p></td>
@@ -222,7 +222,7 @@
 <td><p>Creates a C-shape.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Circle" title="topologicpy.Face.Face.Circle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Circle</span></code></a>([origin, radius, sides, fromAngle, ...])</p></td>
-<td><p>Creates a circle.</p></td>
+<td><p>Creates a circular Face.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Compactness" title="topologicpy.Face.Face.Compactness"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Compactness</span></code></a>(face[, mantissa, silent])</p></td>
 <td><p>Returns the compactness measure of the input face.</p></td>
@@ -249,7 +249,7 @@
 <td><p>Creates an aperiodic monotile, also called an 'einstein' tile (meaning one tile in German, not the name of the famous physicist).</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Ellipse" title="topologicpy.Face.Face.Ellipse"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Ellipse</span></code></a>([origin, inputMode, width, length, ...])</p></td>
-<td><p>Creates an ellipse and returns all its geometry and parameters.</p></td>
+<td><p>Creates an elliptical Face.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.ExteriorAngles" title="topologicpy.Face.Face.ExteriorAngles"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExteriorAngles</span></code></a>(face[, ...])</p></td>
 <td><p>Returns the exterior angles of the input face in degrees.</p></td>
@@ -299,7 +299,7 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.MedialAxis" title="topologicpy.Face.Face.MedialAxis"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MedialAxis</span></code></a>(face[, resolution, ...])</p></td>
 <td><p>Returns a wire representing an approximation of the medial axis of the input topology.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Normal" title="topologicpy.Face.Face.Normal"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Normal</span></code></a>(face[, outputType, mantissa])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Normal" title="topologicpy.Face.Face.Normal"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Normal</span></code></a>(face[, outputType, mantissa, silent])</p></td>
 <td><p>Returns the normal vector to the input face.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.NormalAtParameters" title="topologicpy.Face.Face.NormalAtParameters"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NormalAtParameters</span></code></a>(face[, u, v, outputType, ...])</p></td>
@@ -863,11 +863,18 @@ The default is None which causes the algorithm to use twice the number of cpu co
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Face.Face.ByWire">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByWire</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wire</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Face.Face.ByWire" title="Permalink to this definition"></a></dt>
-<dd><p>Creates a face from the input closed wire.</p>
+<dd><p>Creates a Face from the input closed Wire.</p>
+<p>Curved Edges are preserved exactly whenever the active backend supports
+them. The method never converts a curved Wire to its topological vertices
+as a fallback. If exact Face construction fails for a curved Wire, None is
+returned rather than silently chordalising the boundary.</p>
+<p>For polygonal Wires only, one conservative SelfMerge cleanup attempt is
+retained for compatibility with legacy input containing redundant or
+poorly joined straight Edges.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>wire</strong><span class="classifier">topologic_core.Wire</span></dt><dd><p>The input wire.</p>
+<dt><strong>wire</strong><span class="classifier">topologic_core.Wire</span></dt><dd><p>The input Wire.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
@@ -877,8 +884,7 @@ The default is None which causes the algorithm to use twice the number of cpu co
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Face or list</dt><dd><p>The created face. If the wire is non-planar, the method will attempt to
-triangulate the wire and return a list of faces.</p>
+<dt>topologic_core.Face</dt><dd><p>The created Face, or None if a valid Face cannot be constructed.</p>
 </dd>
 </dl>
 </dd>
@@ -888,23 +894,25 @@ triangulate the wire and return a list of faces.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Face.Face.ByWires">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByWires</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">externalBoundary</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">internalBoundaries</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Face.Face.ByWires" title="Permalink to this definition"></a></dt>
-<dd><p>Creates a face from the input external boundary (closed wire) and the input list of internal boundaries (closed wires).</p>
+<dd><p>Creates a Face from one closed external Wire and optional closed internal Wires.</p>
+<p>Exact curved Edges are preserved by passing the original Wires directly to
+the active backend. Invalid or non-contained internal Wires are ignored.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>externalBoundary</strong><span class="classifier">topologic_core.Wire</span></dt><dd><p>The input external boundary.</p>
+<dt><strong>externalBoundary</strong><span class="classifier">topologic_core.Wire</span></dt><dd><p>The external closed boundary Wire.</p>
 </dd>
-<dt><strong>internalBoundaries</strong><span class="classifier">list , optional</span></dt><dd><p>The input list of internal boundaries (closed wires). Default is an empty list.</p>
+<dt><strong>internalBoundaries</strong><span class="classifier">list , optional</span></dt><dd><p>Internal closed boundary Wires representing holes. Default is an empty list.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Face</dt><dd><p>The created face.</p>
+<dt>topologic_core.Face</dt><dd><p>The created Face, or None on failure.</p>
 </dd>
 </dl>
 </dd>
@@ -1009,32 +1017,42 @@ triangulate the wire and return a list of faces.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Face.Face.Circle">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Circle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sides</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">16</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fromAngle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">toAngle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">360.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[0,</span> <span class="pre">0,</span> <span class="pre">1]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">placement</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'center'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Face.Face.Circle" title="Permalink to this definition"></a></dt>
-<dd><p>Creates a circle.</p>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Circle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sides</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">16</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fromAngle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">toAngle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">360.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[0,</span> <span class="pre">0,</span> <span class="pre">1]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">placement</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'center'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">polyhderon</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">polyline</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Face.Face.Circle" title="Permalink to this definition"></a></dt>
+<dd><p>Creates a circular Face.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex, optional</span></dt><dd><p>The location of the origin of the circle. Default is None which results in the circle being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex, optional</span></dt><dd><p>The location of the origin of the circle. Default is None.</p>
 </dd>
-<dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The radius of the circle. Default is 1.</p>
+<dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The radius of the circle. Default is 0.5.</p>
 </dd>
-<dt><strong>sides</strong><span class="classifier">int , optional</span></dt><dd><p>The number of sides of the circle. Default is 16.</p>
+<dt><strong>sides</strong><span class="classifier">int , optional</span></dt><dd><p>In polyline mode, the number of straight sides. In exact curved mode,
+the number of exact circular-arc Edge subtopologies. Default is 16.</p>
 </dd>
-<dt><strong>fromAngle</strong><span class="classifier">float , optional</span></dt><dd><p>The angle in degrees from which to start creating the arc of the circle. Default is 0.</p>
+<dt><strong>fromAngle</strong><span class="classifier">float , optional</span></dt><dd><p>The angle in degrees from which to start creating the arc. Default is 0.</p>
 </dd>
-<dt><strong>toAngle</strong><span class="classifier">float , optional</span></dt><dd><p>The angle in degrees at which to end creating the arc of the circle. Default is 360.</p>
+<dt><strong>toAngle</strong><span class="classifier">float , optional</span></dt><dd><p>The angle in degrees at which to end creating the arc. Default is 360.</p>
 </dd>
-<dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>The vector representing the up direction of the circle. Default is [0, 0, 1].</p>
+<dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>The vector representing the Face normal. Default is [0, 0, 1].</p>
 </dd>
-<dt><strong>placement</strong><span class="classifier">str , optional</span></dt><dd><p>The description of the placement of the origin of the circle. This can be “center”, “lowerleft”, “upperleft”, “lowerright”, or “upperright”. It is case insensitive. Default is “center”.</p>
+<dt><strong>placement</strong><span class="classifier">str , optional</span></dt><dd><p>The placement mode. Default is “center”.</p>
+</dd>
+<dt><strong>polyhderon</strong><span class="classifier">bool , optional</span></dt><dd><p>Historical misspelled compatibility parameter. If <code class="docutils literal notranslate"><span class="pre">polyline</span></code> is
+None, True creates the historical polygonal approximation and False
+creates exact circular Edges. Default is True.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
+</dd>
+<dt><strong>polyline</strong><span class="classifier">bool , optional</span></dt><dd><p>Explicitly selects straight-segment or exact curved construction.
+If None, <code class="docutils literal notranslate"><span class="pre">polyhderon</span></code> is used for backward compatibility. Default is None.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Face</dt><dd><p>The created circle.</p>
+<dt>topologic_core.Face</dt><dd><p>The created circular Face.</p>
 </dd>
 </dl>
 </dd>
@@ -1304,53 +1322,52 @@ Default is False.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Face.Face.Ellipse">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Ellipse</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inputMode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">length</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">focalLength</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.866025</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eccentricity</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.866025</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">majorAxisLength</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">minorAxisLength</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sides</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fromAngle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">toAngle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">360.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">close</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[0,</span> <span class="pre">0,</span> <span class="pre">1]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">placement</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'center'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Face.Face.Ellipse" title="Permalink to this definition"></a></dt>
-<dd><p>Creates an ellipse and returns all its geometry and parameters.</p>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Ellipse</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inputMode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">length</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">focalLength</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.866025</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eccentricity</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.866025</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">majorAxisLength</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">minorAxisLength</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sides</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fromAngle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">toAngle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">360.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">close</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[0,</span> <span class="pre">0,</span> <span class="pre">1]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">placement</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'center'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">polyline</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Face.Face.Ellipse" title="Permalink to this definition"></a></dt>
+<dd><p>Creates an elliptical Face.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The location of the origin of the ellipse. Default is None which results in the ellipse being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The location of the origin of the ellipse. Default is None.</p>
 </dd>
-<dt><strong>inputMode</strong><span class="classifier">int , optional</span></dt><dd><p>The method by which the ellipse is defined. Default is 1.
-Based on the inputMode value, only the following inputs will be considered. The options are:
-1. Width and Length (considered inputs: width, length)
-2. Focal Length and Eccentricity (considered inputs: focalLength, eccentricity)
-3. Focal Length and Minor Axis Length (considered inputs: focalLength, minorAxisLength)
-4. Major Axis Length and Minor Axis Length (considered input: majorAxisLength, minorAxisLength)</p>
+<dt><strong>inputMode</strong><span class="classifier">int , optional</span></dt><dd><p>Ellipse definition mode. Default is 1.</p>
 </dd>
-<dt><strong>width</strong><span class="classifier">float , optional</span></dt><dd><p>The width of the ellipse. Default is 2.0. This is considered if the inputMode is 1.</p>
+<dt><strong>width</strong><span class="classifier">float , optional</span></dt><dd><p>Overall width when inputMode is 1. Default is 2.0.</p>
 </dd>
-<dt><strong>length</strong><span class="classifier">float , optional</span></dt><dd><p>The length of the ellipse. Default is 1.0. This is considered if the inputMode is 1.</p>
+<dt><strong>length</strong><span class="classifier">float , optional</span></dt><dd><p>Overall length when inputMode is 1. Default is 1.0.</p>
 </dd>
-<dt><strong>focalLength</strong><span class="classifier">float , optional</span></dt><dd><p>The focal length of the ellipse. Default is 0.866025. This is considered if the inputMode is 2 or 3.</p>
+<dt><strong>focalLength</strong><span class="classifier">float , optional</span></dt><dd><p>Focal length used by input modes 2 and 3. Default is 0.866025.</p>
 </dd>
-<dt><strong>eccentricity</strong><span class="classifier">float , optional</span></dt><dd><p>The eccentricity of the ellipse. Default is 0.866025. This is considered if the inputMode is 2.</p>
+<dt><strong>eccentricity</strong><span class="classifier">float , optional</span></dt><dd><p>Eccentricity used by input mode 2. Default is 0.866025.</p>
 </dd>
-<dt><strong>majorAxisLength</strong><span class="classifier">float , optional</span></dt><dd><p>The length of the major axis of the ellipse. Default is 1.0. This is considered if the inputMode is 4.</p>
+<dt><strong>majorAxisLength</strong><span class="classifier">float , optional</span></dt><dd><p>Major-axis length used by input mode 4. Default is 1.0.</p>
 </dd>
-<dt><strong>minorAxisLength</strong><span class="classifier">float , optional</span></dt><dd><p>The length of the minor axis of the ellipse. Default is 0.5. This is considered if the inputMode is 3 or 4.</p>
+<dt><strong>minorAxisLength</strong><span class="classifier">float , optional</span></dt><dd><p>Minor-axis length used by input modes 3 and 4. Default is 0.5.</p>
 </dd>
-<dt><strong>sides</strong><span class="classifier">int , optional</span></dt><dd><p>The number of sides of the ellipse. Default is 32.</p>
+<dt><strong>sides</strong><span class="classifier">int , optional</span></dt><dd><p>Number of exact curve Edge subtopologies, or straight sides when
+<code class="docutils literal notranslate"><span class="pre">polyline</span></code> is True. Default is 32.</p>
 </dd>
-<dt><strong>fromAngle</strong><span class="classifier">float , optional</span></dt><dd><p>The angle in degrees from which to start creating the arc of the ellipse. Default is 0.</p>
+<dt><strong>fromAngle</strong><span class="classifier">float , optional</span></dt><dd><p>Start angle in degrees. Default is 0.</p>
 </dd>
-<dt><strong>toAngle</strong><span class="classifier">float , optional</span></dt><dd><p>The angle in degrees at which to end creating the arc of the ellipse. Default is 360.</p>
+<dt><strong>toAngle</strong><span class="classifier">float , optional</span></dt><dd><p>End angle in degrees. Default is 360.</p>
 </dd>
-<dt><strong>close</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, arcs will be closed by connecting the last vertex to the first vertex. Otherwise, they will be left open.</p>
+<dt><strong>close</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, a partial ellipse is closed. Default is True.</p>
 </dd>
-<dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>The vector representing the up direction of the ellipse. Default is [0, 0, 1].</p>
+<dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>The vector representing the Face normal. Default is [0, 0, 1].</p>
 </dd>
-<dt><strong>placement</strong><span class="classifier">str , optional</span></dt><dd><p>The description of the placement of the origin of the ellipse. This can be “center”, or “lowerleft”. It is case insensitive. Default is “center”.</p>
+<dt><strong>placement</strong><span class="classifier">str , optional</span></dt><dd><p>The placement mode. Default is “center”.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, error and warning messages are suppressed. Default is False.</p>
+</dd>
+<dt><strong>polyline</strong><span class="classifier">bool , optional</span></dt><dd><p>If False, preserves the exact rational-NURBS ellipse. If True,
+creates the historical straight-segment approximation. Default is False.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Face</dt><dd><p>The created ellipse</p>
+<dt>topologic_core.Face</dt><dd><p>The created elliptical Face.</p>
 </dd>
 </dl>
 </dd>
@@ -1828,7 +1845,7 @@ unflattened before return.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Face.Face.Normal">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Normal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">face</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outputType</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'xyz'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">6</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Face.Face.Normal" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Normal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">face</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outputType</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'xyz'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Face.Face.Normal" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the normal vector to the input face. A normal vector of a face is a vector perpendicular to it.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
