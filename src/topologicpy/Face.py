@@ -1603,205 +1603,21 @@ class Face():
     @staticmethod
     def ByWire(wire, tolerance: float = 0.0001, silent: bool = False):
         """
-        Creates a face from the input closed wire.
+        Creates a Face from the input closed Wire.
+
+        Curved Edges are preserved exactly whenever the active backend supports
+        them. The method never converts a curved Wire to its topological vertices
+        as a fallback. If exact Face construction fails for a curved Wire, None is
+        returned rather than silently chordalising the boundary.
+
+        For polygonal Wires only, one conservative SelfMerge cleanup attempt is
+        retained for compatibility with legacy input containing redundant or
+        poorly joined straight Edges.
 
         Parameters
         ----------
         wire : topologic_core.Wire
-            The input wire.
-        tolerance : float , optional
-            The desired tolerance. Default is 0.0001.
-        silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
-
-        Returns
-        -------
-        topologic_core.Face or list
-            The created face. If the wire is non-planar, the method will attempt to
-            triangulate the wire and return a list of faces.
-        """
-
-        try:
-            from topologicpy.Core import Core
-        except:
-            import topologic
-
-        from topologicpy.Wire import Wire
-        from topologicpy.Shell import Shell
-        from topologicpy.Cluster import Cluster
-        from topologicpy.Topology import Topology
-        import inspect
-
-        def _msg(text):
-            if not silent:
-                print(text)
-
-        def _as_list(obj):
-            if obj is None:
-                return []
-            if isinstance(obj, list):
-                return obj
-            return [obj]
-
-        def _valid_faces(faces):
-            return [f for f in _as_list(faces) if Topology.IsInstance(f, "Face")]
-
-        def _face_by_external_boundary(a_wire):
-            try:
-                return Core.Face.ByExternalBoundary(a_wire)
-            except Exception:
-                return None
-
-        def _merged_wire(a_wire):
-            """
-            Expensive cleanup path. Only used after direct face creation fails.
-            """
-            try:
-                edges = Wire.Edges(a_wire)
-                if not edges:
-                    return None
-                merged = Topology.SelfMerge(
-                    Cluster.ByTopologies(edges),
-                    tolerance=tolerance
-                )
-                if Topology.IsInstance(merged, "Wire"):
-                    return merged
-            except Exception:
-                pass
-            return None
-
-        def _triangulate_wire(a_wire):
-            """
-            Fallback for wires that cannot be converted into a single face,
-            typically because they are non-planar or geometrically problematic.
-            """
-            try:
-                clean_wire = Topology.RemoveCollinearEdges(
-                    a_wire,
-                    angTolerance=0.1,
-                    tolerance=tolerance,
-                    silent=silent
-                )
-                vertices = Topology.Vertices(clean_wire)
-                if len(vertices) < 3:
-                    return []
-
-                shell = Shell.Delaunay(vertices)
-                if Topology.IsInstance(shell, "Topology"):
-                    return _valid_faces(Topology.Faces(shell))
-            except Exception:
-                pass
-
-            return []
-
-        def _fix_orientation(face):
-            """
-            Preserve the original method's behaviour: if Face.Area reports a negative
-            area, rebuild the face from an inverted external boundary.
-            """
-            try:
-                if Face.Area(face) < 0:
-                    boundary = Face.ExternalBoundary(face)
-                    inverted = Wire.Invert(boundary, silent=silent)
-                    rebuilt = _face_by_external_boundary(inverted)
-                    if Topology.IsInstance(rebuilt, "Face"):
-                        return rebuilt
-            except Exception:
-                pass
-
-            return face
-
-        # -------------------------------------------------------------------------
-        # Validate input
-        # -------------------------------------------------------------------------
-        if not Topology.IsInstance(wire, "Wire"):
-            if not silent:
-                _msg("Face.ByWire - Error: The input wire parameter is not a valid topologic wire. Returning None.")
-                curframe = inspect.currentframe()
-                calframe = inspect.getouterframes(curframe, 2)
-                print('caller name:', calframe[1][3])
-            return None
-
-        # -------------------------------------------------------------------------
-        # Ensure closure
-        # -------------------------------------------------------------------------
-        if not Wire.IsClosed(wire):
-            wire = Wire.Close(wire, tolerance=tolerance, silent=silent)
-
-            if wire is None or not Wire.IsClosed(wire):
-                if not silent:
-                    _msg("Face.ByWire - Error: The input wire parameter is not a closed topologic wire. Returning None.")
-                    curframe = inspect.currentframe()
-                    calframe = inspect.getouterframes(curframe, 2)
-                    print('caller name:', calframe[1][3])
-                return None
-
-        # -------------------------------------------------------------------------
-        # Fast path: try direct core construction first.
-        # This avoids expensive edge extraction, clustering, self-merge, and vertex
-        # extraction for ordinary valid planar wires.
-        # -------------------------------------------------------------------------
-        faces = _valid_faces(_face_by_external_boundary(wire))
-
-        # -------------------------------------------------------------------------
-        # Cleanup path: if direct construction failed, try self-merging the wire once.
-        # -------------------------------------------------------------------------
-        if not faces:
-            if not silent:
-                _msg("Face.ByWire - Warning: Could not create face by external boundary. Trying cleaned wire.")
-                curframe = inspect.currentframe()
-                calframe = inspect.getouterframes(curframe, 2)
-                print('caller name:', calframe[1][3])
-
-            cleaned_wire = _merged_wire(wire)
-            if cleaned_wire is not None:
-                faces = _valid_faces(_face_by_external_boundary(cleaned_wire))
-                wire = cleaned_wire
-
-        # -------------------------------------------------------------------------
-        # Fallback path: triangulate.
-        # -------------------------------------------------------------------------
-        if not faces:
-            faces = _triangulate_wire(wire)
-
-        # -------------------------------------------------------------------------
-        # Orientation correction.
-        # -------------------------------------------------------------------------
-        faces = [_fix_orientation(f) for f in faces]
-        faces = _valid_faces(faces)
-
-        # -------------------------------------------------------------------------
-        # Return result.
-        # -------------------------------------------------------------------------
-        if len(faces) == 0:
-            if not silent:
-                _msg("Face.ByWire - Error: Could not build a face from the input wire parameter. Returning None.")
-                curframe = inspect.currentframe()
-                calframe = inspect.getouterframes(curframe, 2)
-                print('caller name:', calframe[1][3])
-            return None
-
-        if len(faces) == 1:
-            return faces[0]
-        
-        if not silent:
-            _msg("Face.ByWire - Warning: Could not build a single face from the input wire parameter. Returning a list of faces.")
-            curframe = inspect.currentframe()
-            calframe = inspect.getouterframes(curframe, 2)
-            print('caller name:', calframe[1][3])
-        return faces
-
-    @staticmethod
-    def ByWires(externalBoundary, internalBoundaries: list = [], tolerance: float = 0.0001, silent: bool = False):
-        """
-        Creates a face from the input external boundary (closed wire) and the input list of internal boundaries (closed wires).
-
-        Parameters
-        ----------
-        externalBoundary : topologic_core.Wire
-            The input external boundary.
-        internalBoundaries : list , optional
-            The input list of internal boundaries (closed wires). Default is an empty list.
+            The input Wire.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
@@ -1810,75 +1626,204 @@ class Face():
         Returns
         -------
         topologic_core.Face
-            The created face.
-
+            The created Face, or None if a valid Face cannot be constructed.
         """
-        from topologicpy.Wire import Wire
+        from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
-        import inspect
+        from topologicpy.Wire import Wire
+
+        if not Topology.IsInstance(wire, "Wire"):
+            if not silent:
+                print("Face.ByWire - Error: The input wire parameter is not a valid topologic wire. Returning None.")
+            return None
+
+        try:
+            closed = bool(Wire.IsClosed(wire))
+        except Exception:
+            closed = False
+
+        if not closed:
+            try:
+                wire = Wire.Close(wire, tolerance=tolerance, silent=True)
+            except Exception:
+                wire = None
+
+            if not Topology.IsInstance(wire, "Wire"):
+                if not silent:
+                    print("Face.ByWire - Error: The input wire parameter could not be closed. Returning None.")
+                return None
+
+            try:
+                if not Wire.IsClosed(wire):
+                    if not silent:
+                        print("Face.ByWire - Error: The input wire parameter is not closed. Returning None.")
+                    return None
+            except Exception:
+                return None
+
+        def _build(candidate):
+            try:
+                result = Core.Face.ByExternalBoundary(candidate)
+            except Exception:
+                result = None
+            return result if Topology.IsInstance(result, "Face") else None
+
+        # Exact/native construction is always the first and preferred path.
+        face = _build(wire)
+        if Topology.IsInstance(face, "Face"):
+            return face
+
+        # Never repair a curved Wire through polygonal reconstruction. A failed
+        # exact construction must remain a visible failure.
+        try:
+            is_polyline = bool(Wire.IsPolyline(wire))
+        except Exception:
+            is_polyline = False
+
+        if not is_polyline:
+            if not silent:
+                print("Face.ByWire - Error: Could not construct an exact Face from the curved Wire. Returning None.")
+            return None
+
+        # Conservative legacy cleanup for polygonal input only.
+        try:
+            edges = Wire.Edges(wire) or []
+            if edges:
+                cleaned = Topology.SelfMerge(
+                    Cluster.ByTopologies(edges),
+                    tolerance=tolerance,
+                    silent=True,
+                )
+                if Topology.IsInstance(cleaned, "Wire"):
+                    face = _build(cleaned)
+                    if Topology.IsInstance(face, "Face"):
+                        return face
+        except Exception:
+            pass
+
+        if not silent:
+            print("Face.ByWire - Error: Could not build a Face from the input Wire. Returning None.")
+        return None
+
+    @staticmethod
+    def ByWires(externalBoundary, internalBoundaries: list = [], tolerance: float = 0.0001, silent: bool = False):
+        """
+        Creates a Face from one closed external Wire and optional closed internal Wires.
+
+        Exact curved Edges are preserved by passing the original Wires directly to
+        the active backend. Invalid or non-contained internal Wires are ignored.
+
+        Parameters
+        ----------
+        externalBoundary : topologic_core.Wire
+            The external closed boundary Wire.
+        internalBoundaries : list , optional
+            Internal closed boundary Wires representing holes. Default is an empty list.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        topologic_core.Face
+            The created Face, or None on failure.
+        """
+        from topologicpy.Topology import Topology
+        from topologicpy.Wire import Wire
 
         if not Topology.IsInstance(externalBoundary, "Wire"):
             if not silent:
-                print("Face.ByWires - Error: The input externalBoundary parameter is not a valid topologic wire. Returning None.")
-                curframe = inspect.currentframe()
-                calframe = inspect.getouterframes(curframe, 2)
-                print('caller name:', calframe[1][3])
+                print("Face.ByWires - Error: The input externalBoundary parameter is not a valid topologic Wire. Returning None.")
             return None
-        if not Wire.IsClosed(externalBoundary):
-            if not silent:
-                print("Face.ByWires - Error: The input externalBoundary parameter is not a closed topologic wire. Returning None.")
-                curframe = inspect.currentframe()
-                calframe = inspect.getouterframes(curframe, 2)
-                print('caller name:', calframe[1][3])
+
+        try:
+            if not Wire.IsClosed(externalBoundary):
+                if not silent:
+                    print("Face.ByWires - Error: The input externalBoundary parameter is not closed. Returning None.")
+                return None
+        except Exception:
             return None
+
         if not isinstance(internalBoundaries, list):
             if not silent:
                 print("Face.ByWires - Error: The input internalBoundaries parameter is not a list. Returning None.")
-                curframe = inspect.currentframe()
-                calframe = inspect.getouterframes(curframe, 2)
-                print('caller name:', calframe[1][3])
             return None
-        eb_face= Face.ByWire(externalBoundary)
-        eb_area = Face.Area(eb_face)
-        # Make sure all internal wires are actually inside the external wire.
-        ibList = []
-        for ib in internalBoundaries:
-            if not (Topology.IsInstance(ib, "Wire") and Wire.IsClosed(ib)):
-                if not silent:
-                    print("Face.ByWires - Warning: One of the internal wires is not a valid closed wire. Ignoring.")
-                    curframe = inspect.currentframe()
-                    calframe = inspect.getouterframes(curframe, 2)
-                    print('caller name:', calframe[1][3])
-                continue
-            ib_face = Face.ByWire(ib)
-            ib_area = Face.Area(ib_face)
-            if ib_area >= eb_area:
-                if not silent:
-                    print("Face.ByWires - Warning: One of the iinternal wires has an area greater than that of the external wire. Ignoring.")
-                    curframe = inspect.currentframe()
-                    calframe = inspect.getouterframes(curframe, 2)
-                    print('caller name:', calframe[1][3])
-                continue
-            sp = Topology.SpatialRelationship(ib_face, eb_face)
-            if not sp.lower() == "within":
-                if not silent:
-                    print("Face.ByWires - Warning: One of the internal wires is not within the external wires. Ignoring.")
-                    curframe = inspect.currentframe()
-                    calframe = inspect.getouterframes(curframe, 2)
-                    print('caller name:', calframe[1][3])
-                continue
-            ibList.append(ib)
-        face = None
-        try:
-            face = Core.Face.ByExternalInternalBoundaries(externalBoundary, ibList, tolerance)
-        except:
+
+        external_face = Face.ByWire(
+            externalBoundary,
+            tolerance=tolerance,
+            silent=True,
+        )
+        if not Topology.IsInstance(external_face, "Face"):
             if not silent:
-                print("Face.ByWires - Error: The operation failed. Returning None.")
-                curframe = inspect.currentframe()
-                calframe = inspect.getouterframes(curframe, 2)
-                print('caller name:', calframe[1][3])
-            face = None
-        return face
+                print("Face.ByWires - Error: Could not construct the external Face. Returning None.")
+            return None
+
+        external_area = Face.Area(external_face, mantissa=None, silent=True)
+        accepted = []
+
+        for internal in internalBoundaries:
+            if not Topology.IsInstance(internal, "Wire"):
+                if not silent:
+                    print("Face.ByWires - Warning: Ignoring an invalid internal boundary.")
+                continue
+
+            try:
+                if not Wire.IsClosed(internal):
+                    if not silent:
+                        print("Face.ByWires - Warning: Ignoring an open internal boundary.")
+                    continue
+            except Exception:
+                continue
+
+            internal_face = Face.ByWire(
+                internal,
+                tolerance=tolerance,
+                silent=True,
+            )
+            if not Topology.IsInstance(internal_face, "Face"):
+                if not silent:
+                    print("Face.ByWires - Warning: Ignoring an internal boundary that cannot form a Face.")
+                continue
+
+            internal_area = Face.Area(internal_face, mantissa=None, silent=True)
+            if (
+                isinstance(external_area, (int, float))
+                and isinstance(internal_area, (int, float))
+                and internal_area >= external_area
+            ):
+                if not silent:
+                    print("Face.ByWires - Warning: Ignoring an internal boundary whose area is not smaller than the external boundary.")
+                continue
+
+            try:
+                relationship = Topology.SpatialRelationship(internal_face, external_face)
+            except Exception:
+                relationship = None
+
+            if not isinstance(relationship, str) or relationship.lower() != "within":
+                if not silent:
+                    print("Face.ByWires - Warning: Ignoring an internal boundary that is not within the external boundary.")
+                continue
+
+            accepted.append(internal)
+
+        try:
+            result = Core.Face.ByExternalInternalBoundaries(
+                externalBoundary,
+                accepted,
+                tolerance,
+            )
+        except Exception:
+            result = None
+
+        if not Topology.IsInstance(result, "Face"):
+            if not silent:
+                print("Face.ByWires - Error: Could not construct the Face. Returning None.")
+            return None
+
+        return result
 
     @staticmethod
     def ByWiresCluster(externalBoundary, internalBoundariesCluster = None, tolerance: float = 0.0001, silent: bool = False):
@@ -1963,8 +1908,8 @@ class Face():
         if origin == None:
             origin = Vertex.Origin()
         
-        outer_wire = Wire.Circle(origin=Vertex.Origin(), radius=radius, sides=sides, direction=[0,0,1], placement="center", tolerance=tolerance)
-        inner_wire = Wire.Circle(origin=Vertex.Origin(), radius=radius-thickness, sides=sides, direction=[0,0,1], placement="center", tolerance=tolerance)
+        outer_wire = Wire.Circle(origin=Vertex.Origin(), radius=radius, sides=sides, polyline=True, direction=[0,0,1], placement="center", tolerance=tolerance)
+        inner_wire = Wire.Circle(origin=Vertex.Origin(), radius=radius-thickness, polyline=True, sides=sides, direction=[0,0,1], placement="center", tolerance=tolerance)
         return_face = Face.ByWires(outer_wire, [inner_wire])
         return_face = Face._EnsurePrimitivePositiveZ(return_face, tolerance=tolerance, silent=silent)
         if not Topology.IsInstance(return_face, "face"):
@@ -1994,43 +1939,86 @@ class Face():
         return return_face
     
     @staticmethod
-    def Circle(origin= None, radius: float = 0.5, sides: int = 16, fromAngle: float = 0.0, toAngle: float = 360.0, direction: list = [0, 0, 1],
-                   placement: str = "center", tolerance: float = 0.0001):
+    def Circle(origin=None,
+               radius: float = 0.5,
+               sides: int = 16,
+               fromAngle: float = 0.0,
+               toAngle: float = 360.0,
+               direction: list = [0, 0, 1],
+               placement: str = "center",
+               polyhderon: bool = True,
+               tolerance: float = 0.0001,
+               polyline: bool = None,
+               silent: bool = False):
         """
-        Creates a circle.
+        Creates a circular Face.
 
         Parameters
         ----------
         origin : topologic_core.Vertex, optional
-            The location of the origin of the circle. Default is None which results in the circle being placed at (0, 0, 0).
+            The location of the origin of the circle. Default is None.
         radius : float , optional
-            The radius of the circle. Default is 1.
+            The radius of the circle. Default is 0.5.
         sides : int , optional
-            The number of sides of the circle. Default is 16.
+            In polyline mode, the number of straight sides. In exact curved mode,
+            the number of exact circular-arc Edge subtopologies. Default is 16.
         fromAngle : float , optional
-            The angle in degrees from which to start creating the arc of the circle. Default is 0.
+            The angle in degrees from which to start creating the arc. Default is 0.
         toAngle : float , optional
-            The angle in degrees at which to end creating the arc of the circle. Default is 360.
+            The angle in degrees at which to end creating the arc. Default is 360.
         direction : list , optional
-            The vector representing the up direction of the circle. Default is [0, 0, 1].
+            The vector representing the Face normal. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the circle. This can be "center", "lowerleft", "upperleft", "lowerright", or "upperright". It is case insensitive. Default is "center".
+            The placement mode. Default is "center".
+        polyhderon : bool , optional
+            Historical misspelled compatibility parameter. If ``polyline`` is
+            None, True creates the historical polygonal approximation and False
+            creates exact circular Edges. Default is True.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
+        polyline : bool , optional
+            Explicitly selects straight-segment or exact curved construction.
+            If None, ``polyhderon`` is used for backward compatibility. Default is None.
+        silent : bool , optional
+            If True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
         topologic_core.Face
-            The created circle.
-
+            The created circular Face.
         """
-        from topologicpy.Wire import Wire
         from topologicpy.Topology import Topology
+        from topologicpy.Wire import Wire
 
-        wire = Wire.Circle(origin=origin, radius=radius, sides=sides, fromAngle=fromAngle, toAngle=toAngle, close=True, direction=[0, 0, 1], placement=placement, tolerance=tolerance)
+        if polyline is None:
+            polyline = bool(polyhderon)
+        else:
+            polyline = bool(polyline)
+
+        wire = Wire.Circle(
+            origin=origin,
+            radius=radius,
+            sides=sides,
+            polyline=polyline,
+            fromAngle=fromAngle,
+            toAngle=toAngle,
+            close=True,
+            direction=[0, 0, 1],
+            placement=placement,
+            tolerance=tolerance,
+            silent=silent,
+        )
         if not Topology.IsInstance(wire, "Wire"):
+            if not silent:
+                print("Face.Circle - Error: Could not create the base Wire. Returning None.")
             return None
-        return Face._PrimitiveFaceByWire(wire, origin=origin, direction=direction, tolerance=tolerance, silent=False)
+        return Face._PrimitiveFaceByWire(
+            wire,
+            origin=origin,
+            direction=direction,
+            tolerance=tolerance,
+            silent=silent,
+        )
 
     @staticmethod
     def Compactness(face, mantissa: int = 6, silent: bool = False) -> float:
@@ -3439,7 +3427,7 @@ class Face():
         return Face._PrimitiveFaceByWire(wire, origin=origin, direction=direction, tolerance=tolerance, silent=False)
     
     @staticmethod
-    def Ellipse(origin= None,
+    def Ellipse(origin=None,
                 inputMode: int = 1,
                 width: float = 2.0,
                 length: float = 1.0,
@@ -3447,77 +3435,96 @@ class Face():
                 eccentricity: float = 0.866025,
                 majorAxisLength: float = 1.0,
                 minorAxisLength: float = 0.5,
-                sides: float = 32,
+                sides: int = 32,
                 fromAngle: float = 0.0,
                 toAngle: float = 360.0,
                 close: bool = True,
                 direction: list = [0, 0, 1],
                 placement: str = "center",
                 tolerance: float = 0.0001,
-                silent: bool = False):
+                silent: bool = False,
+                polyline: bool = False):
         """
-        Creates an ellipse and returns all its geometry and parameters.
+        Creates an elliptical Face.
 
         Parameters
         ----------
         origin : topologic_core.Vertex , optional
-            The location of the origin of the ellipse. Default is None which results in the ellipse being placed at (0, 0, 0).
+            The location of the origin of the ellipse. Default is None.
         inputMode : int , optional
-            The method by which the ellipse is defined. Default is 1.
-            Based on the inputMode value, only the following inputs will be considered. The options are:
-            1. Width and Length (considered inputs: width, length)
-            2. Focal Length and Eccentricity (considered inputs: focalLength, eccentricity)
-            3. Focal Length and Minor Axis Length (considered inputs: focalLength, minorAxisLength)
-            4. Major Axis Length and Minor Axis Length (considered input: majorAxisLength, minorAxisLength)
+            Ellipse definition mode. Default is 1.
         width : float , optional
-            The width of the ellipse. Default is 2.0. This is considered if the inputMode is 1.
+            Overall width when inputMode is 1. Default is 2.0.
         length : float , optional
-            The length of the ellipse. Default is 1.0. This is considered if the inputMode is 1.
+            Overall length when inputMode is 1. Default is 1.0.
         focalLength : float , optional
-            The focal length of the ellipse. Default is 0.866025. This is considered if the inputMode is 2 or 3.
+            Focal length used by input modes 2 and 3. Default is 0.866025.
         eccentricity : float , optional
-            The eccentricity of the ellipse. Default is 0.866025. This is considered if the inputMode is 2.
+            Eccentricity used by input mode 2. Default is 0.866025.
         majorAxisLength : float , optional
-            The length of the major axis of the ellipse. Default is 1.0. This is considered if the inputMode is 4.
+            Major-axis length used by input mode 4. Default is 1.0.
         minorAxisLength : float , optional
-            The length of the minor axis of the ellipse. Default is 0.5. This is considered if the inputMode is 3 or 4.
+            Minor-axis length used by input modes 3 and 4. Default is 0.5.
         sides : int , optional
-            The number of sides of the ellipse. Default is 32.
+            Number of exact curve Edge subtopologies, or straight sides when
+            ``polyline`` is True. Default is 32.
         fromAngle : float , optional
-            The angle in degrees from which to start creating the arc of the ellipse. Default is 0.
+            Start angle in degrees. Default is 0.
         toAngle : float , optional
-            The angle in degrees at which to end creating the arc of the ellipse. Default is 360.
+            End angle in degrees. Default is 360.
         close : bool , optional
-            If set to True, arcs will be closed by connecting the last vertex to the first vertex. Otherwise, they will be left open.
+            If True, a partial ellipse is closed. Default is True.
         direction : list , optional
-            The vector representing the up direction of the ellipse. Default is [0, 0, 1].
+            The vector representing the Face normal. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the ellipse. This can be "center", or "lowerleft". It is case insensitive. Default is "center".
+            The placement mode. Default is "center".
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
+            If True, error and warning messages are suppressed. Default is False.
+        polyline : bool , optional
+            If False, preserves the exact rational-NURBS ellipse. If True,
+            creates the historical straight-segment approximation. Default is False.
 
         Returns
         -------
         topologic_core.Face
-            The created ellipse
-
+            The created elliptical Face.
         """
-        from topologicpy.Wire import Wire
         from topologicpy.Topology import Topology
-        w = Wire.Ellipse(origin=origin, inputMode=inputMode, width=width, length=length,
-                         focalLength=focalLength, eccentricity=eccentricity,
-                         majorAxisLength=majorAxisLength, minorAxisLength=minorAxisLength,
-                         sides=sides, fromAngle=fromAngle, toAngle=toAngle,
-                         close=close, direction=[0, 0, 1],
-                         placement=placement, tolerance=tolerance)
-        if not Topology.IsInstance(w, "Wire"):
+        from topologicpy.Wire import Wire
+
+        wire = Wire.Ellipse(
+            origin=origin,
+            inputMode=inputMode,
+            width=width,
+            length=length,
+            focalLength=focalLength,
+            eccentricity=eccentricity,
+            majorAxisLength=majorAxisLength,
+            minorAxisLength=minorAxisLength,
+            sides=sides,
+            fromAngle=fromAngle,
+            toAngle=toAngle,
+            close=close,
+            direction=[0, 0, 1],
+            placement=placement,
+            polyline=polyline,
+            tolerance=tolerance,
+            silent=silent,
+        )
+        if not Topology.IsInstance(wire, "Wire"):
             if not silent:
                 print("Face.Ellipse - Error: Could not create an ellipse. Returning None.")
             return None
-        return Face._PrimitiveFaceByWire(w, origin=origin, direction=direction, tolerance=tolerance, silent=silent)
-    
+        return Face._PrimitiveFaceByWire(
+            wire,
+            origin=origin,
+            direction=direction,
+            tolerance=tolerance,
+            silent=silent,
+        )
+
     @staticmethod
     def ExteriorAngles(face, includeInternalBoundaries=False, mantissa: int = 6) -> list:
         """
@@ -6706,7 +6713,7 @@ class Face():
         return medialAxis
 
     @staticmethod
-    def Normal(face, outputType="xyz", mantissa=6):
+    def Normal(face, outputType="xyz", mantissa: int = 6, silent: bool = False):
         """
         Returns the normal vector to the input face. A normal vector of a face is a vector perpendicular to it.
 
@@ -6733,20 +6740,24 @@ class Face():
         try:
             import numpy as np
         except:
-            print("Face.Normal - Warning: Installing required numpy library.")
+            if not silent:
+                print("Face.Normal - Warning: Installing required numpy library.")
             try:
                 os.system("pip install numpy")
             except:
                 os.system("pip install numpy --user")
             try:
                 import numpy as np
-                print("Face.Normal - Warning: numpy library installed correctly.")
+                if not silent:
+                    print("Face.Normal - Warning: numpy library installed correctly.")
             except:
-                warnings.warn("Face.Normal - Error: Could not import numpy. Please try to install numpy manually. Returning None.")
+                if not silent:
+                    print("Face.Normal - Error: Could not import numpy. Please try to install numpy manually. Returning None.")
                 return None
 
         if not Topology.IsInstance(face, "Face"):
-            print("Face.Normal - Error: The input face parameter is not a valid face. Returning None.")
+            if not silent:
+                print("Face.Normal - Error: The input face parameter is not a valid face. Returning None.")
             return None
         
         return_normal = None
@@ -6761,7 +6772,8 @@ class Face():
             vertices = [Vertex.Coordinates(v, mantissa=mantissa) for v in vertices]
             
             if len(vertices) < 3:
-                print("Face.Normal - Error: At least three vertices are required to define a plane. Returning None.")
+                if not silent:
+                    print("Face.Normal - Error: At least three vertices are required to define a plane. Returning None.")
                 return None
             
             # Convert vertices to numpy array for easier manipulation
@@ -6792,7 +6804,8 @@ class Face():
             # Normalize the normal vector
             normal_length = np.linalg.norm(normal)
             if normal_length == 0:
-                print("Face.Normal - Error: The given vertices do not form a valid plane (cross product resulted in a zero vector). Returning None.")
+                if not silent:
+                    print("Face.Normal - Error: The given vertices do not form a valid plane (cross product resulted in a zero vector). Returning None.")
                 return None
             
             normal = normal / normal_length

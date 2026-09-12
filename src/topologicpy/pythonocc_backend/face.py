@@ -199,6 +199,96 @@ def _surface_and_bounds(face):
         return None
 
 
+
+def _surface_adaptor(face):
+    """Return a location-aware OCCT surface adaptor for a backend Face."""
+    occ_face = _as_occ_face(face)
+    if occ_face is None:
+        return None
+    try:
+        from OCC.Core.BRepAdaptor import BRepAdaptor_Surface
+        return BRepAdaptor_Surface(occ_face, True)
+    except Exception:
+        return None
+
+
+def _surface_d1(face, raw_u, raw_v):
+    """Return location-aware (point, dU, dV) data at native UV parameters."""
+    adaptor = _surface_adaptor(face)
+    if adaptor is None:
+        return None
+    try:
+        from OCC.Core.gp import gp_Pnt, gp_Vec
+        point = gp_Pnt()
+        derivative_u = gp_Vec()
+        derivative_v = gp_Vec()
+        adaptor.D1(
+            float(raw_u),
+            float(raw_v),
+            point,
+            derivative_u,
+            derivative_v,
+        )
+        return point, derivative_u, derivative_v
+    except Exception:
+        return None
+
+
+def _surface_and_location(face):
+    """Return the unlocated supporting surface and its TopLoc_Location when exposed."""
+    occ_face = _as_occ_face(face)
+    if occ_face is None:
+        return None, None
+    try:
+        from OCC.Core.BRep import BRep_Tool
+        try:
+            from OCC.Core.TopLoc import TopLoc_Location
+            location = TopLoc_Location()
+            surface = BRep_Tool.Surface(occ_face, location)
+            if surface is not None:
+                return surface, location
+        except Exception:
+            pass
+        surface = BRep_Tool.Surface(occ_face)
+        return surface, None
+    except Exception:
+        return None, None
+
+
+def _project_point_to_surface(face, vertex, tolerance=0.0001):
+    """Project a world-space Vertex to the Face support and return (u, v, distance)."""
+    if not isinstance(vertex, Vertex):
+        return None
+    surface, location = _surface_and_location(face)
+    if surface is None:
+        return None
+    try:
+        from OCC.Core.GeomAPI import GeomAPI_ProjectPointOnSurf
+        from OCC.Core.gp import gp_Pnt
+
+        point = gp_Pnt(float(vertex.x), float(vertex.y), float(vertex.z))
+
+        if location is not None:
+            try:
+                if not location.IsIdentity():
+                    point.Transform(location.Transformation().Inverted())
+            except Exception:
+                pass
+
+        projector = GeomAPI_ProjectPointOnSurf(point, surface)
+        if projector.NbPoints() < 1:
+            return None
+
+        distance = float(projector.LowerDistance())
+        if not math.isfinite(distance):
+            return None
+
+        raw_u, raw_v = projector.LowerDistanceParameters()
+        return float(raw_u), float(raw_v), distance
+    except Exception:
+        return None
+
+
 def _normalized_to_raw(face, u, v):
     """Map normalized TopologicPy UV parameters to native surface parameters."""
     data = _surface_and_bounds(face)
@@ -274,14 +364,36 @@ class Face(Topology):
 
     @staticmethod
     def ByExternalBoundary(wire):
+        """Create an exact Face from a closed Wire without chordalising curves."""
         if not isinstance(wire, Wire):
             return None
-        if not wire.IsClosed():
+        try:
+            if not wire.IsClosed():
+                return None
+        except Exception:
             return None
-        return Face(shape=make_occ_face(wire), external=wire, internals=[])
+
+        try:
+            shape = make_occ_face(wire)
+        except Exception:
+            shape = None
+
+        if _is_null_shape(shape):
+            return None
+
+        result = Face.ByOcctShape(shape)
+        if not isinstance(result, Face):
+            return None
+
+        # Preserve the original wrapper so metadata and exact constituent curves
+        # remain directly available without re-traversal.
+        result.external = wire
+        result.internals = []
+        return result
 
     @staticmethod
     def ByWire(wire):
+        """Alias for exact curved-safe Face.ByExternalBoundary."""
         return Face.ByExternalBoundary(wire)
 
     @staticmethod
@@ -1197,27 +1309,31 @@ class FaceUtility:
 
     @staticmethod
     def NormalAtParameters(face, u=0.5, v=0.5, tolerance: float = 0.0001):
-        """Return the oriented unit surface normal at normalized UV parameters."""
+        """Return the oriented world-space unit normal at normalized UV parameters."""
         mapped = _normalized_to_raw(face, u, v)
         if mapped is None:
             return None
-        surface, raw_u, raw_v, _, _, _, _ = mapped
+        _, raw_u, raw_v, _, _, _, _ = mapped
         tol = _face_tolerance(tolerance)
+
+        data = _surface_d1(face, raw_u, raw_v)
+        if data is None:
+            return None
+
+        _, derivative_u, derivative_v = data
+
         try:
-            from OCC.Core.GeomLProp import GeomLProp_SLProps
-            from OCC.Core.TopAbs import TopAbs_REVERSED
-            props = GeomLProp_SLProps(surface, raw_u, raw_v, 1, tol)
-            if not props.IsNormalDefined():
-                return None
-            normal = props.Normal()
+            normal = derivative_u.Crossed(derivative_v)
             result = [float(normal.X()), float(normal.Y()), float(normal.Z())]
+
+            from OCC.Core.TopAbs import TopAbs_REVERSED
             occ_face = _as_occ_face(face)
             if occ_face is not None and occ_face.Orientation() == TopAbs_REVERSED:
                 result = [-value for value in result]
+
             return _normalized_vector(result, tolerance=tol)
         except Exception:
             return None
-
 
     @staticmethod
     def Reverse(face):
@@ -1239,135 +1355,71 @@ class FaceUtility:
         v=0.5,
         tolerance: float = 0.0001
     ):
-        """
-        Returns native OCCT surface-curvature properties at normalized parameters.
-
-        Signed principal and mean curvatures respect the topological orientation
-        of the Face. Gaussian curvature is orientation-independent.
-        """
-        mapped = _normalized_to_raw(
-            face,
-            u,
-            v,
-        )
-
+        """Return native OCCT curvature properties at normalized parameters."""
+        mapped = _normalized_to_raw(face, u, v)
         if mapped is None:
             return None
 
         surface, raw_u, raw_v, _, _, _, _ = mapped
+        tol = _face_tolerance(tolerance)
+        occ_face = _as_occ_face(face)
+        if occ_face is None:
+            return None
 
-        tol = _face_tolerance(
-            tolerance
-        )
+        properties = None
+
+        # BRepLProp evaluates the actual located TopoDS_Face and therefore keeps
+        # principal directions in world coordinates.
+        try:
+            from OCC.Core.BRepAdaptor import BRepAdaptor_Surface
+            from OCC.Core.BRepLProp import BRepLProp_SLProps
+            adaptor = BRepAdaptor_Surface(occ_face, True)
+            properties = BRepLProp_SLProps(adaptor, float(raw_u), float(raw_v), 2, tol)
+        except Exception:
+            properties = None
+
+        # Compatibility fallback for PythonOCC builds without BRepLProp_SLProps.
+        if properties is None:
+            try:
+                from OCC.Core.GeomLProp import GeomLProp_SLProps
+                properties = GeomLProp_SLProps(surface, raw_u, raw_v, 2, tol)
+            except Exception:
+                return None
 
         try:
-            from OCC.Core.GeomLProp import GeomLProp_SLProps
-            from OCC.Core.TopAbs import TopAbs_REVERSED
-            from OCC.Core.gp import gp_Dir
-
-            properties = GeomLProp_SLProps(
-                surface,
-                raw_u,
-                raw_v,
-                2,
-                tol,
-            )
-
             if not properties.IsCurvatureDefined():
                 return None
 
-            maximum = float(
-                properties.MaxCurvature()
-            )
-
-            minimum = float(
-                properties.MinCurvature()
-            )
-
-            mean = float(
-                properties.MeanCurvature()
-            )
-
-            gaussian = float(
-                properties.GaussianCurvature()
-            )
-
-            is_umbilic = bool(
-                properties.IsUmbilic()
-            )
+            maximum = float(properties.MaxCurvature())
+            minimum = float(properties.MinCurvature())
+            mean = float(properties.MeanCurvature())
+            gaussian = float(properties.GaussianCurvature())
+            is_umbilic = bool(properties.IsUmbilic())
 
             maximum_direction = None
             minimum_direction = None
 
             try:
-                max_dir = gp_Dir(
-                    1.0,
-                    0.0,
-                    0.0,
-                )
-
-                min_dir = gp_Dir(
-                    0.0,
-                    1.0,
-                    0.0,
-                )
-
-                properties.CurvatureDirections(
-                    max_dir,
-                    min_dir,
-                )
-
-                maximum_direction = [
-                    float(max_dir.X()),
-                    float(max_dir.Y()),
-                    float(max_dir.Z()),
-                ]
-
-                minimum_direction = [
-                    float(min_dir.X()),
-                    float(min_dir.Y()),
-                    float(min_dir.Z()),
-                ]
-
+                from OCC.Core.gp import gp_Dir
+                max_dir = gp_Dir(1.0, 0.0, 0.0)
+                min_dir = gp_Dir(0.0, 1.0, 0.0)
+                properties.CurvatureDirections(max_dir, min_dir)
+                maximum_direction = [float(max_dir.X()), float(max_dir.Y()), float(max_dir.Z())]
+                minimum_direction = [float(min_dir.X()), float(min_dir.Y()), float(min_dir.Z())]
             except Exception:
                 maximum_direction = None
                 minimum_direction = None
 
-            occ_face = _as_occ_face(
-                face
-            )
-
-            # Changing Face orientation reverses the normal. Principal and mean
-            # curvature signs therefore reverse. Since kmax >= kmin, negation
-            # also swaps which principal curvature is the maximum.
-            if (
-                occ_face is not None
-                and occ_face.Orientation() == TopAbs_REVERSED
-            ):
+            from OCC.Core.TopAbs import TopAbs_REVERSED
+            if occ_face.Orientation() == TopAbs_REVERSED:
                 old_maximum = maximum
                 old_minimum = minimum
-
                 maximum = -old_minimum
                 minimum = -old_maximum
-
                 mean = -mean
+                maximum_direction, minimum_direction = minimum_direction, maximum_direction
 
-                maximum_direction, minimum_direction = (
-                    minimum_direction,
-                    maximum_direction,
-                )
-
-            values = [
-                maximum,
-                minimum,
-                mean,
-                gaussian,
-            ]
-
-            if not all(
-                math.isfinite(value)
-                for value in values
-            ):
+            if not all(math.isfinite(value) for value in (maximum, minimum, mean, gaussian)):
                 return None
 
             return {
@@ -1379,7 +1431,6 @@ class FaceUtility:
                 "minimumDirection": minimum_direction,
                 "isUmbilic": is_umbilic,
             }
-
         except Exception:
             return None
 
@@ -1392,59 +1443,45 @@ class FaceUtility:
 
     @staticmethod
     def VertexAtParameters(face, u=0.5, v=0.5):
-        """Return a Vertex at normalized UV parameters on the Face surface."""
+        """Return a world-space Vertex at normalized UV parameters."""
         mapped = _normalized_to_raw(face, u, v)
         if mapped is None:
             return None
-        surface, raw_u, raw_v, _, _, _, _ = mapped
+        _, raw_u, raw_v, _, _, _, _ = mapped
+
+        adaptor = _surface_adaptor(face)
+        if adaptor is None:
+            return None
+
         try:
-            point = surface.Value(raw_u, raw_v)
+            point = adaptor.Value(float(raw_u), float(raw_v))
             return Vertex.ByCoordinates(point.X(), point.Y(), point.Z())
         except Exception:
             return None
 
-
     @staticmethod
     def ParametersAtVertex(face, vertex, tolerance: float = 0.0001):
-        """Return normalized UV parameters of a Vertex on the Face surface."""
+        """Return normalized UV parameters of a world-space Vertex on the Face."""
         if not isinstance(vertex, Vertex):
             return None
-        occ_face = _as_occ_face(face)
-        if occ_face is None:
-            return None
-        try:
-            from OCC.Core.BRep import BRep_Tool
-            from OCC.Core.GeomAPI import GeomAPI_ProjectPointOnSurf
-            from OCC.Core.gp import gp_Pnt
-            surface = BRep_Tool.Surface(occ_face)
-            if surface is None:
-                return None
-            point = gp_Pnt(float(vertex.x), float(vertex.y), float(vertex.z))
-            projector = GeomAPI_ProjectPointOnSurf(point, surface)
-            if projector.NbPoints() < 1:
-                return None
-            if float(projector.LowerDistance()) > _face_tolerance(tolerance):
-                return None
-            raw_u, raw_v = projector.LowerDistanceParameters()
-            return _raw_to_normalized(face, raw_u, raw_v)
-        except Exception:
+
+        projection = _project_point_to_surface(
+            face,
+            vertex,
+            tolerance=tolerance,
+        )
+        if projection is None:
             return None
 
+        raw_u, raw_v, distance = projection
+        if distance > _face_tolerance(tolerance):
+            return None
+
+        return _raw_to_normalized(face, raw_u, raw_v)
 
     @staticmethod
     def IsInside(face, vertex, tolerance: float = 0.0001):
-        """Return True when a Vertex lies in or on the trimmed Face.
-
-        The primary path uses OCCT's ``BRepClass_FaceClassifier`` directly
-        with the 3D point and the actual trimmed ``TopoDS_Face``. This avoids
-        separately projecting the point to the supporting surface and then
-        classifying the projected UV coordinates, which can be unreliable for
-        split spline/NURBS Faces carrying newly created p-curves.
-
-        The former UV-projection route is retained only as a compatibility
-        fallback for PythonOCC/OCCT builds that do not expose the 3D classifier
-        overload.
-        """
+        """Return True when a Vertex lies on and inside/on the trimmed Face."""
         if not isinstance(vertex, Vertex):
             return False
 
@@ -1454,22 +1491,23 @@ class FaceUtility:
 
         tol = _face_tolerance(tolerance)
 
+        projection = _project_point_to_surface(face, vertex, tolerance=tol)
+        if projection is None:
+            return False
+
+        raw_u, raw_v, distance = projection
+        if distance > tol:
+            return False
+
         try:
             from OCC.Core.BRepClass import BRepClass_FaceClassifier
             from OCC.Core.TopAbs import TopAbs_IN, TopAbs_ON
             from OCC.Core.gp import gp_Pnt
 
-            point = gp_Pnt(
-                float(vertex.x),
-                float(vertex.y),
-                float(vertex.z),
-            )
-
+            point = gp_Pnt(float(vertex.x), float(vertex.y), float(vertex.z))
             classifier = BRepClass_FaceClassifier()
-
             performed = False
-            # OCCT 7.8+ exposes optional use-bounding-box and gap-check
-            # arguments. Older PythonOCC bindings expose only (face, point, tol).
+
             for args in (
                 (occ_face, point, tol, True, 0.1),
                 (occ_face, point, tol, True),
@@ -1484,46 +1522,21 @@ class FaceUtility:
 
             if performed:
                 state = classifier.State()
-                return state in (TopAbs_IN, TopAbs_ON)
-
+                if state in (TopAbs_IN, TopAbs_ON):
+                    return True
         except Exception:
             pass
 
-        # Compatibility fallback: project to the supporting surface and
-        # classify in UV. This is intentionally secondary because the direct
-        # 3D classifier above is more robust for trimmed spline/NURBS Faces.
         try:
-            from OCC.Core.BRep import BRep_Tool
-            from OCC.Core.GeomAPI import GeomAPI_ProjectPointOnSurf
             from OCC.Core.BRepTopAdaptor import BRepTopAdaptor_FClass2d
             from OCC.Core.TopAbs import TopAbs_IN, TopAbs_ON
-            from OCC.Core.gp import gp_Pnt, gp_Pnt2d
+            from OCC.Core.gp import gp_Pnt2d
 
-            surface = BRep_Tool.Surface(occ_face)
-            if surface is None:
-                return False
-
-            point = gp_Pnt(
-                float(vertex.x),
-                float(vertex.y),
-                float(vertex.z),
-            )
-            projector = GeomAPI_ProjectPointOnSurf(point, surface)
-            if projector.NbPoints() < 1:
-                return False
-            if float(projector.LowerDistance()) > tol:
-                return False
-
-            raw_u, raw_v = projector.LowerDistanceParameters()
             classifier = BRepTopAdaptor_FClass2d(occ_face, tol)
-            state = classifier.Perform(
-                gp_Pnt2d(float(raw_u), float(raw_v))
-            )
+            state = classifier.Perform(gp_Pnt2d(float(raw_u), float(raw_v)))
             return state in (TopAbs_IN, TopAbs_ON)
-
         except Exception:
             return False
-
 
     @staticmethod
     def TangentsAtParameters(
@@ -1532,71 +1545,32 @@ class FaceUtility:
         v=0.5,
         tolerance: float = 0.0001
     ):
-        """
-        Returns the normalized U and V parametric tangent directions at normalized
-        surface parameters.
-        """
-        mapped = _normalized_to_raw(
-            face,
-            u,
-            v,
-        )
-
+        """Return location-aware world-space U and V unit tangent directions."""
+        mapped = _normalized_to_raw(face, u, v)
         if mapped is None:
             return None
 
-        surface, raw_u, raw_v, _, _, _, _ = mapped
+        _, raw_u, raw_v, _, _, _, _ = mapped
+        tol = _face_tolerance(tolerance)
+        data = _surface_d1(face, raw_u, raw_v)
+        if data is None:
+            return None
 
-        tol = _face_tolerance(
-            tolerance
+        _, derivative_u, derivative_v = data
+
+        tangent_u = _normalized_vector(
+            [float(derivative_u.X()), float(derivative_u.Y()), float(derivative_u.Z())],
+            tolerance=tol,
+        )
+        tangent_v = _normalized_vector(
+            [float(derivative_v.X()), float(derivative_v.Y()), float(derivative_v.Z())],
+            tolerance=tol,
         )
 
-        try:
-            from OCC.Core.GeomLProp import GeomLProp_SLProps
-
-            properties = GeomLProp_SLProps(
-                surface,
-                raw_u,
-                raw_v,
-                1,
-                tol,
-            )
-
-            derivative_u = properties.D1U()
-            derivative_v = properties.D1V()
-
-            tangent_u = [
-                float(derivative_u.X()),
-                float(derivative_u.Y()),
-                float(derivative_u.Z()),
-            ]
-
-            tangent_v = [
-                float(derivative_v.X()),
-                float(derivative_v.Y()),
-                float(derivative_v.Z()),
-            ]
-
-            tangent_u = _normalized_vector(
-                tangent_u,
-                tolerance=tol,
-            )
-
-            tangent_v = _normalized_vector(
-                tangent_v,
-                tolerance=tol,
-            )
-
-            if tangent_u is None or tangent_v is None:
-                return None
-
-            return [
-                tangent_u,
-                tangent_v,
-            ]
-
-        except Exception:
+        if tangent_u is None or tangent_v is None:
             return None
+
+        return [tangent_u, tangent_v]
 
     @staticmethod
     def Triangulate(face, deflection, outputFaces):
@@ -2080,21 +2054,29 @@ class FaceUtility:
 
     @staticmethod
     def InternalVertex(face, tolerance=0.0001):
+        """Return a Vertex guaranteed to lie on the support and inside the trimmed Face."""
         if not isinstance(face, Face):
             return None
+
         from .topology import Topology as _Topology
 
+        tol = _face_tolerance(tolerance)
         centroid = _Topology.CenterOfMass(face)
-        if centroid is not None and FaceUtility.IsInside(face, centroid, tolerance=tolerance):
-            return centroid
 
+        if isinstance(centroid, Vertex):
+            params = FaceUtility.ParametersAtVertex(face, centroid, tolerance=tol)
+            if params is not None and FaceUtility.IsInside(face, centroid, tolerance=tol):
+                return centroid
+
+        # Evaluate candidate points directly on the exact support so every
+        # returned candidate is guaranteed to lie on the surface.
         for v in (0.5, 0.25, 0.75, 0.1, 0.9):
             for u in (0.5, 0.25, 0.75, 0.1, 0.9):
                 candidate = FaceUtility.VertexAtParameters(face, u, v)
-                if candidate is not None and FaceUtility.IsInside(face, candidate, tolerance=tolerance):
+                if isinstance(candidate, Vertex) and FaceUtility.IsInside(face, candidate, tolerance=tol):
                     return candidate
 
-        return centroid
+        return None
 
     @staticmethod
     def TrimByWire(face,

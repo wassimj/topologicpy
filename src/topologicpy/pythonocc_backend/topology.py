@@ -5510,6 +5510,53 @@ class Topology:
         self_shape = _shape_from_topology(self)
         host_shape = _shape_from_topology(hostTopology)
 
+        # Face -> Cell ancestry needs a host-side native remap because boolean /
+        # container construction can preserve the same geometric Face while giving
+        # the query wrapper a different OCCT TShape identity. Keep all other
+        # SuperTopologies behavior unchanged because Wire direction relies on the
+        # historical Vertex -> Edge ordering semantics below.
+        if (
+            source_name == "face"
+            and target_name == "cell"
+            and source_type is not None
+            and target_type is not None
+            and not _is_null_shape(self_shape)
+            and not _is_null_shape(host_shape)
+        ):
+            try:
+                source_shapes = Topology._NativeMatchingShapes(
+                    host_shape,
+                    [self],
+                    source_type,
+                    0.0001,
+                )
+
+                if source_shapes:
+                    ancestor_shapes = Topology._NativeAncestors(
+                        host_shape,
+                        source_shapes,
+                        source_type,
+                        target_type,
+                    )
+
+                    for ancestor_shape in ancestor_shapes or []:
+                        try:
+                            wrapped = Topology.ByOcctShape(ancestor_shape)
+                        except Exception:
+                            wrapped = None
+                        if wrapped is not None:
+                            result.append(wrapped)
+
+                    result = _deduplicate_by_identity(result)
+
+                    if result:
+                        if output is not None:
+                            output.extend(result)
+                            return 0
+                        return result
+            except Exception:
+                result = []
+
         # 1. Fast exact OCCT ancestry.
         if (
             source_type is not None
@@ -8418,7 +8465,154 @@ class Topology:
         except Exception:
             return None
 
+    def AdjacentCells(self, hostTopology: Any, output=None):
+        """
+        Returns Cells in ``hostTopology`` that share at least one native OCCT
+        Face with this Cell.
+
+        Adjacency is determined by native Face identity, not geometric
+        coincidence. The method follows the topologic_core output-list calling
+        convention when ``output`` is supplied.
+        """
+        result = []
+        host_shape = _shape_from_topology(hostTopology)
+        self_shape = _shape_from_topology(self)
+
+        if _is_null_shape(host_shape) or _is_null_shape(self_shape):
+            if output is not None:
+                output.extend(result)
+                return 0
+            return result
+
+        try:
+            if self_shape.ShapeType() != TopAbs_SOLID:
+                if output is not None:
+                    output.extend(result)
+                    return 0
+                return result
+        except Exception:
+            if output is not None:
+                output.extend(result)
+                return 0
+            return result
+
+        def _same_shape(a, b):
+            try:
+                return bool(a.IsSame(b))
+            except Exception:
+                return False
+
+        # Candidate host Cells, including the root when the host itself is a Cell.
+        host_cells = []
+        try:
+            if host_shape.ShapeType() == TopAbs_SOLID:
+                host_cells.append(host_shape)
+        except Exception:
+            pass
+        host_cells.extend(
+            _iter_occ_subshapes_unique(host_shape, TopAbs_SOLID) or []
+        )
+
+        # Resolve the source Cell to the actual host-side Cell. In the common
+        # case this is an IsSame match. If a container constructor copied the
+        # solid TShape, identify the source host Cell by the greatest number of
+        # corresponding Faces, using the established Face matcher only to map
+        # the query Cell back into the host.
+        source_cells = [
+            candidate
+            for candidate in host_cells
+            if _same_shape(candidate, self_shape)
+        ]
+
+        if not source_cells:
+            try:
+                source_faces = _iter_occ_subshapes_unique(
+                    self_shape,
+                    TopAbs_FACE,
+                ) or []
+                mapped_faces = Topology._NativeMatchingShapes(
+                    host_shape,
+                    source_faces,
+                    TopAbs_FACE,
+                    0.0001,
+                )
+
+                best_count = 0
+                best_cells = []
+                for candidate in host_cells:
+                    candidate_faces = _iter_occ_subshapes_unique(
+                        candidate,
+                        TopAbs_FACE,
+                    ) or []
+                    count = sum(
+                        1
+                        for candidate_face in candidate_faces
+                        if any(
+                            _same_shape(candidate_face, mapped_face)
+                            for mapped_face in mapped_faces
+                        )
+                    )
+                    if count > best_count:
+                        best_count = count
+                        best_cells = [candidate]
+                    elif count == best_count and count > 0:
+                        best_cells.append(candidate)
+
+                source_cells = best_cells if best_count > 0 else []
+            except Exception:
+                source_cells = []
+
+        if not source_cells:
+            if output is not None:
+                output.extend(result)
+                return 0
+            return result
+
+        for source_cell in source_cells:
+            source_faces = _iter_occ_subshapes_unique(
+                source_cell,
+                TopAbs_FACE,
+            ) or []
+
+            for candidate in host_cells:
+                if _same_shape(candidate, source_cell):
+                    continue
+
+                candidate_faces = _iter_occ_subshapes_unique(
+                    candidate,
+                    TopAbs_FACE,
+                ) or []
+
+                if any(
+                    _same_shape(source_face, candidate_face)
+                    for source_face in source_faces
+                    for candidate_face in candidate_faces
+                ):
+                    try:
+                        wrapped = Topology.ByOcctShape(candidate)
+                    except Exception:
+                        wrapped = None
+                    if wrapped is not None:
+                        result.append(wrapped)
+
+        result = _deduplicate_by_identity(result)
+
+        if output is not None:
+            output.extend(result)
+            return 0
+        return result
+
+
     def SharedTopologies(self, otherTopology: Any, typeID: Any = None, output=None):
+        """
+        Returns shared subtopologies using native OCCT identity whenever both
+        operands carry OCCT shapes.
+
+        Geometric coincidence alone is deliberately not treated as sharing.
+        ``TopoDS_Shape.IsSame`` is orientation-insensitive but location-aware,
+        which is the required identity relation for a subshape genuinely shared
+        by two host topologies.
+        """
         type_name = None
         if isinstance(typeID, str):
             type_name = typeID.strip().lower()
@@ -8428,38 +8622,76 @@ class Topology:
                     type_name = name.lower()
                     break
 
-        getter_name = Topology._SUBTOPOLOGY_GETTERS.get(type_name) if type_name else "Vertices"
-        my_items = getattr(Topology, getter_name)(self) or []
-        other_items = getattr(Topology, getter_name)(otherTopology) or []
+        getter_name = (
+            Topology._SUBTOPOLOGY_GETTERS.get(type_name)
+            if type_name
+            else "Vertices"
+        )
 
-        other_keys = set()
-        for item in other_items:
-            if hasattr(item, "x") and hasattr(item, "y") and hasattr(item, "z"):
-                other_keys.add(vertex_key(item))
-            else:
-                other_keys.add(getattr(item, "_uuid", id(item)))
+        if getter_name is None or otherTopology is None:
+            if output is not None:
+                return 0
+            return []
+
+        try:
+            my_items = getattr(Topology, getter_name)(self) or []
+            other_items = getattr(Topology, getter_name)(otherTopology) or []
+        except Exception:
+            my_items = []
+            other_items = []
+
+        def _same_native_shape(a, b):
+            shape_a = _shape_from_topology(a)
+            shape_b = _shape_from_topology(b)
+            if _is_null_shape(shape_a) or _is_null_shape(shape_b):
+                return False
+            try:
+                return bool(shape_a.IsSame(shape_b))
+            except Exception:
+                return False
 
         result = []
+
         for item in my_items:
-            if hasattr(item, "x") and hasattr(item, "y") and hasattr(item, "z"):
-                key = vertex_key(item)
-            else:
-                key = getattr(item, "_uuid", id(item))
-            if key in other_keys:
-                result.append(item)
-                continue
-            # Geometric fallback: identities (uuids) differ when the same
-            # face was rebuilt by BOPAlgo_MakerVolume in adjacent cells,
-            # but the underlying OCCT shapes are the same topology.
-            item_shape = getattr(item, "shape", None)
-            if item_shape is not None:
+            item_shape = _shape_from_topology(item)
+            matched = False
+
+            # Native topology: require genuine OCCT sharing. Do not fall back
+            # to coordinates/UUIDs when both sides have native shapes.
+            if not _is_null_shape(item_shape):
                 for other in other_items:
-                    other_shape = getattr(other, "shape", None)
-                    if other_shape is not None and Topology.IsSame(item, other):
-                        result.append(item)
+                    other_shape = _shape_from_topology(other)
+                    if _is_null_shape(other_shape):
+                        continue
+                    if _same_native_shape(item, other):
+                        matched = True
                         break
+            else:
+                # Lightweight/shapeless compatibility only.
+                if hasattr(item, "x") and hasattr(item, "y") and hasattr(item, "z"):
+                    key = vertex_key(item)
+                    matched = any(
+                        _is_null_shape(_shape_from_topology(other))
+                        and hasattr(other, "x")
+                        and hasattr(other, "y")
+                        and hasattr(other, "z")
+                        and vertex_key(other) == key
+                        for other in other_items
+                    )
+                else:
+                    uuid = getattr(item, "_uuid", None)
+                    if uuid is not None:
+                        matched = any(
+                            _is_null_shape(_shape_from_topology(other))
+                            and getattr(other, "_uuid", None) == uuid
+                            for other in other_items
+                        )
+
+            if matched:
+                result.append(item)
 
         result = _deduplicate_by_identity(result)
+
         if output is not None:
             output.extend(result)
             return 0

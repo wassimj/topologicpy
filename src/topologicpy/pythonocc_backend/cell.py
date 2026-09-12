@@ -16,6 +16,7 @@ from .topology import (
 )
 from .vertex import Vertex
 from .wire import Wire
+from .face import Face
 
 
 @dataclass(eq=False)
@@ -83,6 +84,146 @@ class Cell(Topology):
             return None
 
         return Cell.ByShell(shell, tolerance=tolerance, silent=silent)
+
+    @staticmethod
+    def ByPrism(
+        face,
+        vector=(0.0, 0.0, 1.0),
+        tolerance: float = 0.0001,
+        silent: bool = False,
+    ):
+        """
+        Extrudes a Face along a vector and returns the resulting Cell.
+
+        Parameters
+        ----------
+        face : Face
+            The input backend Face.
+        vector : list or tuple , optional
+            The extrusion vector. Default is (0, 0, 1).
+        tolerance : float , optional
+            The desired geometric tolerance. Default is 0.0001.
+        silent : bool , optional
+            If True, suppresses error messages. Default is False.
+
+        Returns
+        -------
+        Cell
+            The resulting Cell, or None if construction fails.
+        """
+        import math
+
+        # Local import deliberately avoids depending on the module-level import
+        # arrangement of cell.py.
+        from .face import Face
+
+        if not isinstance(face, Face):
+            if not silent:
+                print(
+                    "Cell.ByPrism - Error: The input face parameter is not a "
+                    "valid Face. Returning None."
+                )
+            return None
+
+        if not isinstance(vector, (list, tuple)) or len(vector) != 3:
+            if not silent:
+                print(
+                    "Cell.ByPrism - Error: The input vector parameter is not a "
+                    "valid 3D vector. Returning None."
+                )
+            return None
+
+        try:
+            vx = float(vector[0])
+            vy = float(vector[1])
+            vz = float(vector[2])
+            tolerance = abs(float(tolerance))
+        except Exception:
+            if not silent:
+                print(
+                    "Cell.ByPrism - Error: Invalid numerical input. "
+                    "Returning None."
+                )
+            return None
+
+        if (
+            tolerance <= 0.0
+            or not all(
+                math.isfinite(value)
+                for value in (vx, vy, vz, tolerance)
+            )
+        ):
+            return None
+
+        magnitude = math.sqrt(
+            vx * vx
+            + vy * vy
+            + vz * vz
+        )
+
+        if magnitude <= tolerance:
+            if not silent:
+                print(
+                    "Cell.ByPrism - Error: The extrusion vector has zero "
+                    "magnitude. Returning None."
+                )
+            return None
+
+        face_shape = getattr(face, "shape", None)
+
+        if _is_null_shape(face_shape):
+            if not silent:
+                print(
+                    "Cell.ByPrism - Error: The input Face has no valid OCCT "
+                    "shape. Returning None."
+                )
+            return None
+
+        try:
+            from OCC.Core.BRepPrimAPI import (
+                BRepPrimAPI_MakePrism,
+            )
+            from OCC.Core.gp import gp_Vec
+
+            maker = BRepPrimAPI_MakePrism(
+                face_shape,
+                gp_Vec(vx, vy, vz),
+                True,
+                True,
+            )
+
+            if hasattr(maker, "IsDone") and not maker.IsDone():
+                if not silent:
+                    print(
+                        "Cell.ByPrism - Error: OCCT prism construction failed. "
+                        "Returning None."
+                    )
+                return None
+
+            shape = maker.Shape()
+
+        except Exception as exc:
+            if not silent:
+                print(
+                    "Cell.ByPrism - Error: Native OCCT prism construction "
+                    f"failed: {exc}. Returning None."
+                )
+            return None
+
+        result = Cell._native_result(
+            shape,
+            require_cell=True,
+        )
+
+        if not isinstance(result, Cell):
+            if not silent:
+                print(
+                    "Cell.ByPrism - Error: Could not wrap the OCCT solid as a "
+                    "Cell. Returning None."
+                )
+            return None
+
+        return result
 
     @staticmethod
     def ByWires(

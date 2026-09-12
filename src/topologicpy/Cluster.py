@@ -1335,7 +1335,7 @@ class Cluster():
         from itertools import combinations
 
         if wire == None:
-            wire = Wire.Circle(origin=origin, radius=radius, sides=sides, fromAngle=0, toAngle=360, close=True, direction=direction, placement=placement, tolerance=tolerance)
+            wire = Wire.Circle(origin=origin, radius=radius, sides=sides, polyline=True, fromAngle=0, toAngle=360, close=True, direction=direction, placement=placement, tolerance=tolerance)
         if not Wire.IsClosed(wire):
             print("Cluster.MysticRose - Error: The input wire parameter is not a closed topologic wire. Returning None.")
             return None

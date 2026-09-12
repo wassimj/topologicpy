@@ -2648,44 +2648,351 @@ class Wire():
             cage = Topology.Place(cage, originA=Vertex.Origin(), originB=origin)
         return cage
 
-
     @staticmethod
-    def Circle(origin=None, radius: float = 0.5, sides: int = 16, spokes: bool = False, fromAngle: float = 0.0, toAngle: float = 360.0, close: bool = True, direction: list = [0, 0, 1], placement: str = "center", polyline: bool = False, tolerance: float = 0.0001, silent: bool = False):
-        """Creates a circular Wire by creating one circular Edge and passing it to Wire.ByEdge."""
+    def Circle(
+        origin=None,
+        radius: float = 0.5,
+        sides: int = 16,
+        spokes: bool = False,
+        fromAngle: float = 0.0,
+        toAngle: float = 360.0,
+        close: bool = True,
+        direction: list = [0, 0, 1],
+        placement: str = "center",
+        polyline: bool = False,
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
+        """
+        Creates a circular Wire.
+
+        When ``polyline`` is False, ``sides`` specifies the number of exact
+        circular-arc Edge subtopologies. Geometric accuracy is independent of
+        this segmentation count.
+
+        When ``polyline`` is True, ``sides`` specifies the number of straight
+        segments of the historical regular-polygon approximation. The polygon
+        vertices are constructed analytically at equal angular increments rather
+        than by sampling the parameter space of an exact circular Edge.
+
+        Parameters
+        ----------
+        origin : topologic_core.Vertex , optional
+            Placement origin. If None, the global origin is used. Default is None.
+        radius : float , optional
+            Circle radius. Default is 0.5.
+        sides : int , optional
+            Number of exact arc Edges, or straight segments in polyline mode.
+            Default is 16.
+        spokes : bool , optional
+            If True, add radial straight edges from the center to perimeter
+            junction vertices where historically applicable. Default is False.
+        fromAngle : float , optional
+            Beginning of the requested angular range in degrees. Default is 0.
+        toAngle : float , optional
+            End of the requested angular range in degrees. Default is 360.
+        close : bool , optional
+            For a partial circle, if True add a straight closing chord. A complete
+            360-degree circle is already closed. Default is True.
+        direction : list , optional
+            Circle-plane normal. Default is [0, 0, 1].
+        placement : str , optional
+            One of "center", "lowerleft", "upperleft", "lowerright", or
+            "upperright". Default is "center".
+        polyline : bool , optional
+            If True, create the historical straight-edge approximation.
+            Default is False.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed.
+            Default is False.
+
+        Returns
+        -------
+        topologic_core.Wire
+            The created circular Wire.
+        """
         import math
-        from topologicpy.Vertex import Vertex
+
         from topologicpy.Edge import Edge
+        from topologicpy.Vertex import Vertex
         from topologicpy.Topology import Topology
 
         if origin is None:
             origin = Vertex.Origin()
+
         if not Topology.IsInstance(origin, "Vertex"):
-            return None
-        try:
-            radius = abs(float(radius))
-            fromAngle = float(fromAngle)
-            toAngle = float(toAngle)
-            tolerance = float(tolerance)
-        except Exception:
-            return None
-        if radius <= tolerance or tolerance <= 0.0:
-            return None
-        while toAngle < fromAngle:
-            toAngle += 360.0
-        sweep = toAngle - fromAngle
-        if sweep <= 1.0e-12 or sweep > 360.0 + 1.0e-9:
-            return None
-        full = abs(sweep - 360.0) <= 1.0e-9
-        placement = str(placement).lower()
-        if placement not in ["center", "lowerleft", "upperleft", "lowerright", "upperright"]:
+            if not silent:
+                print(
+                    "Wire.Circle - Error: The input origin parameter is not a "
+                    "valid vertex. Returning None."
+                )
             return None
 
-        # Build canonically, then place/orient as one exact Edge. The angle mapping
-        # preserves the historical Wire.Circle convention where angle zero is +Y.
+        try:
+            radius = abs(float(radius))
+            numeric_sides = float(sides)
+            sides = int(numeric_sides)
+            fromAngle = float(fromAngle)
+            toAngle = float(toAngle)
+            tolerance = abs(float(tolerance))
+        except Exception:
+            if not silent:
+                print(
+                    "Wire.Circle - Error: One or more numerical input parameters "
+                    "are invalid. Returning None."
+                )
+            return None
+
+        if (
+            not math.isfinite(radius)
+            or not math.isfinite(numeric_sides)
+            or not math.isfinite(fromAngle)
+            or not math.isfinite(toAngle)
+            or not math.isfinite(tolerance)
+            or abs(numeric_sides - sides) > 1.0e-12
+            or radius <= tolerance
+            or sides < 1
+            or tolerance <= 0.0
+        ):
+            if not silent:
+                print(
+                    "Wire.Circle - Error: Invalid radius, sides, angular range, "
+                    "or tolerance. Returning None."
+                )
+            return None
+
+        if not isinstance(direction, (list, tuple)) or len(direction) != 3:
+            if not silent:
+                print(
+                    "Wire.Circle - Error: The input direction parameter is not "
+                    "a valid 3D vector. Returning None."
+                )
+            return None
+
+        try:
+            direction = [float(value) for value in direction]
+        except Exception:
+            return None
+
+        if not all(math.isfinite(value) for value in direction):
+            return None
+
+        if math.sqrt(sum(value * value for value in direction)) <= tolerance:
+            if not silent:
+                print(
+                    "Wire.Circle - Error: The input direction vector has zero "
+                    "magnitude. Returning None."
+                )
+            return None
+
+        placement = str(placement).lower().strip()
+
+        if placement not in [
+            "center",
+            "lowerleft",
+            "upperleft",
+            "lowerright",
+            "upperright",
+        ]:
+            if not silent:
+                print(
+                    "Wire.Circle - Error: The input placement parameter is not "
+                    "recognized. Returning None."
+                )
+            return None
+
+        while toAngle < fromAngle:
+            toAngle += 360.0
+
+        angle_range = toAngle - fromAngle
+
+        if angle_range <= tolerance or angle_range > 360.0 + tolerance:
+            if not silent:
+                print(
+                    "Wire.Circle - Error: The angular range must be greater than "
+                    "zero and no greater than 360 degrees. Returning None."
+                )
+            return None
+
+        full_circle = abs(angle_range - 360.0) <= tolerance
+
+        # ======================================================================
+        # Historical polygonal mode
+        # ======================================================================
+        #
+        # Do NOT derive these vertices by sampling Edge.Circle.
+        #
+        # "sides" has always meant an inscribed regular polygon in this mode, so
+        # its vertices must be separated by equal geometric angles. This also
+        # guarantees the analytical area
+        #
+        #     0.5 * n * r^2 * sin(2*pi/n)
+        #
+        # expected by the faceted primitive APIs.
+        # ======================================================================
+
+        if bool(polyline):
+
+            if full_circle and sides < 3:
+                if not silent:
+                    print(
+                        "Wire.Circle - Error: A closed polygonal circle requires "
+                        "at least three sides. Returning None."
+                    )
+                return None
+
+            ox = Vertex.X(origin, mantissa=None)
+            oy = Vertex.Y(origin, mantissa=None)
+            oz = Vertex.Z(origin, mantissa=None)
+
+            if ox is None or oy is None or oz is None:
+                return None
+
+            vertices = []
+
+            count = sides if full_circle else sides + 1
+
+            for i in range(count):
+                angle = math.radians(
+                    fromAngle
+                    + angle_range * float(i) / float(sides)
+                )
+
+                vertex = Vertex.ByCoordinates(
+                    math.sin(angle) * radius + ox,
+                    math.cos(angle) * radius + oy,
+                    oz,
+                )
+
+                if not Topology.IsInstance(vertex, "Vertex"):
+                    return None
+
+                vertices.append(vertex)
+
+            # Preserve the historical traversal orientation.
+            vertices.reverse()
+
+            base_wire = Wire.ByVertices(
+                vertices,
+                close=True if full_circle else bool(close),
+                tolerance=tolerance,
+                silent=True,
+            )
+
+            if not Topology.IsInstance(base_wire, "Wire"):
+                if not silent:
+                    print(
+                        "Wire.Circle - Error: Could not create the polygonal "
+                        "circle. Returning None."
+                    )
+                return None
+
+            perimeter_edges = Wire.Edges(base_wire, silent=True) or []
+
+            if spokes and (full_circle or not close):
+                junctions = [
+                    Edge.StartVertex(edge, silent=True)
+                    for edge in perimeter_edges
+                ]
+
+                if not full_circle and perimeter_edges:
+                    junctions.append(
+                        Edge.EndVertex(
+                            perimeter_edges[-1],
+                            silent=True,
+                        )
+                    )
+
+                spoke_edges = []
+
+                for vertex in junctions:
+                    spoke = Edge.ByStartVertexEndVertex(
+                        origin,
+                        vertex,
+                        tolerance=tolerance,
+                        silent=True,
+                    )
+
+                    if Topology.IsInstance(spoke, "Edge"):
+                        spoke_edges.append(spoke)
+
+                if spoke_edges:
+                    candidate = Wire.ByEdges(
+                        perimeter_edges + spoke_edges,
+                        tolerance=tolerance,
+                        silent=True,
+                    )
+
+                    if Topology.IsInstance(candidate, "Wire"):
+                        base_wire = candidate
+
+            # Historical placement convention.
+            if placement == "lowerleft":
+                base_wire = Topology.Translate(
+                    base_wire,
+                    radius,
+                    radius,
+                    0,
+                )
+
+            elif placement == "upperleft":
+                base_wire = Topology.Translate(
+                    base_wire,
+                    radius,
+                    -radius,
+                    0,
+                )
+
+            elif placement == "lowerright":
+                base_wire = Topology.Translate(
+                    base_wire,
+                    -radius,
+                    radius,
+                    0,
+                )
+
+            elif placement == "upperright":
+                base_wire = Topology.Translate(
+                    base_wire,
+                    -radius,
+                    -radius,
+                    0,
+                )
+
+            if direction != [0.0, 0.0, 1.0]:
+                base_wire = Topology.Orient(
+                    base_wire,
+                    origin=origin,
+                    dirA=[0, 0, 1],
+                    dirB=direction,
+                )
+
+            return (
+                base_wire
+                if Topology.IsInstance(base_wire, "Wire")
+                else None
+            )
+
+        # ======================================================================
+        # Exact curved mode
+        # ======================================================================
+
         canonical_origin = Vertex.Origin()
-        if full:
-            curve = Edge.Circle(origin=canonical_origin, radius=radius, placement="center", tolerance=tolerance, silent=True)
+
+        if full_circle:
+            curve = Edge.Circle(
+                origin=canonical_origin,
+                radius=radius,
+                placement="center",
+                tolerance=tolerance,
+                silent=True,
+            )
+
         else:
+            # Historical Wire.Circle convention:
+            # theta=0 lies on +Y.
             curve = Edge.Arc(
                 origin=canonical_origin,
                 radius=radius,
@@ -2696,6 +3003,7 @@ class Wire():
                 tolerance=tolerance,
                 silent=True,
             )
+
         if not Topology.IsInstance(curve, "Edge"):
             return None
 
@@ -2706,37 +3014,96 @@ class Wire():
             "lowerright": [radius, -radius, 0.0],
             "upperright": [radius, radius, 0.0],
         }
-        source_origin = Vertex.ByCoordinates(*refs[placement])
-        curve = Topology.OrientAndPlace(curve, originA=source_origin, originB=origin, dirA=[0, 0, 1], dirB=direction, tolerance=tolerance, silent=True)
+
+        source_origin = Vertex.ByCoordinates(
+            *refs[placement]
+        )
+
+        curve = Topology.OrientAndPlace(
+            curve,
+            originA=source_origin,
+            originB=origin,
+            dirA=[0, 0, 1],
+            dirB=direction,
+            tolerance=tolerance,
+            silent=True,
+        )
+
         if not Topology.IsInstance(curve, "Edge"):
             return None
 
-        wire = Wire.ByEdge(curve, sides=sides, polyline=polyline, silent=silent)
+        wire = Wire.ByEdge(
+            curve,
+            sides=sides,
+            polyline=False,
+            silent=silent,
+        )
+
         if not Topology.IsInstance(wire, "Wire"):
             return None
 
-        if (not full) and close:
-            chord = Edge.ByStartVertexEndVertex(Edge.EndVertex(curve, silent=True), Edge.StartVertex(curve, silent=True), tolerance=tolerance, silent=True)
+        if not full_circle and close:
+            chord = Edge.ByStartVertexEndVertex(
+                Edge.EndVertex(curve, silent=True),
+                Edge.StartVertex(curve, silent=True),
+                tolerance=tolerance,
+                silent=True,
+            )
+
             if Topology.IsInstance(chord, "Edge"):
-                closed_wire = Wire.ByEdges((Topology.Edges(wire, silent=True) or []) + [chord], orient=True, tolerance=tolerance, silent=True)
+                closed_wire = Wire.ByEdges(
+                    (Topology.Edges(wire, silent=True) or [])
+                    + [chord],
+                    orient=True,
+                    tolerance=tolerance,
+                    silent=True,
+                )
+
                 if Topology.IsInstance(closed_wire, "Wire"):
                     wire = closed_wire
 
-        if spokes and (full or not close):
-            center = Topology.OrientAndPlace(Vertex.Origin(), originA=source_origin, originB=origin, dirA=[0, 0, 1], dirB=direction, tolerance=tolerance, silent=True)
+        if spokes and (full_circle or not close):
+            center = Topology.OrientAndPlace(
+                Vertex.Origin(),
+                originA=source_origin,
+                originB=origin,
+                dirA=[0, 0, 1],
+                dirB=direction,
+                tolerance=tolerance,
+                silent=True,
+            )
+
             if Topology.IsInstance(center, "Vertex"):
                 spoke_edges = []
-                for vertex in Topology.Vertices(wire, silent=True) or []:
-                    spoke = Edge.ByStartVertexEndVertex(center, vertex, tolerance=tolerance, silent=True)
+
+                for vertex in Topology.Vertices(
+                    wire,
+                    silent=True,
+                ) or []:
+
+                    spoke = Edge.ByStartVertexEndVertex(
+                        center,
+                        vertex,
+                        tolerance=tolerance,
+                        silent=True,
+                    )
+
                     if Topology.IsInstance(spoke, "Edge"):
                         spoke_edges.append(spoke)
+
                 if spoke_edges:
-                    candidate = Wire.ByEdges((Topology.Edges(wire, silent=True) or []) + spoke_edges, tolerance=tolerance, silent=True)
+                    candidate = Wire.ByEdges(
+                        (Topology.Edges(wire, silent=True) or [])
+                        + spoke_edges,
+                        tolerance=tolerance,
+                        silent=True,
+                    )
+
                     if Topology.IsInstance(candidate, "Wire"):
                         wire = candidate
+
         return wire
 
-    
     @staticmethod
     def Close(wire, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
         """
@@ -7154,16 +7521,91 @@ class Wire():
             return None
 
     @staticmethod
-    def Line(origin=None, length: float = 1, direction: list = [1, 0, 0], sides: int = 2, placement: str = "center", tolerance: float = 0.0001, silent: bool = True):
-        """Creates a segmented linear Wire by delegating the source geometry to Edge.Line and segmentation to Wire.ByEdge."""
+    def Line(origin=None,
+            length: float = 1,
+            direction: list = [1, 0, 0],
+            sides: int = 2,
+            placement: str = "center",
+            tolerance: float = 0.0001,
+            silent: bool = True):
+        from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
         from topologicpy.Topology import Topology
-        edge = Edge.Line(origin=origin, length=length, direction=direction, placement=placement, tolerance=tolerance)
-        if not Topology.IsInstance(edge, "Edge"):
+
+        if not Topology.IsInstance(origin, "Vertex"):
+            origin = Vertex.Origin()
+        if not Topology.IsInstance(origin, "Vertex"):
             if not silent:
-                print("Wire.Line - Error: Could not create the source line Edge. Returning None.")
+                print("Wire.Line - Error: The input origin is not a valid vertex. Returning None.")
             return None
-        return Wire.ByEdge(edge, sides=sides, polyline=True, silent=silent)
+
+        try:
+            length = float(length)
+            sides = int(sides)
+            tolerance = abs(float(tolerance))
+        except Exception:
+            if not silent:
+                print("Wire.Line - Error: One or more numerical input parameters are invalid. Returning None.")
+            return None
+
+        if length <= 0:
+            if not silent:
+                print("Wire.Line - Error: The input length is less than or equal to zero. Returning None.")
+            return None
+
+        if not isinstance(direction, (list, tuple)) or len(direction) != 3:
+            if not silent:
+                print("Wire.Line - Error: The input direction is not a valid 3D vector. Returning None.")
+            return None
+
+        try:
+            direction = [float(direction[0]), float(direction[1]), float(direction[2])]
+        except Exception:
+            if not silent:
+                print("Wire.Line - Error: The input direction is not numerical. Returning None.")
+            return None
+
+        if sum(value * value for value in direction) <= tolerance * tolerance:
+            if not silent:
+                print("Wire.Line - Error: The input direction has zero magnitude. Returning None.")
+            return None
+
+        if sides < 2:
+            if not silent:
+                print("Wire.Line - Error: The number of sides cannot be less than two. Consider using Edge.Line() instead. Returning None.")
+            return None
+
+        placement = str(placement).lower().strip()
+        if placement not in ("center", "start", "end"):
+            if not silent:
+                print('Wire.Line - Error: The placement must be "center", "start", or "end". Returning None.')
+            return None
+
+        full_edge = Edge.Line(origin=origin, length=length, direction=direction, placement=placement)
+        if not Topology.IsInstance(full_edge, "Edge"):
+            return None
+
+        vertices = [Edge.StartVertex(full_edge)]
+        for i in range(1, sides):
+            vertex = Edge.VertexByParameter(full_edge, float(i) / float(sides))
+            if not Topology.IsInstance(vertex, "Vertex"):
+                return None
+            vertices.append(vertex)
+        vertices.append(Edge.EndVertex(full_edge))
+
+        edges = []
+        for i in range(sides):
+            edge = Edge.ByStartVertexEndVertex(vertices[i], vertices[i + 1])
+            if not Topology.IsInstance(edge, "Edge"):
+                return None
+            edges.append(edge)
+
+        result = Wire.ByEdges(edges, tolerance=tolerance, silent=True)
+        if not Topology.IsInstance(result, "Wire"):
+            if not silent:
+                print("Wire.Line - Error: Could not create the subdivided Wire. Returning None.")
+            return None
+        return result
 
 
     @staticmethod

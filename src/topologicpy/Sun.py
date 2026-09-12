@@ -869,7 +869,7 @@ class Sun():
             center = Topology.SetDictionary(center, d)
             diagram['center'] = center
         else:
-            ground = Wire.Circle(origin=origin, radius=radius, sides=36)
+            ground = Wire.Circle(origin=origin, radius=radius, sides=36, polyline=True)
             d = Dictionary.ByKeysValues(["latitude", "longitude", "type"], [latitude, longitude, "ground"])
             ground = Topology.SetDictionary(ground, d)
             diagram['compass'] = None

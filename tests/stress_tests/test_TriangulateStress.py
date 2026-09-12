@@ -59,9 +59,14 @@ def _face(sides=7):
         sides=sides,
         close=True,
         placement="center",
+        polyline=True,
         tolerance=TOLERANCE,
     )
-    f = Face.ByWire(w, tolerance=TOLERANCE, silent=True)
+    f = Face.ByWire(
+        w,
+        tolerance=TOLERANCE,
+        silent=True,
+    )
     assert Topology.IsInstance(f, "Face")
     return f
 

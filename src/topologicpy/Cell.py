@@ -514,57 +514,260 @@ class Cell():
                 return None
         return cell
 
+    # @staticmethod
+    # def ByThickenedFace(face,
+    #                     thickness: float = 1.0,
+    #                     bothSides: bool = True,
+    #                     wSides: int = 1,
+    #                     reverse: bool = False,
+    #                     tolerance: float = 0.0001,
+    #                     silent: bool = False,
+    #                     polyhedron: bool = True):
+    #     """
+    #     Creates a cell by thickening the input face.
+
+    #     Behaviour:
+    #     - Only the bottom and top faces are used as horizontal faces.
+    #     - wSides controls the number of vertical segments along the thickness.
+    #     Intermediate offset layers are used only to build side faces and are
+    #     not included as horizontal faces in Cell.ByFaces.
+
+    #     Parameters
+    #     ----------
+    #     face : topologic_core.Face
+    #         The input face to be thickened.
+    #     thickness : float , optional
+    #         The desired thickness. Default is 1.0.
+    #     bothSides : bool
+    #         If True, the thickening is symmetric about the original face
+    #         (i.e. from -thickness/2 to +thickness/2).
+    #         If False, the thickening is from 0 to +thickness along the face normal.
+    #         Default is True.
+    #     reverse : bool
+    #         If True, the extrusion direction is flipped (normal is negated).
+    #         Default is False.
+    #     wSides: int, optional
+    #         The number of segments along the thickness direction.
+    #         This is the same definition regardless of bothSides.
+    #         Default is 1.
+    #     tolerance : float , optional
+    #         The desired tolerance. Default is 0.0001.
+    #     silent : bool , optional
+    #         If set to True, error and warning messages are suppressed. Default is False.
+
+    #     Returns
+    #     -------
+    #     topologic_core.Cell
+    #         The created cell, or None on failure.
+    #     """
+    #     if not polyhedron:
+    #         result = Cell._NativeCell("ByThickenedFace", face, thickness=thickness, bothSides=bothSides, reverse=reverse, tolerance=tolerance, silent=silent)
+    #         if result is None and not silent: print("Cell.ByThickenedFace - Error: Native thickening failed. Returning None.")
+    #         return result
+    #     import math
+    #     from topologicpy.Topology import Topology
+    #     from topologicpy.Face import Face
+    #     from topologicpy.Edge import Edge
+    #     from topologicpy.Wire import Wire
+    #     from topologicpy.Vertex import Vertex
+
+    #     # -----------------------------
+    #     # Validation
+    #     # -----------------------------
+    #     if not Topology.IsInstance(face, "Face"):
+    #         if not silent:
+    #             print("Cell.ByThickenedFace - Error: Input is not a valid Face. Returning None.")
+    #         return None
+
+    #     if thickness <= tolerance:
+    #         if not silent:
+    #             print("Cell.ByThickenedFace - Error: Thickness is less than or equal to the tolerance. Returning None.")
+    #         return None
+        
+    #     if wSides < 1:
+    #         if not silent:
+    #             print("Cell.ByThickenedFace - Error: wSides is less than 1. Returning None.")
+    #         return None
+
+    #     if thickness/float(wSides) <= tolerance:
+    #         if not silent:
+    #             print("Cell.ByThickenedFace - Error: The distance between layers is less than or equal to the tolerance. Returning None.")
+    #         return None
+
+    #     # -----------------------------
+    #     # Face normal (normalized)
+    #     # -----------------------------
+    #     normal = Face.Normal(face)
+    #     if not isinstance(normal, (list, tuple)) or len(normal) != 3:
+    #         if not silent:
+    #             print("Cell.ByThickenedFace - Error: Could not compute face normal.")
+    #         return None
+
+    #     nx, ny, nz = normal
+    #     L = math.sqrt(nx*nx + ny*ny + nz*nz)
+    #     if L <= tolerance:
+    #         if not silent:
+    #             print("Cell.ByThickenedFace - Error: Degenerate face normal.")
+    #         return None
+
+    #     nx, ny, nz = nx/L, ny/L, nz/L
+
+    #     if reverse:
+    #         nx, ny, nz = -nx, -ny, -nz
+
+    #     # -----------------------------
+    #     # Build offset layers
+    #     # NOTE: We will only keep the min/max offset faces as bottom/top.
+    #     # Intermediate layers are used only for building side faces.
+    #     # -----------------------------
+    #     step = thickness / float(wSides)
+    #     layers = []
+
+    #     if bothSides:
+    #         # Symmetric: [-thickness/2, ..., +thickness/2]
+    #         start = -0.5 * thickness
+    #         for i in range(wSides + 1):
+    #             offset = start + step * i
+    #             f = Topology.Translate(face, nx*offset, ny*offset, nz*offset)
+    #             layers.append((offset, f))
+    #     else:
+    #         # One-sided: [0, ..., thickness]
+    #         for i in range(wSides + 1):
+    #             offset = step * i
+    #             f = Topology.Translate(face, nx*offset, ny*offset, nz*offset)
+    #             layers.append((offset, f))
+
+    #     if len(layers) < 2:
+    #         if not silent:
+    #             print("Cell.ByThickenedFace - Error: Not enough layers to form a volume.")
+    #         return None
+
+    #     layers.sort(key=lambda x: x[0])
+
+    #     # Bottom and top faces only
+    #     bottom_face = layers[0][1]
+    #     top_face = layers[-1][1]
+
+    #     faces_all = [bottom_face, top_face]
+
+    #     # -----------------------------
+    #     # Build side faces between each consecutive pair of layers
+    #     # These are the vertical segmentation faces controlled by wSides.
+    #     # -----------------------------
+    #     for i in range(len(layers) - 1):
+    #         _, faceA = layers[i]
+    #         _, faceB = layers[i + 1]
+
+    #         edgesA = Topology.Edges(faceA)
+    #         edgesB = Topology.Edges(faceB)
+
+    #         if not edgesA or not edgesB or len(edgesA) != len(edgesB):
+    #             if not silent:
+    #                 print("Cell.ByThickenedFace - Warning: Edge mismatch between layers. "
+    #                     "Side faces may be incomplete.")
+    #             # We try to continue with min length
+    #         count = min(len(edgesA), len(edgesB))
+
+    #         # Get external boundary edge geometries to identify outer vs inner
+    #         ext_boundary = Face.ExternalBoundary(faceA)
+    #         ext_edges = Topology.Edges(ext_boundary) if ext_boundary else []
+    #         ext_edge_keys = set()
+    #         for e in ext_edges:
+    #             sv = Edge.StartVertex(e)
+    #             ev = Edge.EndVertex(e)
+    #             key = tuple(sorted([(round(Vertex.X(sv), 8), round(Vertex.Y(sv), 8), round(Vertex.Z(sv), 8)),
+    #                                  (round(Vertex.X(ev), 8), round(Vertex.Y(ev), 8), round(Vertex.Z(ev), 8))]))
+    #             ext_edge_keys.add(key)
+
+    #         for j in range(count):
+    #             eA = edgesA[j]
+    #             eB = edgesB[j]
+
+    #             vA = Topology.Vertices(eA)
+    #             vB = Topology.Vertices(eB)
+
+    #             if not vA or not vB or len(vA) != 2 or len(vB) != 2:
+    #                 continue
+
+    #             vA1, vA2 = vA
+    #             vB1, vB2 = vB
+
+    #             # Check if this edge is from the inner boundary (hole)
+    #             svA = Edge.StartVertex(eA)
+    #             evA = Edge.EndVertex(eA)
+    #             edge_key = tuple(sorted([(round(Vertex.X(svA), 8), round(Vertex.Y(svA), 8), round(Vertex.Z(svA), 8)),
+    #                                      (round(Vertex.X(evA), 8), round(Vertex.Y(evA), 8), round(Vertex.Z(evA), 8))]))
+    #             is_inner = edge_key not in ext_edge_keys
+
+    #             try:
+    #                 if is_inner:
+    #                     # Reversed winding for inner hole edges - creates inward-facing normals
+    #                     e1 = Edge.ByStartVertexEndVertex(vA2, vA1)
+    #                     e2 = Edge.ByStartVertexEndVertex(vA1, vB1)
+    #                     e3 = Edge.ByStartVertexEndVertex(vB1, vB2)
+    #                     e4 = Edge.ByStartVertexEndVertex(vB2, vA2)
+    #                 else:
+    #                     # Normal winding for outer boundary edges
+    #                     e1 = Edge.ByStartVertexEndVertex(vA1, vA2)
+    #                     e2 = Edge.ByStartVertexEndVertex(vA2, vB2)
+    #                     e3 = Edge.ByStartVertexEndVertex(vB2, vB1)
+    #                     e4 = Edge.ByStartVertexEndVertex(vB1, vA1)
+
+    #                 if not (e1 and e2 and e3 and e4):
+    #                     continue
+
+    #                 side_wire = Wire.ByEdges([e1, e2, e3, e4])
+    #                 if not side_wire:
+    #                     continue
+
+    #                 side_face = Face.ByWire(side_wire)
+    #                 if side_face:
+    #                     faces_all.append(side_face)
+    #             except Exception:
+    #                 # Skip problematic quads but continue
+    #                 continue
+
+    #     # -----------------------------
+    #     # Build final cell
+    #     # -----------------------------
+    #     try:
+    #         cell = Cell.ByFaces(faces_all, tolerance=tolerance)
+    #     except Exception:
+    #         if not silent:
+    #             print("Cell.ByThickenedFace - Error: Cell.ByFaces failed.")
+    #         return None
+
+    #     if not Topology.IsInstance(cell, "Cell"):
+    #         if not silent:
+    #             print("Cell.ByThickenedFace - Error: Cell.ByFaces did not return a valid Cell.")
+    #         return None
+
+    #     return cell
 
     @staticmethod
-    def ByThickenedFace(face,
-                        thickness: float = 1.0,
-                        bothSides: bool = True,
-                        wSides: int = 1,
-                        reverse: bool = False,
-                        tolerance: float = 0.0001,
-                        silent: bool = False,
-                        polyhedron: bool = True):
-        """
-        Creates a cell by thickening the input face.
-
-        Behaviour:
-        - Only the bottom and top faces are used as horizontal faces.
-        - wSides controls the number of vertical segments along the thickness.
-        Intermediate offset layers are used only to build side faces and are
-        not included as horizontal faces in Cell.ByFaces.
-
-        Parameters
-        ----------
-        face : topologic_core.Face
-            The input face to be thickened.
-        thickness : float , optional
-            The desired thickness. Default is 1.0.
-        bothSides : bool
-            If True, the thickening is symmetric about the original face
-            (i.e. from -thickness/2 to +thickness/2).
-            If False, the thickening is from 0 to +thickness along the face normal.
-            Default is True.
-        reverse : bool
-            If True, the extrusion direction is flipped (normal is negated).
-            Default is False.
-        wSides: int, optional
-            The number of segments along the thickness direction.
-            This is the same definition regardless of bothSides.
-            Default is 1.
-        tolerance : float , optional
-            The desired tolerance. Default is 0.0001.
-        silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
-
-        Returns
-        -------
-        topologic_core.Cell
-            The created cell, or None on failure.
-        """
+    def ByThickenedFace(
+        face,
+        thickness: float = 1.0,
+        bothSides: bool = True,
+        wSides: int = 1,
+        reverse: bool = False,
+        tolerance: float = 0.0001,
+        silent: bool = False,
+        polyhedron: bool = True,
+    ):
         if not polyhedron:
-            result = Cell._NativeCell("ByThickenedFace", face, thickness=thickness, bothSides=bothSides, reverse=reverse, tolerance=tolerance, silent=silent)
-            if result is None and not silent: print("Cell.ByThickenedFace - Error: Native thickening failed. Returning None.")
+            result = Cell._NativeCell(
+                "ByThickenedFace", face,
+                thickness=thickness,
+                bothSides=bothSides,
+                reverse=reverse,
+                tolerance=tolerance,
+                silent=silent,
+            )
+            if result is None and not silent:
+                print("Cell.ByThickenedFace - Error: Native thickening failed. Returning None.")
             return result
+
         import math
         from topologicpy.Topology import Topology
         from topologicpy.Face import Face
@@ -572,178 +775,122 @@ class Cell():
         from topologicpy.Wire import Wire
         from topologicpy.Vertex import Vertex
 
-        # -----------------------------
-        # Validation
-        # -----------------------------
         if not Topology.IsInstance(face, "Face"):
             if not silent:
                 print("Cell.ByThickenedFace - Error: Input is not a valid Face. Returning None.")
             return None
 
-        if thickness <= tolerance:
+        try:
+            thickness = float(thickness)
+            wSides = int(wSides)
+            tolerance = abs(float(tolerance))
+        except Exception:
             if not silent:
-                print("Cell.ByThickenedFace - Error: Thickness is less than or equal to the tolerance. Returning None.")
-            return None
-        
-        if wSides < 1:
-            if not silent:
-                print("Cell.ByThickenedFace - Error: wSides is less than 1. Returning None.")
-            return None
-
-        if thickness/float(wSides) <= tolerance:
-            if not silent:
-                print("Cell.ByThickenedFace - Error: The distance between layers is less than or equal to the tolerance. Returning None.")
+                print("Cell.ByThickenedFace - Error: Invalid numerical input. Returning None.")
             return None
 
-        # -----------------------------
-        # Face normal (normalized)
-        # -----------------------------
-        normal = Face.Normal(face)
+        if thickness <= tolerance or wSides < 1 or thickness / float(wSides) <= tolerance:
+            if not silent:
+                print("Cell.ByThickenedFace - Error: Invalid thickness or wSides. Returning None.")
+            return None
+
+        normal = Face.Normal(face, mantissa=None, silent=True)
         if not isinstance(normal, (list, tuple)) or len(normal) != 3:
             if not silent:
-                print("Cell.ByThickenedFace - Error: Could not compute face normal.")
+                print("Cell.ByThickenedFace - Error: Could not compute face normal. Returning None.")
             return None
 
-        nx, ny, nz = normal
-        L = math.sqrt(nx*nx + ny*ny + nz*nz)
-        if L <= tolerance:
-            if not silent:
-                print("Cell.ByThickenedFace - Error: Degenerate face normal.")
+        nx, ny, nz = [float(value) for value in normal]
+        magnitude = math.sqrt(nx * nx + ny * ny + nz * nz)
+        if magnitude <= tolerance:
             return None
-
-        nx, ny, nz = nx/L, ny/L, nz/L
-
+        nx, ny, nz = nx / magnitude, ny / magnitude, nz / magnitude
         if reverse:
             nx, ny, nz = -nx, -ny, -nz
 
-        # -----------------------------
-        # Build offset layers
-        # NOTE: We will only keep the min/max offset faces as bottom/top.
-        # Intermediate layers are used only for building side faces.
-        # -----------------------------
         step = thickness / float(wSides)
-        layers = []
-
         if bothSides:
-            # Symmetric: [-thickness/2, ..., +thickness/2]
-            start = -0.5 * thickness
-            for i in range(wSides + 1):
-                offset = start + step * i
-                f = Topology.Translate(face, nx*offset, ny*offset, nz*offset)
-                layers.append((offset, f))
+            offsets = [-0.5 * thickness + step * i for i in range(wSides + 1)]
         else:
-            # One-sided: [0, ..., thickness]
-            for i in range(wSides + 1):
-                offset = step * i
-                f = Topology.Translate(face, nx*offset, ny*offset, nz*offset)
-                layers.append((offset, f))
+            offsets = [step * i for i in range(wSides + 1)]
 
-        if len(layers) < 2:
-            if not silent:
-                print("Cell.ByThickenedFace - Error: Not enough layers to form a volume.")
-            return None
+        layers = []
+        for offset in offsets:
+            layer = Topology.Translate(face, nx * offset, ny * offset, nz * offset)
+            if not Topology.IsInstance(layer, "Face"):
+                return None
+            layers.append((offset, layer))
 
-        layers.sort(key=lambda x: x[0])
+        faces_all = [layers[0][1], layers[-1][1]]
 
-        # Bottom and top faces only
-        bottom_face = layers[0][1]
-        top_face = layers[-1][1]
+        def _vertex_key(vertex):
+            return (
+                round(float(Vertex.X(vertex, mantissa=None)), 10),
+                round(float(Vertex.Y(vertex, mantissa=None)), 10),
+                round(float(Vertex.Z(vertex, mantissa=None)), 10),
+            )
 
-        faces_all = [bottom_face, top_face]
-
-        # -----------------------------
-        # Build side faces between each consecutive pair of layers
-        # These are the vertical segmentation faces controlled by wSides.
-        # -----------------------------
         for i in range(len(layers) - 1):
-            _, faceA = layers[i]
-            _, faceB = layers[i + 1]
+            offset_a, face_a = layers[i]
+            offset_b, _ = layers[i + 1]
+            delta = offset_b - offset_a
 
-            edgesA = Topology.Edges(faceA)
-            edgesB = Topology.Edges(faceB)
+            edges_a = Topology.Edges(face_a) or []
+            if not edges_a:
+                return None
 
-            if not edgesA or not edgesB or len(edgesA) != len(edgesB):
-                if not silent:
-                    print("Cell.ByThickenedFace - Warning: Edge mismatch between layers. "
-                        "Side faces may be incomplete.")
-                # We try to continue with min length
-            count = min(len(edgesA), len(edgesB))
+            external = Face.ExternalBoundary(face_a)
+            external_edges = Topology.Edges(external) if external is not None else []
+            external_keys = set()
+            for edge in external_edges or []:
+                sv = Edge.StartVertex(edge)
+                ev = Edge.EndVertex(edge)
+                if Topology.IsInstance(sv, "Vertex") and Topology.IsInstance(ev, "Vertex"):
+                    external_keys.add(tuple(sorted((_vertex_key(sv), _vertex_key(ev)))))
 
-            # Get external boundary edge geometries to identify outer vs inner
-            ext_boundary = Face.ExternalBoundary(faceA)
-            ext_edges = Topology.Edges(ext_boundary) if ext_boundary else []
-            ext_edge_keys = set()
-            for e in ext_edges:
-                sv = Edge.StartVertex(e)
-                ev = Edge.EndVertex(e)
-                key = tuple(sorted([(round(Vertex.X(sv), 8), round(Vertex.Y(sv), 8), round(Vertex.Z(sv), 8)),
-                                     (round(Vertex.X(ev), 8), round(Vertex.Y(ev), 8), round(Vertex.Z(ev), 8))]))
-                ext_edge_keys.add(key)
-
-            for j in range(count):
-                eA = edgesA[j]
-                eB = edgesB[j]
-
-                vA = Topology.Vertices(eA)
-                vB = Topology.Vertices(eB)
-
-                if not vA or not vB or len(vA) != 2 or len(vB) != 2:
+            for edge_a in edges_a:
+                if not Topology.IsInstance(edge_a, "Edge"):
                     continue
 
-                vA1, vA2 = vA
-                vB1, vB2 = vB
+                edge_b = Topology.Translate(edge_a, nx * delta, ny * delta, nz * delta)
+                if not Topology.IsInstance(edge_b, "Edge"):
+                    return None
 
-                # Check if this edge is from the inner boundary (hole)
-                svA = Edge.StartVertex(eA)
-                evA = Edge.EndVertex(eA)
-                edge_key = tuple(sorted([(round(Vertex.X(svA), 8), round(Vertex.Y(svA), 8), round(Vertex.Z(svA), 8)),
-                                         (round(Vertex.X(evA), 8), round(Vertex.Y(evA), 8), round(Vertex.Z(evA), 8))]))
-                is_inner = edge_key not in ext_edge_keys
-
-                try:
-                    if is_inner:
-                        # Reversed winding for inner hole edges - creates inward-facing normals
-                        e1 = Edge.ByStartVertexEndVertex(vA2, vA1)
-                        e2 = Edge.ByStartVertexEndVertex(vA1, vB1)
-                        e3 = Edge.ByStartVertexEndVertex(vB1, vB2)
-                        e4 = Edge.ByStartVertexEndVertex(vB2, vA2)
-                    else:
-                        # Normal winding for outer boundary edges
-                        e1 = Edge.ByStartVertexEndVertex(vA1, vA2)
-                        e2 = Edge.ByStartVertexEndVertex(vA2, vB2)
-                        e3 = Edge.ByStartVertexEndVertex(vB2, vB1)
-                        e4 = Edge.ByStartVertexEndVertex(vB1, vA1)
-
-                    if not (e1 and e2 and e3 and e4):
-                        continue
-
-                    side_wire = Wire.ByEdges([e1, e2, e3, e4])
-                    if not side_wire:
-                        continue
-
-                    side_face = Face.ByWire(side_wire)
-                    if side_face:
-                        faces_all.append(side_face)
-                except Exception:
-                    # Skip problematic quads but continue
+                a0 = Edge.StartVertex(edge_a)
+                a1 = Edge.EndVertex(edge_a)
+                b0 = Edge.StartVertex(edge_b)
+                b1 = Edge.EndVertex(edge_b)
+                if not all(Topology.IsInstance(v, "Vertex") for v in (a0, a1, b0, b1)):
                     continue
 
-        # -----------------------------
-        # Build final cell
-        # -----------------------------
-        try:
-            cell = Cell.ByFaces(faces_all, tolerance=tolerance)
-        except Exception:
-            if not silent:
-                print("Cell.ByThickenedFace - Error: Cell.ByFaces failed.")
-            return None
+                edge_key = tuple(sorted((_vertex_key(a0), _vertex_key(a1))))
+                is_inner = edge_key not in external_keys
+                ordered = [a1, a0, b0, b1] if is_inner else [a0, a1, b1, b0]
 
-        if not Topology.IsInstance(cell, "Cell"):
-            if not silent:
-                print("Cell.ByThickenedFace - Error: Cell.ByFaces did not return a valid Cell.")
-            return None
+                side_edges = []
+                for j in range(4):
+                    e = Edge.ByStartVertexEndVertex(ordered[j], ordered[(j + 1) % 4])
+                    if not Topology.IsInstance(e, "Edge"):
+                        side_edges = []
+                        break
+                    side_edges.append(e)
+                if len(side_edges) != 4:
+                    return None
 
-        return cell
+                side_wire = Wire.ByEdges(side_edges, tolerance=tolerance, silent=True)
+                if not Topology.IsInstance(side_wire, "Wire"):
+                    return None
+                side_face = Face.ByWire(side_wire, tolerance=tolerance, silent=True)
+                if not Topology.IsInstance(side_face, "Face"):
+                    return None
+                faces_all.append(side_face)
+
+        result = Cell.ByFaces(faces_all, tolerance=tolerance, silent=True)
+        if not Topology.IsInstance(result, "Cell"):
+            if not silent:
+                print("Cell.ByThickenedFace - Error: Cell.ByFaces did not return a valid Cell. Returning None.")
+            return None
+        return result
 
     @staticmethod
     def ByThickenedShell(shell, direction: list = [0, 0, 1], thickness: float = 1.0, bothSides: bool = True, reverse: bool = False,
@@ -2135,9 +2282,14 @@ class Cell():
     
     @staticmethod
     def Cube(origin = None,
-            size: float = 1,
-            uSides: int = 1, vSides: int = 1, wSides: int = 1,
-            direction: list = [0, 0, 1], placement: str ="center", tolerance: float = 0.0001):
+             size: float = 1,
+            uSides: int = 1,
+            vSides: int = 1,
+            wSides: int = 1,
+            direction: list = [0, 0, 1],
+            placement: str ="center",
+            tolerance: float = 0.0001,
+            silent: bool = False):
         """
         Creates a cube.
 
@@ -2159,6 +2311,8 @@ class Cell():
             The description of the placement of the origin of the cube. This can be "bottom", "center", or "lowerleft". It is case insensitive. Default is "center".
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
         
         Returns
         -------
@@ -2166,42 +2320,65 @@ class Cell():
             The created cube.
 
         """
-        return Cell.Prism(origin=origin, width=size, length=size, height=size,
-                          uSides=uSides, vSides=vSides, wSides=wSides,
-                          direction=direction, placement=placement, tolerance=tolerance)
+        return Cell.Prism(origin=origin,
+                          width=size,
+                          length=size,
+                          height=size,
+                          uSides=uSides,
+                          vSides=vSides,
+                          wSides=wSides,
+                          direction=direction,
+                          placement=placement,
+                          tolerance=tolerance,
+                          silent=silent)
     
     @staticmethod
-    def Cylinder(origin = None, radius: float = 0.5, height: float = 1, uSides: int = 16, vSides: int = 1, direction: list = [0, 0, 1],
-                     placement: str = "center", mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False, polyhedron: bool = True):
+    def Cylinder(
+        origin=None,
+        radius: float = 0.5,
+        height: float = 1,
+        uSides: int = 16,
+        vSides: int = 1,
+        polyhedron: bool = True,
+        direction: list = [0, 0, 1],
+        placement: str = "center",
+        mantissa: int = 6,
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
         """
         Creates a cylinder.
 
         Parameters
         ----------
         origin : topologic_core.Vertex , optional
-            The location of the origin of the cylinder. Default is None which results in the cylinder being placed at (0, 0, 0).
+            The location of the origin of the cylinder.
         radius : float , optional
             The radius of the cylinder. Default is 0.5.
         height : float , optional
             The height of the cylinder. Default is 1.
         uSides : int , optional
-            The number of circle segments of the cylinder. Default is 16.
+            The number of circumferential segments. Default is 16.
         vSides : int , optional
-            The number of vertical segments of the cylinder. Default is 1.
+            The number of vertical segments. Default is 1.
+        polyhedron : bool , optional
+            If True, creates a faceted cylinder. If False, creates an exact
+            curved cylinder on the PythonOCC backend. Default is True.
         direction : list , optional
-            The vector representing the up direction of the cylinder. Default is [0, 0, 1].
+            The cylinder axis. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the cylinder. This can be "bottom", "center", or "lowerleft". It is case insensitive. Default is "bottom".
+            "bottom", "center", or "lowerleft". Default is "center".
         mantissa : int , optional
-            The number of decimal places to round the result to. Default is 6.
+            The desired mantissa. Default is 6.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
         topologic_core.Cell
-            The created cell.
-
+            The created Cell.
         """
         from topologicpy.Vertex import Vertex
         from topologicpy.Wire import Wire
@@ -2210,56 +2387,183 @@ class Cell():
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
 
+        if not Topology.IsInstance(origin, "Vertex"):
+            origin = Vertex.Origin()
+
+        try:
+            radius = abs(float(radius))
+            height = abs(float(height))
+            uSides = int(uSides)
+            vSides = int(vSides)
+            tolerance = abs(float(tolerance))
+        except Exception:
+            return None
+
+        if radius <= tolerance or height <= tolerance:
+            return None
+
+        if uSides < 3 or vSides < 1:
+            return None
+
+        placement = str(placement).lower().strip()
+        if placement not in ["bottom", "center", "lowerleft"]:
+            return None
+
+        # Exact curved cylinder.
         if not polyhedron:
-            if not Topology.IsInstance(origin, "Vertex"):
-                origin = Vertex.Origin()
-            cylinder = Cell._NativeCell("ByCylinder", radius=radius, height=height, tolerance=tolerance, silent=silent)
+            cylinder = Cell._NativeCell(
+                "ByCylinder",
+                radius=radius,
+                height=height,
+                tolerance=tolerance,
+                silent=True,
+            )
+
             if not Topology.IsInstance(cylinder, "Cell"):
                 return None
-            p = str(placement).lower().strip()
-            source = [0.0, 0.0, 0.0]
-            if p == "bottom":
-                source = [0.0, 0.0, -0.5*float(height)]
-            elif p == "lowerleft":
-                source = [-float(radius), -float(radius), -0.5*float(height)]
-            elif p != "center":
-                if not silent:
-                    print('Cell.Cylinder - Error: placement must be "center", "bottom", or "lowerleft". Returning None.')
-                return None
-            return Cell._PlaceNativeCell(cylinder, origin, direction, source, tolerance, silent)
 
-        if not Topology.IsInstance(origin, "Vertex"):
-            origin = Vertex.ByCoordinates(0, 0, 0)
-        if not Topology.IsInstance(origin, "Vertex"):
-            print("Cell.Cylinder - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
+            source = [0.0, 0.0, 0.0]
+
+            if placement == "bottom":
+                source = [0.0, 0.0, -0.5 * height]
+            elif placement == "lowerleft":
+                source = [-radius, -radius, -0.5 * height]
+
+            return Cell._PlaceNativeCell(
+                cylinder,
+                origin,
+                direction,
+                source,
+                tolerance,
+                True,
+            )
+
+        # Placement of polygonal base.
+        x_offset = 0.0
+        y_offset = 0.0
+        z_offset = 0.0
+
+        if placement == "center":
+            z_offset = -0.5 * height
+
+        elif placement == "lowerleft":
+            x_offset = radius
+            y_offset = radius
+
+        base_origin = Vertex.ByCoordinates(
+            Vertex.X(origin, mantissa=None) + x_offset,
+            Vertex.Y(origin, mantissa=None) + y_offset,
+            Vertex.Z(origin, mantissa=None) + z_offset,
+        )
+
+        base_wire = Wire.Circle(
+            origin=base_origin,
+            radius=radius,
+            sides=uSides,
+            fromAngle=0,
+            toAngle=360,
+            close=True,
+            direction=[0, 0, 1],
+            placement="center",
+            polyline=True,
+            tolerance=tolerance,
+            silent=True,
+        )
+
+        if not Topology.IsInstance(base_wire, "Wire"):
+            if not silent:
+                print("Cell.Cylinder - Error: Could not create the base wire. Returning None.")
             return None
-        xOffset = 0
-        yOffset = 0
-        zOffset = 0
-        if placement.lower() == "center":
-            zOffset = -height*0.5
-        elif placement.lower() == "lowerleft":
-            xOffset = radius
-            yOffset = radius
-        circle_origin = Vertex.ByCoordinates(Vertex.X(origin, mantissa=mantissa) + xOffset, Vertex.Y(origin, mantissa=mantissa) + yOffset, Vertex.Z(origin, mantissa=mantissa) + zOffset)
-        
-        baseWire = Wire.Circle(origin=circle_origin, radius=radius, sides=uSides, fromAngle=0, toAngle=360, close=True, direction=[0, 0, 1], placement="center", tolerance=tolerance)
-        baseFace = Face.ByWire(baseWire, tolerance=tolerance)
-        cylinder = Cell.ByThickenedFace(face=baseFace, thickness=height, bothSides=False, reverse=False, tolerance=tolerance)
+
+        base_face = Face.ByWire(
+            base_wire,
+            tolerance=tolerance,
+            silent=True,
+        )
+
+        if not Topology.IsInstance(base_face, "Face"):
+            return None
+
+        # PythonOCC: direct exact extrusion of the polygonal Face.
+        if not Topology._IsTopologicCoreBackend():
+            cylinder = Cell._NativeCell(
+                "ByPrism",
+                base_face,
+                vector=[0.0, 0.0, height],
+                tolerance=tolerance,
+                silent=True,
+            )
+
+        # TopologicCore: retain historical polyhedral construction.
+        else:
+            cylinder = Cell.ByThickenedFace(
+                face=base_face,
+                thickness=height,
+                bothSides=False,
+                reverse=False,
+                tolerance=tolerance,
+                silent=silent,
+                polyhedron=True,
+            )
+
+        if not Topology.IsInstance(cylinder, "Cell"):
+            return None
+
+        # Vertical subdivisions.
         if vSides > 1:
             cutting_planes = []
-            baseX = Vertex.X(origin, mantissa=mantissa) + xOffset
-            baseY = Vertex.Y(origin, mantissa=mantissa) + yOffset
-            size = radius*3
-            for i in range(1, vSides):
-                baseZ = Vertex.Z(origin) + zOffset + float(height)/float(vSides)*i
-                tool_origin = Vertex.ByCoordinates(baseX, baseY, baseZ)
-                cutting_planes.append(Face.ByWire(Wire.Rectangle(origin=tool_origin, width=size, length=size), tolerance=tolerance))
-            cutting_planes_cluster = Cluster.ByTopologies(cutting_planes)
-            cylinder = CellComplex.ExternalBoundary(Topology.Slice(cylinder,cutting_planes_cluster))
 
-        cylinder = Topology.Orient(cylinder, origin=origin, dirA=[0, 0, 1], dirB=direction)
-        return cylinder
+            base_x = Vertex.X(origin, mantissa=None) + x_offset
+            base_y = Vertex.Y(origin, mantissa=None) + y_offset
+            size = radius * 3.0
+
+            for i in range(1, vSides):
+                z = (
+                    Vertex.Z(origin, mantissa=None)
+                    + z_offset
+                    + height * float(i) / float(vSides)
+                )
+
+                tool_origin = Vertex.ByCoordinates(
+                    base_x,
+                    base_y,
+                    z,
+                )
+
+                cutting_face = Face.ByWire(
+                    Wire.Rectangle(
+                        origin=tool_origin,
+                        width=size,
+                        length=size,
+                    ),
+                    tolerance=tolerance,
+                    silent=True,
+                )
+
+                if Topology.IsInstance(cutting_face, "Face"):
+                    cutting_planes.append(cutting_face)
+
+            if cutting_planes:
+                cutters = Cluster.ByTopologies(cutting_planes)
+
+                sliced = Topology.Slice(
+                    cylinder,
+                    cutters,
+                )
+
+                if sliced is not None:
+                    candidate = CellComplex.ExternalBoundary(sliced)
+                    if Topology.IsInstance(candidate, "Cell"):
+                        cylinder = candidate
+
+        return Topology.Orient(
+            cylinder,
+            origin=origin,
+            dirA=[0, 0, 1],
+            dirB=direction,
+            tolerance=tolerance,
+            silent=True,
+        )
     
     @staticmethod
     def Decompose(cell, tiltAngle: float = 10, tolerance: float = 0.0001) -> dict:

@@ -672,75 +672,225 @@ class Shell():
         """
         return Shell.Pie(origin=origin, radiusA=radius, radiusB=0, sides=sides, rings=1, fromAngle=fromAngle, toAngle=toAngle, direction=direction, placement=placement, tolerance=tolerance)
 
+    # @staticmethod
+    # def Delaunay(
+    #     vertices: list,
+    #     face,
+    #     deflection: float = None,
+    #     maxIterations: int = 5,
+    #     convergence: float = 0.001,
+    #     tolerance: float = 0.0001,
+    #     silent: bool = False,
+    # ):
+    #     """
+    #     Returns the intrinsic/geodesic Delaunay partition of the input Face.
+
+    #     The input Vertices are the Delaunay sites and must all lie on, or within
+    #     ``tolerance`` of, the trimmed input Face. Distances are measured intrinsically
+    #     on the Face, so the shortest paths are constrained by its outer boundary and
+    #     any internal boundaries. The planar construction is therefore a special case
+    #     of the general surface construction.
+
+    #     On the PythonOCC backend the intrinsic metric is approximated with the
+    #     Kimmel-Sethian Fast Marching Method on successively refined triangulations
+    #     of the trimmed Face. Delaunay adjacency is derived strictly as the dual of
+    #     the converged intrinsic Voronoi diagram; adjacent sites are connected by
+    #     continuous steepest-descent traces through the piecewise-linear Fast
+    #     Marching distance field. The resulting paths are chained and rebuilt as
+    #     degree-1 B-spline p-curves on the original exact OCCT surface and used to
+    #     split that Face. Thus the returned Shell contains subsets
+    #     of the original analytic, B-spline, or NURBS surface rather than inheriting
+    #     one topological Edge per temporary computational triangle.
+
+    #     Parameters
+    #     ----------
+    #     vertices : list
+    #         The input list of site Vertices. At least three are required.
+    #     face : topologic_core.Face
+    #         The trimmed surface domain on which the intrinsic Delaunay partition is
+    #         computed.
+    #     deflection : float , optional
+    #         Finest permitted linear deflection of the computational triangulation.
+    #         Refinement starts coarser and approaches, but never goes below, this
+    #         value. If None, a scale-aware target is selected automatically. Default
+    #         is None.
+    #     maxIterations : int , optional
+    #         Maximum number of surface-mesh refinement iterations. Default is 5.
+    #     convergence : float , optional
+    #         Absolute geometric convergence criterion for successive intrinsic
+    #         Voronoi boundaries from which the Delaunay dual is derived. Default is
+    #         0.001.
+    #     tolerance : float , optional
+    #         The desired geometric tolerance. Default is 0.0001.
+    #     silent : bool , optional
+    #         If True, error and warning messages are suppressed. Default is False.
+
+    #     Returns
+    #     -------
+    #     topologic_core.Shell
+    #         A Shell partitioning the exact input Face by intrinsic Delaunay geodesics,
+    #         or None if the operation fails.
+    #     """
+    #     from topologicpy.Topology import Topology
+
+    #     if not isinstance(vertices, list):
+    #         if not silent:
+    #             print("Shell.Delaunay - Error: The input vertices parameter is not a valid list. Returning None.")
+    #         return None
+    #     if len(vertices) < 3 or any(not Topology.IsInstance(v, "Vertex") for v in vertices):
+    #         if not silent:
+    #             print("Shell.Delaunay - Error: At least three valid Vertices are required. Returning None.")
+    #         return None
+    #     if not Topology.IsInstance(face, "Face"):
+    #         if not silent:
+    #             print("Shell.Delaunay - Error: The input face parameter is not a valid Face. Returning None.")
+    #         return None
+    #     if Topology._IsTopologicCoreBackend():
+    #         if not silent:
+    #             print("Shell.Delaunay - Error: Intrinsic surface Delaunay currently requires the PythonOCC backend. Returning None.")
+    #         return None
+
+    #     try:
+    #         return Core.Shell.Delaunay(
+    #             vertices,
+    #             face,
+    #             deflection=deflection,
+    #             maxIterations=maxIterations,
+    #             convergence=convergence,
+    #             tolerance=tolerance,
+    #             silent=silent,
+    #         )
+    #     except TypeError:
+    #         try:
+    #             return Core.Shell.Delaunay(vertices, face, deflection, maxIterations, convergence, tolerance, silent)
+    #         except Exception:
+    #             pass
+    #     except Exception:
+    #         pass
+
+    #     if not silent:
+    #         print("Shell.Delaunay - Error: Could not construct the intrinsic Delaunay partition. Returning None.")
+    #     return None
+
     @staticmethod
     def Delaunay(
         vertices: list,
-        face,
+        face=None,
         deflection: float = None,
         maxIterations: int = 5,
         convergence: float = 0.001,
         tolerance: float = 0.0001,
         silent: bool = False,
     ):
-        """
-        Returns the intrinsic/geodesic Delaunay partition of the input Face.
-
-        The input Vertices are the Delaunay sites and must all lie on, or within
-        ``tolerance`` of, the trimmed input Face. Distances are measured intrinsically
-        on the Face, so the shortest paths are constrained by its outer boundary and
-        any internal boundaries. The planar construction is therefore a special case
-        of the general surface construction.
-
-        On the PythonOCC backend the intrinsic metric is approximated with the
-        Kimmel-Sethian Fast Marching Method on successively refined triangulations
-        of the trimmed Face. Delaunay adjacency is derived strictly as the dual of
-        the converged intrinsic Voronoi diagram; adjacent sites are connected by
-        continuous steepest-descent traces through the piecewise-linear Fast
-        Marching distance field. The resulting paths are chained and rebuilt as
-        degree-1 B-spline p-curves on the original exact OCCT surface and used to
-        split that Face. Thus the returned Shell contains subsets
-        of the original analytic, B-spline, or NURBS surface rather than inheriting
-        one topological Edge per temporary computational triangle.
-
-        Parameters
-        ----------
-        vertices : list
-            The input list of site Vertices. At least three are required.
-        face : topologic_core.Face
-            The trimmed surface domain on which the intrinsic Delaunay partition is
-            computed.
-        deflection : float , optional
-            Finest permitted linear deflection of the computational triangulation.
-            Refinement starts coarser and approaches, but never goes below, this
-            value. If None, a scale-aware target is selected automatically. Default
-            is None.
-        maxIterations : int , optional
-            Maximum number of surface-mesh refinement iterations. Default is 5.
-        convergence : float , optional
-            Absolute geometric convergence criterion for successive intrinsic
-            Voronoi boundaries from which the Delaunay dual is derived. Default is
-            0.001.
-        tolerance : float , optional
-            The desired geometric tolerance. Default is 0.0001.
-        silent : bool , optional
-            If True, error and warning messages are suppressed. Default is False.
-
-        Returns
-        -------
-        topologic_core.Shell
-            A Shell partitioning the exact input Face by intrinsic Delaunay geodesics,
-            or None if the operation fails.
-        """
+        import math
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Wire import Wire
+        from topologicpy.Face import Face
+        from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
 
         if not isinstance(vertices, list):
             if not silent:
                 print("Shell.Delaunay - Error: The input vertices parameter is not a valid list. Returning None.")
             return None
-        if len(vertices) < 3 or any(not Topology.IsInstance(v, "Vertex") for v in vertices):
+        vertices = [v for v in vertices if Topology.IsInstance(v, "Vertex")]
+        if len(vertices) < 3:
             if not silent:
                 print("Shell.Delaunay - Error: At least three valid Vertices are required. Returning None.")
             return None
+
+        try:
+            tolerance = abs(float(tolerance))
+        except Exception:
+            tolerance = 0.0001
+        if tolerance <= 0.0:
+            tolerance = 0.0001
+
+        if face is None:
+            try:
+                import numpy as np
+                from scipy.spatial import Delaunay as SciPyDelaunay
+            except Exception:
+                if not silent:
+                    print("Shell.Delaunay - Error: NumPy/SciPy are required for unconstrained Delaunay triangulation. Returning None.")
+                return None
+
+            points3d = []
+            for vertex in vertices:
+                points3d.append(np.array([
+                    float(Vertex.X(vertex, mantissa=None)),
+                    float(Vertex.Y(vertex, mantissa=None)),
+                    float(Vertex.Z(vertex, mantissa=None)),
+                ], dtype=float))
+
+            p0 = points3d[0]
+            u_axis = None
+            normal = None
+            for i in range(1, len(points3d)):
+                candidate_u = points3d[i] - p0
+                lu = float(np.linalg.norm(candidate_u))
+                if lu <= tolerance:
+                    continue
+                for j in range(i + 1, len(points3d)):
+                    candidate_v = points3d[j] - p0
+                    cross = np.cross(candidate_u, candidate_v)
+                    lc = float(np.linalg.norm(cross))
+                    if lc <= tolerance:
+                        continue
+                    u_axis = candidate_u / lu
+                    normal = cross / lc
+                    break
+                if u_axis is not None:
+                    break
+
+            if u_axis is None or normal is None:
+                if not silent:
+                    print("Shell.Delaunay - Error: The input Vertices are collinear. Returning None.")
+                return None
+
+            v_axis = np.cross(normal, u_axis)
+            lv = float(np.linalg.norm(v_axis))
+            if lv <= tolerance:
+                return None
+            v_axis /= lv
+
+            points2d = []
+            for point in points3d:
+                delta = point - p0
+                if abs(float(np.dot(delta, normal))) > tolerance:
+                    if not silent:
+                        print("Shell.Delaunay - Error: The input Vertices are not coplanar. Returning None.")
+                    return None
+                points2d.append([
+                    float(np.dot(delta, u_axis)),
+                    float(np.dot(delta, v_axis)),
+                ])
+
+            try:
+                triangulation = SciPyDelaunay(np.asarray(points2d, dtype=float))
+            except Exception:
+                if not silent:
+                    print("Shell.Delaunay - Error: Could not compute the planar Delaunay triangulation. Returning None.")
+                return None
+
+            faces = []
+            for simplex in triangulation.simplices:
+                wire = Wire.ByVertices([
+                    vertices[int(simplex[0])],
+                    vertices[int(simplex[1])],
+                    vertices[int(simplex[2])],
+                ], close=True, tolerance=tolerance, silent=True)
+                triangle = Face.ByWire(wire, tolerance=tolerance, silent=True)
+                if Topology.IsInstance(triangle, "Face"):
+                    faces.append(triangle)
+
+            if not faces:
+                return None
+            shell = Shell.ByFaces(faces, tolerance=tolerance, silent=True)
+            if Topology.IsInstance(shell, "Shell"):
+                return shell
+            return Cluster.ByTopologies(faces, silent=True)
+
         if not Topology.IsInstance(face, "Face"):
             if not silent:
                 print("Shell.Delaunay - Error: The input face parameter is not a valid Face. Returning None.")
@@ -1699,7 +1849,7 @@ class Shell():
             return None
         
         total_angle = 180*twists
-        cir = Wire.Circle(origin=origin, radius=radius, sides=uSides)
+        cir = Wire.Circle(origin=origin, radius=radius, sides=uSides, polyline=True)
         c_verts = Topology.Vertices(cir, silent=True)
         wires = []
         for i, v in enumerate(c_verts):

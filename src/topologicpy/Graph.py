@@ -18026,7 +18026,7 @@ class Graph:
                 edge_dict[str(si)+"_"+str(ei)] = i
                 edge_dict[str(ei)+"_"+str(si)] = i
             n = len(vertices)
-            c = Wire.Circle(radius=radius, sides=sides)
+            c = Wire.Circle(radius=radius, sides=sides, polyline=True)
             c_vertices = []
             for i in range(n):
                 u = i*(1/n)

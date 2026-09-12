@@ -2345,7 +2345,7 @@ class CellComplex():
             )
 
         # Historical v0.9.68 faceted construction (kept intentionally intact).
-        c = Wire.Circle(origin=Vertex.Origin(), radius=minorRadius, sides=vSides, fromAngle=0, toAngle=360, close=False, direction=[0, 1, 0], placement="center")
+        c = Wire.Circle(origin=Vertex.Origin(), radius=minorRadius, sides=vSides, polyline=polyhedron, fromAngle=0, toAngle=360, close=False, direction=[0, 1, 0], placement="center")
         c = Face.ByWire(c)
         c = Topology.Translate(c, abs(majorRadius-minorRadius), 0, 0)
         torus = Topology.Spin(c, origin=Vertex.Origin(), triangulate=False, direction=[0, 0, 1], angle=360, sides=uSides, tolerance=tolerance)
