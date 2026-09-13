@@ -360,7 +360,7 @@ def test_bounding_rectangle_dictionary_reports_extents(rectangle):
 
 
 def test_by_offset_and_bisectors_for_closed_rectangle(rectangle):
-    offset_wire = Wire.ByOffset(rectangle, offset=0.1, silent=True)
+    offset_wire = Wire.ByOffset(rectangle, offset=0.1, smooth=True, silent=True)
     bisectors = Wire.Bisectors(rectangle, offset=0.1, silent=True)
 
     _assert_wire(offset_wire)
@@ -528,7 +528,6 @@ def test_by_tgraph_vertices_builds_wire_from_minimal_tgraph_records():
 
 def test_invalid_inputs_for_higher_level_wire_methods(rectangle):
     assert Wire.ByOffset(None) is None
-    assert Wire.ByOffsetArea(None, area=1, silent=True) is None
     assert Wire.Close(None, silent=True) is None
     assert Wire.ExternalBoundary(None, silent=True) is None
     assert Wire.Project(rectangle, None) is None

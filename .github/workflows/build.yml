@@ -207,7 +207,7 @@ jobs:
       - build
       - test-topologiccore
       - test-pythonocc
-    name: Consider & Publish PyPI Release
+    name: Publish PyPI Release
     permissions:
       id-token: write
     environment:
@@ -260,7 +260,7 @@ jobs:
       - prepare-build-info
       - publish-pypi-release
     if: ${{ startsWith(needs.prepare-build-info.outputs.tagname, 'v') && github.event_name != 'pull_request' && needs.prepare-build-info.outputs.branchname == 'main' }}
-    name: Consider & Draft GitHub Release Page
+    name: Draft GitHub Release Page
     runs-on: ubuntu-latest
     permissions:
       # IMPORTANT: mandatory for GitHub Releases

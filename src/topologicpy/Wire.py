@@ -1418,6 +1418,524 @@ class Wire():
         edges = Topology.Edges(cluster)
         return Wire.ByEdges(edges, tolerance=tolerance)
 
+    # @staticmethod
+    # def ByOffset(
+    #     wire,
+    #     offset: float = 1.0,
+    #     offsetKey: str = "offset",
+    #     stepOffsetA: float = 0,
+    #     stepOffsetB: float = 0,
+    #     stepOffsetKeyA: str = "stepOffsetA",
+    #     stepOffsetKeyB: str = "stepOffsetB",
+    #     reverse: bool = False,
+    #     bisectors: bool = False,
+    #     transferDictionaries: bool = False,
+    #     epsilon: float = 0.01,
+    #     tolerance: float = 0.0001,
+    #     silent: bool = False,
+    #     numWorkers: int = None,
+    # ):
+    #     """
+    #     Creates an offset Wire.
+
+    #     For geometrically curved Wires, the PythonOCC backend uses
+    #     ``BRepOffsetAPI_MakeOffset`` so circular, B-spline, and NURBS Edges remain
+    #     genuine curves. Curved Wires with per-Edge varying offset distances are
+    #     rejected because rebuilding those Edges independently would destroy exact
+    #     corner/join geometry. On non-PythonOCC backends curved Wires are likewise
+    #     rejected rather than silently converted to chords.
+
+    #     The historical TopologicPy algorithm is retained unchanged for polylines,
+    #     including per-Edge offsets, step offsets, bisectors, and its existing
+    #     dictionary-transfer behaviour.
+
+    #     Parameters
+    #     ----------
+    #     wire : topologic_core.Wire
+    #         The input Wire.
+    #     offset : float , optional
+    #         The desired offset distance. A positive value offsets to the interior
+    #         of an anti-clockwise closed Wire. Default is 1.0.
+    #     offsetKey : str , optional
+    #         Edge dictionary key used to override ``offset``. Default is "offset".
+    #     stepOffsetA : float , optional
+    #         Historical polyline step offset along the previous Edge. Default is 0.
+    #     stepOffsetB : float , optional
+    #         Historical polyline step offset along the next Edge. Default is 0.
+    #     stepOffsetKeyA : str , optional
+    #         Vertex dictionary key for ``stepOffsetA``. Default is "stepOffsetA".
+    #     stepOffsetKeyB : str , optional
+    #         Vertex dictionary key for ``stepOffsetB``. Default is "stepOffsetB".
+    #     reverse : bool , optional
+    #         If True, reverses the offset direction. Default is False.
+    #     bisectors : bool , optional
+    #         If True, include seam Edges between the source and offset Wire.
+    #         Default is False.
+    #     transferDictionaries : bool , optional
+    #         If True, transfer available dictionaries to the result. Default is False.
+    #     epsilon : float , optional
+    #         Historical polyline cleanup tolerance. Default is 0.01.
+    #     tolerance : float , optional
+    #         The desired geometric tolerance. Default is 0.0001.
+    #     silent : bool , optional
+    #         If True, suppress diagnostics. Default is False.
+    #     numWorkers : int , optional
+    #         Historical dictionary-transfer worker count.
+
+    #     Returns
+    #     -------
+    #     topologic_core.Wire
+    #         The offset Wire, or None when the requested operation cannot be
+    #         performed without degrading curved geometry.
+    #     """
+    #     import math
+
+    #     from topologicpy.Vertex import Vertex
+    #     from topologicpy.Edge import Edge
+    #     from topologicpy.Face import Face
+    #     from topologicpy.Dictionary import Dictionary
+    #     from topologicpy.Cluster import Cluster
+    #     from topologicpy.Topology import Topology
+    #     from topologicpy.Vector import Vector
+    #     from topologicpy.Helper import Helper
+
+    #     if not Topology.IsInstance(wire, "Wire"):
+    #         if not silent:
+    #             print("Wire.ByOffset - Error: The input wire parameter is not a valid Wire. Returning None.")
+    #         return None
+
+    #     try:
+    #         offset = float(offset)
+    #         tolerance = max(abs(float(tolerance)), 1.0e-12)
+    #     except Exception:
+    #         if not silent:
+    #             print("Wire.ByOffset - Error: Invalid offset or tolerance. Returning None.")
+    #         return None
+
+    #     if not math.isfinite(offset):
+    #         if not silent:
+    #             print("Wire.ByOffset - Error: The input offset must be finite. Returning None.")
+    #         return None
+
+    #     source_edges = Wire._OrderedEdges(wire, tolerance=tolerance, silent=True)
+    #     if not isinstance(source_edges, list) or not source_edges:
+    #         return None
+
+    #     is_polyline = bool(Wire.IsPolyline(wire, tolerance=tolerance, silent=True))
+
+    #     # ------------------------------------------------------------------
+    #     # Native curve-preserving offset.
+    #     # ------------------------------------------------------------------
+    #     if not is_polyline:
+    #         try:
+    #             planar = bool(Topology.IsPlanar(wire, tolerance=tolerance))
+    #         except TypeError:
+    #             try:
+    #                 planar = bool(Topology.IsPlanar(wire))
+    #             except Exception:
+    #                 planar = False
+    #         except Exception:
+    #             planar = False
+
+    #         if not planar:
+    #             if not silent:
+    #                 print("Wire.ByOffset - Error: Curved Wire offset currently requires a planar Wire. Returning None.")
+    #             return None
+
+    #         factor = -1.0 if reverse else 1.0
+    #         effective_offsets = []
+
+    #         for edge in source_edges:
+    #             value = offset
+    #             if isinstance(offsetKey, str):
+    #                 dictionary = Topology.Dictionary(edge, silent=True)
+    #                 if dictionary:
+    #                     try:
+    #                         candidate = Dictionary.ValueAtKey(
+    #                             dictionary,
+    #                             key=offsetKey,
+    #                             defaultValue=offset,
+    #                         )
+    #                     except TypeError:
+    #                         try:
+    #                             candidate = Dictionary.ValueAtKey(dictionary, offsetKey)
+    #                         except Exception:
+    #                             candidate = offset
+    #                     except Exception:
+    #                         candidate = offset
+
+    #                     if isinstance(candidate, (int, float)):
+    #                         value = float(candidate)
+
+    #             if not math.isfinite(float(value)):
+    #                 return None
+    #             effective_offsets.append(float(value) * factor)
+
+    #         native_offset = effective_offsets[0]
+    #         if any(abs(value - native_offset) > tolerance for value in effective_offsets[1:]):
+    #             if not silent:
+    #                 print("Wire.ByOffset - Error: Curved Wires require one uniform offset distance. Per-Edge varying offsets would destroy exact curve joins. Returning None.")
+    #             return None
+
+    #         if abs(native_offset) <= tolerance:
+    #             return wire
+
+    #         try:
+    #             is_topologic_core = bool(Topology._IsTopologicCoreBackend())
+    #         except Exception:
+    #             is_topologic_core = True
+
+    #         if is_topologic_core:
+    #             if not silent:
+    #                 print("Wire.ByOffset - Error: The active backend cannot offset this curved Wire without approximation. Returning None.")
+    #             return None
+
+    #         def wrap_offset_shape(shape):
+    #             result = None
+    #             try:
+    #                 if Core.HasAttribute("Topology", "ByOcctShape"):
+    #                     result = Core.Topology.ByOcctShape(shape)
+    #             except Exception:
+    #                 result = None
+
+    #             if Topology.IsInstance(result, "Wire"):
+    #                 return result
+
+    #             if result is not None:
+    #                 wires = Topology.Wires(result, silent=True) or []
+    #                 wires = [candidate for candidate in wires if Topology.IsInstance(candidate, "Wire")]
+    #                 if len(wires) == 1:
+    #                     return wires[0]
+
+    #                 if len(wires) > 1:
+    #                     edges = []
+    #                     for candidate in wires:
+    #                         edges.extend(Wire.Edges(candidate, silent=True) or [])
+    #                     merged = Wire.ByEdges(
+    #                         edges,
+    #                         orient=True,
+    #                         tolerance=tolerance,
+    #                         silent=True,
+    #                     )
+    #                     if Topology.IsInstance(merged, "Wire"):
+    #                         return merged
+    #             return None
+
+    #         try:
+    #             from OCC.Core.BRepOffsetAPI import BRepOffsetAPI_MakeOffset
+    #             from OCC.Core.GeomAbs import GeomAbs_Arc
+    #             from OCC.Core.TopoDS import topods
+
+    #             shape = getattr(wire, "shape", None)
+    #             if shape is None or shape.IsNull():
+    #                 return None
+
+    #             occ_wire = topods.Wire(shape)
+    #             open_result = not bool(Wire.IsClosed(wire, tolerance=tolerance, silent=True))
+
+    #             try:
+    #                 maker = BRepOffsetAPI_MakeOffset(
+    #                     occ_wire,
+    #                     GeomAbs_Arc,
+    #                     open_result,
+    #                 )
+    #             except Exception:
+    #                 maker = BRepOffsetAPI_MakeOffset()
+    #                 maker.Init(
+    #                     occ_wire,
+    #                     GeomAbs_Arc,
+    #                     open_result,
+    #                 )
+
+    #             maker.Perform(native_offset, 0.0)
+    #             if hasattr(maker, "IsDone") and not maker.IsDone():
+    #                 return None
+
+    #             result = wrap_offset_shape(maker.Shape())
+    #         except Exception:
+    #             result = None
+
+    #         if not Topology.IsInstance(result, "Wire"):
+    #             if not silent:
+    #                 print("Wire.ByOffset - Error: Native curve-preserving offset construction failed. Returning None.")
+    #             return None
+
+    #         # Transfer Edge dictionaries by traversal correspondence when OCCT
+    #         # preserves the section count.
+    #         if transferDictionaries:
+    #             result_edges = Wire._OrderedEdges(result, tolerance=tolerance, silent=True)
+    #             if isinstance(result_edges, list) and len(result_edges) == len(source_edges):
+    #                 updated_edges = []
+    #                 for source_edge, result_edge in zip(source_edges, result_edges):
+    #                     dictionary = Topology.Dictionary(source_edge, silent=True)
+    #                     updated = result_edge
+    #                     if dictionary:
+    #                         candidate = Topology.SetDictionary(updated, dictionary, silent=True)
+    #                         if Topology.IsInstance(candidate, "Edge"):
+    #                             updated = candidate
+    #                     updated_edges.append(updated)
+
+    #                 rebuilt = Wire.ByEdges(
+    #                     updated_edges,
+    #                     orient=True,
+    #                     tolerance=tolerance,
+    #                     silent=True,
+    #                 )
+    #                 if Topology.IsInstance(rebuilt, "Wire"):
+    #                     result = rebuilt
+
+    #             wire_dictionary = Topology.Dictionary(wire, silent=True)
+    #             if wire_dictionary:
+    #                 candidate = Topology.SetDictionary(result, wire_dictionary, silent=True)
+    #                 if Topology.IsInstance(candidate, "Wire"):
+    #                     result = candidate
+
+    #         if bisectors:
+    #             source_vertices = Topology.Vertices(wire, silent=True) or []
+    #             result_vertices = Topology.Vertices(result, silent=True) or []
+
+    #             seams = []
+    #             for source_vertex in source_vertices:
+    #                 if not result_vertices:
+    #                     break
+
+    #                 nearest = min(
+    #                     result_vertices,
+    #                     key=lambda candidate: Vertex.Distance(source_vertex, candidate),
+    #                 )
+
+    #                 if Vertex.Distance(source_vertex, nearest) > tolerance:
+    #                     seam = Edge.ByStartVertexEndVertex(
+    #                         source_vertex,
+    #                         nearest,
+    #                         tolerance=tolerance,
+    #                         silent=True,
+    #                     )
+    #                     if Topology.IsInstance(seam, "Edge"):
+    #                         seams.append(seam)
+
+    #             if seams:
+    #                 merged = Topology.SelfMerge(
+    #                     Cluster.ByTopologies([result] + seams, silent=True),
+    #                     tolerance=tolerance,
+    #                 )
+    #                 if Topology.IsInstance(merged, "Wire"):
+    #                     result = merged
+    #                 else:
+    #                     if not silent:
+    #                         print("Wire.ByOffset - Error: Could not include bisectors while retaining a valid Wire. Returning None.")
+    #                     return None
+
+    #         return result
+
+    #     # Curves have already been handled above. The historical algorithm below
+    #     # is deliberately retained only for polylines.
+    #     if reverse == True:
+    #         fac = -1
+    #     else:
+    #         fac = 1
+    #     origin = Topology.Centroid(wire)
+    #     temp_vertices = [Topology.Vertices(wire)[0], Topology.Vertices(wire)[1], Topology.Centroid(wire)]
+    #     temp_face = Face.ByWire(Wire.ByVertices(temp_vertices, close=True, tolerance=tolerance, silent=True), silent=True)
+    #     if not temp_face:
+    #         if not silent:
+    #             print("Wire.Offset - Error: The input wire has errors. Returning None.")
+    #         return None
+    #     normal = Face.Normal(temp_face)
+    #     flat_wire = Topology.Flatten(wire, direction=normal, origin=origin)
+    #     original_edges = Topology.Edges(wire)
+    #     edges = Topology.Edges(flat_wire)
+    #     offsets = []
+    #     offset_edges = []
+    #     final_vertices = []
+    #     bisectors_list = []
+    #     edge_dictionaries = []
+    #     for i, edge in enumerate(edges):
+    #         d = Topology.Dictionary(original_edges[i])
+    #         d_offset = Dictionary.ValueAtKey(d, key=offsetKey, defaultValue=offset)
+    #         d_offset = d_offset*fac
+    #         offsets.append(d_offset)
+    #         offset_edge = Edge.ByOffset2D(edge, d_offset)
+    #         offset_edges.append(offset_edge)
+    #     for i in range(len(edges)):
+    #         o_edge_a = offset_edges[i]
+    #         v_a = Edge.StartVertex(edges[i])
+    #         if i == 0:
+    #             if Wire.IsClosed(wire) == False:
+    #                 v1 = Edge.StartVertex(offset_edges[0])
+    #                 if transferDictionaries == True:
+    #                     v1 = Topology.SetDictionary(v1, Topology.Dictionary(v_a), silent=True)
+    #                     edge_dictionaries.append(Topology.Dictionary(edges[i]))
+    #                 final_vertices.append(v1)
+    #                 if bisectors == True:
+    #                     bisectors_list.append(Edge.ByVertices(v_a, v1))
+    #             else:
+    #                 prev_edge = offset_edges[-1]
+    #                 v1 = Edge.Intersect2D(prev_edge, o_edge_a, silent=True)
+    #                 if Topology.IsInstance(v1, "Vertex"):
+    #                     if bisectors == True:
+    #                         bisectors_list.append(Edge.ByVertices(v_a, v1))
+    #                     if transferDictionaries == True:
+    #                         v1 = Topology.SetDictionary(v1, Topology.Dictionary(v_a), silent=True)
+    #                         edge_dictionaries.append(Topology.Dictionary(edges[i]))
+    #                     final_vertices.append(v1)
+    #                 else:
+    #                     connection = Edge.Connection(prev_edge, o_edge_a)
+    #                     if Topology.IsInstance(connection, "Edge"):
+    #                         d = Topology.Dictionary(v_a)
+    #                         d_stepOffsetA = Dictionary.ValueAtKey(d, stepOffsetKeyA)
+    #                         if d_stepOffsetA == None:
+    #                             d_stepOffsetA = stepOffsetA
+    #                         d_stepOffsetB = Dictionary.ValueAtKey(d, stepOffsetKeyB)
+    #                         if d_stepOffsetB == None:
+    #                             d_stepOffsetB = stepOffsetB
+    #                         v1_1 = Topology.TranslateByDirectionDistance(Edge.EndVertex(prev_edge),
+    #                                                                     direction = Vector.Reverse(Edge.Direction(prev_edge)),
+    #                                                                     distance = d_stepOffsetA)
+                                                                                                    
+    #                         v1_2 = Topology.TranslateByDirectionDistance(Edge.StartVertex(o_edge_a),
+    #                                                                     direction = Edge.Direction(o_edge_a),
+    #                                                                     distance = d_stepOffsetB)
+    #                         bisectors_list.append(Edge.ByVertices(v_a, v1_1))
+    #                         bisectors_list.append(Edge.ByVertices(v_a, v1_2))
+    #                         final_vertices.append(v1_1)
+    #                         final_vertices.append(v1_2)
+    #                         if transferDictionaries == True:
+    #                             v1_1 = Topology.SetDictionary(v1_1, Topology.Dictionary(v_a), silent=True)
+    #                             v1_2 = Topology.SetDictionary(v1_2, Topology.Dictionary(v_a), silent=True)
+    #                             edge_dictionaries.append(Topology.Dictionary(v_a))
+    #                             edge_dictionaries.append(Topology.Dictionary(edges[i]))
+    #         else:
+    #             prev_edge = offset_edges[i-1]
+    #             v1 = Edge.Intersect2D(prev_edge, o_edge_a, silent=True)
+    #             if Topology.IsInstance(v1, "Vertex"):
+    #                 if bisectors == True:
+    #                     bisectors_list.append(Edge.ByVertices(v_a, v1))
+    #                 if transferDictionaries == True:
+    #                     d_temp = Topology.Dictionary(v_a)
+    #                     v1 = Topology.SetDictionary(v1, Topology.Dictionary(v_a), silent=True)
+    #                     edge_dictionaries.append(Topology.Dictionary(edges[i]))
+    #                 final_vertices.append(v1)
+    #             else:
+    #                 connection = Edge.Connection(prev_edge, o_edge_a)
+    #                 if Topology.IsInstance(connection, "Edge"):
+    #                     d = Topology.Dictionary(v_a)
+    #                     d_stepOffsetA = Dictionary.ValueAtKey(d, stepOffsetKeyA)
+    #                     if d_stepOffsetA == None:
+    #                         d_stepOffsetA = stepOffsetA
+    #                     d_stepOffsetB = Dictionary.ValueAtKey(d, stepOffsetKeyB)
+    #                     if d_stepOffsetB == None:
+    #                         d_stepOffsetB = stepOffsetB
+    #                     v1_1 = Topology.TranslateByDirectionDistance(Edge.EndVertex(prev_edge),
+    #                                                                  direction = Vector.Reverse(Edge.Direction(prev_edge)),
+    #                                                                  distance = d_stepOffsetA)
+                                                                                                
+    #                     v1_2 = Topology.TranslateByDirectionDistance(Edge.StartVertex(o_edge_a),
+    #                                                                  direction = Edge.Direction(o_edge_a),
+    #                                                                  distance = d_stepOffsetB)
+    #                     if transferDictionaries == True:
+    #                         v1_1 = Topology.SetDictionary(v1_1, Topology.Dictionary(v_a), silent=True)
+    #                         v1_2 = Topology.SetDictionary(v1_2, Topology.Dictionary(v_a), silent=True)
+    #                         edge_dictionaries.append(Topology.Dictionary(v_a))
+    #                         edge_dictionaries.append(Topology.Dictionary(edges[i]))
+    #                     b_e = Edge.ByVertices(v_a, v1_1, silent=True)
+    #                     if b_e:
+    #                         bisectors_list.append(b_e)
+    #                     b_e = Edge.ByVertices(v_a, v1_2, silent=True)
+    #                     if b_e:
+    #                         bisectors_list.append(b_e)
+    #                     final_vertices.append(v1_1)
+    #                     final_vertices.append(v1_2)
+    #     v_a = Edge.EndVertex(edges[-1])
+    #     if Wire.IsClosed(wire) == False:
+    #         v1 = Edge.EndVertex(offset_edges[-1])
+    #         final_vertices.append(v1)
+    #         if transferDictionaries == True:
+    #             v1 = Topology.SetDictionary(v1, Topology.Dictionary(v_a), silent=True)
+    #         if bisectors == True:
+    #             b_e = Edge.ByVertices(v_a, v1, silent=True)
+    #             if b_e:
+    #                 bisectors_list.append(b_e)
+    #     return_wire = Wire.ByVertices(final_vertices, close=Wire.IsClosed(wire), tolerance=tolerance, silent=silent)
+    #     wire_edges = [Edge.SetLength(w_e, Edge.Length(w_e)+(2*epsilon), bothSides=True) for w_e in Topology.Edges(return_wire)]
+    #     return_wire_edges = Topology.Edges(return_wire)
+    #     if transferDictionaries == True:
+    #         if not len(wire_edges) == len(edge_dictionaries):
+    #             if not silent:
+    #                     print("Length of Wire Edges:", len(wire_edges))
+    #                     print("Length of Edge Dictionaries:", len(edge_dictionaries))
+    #                     print("Wire.ByOffset - Warning: The resulting wire is not well-formed, offsets may not be applied correctly. Please check your offsets.")
+    #         for i, wire_edge in enumerate(wire_edges):
+    #             if len(edge_dictionaries) > 0:
+    #                 temp_dictionary = edge_dictionaries[min(i,len(edge_dictionaries)-1)]
+    #                 wire_edge = Topology.SetDictionary(wire_edge, temp_dictionary, silent=True)
+    #                 return_wire_edges[i] = Topology.SetDictionary(return_wire_edges[i], temp_dictionary, silent=True)
+    #     if bisectors == True:
+    #         i = 0
+    #         temp_return_wire = Topology.SelfMerge(Cluster.ByTopologies(wire_edges+bisectors_list))
+    #         while not Topology.IsInstance(temp_return_wire, "wire") and i < 9:
+    #             verts = Topology.Vertices(temp_return_wire)
+    #             new_verts = Vertex.Fuse(verts, tolerance=tolerance*(i+1)*10)
+    #             temp_return_wire = Topology.ReplaceVertices(temp_return_wire, verticesA=verts, verticesB=new_verts)
+    #             temp_return_wire = Topology.SelfMerge(temp_return_wire)
+    #             i += 1
+    #         if transferDictionaries == True:
+    #             sel_vertices = Topology.Vertices(return_wire)
+    #             sel_vertices += Topology.Vertices(flat_wire)
+    #             edges = Topology.Edges(return_wire)
+    #             sel_edges = []
+    #             for edge in edges:
+    #                 d = Topology.Dictionary(edge)
+    #                 c = Topology.Centroid(edge)
+    #                 c = Topology.SetDictionary(c, d, silent=True)
+    #                 sel_edges.append(c)
+    #             temp_return_wire = Topology.TransferDictionariesBySelectors(temp_return_wire, sel_vertices, tranVertices=True, tolerance=tolerance*10, numWorkers=numWorkers)
+    #             temp_return_wire = Topology.TransferDictionariesBySelectors(temp_return_wire, sel_edges, tranEdges=True, tolerance=tolerance*10, numWorkers=numWorkers)
+                
+    #         return_wire = temp_return_wire
+        
+        
+    #     if not Topology.IsInstance(return_wire, "Wire"):
+    #         if not silent:
+    #             print("Wire.ByOffset - Warning: The resulting wire is not well-formed, please check your offsets.")
+    #     else:
+    #         if not Wire.IsManifold(return_wire) and bisectors == False:
+    #             if not silent:
+    #                 print("Wire.ByOffset - Warning: The resulting wire is non-manifold, please check your offsets.")
+    #                 print("Wire.ByOffset - Warning: Pursuing a workaround, but it might take longer to complete.")
+                
+    #             temp_wire = Topology.SelfMerge(Cluster.ByTopologies(wire_edges))
+    #             cycles = Wire.Cycles(temp_wire, maxVertices = len(final_vertices))
+    #             if len(cycles) > 0:
+    #                 distances = []
+    #                 for cycle in cycles:
+    #                     cycle_centroid = Topology.Centroid(cycle)
+    #                     distance = Vertex.Distance(origin, cycle_centroid)
+    #                     distances.append(distance)
+    #                 cycles = Helper.Sort(cycles, distances)
+    #                 # Get the top three or less
+    #                 cycles = cycles[:min(3, len(cycles))]
+    #                 areas = [Face.Area(Face.ByWire(cycle)) for cycle in cycles]
+    #                 cycles = Helper.Sort(cycles, areas)
+    #                 return_cycle = Wire.Reverse(cycles[-1])
+    #                 test_cycle = Wire.Simplify(return_cycle, tolerance=epsilon)
+    #                 if Topology.IsInstance(test_cycle, "Wire"):
+    #                     return_cycle = test_cycle
+    #                 return_cycle = Wire.RemoveCollinearEdges(return_cycle, silent=silent)
+    #                 sel_edges = []
+    #                 for temp_edge in wire_edges:
+    #                     x = Topology.Centroid(temp_edge)
+    #                     d = Topology.Dictionary(temp_edge)
+    #                     x = Topology.SetDictionary(x, d, silent=True)
+    #                     sel_edges.append(x)
+    #                 return_cycle = Topology.TransferDictionariesBySelectors(return_cycle, Topology.Vertices(return_wire), tranVertices=True, tolerance=tolerance, numWorkers=numWorkers)
+    #                 return_cycle = Topology.TransferDictionariesBySelectors(return_cycle, sel_edges, tranEdges=True, tolerance=tolerance, numWorkers=numWorkers)
+    #                 return_wire = return_cycle
+    #     return_wire = Topology.Unflatten(return_wire, direction=normal, origin=origin)
+    #     if transferDictionaries == True:
+    #         return_wire = Topology.SetDictionary(return_wire, Topology.Dictionary(wire), silent=True)
+    #     return return_wire
+
     @staticmethod
     def ByOffset(
         wire,
@@ -1428,6 +1946,7 @@ class Wire():
         stepOffsetKeyA: str = "stepOffsetA",
         stepOffsetKeyB: str = "stepOffsetB",
         reverse: bool = False,
+        smooth: bool = True,
         bisectors: bool = False,
         transferDictionaries: bool = False,
         epsilon: float = 0.01,
@@ -1438,55 +1957,97 @@ class Wire():
         """
         Creates an offset Wire.
 
-        For geometrically curved Wires, the PythonOCC backend uses
-        ``BRepOffsetAPI_MakeOffset`` so circular, B-spline, and NURBS Edges remain
-        genuine curves. Curved Wires with per-Edge varying offset distances are
-        rejected because rebuilding those Edges independently would destroy exact
-        corner/join geometry. On non-PythonOCC backends curved Wires are likewise
-        rejected rather than silently converted to chords.
+        Each source Edge may specify its own offset distance through ``offsetKey``.
+        The default ``offset`` value is used when that key is absent. Positive
+        offsets lie to the left of the oriented Edge when viewed along the planar
+        Wire normal; for an anti-clockwise closed Wire this is the interior side.
 
-        The historical TopologicPy algorithm is retained unchanged for polylines,
-        including per-Edge offsets, step offsets, bisectors, and its existing
-        dictionary-transfer behaviour.
+        Polylines retain the historical TopologicPy variable-offset algorithm.
+        Under the PythonOCC backend, planar Wires containing circular, Bezier,
+        B-spline, or NURBS Edges can also use different per-Edge offsets without
+        converting those curves to endpoint chords. Uniform and variable curved offsets use the same calibrated Edge-by-Edge
+        exact OCCT offset path. Equal distances therefore do not select a different
+        algorithm, offset side, join strategy, or smoothing path. At every
+        joint the finite offset Edges are intersected first. If they already cross or
+        overshoot one another, both are trimmed to the local finite intersection.
+        Consecutive collinear straight source Edges are handled explicitly: equal
+        offsets remain continuous without a transition, while differing offsets trim
+        the preceding/following offset Edges by ``stepOffsetA`` / ``stepOffsetB`` and
+        insert one straight step Edge between them. Only a genuine non-collinear gap
+        is resolved by extending an exact endpoint tangent as a new straight Edge.
+        Other line-line joints retain infinite supporting-line intersection behaviour.
+        If ``smooth`` is True, a curved Edge whose exact mathematical offset is
+        near a cusp/fold singularity is rebuilt as one shape-preserving cubic
+        B-spline. The source curve is sampled, every sample is displaced by the
+        requested signed distance along its local in-plane normal, and a constrained
+        least-squares B-spline is fitted to those offset samples. The first and last
+        offset points are hard positional constraints and the source start/end
+        tangent directions are hard tangent constraints. This avoids the compressed
+        cusp produced by an exact parallel curve while retaining the source curve's
+        overall character. Regular exact curved offsets remain exact. If ``smooth``
+        is False, the mathematically exact offset is retained even when singular.
+        If neither trimming nor tangent extension can resolve a joint, the existing
+        step-transition semantics are used.
+
+        On TopologicCore, exact curved variable offsets remain unsupported and
+        return None rather than silently approximating the source curves.
 
         Parameters
         ----------
         wire : topologic_core.Wire
-            The input Wire.
+            The input Wire. It must be planar when it contains curved Edges.
         offset : float , optional
-            The desired offset distance. A positive value offsets to the interior
-            of an anti-clockwise closed Wire. Default is 1.0.
+            Default signed offset distance. Default is 1.0.
         offsetKey : str , optional
-            Edge dictionary key used to override ``offset``. Default is "offset".
+            Edge dictionary key used to override ``offset`` independently for each
+            source Edge. Default is "offset".
         stepOffsetA : float , optional
-            Historical polyline step offset along the previous Edge. Default is 0.
+            Distance trimmed backward along the preceding offset Edge when adjacent
+            variable offsets do not intersect. Default is 0.
         stepOffsetB : float , optional
-            Historical polyline step offset along the next Edge. Default is 0.
+            Distance trimmed forward along the following offset Edge when adjacent
+            variable offsets do not intersect. Default is 0.
         stepOffsetKeyA : str , optional
-            Vertex dictionary key for ``stepOffsetA``. Default is "stepOffsetA".
+            Source joint Vertex dictionary key overriding ``stepOffsetA``. Default
+            is "stepOffsetA".
         stepOffsetKeyB : str , optional
-            Vertex dictionary key for ``stepOffsetB``. Default is "stepOffsetB".
+            Source joint Vertex dictionary key overriding ``stepOffsetB``. Default
+            is "stepOffsetB".
         reverse : bool , optional
-            If True, reverses the offset direction. Default is False.
+            If True, reverses every effective offset direction. Default is False.
+        smooth : bool , optional
+            If True, curved offsets that approach a cusp/fold singularity are
+            replaced by one shape-preserving cubic B-spline fitted to sampled normal
+            offsets. The first and last offset points and the source start/end tangent
+            directions are imposed as hard constraints. Regular exact curved offsets
+            remain exact. If False, retains the mathematically exact offset even when
+            it contains a cusp. Default is True.
         bisectors : bool , optional
-            If True, include seam Edges between the source and offset Wire.
-            Default is False.
+            If True, include seam Edges between source joints/endpoints and the
+            corresponding resolved offset points. Default is False.
         transferDictionaries : bool , optional
-            If True, transfer available dictionaries to the result. Default is False.
+            If True, source Edge dictionaries are assigned to their corresponding
+            offset Edges, source Vertex dictionaries are transferred from the canonical coincident
+            input-Wire vertices to the corresponding offset vertices, and the source Wire dictionary is assigned
+            to the result. When one source corner resolves to two output vertices
+            (for example a variable-offset step or tangent-extension transition), the
+            same source-corner dictionary is transferred to both output vertices.
+            Transition Edges also receive the source joint Vertex dictionary when one
+            is available. Default is False.
         epsilon : float , optional
             Historical polyline cleanup tolerance. Default is 0.01.
         tolerance : float , optional
-            The desired geometric tolerance. Default is 0.0001.
+            Geometric tolerance. Default is 0.0001.
         silent : bool , optional
             If True, suppress diagnostics. Default is False.
         numWorkers : int , optional
-            Historical dictionary-transfer worker count.
+            Historical dictionary-transfer worker count used by the polyline path.
 
         Returns
         -------
         topologic_core.Wire
-            The offset Wire, or None when the requested operation cannot be
-            performed without degrading curved geometry.
+            The offset Wire, or None if the requested exact operation cannot be
+            constructed.
         """
         import math
 
@@ -1521,10 +2082,51 @@ class Wire():
         if not isinstance(source_edges, list) or not source_edges:
             return None
 
+        # Snapshot the actual input-Wire vertices before any curve offsetting,
+        # trimming, reversal, or reconstruction. A curved constructor such as
+        # Edge.ArcByVertices may expose fresh endpoint wrappers that do not carry
+        # the dictionary of the coincident source corner. Whenever several input
+        # vertices are coincident, prefer one that actually carries a dictionary.
+        source_wire_vertices = Topology.Vertices(wire, silent=True) or []
+
+        def canonical_source_vertex(vertex):
+            if not Topology.IsInstance(vertex, "Vertex"):
+                return vertex
+
+            coincident = []
+            for candidate in source_wire_vertices:
+                if not Topology.IsInstance(candidate, "Vertex"):
+                    continue
+                try:
+                    same = Vertex.IsCoincident(
+                        vertex,
+                        candidate,
+                        tolerance=tolerance * 10.0,
+                        silent=True,
+                    )
+                except Exception:
+                    same = False
+                if same:
+                    coincident.append(candidate)
+
+            if not coincident:
+                return vertex
+
+            # Prefer a coincident input-Wire vertex with metadata.
+            for candidate in coincident:
+                try:
+                    dictionary = Topology.Dictionary(candidate, silent=True)
+                except Exception:
+                    dictionary = None
+                if dictionary:
+                    return candidate
+
+            return coincident[0]
+
         is_polyline = bool(Wire.IsPolyline(wire, tolerance=tolerance, silent=True))
 
         # ------------------------------------------------------------------
-        # Native curve-preserving offset.
+        # Exact curve-preserving path.
         # ------------------------------------------------------------------
         if not is_polyline:
             try:
@@ -1539,46 +2141,44 @@ class Wire():
 
             if not planar:
                 if not silent:
-                    print("Wire.ByOffset - Error: Curved Wire offset currently requires a planar Wire. Returning None.")
+                    print("Wire.ByOffset - Error: Curved Wire offset requires a planar Wire. Returning None.")
                 return None
 
             factor = -1.0 if reverse else 1.0
             effective_offsets = []
 
+            def dictionary_value(dictionary, key, default):
+                if dictionary is None or not isinstance(key, str):
+                    return default
+                try:
+                    return Dictionary.ValueAtKey(
+                        dictionary,
+                        key=key,
+                        defaultValue=default,
+                    )
+                except TypeError:
+                    try:
+                        value = Dictionary.ValueAtKey(dictionary, key)
+                        return default if value is None else value
+                    except Exception:
+                        return default
+                except Exception:
+                    return default
+
             for edge in source_edges:
                 value = offset
                 if isinstance(offsetKey, str):
                     dictionary = Topology.Dictionary(edge, silent=True)
-                    if dictionary:
-                        try:
-                            candidate = Dictionary.ValueAtKey(
-                                dictionary,
-                                key=offsetKey,
-                                defaultValue=offset,
-                            )
-                        except TypeError:
-                            try:
-                                candidate = Dictionary.ValueAtKey(dictionary, offsetKey)
-                            except Exception:
-                                candidate = offset
-                        except Exception:
-                            candidate = offset
-
-                        if isinstance(candidate, (int, float)):
-                            value = float(candidate)
-
-                if not math.isfinite(float(value)):
+                    candidate = dictionary_value(dictionary, offsetKey, offset)
+                    if isinstance(candidate, (int, float)) and not isinstance(candidate, bool):
+                        value = float(candidate)
+                try:
+                    value = float(value) * factor
+                except Exception:
                     return None
-                effective_offsets.append(float(value) * factor)
-
-            native_offset = effective_offsets[0]
-            if any(abs(value - native_offset) > tolerance for value in effective_offsets[1:]):
-                if not silent:
-                    print("Wire.ByOffset - Error: Curved Wires require one uniform offset distance. Per-Edge varying offsets would destroy exact curve joins. Returning None.")
-                return None
-
-            if abs(native_offset) <= tolerance:
-                return wire
+                if not math.isfinite(value):
+                    return None
+                effective_offsets.append(value)
 
             try:
                 is_topologic_core = bool(Topology._IsTopologicCoreBackend())
@@ -1587,8 +2187,26 @@ class Wire():
 
             if is_topologic_core:
                 if not silent:
-                    print("Wire.ByOffset - Error: The active backend cannot offset this curved Wire without approximation. Returning None.")
+                    print("Wire.ByOffset - Error: The active backend cannot offset a curved Wire exactly. Returning None.")
                 return None
+
+            # --------------------------------------------------------------
+            # Small wrappers used by both native curved paths.
+            # --------------------------------------------------------------
+            def wrap_occ_edge(shape):
+                result = None
+                try:
+                    if Core.HasAttribute("Edge", "ByOcctShape"):
+                        result = Core.Edge.ByOcctShape(shape)
+                except Exception:
+                    result = None
+                if not Topology.IsInstance(result, "Edge"):
+                    try:
+                        if Core.HasAttribute("Topology", "ByOcctShape"):
+                            result = Core.Topology.ByOcctShape(shape)
+                    except Exception:
+                        result = None
+                return result if Topology.IsInstance(result, "Edge") else None
 
             def wrap_offset_shape(shape):
                 result = None
@@ -1606,7 +2224,6 @@ class Wire():
                     wires = [candidate for candidate in wires if Topology.IsInstance(candidate, "Wire")]
                     if len(wires) == 1:
                         return wires[0]
-
                     if len(wires) > 1:
                         edges = []
                         for candidate in wires:
@@ -1621,68 +2238,1475 @@ class Wire():
                             return merged
                 return None
 
-            try:
-                from OCC.Core.BRepOffsetAPI import BRepOffsetAPI_MakeOffset
-                from OCC.Core.GeomAbs import GeomAbs_Arc
-                from OCC.Core.TopoDS import topods
+            def add_seam(seams, source_vertex, target_vertex):
+                if not Topology.IsInstance(source_vertex, "Vertex") or not Topology.IsInstance(target_vertex, "Vertex"):
+                    return
+                if Vertex.IsCoincident(source_vertex, target_vertex, tolerance=tolerance, silent=True):
+                    return
+                seam = Edge.ByStartVertexEndVertex(
+                    source_vertex,
+                    target_vertex,
+                    tolerance=tolerance,
+                    silent=True,
+                )
+                if Topology.IsInstance(seam, "Edge"):
+                    seams.append(seam)
 
-                shape = getattr(wire, "shape", None)
-                if shape is None or shape.IsNull():
+            def vertex_dictionary_selector(source_vertex, target_vertex):
+                """Return a selector at target_vertex carrying source_vertex metadata."""
+                if not transferDictionaries:
+                    return None
+                if (
+                    not Topology.IsInstance(source_vertex, "Vertex")
+                    or not Topology.IsInstance(target_vertex, "Vertex")
+                ):
                     return None
 
-                occ_wire = topods.Wire(shape)
-                open_result = not bool(Wire.IsClosed(wire, tolerance=tolerance, silent=True))
+                dictionary = Topology.Dictionary(source_vertex, silent=True)
+                if not dictionary:
+                    return None
 
+                coordinates = Vertex.Coordinates(target_vertex, mantissa=None)
+                if not isinstance(coordinates, (list, tuple)) or len(coordinates) < 3:
+                    return None
+
+                selector = Vertex.ByCoordinates(
+                    float(coordinates[0]),
+                    float(coordinates[1]),
+                    float(coordinates[2]),
+                )
+                if not Topology.IsInstance(selector, "Vertex"):
+                    return None
+
+                candidate = Topology.SetDictionary(selector, dictionary, silent=True)
+                return candidate if Topology.IsInstance(candidate, "Vertex") else None
+
+            def record_vertex_dictionary(selectors, source_vertex, *target_vertices):
+                """Record source vertex metadata at every resolved output corner vertex."""
+                if not transferDictionaries:
+                    return
+                for target_vertex in target_vertices:
+                    selector = vertex_dictionary_selector(source_vertex, target_vertex)
+                    if Topology.IsInstance(selector, "Vertex"):
+                        selectors.append(selector)
+
+            def apply_vertex_dictionary_selectors(result, selectors):
+                """Transfer recorded source vertex dictionaries onto the assembled Wire."""
+                if not transferDictionaries or not selectors:
+                    return result
                 try:
-                    maker = BRepOffsetAPI_MakeOffset(
-                        occ_wire,
-                        GeomAbs_Arc,
-                        open_result,
+                    candidate = Topology.TransferDictionariesBySelectors(
+                        result,
+                        selectors,
+                        tranVertices=True,
+                        tolerance=tolerance * 10.0,
+                        numWorkers=numWorkers,
                     )
+                except TypeError:
+                    try:
+                        candidate = Topology.TransferDictionariesBySelectors(
+                            result,
+                            selectors,
+                            tranVertices=True,
+                            tolerance=tolerance * 10.0,
+                        )
+                    except Exception:
+                        candidate = None
                 except Exception:
-                    maker = BRepOffsetAPI_MakeOffset()
-                    maker.Init(
-                        occ_wire,
-                        GeomAbs_Arc,
-                        open_result,
-                    )
+                    candidate = None
 
-                maker.Perform(native_offset, 0.0)
-                if hasattr(maker, "IsDone") and not maker.IsDone():
+                return candidate if Topology.IsInstance(candidate, "Wire") else result
+
+            def finish_native_wire(result):
+                """Retain the established uniform-offset post-processing."""
+                if not Topology.IsInstance(result, "Wire"):
                     return None
 
-                result = wrap_offset_shape(maker.Shape())
-            except Exception:
-                result = None
+                if transferDictionaries:
+                    result_edges = Wire._OrderedEdges(result, tolerance=tolerance, silent=True)
+                    if isinstance(result_edges, list) and len(result_edges) == len(source_edges):
+                        updated_edges = []
+                        for source_edge, result_edge in zip(source_edges, result_edges):
+                            dictionary = Topology.Dictionary(source_edge, silent=True)
+                            updated = result_edge
+                            if dictionary:
+                                candidate = Topology.SetDictionary(updated, dictionary, silent=True)
+                                if Topology.IsInstance(candidate, "Edge"):
+                                    updated = candidate
+                            updated_edges.append(updated)
 
-            if not Topology.IsInstance(result, "Wire"):
+                        rebuilt = Wire.ByEdges(
+                            updated_edges,
+                            orient=True,
+                            tolerance=tolerance,
+                            silent=True,
+                        )
+                        if Topology.IsInstance(rebuilt, "Wire"):
+                            result = rebuilt
+
+                    # Preserve source Vertex dictionaries on the native uniform
+                    # offset result. Native whole-Wire offset normally yields one
+                    # resolved offset corner per source corner, so nearest-corner
+                    # correspondence is sufficient here.
+                    source_vertices = [
+                        canonical_source_vertex(vertex)
+                        for vertex in (Topology.Vertices(wire, silent=True) or [])
+                    ]
+                    result_vertices = Topology.Vertices(result, silent=True) or []
+                    vertex_selectors = []
+                    for source_vertex in source_vertices:
+                        if not result_vertices:
+                            break
+                        target_vertex = min(
+                            result_vertices,
+                            key=lambda candidate: Vertex.Distance(source_vertex, candidate),
+                        )
+                        record_vertex_dictionary(
+                            vertex_selectors,
+                            source_vertex,
+                            target_vertex,
+                        )
+                    result = apply_vertex_dictionary_selectors(
+                        result,
+                        vertex_selectors,
+                    )
+
+                    wire_dictionary = Topology.Dictionary(wire, silent=True)
+                    if wire_dictionary:
+                        candidate = Topology.SetDictionary(result, wire_dictionary, silent=True)
+                        if Topology.IsInstance(candidate, "Wire"):
+                            result = candidate
+
+                if bisectors:
+                    source_vertices = Topology.Vertices(wire, silent=True) or []
+                    result_vertices = Topology.Vertices(result, silent=True) or []
+                    seams = []
+                    for source_vertex in source_vertices:
+                        if not result_vertices:
+                            break
+                        nearest = min(
+                            result_vertices,
+                            key=lambda candidate: Vertex.Distance(source_vertex, candidate),
+                        )
+                        add_seam(seams, source_vertex, nearest)
+
+                    if seams:
+                        merged = Topology.SelfMerge(
+                            Cluster.ByTopologies([result] + seams, silent=True),
+                            tolerance=tolerance,
+                        )
+                        if Topology.IsInstance(merged, "Wire"):
+                            result = merged
+                        else:
+                            if not silent:
+                                print("Wire.ByOffset - Error: Could not include bisectors while retaining a valid Wire. Returning None.")
+                            return None
+                return result
+
+            # --------------------------------------------------------------
+            # Exact curved offset: one calibrated path for both uniform and
+            # variable per-Edge distances. Uniformity must not change the
+            # offset side, join semantics, or smoothing behaviour.
+            # --------------------------------------------------------------
+            def xyz(vertex):
+                if not Topology.IsInstance(vertex, "Vertex"):
+                    return None
+                values = Vertex.Coordinates(vertex, mantissa=None)
+                if not isinstance(values, (list, tuple)) or len(values) < 3:
+                    return None
+                try:
+                    return [float(values[0]), float(values[1]), float(values[2])]
+                except Exception:
+                    return None
+
+            def sub(a, b):
+                return [a[0]-b[0], a[1]-b[1], a[2]-b[2]]
+
+            def dot(a, b):
+                return a[0]*b[0] + a[1]*b[1] + a[2]*b[2]
+
+            def cross(a, b):
+                return [
+                    a[1]*b[2] - a[2]*b[1],
+                    a[2]*b[0] - a[0]*b[2],
+                    a[0]*b[1] - a[1]*b[0],
+                ]
+
+            def magnitude(vector):
+                return math.sqrt(dot(vector, vector))
+
+            def normalized(vector):
+                length = magnitude(vector)
+                if length <= tolerance:
+                    return None
+                return [component / length for component in vector]
+
+            def wire_plane_normal():
+                points = []
+                for edge in source_edges:
+                    for parameter in (0.0, 0.25, 0.5, 0.75, 1.0):
+                        vertex = Edge.VertexByParameter(
+                            edge,
+                            u=parameter,
+                            tolerance=tolerance,
+                            silent=True,
+                        )
+                        point = xyz(vertex)
+                        if point is None:
+                            continue
+                        if not any(math.dist(point, existing) <= tolerance for existing in points):
+                            points.append(point)
+
+                if len(points) < 3:
+                    return None
+
+                origin = None
+                normal = None
+                for i in range(len(points)-2):
+                    for j in range(i+1, len(points)-1):
+                        a = sub(points[j], points[i])
+                        if magnitude(a) <= tolerance:
+                            continue
+                        for k in range(j+1, len(points)):
+                            b = sub(points[k], points[i])
+                            candidate = cross(a, b)
+                            candidate = normalized(candidate)
+                            if candidate is not None:
+                                origin = points[i]
+                                normal = candidate
+                                break
+                        if normal is not None:
+                            break
+                    if normal is not None:
+                        break
+
+                if normal is None:
+                    return None
+
+                # Canonical normal sign. Positive offset semantics are then defined
+                # consistently as "left of traversal" relative to this normal.
+                dominant = max(range(3), key=lambda index: abs(normal[index]))
+                if normal[dominant] < 0.0:
+                    normal = [-component for component in normal]
+
+                plane_tolerance = max(tolerance * 10.0, 1.0e-8)
+                for point in points:
+                    if abs(dot(sub(point, origin), normal)) > plane_tolerance:
+                        return None
+                return normal
+
+            normal = wire_plane_normal()
+            if normal is None:
                 if not silent:
-                    print("Wire.ByOffset - Error: Native curve-preserving offset construction failed. Returning None.")
+                    print("Wire.ByOffset - Error: Could not determine a stable plane normal for the curved Wire. Returning None.")
                 return None
 
-            # Transfer Edge dictionaries by traversal correspondence when OCCT
-            # preserves the section count.
-            if transferDictionaries:
-                result_edges = Wire._OrderedEdges(result, tolerance=tolerance, silent=True)
-                if isinstance(result_edges, list) and len(result_edges) == len(source_edges):
-                    updated_edges = []
-                    for source_edge, result_edge in zip(source_edges, result_edges):
-                        dictionary = Topology.Dictionary(source_edge, silent=True)
-                        updated = result_edge
-                        if dictionary:
-                            candidate = Topology.SetDictionary(updated, dictionary, silent=True)
-                            if Topology.IsInstance(candidate, "Edge"):
-                                updated = candidate
-                        updated_edges.append(updated)
-
-                    rebuilt = Wire.ByEdges(
-                        updated_edges,
-                        orient=True,
+            def source_tangent(edge):
+                for parameter in (0.5, 0.375, 0.625, 0.25, 0.75):
+                    tangent = Edge.TangentAtParameter(
+                        edge,
+                        u=parameter,
+                        mantissa=None,
                         tolerance=tolerance,
                         silent=True,
                     )
-                    if Topology.IsInstance(rebuilt, "Wire"):
-                        result = rebuilt
+                    if isinstance(tangent, (list, tuple)) and len(tangent) >= 3:
+                        try:
+                            vector = normalized([
+                                float(tangent[0]),
+                                float(tangent[1]),
+                                float(tangent[2]),
+                            ])
+                        except Exception:
+                            vector = None
+                        if vector is not None:
+                            return vector, parameter
+                return None, None
+
+            def exact_offset_edge(source_edge, distance):
+                """Offset one Edge exactly while preserving its curve geometry."""
+                if abs(distance) <= tolerance:
+                    return source_edge
+
+                tangent, calibration_parameter = source_tangent(source_edge)
+                if tangent is None:
+                    return None
+
+                left = normalized(cross(normal, tangent))
+                if left is None:
+                    return None
+
+                # Linear Edge: translate its endpoints by the exact in-plane left vector.
+                if Edge.IsLinear(source_edge, tolerance=tolerance, silent=True):
+                    start = xyz(Edge.StartVertex(source_edge, silent=True))
+                    end = xyz(Edge.EndVertex(source_edge, silent=True))
+                    if start is None or end is None:
+                        return None
+                    delta = [component * distance for component in left]
+                    start_vertex = Vertex.ByCoordinates(
+                        start[0] + delta[0],
+                        start[1] + delta[1],
+                        start[2] + delta[2],
+                    )
+                    end_vertex = Vertex.ByCoordinates(
+                        end[0] + delta[0],
+                        end[1] + delta[1],
+                        end[2] + delta[2],
+                    )
+                    result = Edge.ByStartVertexEndVertex(
+                        start_vertex,
+                        end_vertex,
+                        tolerance=tolerance,
+                        silent=True,
+                    )
+                    return result if Topology.IsInstance(result, "Edge") else None
+
+                try:
+                    from OCC.Core.BRep import BRep_Tool
+                    from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakeEdge
+                    from OCC.Core.Geom import Geom_OffsetCurve
+                    from OCC.Core.gp import gp_Dir
+
+                    shape = getattr(source_edge, "shape", None)
+                    if shape is None or shape.IsNull():
+                        return None
+                    curve, first, last = BRep_Tool.Curve(shape)
+                    if curve is None:
+                        return None
+                    first = float(first)
+                    last = float(last)
+
+                    # OCCT's offset sign is tied to the basis-curve parameter
+                    # direction, while TopologicPy's sign is tied to topological
+                    # traversal. Determine the required OCCT sign geometrically so
+                    # reversed Edges and periodic curves remain correct.
+                    target_direction = left if distance > 0.0 else [-v for v in left]
+                    trial_magnitude = abs(float(distance))
+                    trial = Geom_OffsetCurve(
+                        curve,
+                        trial_magnitude,
+                        gp_Dir(float(normal[0]), float(normal[1]), float(normal[2])),
+                    )
+
+                    try:
+                        from OCC.Core.TopAbs import TopAbs_REVERSED
+                        source_is_reversed = shape.Orientation() == TopAbs_REVERSED
+                    except Exception:
+                        source_is_reversed = False
+
+                    if source_is_reversed:
+                        raw_parameter = last + float(calibration_parameter) * (first - last)
+                    else:
+                        raw_parameter = first + float(calibration_parameter) * (last - first)
+                    source_point = curve.Value(raw_parameter)
+                    offset_point = trial.Value(raw_parameter)
+                    displacement = [
+                        float(offset_point.X()) - float(source_point.X()),
+                        float(offset_point.Y()) - float(source_point.Y()),
+                        float(offset_point.Z()) - float(source_point.Z()),
+                    ]
+                    native_offset = trial_magnitude
+                    if dot(displacement, target_direction) < 0.0:
+                        native_offset = -trial_magnitude
+
+                    offset_curve = Geom_OffsetCurve(
+                        curve,
+                        native_offset,
+                        gp_Dir(float(normal[0]), float(normal[1]), float(normal[2])),
+                    )
+                    maker = BRepBuilderAPI_MakeEdge(offset_curve, first, last)
+                    if hasattr(maker, "IsDone") and not maker.IsDone():
+                        return None
+                    occ_edge = maker.Edge()
+
+                    # Match the source topological orientation. BRep_Tool.Curve
+                    # parameter bounds themselves are orientation-independent.
+                    try:
+                        if source_is_reversed:
+                            occ_edge.Reverse()
+                    except Exception:
+                        pass
+
+                    result = wrap_occ_edge(occ_edge)
+                    return result if Topology.IsInstance(result, "Edge") else None
+                except Exception:
+                    return None
+
+            def smooth_offset_edge(source_edge, offset_edge, signed_offset):
+                """Return a fair, shape-preserving fitted offset when the exact offset is singular.
+
+                Regular exact curved offsets are returned unchanged. If the requested
+                offset approaches a parallel-curve cusp/fold, sample the source Edge,
+                displace every sample by the requested signed distance along the local
+                in-plane normal, then fit one clamped cubic B-spline by least squares.
+                Endpoint positions and endpoint tangent directions are hard constraints.
+                """
+                if not smooth or Edge.IsLinear(source_edge, tolerance=tolerance, silent=True):
+                    return offset_edge
+
+                # ----------------------------------------------------------
+                # Detect whether the exact parallel curve is approaching a
+                # singularity. For a planar offset C_d = C + d*L, the local
+                # speed vanishes when d*kappa = 1. We only replace curves that
+                # approach that condition; ordinary circular/NURBS offsets stay exact.
+                # ----------------------------------------------------------
+                detect_count = 257
+                detect_points = [None] * detect_count
+                detect_tangents = [None] * detect_count
+                singular = False
+
+                for index in range(detect_count):
+                    u = float(index) / float(detect_count - 1)
+                    vertex = Edge.VertexByParameter(
+                        edge=source_edge,
+                        u=u,
+                        tolerance=tolerance,
+                        silent=True,
+                    )
+                    tangent = Edge.TangentAtParameter(
+                        edge=source_edge,
+                        u=u,
+                        mantissa=None,
+                        tolerance=tolerance,
+                        silent=True,
+                    )
+                    point = xyz(vertex)
+                    if point is None or not isinstance(tangent, (list, tuple)) or len(tangent) < 3:
+                        continue
+                    try:
+                        tangent = normalized([float(tangent[i]) for i in range(3)])
+                    except Exception:
+                        tangent = None
+                    if tangent is None:
+                        continue
+                    detect_points[index] = point
+                    detect_tangents[index] = tangent
+
+                for index in range(1, detect_count - 1):
+                    p0 = detect_points[index - 1]
+                    p1 = detect_points[index]
+                    p2 = detect_points[index + 1]
+                    t0 = detect_tangents[index - 1]
+                    t1 = detect_tangents[index]
+                    t2 = detect_tangents[index + 1]
+                    if any(value is None for value in (p0, p1, p2, t0, t1, t2)):
+                        continue
+
+                    ds = math.dist(p0, p1) + math.dist(p1, p2)
+                    if ds <= tolerance:
+                        continue
+
+                    d_tangent_ds = [
+                        (t2[axis] - t0[axis]) / ds
+                        for axis in range(3)
+                    ]
+                    left_normal = normalized(cross(normal, t1))
+                    if left_normal is None:
+                        continue
+
+                    signed_curvature = dot(d_tangent_ds, left_normal)
+                    ratio = float(signed_offset) * float(signed_curvature)
+                    if ratio >= 0.95:
+                        singular = True
+                        break
+
+                # Defensive fallback: if sampling misses a very narrow singularity,
+                # a reversal of exact-offset tangent relative to source tangent is
+                # direct evidence that the parallel curve has folded.
+                if not singular:
+                    for index in range(1, 128):
+                        u = float(index) / 128.0
+                        source_tangent = Edge.TangentAtParameter(
+                            edge=source_edge,
+                            u=u,
+                            mantissa=None,
+                            tolerance=tolerance,
+                            silent=True,
+                        )
+                        offset_tangent = Edge.TangentAtParameter(
+                            edge=offset_edge,
+                            u=u,
+                            mantissa=None,
+                            tolerance=tolerance,
+                            silent=True,
+                        )
+                        if (
+                            not isinstance(source_tangent, (list, tuple))
+                            or len(source_tangent) < 3
+                            or not isinstance(offset_tangent, (list, tuple))
+                            or len(offset_tangent) < 3
+                        ):
+                            continue
+                        try:
+                            source_tangent = normalized([float(source_tangent[i]) for i in range(3)])
+                            offset_tangent = normalized([float(offset_tangent[i]) for i in range(3)])
+                        except Exception:
+                            source_tangent = None
+                            offset_tangent = None
+                        if (
+                            source_tangent is not None
+                            and offset_tangent is not None
+                            and dot(source_tangent, offset_tangent) < -1.0e-8
+                        ):
+                            singular = True
+                            break
+
+                if not singular:
+                    return offset_edge
+
+                # ----------------------------------------------------------
+                # Shape-preserving sampled normal offset.
+                # These values are intentionally conservative and match the
+                # standalone test used to validate the desired S-curve behaviour.
+                # ----------------------------------------------------------
+                sample_count = 41
+                degree = 3
+                control_count = 9
+
+                try:
+                    import numpy as np
+                    from scipy.interpolate import BSpline
+
+                    offset_points = []
+                    sample_tangents = []
+
+                    for index in range(sample_count):
+                        u = float(index) / float(sample_count - 1)
+                        vertex = Edge.VertexByParameter(
+                            edge=source_edge,
+                            u=u,
+                            tolerance=tolerance,
+                            silent=True,
+                        )
+                        tangent = Edge.TangentAtParameter(
+                            edge=source_edge,
+                            u=u,
+                            mantissa=None,
+                            tolerance=tolerance,
+                            silent=True,
+                        )
+                        point = xyz(vertex)
+                        if point is None or not isinstance(tangent, (list, tuple)) or len(tangent) < 3:
+                            return offset_edge
+                        tangent = normalized([float(tangent[i]) for i in range(3)])
+                        if tangent is None:
+                            return offset_edge
+                        left_normal = normalized(cross(normal, tangent))
+                        if left_normal is None:
+                            return offset_edge
+
+                        offset_points.append([
+                            point[i] + float(signed_offset) * left_normal[i]
+                            for i in range(3)
+                        ])
+                        sample_tangents.append(tangent)
+
+                    offset_points = np.asarray(offset_points, dtype=float)
+
+                    # Chord-length parameterisation of the offset samples.
+                    segment_lengths = np.linalg.norm(
+                        np.diff(offset_points, axis=0),
+                        axis=1,
+                    )
+                    total_length = float(np.sum(segment_lengths))
+                    if not math.isfinite(total_length) or total_length <= tolerance:
+                        return offset_edge
+
+                    parameters = np.concatenate(
+                        ([0.0], np.cumsum(segment_lengths))
+                    )
+                    parameters /= parameters[-1]
+
+                    n_ctrl = int(control_count)
+                    n_internal = n_ctrl - degree - 1
+                    knots = [0.0] * (degree + 1)
+                    if n_internal > 0:
+                        knots += [
+                            float(i) / float(n_internal + 1)
+                            for i in range(1, n_internal + 1)
+                        ]
+                    knots += [1.0] * (degree + 1)
+                    knots = np.asarray(knots, dtype=float)
+
+                    # B-spline basis matrix at every sample parameter.
+                    basis = np.zeros((len(parameters), n_ctrl), dtype=float)
+                    for column in range(n_ctrl):
+                        coefficients = np.zeros(n_ctrl, dtype=float)
+                        coefficients[column] = 1.0
+                        basis_function = BSpline(
+                            knots,
+                            coefficients,
+                            degree,
+                            extrapolate=False,
+                        )
+                        basis[:, column] = basis_function(parameters)
+
+                    # Hard endpoint position constraints.
+                    p0 = offset_points[0].copy()
+                    pn = offset_points[-1].copy()
+
+                    # Hard endpoint tangent-direction constraints. The derivative
+                    # magnitudes are estimated from local offset-sample spacing, while
+                    # their directions remain those of the source curve endpoints.
+                    t0 = np.asarray(sample_tangents[0], dtype=float)
+                    tn = np.asarray(sample_tangents[-1], dtype=float)
+                    t0 /= np.linalg.norm(t0)
+                    tn /= np.linalg.norm(tn)
+
+                    du0 = float(parameters[1] - parameters[0])
+                    dun = float(parameters[-1] - parameters[-2])
+                    if du0 <= 1.0e-12 or dun <= 1.0e-12:
+                        return offset_edge
+
+                    speed0 = float(np.linalg.norm(offset_points[1] - offset_points[0])) / du0
+                    speedn = float(np.linalg.norm(offset_points[-1] - offset_points[-2])) / dun
+                    d0 = t0 * speed0
+                    dn = tn * speedn
+
+                    start_span = float(knots[degree + 1] - knots[1])
+                    n = n_ctrl - 1
+                    end_span = float(knots[n + degree] - knots[n])
+                    if start_span <= 0.0 or end_span <= 0.0:
+                        return offset_edge
+
+                    p1 = p0 + d0 * start_span / float(degree)
+                    pn1 = pn - dn * end_span / float(degree)
+
+                    fixed_indices = [0, 1, n_ctrl - 2, n_ctrl - 1]
+                    fixed_points = [p0, p1, pn1, pn]
+                    free_indices = [
+                        index
+                        for index in range(n_ctrl)
+                        if index not in fixed_indices
+                    ]
+
+                    rhs = offset_points.copy()
+                    for index, point in zip(fixed_indices, fixed_points):
+                        rhs -= basis[:, [index]] * point
+
+                    free_basis = basis[:, free_indices]
+                    free_control_points, _, _, _ = np.linalg.lstsq(
+                        free_basis,
+                        rhs,
+                        rcond=None,
+                    )
+
+                    fitted_control_points = np.zeros((n_ctrl, 3), dtype=float)
+                    for index, point in zip(fixed_indices, fixed_points):
+                        fitted_control_points[index] = point
+                    for index, point in zip(free_indices, free_control_points):
+                        fitted_control_points[index] = point
+
+                    fit_vertices = [
+                        Vertex.ByCoordinates(
+                            float(point[0]),
+                            float(point[1]),
+                            float(point[2]),
+                        )
+                        for point in fitted_control_points
+                    ]
+
+                    fitted_edge = Edge.ByNurbsParameters(
+                        controlPoints=fit_vertices,
+                        weights=None,
+                        knots=knots.tolist(),
+                        isRational=False,
+                        isPeriodic=False,
+                        degree=degree,
+                        tolerance=tolerance,
+                        silent=True,
+                    )
+                    if not Topology.IsInstance(fitted_edge, "Edge"):
+                        return offset_edge
+
+                    # Preserve source traversal direction defensively.
+                    expected_start = Vertex.ByCoordinates(
+                        float(p0[0]),
+                        float(p0[1]),
+                        float(p0[2]),
+                    )
+                    fit_start = Edge.StartVertex(edge=fitted_edge, silent=True)
+                    fit_end = Edge.EndVertex(edge=fitted_edge, silent=True)
+                    if (
+                        Topology.IsInstance(fit_start, "Vertex")
+                        and Topology.IsInstance(fit_end, "Vertex")
+                        and Vertex.Distance(expected_start, fit_end)
+                        < Vertex.Distance(expected_start, fit_start)
+                    ):
+                        candidate = Topology.Reverse(fitted_edge)
+                        if Topology.IsInstance(candidate, "Edge"):
+                            fitted_edge = candidate
+
+                    return fitted_edge
+
+                except Exception as error:
+                    if not silent:
+                        print(
+                            "Wire.ByOffset - Warning: Shape-preserving sampled offset "
+                            "fit failed for one curved Edge. Keeping the exact offset "
+                            f"curve. ({error})"
+                        )
+                    return offset_edge
+
+            offset_edges = []
+            for source_edge, edge_offset in zip(source_edges, effective_offsets):
+                result_edge = exact_offset_edge(source_edge, edge_offset)
+                if not Topology.IsInstance(result_edge, "Edge"):
+                    if not silent:
+                        print("Wire.ByOffset - Error: Could not construct an exact offset for one of the curved Wire Edges. Returning None.")
+                    return None
+                if smooth and not Edge.IsLinear(source_edge, tolerance=tolerance, silent=True):
+                    result_edge = smooth_offset_edge(source_edge, result_edge, edge_offset)
+                if transferDictionaries:
+                    dictionary = Topology.Dictionary(source_edge, silent=True)
+                    if dictionary:
+                        candidate = Topology.SetDictionary(result_edge, dictionary, silent=True)
+                        if Topology.IsInstance(candidate, "Edge"):
+                            result_edge = candidate
+                offset_edges.append(result_edge)
+
+            closed = bool(Wire.IsClosed(wire, tolerance=tolerance, silent=True))
+
+            # A one-Edge closed curve (for example a full circle) has no corner
+            # joins to solve.
+            if closed and len(offset_edges) == 1:
+                result = Wire.ByEdges(
+                    offset_edges,
+                    orient=True,
+                    tolerance=tolerance,
+                    silent=True,
+                )
+                if not Topology.IsInstance(result, "Wire"):
+                    return None
+                if transferDictionaries:
+                    wire_dictionary = Topology.Dictionary(wire, silent=True)
+                    if wire_dictionary:
+                        candidate = Topology.SetDictionary(result, wire_dictionary, silent=True)
+                        if Topology.IsInstance(candidate, "Wire"):
+                            result = candidate
+                return result
+
+            def endpoint_tangent(edge, at_end):
+                """Return a stable oriented unit tangent near one topological endpoint."""
+                parameters = (
+                    (1.0, 0.999999, 0.9999, 0.999, 0.99)
+                    if at_end
+                    else (0.0, 0.000001, 0.0001, 0.001, 0.01)
+                )
+                for parameter in parameters:
+                    tangent = Edge.TangentAtParameter(
+                        edge,
+                        u=parameter,
+                        mantissa=None,
+                        tolerance=tolerance,
+                        silent=True,
+                    )
+                    if not isinstance(tangent, (list, tuple)) or len(tangent) < 3:
+                        continue
+                    try:
+                        result = normalized([
+                            float(tangent[0]),
+                            float(tangent[1]),
+                            float(tangent[2]),
+                        ])
+                    except Exception:
+                        result = None
+                    if result is not None:
+                        return result
+                return None
+
+            def oriented_line_intersection(origin_a, direction_a, origin_b, direction_b):
+                """Intersect two oriented supporting lines in the Wire plane.
+
+                Returns ``(vertex, parameter_a, parameter_b)`` where
+                ``origin + parameter * direction`` defines each line. Parameters are
+                signed and therefore let curved joins verify that the intersection lies
+                beyond the correct endpoint rather than behind the curve.
+                """
+                point_a = xyz(origin_a)
+                point_b = xyz(origin_b)
+                if point_a is None or point_b is None:
+                    return None, None, None
+
+                dir_a = normalized(direction_a)
+                dir_b = normalized(direction_b)
+                if dir_a is None or dir_b is None:
+                    return None, None, None
+
+                denominator = dot(cross(dir_a, dir_b), normal)
+                if abs(denominator) <= max(tolerance, 1.0e-12):
+                    return None, None, None
+
+                delta = sub(point_b, point_a)
+                parameter_a = dot(cross(delta, dir_b), normal) / denominator
+                parameter_b = dot(cross(delta, dir_a), normal) / denominator
+
+                point = [
+                    point_a[i] + parameter_a * dir_a[i]
+                    for i in range(3)
+                ]
+                return (
+                    Vertex.ByCoordinates(point[0], point[1], point[2]),
+                    float(parameter_a),
+                    float(parameter_b),
+                )
+
+            def support_at_joint(edge, at_end):
+                """Return the support origin and oriented tangent for one offset Edge."""
+                vertex = (
+                    Edge.EndVertex(edge, silent=True)
+                    if at_end
+                    else Edge.StartVertex(edge, silent=True)
+                )
+                tangent = endpoint_tangent(edge, at_end=at_end)
+                if not Topology.IsInstance(vertex, "Vertex") or tangent is None:
+                    return None, None
+                return vertex, tangent
+
+            def collinear_linear_source_joint(previous_index, current_index):
+                """Return True for a same-direction collinear straight source joint.
+
+                Source Edges are already in head-to-tail traversal order. Coincident
+                joint endpoints plus parallel same-direction tangents identify the
+                explicit step-offset case. Opposite-direction pairs are treated as
+                backtracking/overlap and left to the generic resolver.
+                """
+                previous_source = source_edges[previous_index]
+                current_source = source_edges[current_index]
+
+                if not Edge.IsLinear(previous_source, tolerance=tolerance, silent=True):
+                    return False
+                if not Edge.IsLinear(current_source, tolerance=tolerance, silent=True):
+                    return False
+
+                previous_joint = Edge.EndVertex(previous_source, silent=True)
+                current_joint = Edge.StartVertex(current_source, silent=True)
+                if (
+                    not Topology.IsInstance(previous_joint, "Vertex")
+                    or not Topology.IsInstance(current_joint, "Vertex")
+                    or not Vertex.IsCoincident(
+                        previous_joint,
+                        current_joint,
+                        tolerance=tolerance * 10.0,
+                        silent=True,
+                    )
+                ):
+                    return False
+
+                previous_direction = endpoint_tangent(previous_source, at_end=True)
+                current_direction = endpoint_tangent(current_source, at_end=False)
+                if previous_direction is None or current_direction is None:
+                    return False
+
+                alignment = dot(previous_direction, current_direction)
+                angular_tolerance = max(tolerance * 10.0, 1.0e-9)
+                return alignment >= 1.0 - angular_tolerance
+
+            def same_offset_continuation(previous_index, current_index):
+                """Resolve equal-offset collinear line segments without a step Edge."""
+                previous_edge = offset_edges[previous_index]
+                current_edge = offset_edges[current_index]
+                previous_end = Edge.EndVertex(previous_edge, silent=True)
+                current_start = Edge.StartVertex(current_edge, silent=True)
+                if (
+                    not Topology.IsInstance(previous_end, "Vertex")
+                    or not Topology.IsInstance(current_start, "Vertex")
+                ):
+                    return None
+
+                if Vertex.IsCoincident(
+                    previous_end,
+                    current_start,
+                    tolerance=tolerance * 10.0,
+                    silent=True,
+                ):
+                    return previous_end
+
+                p0 = xyz(previous_end)
+                p1 = xyz(current_start)
+                if p0 is None or p1 is None:
+                    return None
+                midpoint = [0.5 * (p0[i] + p1[i]) for i in range(3)]
+                return Vertex.ByCoordinates(midpoint[0], midpoint[1], midpoint[2])
+
+            def explicit_step_transition(previous_index, current_index, source_joint):
+                """Apply stepOffsetA/B deliberately for collinear unequal offsets."""
+                previous_edge = offset_edges[previous_index]
+                current_edge = offset_edges[current_index]
+
+                step_a = step_value(source_joint, stepOffsetKeyA, stepOffsetA)
+                step_b = step_value(source_joint, stepOffsetKeyB, stepOffsetB)
+                previous_point = point_after_step(previous_edge, at_end=True, distance=step_a)
+                current_point = point_after_step(current_edge, at_end=False, distance=step_b)
+
+                if (
+                    not Topology.IsInstance(previous_point, "Vertex")
+                    or not Topology.IsInstance(current_point, "Vertex")
+                ):
+                    return None
+
+                transition_edges = []
+                if not Vertex.IsCoincident(
+                    previous_point,
+                    current_point,
+                    tolerance=tolerance,
+                    silent=True,
+                ):
+                    bridge = Edge.ByStartVertexEndVertex(
+                        previous_point,
+                        current_point,
+                        tolerance=tolerance,
+                        silent=True,
+                    )
+                    if not Topology.IsInstance(bridge, "Edge"):
+                        return None
+                    if transferDictionaries:
+                        joint_dictionary = Topology.Dictionary(source_joint, silent=True)
+                        if joint_dictionary:
+                            candidate = Topology.SetDictionary(bridge, joint_dictionary, silent=True)
+                            if Topology.IsInstance(candidate, "Edge"):
+                                bridge = candidate
+                    transition_edges.append(bridge)
+
+                return previous_point, current_point, transition_edges
+
+            def finite_intersections(edge_a, edge_b):
+                """Return exact finite Edge/Edge intersection vertices using OCCT.
+
+                Unlike supporting-line intersection, this operates on the actual
+                bounded offset Edges. It is therefore the first join test: if the
+                offset Edges already cross, the correct operation is to trim them
+                to that crossing rather than add extension geometry.
+                """
+                candidates = []
+
+                # Coincident endpoints are valid finite intersections and avoid a
+                # heavier OCCT boolean call in the common equal-offset case.
+                a_start = Edge.StartVertex(edge_a, silent=True)
+                a_end = Edge.EndVertex(edge_a, silent=True)
+                b_start = Edge.StartVertex(edge_b, silent=True)
+                b_end = Edge.EndVertex(edge_b, silent=True)
+                for va in (a_start, a_end):
+                    if not Topology.IsInstance(va, "Vertex"):
+                        continue
+                    for vb in (b_start, b_end):
+                        if (
+                            Topology.IsInstance(vb, "Vertex")
+                            and Vertex.IsCoincident(va, vb, tolerance=tolerance, silent=True)
+                        ):
+                            candidates.append(va)
+
+                try:
+                    from OCC.Core.BRepAlgoAPI import BRepAlgoAPI_Section
+                    from OCC.Core.BRep import BRep_Tool
+                    from OCC.Core.TopAbs import TopAbs_VERTEX
+                    from OCC.Core.TopExp import TopExp_Explorer
+                    from OCC.Core.TopoDS import topods
+
+                    shape_a = getattr(edge_a, "shape", None)
+                    shape_b = getattr(edge_b, "shape", None)
+                    if (
+                        shape_a is not None
+                        and shape_b is not None
+                        and not shape_a.IsNull()
+                        and not shape_b.IsNull()
+                    ):
+                        try:
+                            section = BRepAlgoAPI_Section(shape_a, shape_b, False)
+                        except Exception:
+                            section = BRepAlgoAPI_Section(shape_a, shape_b)
+                        try:
+                            section.Approximation(False)
+                        except Exception:
+                            pass
+                        try:
+                            section.ComputePCurveOn1(False)
+                            section.ComputePCurveOn2(False)
+                        except Exception:
+                            pass
+                        try:
+                            section.Build()
+                        except Exception:
+                            pass
+
+                        is_done = True
+                        try:
+                            is_done = bool(section.IsDone())
+                        except Exception:
+                            pass
+
+                        if is_done:
+                            explorer = TopExp_Explorer(section.Shape(), TopAbs_VERTEX)
+                            while explorer.More():
+                                try:
+                                    occ_vertex = topods.Vertex(explorer.Current())
+                                    point = BRep_Tool.Pnt(occ_vertex)
+                                    candidate = Vertex.ByCoordinates(
+                                        float(point.X()),
+                                        float(point.Y()),
+                                        float(point.Z()),
+                                    )
+                                    if Topology.IsInstance(candidate, "Vertex"):
+                                        candidates.append(candidate)
+                                except Exception:
+                                    pass
+                                explorer.Next()
+                except Exception:
+                    pass
+
+                unique = []
+                for candidate in candidates:
+                    if not Topology.IsInstance(candidate, "Vertex"):
+                        continue
+                    if any(
+                        Vertex.IsCoincident(candidate, existing, tolerance=tolerance, silent=True)
+                        for existing in unique
+                    ):
+                        continue
+                    unique.append(candidate)
+                return unique
+
+            def finite_join_at_joint(previous_edge, current_edge):
+                """Choose the finite intersection local to previous-end/current-start.
+
+                Multiple intersections are possible for curved Edges. Rank candidates
+                by their normalized parameters: the desired joint is nearest u=1 on
+                the preceding Edge and u=0 on the following Edge.
+                """
+                candidates = finite_intersections(previous_edge, current_edge)
+                if not candidates:
+                    return None
+
+                previous_end = Edge.EndVertex(previous_edge, silent=True)
+                current_start = Edge.StartVertex(current_edge, silent=True)
+                scored = []
+
+                for candidate in candidates:
+                    try:
+                        parameter_a = Edge.ParameterAtVertex(
+                            previous_edge,
+                            candidate,
+                            mantissa=None,
+                            tolerance=tolerance * 20.0,
+                            silent=True,
+                        )
+                    except Exception:
+                        parameter_a = None
+                    try:
+                        parameter_b = Edge.ParameterAtVertex(
+                            current_edge,
+                            candidate,
+                            mantissa=None,
+                            tolerance=tolerance * 20.0,
+                            silent=True,
+                        )
+                    except Exception:
+                        parameter_b = None
+
+                    if isinstance(parameter_a, (int, float)) and isinstance(parameter_b, (int, float)):
+                        # Section gives finite intersections, but retain a tolerant
+                        # parameter-domain check before trimming.
+                        domain_tol = max(tolerance * 100.0, 1.0e-7)
+                        if parameter_a < -domain_tol or parameter_a > 1.0 + domain_tol:
+                            continue
+                        if parameter_b < -domain_tol or parameter_b > 1.0 + domain_tol:
+                            continue
+                        score = abs(1.0 - float(parameter_a)) + abs(float(parameter_b))
+                    else:
+                        # Fallback ranking remains local to the expected joint.
+                        try:
+                            score = (
+                                Vertex.Distance(candidate, previous_end)
+                                + Vertex.Distance(candidate, current_start)
+                            )
+                        except Exception:
+                            continue
+
+                    scored.append((score, candidate))
+
+                if not scored:
+                    return None
+                scored.sort(key=lambda item: item[0])
+                return scored[0][1]
+
+            def extension_edge(start_vertex, end_vertex, source_edge):
+                """Create one straight tangent-extension segment with source metadata."""
+                if (
+                    not Topology.IsInstance(start_vertex, "Vertex")
+                    or not Topology.IsInstance(end_vertex, "Vertex")
+                    or Vertex.IsCoincident(start_vertex, end_vertex, tolerance=tolerance, silent=True)
+                ):
+                    return None
+
+                result = Edge.ByStartVertexEndVertex(
+                    start_vertex,
+                    end_vertex,
+                    tolerance=tolerance,
+                    silent=True,
+                )
+                if not Topology.IsInstance(result, "Edge"):
+                    return None
+
+                if transferDictionaries:
+                    dictionary = Topology.Dictionary(source_edge, silent=True)
+                    if dictionary:
+                        candidate = Topology.SetDictionary(result, dictionary, silent=True)
+                        if Topology.IsInstance(candidate, "Edge"):
+                            result = candidate
+                return result
+
+            def resolve_tangent_join(previous_index, current_index):
+                """Resolve one joint by trimming first, then extending if necessary.
+
+                The actual finite offset Edges are intersected first. A local finite
+                crossing means the Edges have met or overshot, so both are trimmed to
+                that point. Only when no such crossing exists may an endpoint tangent
+                be extended as new straight geometry.
+
+                Returns
+                -------
+                tuple
+                    ``(join, previous_target, current_target, transition_edges)``.
+                    ``previous_target`` / ``current_target`` are the trim targets for
+                    the two offset Edges. ``transition_edges`` are inserted between
+                    them in traversal order.
+                """
+                previous_edge = offset_edges[previous_index]
+                current_edge = offset_edges[current_index]
+                previous_source = source_edges[previous_index]
+                current_source = source_edges[current_index]
+
+                # FIRST: if the actual bounded offset Edges already intersect,
+                # trim both to that local crossing. Do not create a miter, bridge,
+                # or tangent extension for an overshoot.
+                finite_join = finite_join_at_joint(previous_edge, current_edge)
+                if Topology.IsInstance(finite_join, "Vertex"):
+                    return finite_join, finite_join, finite_join, []
+
+                previous_curved = not Edge.IsLinear(previous_edge, tolerance=tolerance, silent=True)
+                current_curved = not Edge.IsLinear(current_edge, tolerance=tolerance, silent=True)
+
+                previous_endpoint, previous_direction = support_at_joint(previous_edge, at_end=True)
+                current_endpoint, current_direction = support_at_joint(current_edge, at_end=False)
+                if (
+                    not Topology.IsInstance(previous_endpoint, "Vertex")
+                    or not Topology.IsInstance(current_endpoint, "Vertex")
+                    or previous_direction is None
+                    or current_direction is None
+                ):
+                    return None
+
+                join, parameter_a, parameter_b = oriented_line_intersection(
+                    previous_endpoint,
+                    previous_direction,
+                    current_endpoint,
+                    current_direction,
+                )
+                if not Topology.IsInstance(join, "Vertex"):
+                    return None
+
+                # A previous curved Edge may only continue *forward* from its end.
+                # A current curved Edge may only continue *backward* from its start.
+                # Linear Edges retain the historical infinite-support behaviour.
+                direction_tolerance = max(tolerance * 10.0, 1.0e-9)
+                if previous_curved and parameter_a < -direction_tolerance:
+                    return None
+                if current_curved and parameter_b > direction_tolerance:
+                    return None
+
+                previous_target = previous_endpoint if previous_curved else join
+                current_target = current_endpoint if current_curved else join
+                transitions = []
+
+                if previous_curved:
+                    tangent_edge = extension_edge(previous_endpoint, join, previous_source)
+                    if tangent_edge is not None:
+                        transitions.append(tangent_edge)
+                    elif not Vertex.IsCoincident(previous_endpoint, join, tolerance=tolerance, silent=True):
+                        return None
+
+                if current_curved:
+                    tangent_edge = extension_edge(join, current_endpoint, current_source)
+                    if tangent_edge is not None:
+                        transitions.append(tangent_edge)
+                    elif not Vertex.IsCoincident(join, current_endpoint, tolerance=tolerance, silent=True):
+                        return None
+
+                return join, previous_target, current_target, transitions
+
+            def step_value(source_vertex, key, default):
+                dictionary = Topology.Dictionary(source_vertex, silent=True)
+                value = dictionary_value(dictionary, key, default)
+                try:
+                    value = float(value)
+                except Exception:
+                    value = float(default)
+                return value if math.isfinite(value) else float(default)
+
+            def point_after_step(edge, at_end, distance):
+                endpoint = Edge.EndVertex(edge, silent=True) if at_end else Edge.StartVertex(edge, silent=True)
+                if abs(distance) <= tolerance:
+                    return endpoint
+                signed_distance = -distance if at_end else distance
+                result = Edge.VertexByDistance(
+                    edge,
+                    distance=signed_distance,
+                    origin=endpoint,
+                    mantissa=None,
+                    tolerance=tolerance,
+                    silent=True,
+                )
+                return result if Topology.IsInstance(result, "Vertex") else None
+
+            start_targets = [Edge.StartVertex(edge, silent=True) for edge in offset_edges]
+            end_targets = [Edge.EndVertex(edge, silent=True) for edge in offset_edges]
+            transitions_after = {}
+            seams = []
+            vertex_dictionary_selectors = []
+
+            joint_indices = list(range(len(offset_edges))) if closed else list(range(1, len(offset_edges)))
+            for current_index in joint_indices:
+                previous_index = (current_index - 1) % len(offset_edges)
+                if not closed and current_index == 0:
+                    continue
+
+                previous_edge = offset_edges[previous_index]
+                current_edge = offset_edges[current_index]
+                source_joint = Edge.StartVertex(source_edges[current_index], silent=True)
+                if not Topology.IsInstance(source_joint, "Vertex"):
+                    source_joint = Edge.EndVertex(source_edges[previous_index], silent=True)
+                source_joint = canonical_source_vertex(source_joint)
+
+                # Explicit historical semantics for a straight collinear source
+                # joint. This is evaluated before the generic trim/extension logic.
+                if collinear_linear_source_joint(previous_index, current_index):
+                    offset_a = effective_offsets[previous_index]
+                    offset_b = effective_offsets[current_index]
+
+                    if abs(float(offset_a) - float(offset_b)) <= tolerance:
+                        join = same_offset_continuation(previous_index, current_index)
+                        if not Topology.IsInstance(join, "Vertex"):
+                            if not silent:
+                                print("Wire.ByOffset - Error: Could not resolve an equal-offset collinear continuation. Returning None.")
+                            return None
+                        end_targets[previous_index] = join
+                        start_targets[current_index] = join
+                        record_vertex_dictionary(
+                            vertex_dictionary_selectors,
+                            source_joint,
+                            join,
+                        )
+                        if bisectors:
+                            add_seam(seams, source_joint, join)
+                        continue
+
+                    stepped = explicit_step_transition(previous_index, current_index, source_joint)
+                    if stepped is None:
+                        if not silent:
+                            print("Wire.ByOffset - Error: Could not construct the collinear variable-offset step transition. Returning None.")
+                        return None
+                    previous_point, current_point, transition_edges = stepped
+                    end_targets[previous_index] = previous_point
+                    start_targets[current_index] = current_point
+                    record_vertex_dictionary(
+                        vertex_dictionary_selectors,
+                        source_joint,
+                        previous_point,
+                        current_point,
+                    )
+                    if transition_edges:
+                        transitions_after[previous_index] = transition_edges
+                    if bisectors:
+                        add_seam(seams, source_joint, previous_point)
+                        add_seam(seams, source_joint, current_point)
+                    continue
+
+                resolved = resolve_tangent_join(previous_index, current_index)
+                if resolved is not None:
+                    join, previous_target, current_target, transition_edges = resolved
+                    end_targets[previous_index] = previous_target
+                    start_targets[current_index] = current_target
+                    record_vertex_dictionary(
+                        vertex_dictionary_selectors,
+                        source_joint,
+                        previous_target,
+                        current_target,
+                    )
+                    if transition_edges:
+                        transitions_after[previous_index] = transition_edges
+                    if bisectors:
+                        add_seam(seams, source_joint, join)
+                    continue
+
+                # Parallel/degenerate tangent supports retain the historical step
+                # transition semantics. Curved Edges remain inside their valid
+                # parameter domains; only straight transition geometry is added.
+                step_a = step_value(source_joint, stepOffsetKeyA, stepOffsetA)
+                step_b = step_value(source_joint, stepOffsetKeyB, stepOffsetB)
+                previous_point = point_after_step(previous_edge, at_end=True, distance=step_a)
+                current_point = point_after_step(current_edge, at_end=False, distance=step_b)
+
+                if not Topology.IsInstance(previous_point, "Vertex") or not Topology.IsInstance(current_point, "Vertex"):
+                    if not silent:
+                        print("Wire.ByOffset - Error: Could not resolve a curved tangent join or its step transition. Returning None.")
+                    return None
+
+                end_targets[previous_index] = previous_point
+                start_targets[current_index] = current_point
+                record_vertex_dictionary(
+                    vertex_dictionary_selectors,
+                    source_joint,
+                    previous_point,
+                    current_point,
+                )
+
+                transition_edges = []
+                if not Vertex.IsCoincident(previous_point, current_point, tolerance=tolerance, silent=True):
+                    bridge = Edge.ByStartVertexEndVertex(
+                        previous_point,
+                        current_point,
+                        tolerance=tolerance,
+                        silent=True,
+                    )
+                    if not Topology.IsInstance(bridge, "Edge"):
+                        return None
+                    if transferDictionaries:
+                        joint_dictionary = Topology.Dictionary(source_joint, silent=True)
+                        if joint_dictionary:
+                            candidate = Topology.SetDictionary(bridge, joint_dictionary, silent=True)
+                            if Topology.IsInstance(candidate, "Edge"):
+                                bridge = candidate
+                    transition_edges.append(bridge)
+
+                if transition_edges:
+                    transitions_after[previous_index] = transition_edges
+
+                if bisectors:
+                    add_seam(seams, source_joint, previous_point)
+                    add_seam(seams, source_joint, current_point)
+
+            if not closed:
+                source_start = canonical_source_vertex(
+                    Edge.StartVertex(source_edges[0], silent=True)
+                )
+                source_end = canonical_source_vertex(
+                    Edge.EndVertex(source_edges[-1], silent=True)
+                )
+                record_vertex_dictionary(
+                    vertex_dictionary_selectors,
+                    source_start,
+                    start_targets[0],
+                )
+                record_vertex_dictionary(
+                    vertex_dictionary_selectors,
+                    source_end,
+                    end_targets[-1],
+                )
+
+            if not closed and bisectors:
+                add_seam(
+                    seams,
+                    Edge.StartVertex(source_edges[0], silent=True),
+                    start_targets[0],
+                )
+                add_seam(
+                    seams,
+                    Edge.EndVertex(source_edges[-1], silent=True),
+                    end_targets[-1],
+                )
+
+            def trim_offset_edge(edge, start_vertex, end_vertex, source_edge):
+                if (
+                    not Topology.IsInstance(start_vertex, "Vertex")
+                    or not Topology.IsInstance(end_vertex, "Vertex")
+                    or Vertex.IsCoincident(start_vertex, end_vertex, tolerance=tolerance, silent=True)
+                ):
+                    return None
+
+                original_start = Edge.StartVertex(edge, silent=True)
+                original_end = Edge.EndVertex(edge, silent=True)
+                if (
+                    Vertex.IsCoincident(start_vertex, original_start, tolerance=tolerance, silent=True)
+                    and Vertex.IsCoincident(end_vertex, original_end, tolerance=tolerance, silent=True)
+                ):
+                    result = edge
+                elif Edge.IsLinear(edge, tolerance=tolerance, silent=True):
+                    result = Edge.ByStartVertexEndVertex(
+                        start_vertex,
+                        end_vertex,
+                        tolerance=tolerance,
+                        silent=True,
+                    )
+                else:
+                    parameter_a = Edge.ParameterAtVertex(
+                        edge,
+                        start_vertex,
+                        mantissa=None,
+                        tolerance=tolerance * 10.0,
+                        silent=True,
+                    )
+                    parameter_b = Edge.ParameterAtVertex(
+                        edge,
+                        end_vertex,
+                        mantissa=None,
+                        tolerance=tolerance * 10.0,
+                        silent=True,
+                    )
+                    if parameter_a is None or parameter_b is None:
+                        return None
+                    result = Edge.TrimByParameters(
+                        edge,
+                        uA=parameter_a,
+                        uB=parameter_b,
+                        tolerance=tolerance,
+                        silent=True,
+                    )
+
+                if not Topology.IsInstance(result, "Edge"):
+                    return None
+                if transferDictionaries:
+                    dictionary = Topology.Dictionary(source_edge, silent=True)
+                    if dictionary:
+                        candidate = Topology.SetDictionary(result, dictionary, silent=True)
+                        if Topology.IsInstance(candidate, "Edge"):
+                            result = candidate
+                return result
+
+            result_edges = []
+            for index, (edge, source_edge) in enumerate(zip(offset_edges, source_edges)):
+                trimmed = trim_offset_edge(
+                    edge,
+                    start_targets[index],
+                    end_targets[index],
+                    source_edge,
+                )
+                if not Topology.IsInstance(trimmed, "Edge"):
+                    if not silent:
+                        print("Wire.ByOffset - Error: Could not trim an exact offset Edge to its resolved joints. Returning None.")
+                    return None
+                result_edges.append(trimmed)
+                for transition_edge in transitions_after.get(index, []):
+                    if Topology.IsInstance(transition_edge, "Edge"):
+                        result_edges.append(transition_edge)
+
+            result = Wire.ByEdges(
+                result_edges,
+                orient=True,
+                tolerance=tolerance * 10.0,
+                silent=True,
+            )
+            if not Topology.IsInstance(result, "Wire"):
+                if not silent:
+                    print("Wire.ByOffset - Error: Could not assemble the exact variable-offset Edges into a Wire. Returning None.")
+                return None
+
+            if transferDictionaries:
+                # Reapply source corner metadata after trimming/assembly because
+                # OCCT edge rebuilding may create fresh endpoint Vertex wrappers.
+                result = apply_vertex_dictionary_selectors(
+                    result,
+                    vertex_dictionary_selectors,
+                )
 
                 wire_dictionary = Topology.Dictionary(wire, silent=True)
                 if wire_dictionary:
@@ -1690,41 +3714,17 @@ class Wire():
                     if Topology.IsInstance(candidate, "Wire"):
                         result = candidate
 
-            if bisectors:
-                source_vertices = Topology.Vertices(wire, silent=True) or []
-                result_vertices = Topology.Vertices(result, silent=True) or []
-
-                seams = []
-                for source_vertex in source_vertices:
-                    if not result_vertices:
-                        break
-
-                    nearest = min(
-                        result_vertices,
-                        key=lambda candidate: Vertex.Distance(source_vertex, candidate),
-                    )
-
-                    if Vertex.Distance(source_vertex, nearest) > tolerance:
-                        seam = Edge.ByStartVertexEndVertex(
-                            source_vertex,
-                            nearest,
-                            tolerance=tolerance,
-                            silent=True,
-                        )
-                        if Topology.IsInstance(seam, "Edge"):
-                            seams.append(seam)
-
-                if seams:
-                    merged = Topology.SelfMerge(
-                        Cluster.ByTopologies([result] + seams, silent=True),
-                        tolerance=tolerance,
-                    )
-                    if Topology.IsInstance(merged, "Wire"):
-                        result = merged
-                    else:
-                        if not silent:
-                            print("Wire.ByOffset - Error: Could not include bisectors while retaining a valid Wire. Returning None.")
-                        return None
+            if bisectors and seams:
+                merged = Topology.SelfMerge(
+                    Cluster.ByTopologies([result] + seams, silent=True),
+                    tolerance=tolerance,
+                )
+                if Topology.IsInstance(merged, "Wire"):
+                    result = merged
+                else:
+                    if not silent:
+                        print("Wire.ByOffset - Error: Could not include bisectors while retaining a valid Wire. Returning None.")
+                    return None
 
             return result
 
@@ -1792,7 +3792,7 @@ class Wire():
                             v1_1 = Topology.TranslateByDirectionDistance(Edge.EndVertex(prev_edge),
                                                                         direction = Vector.Reverse(Edge.Direction(prev_edge)),
                                                                         distance = d_stepOffsetA)
-                                                                                                    
+
                             v1_2 = Topology.TranslateByDirectionDistance(Edge.StartVertex(o_edge_a),
                                                                         direction = Edge.Direction(o_edge_a),
                                                                         distance = d_stepOffsetB)
@@ -1827,12 +3827,12 @@ class Wire():
                         if d_stepOffsetB == None:
                             d_stepOffsetB = stepOffsetB
                         v1_1 = Topology.TranslateByDirectionDistance(Edge.EndVertex(prev_edge),
-                                                                     direction = Vector.Reverse(Edge.Direction(prev_edge)),
-                                                                     distance = d_stepOffsetA)
-                                                                                                
+                                                                    direction = Vector.Reverse(Edge.Direction(prev_edge)),
+                                                                    distance = d_stepOffsetA)
+
                         v1_2 = Topology.TranslateByDirectionDistance(Edge.StartVertex(o_edge_a),
-                                                                     direction = Edge.Direction(o_edge_a),
-                                                                     distance = d_stepOffsetB)
+                                                                    direction = Edge.Direction(o_edge_a),
+                                                                    distance = d_stepOffsetB)
                         if transferDictionaries == True:
                             v1_1 = Topology.SetDictionary(v1_1, Topology.Dictionary(v_a), silent=True)
                             v1_2 = Topology.SetDictionary(v1_2, Topology.Dictionary(v_a), silent=True)
@@ -1891,10 +3891,10 @@ class Wire():
                     sel_edges.append(c)
                 temp_return_wire = Topology.TransferDictionariesBySelectors(temp_return_wire, sel_vertices, tranVertices=True, tolerance=tolerance*10, numWorkers=numWorkers)
                 temp_return_wire = Topology.TransferDictionariesBySelectors(temp_return_wire, sel_edges, tranEdges=True, tolerance=tolerance*10, numWorkers=numWorkers)
-                
+
             return_wire = temp_return_wire
-        
-        
+
+
         if not Topology.IsInstance(return_wire, "Wire"):
             if not silent:
                 print("Wire.ByOffset - Warning: The resulting wire is not well-formed, please check your offsets.")
@@ -1903,7 +3903,7 @@ class Wire():
                 if not silent:
                     print("Wire.ByOffset - Warning: The resulting wire is non-manifold, please check your offsets.")
                     print("Wire.ByOffset - Warning: Pursuing a workaround, but it might take longer to complete.")
-                
+
                 temp_wire = Topology.SelfMerge(Cluster.ByTopologies(wire_edges))
                 cycles = Wire.Cycles(temp_wire, maxVertices = len(final_vertices))
                 if len(cycles) > 0:

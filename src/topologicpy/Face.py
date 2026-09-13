@@ -1057,130 +1057,1408 @@ class Face():
 
         return face
 
+    # @staticmethod
+    # def ByOffset(face, offset: float = 1.0, offsetKey: str = "offset", stepOffsetA: float = 0, stepOffsetB: float = 0, stepOffsetKeyA: str = "stepOffsetA", stepOffsetKeyB: str = "stepOffsetB", reverse: bool = False, bisectors: bool = False, transferDictionaries: bool = False, epsilon: float = 0.01, tolerance: float = 0.0001,  silent: bool = False, numWorkers: int = None):
+    #     """
+    #     Creates an offset face from the input face. A positive offset value results in an offset to the interior of an anti-clockwise face.
+
+    #     Parameters
+    #     ----------
+    #     face : topologic_core.Face
+    #         The input face.
+    #     offset : float , optional
+    #         The desired offset distance. Default is 1.0.
+    #     offsetKey : str , optional
+    #         The edge dictionary key under which to find the offset value. If a value cannot be found, the offset input parameter value is used instead. Default is "offset".
+    #     stepOffsetA : float , optional
+    #         The amount to offset along the previous edge when transitioning between parallel edges with different offsets. Default is 0.
+    #     stepOffsetB : float , optional
+    #         The amount to offset along the next edge when transitioning between parallel edges with different offsets. Default is 0.
+    #     stepOffsetKeyA : str , optional
+    #         The vertex dictionary key under which to find the step offset A value. If a value cannot be found, the stepOffsetA input parameter value is used instead. Default is "stepOffsetA".
+    #     stepOffsetKeyB : str , optional
+    #         The vertex dictionary key under which to find the step offset B value. If a value cannot be found, the stepOffsetB input parameter value is used instead. Default is "stepOffsetB".
+    #     bisectors : bool , optional
+    #         If set to True, The bisectors (seams) edges will be included in the returned wire. This will result in the returned shape to be a shell rather than a face. Default is False.
+    #     reverse : bool , optional
+    #         If set to True, the direction of offsets is reversed. Otherwise, it is not. Default is False.
+    #     transferDictionaries : bool , optional
+    #         If set to True, the dictionaries of the original wire, its edges, and its vertices are transfered to the new wire. Otherwise, they are not. Default is False.
+    #     epsilon : float , optional
+    #         The desired epsilon (another form of tolerance for shortest edge to remove). Default is 0.01. (This is set to a larger number as it was found to work better)
+    #     tolerance : float , optional
+    #         The desired tolerance. Default is 0.0001.
+    #     silent : bool , optional
+    #         If set to True, error and warning messages are suppressed. Default is False.
+    #     numWorkers : int , optional
+    #         Number of workers run in parallel to process. If you set it to 1, no parallel processing will take place.
+    #         The default is None which causes the algorithm to use twice the number of cpu cores in the host computer.
+        
+    #     Returns
+    #     -------
+    #     topologic_core.Face or topologic_core.Shell
+    #         The created face or shell.
+
+    #     """
+    #     from topologicpy.Wire import Wire
+    #     from topologicpy.Cluster import Cluster
+    #     from topologicpy.Topology import Topology
+    #     from topologicpy.Helper import Helper
+
+    #     if not Topology.IsInstance(face, "Face"):
+    #         if not silent:
+    #             print("Face.ByOffset - Warning: The input face parameter is not a valid face. Returning None.")
+    #         return None
+        
+    #     if abs(Face.Normal(face)[2] + 1) <= tolerance:
+    #         reverse = not(reverse)
+    #     eb = Face.Wire(face)
+        
+    #     internal_boundaries = Face.InternalBoundaries(face)
+    #     offset_external_boundary = Wire.ByOffset(eb,
+    #                                              offset=offset,
+    #                                              offsetKey=offsetKey,
+    #                                              stepOffsetA=stepOffsetA,
+    #                                              stepOffsetB=stepOffsetB,
+    #                                              stepOffsetKeyA=stepOffsetKeyA,
+    #                                              stepOffsetKeyB=stepOffsetKeyB,
+    #                                              reverse=reverse,
+    #                                              bisectors=bisectors,
+    #                                              transferDictionaries=transferDictionaries,
+    #                                              epsilon=epsilon,
+    #                                              tolerance=tolerance,
+    #                                              silent=silent,
+    #                                              numWorkers=numWorkers)
+    #     offset_internal_boundaries = []
+    #     for internal_boundary in internal_boundaries:
+    #         offset_internal_boundary = Wire.ByOffset(internal_boundary,
+    #                                                 offset=offset,
+    #                                                 offsetKey=offsetKey,
+    #                                                 stepOffsetA=stepOffsetA,
+    #                                                 stepOffsetB=stepOffsetB,
+    #                                                 stepOffsetKeyA=stepOffsetKeyA,
+    #                                                 stepOffsetKeyB=stepOffsetKeyB,
+    #                                                 reverse=reverse,
+    #                                                 bisectors=bisectors,
+    #                                                 transferDictionaries=transferDictionaries,
+    #                                                 epsilon=epsilon,
+    #                                                 tolerance=tolerance,
+    #                                                 silent=silent,
+    #                                                 numWorkers=numWorkers)
+    #         offset_internal_boundaries.append(offset_internal_boundary)
+        
+    #     if bisectors == True:
+    #         return_face = Face.ByOffset(face,
+    #                                 offset=offset,
+    #                                 offsetKey=offsetKey,
+    #                                 stepOffsetA=stepOffsetA,
+    #                                 stepOffsetB=stepOffsetB,
+    #                                 stepOffsetKeyA=stepOffsetKeyA,
+    #                                 stepOffsetKeyB=stepOffsetKeyB,
+    #                                 reverse=reverse,
+    #                                 bisectors=False,
+    #                                 transferDictionaries=transferDictionaries,
+    #                                 epsilon=epsilon,
+    #                                 tolerance=tolerance,
+    #                                 silent=silent,
+    #                                 numWorkers=numWorkers)
+    #         all_edges = Topology.Edges(offset_external_boundary)+[Topology.Edges(ib, silent=True) for ib in offset_internal_boundaries]
+    #         all_edges += Topology.Edges(face, silent=True)
+    #         all_edges = Helper.Flatten(all_edges)
+    #         all_edges_cluster = Cluster.ByTopologies(all_edges)
+    #         if reverse == True:
+    #             return_face = Topology.Slice(return_face, all_edges_cluster)
+    #         else:
+    #             return_face = Topology.Slice(face, all_edges_cluster)
+    #         if not Topology.IsInstance(return_face, "Shell"):
+    #             if not silent:
+    #                 print("Face.ByOffset - Warning: Could not create shell by slicing. Returning None.")
+    #             return None
+    #         return return_face
+    #     return_face = Face.ByWires(offset_external_boundary, offset_internal_boundaries, tolerance=tolerance)
+    #     if not Topology.IsInstance(return_face, "Face"):
+    #         if not silent:
+    #             print("Face.ByOffset - Warning: Could not create face from wires. Returning None.")
+    #         return None
+    #     return return_face
+
     @staticmethod
-    def ByOffset(face, offset: float = 1.0, offsetKey: str = "offset", stepOffsetA: float = 0, stepOffsetB: float = 0, stepOffsetKeyA: str = "stepOffsetA", stepOffsetKeyB: str = "stepOffsetB", reverse: bool = False, bisectors: bool = False, transferDictionaries: bool = False, epsilon: float = 0.01, tolerance: float = 0.0001,  silent: bool = False, numWorkers: int = None):
+    def ByOffset(
+        face,
+        offset: float = 1.0,
+        offsetKey: str = "offset",
+        stepOffsetA: float = 0,
+        stepOffsetB: float = 0,
+        stepOffsetKeyA: str = "stepOffsetA",
+        stepOffsetKeyB: str = "stepOffsetB",
+        reverse: bool = False,
+        smooth: bool = True,
+        transferDictionaries: bool = False,
+        epsilon: float = 0.01,
+        tolerance: float = 0.0001,
+        silent: bool = False,
+        numWorkers: int = None,
+    ):
         """
-        Creates an offset face from the input face. A positive offset value results in an offset to the interior of an anti-clockwise face.
+        Creates an offset Face by independently offsetting its external and internal
+        boundary Wires.
+
+        The external boundary and all internal boundary Wires are first normalized
+        to the same traversal direction. The external boundary is then passed to
+        Wire.ByOffset using the input ``offset`` as its default offset distance.
+
+        Each internal boundary is passed to Wire.ByOffset using ``-offset`` as its
+        default offset distance. Thus, for a positive default offset, the external
+        boundary moves inward while holes move outward. Explicit per-Edge values
+        stored under ``offsetKey`` always take precedence over these defaults.
+
+        After offsetting, the method validates that:
+
+        * every resulting boundary is a closed manifold Wire;
+        * no resulting boundary self-intersects;
+        * every hole remains completely inside the external boundary;
+        * no hole touches or crosses the external boundary;
+        * holes neither touch, overlap, nor contain one another;
+        * the reconstructed Face contains the expected number of holes;
+        * the resulting Face has positive area;
+        * the resulting native shape is valid when native validation is available.
+
+        If any of these conditions fail, None is returned.
 
         Parameters
         ----------
         face : topologic_core.Face
-            The input face.
+            The input Face. The Face must be planar.
         offset : float , optional
-            The desired offset distance. Default is 1.0.
+            The default signed offset distance. For the external boundary, positive
+            values move toward the interior of a counter-clockwise boundary. For
+            internal boundaries, the default value is automatically negated so that
+            positive Face offsets enlarge holes. Explicit Edge dictionary values
+            stored under ``offsetKey`` override the default. Default is 1.0.
         offsetKey : str , optional
-            The edge dictionary key under which to find the offset value. If a value cannot be found, the offset input parameter value is used instead. Default is "offset".
+            Edge dictionary key used by Wire.ByOffset to override the default offset
+            independently for each Edge. Default is "offset".
         stepOffsetA : float , optional
-            The amount to offset along the previous edge when transitioning between parallel edges with different offsets. Default is 0.
+            Default backward trim distance used by Wire.ByOffset when resolving a
+            variable-offset step. Default is 0.
         stepOffsetB : float , optional
-            The amount to offset along the next edge when transitioning between parallel edges with different offsets. Default is 0.
+            Default forward trim distance used by Wire.ByOffset when resolving a
+            variable-offset step. Default is 0.
         stepOffsetKeyA : str , optional
-            The vertex dictionary key under which to find the step offset A value. If a value cannot be found, the stepOffsetA input parameter value is used instead. Default is "stepOffsetA".
+            Vertex dictionary key overriding ``stepOffsetA``. Default is
+            "stepOffsetA".
         stepOffsetKeyB : str , optional
-            The vertex dictionary key under which to find the step offset B value. If a value cannot be found, the stepOffsetB input parameter value is used instead. Default is "stepOffsetB".
-        bisectors : bool , optional
-            If set to True, The bisectors (seams) edges will be included in the returned wire. This will result in the returned shape to be a shell rather than a face. Default is False.
+            Vertex dictionary key overriding ``stepOffsetB``. Default is
+            "stepOffsetB".
         reverse : bool , optional
-            If set to True, the direction of offsets is reversed. Otherwise, it is not. Default is False.
+            If True, reverses all effective offset directions. Default is False.
+        smooth : bool , optional
+            Passed directly to Wire.ByOffset. If True, curved offsets approaching a
+            cusp/fold singularity use the shape-preserving smooth offset strategy.
+            Default is True.
         transferDictionaries : bool , optional
-            If set to True, the dictionaries of the original wire, its edges, and its vertices are transfered to the new wire. Otherwise, they are not. Default is False.
+            If True, dictionaries are transferred by Wire.ByOffset and the input
+            Face dictionary is assigned to the returned Face. Default is False.
         epsilon : float , optional
-            The desired epsilon (another form of tolerance for shortest edge to remove). Default is 0.01. (This is set to a larger number as it was found to work better)
+            Cleanup tolerance passed to Wire.ByOffset. Default is 0.01.
         tolerance : float , optional
-            The desired tolerance. Default is 0.0001.
+            Geometric tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
+            If True, error and warning messages are suppressed. Default is False.
         numWorkers : int , optional
-            Number of workers run in parallel to process. If you set it to 1, no parallel processing will take place.
-            The default is None which causes the algorithm to use twice the number of cpu cores in the host computer.
-        
+            Worker count passed to Wire.ByOffset. Default is None.
+
         Returns
         -------
-        topologic_core.Face or topologic_core.Shell
-            The created face or shell.
+        topologic_core.Face
+            The offset Face, or None if the offset cannot be constructed as a valid
+            manifold Face.
 
         """
-        from topologicpy.Wire import Wire
-        from topologicpy.Cluster import Cluster
-        from topologicpy.Topology import Topology
-        from topologicpy.Helper import Helper
 
-        if not Topology.IsInstance(face, "Face"):
+        import math
+
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Wire import Wire
+        from topologicpy.Face import Face
+        from topologicpy.Topology import Topology
+
+        # ------------------------------------------------------------------
+        # Helpers
+        # ------------------------------------------------------------------
+
+        def error(message):
             if not silent:
-                print("Face.ByOffset - Warning: The input face parameter is not a valid face. Returning None.")
+                print(f"Face.ByOffset - Error: {message} Returning None.")
             return None
-        
-        if abs(Face.Normal(face)[2] + 1) <= tolerance:
-            reverse = not(reverse)
-        eb = Face.Wire(face)
-        
-        internal_boundaries = Face.InternalBoundaries(face)
-        offset_external_boundary = Wire.ByOffset(eb,
-                                                 offset=offset,
-                                                 offsetKey=offsetKey,
-                                                 stepOffsetA=stepOffsetA,
-                                                 stepOffsetB=stepOffsetB,
-                                                 stepOffsetKeyA=stepOffsetKeyA,
-                                                 stepOffsetKeyB=stepOffsetKeyB,
-                                                 reverse=reverse,
-                                                 bisectors=bisectors,
-                                                 transferDictionaries=transferDictionaries,
-                                                 epsilon=epsilon,
-                                                 tolerance=tolerance,
-                                                 silent=silent,
-                                                 numWorkers=numWorkers)
-        offset_internal_boundaries = []
-        for internal_boundary in internal_boundaries:
-            offset_internal_boundary = Wire.ByOffset(internal_boundary,
-                                                    offset=offset,
-                                                    offsetKey=offsetKey,
-                                                    stepOffsetA=stepOffsetA,
-                                                    stepOffsetB=stepOffsetB,
-                                                    stepOffsetKeyA=stepOffsetKeyA,
-                                                    stepOffsetKeyB=stepOffsetKeyB,
-                                                    reverse=reverse,
-                                                    bisectors=bisectors,
-                                                    transferDictionaries=transferDictionaries,
-                                                    epsilon=epsilon,
-                                                    tolerance=tolerance,
-                                                    silent=silent,
-                                                    numWorkers=numWorkers)
-            offset_internal_boundaries.append(offset_internal_boundary)
-        
-        if bisectors == True:
-            return_face = Face.ByOffset(face,
-                                    offset=offset,
-                                    offsetKey=offsetKey,
-                                    stepOffsetA=stepOffsetA,
-                                    stepOffsetB=stepOffsetB,
-                                    stepOffsetKeyA=stepOffsetKeyA,
-                                    stepOffsetKeyB=stepOffsetKeyB,
-                                    reverse=reverse,
-                                    bisectors=False,
-                                    transferDictionaries=transferDictionaries,
-                                    epsilon=epsilon,
-                                    tolerance=tolerance,
-                                    silent=silent,
-                                    numWorkers=numWorkers)
-            all_edges = Topology.Edges(offset_external_boundary)+[Topology.Edges(ib, silent=True) for ib in offset_internal_boundaries]
-            all_edges += Topology.Edges(face, silent=True)
-            all_edges = Helper.Flatten(all_edges)
-            all_edges_cluster = Cluster.ByTopologies(all_edges)
-            if reverse == True:
-                return_face = Topology.Slice(return_face, all_edges_cluster)
-            else:
-                return_face = Topology.Slice(face, all_edges_cluster)
-            if not Topology.IsInstance(return_face, "Shell"):
-                if not silent:
-                    print("Face.ByOffset - Warning: Could not create shell by slicing. Returning None.")
+
+        def topology_vertices(topology):
+            if topology is None:
+                return []
+
+            if Topology.IsInstance(topology, "Vertex"):
+                return [topology]
+
+            try:
+                return Topology.Vertices(
+                    topology,
+                    silent=True,
+                ) or []
+            except Exception:
+                return []
+
+        def topology_edges(topology):
+            if topology is None:
+                return []
+
+            if Topology.IsInstance(topology, "Edge"):
+                return [topology]
+
+            try:
+                return Topology.Edges(
+                    topology,
+                    silent=True,
+                ) or []
+            except Exception:
+                return []
+
+        def topology_faces(topology):
+            if topology is None:
+                return []
+
+            if Topology.IsInstance(topology, "Face"):
+                return [topology]
+
+            try:
+                return Topology.Faces(
+                    topology,
+                    silent=True,
+                ) or []
+            except Exception:
+                return []
+
+        def is_nonempty(topology):
+            if topology is None:
+                return False
+
+            if any(
+                Topology.IsInstance(topology, topology_type)
+                for topology_type in (
+                    "Vertex",
+                    "Edge",
+                    "Wire",
+                    "Face",
+                    "Shell",
+                    "Cell",
+                    "CellComplex",
+                    "Cluster",
+                )
+            ):
+                vertices = topology_vertices(topology)
+                edges = topology_edges(topology)
+                faces = topology_faces(topology)
+
+                if vertices or edges or faces:
+                    return True
+
+                # A valid primitive might not expose lower-dimensional
+                # subtopologies through the convenience methods.
+                if (
+                    Topology.IsInstance(topology, "Vertex")
+                    or Topology.IsInstance(topology, "Edge")
+                    or Topology.IsInstance(topology, "Face")
+                ):
+                    return True
+
+            return False
+
+        def is_coincident(vertex_a, vertex_b):
+            if not Topology.IsInstance(vertex_a, "Vertex"):
+                return False
+
+            if not Topology.IsInstance(vertex_b, "Vertex"):
+                return False
+
+            try:
+                return bool(
+                    Vertex.IsCoincident(
+                        vertex_a,
+                        vertex_b,
+                        tolerance=tolerance,
+                        silent=True,
+                    )
+                )
+            except Exception:
+                try:
+                    return (
+                        Vertex.Distance(
+                            vertex_a,
+                            vertex_b,
+                        )
+                        <= tolerance
+                    )
+                except Exception:
+                    return False
+
+        def shared_endpoints(edge_a, edge_b):
+            try:
+                endpoints_a = [
+                    Edge.StartVertex(
+                        edge_a,
+                        silent=True,
+                    ),
+                    Edge.EndVertex(
+                        edge_a,
+                        silent=True,
+                    ),
+                ]
+
+                endpoints_b = [
+                    Edge.StartVertex(
+                        edge_b,
+                        silent=True,
+                    ),
+                    Edge.EndVertex(
+                        edge_b,
+                        silent=True,
+                    ),
+                ]
+            except Exception:
+                return []
+
+            result = []
+
+            for vertex_a in endpoints_a:
+                for vertex_b in endpoints_b:
+                    if is_coincident(
+                        vertex_a,
+                        vertex_b,
+                    ):
+                        if not any(
+                            is_coincident(vertex_a, existing)
+                            for existing in result
+                        ):
+                            result.append(vertex_a)
+
+            return result
+
+        def native_is_valid(topology):
+            """
+            Use OCCT BRep validation when the active backend exposes a native
+            TopoDS_Shape. On other backends this becomes a no-op.
+            """
+
+            shape = getattr(
+                topology,
+                "shape",
+                None,
+            )
+
+            if shape is None:
+                try:
+                    shape = topology.GetOcctShape()
+                except Exception:
+                    shape = None
+
+            if shape is None:
+                return True
+
+            try:
+                from OCC.Core.BRepCheck import BRepCheck_Analyzer
+
+                analyzer = BRepCheck_Analyzer(
+                    shape
+                )
+
+                return bool(
+                    analyzer.IsValid()
+                )
+
+            except Exception:
+                return True
+
+        def wire_is_simple(wire):
+            """
+            Check topological manifoldness plus geometric pairwise
+            self-intersection.
+            """
+
+            if not Topology.IsInstance(
+                wire,
+                "Wire",
+            ):
+                return False
+
+            try:
+                if not Wire.IsClosed(wire):
+                    return False
+            except Exception:
+                return False
+
+            try:
+                if not Wire.IsManifold(
+                    wire,
+                    silent=True,
+                ):
+                    return False
+            except Exception:
+                return False
+
+            if not native_is_valid(wire):
+                return False
+
+            try:
+                edges = Wire.Edges(
+                    wire,
+                    silent=True,
+                ) or []
+            except Exception:
+                return False
+
+            if len(edges) < 2:
+                return True
+
+            # --------------------------------------------------------------
+            # Detect crossings and overlaps between distinct Edges.
+            #
+            # Adjacent Edges may intersect only at their shared endpoint.
+            # --------------------------------------------------------------
+
+            for i in range(len(edges)):
+                edge_a = edges[i]
+
+                for j in range(i + 1, len(edges)):
+                    edge_b = edges[j]
+
+                    try:
+                        intersection = Topology.Intersect(
+                            edge_a,
+                            edge_b,
+                            tolerance=tolerance,
+                            silent=True,
+                        )
+                    except Exception:
+                        intersection = None
+
+                    if not is_nonempty(intersection):
+                        continue
+
+                    shared = shared_endpoints(
+                        edge_a,
+                        edge_b,
+                    )
+
+                    # Overlapping Edges are always invalid for a boundary.
+                    if topology_edges(intersection):
+                        return False
+
+                    intersection_vertices = topology_vertices(
+                        intersection
+                    )
+
+                    if not shared:
+                        # Non-adjacent Edges intersect.
+                        return False
+
+                    # Adjacent Edges may intersect only at their shared
+                    # topological endpoint.
+                    for vertex in intersection_vertices:
+                        if not any(
+                            is_coincident(
+                                vertex,
+                                shared_vertex,
+                            )
+                            for shared_vertex in shared
+                        ):
+                            return False
+
+            return True
+
+        def boundaries_intersect(wire_a, wire_b):
+            """
+            Return True when two independent boundary Wires touch, cross, or
+            overlap.
+            """
+
+            try:
+                edges_a = Wire.Edges(
+                    wire_a,
+                    silent=True,
+                ) or []
+
+                edges_b = Wire.Edges(
+                    wire_b,
+                    silent=True,
+                ) or []
+            except Exception:
+                return True
+
+            for edge_a in edges_a:
+                for edge_b in edges_b:
+                    try:
+                        intersection = Topology.Intersect(
+                            edge_a,
+                            edge_b,
+                            tolerance=tolerance,
+                            silent=True,
+                        )
+                    except Exception:
+                        intersection = None
+
+                    if is_nonempty(intersection):
+                        return True
+
+            return False
+
+        def topology_area(topology):
+            if topology is None:
+                return 0.0
+
+            faces = topology_faces(
+                topology
+            )
+
+            area = 0.0
+
+            for candidate_face in faces:
+                try:
+                    value = Face.Area(
+                        candidate_face,
+                        mantissa=None,
+                    )
+                except TypeError:
+                    try:
+                        value = Face.Area(
+                            candidate_face
+                        )
+                    except Exception:
+                        value = None
+                except Exception:
+                    value = None
+
+                try:
+                    value = abs(
+                        float(value)
+                    )
+                except Exception:
+                    value = 0.0
+
+                if math.isfinite(value):
+                    area += value
+
+            return area
+
+        def regions_overlap(face_a, face_b):
+            """
+            Return True when two planar regions overlap by non-zero area.
+            """
+
+            try:
+                intersection = Topology.Intersect(
+                    face_a,
+                    face_b,
+                    tolerance=tolerance,
+                    silent=True,
+                )
+            except Exception:
+                intersection = None
+
+            if intersection is None:
+                return False
+
+            area = topology_area(
+                intersection
+            )
+
+            area_tolerance = max(
+                tolerance * tolerance,
+                1.0e-10,
+            )
+
+            return area > area_tolerance
+
+        def hole_is_inside_outer(
+            hole_face,
+            outer_face,
+        ):
+            """
+            Verify full region containment by comparing the hole area with its
+            intersection with the external region.
+
+            Boundary contact is checked separately.
+            """
+
+            hole_area = topology_area(
+                hole_face
+            )
+
+            if hole_area <= max(
+                tolerance * tolerance,
+                1.0e-10,
+            ):
+                return False
+
+            try:
+                intersection = Topology.Intersect(
+                    hole_face,
+                    outer_face,
+                    tolerance=tolerance,
+                    silent=True,
+                )
+            except Exception:
+                intersection = None
+
+            intersection_area = topology_area(
+                intersection
+            )
+
+            area_tolerance = max(
+                tolerance * tolerance * 10.0,
+                hole_area * 1.0e-7,
+                1.0e-9,
+            )
+
+            return abs(
+                intersection_area - hole_area
+            ) <= area_tolerance
+
+        def wire_normal(wire):
+            """Return a deterministic normal following the Wire traversal."""
+
+            try:
+                edges = Wire._OrderedEdges(
+                    wire,
+                    tolerance=tolerance,
+                    silent=True,
+                )
+            except Exception:
+                edges = None
+
+            if not isinstance(edges, list) or len(edges) < 1:
                 return None
-            return return_face
-        return_face = Face.ByWires(offset_external_boundary, offset_internal_boundaries, tolerance=tolerance)
-        if not Topology.IsInstance(return_face, "Face"):
-            if not silent:
-                print("Face.ByOffset - Warning: Could not create face from wires. Returning None.")
-            return None
-        return return_face
+
+            points = []
+
+            def append_point(vertex):
+                if not Topology.IsInstance(vertex, "Vertex"):
+                    return
+
+                try:
+                    coordinates = Vertex.Coordinates(
+                        vertex,
+                        mantissa=None,
+                    )
+                    point = [
+                        float(coordinates[0]),
+                        float(coordinates[1]),
+                        float(coordinates[2]),
+                    ]
+                except Exception:
+                    return
+
+                if points:
+                    distance = math.sqrt(
+                        sum(
+                            (point[i] - points[-1][i]) ** 2
+                            for i in range(3)
+                        )
+                    )
+                    if distance <= tolerance:
+                        return
+
+                points.append(point)
+
+            # Sample the actual ordered Edge geometry. Sampling is used only to
+            # determine traversal orientation; the returned offset geometry remains
+            # exact and is never reconstructed from these points.
+            for edge in edges:
+                for parameter in (0.0, 0.25, 0.5, 0.75):
+                    try:
+                        vertex = Edge.VertexByParameter(
+                            edge,
+                            u=parameter,
+                            tolerance=tolerance,
+                            silent=True,
+                        )
+                    except Exception:
+                        vertex = None
+
+                    append_point(vertex)
+
+            try:
+                append_point(
+                    Edge.EndVertex(
+                        edges[-1],
+                        silent=True,
+                    )
+                )
+            except Exception:
+                pass
+
+            if len(points) > 1:
+                closing_distance = math.sqrt(
+                    sum(
+                        (points[0][i] - points[-1][i]) ** 2
+                        for i in range(3)
+                    )
+                )
+                if closing_distance <= tolerance:
+                    points.pop()
+
+            if len(points) < 3:
+                return None
+
+            # Newell's method preserves the sign of the ordered traversal and is
+            # robust for both polygonal and sampled curved planar boundaries.
+            nx = 0.0
+            ny = 0.0
+            nz = 0.0
+
+            for index, point in enumerate(points):
+                next_point = points[(index + 1) % len(points)]
+                nx += (point[1] - next_point[1]) * (point[2] + next_point[2])
+                ny += (point[2] - next_point[2]) * (point[0] + next_point[0])
+                nz += (point[0] - next_point[0]) * (point[1] + next_point[1])
+
+            magnitude = math.sqrt(
+                nx * nx
+                + ny * ny
+                + nz * nz
+            )
+
+            if magnitude <= tolerance:
+                return None
+
+            return [
+                nx / magnitude,
+                ny / magnitude,
+                nz / magnitude,
+            ]
+
+        def align_wire_orientation(
+            wire,
+            reference_normal,
+        ):
+            """
+            Return the Wire oriented consistently with reference_normal.
+            """
+
+            normal = wire_normal(
+                wire
+            )
+
+            if normal is None:
+                return None
+
+            dot = sum(
+                normal[i] * reference_normal[i]
+                for i in range(3)
+            )
+
+            if dot >= 0.0:
+                return wire
+
+            try:
+                return Wire.Reverse(
+                    wire,
+                    transferDictionaries=True,
+                    tolerance=tolerance,
+                    silent=True,
+                )
+            except Exception:
+                return None
+
+        # ------------------------------------------------------------------
+        # Validate inputs
+        # ------------------------------------------------------------------
+
+        if not Topology.IsInstance(
+            face,
+            "Face",
+        ):
+            return error(
+                "The input face parameter is not a valid Face."
+            )
+
+        try:
+            offset = float(offset)
+            stepOffsetA = float(stepOffsetA)
+            stepOffsetB = float(stepOffsetB)
+            epsilon = abs(float(epsilon))
+            tolerance = abs(float(tolerance))
+        except Exception:
+            return error(
+                "One or more numerical input parameters are invalid."
+            )
+
+        if not all(
+            math.isfinite(value)
+            for value in (
+                offset,
+                stepOffsetA,
+                stepOffsetB,
+                epsilon,
+                tolerance,
+            )
+        ):
+            return error(
+                "All numerical input parameters must be finite."
+            )
+
+        tolerance = max(
+            tolerance,
+            1.0e-12,
+        )
+
+        if not isinstance(offsetKey, str):
+            return error(
+                "The input offsetKey parameter is not a valid string."
+            )
+
+        if not isinstance(stepOffsetKeyA, str):
+            return error(
+                "The input stepOffsetKeyA parameter is not a valid string."
+            )
+
+        if not isinstance(stepOffsetKeyB, str):
+            return error(
+                "The input stepOffsetKeyB parameter is not a valid string."
+            )
+
+        if not isinstance(reverse, bool):
+            return error(
+                "The input reverse parameter is not a valid boolean."
+            )
+
+        if not isinstance(smooth, bool):
+            return error(
+                "The input smooth parameter is not a valid boolean."
+            )
+
+        if not isinstance(
+            transferDictionaries,
+            bool,
+        ):
+            return error(
+                "The input transferDictionaries parameter is not a valid boolean."
+            )
+
+        if (
+            numWorkers is not None
+            and (
+                not isinstance(numWorkers, int)
+                or isinstance(numWorkers, bool)
+                or numWorkers < 1
+            )
+        ):
+            return error(
+                "The input numWorkers parameter must be a positive integer or None."
+            )
+
+        try:
+            planar = Face.IsPlanar(
+                face,
+                tolerance=tolerance,
+            )
+        except Exception:
+            planar = None
+
+        if planar is False:
+            return error(
+                "The input Face is not planar."
+            )
+
+        if not native_is_valid(face):
+            return error(
+                "The input Face is not geometrically valid."
+            )
+
+        # ------------------------------------------------------------------
+        # Retrieve source boundaries.
+        #
+        # Prefer the preserved standalone wrappers when available because
+        # they retain Edge/Vertex dictionaries and their original traversal.
+        # Fall back to the actual Face boundaries otherwise.
+        # ------------------------------------------------------------------
+
+        try:
+            native_external = Face.ExternalBoundary(
+                face
+            )
+        except Exception:
+            native_external = None
+
+        if not Topology.IsInstance(
+            native_external,
+            "Wire",
+        ):
+            return error(
+                "Could not retrieve the external boundary of the input Face."
+            )
+
+        try:
+            native_internals = Face.InternalBoundaries(
+                face
+            ) or []
+        except Exception:
+            native_internals = []
+
+        stored_external = getattr(
+            face,
+            "external",
+            None,
+        )
+
+        if Topology.IsInstance(
+            stored_external,
+            "Wire",
+        ):
+            external_wire = stored_external
+        else:
+            external_wire = native_external
+
+        stored_internals = getattr(
+            face,
+            "internals",
+            None,
+        )
+
+        if (
+            isinstance(stored_internals, (list, tuple))
+            and len(stored_internals) == len(native_internals)
+            and all(
+                Topology.IsInstance(wire, "Wire")
+                for wire in stored_internals
+            )
+        ):
+            internal_wires = list(
+                stored_internals
+            )
+        else:
+            internal_wires = list(
+                native_internals
+            )
+
+        # ------------------------------------------------------------------
+        # Validate source boundaries
+        # ------------------------------------------------------------------
+
+        if not wire_is_simple(
+            external_wire
+        ):
+            return error(
+                "The external boundary of the input Face is not a valid simple closed Wire."
+            )
+
+        for index, wire in enumerate(
+            internal_wires
+        ):
+            if not wire_is_simple(wire):
+                return error(
+                    f"Internal boundary {index + 1} is not a valid simple closed Wire."
+                )
+
+        # ------------------------------------------------------------------
+        # Normalize the external boundary against the actual Face normal first.
+        #
+        # A Face may be correctly oriented while a preserved standalone boundary
+        # wrapper retains the opposite traversal. Signed Wire offsets must follow
+        # the Face orientation, not whichever traversal happens to be stored on
+        # that wrapper.
+        # ------------------------------------------------------------------
+
+        try:
+            face_normal = Face.Normal(
+                face,
+                outputType="xyz",
+                mantissa=12,
+                silent=True,
+            )
+        except TypeError:
+            try:
+                face_normal = Face.Normal(
+                    face,
+                    outputType="xyz",
+                    mantissa=12,
+                )
+            except Exception:
+                face_normal = None
+        except Exception:
+            face_normal = None
+
+        if (
+            not isinstance(face_normal, (list, tuple))
+            or len(face_normal) < 3
+        ):
+            return error(
+                "Could not determine the input Face normal."
+            )
+
+        try:
+            face_normal = [
+                float(face_normal[0]),
+                float(face_normal[1]),
+                float(face_normal[2]),
+            ]
+            face_normal_magnitude = math.sqrt(
+                sum(
+                    value * value
+                    for value in face_normal
+                )
+            )
+        except Exception:
+            face_normal_magnitude = 0.0
+
+        if face_normal_magnitude <= tolerance:
+            return error(
+                "Could not determine a valid input Face normal."
+            )
+
+        face_normal = [
+            value / face_normal_magnitude
+            for value in face_normal
+        ]
+
+        external_wire = align_wire_orientation(
+            external_wire,
+            face_normal,
+        )
+
+        if not Topology.IsInstance(
+            external_wire,
+            "Wire",
+        ):
+            return error(
+                "Could not align the external boundary with the input Face orientation."
+            )
+
+        # ------------------------------------------------------------------
+        # Normalize every hole to the canonical external boundary traversal.
+        #
+        # Face.ByWires will later restore the opposite native orientation that
+        # OCCT requires for holes.
+        # ------------------------------------------------------------------
+
+        external_normal = wire_normal(
+            external_wire
+        )
+
+        if external_normal is None:
+            return error(
+                "Could not determine the external boundary orientation."
+            )
+
+        aligned_internal_wires = []
+
+        for index, wire in enumerate(
+            internal_wires
+        ):
+            aligned_wire = align_wire_orientation(
+                wire,
+                external_normal,
+            )
+
+            if not Topology.IsInstance(
+                aligned_wire,
+                "Wire",
+            ):
+                return error(
+                    f"Could not normalize internal boundary {index + 1}."
+                )
+
+            aligned_internal_wires.append(
+                aligned_wire
+            )
+
+        # ------------------------------------------------------------------
+        # Offset external boundary
+        # ------------------------------------------------------------------
+
+        offset_external = Wire.ByOffset(
+            wire=external_wire,
+            offset=offset,
+            offsetKey=offsetKey,
+            stepOffsetA=stepOffsetA,
+            stepOffsetB=stepOffsetB,
+            stepOffsetKeyA=stepOffsetKeyA,
+            stepOffsetKeyB=stepOffsetKeyB,
+            reverse=reverse,
+            smooth=smooth,
+            bisectors=False,
+            transferDictionaries=transferDictionaries,
+            epsilon=epsilon,
+            tolerance=tolerance,
+            silent=silent,
+            numWorkers=numWorkers,
+        )
+
+        if not Topology.IsInstance(
+            offset_external,
+            "Wire",
+        ):
+            return error(
+                "Could not offset the external boundary."
+            )
+
+        if not wire_is_simple(
+            offset_external
+        ):
+            return error(
+                "The offset external boundary is self-intersecting or non-manifold."
+            )
+
+        # ------------------------------------------------------------------
+        # Offset holes.
+        #
+        # Because all boundaries now have the same traversal orientation,
+        # the fallback default must be negated for holes. Explicit Edge values
+        # stored under offsetKey are left untouched by Wire.ByOffset.
+        # ------------------------------------------------------------------
+
+        offset_internals = []
+
+        for index, wire in enumerate(
+            aligned_internal_wires
+        ):
+            offset_internal = Wire.ByOffset(
+                wire=wire,
+                offset=-offset,
+                offsetKey=offsetKey,
+                stepOffsetA=stepOffsetA,
+                stepOffsetB=stepOffsetB,
+                stepOffsetKeyA=stepOffsetKeyA,
+                stepOffsetKeyB=stepOffsetKeyB,
+                reverse=reverse,
+                smooth=smooth,
+                bisectors=False,
+                transferDictionaries=transferDictionaries,
+                epsilon=epsilon,
+                tolerance=tolerance,
+                silent=silent,
+                numWorkers=numWorkers,
+            )
+
+            if not Topology.IsInstance(
+                offset_internal,
+                "Wire",
+            ):
+                return error(
+                    f"Could not offset internal boundary {index + 1}."
+                )
+
+            if not wire_is_simple(
+                offset_internal
+            ):
+                return error(
+                    f"Offset internal boundary {index + 1} is self-intersecting or non-manifold."
+                )
+
+            offset_internals.append(
+                offset_internal
+            )
+
+        # ------------------------------------------------------------------
+        # Convert each standalone boundary to a planar region for validation.
+        # ------------------------------------------------------------------
+
+        outer_region = Face.ByWire(
+            offset_external,
+            silent=True,
+        )
+
+        if not Topology.IsInstance(
+            outer_region,
+            "Face",
+        ):
+            return error(
+                "The offset external boundary does not define a valid Face."
+            )
+
+        outer_area = topology_area(
+            outer_region
+        )
+
+        if outer_area <= max(
+            tolerance * tolerance,
+            1.0e-10,
+        ):
+            return error(
+                "The offset external boundary has zero or negligible area."
+            )
+
+        hole_regions = []
+
+        for index, wire in enumerate(
+            offset_internals
+        ):
+            hole_region = Face.ByWire(
+                wire,
+                silent=True,
+            )
+
+            if not Topology.IsInstance(
+                hole_region,
+                "Face",
+            ):
+                return error(
+                    f"Offset internal boundary {index + 1} does not define a valid Face."
+                )
+
+            hole_area = topology_area(
+                hole_region
+            )
+
+            if hole_area <= max(
+                tolerance * tolerance,
+                1.0e-10,
+            ):
+                return error(
+                    f"Offset internal boundary {index + 1} has zero or negligible area."
+                )
+
+            hole_regions.append(
+                hole_region
+            )
+
+        # ------------------------------------------------------------------
+        # Validate every hole against the external boundary.
+        # ------------------------------------------------------------------
+
+        for index, (
+            hole_wire,
+            hole_region,
+        ) in enumerate(
+            zip(
+                offset_internals,
+                hole_regions,
+            )
+        ):
+            if boundaries_intersect(
+                offset_external,
+                hole_wire,
+            ):
+                return error(
+                    f"Offset internal boundary {index + 1} touches or crosses the external boundary."
+                )
+
+            if not hole_is_inside_outer(
+                hole_region,
+                outer_region,
+            ):
+                return error(
+                    f"Offset internal boundary {index + 1} lies partly or completely outside the external boundary."
+                )
+
+        # ------------------------------------------------------------------
+        # Validate holes against each other.
+        #
+        # Touching is invalid because it creates a non-manifold Face.
+        # Area overlap also rejects nesting/containment of one hole inside
+        # another.
+        # ------------------------------------------------------------------
+
+        for i in range(
+            len(offset_internals)
+        ):
+            for j in range(
+                i + 1,
+                len(offset_internals),
+            ):
+                if boundaries_intersect(
+                    offset_internals[i],
+                    offset_internals[j],
+                ):
+                    return error(
+                        f"Offset internal boundaries {i + 1} and {j + 1} touch or intersect."
+                    )
+
+                if regions_overlap(
+                    hole_regions[i],
+                    hole_regions[j],
+                ):
+                    return error(
+                        f"Offset internal boundaries {i + 1} and {j + 1} overlap or are nested."
+                    )
+
+        # ------------------------------------------------------------------
+        # Construct final Face
+        # ------------------------------------------------------------------
+
+        result = Face.ByWires(
+            externalBoundary=offset_external,
+            internalBoundaries=offset_internals,
+        )
+
+        if not Topology.IsInstance(
+            result,
+            "Face",
+        ):
+            return error(
+                "Could not construct a Face from the offset boundaries."
+            )
+
+        if not native_is_valid(
+            result
+        ):
+            return error(
+                "The reconstructed offset Face is geometrically invalid."
+            )
+
+        # ------------------------------------------------------------------
+        # Verify that no hole was lost or reclassified during reconstruction.
+        # ------------------------------------------------------------------
+
+        try:
+            result_internals = Face.InternalBoundaries(
+                result
+            ) or []
+        except Exception:
+            result_internals = []
+
+        if len(result_internals) != len(
+            offset_internals
+        ):
+            return error(
+                "The reconstructed Face does not contain the expected number of internal boundaries."
+            )
+
+        # ------------------------------------------------------------------
+        # Final area sanity check.
+        # ------------------------------------------------------------------
+
+        result_area = topology_area(
+            result
+        )
+
+        if result_area <= max(
+            tolerance * tolerance,
+            1.0e-10,
+        ):
+            return error(
+                "The reconstructed offset Face has zero or negligible area."
+            )
+
+        # ------------------------------------------------------------------
+        # Transfer Face dictionary
+        # ------------------------------------------------------------------
+
+        if transferDictionaries:
+            try:
+                dictionary = Topology.Dictionary(
+                    face,
+                    silent=True,
+                )
+
+                if dictionary:
+                    result = Topology.SetDictionary(
+                        result,
+                        dictionary,
+                    )
+            except Exception:
+                pass
+
+        return result
 
     @staticmethod  
     def ByOffsetArea(face,
@@ -4320,38 +5598,164 @@ class Face():
     @staticmethod
     def Invert(face, tolerance: float = 0.0001, silent: bool = False):
         """
-        Creates a face that is an inverse (mirror) of the input face.
+        Reverses the orientation of the input Face without approximating its
+        geometry.
+
+        Exact curved boundaries and NURBS surfaces are preserved. The preferred
+        path reverses the backend-native OCCT Face directly. If native reversal
+        is unavailable, a planar fallback reverses the existing boundary Wires
+        rather than rebuilding them from vertices.
 
         Parameters
         ----------
         face : topologic_core.Face
-            The input face.
+            The input Face.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
+            If True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
         topologic_core.Face
-            The inverted face.
-
+            The orientation-reversed Face, or None on failure.
         """
         from topologicpy.Wire import Wire
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(face, "Face"):
+            if not silent:
+                print("Face.Invert - Error: The input face parameter is not a valid Face. Returning None.")
             return None
-        eb = Face.ExternalBoundary(face)
-        vertices = Topology.Vertices(eb)
-        vertices.reverse()
-        inverted_wire = Wire.ByVertices(vertices, close=Wire.IsClosed(eb), tolerance=tolerance, silent=silent)
-        internal_boundaries = Face.InternalBoundaries(face)
-        if not internal_boundaries:
-            inverted_face = Face.ByWire(inverted_wire, tolerance=tolerance, silent=silent)
-        else:
-            inverted_face = Face.ByWires(inverted_wire, internal_boundaries, tolerance=tolerance, silent=silent)
-        return inverted_face
+
+        try:
+            tolerance = max(abs(float(tolerance)), 1.0e-12)
+        except Exception:
+            if not silent:
+                print("Face.Invert - Error: The input tolerance parameter is invalid. Returning None.")
+            return None
+
+        face_dictionary = None
+        try:
+            face_dictionary = Topology.Dictionary(face, silent=True)
+        except Exception:
+            pass
+
+        # Preferred path: reverse the native OCCT Face. Reversing the TopoDS
+        # orientation preserves the underlying surface, trimming curves, p-curves,
+        # and exact NURBS geometry.
+        try:
+            shape = Topology.OCCTShape(face, silent=True)
+        except Exception:
+            shape = None
+
+        if shape is not None:
+            try:
+                reversed_shape = shape.Reversed()
+            except Exception:
+                reversed_shape = None
+
+            if reversed_shape is not None:
+                try:
+                    result = Topology.ByOCCTShape(
+                        reversed_shape,
+                        silent=True,
+                    )
+                except Exception:
+                    result = None
+
+                if Topology.IsInstance(result, "Face"):
+                    if face_dictionary:
+                        try:
+                            candidate = Topology.SetDictionary(
+                                result,
+                                face_dictionary,
+                                silent=True,
+                            )
+                            if Topology.IsInstance(candidate, "Face"):
+                                result = candidate
+                        except Exception:
+                            pass
+                    return result
+
+        # Exact planar fallback. Wire.Reverse reverses the actual Edge geometry,
+        # so arcs, B-splines and NURBS are retained instead of being chordalised.
+        try:
+            planar = Face.IsPlanar(
+                face,
+                tolerance=tolerance,
+            )
+        except Exception:
+            planar = False
+
+        if planar is not True:
+            if not silent:
+                print("Face.Invert - Error: Could not reverse the native non-planar Face exactly. Returning None.")
+            return None
+
+        external = Face.ExternalBoundary(
+            face,
+            silent=True,
+        )
+        if not Topology.IsInstance(external, "Wire"):
+            if not silent:
+                print("Face.Invert - Error: Could not retrieve the external boundary. Returning None.")
+            return None
+
+        reversed_external = Wire.Reverse(
+            external,
+            transferDictionaries=True,
+            tolerance=tolerance,
+            silent=True,
+        )
+        if not Topology.IsInstance(reversed_external, "Wire"):
+            if not silent:
+                print("Face.Invert - Error: Could not reverse the external boundary. Returning None.")
+            return None
+
+        try:
+            internal_boundaries = Face.InternalBoundaries(face) or []
+        except Exception:
+            internal_boundaries = []
+
+        reversed_internals = []
+        for internal in internal_boundaries:
+            reversed_internal = Wire.Reverse(
+                internal,
+                transferDictionaries=True,
+                tolerance=tolerance,
+                silent=True,
+            )
+            if not Topology.IsInstance(reversed_internal, "Wire"):
+                if not silent:
+                    print("Face.Invert - Error: Could not reverse an internal boundary. Returning None.")
+                return None
+            reversed_internals.append(reversed_internal)
+
+        result = Face.ByWires(
+            reversed_external,
+            reversed_internals,
+            tolerance=tolerance,
+            silent=True,
+        )
+        if not Topology.IsInstance(result, "Face"):
+            if not silent:
+                print("Face.Invert - Error: Could not reconstruct the reversed Face. Returning None.")
+            return None
+
+        if face_dictionary:
+            try:
+                candidate = Topology.SetDictionary(
+                    result,
+                    face_dictionary,
+                    silent=True,
+                )
+                if Topology.IsInstance(candidate, "Face"):
+                    result = candidate
+            except Exception:
+                pass
+
+        return result
     
     @staticmethod
     def IsConvex(face, mantissa: int = 6, silent: bool = False) -> bool:
@@ -7120,50 +8524,192 @@ class Face():
         """
         Creates a north arrow.
 
+        The arrow is built in canonical local XY with a +Z normal, rotated about
+        the local origin, translated for placement, placed once at the requested
+        origin, and finally oriented to the requested direction.
+
         Parameters
         ----------
         origin : topologic_core.Vertex, optional
-            The location of the origin of the circle. Default is None which results in the circle being placed at (0, 0, 0).
+            The location of the origin of the north arrow. Default is None.
         radius : float , optional
-            The radius of the circle. Default is 1.
+            The radius of the circular body. Default is 0.5.
         sides : int , optional
-            The number of sides of the circle. Default is 16.
+            The number of sides of the circular body. Default is 16.
         direction : list , optional
-            The vector representing the up direction of the circle. Default is [0, 0, 1].
+            The vector representing the Face normal. Default is [0, 0, 1].
         northAngle : float , optional
-            The angular offset in degrees from the positive Y axis direction. The angle is measured in a counter-clockwise fashion where 0 is positive Y, 90 is negative X, 180 is negative Y, and 270 is positive X.
+            Angular offset in degrees from positive Y, measured counter-clockwise.
+            Default is 0.
         placement : str , optional
-            The description of the placement of the origin of the circle. This can be "center", "lowerleft", "upperleft", "lowerright", or "upperright". It is case insensitive. Default is "center".
+            One of "center", "lowerleft", "upperleft", "lowerright", or
+            "upperright". Default is "center".
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
 
         Returns
         -------
         topologic_core.Face
-            The created circle.
-
+            The created north-arrow Face, or None on failure.
         """
         from topologicpy.Topology import Topology
         from topologicpy.Vertex import Vertex
-        if not Topology.IsInstance(origin, "Vertex"):
+
+        if origin is None:
             origin = Vertex.Origin()
-        
-        c = Face.Circle(origin=origin, radius=radius, sides=sides, direction=[0, 0, 1], placement="center", tolerance=tolerance)
-        r = Face.Rectangle(origin=origin, width=radius*0.01,length=radius*1.2, placement="lowerleft")
-        r = Topology.Translate(r, -0.005*radius,0,0)
-        arrow = Topology.Difference(c, r, tolerance=tolerance)
-        arrow = Topology.Rotate(arrow, origin=Vertex.Origin(), axis=[0, 0, 1], angle=northAngle)
-        if placement.lower() == "lowerleft":
-            arrow = Topology.Translate(arrow, radius, radius, 0)
-        elif placement.lower() == "upperleft":
-            arrow = Topology.Translate(arrow, radius, -radius, 0)
-        elif placement.lower() == "lowerright":
-            arrow = Topology.Translate(arrow, -radius, radius, 0)
-        elif placement.lower() == "upperright":
-            arrow = Topology.Translate(arrow, -radius, -radius, 0)
-        arrow = Topology.Place(arrow, originA=Vertex.Origin(), originB=origin)
-        arrow = Topology.Orient(arrow, origin=origin, dirA=[0,0,1], dirB=direction)
-        return arrow
+        if not Topology.IsInstance(origin, "Vertex"):
+            return None
+
+        try:
+            radius = float(radius)
+            northAngle = float(northAngle)
+            sides = int(sides)
+            tolerance = max(abs(float(tolerance)), 1.0e-12)
+        except Exception:
+            return None
+
+        if not math.isfinite(radius) or radius <= tolerance:
+            return None
+        if not math.isfinite(northAngle):
+            return None
+        if sides < 3:
+            return None
+
+        if not isinstance(direction, (list, tuple)) or len(direction) != 3:
+            return None
+
+        try:
+            direction = [
+                float(direction[0]),
+                float(direction[1]),
+                float(direction[2]),
+            ]
+            if not all(math.isfinite(value) for value in direction):
+                return None
+            magnitude = math.sqrt(
+                sum(value * value for value in direction)
+            )
+        except Exception:
+            return None
+
+        if magnitude <= tolerance:
+            return None
+
+        if not isinstance(placement, str):
+            return None
+        placement = placement.lower()
+        if placement not in [
+            "center",
+            "lowerleft",
+            "upperleft",
+            "lowerright",
+            "upperright",
+        ]:
+            return None
+
+        local_origin = Vertex.Origin()
+
+        circle = Face.Circle(
+            origin=local_origin,
+            radius=radius,
+            sides=sides,
+            direction=[0, 0, 1],
+            placement="center",
+            tolerance=tolerance,
+            silent=True,
+        )
+        rectangle = Face.Rectangle(
+            origin=local_origin,
+            width=radius * 0.01,
+            length=radius * 1.2,
+            direction=[0, 0, 1],
+            placement="lowerleft",
+            tolerance=tolerance,
+            silent=True,
+        )
+
+        if not Topology.IsInstance(circle, "Face") or not Topology.IsInstance(rectangle, "Face"):
+            return None
+
+        rectangle = Topology.Translate(
+            rectangle,
+            x=-0.005 * radius,
+            y=0,
+            z=0,
+        )
+        if not Topology.IsInstance(rectangle, "Face"):
+            return None
+
+        arrow = Topology.Difference(
+            circle,
+            rectangle,
+            tolerance=tolerance,
+            silent=True,
+        )
+        if not Topology.IsInstance(arrow, "Face"):
+            return None
+
+        arrow = Face._EnsurePrimitivePositiveZ(
+            arrow,
+            tolerance=tolerance,
+            silent=True,
+        )
+        if not Topology.IsInstance(arrow, "Face"):
+            return None
+
+        if abs(northAngle) > tolerance:
+            arrow = Topology.Rotate(
+                arrow,
+                origin=local_origin,
+                axis=[0, 0, 1],
+                angle=northAngle,
+            )
+            if not Topology.IsInstance(arrow, "Face"):
+                return None
+
+        x_offset = 0.0
+        y_offset = 0.0
+
+        if placement == "lowerleft":
+            x_offset = radius
+            y_offset = radius
+        elif placement == "upperleft":
+            x_offset = radius
+            y_offset = -radius
+        elif placement == "lowerright":
+            x_offset = -radius
+            y_offset = radius
+        elif placement == "upperright":
+            x_offset = -radius
+            y_offset = -radius
+
+        if abs(x_offset) > tolerance or abs(y_offset) > tolerance:
+            arrow = Topology.Translate(
+                arrow,
+                x=x_offset,
+                y=y_offset,
+                z=0,
+            )
+            if not Topology.IsInstance(arrow, "Face"):
+                return None
+
+        arrow = Topology.Place(
+            arrow,
+            originA=local_origin,
+            originB=origin,
+        )
+        if not Topology.IsInstance(arrow, "Face"):
+            return None
+
+        if direction != [0.0, 0.0, 1.0]:
+            arrow = Topology.Orient(
+                arrow,
+                origin=origin,
+                dirA=[0, 0, 1],
+                dirB=direction,
+            )
+
+        return arrow if Topology.IsInstance(arrow, "Face") else None
     
     @staticmethod
     def PlaneEquation(face, mantissa: int = 6) -> dict:
@@ -7374,98 +8920,238 @@ class Face():
     @staticmethod
     def RHS(origin= None, width: float = 1.0, length: float = 1.0, thickness: float = 0.25, outerFillet: float = 0.0, innerFillet: float = 0.0, sides: int = 16, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001, silent: bool = False):
         """
-        Creates a rectangluar hollow section (RHS).
+        Creates a rectangular hollow section (RHS).
 
         Parameters
         ----------
         origin : topologic_core.Vertex, optional
-            The location of the origin of the RHS. Default is None which results in the RHS being placed at (0, 0, 0).
+            The location of the origin of the RHS. Default is None.
         width : float , optional
             The width of the RHS. Default is 1.0.
         length : float , optional
             The length of the RHS. Default is 1.0.
         thickness : float , optional
-            The thickness of the RHS. Default is 0.25.
+            The wall thickness. Default is 0.25.
         outerFillet : float , optional
-            The outer fillet multiplication factor based on the thickness (e.g. 1t). Default is 0.
+            Outer fillet factor multiplied by thickness. Default is 0.
         innerFillet : float , optional
-            The inner fillet multiplication factor based on the thickness (e.g. 1.5t). Default is 0.
+            Inner fillet factor multiplied by thickness. Default is 0.
         sides : int , optional
             The desired number of sides of the fillets. Default is 16.
         direction : list , optional
-            The vector representing the up direction of the RHS. Default is [0, 0, 1].
+            The vector representing the Face normal. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the RHS. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. Default is "center".
+            One of "center", "lowerleft", "upperleft", "lowerright", or
+            "upperright". Default is "center".
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
+            If True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
         topologic_core.Face
-            The created face.
-
+            The created RHS Face, or None on failure.
         """
         from topologicpy.Vertex import Vertex
         from topologicpy.Wire import Wire
         from topologicpy.Topology import Topology
 
-        if 2*thickness >= width:
+        def error(message):
             if not silent:
-                print("Face.RHS - Error: Twice the thickness value is larger than or equal to the width value. Returning None.")
+                print(f"Face.RHS - Error: {message} Returning None.")
             return None
-        if 2*thickness >= width:
-            if not silent:
-                print("Face.RHS - Error: Twice the thickness value is larger than or equal to the length value. Returning None.")
-            return None
-        outer_dimension = min(width, length)
-        fillet_dimension = 2*outerFillet*thickness
-        if  fillet_dimension > outer_dimension:
-            if not silent:
-                print("Face.RHS = Error: The outer fillet radius input value is too large given the desired dimensions of the RHS. Returning None.")
-            return None
-        inner_dimension = min(width, length) - 2*thickness
-        fillet_dimension = 2*innerFillet*thickness
-        if fillet_dimension > inner_dimension:
-            if not silent:
-                print("Face.RHS = Error: The inner fillet radius input value is too large given the desired dimensions of the RHS. Returning None.")
-            return None
-        if origin == None:
+
+        try:
+            width = float(width)
+            length = float(length)
+            thickness = float(thickness)
+            outerFillet = float(outerFillet)
+            innerFillet = float(innerFillet)
+            sides = int(sides)
+            tolerance = max(abs(float(tolerance)), 1.0e-12)
+        except Exception:
+            return error("One or more numerical input parameters are invalid.")
+
+        if not all(
+            math.isfinite(value)
+            for value in [
+                width,
+                length,
+                thickness,
+                outerFillet,
+                innerFillet,
+            ]
+        ):
+            return error("All numerical input parameters must be finite.")
+
+        if width <= tolerance:
+            return error("The width must be greater than the tolerance value.")
+        if length <= tolerance:
+            return error("The length must be greater than the tolerance value.")
+        if thickness <= tolerance:
+            return error("The thickness must be greater than the tolerance value.")
+        if 2.0 * thickness >= width:
+            return error("Twice the thickness is larger than or equal to the width.")
+        if 2.0 * thickness >= length:
+            return error("Twice the thickness is larger than or equal to the length.")
+        if outerFillet < 0 or innerFillet < 0:
+            return error("The fillet factors cannot be negative.")
+        if sides < 1:
+            return error("The sides parameter must be a positive integer.")
+
+        outer_radius = outerFillet * thickness
+        inner_radius = innerFillet * thickness
+        inner_width = width - 2.0 * thickness
+        inner_length = length - 2.0 * thickness
+
+        if 2.0 * outer_radius > min(width, length):
+            return error("The outer fillet radius is too large for the requested dimensions.")
+        if 2.0 * inner_radius > min(inner_width, inner_length):
+            return error("The inner fillet radius is too large for the requested dimensions.")
+
+        if origin is None:
             origin = Vertex.Origin()
-        
-        outer_wire = Wire.Rectangle(origin=Vertex.Origin(), width=width, length=length, direction=[0,0,1], placement="center", tolerance=tolerance, silent=silent)
-        inner_wire = Wire.Rectangle(origin=Vertex.Origin(), width=width-thickness*2, length=length-thickness*2, direction=[0,0,1], placement="center", tolerance=tolerance, silent=silent)
-        if outerFillet > 0:
-           outer_wire = Wire.Fillet(outer_wire, radius=outerFillet*thickness, sides=sides, silent=silent)
-        if innerFillet > 0:
-           inner_wire = Wire.Fillet(inner_wire, radius=innerFillet*thickness, sides=sides, silent=silent) 
-        return_face = Face.ByWires(outer_wire, [inner_wire], silent=silent)
-        return_face = Face._EnsurePrimitivePositiveZ(return_face, tolerance=tolerance, silent=silent)
-        if not Topology.IsInstance(return_face, "face"):
-            if not silent:
-                print("Face.RHS - Error: Could not create the face for the RHS. Returning None.")
-            return None
-        
-        xOffset = 0
-        yOffset = 0
-        zOffset = 0
-        if placement.lower() == "lowerleft":
-            xOffset = width*0.5
-            yOffset = length*0.5
-        elif placement.lower() == "upperleft":
-            xOffset = width*0.5
-            yOffset = -length*0.5
-        elif placement.lower() == "lowerright":
-            xOffset = -width*0.5
-            yOffset = length*0.5
-        elif placement.lower() == "upperright":
-            xOffset = -width*0.5
-            yOffset = -length*0.5
-        return_face = Topology.Translate(return_face, x=xOffset, y=yOffset, z=zOffset)
-        return_face = Topology.Place(return_face, originA=Vertex.Origin(), originB=origin)
-        if direction != [0, 0, 1]:
-            return_face = Topology.Orient(return_face, origin=origin, dirA=[0, 0, 1], dirB=direction)
+        if not Topology.IsInstance(origin, "Vertex"):
+            return error("The origin parameter is not a valid Vertex.")
+
+        if not isinstance(direction, (list, tuple)) or len(direction) != 3:
+            return error("The direction parameter is not a valid vector.")
+
+        try:
+            direction = [
+                float(direction[0]),
+                float(direction[1]),
+                float(direction[2]),
+            ]
+            if not all(math.isfinite(value) for value in direction):
+                return error("The direction vector must contain finite values.")
+            magnitude = math.sqrt(
+                sum(value * value for value in direction)
+            )
+        except Exception:
+            magnitude = 0.0
+
+        if magnitude <= tolerance:
+            return error("The direction vector magnitude is below tolerance.")
+
+        if not isinstance(placement, str):
+            return error("The placement parameter is not a valid string.")
+        placement = placement.lower()
+        if placement not in [
+            "center",
+            "lowerleft",
+            "upperleft",
+            "lowerright",
+            "upperright",
+        ]:
+            return error("The placement parameter is not recognized.")
+
+        local_origin = Vertex.Origin()
+
+        outer_wire = Wire.Rectangle(
+            origin=local_origin,
+            width=width,
+            length=length,
+            direction=[0, 0, 1],
+            placement="center",
+            tolerance=tolerance,
+            silent=silent,
+        )
+        inner_wire = Wire.Rectangle(
+            origin=local_origin,
+            width=inner_width,
+            length=inner_length,
+            direction=[0, 0, 1],
+            placement="center",
+            tolerance=tolerance,
+            silent=silent,
+        )
+
+        if not Topology.IsInstance(outer_wire, "Wire") or not Topology.IsInstance(inner_wire, "Wire"):
+            return error("Could not create the base boundary Wires.")
+
+        if outer_radius > tolerance:
+            outer_wire = Wire.Fillet(
+                outer_wire,
+                radius=outer_radius,
+                sides=sides,
+                tolerance=tolerance,
+                silent=silent,
+            )
+            if not Topology.IsInstance(outer_wire, "Wire"):
+                return error("Could not fillet the external boundary.")
+
+        if inner_radius > tolerance:
+            inner_wire = Wire.Fillet(
+                inner_wire,
+                radius=inner_radius,
+                sides=sides,
+                tolerance=tolerance,
+                silent=silent,
+            )
+            if not Topology.IsInstance(inner_wire, "Wire"):
+                return error("Could not fillet the internal boundary.")
+
+        return_face = Face.ByWires(
+            outer_wire,
+            [inner_wire],
+            tolerance=tolerance,
+            silent=silent,
+        )
+        return_face = Face._EnsurePrimitivePositiveZ(
+            return_face,
+            tolerance=tolerance,
+            silent=silent,
+        )
+
+        if not Topology.IsInstance(return_face, "Face"):
+            return error("Could not create the RHS Face.")
+
+        x_offset = 0.0
+        y_offset = 0.0
+
+        if placement == "lowerleft":
+            x_offset = width * 0.5
+            y_offset = length * 0.5
+        elif placement == "upperleft":
+            x_offset = width * 0.5
+            y_offset = -length * 0.5
+        elif placement == "lowerright":
+            x_offset = -width * 0.5
+            y_offset = length * 0.5
+        elif placement == "upperright":
+            x_offset = -width * 0.5
+            y_offset = -length * 0.5
+
+        if abs(x_offset) > tolerance or abs(y_offset) > tolerance:
+            return_face = Topology.Translate(
+                return_face,
+                x=x_offset,
+                y=y_offset,
+                z=0,
+            )
+            if not Topology.IsInstance(return_face, "Face"):
+                return error("Could not apply the requested placement.")
+
+        return_face = Topology.Place(
+            return_face,
+            originA=local_origin,
+            originB=origin,
+        )
+        if not Topology.IsInstance(return_face, "Face"):
+            return error("Could not place the RHS at the requested origin.")
+
+        if direction != [0.0, 0.0, 1.0]:
+            return_face = Topology.Orient(
+                return_face,
+                origin=origin,
+                dirA=[0, 0, 1],
+                dirB=direction,
+            )
+            if not Topology.IsInstance(return_face, "Face"):
+                return error("Could not orient the RHS to the requested direction.")
+
         return return_face
     
     @staticmethod

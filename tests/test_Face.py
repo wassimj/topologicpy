@@ -294,8 +294,17 @@ def test_bounding_rectangle_preserves_area_metadata(rectangle_face):
     assert Face.BoundingRectangle(None) is None
 
 
-def test_offset_and_thickened_wire_create_faces(rectangle_face):
-    offset = Face.ByOffset(rectangle_face, offset=0.1, silent=True)
+def test_offset_and_thickened_wire_create_faces():
+    # Build the source Face from an explicitly counter-clockwise planar Wire so
+    # this test isolates Face.ByOffset from primitive-face orientation handling.
+    boundary = Wire.ByVertices(
+        [_v(-2, -1, 0), _v(2, -1, 0), _v(2, 1, 0), _v(-2, 1, 0)],
+        close=True,
+        silent=True,
+    )
+    source = Face.ByWire(boundary, silent=True)
+    offset = Face.ByOffset(source, offset=0.1, smooth=True, silent=True)
+
     # ByThickenedWire needs a planar wire with enough non-collinear vertices to
     # establish its working plane. A straight line is intentionally insufficient.
     polyline = Wire.ByVertices(
@@ -305,12 +314,15 @@ def test_offset_and_thickened_wire_create_faces(rectangle_face):
     )
     thickened = Face.ByThickenedWire(polyline, offsetA=0.5, offsetB=0.5, silent=True)
 
+    _assert_face(source)
     _assert_face(offset)
     _assert_face(thickened)
+    assert Face.Area(source) == pytest.approx(8)
     assert Face.Area(offset) > 0
+    assert Face.Area(offset) != pytest.approx(Face.Area(source))
     assert Face.Area(thickened) > 0
 
-    assert Face.ByOffset(None, silent=True) is None
+    assert Face.ByOffset(None, smooth=True, silent=True) is None
     assert Face.ByThickenedWire(None, silent=True) is None
 
 
