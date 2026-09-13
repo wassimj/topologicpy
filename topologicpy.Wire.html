@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Wire module &mdash; topologicpy 0.9.68 documentation</title>
+  <title>topologicpy.Wire module &mdash; topologicpy 0.9.69 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.9.68
+                0.9.69
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -541,56 +541,97 @@ at least three sides. Open Edges accept any <code class="docutils literal notran
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Wire.Wire.ByOffset">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByOffset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wire</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offsetKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'offset'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stepOffsetA</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stepOffsetB</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stepOffsetKeyA</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'stepOffsetA'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stepOffsetKeyB</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'stepOffsetB'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reverse</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bisectors</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transferDictionaries</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epsilon</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.01</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">numWorkers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Wire.Wire.ByOffset" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByOffset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wire</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offsetKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'offset'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stepOffsetA</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stepOffsetB</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stepOffsetKeyA</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'stepOffsetA'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stepOffsetKeyB</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'stepOffsetB'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reverse</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">smooth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bisectors</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transferDictionaries</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epsilon</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.01</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">numWorkers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Wire.Wire.ByOffset" title="Permalink to this definition"></a></dt>
 <dd><p>Creates an offset Wire.</p>
-<p>For geometrically curved Wires, the PythonOCC backend uses
-<code class="docutils literal notranslate"><span class="pre">BRepOffsetAPI_MakeOffset</span></code> so circular, B-spline, and NURBS Edges remain
-genuine curves. Curved Wires with per-Edge varying offset distances are
-rejected because rebuilding those Edges independently would destroy exact
-corner/join geometry. On non-PythonOCC backends curved Wires are likewise
-rejected rather than silently converted to chords.</p>
-<p>The historical TopologicPy algorithm is retained unchanged for polylines,
-including per-Edge offsets, step offsets, bisectors, and its existing
-dictionary-transfer behaviour.</p>
+<p>Each source Edge may specify its own offset distance through <code class="docutils literal notranslate"><span class="pre">offsetKey</span></code>.
+The default <code class="docutils literal notranslate"><span class="pre">offset</span></code> value is used when that key is absent. Positive
+offsets lie to the left of the oriented Edge when viewed along the planar
+Wire normal; for an anti-clockwise closed Wire this is the interior side.</p>
+<p>Polylines retain the historical TopologicPy variable-offset algorithm.
+Under the PythonOCC backend, planar Wires containing circular, Bezier,
+B-spline, or NURBS Edges can also use different per-Edge offsets without
+converting those curves to endpoint chords. Uniform and variable curved offsets use the same calibrated Edge-by-Edge
+exact OCCT offset path. Equal distances therefore do not select a different
+algorithm, offset side, join strategy, or smoothing path. At every
+joint the finite offset Edges are intersected first. If they already cross or
+overshoot one another, both are trimmed to the local finite intersection.
+Consecutive collinear straight source Edges are handled explicitly: equal
+offsets remain continuous without a transition, while differing offsets trim
+the preceding/following offset Edges by <code class="docutils literal notranslate"><span class="pre">stepOffsetA</span></code> / <code class="docutils literal notranslate"><span class="pre">stepOffsetB</span></code> and
+insert one straight step Edge between them. Only a genuine non-collinear gap
+is resolved by extending an exact endpoint tangent as a new straight Edge.
+Other line-line joints retain infinite supporting-line intersection behaviour.
+If <code class="docutils literal notranslate"><span class="pre">smooth</span></code> is True, a curved Edge whose exact mathematical offset is
+near a cusp/fold singularity is rebuilt as one shape-preserving cubic
+B-spline. The source curve is sampled, every sample is displaced by the
+requested signed distance along its local in-plane normal, and a constrained
+least-squares B-spline is fitted to those offset samples. The first and last
+offset points are hard positional constraints and the source start/end
+tangent directions are hard tangent constraints. This avoids the compressed
+cusp produced by an exact parallel curve while retaining the source curve’s
+overall character. Regular exact curved offsets remain exact. If <code class="docutils literal notranslate"><span class="pre">smooth</span></code>
+is False, the mathematically exact offset is retained even when singular.
+If neither trimming nor tangent extension can resolve a joint, the existing
+step-transition semantics are used.</p>
+<p>On TopologicCore, exact curved variable offsets remain unsupported and
+return None rather than silently approximating the source curves.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>wire</strong><span class="classifier">topologic_core.Wire</span></dt><dd><p>The input Wire.</p>
+<dt><strong>wire</strong><span class="classifier">topologic_core.Wire</span></dt><dd><p>The input Wire. It must be planar when it contains curved Edges.</p>
 </dd>
-<dt><strong>offset</strong><span class="classifier">float , optional</span></dt><dd><p>The desired offset distance. A positive value offsets to the interior
-of an anti-clockwise closed Wire. Default is 1.0.</p>
+<dt><strong>offset</strong><span class="classifier">float , optional</span></dt><dd><p>Default signed offset distance. Default is 1.0.</p>
 </dd>
-<dt><strong>offsetKey</strong><span class="classifier">str , optional</span></dt><dd><p>Edge dictionary key used to override <code class="docutils literal notranslate"><span class="pre">offset</span></code>. Default is “offset”.</p>
+<dt><strong>offsetKey</strong><span class="classifier">str , optional</span></dt><dd><p>Edge dictionary key used to override <code class="docutils literal notranslate"><span class="pre">offset</span></code> independently for each
+source Edge. Default is “offset”.</p>
 </dd>
-<dt><strong>stepOffsetA</strong><span class="classifier">float , optional</span></dt><dd><p>Historical polyline step offset along the previous Edge. Default is 0.</p>
+<dt><strong>stepOffsetA</strong><span class="classifier">float , optional</span></dt><dd><p>Distance trimmed backward along the preceding offset Edge when adjacent
+variable offsets do not intersect. Default is 0.</p>
 </dd>
-<dt><strong>stepOffsetB</strong><span class="classifier">float , optional</span></dt><dd><p>Historical polyline step offset along the next Edge. Default is 0.</p>
+<dt><strong>stepOffsetB</strong><span class="classifier">float , optional</span></dt><dd><p>Distance trimmed forward along the following offset Edge when adjacent
+variable offsets do not intersect. Default is 0.</p>
 </dd>
-<dt><strong>stepOffsetKeyA</strong><span class="classifier">str , optional</span></dt><dd><p>Vertex dictionary key for <code class="docutils literal notranslate"><span class="pre">stepOffsetA</span></code>. Default is “stepOffsetA”.</p>
+<dt><strong>stepOffsetKeyA</strong><span class="classifier">str , optional</span></dt><dd><p>Source joint Vertex dictionary key overriding <code class="docutils literal notranslate"><span class="pre">stepOffsetA</span></code>. Default
+is “stepOffsetA”.</p>
 </dd>
-<dt><strong>stepOffsetKeyB</strong><span class="classifier">str , optional</span></dt><dd><p>Vertex dictionary key for <code class="docutils literal notranslate"><span class="pre">stepOffsetB</span></code>. Default is “stepOffsetB”.</p>
+<dt><strong>stepOffsetKeyB</strong><span class="classifier">str , optional</span></dt><dd><p>Source joint Vertex dictionary key overriding <code class="docutils literal notranslate"><span class="pre">stepOffsetB</span></code>. Default
+is “stepOffsetB”.</p>
 </dd>
-<dt><strong>reverse</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, reverses the offset direction. Default is False.</p>
+<dt><strong>reverse</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, reverses every effective offset direction. Default is False.</p>
 </dd>
-<dt><strong>bisectors</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, include seam Edges between the source and offset Wire.
-Default is False.</p>
+<dt><strong>smooth</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, curved offsets that approach a cusp/fold singularity are
+replaced by one shape-preserving cubic B-spline fitted to sampled normal
+offsets. The first and last offset points and the source start/end tangent
+directions are imposed as hard constraints. Regular exact curved offsets
+remain exact. If False, retains the mathematically exact offset even when
+it contains a cusp. Default is True.</p>
 </dd>
-<dt><strong>transferDictionaries</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, transfer available dictionaries to the result. Default is False.</p>
+<dt><strong>bisectors</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, include seam Edges between source joints/endpoints and the
+corresponding resolved offset points. Default is False.</p>
+</dd>
+<dt><strong>transferDictionaries</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, source Edge dictionaries are assigned to their corresponding
+offset Edges, source Vertex dictionaries are transferred from the canonical coincident
+input-Wire vertices to the corresponding offset vertices, and the source Wire dictionary is assigned
+to the result. When one source corner resolves to two output vertices
+(for example a variable-offset step or tangent-extension transition), the
+same source-corner dictionary is transferred to both output vertices.
+Transition Edges also receive the source joint Vertex dictionary when one
+is available. Default is False.</p>
 </dd>
 <dt><strong>epsilon</strong><span class="classifier">float , optional</span></dt><dd><p>Historical polyline cleanup tolerance. Default is 0.01.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired geometric tolerance. Default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>Geometric tolerance. Default is 0.0001.</p>
 </dd>
 <dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, suppress diagnostics. Default is False.</p>
 </dd>
-<dt><strong>numWorkers</strong><span class="classifier">int , optional</span></dt><dd><p>Historical dictionary-transfer worker count.</p>
+<dt><strong>numWorkers</strong><span class="classifier">int , optional</span></dt><dd><p>Historical dictionary-transfer worker count used by the polyline path.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Wire</dt><dd><p>The offset Wire, or None when the requested operation cannot be
-performed without degrading curved geometry.</p>
+<dt>topologic_core.Wire</dt><dd><p>The offset Wire, or None if the requested exact operation cannot be
+constructed.</p>
 </dd>
 </dl>
 </dd>
