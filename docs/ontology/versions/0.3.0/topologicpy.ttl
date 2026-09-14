@@ -1,467 +1,545 @@
-@base <http://w3id.org/topologicpy/> .
-@prefix top: <http://w3id.org/topologicpy#> .
 @prefix bot: <https://w3id.org/bot#> .
-@prefix geo: <http://www.opengis.net/ont/geosparql#> .
 @prefix brick: <https://brickschema.org/schema/Brick#> .
-@prefix ifc: <https://standards.buildingsmart.org/IFC/DEV/IFC4/ADD2_TC1/OWL#> .
-@prefix geo: <http://www.opengis.net/ont/geosparql#> .
-@prefix prov: <http://www.w3.org/ns/prov#> .
 @prefix dcterms: <http://purl.org/dc/terms/> .
-@prefix vann: <http://purl.org/vocab/vann/> .
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix top: <http://w3id.org/topologicpy#> .
+@prefix vann: <http://purl.org/vocab/vann/> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
-@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
 
-<http://w3id.org/topologicpy>
-    rdf:type owl:Ontology ;
-    dcterms:title "TopologicPy Ontology"@en ;
-    dcterms:description "A compact OWL/RDFS vocabulary for TopologicPy topology, graph, IFC/BOT/Brick alignment, dictionary metadata, and semantic edge predicates emitted by TopologicPy."@en ;
-    dcterms:creator "TopologicPy Project"@en ;
+<http://w3id.org/topologicpy> a owl:Ontology ;
+    rdfs:label "TopologicPy Ontology"@en ;
     dcterms:contributor "Wassim Jabi"@en ;
-    dcterms:license <https://creativecommons.org/licenses/by/4.0/> ;
+    dcterms:creator "TopologicPy Project"@en ;
+    dcterms:description "A compact OWL/RDFS vocabulary for TopologicPy topology, graph, IFC/BOT/Brick alignment, dictionary metadata, and semantic edge predicates emitted by TopologicPy."@en ;
     dcterms:issued "2026-05-24"^^xsd:date ;
+    dcterms:license <https://creativecommons.org/licenses/by/4.0/> ;
     dcterms:modified "2026-06-29"^^xsd:date ;
-    owl:versionInfo "0.3.0" ;
+    dcterms:title "TopologicPy Ontology"@en ;
     vann:preferredNamespacePrefix "top" ;
     vann:preferredNamespaceUri "http://w3id.org/topologicpy#" ;
-    rdfs:label "TopologicPy Ontology"@en ;
-    rdfs:comment "The canonical namespace prefix is top:. Brick, BOT, GEO, and IFC terms are referenced for interoperability but are not redefined here."@en .
+    rdfs:comment "The canonical namespace prefix is top:. Brick, BOT, GEO, and IFC terms are referenced for interoperability but are not redefined here."@en ;
+    owl:versionInfo "0.3.0" .
 
-# =============================================================================
-# Core topological classes
-# =============================================================================
+top:AdjacencyGraph a owl:Class ;
+    rdfs:label "AdjacencyGraph"@en ;
+    rdfs:subClassOf top:Graph .
 
-top:Topology rdf:type owl:Class ;
-    rdfs:label "Topology"@en ;
-    rdfs:comment "Superclass for TopologicPy topological entities."@en .
-
-top:Vertex rdf:type owl:Class ;
-    rdfs:subClassOf top:Topology ;
-    rdfs:label "Vertex"@en ;
-    rdfs:comment "A zero-dimensional topological entity."@en .
-
-top:Edge rdf:type owl:Class ;
-    rdfs:subClassOf top:Topology ;
-    rdfs:label "Edge"@en ;
-    rdfs:comment "A one-dimensional topological entity connecting two vertices."@en .
-
-top:Wire rdf:type owl:Class ;
-    rdfs:subClassOf top:Topology ;
-    rdfs:label "Wire"@en ;
-    rdfs:comment "A connected collection of edges."@en .
-
-top:Face rdf:type owl:Class ;
-    rdfs:subClassOf top:Topology ;
-    rdfs:label "Face"@en ;
-    rdfs:comment "A two-dimensional topological entity bounded by wires."@en .
-
-top:Shell rdf:type owl:Class ;
-    rdfs:subClassOf top:Topology ;
-    rdfs:label "Shell"@en ;
-    rdfs:comment "A connected collection of faces."@en .
-
-top:Cell rdf:type owl:Class ;
-    rdfs:subClassOf top:Topology ;
-    rdfs:label "Cell"@en ;
-    rdfs:comment "A three-dimensional topological entity bounded by shells."@en .
-
-top:CellComplex rdf:type owl:Class ;
-    rdfs:subClassOf top:Topology ;
-    rdfs:label "CellComplex"@en ;
-    rdfs:comment "A connected collection of cells."@en .
-
-top:Cluster rdf:type owl:Class ;
-    rdfs:subClassOf top:Topology ;
-    rdfs:label "Cluster"@en ;
-    rdfs:comment "A collection of topologies."@en .
-
-top:Aperture rdf:type owl:Class ;
-    rdfs:subClassOf top:Topology ;
+top:Aperture a owl:Class ;
     rdfs:label "Aperture"@en ;
-    rdfs:comment "An opening or aperture associated with a topology."@en .
+    rdfs:comment "An opening or aperture associated with a topology."@en ;
+    rdfs:subClassOf top:Topology .
 
-# =============================================================================
-# Graph and semantic graph classes
-# =============================================================================
+top:Beam a owl:Class ;
+    rdfs:label "Beam"@en ;
+    rdfs:subClassOf top:Element .
 
-top:Graph rdf:type owl:Class ;
-    rdfs:label "Graph"@en ;
-    rdfs:comment "A graph representation emitted or consumed by TopologicPy."@en .
+top:Cell a owl:Class ;
+    rdfs:label "Cell"@en ;
+    rdfs:comment "A three-dimensional topological entity bounded by shells."@en ;
+    rdfs:subClassOf top:Topology .
 
-top:KnowledgeGraph rdf:type owl:Class ;
-    rdfs:subClassOf top:Graph ;
+top:CellComplex a owl:Class ;
+    rdfs:label "CellComplex"@en ;
+    rdfs:comment "A connected collection of cells."@en ;
+    rdfs:subClassOf top:Topology .
+
+top:CirculationGraph a owl:Class ;
+    rdfs:label "CirculationGraph"@en ;
+    rdfs:subClassOf top:Graph .
+
+top:Cluster a owl:Class ;
+    rdfs:label "Cluster"@en ;
+    rdfs:comment "A collection of topologies."@en ;
+    rdfs:subClassOf top:Topology .
+
+top:Column a owl:Class ;
+    rdfs:label "Column"@en ;
+    rdfs:subClassOf top:Element .
+
+top:ConnectivityGraph a owl:Class ;
+    rdfs:label "ConnectivityGraph"@en ;
+    rdfs:subClassOf top:Graph .
+
+top:CurtainWall a owl:Class ;
+    rdfs:label "CurtainWall"@en ;
+    rdfs:subClassOf top:Wall .
+
+top:Door a owl:Class ;
+    rdfs:label "Door"@en ;
+    rdfs:subClassOf top:Element .
+
+top:Equipment a owl:Class ;
+    rdfs:label "Equipment"@en ;
+    rdfs:comment "A generic physical equipment class used when no more specific Brick class is emitted."@en ;
+    rdfs:subClassOf top:Element .
+
+top:Face a owl:Class ;
+    rdfs:label "Face"@en ;
+    rdfs:comment "A two-dimensional topological entity bounded by wires."@en ;
+    rdfs:subClassOf top:Topology .
+
+top:Furniture a owl:Class ;
+    rdfs:label "Furniture"@en ;
+    rdfs:subClassOf top:Element .
+
+top:HasseDiagram a owl:Class ;
+    rdfs:label "HasseDiagram"@en ;
+    rdfs:subClassOf top:Graph .
+
+top:Interface a owl:Class ;
+    rdfs:label "Interface"@en ;
+    rdfs:comment "A boundary or interface between spaces/elements, including IFC space boundaries."@en ;
+    rdfs:subClassOf top:Topology,
+        bot:Interface .
+
+top:KnowledgeGraph a owl:Class ;
     rdfs:label "KnowledgeGraph"@en ;
-    rdfs:comment "A semantic graph or RDF-compatible knowledge graph representation."@en .
+    rdfs:comment "A semantic graph or RDF-compatible knowledge graph representation."@en ;
+    rdfs:subClassOf top:Graph .
 
-top:Node rdf:type owl:Class ;
-    rdfs:label "Node"@en ;
-    rdfs:comment "A graph node record. TopologicPy TGraph vertices may be projected as nodes."@en .
+top:LineGraph a owl:Class ;
+    rdfs:label "LineGraph"@en ;
+    rdfs:subClassOf top:Graph .
 
-top:Relationship rdf:type owl:Class ;
-    rdfs:label "Relationship"@en ;
-    rdfs:comment "A graph edge or relationship record. The semantic RDF predicate of such a record is carried by top:hasPredicate or by the emitted ontology_predicate dictionary value."@en .
+top:Member a owl:Class ;
+    rdfs:label "Member"@en ;
+    rdfs:subClassOf top:Element .
 
-top:AdjacencyGraph rdf:type owl:Class ; rdfs:subClassOf top:Graph ; rdfs:label "AdjacencyGraph"@en .
-top:CirculationGraph rdf:type owl:Class ; rdfs:subClassOf top:Graph ; rdfs:label "CirculationGraph"@en .
-top:ConnectivityGraph rdf:type owl:Class ; rdfs:subClassOf top:Graph ; rdfs:label "ConnectivityGraph"@en .
-top:HasseDiagram rdf:type owl:Class ; rdfs:subClassOf top:Graph ; rdfs:label "HasseDiagram"@en .
-top:LineGraph rdf:type owl:Class ; rdfs:subClassOf top:Graph ; rdfs:label "LineGraph"@en .
-top:QuotientGraph rdf:type owl:Class ; rdfs:subClassOf top:Graph ; rdfs:label "QuotientGraph"@en .
-top:SpatialGraph rdf:type owl:Class ; rdfs:subClassOf top:Graph ; rdfs:label "SpatialGraph"@en .
-top:Tree rdf:type owl:Class ; rdfs:subClassOf top:Graph ; rdfs:label "Tree"@en .
-top:VisibilityGraph rdf:type owl:Class ; rdfs:subClassOf top:Graph ; rdfs:label "VisibilityGraph"@en .
-
-# =============================================================================
-# Building, spatial, architectural, and MEP-support classes
-# =============================================================================
-
-top:Project rdf:type owl:Class ;
+top:Project a owl:Class ;
     rdfs:label "Project"@en ;
     rdfs:comment "A project-level container, commonly mapped from IfcProject."@en .
 
-top:Site rdf:type owl:Class ;
-    rdfs:subClassOf top:Topology, bot:Site ;
-    rdfs:label "Site"@en .
-
-top:Building rdf:type owl:Class ;
-    rdfs:subClassOf top:Topology, bot:Building ;
-    rdfs:label "Building"@en .
-
-top:Storey rdf:type owl:Class ;
-    rdfs:subClassOf top:Topology, bot:Storey ;
-    rdfs:label "Storey"@en .
-
-top:Space rdf:type owl:Class ;
-    rdfs:subClassOf top:Topology, bot:Space ;
-    rdfs:label "Space"@en .
-
-top:Room rdf:type owl:Class ;
-    rdfs:subClassOf top:Space ;
-    rdfs:label "Room"@en .
-
-top:Zone rdf:type owl:Class ;
-    rdfs:subClassOf top:Topology, bot:Zone ;
-    rdfs:label "Zone"@en .
-
-top:ThermalZone rdf:type owl:Class ;
-    rdfs:subClassOf top:Zone ;
-    rdfs:label "ThermalZone"@en .
-
-top:Element rdf:type owl:Class ;
-    rdfs:subClassOf top:Topology, bot:Element ;
-    rdfs:label "Element"@en ;
-    rdfs:comment "A physical building or infrastructure element."@en .
-
-top:Interface rdf:type owl:Class ;
-    rdfs:subClassOf top:Topology, bot:Interface ;
-    rdfs:label "Interface"@en ;
-    rdfs:comment "A boundary or interface between spaces/elements, including IFC space boundaries."@en .
-
-top:Equipment rdf:type owl:Class ;
-    rdfs:subClassOf top:Element ;
-    rdfs:label "Equipment"@en ;
-    rdfs:comment "A generic physical equipment class used when no more specific Brick class is emitted."@en .
-
-top:Port rdf:type owl:Class ;
-    rdfs:label "Port"@en ;
-    rdfs:comment "A distribution or connection port, commonly mapped from IfcDistributionPort."@en .
-
-top:System rdf:type owl:Class ;
-    rdfs:label "System"@en ;
-    rdfs:comment "A building, distribution, or MEP system, commonly mapped from IfcSystem."@en .
-
-top:Opening rdf:type owl:Class ; rdfs:subClassOf top:Element ; rdfs:label "Opening"@en .
-top:Beam rdf:type owl:Class ; rdfs:subClassOf top:Element ; rdfs:label "Beam"@en .
-top:Column rdf:type owl:Class ; rdfs:subClassOf top:Element ; rdfs:label "Column"@en .
-top:CurtainWall rdf:type owl:Class ; rdfs:subClassOf top:Wall ; rdfs:label "CurtainWall"@en .
-top:Door rdf:type owl:Class ; rdfs:subClassOf top:Element ; rdfs:label "Door"@en .
-top:Furniture rdf:type owl:Class ; rdfs:subClassOf top:Element ; rdfs:label "Furniture"@en .
-top:Member rdf:type owl:Class ; rdfs:subClassOf top:Element ; rdfs:label "Member"@en .
-top:Railing rdf:type owl:Class ; rdfs:subClassOf top:Element ; rdfs:label "Railing"@en .
-top:Roof rdf:type owl:Class ; rdfs:subClassOf top:Element ; rdfs:label "Roof"@en .
-top:Slab rdf:type owl:Class ; rdfs:subClassOf top:Element ; rdfs:label "Slab"@en .
-top:Stair rdf:type owl:Class ; rdfs:subClassOf top:Element ; rdfs:label "Stair"@en .
-top:Wall rdf:type owl:Class ; rdfs:subClassOf top:Element ; rdfs:label "Wall"@en .
-top:Window rdf:type owl:Class ; rdfs:subClassOf top:Element ; rdfs:label "Window"@en .
-
-# =============================================================================
-# IFC metadata, property, material, and classification classes
-# =============================================================================
-
-top:PropertySet rdf:type owl:Class ;
-    rdfs:label "PropertySet"@en ;
-    rdfs:comment "A set of properties, commonly mapped from IfcPropertySet and related property-definition entities."@en .
-
-top:Quantity rdf:type owl:Class ;
+top:Quantity a owl:Class ;
     rdfs:label "Quantity"@en ;
     rdfs:comment "A quantity record, commonly mapped from IfcElementQuantity."@en .
 
-top:Material rdf:type owl:Class ;
-    rdfs:label "Material"@en ;
-    rdfs:comment "A material record, commonly mapped from IfcMaterial."@en .
+top:QuotientGraph a owl:Class ;
+    rdfs:label "QuotientGraph"@en ;
+    rdfs:subClassOf top:Graph .
 
-top:MaterialSet rdf:type owl:Class ;
-    rdfs:label "MaterialSet"@en ;
-    rdfs:comment "A material-set record, commonly mapped from IfcMaterialList, IfcMaterialLayerSet, or IfcMaterialConstituentSet."@en .
+top:Railing a owl:Class ;
+    rdfs:label "Railing"@en ;
+    rdfs:subClassOf top:Element .
 
-top:ClassificationReference rdf:type owl:Class ;
-    rdfs:label "ClassificationReference"@en ;
-    rdfs:comment "A classification reference, commonly mapped from IfcClassificationReference."@en .
+top:Roof a owl:Class ;
+    rdfs:label "Roof"@en ;
+    rdfs:subClassOf top:Element .
 
-# =============================================================================
-# Topology and graph object properties
-# =============================================================================
+top:Room a owl:Class ;
+    rdfs:label "Room"@en ;
+    rdfs:subClassOf top:Space .
 
-top:hasStartVertex rdf:type owl:ObjectProperty ;
-    rdfs:domain top:Edge ;
-    rdfs:range top:Vertex ;
-    rdfs:label "has start vertex"@en .
+top:Shell a owl:Class ;
+    rdfs:label "Shell"@en ;
+    rdfs:comment "A connected collection of faces."@en ;
+    rdfs:subClassOf top:Topology .
 
-top:hasEndVertex rdf:type owl:ObjectProperty ;
-    rdfs:domain top:Edge ;
-    rdfs:range top:Vertex ;
-    rdfs:label "has end vertex"@en .
+top:Site a owl:Class ;
+    rdfs:label "Site"@en ;
+    rdfs:subClassOf top:Topology,
+        bot:Site .
 
-top:connectsTo rdf:type owl:ObjectProperty, owl:SymmetricProperty ;
-    rdfs:domain top:Topology ;
-    rdfs:range top:Topology ;
-    rdfs:label "connects to"@en ;
-    rdfs:comment "Generic undirected topological or graph connectivity."@en .
+top:Slab a owl:Class ;
+    rdfs:label "Slab"@en ;
+    rdfs:subClassOf top:Element .
 
-top:hasNode rdf:type owl:ObjectProperty ;
+top:SpatialGraph a owl:Class ;
+    rdfs:label "SpatialGraph"@en ;
+    rdfs:subClassOf top:Graph .
+
+top:Stair a owl:Class ;
+    rdfs:label "Stair"@en ;
+    rdfs:subClassOf top:Element .
+
+top:Storey a owl:Class ;
+    rdfs:label "Storey"@en ;
+    rdfs:subClassOf top:Topology,
+        bot:Storey .
+
+top:ThermalZone a owl:Class ;
+    rdfs:label "ThermalZone"@en ;
+    rdfs:subClassOf top:Zone .
+
+top:TopologicPyOntology a owl:Ontology ;
+    rdfs:label "TopologicPy Ontology"@en ;
+    dcterms:created "2026-09-14"^^xsd:date ;
+    dcterms:license <https://www.gnu.org/licenses/lgpl-3.0.html> ;
+    dcterms:modified "2026-09-14"^^xsd:date ;
+    vann:preferredNamespacePrefix "top" ;
+    vann:preferredNamespaceUri "http://w3id.org/topologicpy#" ;
+    rdfs:comment "The canonical ontology for TopologicPy topology, spatial-semantic graphs, BIM/IFC interoperability, provenance and analysis."@en ;
+    owl:versionIRI <http://w3id.org/topologicpy/0.5.0> ;
+    owl:versionInfo "0.5.0" .
+
+top:Tree a owl:Class ;
+    rdfs:label "Tree"@en ;
+    rdfs:subClassOf top:Graph .
+
+top:VisibilityGraph a owl:Class ;
+    rdfs:label "VisibilityGraph"@en ;
+    rdfs:subClassOf top:Graph .
+
+top:Window a owl:Class ;
+    rdfs:label "Window"@en ;
+    rdfs:subClassOf top:Element .
+
+top:Wire a owl:Class ;
+    rdfs:label "Wire"@en ;
+    rdfs:comment "A connected collection of edges."@en ;
+    rdfs:subClassOf top:Topology .
+
+top:allowsParallelEdges a owl:DatatypeProperty ;
+    rdfs:label "allowsParallelEdges" ;
+    rdfs:comment "True when a graph permits parallel relationships between the same endpoints." ;
     rdfs:domain top:Graph ;
-    rdfs:range top:Node ;
-    rdfs:label "has node"@en .
+    rdfs:range xsd:boolean .
 
-top:hasRelationship rdf:type owl:ObjectProperty ;
+top:allowsSelfLoops a owl:DatatypeProperty ;
+    rdfs:label "allowsSelfLoops" ;
+    rdfs:comment "True when a graph permits self-loop relationships." ;
     rdfs:domain top:Graph ;
-    rdfs:range top:Relationship ;
-    rdfs:label "has relationship"@en .
+    rdfs:range xsd:boolean .
 
-top:hasPredicate rdf:type owl:ObjectProperty ;
-    rdfs:domain top:Relationship ;
-    rdfs:range rdf:Property ;
-    rdfs:label "has predicate"@en ;
-    rdfs:comment "Associates a TopologicPy relationship record with the RDF predicate it emits."@en .
-
-# =============================================================================
-# IFC/BOT/Brick coordination and semantic edge predicates
-# =============================================================================
-
-top:connects rdf:type owl:ObjectProperty, owl:SymmetricProperty ;
-    rdfs:domain top:Topology ;
-    rdfs:range top:Topology ;
-    rdfs:label "connects"@en ;
-    rdfs:comment "Generic semantic connection when the relationship is known but more specific semantics are unavailable."@en .
-
-top:isConnectedTo rdf:type owl:ObjectProperty, owl:SymmetricProperty ;
-    owl:equivalentProperty top:connects ;
-    rdfs:label "is connected to"@en .
-
-top:connectsPort rdf:type owl:ObjectProperty, owl:SymmetricProperty ;
-    rdfs:domain top:Port ;
-    rdfs:range top:Port ;
-    rdfs:label "connects port"@en ;
-    rdfs:comment "Connects two ports without asserting flow direction. This is the preferred direct mapping for IfcRelConnectsPorts."@en .
-
-top:isConnectedPortOf rdf:type owl:ObjectProperty ;
-    owl:inverseOf top:connectsPort ;
-    rdfs:label "is connected port of"@en .
-
-top:hasConnectedPort rdf:type owl:ObjectProperty ;
-    rdfs:domain top:Element ;
-    rdfs:range top:Port ;
-    rdfs:label "has connected port"@en ;
-    rdfs:comment "Associates an element or equipment item with a connected port."@en .
-
-top:servesSpatialStructure rdf:type owl:ObjectProperty ;
-    rdfs:domain top:System ;
-    rdfs:range top:Topology ;
-    rdfs:label "serves spatial structure"@en ;
-    rdfs:comment "Associates a system or equipment item with the spatial structure it serves, such as a site, building, storey, space, or zone."@en .
-
-top:isServedBy rdf:type owl:ObjectProperty ;
-    owl:inverseOf top:servesSpatialStructure ;
-    rdfs:label "is served by"@en .
-
-top:servesBuilding rdf:type owl:ObjectProperty ;
-    rdfs:subPropertyOf top:servesSpatialStructure ;
-    rdfs:domain top:System ;
-    rdfs:range top:Building ;
-    rdfs:label "serves building"@en ;
-    rdfs:comment "Specific serving relationship for systems explicitly related to buildings."@en .
-
-top:aggregates rdf:type owl:ObjectProperty ;
-    rdfs:domain top:Topology ;
-    rdfs:range top:Topology ;
-    rdfs:label "aggregates"@en ;
-    rdfs:comment "A decomposition or whole-part relationship, commonly mapped from IfcRelAggregates."@en .
-
-top:isAggregatedBy rdf:type owl:ObjectProperty ;
-    owl:inverseOf top:aggregates ;
-    rdfs:label "is aggregated by"@en .
-
-top:hasOpening rdf:type owl:ObjectProperty ;
-    rdfs:domain top:Element ;
-    rdfs:range top:Opening ;
-    rdfs:label "has opening"@en ;
-    rdfs:comment "Associates an element with an opening, commonly mapped from IfcRelVoidsElement."@en .
-
-top:isOpeningIn rdf:type owl:ObjectProperty ;
-    owl:inverseOf top:hasOpening ;
-    rdfs:label "is opening in"@en .
-
-top:fillsOpening rdf:type owl:ObjectProperty ;
-    rdfs:domain top:Element ;
-    rdfs:range top:Opening ;
-    rdfs:label "fills opening"@en ;
-    rdfs:comment "Associates an element such as a door or window with the opening it fills, commonly mapped from IfcRelFillsElement."@en .
-
-top:isFilledBy rdf:type owl:ObjectProperty ;
-    owl:inverseOf top:fillsOpening ;
-    rdfs:label "is filled by"@en .
-
-top:hasPropertySet rdf:type owl:ObjectProperty ;
-    rdfs:domain top:Topology ;
-    rdfs:range top:PropertySet ;
-    rdfs:label "has property set"@en ;
-    rdfs:comment "Associates a topology, element, type, system, or relationship with a property set."@en .
-
-top:isPropertySetOf rdf:type owl:ObjectProperty ;
-    owl:inverseOf top:hasPropertySet ;
-    rdfs:label "is property set of"@en .
-
-top:hasIFCType rdf:type owl:ObjectProperty ;
-    rdfs:domain top:Topology ;
-    rdfs:label "has IFC type"@en ;
-    rdfs:comment "Associates an IFC occurrence with its IFC type object, commonly mapped from IfcRelDefinesByType."@en .
-
-top:isIFCTypeOf rdf:type owl:ObjectProperty ;
-    owl:inverseOf top:hasIFCType ;
-    rdfs:label "is IFC type of"@en .
-
-top:hasMaterial rdf:type owl:ObjectProperty ;
-    rdfs:domain top:Topology ;
-    rdfs:range [ rdf:type owl:Class ; owl:unionOf ( top:Material top:MaterialSet ) ] ;
-    rdfs:label "has material"@en ;
-    rdfs:comment "Associates a topology or element with a material or material set."@en .
-
-top:isMaterialOf rdf:type owl:ObjectProperty ;
-    owl:inverseOf top:hasMaterial ;
-    rdfs:label "is material of"@en .
-
-top:hasClassification rdf:type owl:ObjectProperty ;
-    rdfs:domain top:Topology ;
-    rdfs:range top:ClassificationReference ;
-    rdfs:label "has classification"@en ;
-    rdfs:comment "Associates a topology or element with a classification reference."@en .
-
-top:isClassificationOf rdf:type owl:ObjectProperty ;
-    owl:inverseOf top:hasClassification ;
-    rdfs:label "is classification of"@en .
-
-top:hasDocument rdf:type owl:ObjectProperty ;
-    rdfs:label "has document"@en ;
-    rdfs:comment "Associates an entity with an associated document reference."@en .
-
-top:isDocumentOf rdf:type owl:ObjectProperty ;
-    owl:inverseOf top:hasDocument ;
-    rdfs:label "is document of"@en .
-
-top:hasApproval rdf:type owl:ObjectProperty ;
-    rdfs:label "has approval"@en ;
-    rdfs:comment "Associates an entity with an approval record."@en .
-
-top:isApprovalOf rdf:type owl:ObjectProperty ;
-    owl:inverseOf top:hasApproval ;
-    rdfs:label "is approval of"@en .
-
-top:hasConstraint rdf:type owl:ObjectProperty ;
-    rdfs:label "has constraint"@en ;
-    rdfs:comment "Associates an entity with a constraint record."@en .
-
-top:isConstraintOf rdf:type owl:ObjectProperty ;
-    owl:inverseOf top:hasConstraint ;
-    rdfs:label "is constraint of"@en .
-
-# =============================================================================
-# Analysis and coordination predicates
-# =============================================================================
-
-top:locatedIn rdf:type owl:ObjectProperty ;
-    rdfs:domain top:Topology ;
-    rdfs:range top:Topology ;
-    rdfs:label "located in"@en ;
-    rdfs:comment "Associates a topology or element with the containing or nearest spatial structure derived by geometric/spatial analysis."@en .
-
-top:intersects rdf:type owl:ObjectProperty, owl:SymmetricProperty ;
-    rdfs:domain top:Topology ;
-    rdfs:range top:Topology ;
-    rdfs:label "intersects"@en ;
-    rdfs:comment "A geometric or topological intersection relation derived by TopologicPy analysis."@en .
-
-top:passesThrough rdf:type owl:ObjectProperty ;
-    rdfs:domain top:Topology ;
-    rdfs:range top:Topology ;
-    rdfs:label "passes through"@en ;
-    rdfs:comment "Indicates that one topology passes through another, typically inferred from intersections and openings."@en .
-
-top:requiresOpening rdf:type owl:ObjectProperty ;
-    rdfs:domain top:Topology ;
-    rdfs:range top:Element ;
-    rdfs:label "requires opening"@en ;
-    rdfs:comment "Indicates that an element or system component requires an opening through another element."@en .
-
-top:hasMissingOpening rdf:type owl:ObjectProperty ;
-    rdfs:domain top:Topology ;
-    rdfs:range top:Element ;
-    rdfs:label "has missing opening"@en ;
-    rdfs:comment "Flags a coordination issue where an expected opening is absent."@en .
-
-top:violatesCoordinationRule rdf:type owl:ObjectProperty ;
-    rdfs:domain top:Topology ;
-    rdfs:range top:Relationship ;
-    rdfs:label "violates coordination rule"@en ;
-    rdfs:comment "Associates an entity with a violated coordination rule or relationship record."@en .
-
-top:hasCoordinationIssue rdf:type owl:ObjectProperty ;
-    rdfs:domain top:Topology ;
-    rdfs:range top:Relationship ;
-    rdfs:label "has coordination issue"@en ;
-    rdfs:comment "Associates an entity with a detected coordination issue."@en .
-
-# =============================================================================
-# Datatype and annotation-style properties emitted from dictionaries
-# =============================================================================
-
-top:category rdf:type owl:DatatypeProperty ;
+top:category a owl:DatatypeProperty ;
     rdfs:label "category"@en ;
     rdfs:comment "A general-purpose category value emitted from TopologicPy dictionaries."@en .
 
-top:relationship rdf:type owl:DatatypeProperty ;
+top:connects a owl:ObjectProperty,
+        owl:SymmetricProperty ;
+    rdfs:label "connects"@en ;
+    rdfs:comment "Generic semantic connection when the relationship is known but more specific semantics are unavailable."@en ;
+    rdfs:domain top:Topology ;
+    rdfs:range top:Topology .
+
+top:connectsTo a owl:ObjectProperty,
+        owl:SymmetricProperty ;
+    rdfs:label "connects to"@en ;
+    rdfs:comment "Generic undirected topological or graph connectivity."@en ;
+    rdfs:domain top:Topology ;
+    rdfs:range top:Topology .
+
+top:directed a owl:DatatypeProperty ;
+    rdfs:label "directed" ;
+    rdfs:comment "True when a graph or relationship is directed." ;
+    rdfs:domain owl:Thing ;
+    rdfs:range xsd:boolean .
+
+top:endsAt a owl:ObjectProperty ;
+    rdfs:label "has end vertex"@en ;
+    rdfs:comment "Associates an edge or relationship with its end vertex or target node." ;
+    rdfs:domain top:Edge ;
+    rdfs:range top:Vertex .
+
+top:generatedByMethod a owl:DatatypeProperty ;
+    rdfs:label "generatedByMethod" ;
+    rdfs:comment "The TopologicPy method, function, script, or tool name that generated a resource." ;
+    rdfs:domain owl:Thing ;
+    rdfs:range xsd:string .
+
+top:hasConnectedPort a owl:ObjectProperty ;
+    rdfs:label "has connected port"@en ;
+    rdfs:comment "Associates an element or equipment item with a connected port."@en ;
+    rdfs:domain top:Element ;
+    rdfs:range top:Port .
+
+top:hasCoordinationIssue a owl:ObjectProperty ;
+    rdfs:label "has coordination issue"@en ;
+    rdfs:comment "Associates an entity with a detected coordination issue."@en ;
+    rdfs:domain top:Topology ;
+    rdfs:range top:Relationship .
+
+top:hasInversePredicate a owl:ObjectProperty ;
+    rdfs:label "hasInversePredicate" ;
+    rdfs:comment "Associates a relationship record with an explicitly supplied inverse RDF predicate." ;
+    rdfs:domain top:Relationship ;
+    rdfs:range rdf:Property .
+
+top:hasMissingOpening a owl:ObjectProperty ;
+    rdfs:label "has missing opening"@en ;
+    rdfs:comment "Flags a coordination issue where an expected opening is absent."@en ;
+    rdfs:domain top:Topology ;
+    rdfs:range top:Element .
+
+top:hasNode a owl:ObjectProperty ;
+    rdfs:label "has node"@en ;
+    rdfs:domain top:Graph ;
+    rdfs:range top:Node .
+
+top:hasPredicate a owl:ObjectProperty ;
+    rdfs:label "hasPredicate" ;
+    rdfs:comment "Associates a relationship record with the RDF predicate that gives the relationship its semantic meaning." ;
+    rdfs:domain top:Relationship ;
+    rdfs:range rdf:Property .
+
+top:hasRelationship a owl:ObjectProperty ;
+    rdfs:label "has relationship"@en ;
+    rdfs:domain top:Graph ;
+    rdfs:range top:Relationship .
+
+top:intersects a owl:ObjectProperty,
+        owl:SymmetricProperty ;
+    rdfs:label "intersects"@en ;
+    rdfs:comment "A geometric or topological intersection relation derived by TopologicPy analysis."@en ;
+    rdfs:domain top:Topology ;
+    rdfs:range top:Topology .
+
+top:isAggregatedBy a owl:ObjectProperty ;
+    rdfs:label "is aggregated by"@en ;
+    owl:inverseOf top:aggregates .
+
+top:isApprovalOf a owl:ObjectProperty ;
+    rdfs:label "is approval of"@en ;
+    owl:inverseOf top:hasApproval .
+
+top:isClassificationOf a owl:ObjectProperty ;
+    rdfs:label "is classification of"@en ;
+    owl:inverseOf top:hasClassification .
+
+top:isConnectedPortOf a owl:ObjectProperty ;
+    rdfs:label "is connected port of"@en ;
+    owl:inverseOf top:connectsPort .
+
+top:isConnectedTo a owl:ObjectProperty,
+        owl:SymmetricProperty ;
+    rdfs:label "is connected to"@en .
+
+top:isConstraintOf a owl:ObjectProperty ;
+    rdfs:label "is constraint of"@en ;
+    owl:inverseOf top:hasConstraint .
+
+top:isDocumentOf a owl:ObjectProperty ;
+    rdfs:label "is document of"@en ;
+    owl:inverseOf top:hasDocument .
+
+top:isFilledBy a owl:ObjectProperty ;
+    rdfs:label "is filled by"@en ;
+    owl:inverseOf top:fillsOpening .
+
+top:isIFCTypeOf a owl:ObjectProperty ;
+    rdfs:label "is IFC type of"@en ;
+    owl:inverseOf top:hasIFCType .
+
+top:isMaterialOf a owl:ObjectProperty ;
+    rdfs:label "is material of"@en ;
+    owl:inverseOf top:hasMaterial .
+
+top:isOpeningIn a owl:ObjectProperty ;
+    rdfs:label "is opening in"@en ;
+    owl:inverseOf top:hasOpening .
+
+top:isPropertySetOf a owl:ObjectProperty ;
+    rdfs:label "is property set of"@en ;
+    owl:inverseOf top:hasPropertySet .
+
+top:isServedBy a owl:ObjectProperty ;
+    rdfs:label "is served by"@en ;
+    owl:inverseOf top:servesSpatialStructure .
+
+top:locatedIn a owl:ObjectProperty ;
+    rdfs:label "located in"@en ;
+    rdfs:comment "Associates a topology or element with the containing or nearest spatial structure derived by geometric/spatial analysis."@en ;
+    rdfs:domain top:Topology ;
+    rdfs:range top:Topology .
+
+top:passesThrough a owl:ObjectProperty ;
+    rdfs:label "passes through"@en ;
+    rdfs:comment "Indicates that one topology passes through another, typically inferred from intersections and openings."@en ;
+    rdfs:domain top:Topology ;
+    rdfs:range top:Topology .
+
+top:relationship a owl:DatatypeProperty ;
     rdfs:label "relationship"@en ;
     rdfs:comment "A general-purpose relationship label emitted from TopologicPy dictionaries."@en .
 
-top:hasX rdf:type owl:DatatypeProperty ;
-    rdfs:domain top:Vertex ;
-    rdfs:range xsd:double ;
-    rdfs:label "has X"@en .
+top:requiresOpening a owl:ObjectProperty ;
+    rdfs:label "requires opening"@en ;
+    rdfs:comment "Indicates that an element or system component requires an opening through another element."@en ;
+    rdfs:domain top:Topology ;
+    rdfs:range top:Element .
 
-top:hasY rdf:type owl:DatatypeProperty ;
-    rdfs:domain top:Vertex ;
-    rdfs:range xsd:double ;
-    rdfs:label "has Y"@en .
+top:servesBuilding a owl:ObjectProperty ;
+    rdfs:label "serves building"@en ;
+    rdfs:comment "Specific serving relationship for systems explicitly related to buildings."@en ;
+    rdfs:domain top:System ;
+    rdfs:range top:Building ;
+    rdfs:subPropertyOf top:servesSpatialStructure .
 
-top:hasZ rdf:type owl:DatatypeProperty ;
-    rdfs:domain top:Vertex ;
-    rdfs:range xsd:double ;
-    rdfs:label "has Z"@en .
+top:startsAt a owl:ObjectProperty ;
+    rdfs:label "has start vertex"@en ;
+    rdfs:comment "Associates an edge or relationship with its start vertex or source node." ;
+    rdfs:domain top:Edge ;
+    rdfs:range top:Vertex .
 
-# =============================================================================
-# External vocabulary alignment notes
-# =============================================================================
+top:violatesCoordinationRule a owl:ObjectProperty ;
+    rdfs:label "violates coordination rule"@en ;
+    rdfs:comment "Associates an entity with a violated coordination rule or relationship record."@en ;
+    rdfs:domain top:Topology ;
+    rdfs:range top:Relationship .
+
+top:x a owl:DatatypeProperty ;
+    rdfs:label "has X"@en ;
+    rdfs:domain top:Vertex ;
+    rdfs:range xsd:double .
+
+top:y a owl:DatatypeProperty ;
+    rdfs:label "has Y"@en ;
+    rdfs:domain top:Vertex ;
+    rdfs:range xsd:double .
+
+top:z a owl:DatatypeProperty ;
+    rdfs:label "has Z"@en ;
+    rdfs:domain top:Vertex ;
+    rdfs:range xsd:double .
 
 brick:Equipment rdfs:comment "Referenced by TopologicPy when MEP entities are mapped to Brick classes. The Brick ontology remains authoritative for this term."@en .
+
 bot:containsElement rdfs:comment "Referenced by TopologicPy for spatial containment, especially IfcRelContainedInSpatialStructure. The BOT ontology remains authoritative for this term."@en .
+
+top:Building a owl:Class ;
+    rdfs:label "Building"@en ;
+    rdfs:subClassOf top:Topology,
+        bot:Building .
+
+top:ClassificationReference a owl:Class ;
+    rdfs:label "ClassificationReference"@en ;
+    rdfs:comment "A classification reference, commonly mapped from IfcClassificationReference."@en .
+
+top:Material a owl:Class ;
+    rdfs:label "Material"@en ;
+    rdfs:comment "A material record, commonly mapped from IfcMaterial."@en .
+
+top:MaterialSet a owl:Class ;
+    rdfs:label "MaterialSet"@en ;
+    rdfs:comment "A material-set record, commonly mapped from IfcMaterialList, IfcMaterialLayerSet, or IfcMaterialConstituentSet."@en .
+
+top:Node a owl:Class ;
+    rdfs:label "Node"@en ;
+    rdfs:comment "A graph node record. TopologicPy TGraph vertices may be projected as nodes."@en .
+
+top:PropertySet a owl:Class ;
+    rdfs:label "PropertySet"@en ;
+    rdfs:comment "A set of properties, commonly mapped from IfcPropertySet and related property-definition entities."@en .
+
+top:Space a owl:Class ;
+    rdfs:label "Space"@en ;
+    rdfs:subClassOf top:Topology,
+        bot:Space .
+
+top:Wall a owl:Class ;
+    rdfs:label "Wall"@en ;
+    rdfs:subClassOf top:Element .
+
+top:Zone a owl:Class ;
+    rdfs:label "Zone"@en ;
+    rdfs:subClassOf top:Topology,
+        bot:Zone .
+
+top:aggregates a owl:ObjectProperty ;
+    rdfs:label "aggregates"@en ;
+    rdfs:comment "A decomposition or whole-part relationship, commonly mapped from IfcRelAggregates."@en ;
+    rdfs:domain top:Topology ;
+    rdfs:range top:Topology .
+
+top:connectsPort a owl:ObjectProperty,
+        owl:SymmetricProperty ;
+    rdfs:label "connects port"@en ;
+    rdfs:comment "Connects two ports without asserting flow direction. This is the preferred direct mapping for IfcRelConnectsPorts."@en ;
+    rdfs:domain top:Port ;
+    rdfs:range top:Port .
+
+top:fillsOpening a owl:ObjectProperty ;
+    rdfs:label "fills opening"@en ;
+    rdfs:comment "Associates an element such as a door or window with the opening it fills, commonly mapped from IfcRelFillsElement."@en ;
+    rdfs:domain top:Element ;
+    rdfs:range top:Opening .
+
+top:hasApproval a owl:ObjectProperty ;
+    rdfs:label "has approval"@en ;
+    rdfs:comment "Associates an entity with an approval record."@en .
+
+top:hasClassification a owl:ObjectProperty ;
+    rdfs:label "has classification"@en ;
+    rdfs:comment "Associates a topology or element with a classification reference."@en ;
+    rdfs:domain top:Topology ;
+    rdfs:range top:ClassificationReference .
+
+top:hasConstraint a owl:ObjectProperty ;
+    rdfs:label "has constraint"@en ;
+    rdfs:comment "Associates an entity with a constraint record."@en .
+
+top:hasDocument a owl:ObjectProperty ;
+    rdfs:label "has document"@en ;
+    rdfs:comment "Associates an entity with an associated document reference."@en .
+
+top:hasIFCType a owl:ObjectProperty ;
+    rdfs:label "has IFC type"@en ;
+    rdfs:comment "Associates an IFC occurrence with its IFC type object, commonly mapped from IfcRelDefinesByType."@en ;
+    rdfs:domain top:Topology .
+
+top:hasMaterial a owl:ObjectProperty ;
+    rdfs:label "has material"@en ;
+    rdfs:comment "Associates a topology or element with a material or material set."@en ;
+    rdfs:domain top:Topology ;
+    rdfs:range [ a owl:Class ;
+            owl:unionOf ( top:Material top:MaterialSet ) ] .
+
+top:hasOpening a owl:ObjectProperty ;
+    rdfs:label "has opening"@en ;
+    rdfs:comment "Associates an element with an opening, commonly mapped from IfcRelVoidsElement."@en ;
+    rdfs:domain top:Element ;
+    rdfs:range top:Opening .
+
+top:hasPropertySet a owl:ObjectProperty ;
+    rdfs:label "has property set"@en ;
+    rdfs:comment "Associates a topology, element, type, system, or relationship with a property set."@en ;
+    rdfs:domain top:Topology ;
+    rdfs:range top:PropertySet .
+
+top:Edge a owl:Class ;
+    rdfs:label "Edge"@en ;
+    rdfs:comment "A one-dimensional topological entity connecting two vertices."@en ;
+    rdfs:subClassOf top:Topology .
+
+top:Opening a owl:Class ;
+    rdfs:label "Opening"@en ;
+    rdfs:subClassOf top:Element .
+
+top:System a owl:Class ;
+    rdfs:label "System"@en ;
+    rdfs:comment "A building, distribution, or MEP system, commonly mapped from IfcSystem."@en .
+
+top:servesSpatialStructure a owl:ObjectProperty ;
+    rdfs:label "serves spatial structure"@en ;
+    rdfs:comment "Associates a system or equipment item with the spatial structure it serves, such as a site, building, storey, space, or zone."@en ;
+    rdfs:domain top:System ;
+    rdfs:range top:Topology .
+
+top:Port a owl:Class ;
+    rdfs:label "Port"@en ;
+    rdfs:comment "A distribution or connection port, commonly mapped from IfcDistributionPort."@en .
+
+top:Relationship a owl:Class ;
+    rdfs:label "Relationship"@en ;
+    rdfs:comment "A graph edge or relationship record. The semantic RDF predicate of such a record is carried by top:hasPredicate or by the emitted ontology_predicate dictionary value."@en .
+
+top:Vertex a owl:Class ;
+    rdfs:label "Vertex"@en ;
+    rdfs:comment "A zero-dimensional topological entity."@en ;
+    rdfs:subClassOf top:Topology .
+
+top:Graph a owl:Class ;
+    rdfs:label "Graph"@en ;
+    rdfs:comment "A graph representation emitted or consumed by TopologicPy."@en .
+
+top:Element a owl:Class ;
+    rdfs:label "Element"@en ;
+    rdfs:comment "A physical building or infrastructure element."@en ;
+    rdfs:subClassOf top:Topology,
+        bot:Element .
+
+top:Topology a owl:Class ;
+    rdfs:label "Topology"@en ;
+    rdfs:comment "Superclass for TopologicPy topological entities."@en .
+

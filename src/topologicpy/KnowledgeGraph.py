@@ -63,24 +63,12 @@ class KnowledgeGraph:
         useRDFLib: bool = True,
         silent: bool = False,
     ):
-        """
-        Initializes a KnowledgeGraph.
+        """Initializes a KnowledgeGraph.
 
-        Parameters
-        ----------
-        triples : iterable(tuple), optional
-            Input triples. Each triple must be ``(subject, predicate, object)``.
-        namespaces : dict, optional
-            Namespace prefix-to-URI mapping. If omitted, the mapping is taken
-            from Ontology.py when available.
-        rdfGraph : rdflib.Graph, optional
-            Existing RDFLib graph to wrap/import.
-        useRDFLib : bool, optional
-            If True, RDFLib is used when available. Default is True.
-        silent : bool, optional
-            If True, warning/error messages are suppressed. Default is False.
+        RDF imported through ``rdfGraph`` is preserved semantically as-is. No
+        deprecated TopologicPy aliases are rewritten: the canonical ontology is
+        defined exclusively by Ontology.py and the canonical TTL.
         """
-
         self._namespaces: Dict[str, str] = KnowledgeGraph.Namespaces(namespaces)
         self._triples: Set[Tuple[str, str, str]] = set()
         self._rdflib_enabled: bool = bool(useRDFLib)
@@ -91,11 +79,6 @@ class KnowledgeGraph:
             self._rdflib_enabled = True
             self._bind_namespaces(self._rdf_graph)
             self._sync_triples_from_rdflib(silent=silent)
-            # Rebuild the RDFLib graph from the canonical internal triple store.
-            # This normalises accepted legacy aliases such as top:hasStartVertex
-            # to the canonical predicates declared in Ontology.py.
-            if self._rdflib_enabled:
-                self._sync_rdflib_from_triples(silent=True)
         else:
             if triples is not None:
                 self.AddTriples(triples, silent=silent)
@@ -205,44 +188,39 @@ class KnowledgeGraph:
     # ---------------------------------------------------------------------
 
     @staticmethod
+    @staticmethod
     def Namespaces(extra: Optional[Dict[str, str]] = None) -> Dict[str, str]:
-        """
-        Returns the namespace dictionary used by TopologicPy knowledge graphs.
-
-        Parameters
-        ----------
-        extra : dict, optional
-            Additional or overriding namespaces.
-
-        Returns
-        -------
-        dict
-            Prefix-to-namespace-URI mapping.
-        """
-
+        """Returns the namespace dictionary used by TopologicPy knowledge graphs."""
         Ontology = KnowledgeGraph._ontology_class()
+        ns = {}
         if Ontology is not None:
             try:
-                ns = dict(Ontology.NAMESPACES)
+                ns = dict(Ontology.Namespaces())
             except Exception:
-                ns = {}
-        else:
-            ns = {}
-        ns.setdefault("bot", "https://w3id.org/bot#")
-        ns.setdefault("brick", "https://brickschema.org/schema/Brick#")
-        ns.setdefault("geo", "http://www.opengis.net/ont/geosparql#")
-        ns.setdefault("ifc", "https://standards.buildingsmart.org/IFC/DEV/IFC4/ADD2_TC1/OWL#")
-        ns.setdefault("prov", "http://www.w3.org/ns/prov#")
-        ns.setdefault("dcterms", "http://purl.org/dc/terms/")
-        ns.setdefault("vann", "http://purl.org/vocab/vann/")
-        ns.setdefault("skos", "http://www.w3.org/2004/02/skos/core#")
-        ns.setdefault("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#")
-        ns.setdefault("rdfs", "http://www.w3.org/2000/01/rdf-schema#")
-        ns.setdefault("xsd", "http://www.w3.org/2001/XMLSchema#")
-        ns.setdefault("owl", "http://www.w3.org/2002/07/owl#")
-        ns.setdefault("top", "http://w3id.org/topologicpy#")
-        ns.setdefault("dict", "http://w3id.org/topologicpy/dictionary#")
-        ns.setdefault("inst", "http://w3id.org/topologicpy/instance#")
+                try:
+                    ns = dict(Ontology.NAMESPACES)
+                except Exception:
+                    ns = {}
+
+        defaults = {
+            "bot": "https://w3id.org/bot#",
+            "brick": "https://brickschema.org/schema/Brick#",
+            "geo": "http://www.opengis.net/ont/geosparql#",
+            "ifc": "https://standards.buildingsmart.org/IFC/DEV/IFC4/ADD2_TC1/OWL#",
+            "prov": "http://www.w3.org/ns/prov#",
+            "dcterms": "http://purl.org/dc/terms/",
+            "vann": "http://purl.org/vocab/vann/",
+            "skos": "http://www.w3.org/2004/02/skos/core#",
+            "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+            "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+            "xsd": "http://www.w3.org/2001/XMLSchema#",
+            "owl": "http://www.w3.org/2002/07/owl#",
+            "top": "http://w3id.org/topologicpy#",
+            "dict": "http://w3id.org/topologicpy/dictionary#",
+            "inst": "http://w3id.org/topologicpy/instance#",
+        }
+        for prefix, uri in defaults.items():
+            ns.setdefault(prefix, uri)
         if isinstance(extra, dict):
             for key, value in extra.items():
                 if key is not None and value is not None:
@@ -380,120 +358,86 @@ class KnowledgeGraph:
         return literal
 
     @staticmethod
+    @staticmethod
     def _canonical_predicate_token(predicate: Any, namespaces: Optional[Dict[str, str]] = None) -> Any:
-        """Returns the canonical predicate token aligned with the _005 ontology policy.
+        """Returns the canonical predicate token.
 
-        Known TopologicPy aliases are canonicalised through Ontology.PropertyQName
-        when Ontology.py is available. Unknown dictionary-style predicates must
-        not be minted in the ``top:`` namespace; they are placed under ``dict:``.
-        External RDF/RDFS/OWL/SKOS/DC/BOT/Brick/IFC/PROV predicates are preserved.
+        External vocabulary terms are preserved. Declared TopologicPy predicates
+        are accepted exactly as declared by Ontology.py. Undeclared explicit
+        ``top:`` predicates are rejected; unqualified application keys are mapped
+        by Ontology.PropertyQName, normally to ``dict:`` when they are not ontology
+        terms. No legacy alias rewriting is performed.
         """
         if predicate is None:
-            return predicate
+            return None
         text = str(predicate).strip()
-        if text == "":
-            return text
+        if not text:
+            return None
 
         ns = KnowledgeGraph.Namespaces(namespaces)
-
-        qname = text
+        token = text
         if text.startswith("<") and text.endswith(">"):
             q = KnowledgeGraph.QName(text[1:-1], namespaces=ns, defaultValue=None)
-            qname = q if q is not None else text
-        elif text.startswith("http://") or text.startswith("https://"):
+            token = q if q is not None else text
+        elif text.startswith(("http://", "https://", "urn:")):
             q = KnowledgeGraph.QName(text, namespaces=ns, defaultValue=None)
-            qname = q if q is not None else "<" + text + ">"
+            token = q if q is not None else "<" + text + ">"
 
         Ontology = KnowledgeGraph._ontology_class()
         if Ontology is not None:
             try:
-                return Ontology.PropertyQName(qname) or qname
+                if isinstance(token, str) and token.startswith("top:"):
+                    return Ontology.PropertyQName(token)
+                if isinstance(token, str) and ":" not in token and not token.startswith("<"):
+                    return Ontology.PropertyQName(token)
+            except Exception:
+                return None
+
+        if isinstance(token, str) and token.startswith("top:"):
+            return None
+        if isinstance(token, str) and token.startswith("dict:"):
+            return "dict:" + KnowledgeGraph._safe_local_name(token.split(":", 1)[1])
+        if isinstance(token, str) and token.startswith("<") and token.endswith(">"):
+            return token
+        if isinstance(token, str) and ":" in token:
+            prefix, local = token.split(":", 1)
+            if prefix in ns and local:
+                return token
+            return None
+        return "dict:" + KnowledgeGraph._safe_local_name(token)
+
+    @staticmethod
+    @staticmethod
+    def _canonical_class_token(classToken: Any, namespaces: Optional[Dict[str, str]] = None) -> Any:
+        """Returns a canonical class token without legacy aliasing."""
+        if classToken is None:
+            return None
+        text = str(classToken).strip()
+        if not text or KnowledgeGraph._is_literal_token(text):
+            return None
+        ns = KnowledgeGraph.Namespaces(namespaces)
+        token = text
+        if text.startswith("<") and text.endswith(">"):
+            q = KnowledgeGraph.QName(text[1:-1], namespaces=ns, defaultValue=None)
+            token = q if q is not None else text
+        elif text.startswith(("http://", "https://", "urn:")):
+            q = KnowledgeGraph.QName(text, namespaces=ns, defaultValue=None)
+            token = q if q is not None else "<" + text + ">"
+
+        Ontology = KnowledgeGraph._ontology_class()
+        if Ontology is not None:
+            try:
+                return Ontology.CanonicalClass(token, defaultValue=None)
             except Exception:
                 pass
 
-        standard_prefixes = {
-            "rdf", "rdfs", "owl", "xsd", "skos", "dcterms", "vann",
-            "bot", "brick", "geo", "ifc", "prov",
-        }
-        if isinstance(qname, str) and ":" in qname and not qname.startswith("<"):
-            prefix, local = qname.split(":", 1)
-            if prefix in standard_prefixes:
-                return qname
-            if prefix == "dict":
-                return "dict:" + KnowledgeGraph._safe_local_name(local)
-            if prefix == "top":
-                fallback_top = {
-                    "startsAt", "endsAt", "connectsTo", "adjacentTo", "containsElement",
-                    "hasNode", "hasRelationship", "hasVertex", "hasEdge", "hasTopology",
-                    "srcId", "dstId", "index", "uuid", "x", "y", "z", "length",
-                    "area", "volume", "mantissa", "unit", "ifcClass", "ifcGUID",
-                    "ifcName", "ifcType", "ifcStepId", "ifcStepKey", "label", "name",
-                    "description", "category", "source", "derivedFrom", "generatedByMethod",
-                    "ontologyClass", "ontologyURI",
-                }
-                if local in fallback_top:
-                    return qname
-                alias = {
-                    "hasStartVertex": "startsAt",
-                    "hasEndVertex": "endsAt",
-                    "hasX": "x",
-                    "hasY": "y",
-                    "hasZ": "z",
-                    "hasLength": "length",
-                    "hasArea": "area",
-                    "hasVolume": "volume",
-                    "hasMantissa": "mantissa",
-                    "hasUnit": "unit",
-                    "src": "srcId",
-                    "dst": "dstId",
-                    "IFC_global_id": "ifcGUID",
-                    "IFC_id": "ifcStepId",
-                    "IFC_key": "ifcStepKey",
-                    "IFC_name": "ifcName",
-                    "IFC_type": "ifcType",
-                    "ifc_class": "ifcClass",
-                    "ifc_guid": "ifcGUID",
-                    "ifc_name": "ifcName",
-                    "ifc_type": "ifcType",
-                    "ifc_step_id": "ifcStepId",
-                    "ifc_step_key": "ifcStepKey",
-                    "generated_by": "generatedByMethod",
-                    "derived_from": "derivedFrom",
-                    "ontology_class": "ontologyClass",
-                    "ontology_uri": "ontologyURI",
-                }.get(local)
-                if alias is not None:
-                    return "top:" + alias
-                return "dict:" + KnowledgeGraph._safe_local_name(local)
-            if prefix in ns:
-                return qname
-            return "dict:" + KnowledgeGraph._safe_local_name(prefix + "_" + local)
-
-        return "dict:" + KnowledgeGraph._safe_local_name(qname)
+        if isinstance(token, str) and token.startswith("top:"):
+            return None
+        if isinstance(token, str) and (token.startswith("<") or ":" in token):
+            return token
+        return None
 
     @staticmethod
-    def _canonical_class_token(classToken: Any, namespaces: Optional[Dict[str, str]] = None) -> Any:
-        """Returns the canonical ontology class token when Ontology.py is available."""
-        if classToken is None:
-            return classToken
-        text = str(classToken).strip()
-        if text == "" or KnowledgeGraph._is_literal_token(text):
-            return text
-        Ontology = KnowledgeGraph._ontology_class()
-        if Ontology is None:
-            return text
-        try:
-            qname = text
-            if text.startswith("<") and text.endswith(">"):
-                q = KnowledgeGraph.QName(text[1:-1], namespaces=namespaces, defaultValue=None)
-                qname = q if q is not None else text
-            elif text.startswith("http://") or text.startswith("https://"):
-                q = KnowledgeGraph.QName(text, namespaces=namespaces, defaultValue=None)
-                qname = q if q is not None else text
-            return Ontology.CanonicalClass(qname, defaultValue=qname)
-        except Exception:
-            return text
-
     @staticmethod
     def _canonicalize_triple_tokens(
         subject: Any,
@@ -501,13 +445,14 @@ class KnowledgeGraph:
         object: Any,
         namespaces: Optional[Dict[str, str]] = None,
     ) -> Tuple[Any, Any, Any]:
-        """Canonicalises a normalized triple without changing its meaning."""
-        s = subject
+        """Canonicalises API-supplied triple tokens without rewriting imported RDF."""
         p = KnowledgeGraph._canonical_predicate_token(predicate, namespaces=namespaces)
         o = object
         if p == "rdf:type":
-            o = KnowledgeGraph._canonical_class_token(o, namespaces=namespaces)
-        return s, p, o
+            canonical = KnowledgeGraph._canonical_class_token(o, namespaces=namespaces)
+            if canonical is not None:
+                o = canonical
+        return subject, p, o
 
     @staticmethod
     def NormalizeTerm(
@@ -775,6 +720,7 @@ class KnowledgeGraph:
         return graph
 
     def _sync_triples_from_rdflib(self, silent: bool = False) -> Set[Tuple[str, str, str]]:
+        """Refreshes the compact triple store from RDFLib without semantic rewriting."""
         self._triples = set()
         if self._rdf_graph is None:
             return self._triples
@@ -789,8 +735,8 @@ class KnowledgeGraph:
                 ts = self._rdflib_to_token(s)
                 tp = self._rdflib_to_token(p)
                 to = self._rdflib_to_token(o)
-                ts, tp, to = KnowledgeGraph._canonicalize_triple_tokens(ts, tp, to, namespaces=self._namespaces)
-                self._triples.add((ts, tp, to))
+                if ts is not None and tp is not None and to is not None:
+                    self._triples.add((ts, tp, to))
         except Exception as exc:
             if not silent:
                 print("KnowledgeGraph - Error: Could not import triples from RDFLib graph.")
@@ -811,40 +757,33 @@ class KnowledgeGraph:
         language: Optional[str] = None,
         silent: bool = False,
     ) -> Optional[Tuple[str, str, str]]:
-        """
-        Adds one triple and returns the normalized triple.
-
-        Parameters
-        ----------
-        subject : any
-            Triple subject.
-        predicate : any
-            Triple predicate.
-        object : any
-            Triple object.
-        objectIsLiteral : bool, optional
-            If True, the object is encoded as a literal. Default is False.
-        datatype : str, optional
-            Datatype QName for literal objects.
-        language : str, optional
-            Language tag for literal objects.
-        silent : bool, optional
-            If True, warnings are suppressed. Default is False.
-
-        Returns
-        -------
-        tuple or None
-            Normalized triple, or None if invalid.
-        """
-
+        """Adds one canonical triple and returns the normalized triple."""
         s = KnowledgeGraph.NormalizeTerm(subject, role="subject", namespaces=self._namespaces)
         p = KnowledgeGraph.NormalizeTerm(predicate, role="predicate", namespaces=self._namespaces)
-        o = KnowledgeGraph.NormalizeTerm(object, role="object", namespaces=self._namespaces, literal=objectIsLiteral, datatype=datatype, language=language)
+        o = KnowledgeGraph.NormalizeTerm(
+            object,
+            role="object",
+            namespaces=self._namespaces,
+            literal=objectIsLiteral,
+            datatype=datatype,
+            language=language,
+        )
         if s is None or p is None or o is None:
             if not silent:
-                print("KnowledgeGraph.AddTriple - Error: Invalid subject, predicate, or object. Returning None.")
+                print("KnowledgeGraph.AddTriple - Error: Invalid or undeclared subject, predicate, or object. Returning None.")
             return None
         s, p, o = KnowledgeGraph._canonicalize_triple_tokens(s, p, o, namespaces=self._namespaces)
+        if p is None:
+            if not silent:
+                print("KnowledgeGraph.AddTriple - Error: The predicate is not part of the canonical vocabulary. Returning None.")
+            return None
+        if p == "rdf:type" and isinstance(str(o), str) and str(o).startswith("top:"):
+            canonical_class = KnowledgeGraph._canonical_class_token(o, namespaces=self._namespaces)
+            if canonical_class is None:
+                if not silent:
+                    print("KnowledgeGraph.AddTriple - Error: The TopologicPy class is not declared in the canonical ontology. Returning None.")
+                return None
+            o = canonical_class
         triple = (s, p, o)
         self._triples.add(triple)
         if self._rdflib_enabled:
@@ -855,7 +794,8 @@ class KnowledgeGraph:
                     rs = self._term_to_rdflib(s, role="subject")
                     rp = self._term_to_rdflib(p, role="predicate")
                     ro = self._term_to_rdflib(o, role="object")
-                    self._rdf_graph.add((rs, rp, ro))
+                    if rs is not None and rp is not None and ro is not None:
+                        self._rdf_graph.add((rs, rp, ro))
                 except Exception:
                     self._sync_rdflib_from_triples(silent=True)
         return triple
@@ -973,8 +913,12 @@ class KnowledgeGraph:
         return sorted(result) if sort else list(result)
 
     def Copy(self) -> "KnowledgeGraph":
-        """Returns a deep copy of this KnowledgeGraph."""
-        return KnowledgeGraph(triples=list(self._triples), namespaces=dict(self._namespaces), useRDFLib=self._rdflib_enabled, silent=True)
+        """Returns an exact semantic copy of this KnowledgeGraph."""
+        kg = KnowledgeGraph(namespaces=dict(self._namespaces), useRDFLib=self._rdflib_enabled, silent=True)
+        kg._triples = set(self._triples)
+        if kg._rdflib_enabled:
+            kg._sync_rdflib_from_triples(silent=True)
+        return kg
 
     def Dictionary(self) -> Dict[str, Any]:
         """Returns a JSON-friendly dictionary representation."""
@@ -1147,6 +1091,7 @@ class KnowledgeGraph:
             return {}
 
     @staticmethod
+    @staticmethod
     def ByTopology(
         topology: Any,
         includeOntologyAxioms: bool = False,
@@ -1157,47 +1102,18 @@ class KnowledgeGraph:
         silent: bool = False,
         **kwargs,
     ) -> Optional["KnowledgeGraph"]:
-        """
-        Creates a KnowledgeGraph from a TopologicPy topology, legacy Graph, or TGraph.
-
-        The method delegates triple creation to Ontology.py whenever available so
-        that dictionary keys and RDF predicates remain canonical.
-        """
-
-        Ontology = KnowledgeGraph._ontology_class()
+        """Creates a KnowledgeGraph using Ontology.py as the sole semantic authority."""
         if topology is None:
             if not silent:
                 print("KnowledgeGraph.ByTopology - Error: The input topology is None. Returning None.")
             return None
+        Ontology = KnowledgeGraph._ontology_class()
         if Ontology is None:
-            TGraph = KnowledgeGraph._tgraph_class()
-            if TGraph is not None and isinstance(topology, TGraph) and hasattr(TGraph, "OntologyTriples"):
-                try:
-                    if not silent:
-                        print("KnowledgeGraph.ByTopology - Warning: Ontology.py is unavailable; using TGraph.OntologyTriples fallback.")
-                    triples = TGraph.OntologyTriples(
-                        topology,
-                        includeDictionaries=includeDictionaries,
-                        includeBOT=includeBOT,
-                        namespacePrefix=namespacePrefix,
-                    )
-                    return KnowledgeGraph.ByTriples(triples, namespaces=KnowledgeGraph.Namespaces(), useRDFLib=useRDFLib, silent=silent)
-                except Exception as exc:
-                    if not silent:
-                        print("KnowledgeGraph.ByTopology - Error: Could not create a knowledge graph from TGraph fallback. Returning None.")
-                        print("Error:", exc)
-                    return None
             if not silent:
-                print("KnowledgeGraph.ByTopology - Error: Ontology.py is required for topology conversion. Returning None.")
+                print("KnowledgeGraph.ByTopology - Error: Ontology.py is required. Returning None.")
             return None
-
         try:
-            is_graph_like = False
-            try:
-                is_graph_like = bool(Ontology._is_graph_like(topology))
-            except Exception:
-                pass
-            if is_graph_like:
+            if Ontology._is_graph_like(topology):
                 graph_kwargs = KnowledgeGraph._filtered_kwargs(Ontology.GraphTriples, kwargs)
                 triples = Ontology.GraphTriples(
                     topology,
@@ -1218,11 +1134,13 @@ class KnowledgeGraph:
                     **topo_kwargs,
                 )
             if includeOntologyAxioms:
-                try:
-                    triples = list(triples) + list(Ontology.OntologyTriples(includeBOT=includeBOT))
-                except Exception:
-                    pass
-            return KnowledgeGraph.ByTriples(triples, namespaces=Ontology.NAMESPACES, useRDFLib=useRDFLib, silent=silent)
+                triples = list(triples) + list(Ontology.OntologyTriples(includeBOT=includeBOT))
+            return KnowledgeGraph.ByTriples(
+                triples,
+                namespaces=Ontology.Namespaces(),
+                useRDFLib=useRDFLib,
+                silent=silent,
+            )
         except Exception as exc:
             if not silent:
                 print("KnowledgeGraph.ByTopology - Error: Could not create a knowledge graph. Returning None.")
@@ -1412,15 +1330,15 @@ class KnowledgeGraph:
     # ---------------------------------------------------------------------
 
     def Merge(self, other: Any, inplace: bool = False, silent: bool = False) -> Optional["KnowledgeGraph"]:
-        """
-        Returns the union of this graph and another KnowledgeGraph/triple iterable.
-        """
+        """Returns the exact RDF union of this graph and another graph."""
         target = self if inplace else self.Copy()
         other_kg = KnowledgeGraph._as_kg(other, namespaces=self._namespaces, silent=silent)
         if other_kg is None:
             return None
         target._namespaces.update(other_kg._namespaces)
-        target.AddTriples(other_kg.Triples(sort=False), silent=silent)
+        target._triples.update(other_kg._triples)
+        if target._rdflib_enabled:
+            target._sync_rdflib_from_triples(silent=True)
         return target
 
     def Difference(self, other: Any, direction: str = "self_minus_other", silent: bool = False) -> Optional[List[Tuple[str, str, str]]]:
@@ -1567,20 +1485,37 @@ class KnowledgeGraph:
         labelKey: str = "label",
         silent: bool = False,
     ) -> Any:
-        """
-        Converts this KnowledgeGraph to a TGraph semantic view.
+        """Converts this KnowledgeGraph to a TGraph.
 
-        Resources and optionally literals become vertices. Triples become
-        directed edges with predicate/relationship metadata.
+        If the RDF graph is a canonical TopologicPy graph serialization, conversion
+        is delegated to ``Ontology.GraphByRDFGraph`` for lossless reconstruction.
+        Otherwise a semantic projection is created. Original RDF statements are
+        retained in ``_rdf_types``/``_rdf_properties`` metadata so semantic content
+        survives subsequent canonical RDF export. Literal nodes, when requested,
+        are visualization nodes only and never masquerade as RDF resources.
         """
         TGraph = KnowledgeGraph._tgraph_class()
-        if TGraph is None:
+        Ontology = KnowledgeGraph._ontology_class()
+        if TGraph is None or Ontology is None:
             if not silent:
-                print("KnowledgeGraph.ToTGraph - Error: TGraph.py is not available. Returning None.")
+                print("KnowledgeGraph.ToTGraph - Error: TGraph.py and Ontology.py are required. Returning None.")
             return None
+
+        rdf = self.RDFGraph(rebuild=True, silent=silent)
+        if rdf is None:
+            return None
+
         try:
+            canonical = Ontology.GraphByRDFGraph(rdf, silent=True)
+            if canonical is not None:
+                return canonical
+        except Exception:
+            pass
+
+        try:
+            rd = KnowledgeGraph._rdflib(silent=True)
             graph = TGraph(
-                directed=directed,
+                directed=bool(directed),
                 allowSelfLoops=True,
                 allowParallelEdges=True,
                 dictionary={
@@ -1588,59 +1523,134 @@ class KnowledgeGraph:
                     "category": "graph",
                     "label": "KnowledgeGraph",
                     "generated_by": "KnowledgeGraph.ToTGraph",
+                    "rdf_projection": True,
                 },
             )
-        except TypeError:
-            graph = TGraph(directed=directed, dictionary={"ontology_class": "top:KnowledgeGraph", "category": "graph"})
+            if rd is None:
+                return graph
 
-        index_by_token: Dict[str, int] = {}
+            def token(term):
+                return self._rdflib_to_token(term)
 
-        def label_from_token(token: str) -> str:
-            if KnowledgeGraph._is_literal_token(token):
-                return KnowledgeGraph._strip_literal_quotes(token)
-            if ":" in token and not token.startswith("<"):
-                return token.split(":", 1)[1]
-            if token.startswith("<") and token.endswith(">"):
-                return token[1:-1].rstrip("/#").split("/")[-1].split("#")[-1]
-            return token
+            def label(term_token: str) -> str:
+                if KnowledgeGraph._is_literal_token(term_token):
+                    return KnowledgeGraph._strip_literal_quotes(term_token)
+                text = str(term_token)
+                if text.startswith("<") and text.endswith(">"):
+                    text = text[1:-1]
+                if "#" in text:
+                    return text.rsplit("#", 1)[-1]
+                if "/" in text:
+                    return text.rstrip("/").rsplit("/", 1)[-1]
+                if ":" in text and not text.startswith("_:"):
+                    return text.split(":", 1)[1]
+                return text
 
-        def add_node(token: str) -> Optional[int]:
-            if token in index_by_token:
-                return index_by_token[token]
-            is_lit = KnowledgeGraph._is_literal_token(token)
-            if is_lit and not includeLiterals:
-                return None
-            d = {
-                uriKey: token,
-                labelKey: label_from_token(token),
-                "ontology_class": "top:Node",
-                "category": "literal" if is_lit else "resource",
-            }
-            try:
+            resources = set()
+            for s, p, o in rdf:
+                resources.add(s)
+                if isinstance(o, (rd["URIRef"], rd["BNode"])):
+                    resources.add(o)
+
+            index_by_term = {}
+            for term in sorted(resources, key=lambda x: str(x)):
+                t = token(term)
+                d = {
+                    uriKey: t,
+                    "_rdf_uri": t,
+                    labelKey: label(t),
+                    "ontology_class": "top:Node",
+                    "category": "resource",
+                    "_rdf_types": [],
+                    "_rdf_properties": [],
+                }
+                for obj in rdf.objects(term, rd["RDF"].type):
+                    d["_rdf_types"].append(str(obj))
+                for pred, obj in rdf.predicate_objects(term):
+                    if pred == rd["RDF"].type:
+                        continue
+                    try:
+                        encoded = Ontology._encoded_rdf_object(obj)
+                    except Exception:
+                        if isinstance(obj, rd["URIRef"]):
+                            encoded = {"kind": "uri", "value": str(obj)}
+                        elif isinstance(obj, rd["BNode"]):
+                            encoded = {"kind": "bnode", "value": str(obj)}
+                        else:
+                            encoded = {
+                                "kind": "literal",
+                                "value": str(obj),
+                                "datatype": str(obj.datatype) if getattr(obj, "datatype", None) else None,
+                                "language": getattr(obj, "language", None),
+                            }
+                    d["_rdf_properties"].append({"predicate": str(pred), "object": encoded})
+                top_types = []
+                for t_uri in d["_rdf_types"]:
+                    q = KnowledgeGraph.QName(t_uri, namespaces=self._namespaces, defaultValue=t_uri)
+                    if isinstance(q, str) and q.startswith("top:"):
+                        c = Ontology.CanonicalClass(q, defaultValue=None)
+                        if c is not None:
+                            top_types.append(c)
+                if top_types:
+                    d["ontology_class"] = top_types[0]
                 idx = graph.AddVertex(dictionary=d)
-            except Exception:
-                idx = TGraph.AddVertex(graph, dictionary=d)
-            index_by_token[token] = idx
-            return idx
+                index_by_term[term] = idx
 
-        for s, p, o in self.Triples(sort=True):
-            sidx = add_node(s)
-            oidx = add_node(o)
-            if sidx is None or oidx is None:
-                continue
-            pred_label = label_from_token(p)
-            ed = {
-                predicateKey: p,
-                relationshipKey: pred_label,
-                "ontology_class": "top:Relationship",
-                "category": "semantic",
-                "label": pred_label,
-            }
-            try:
-                graph.AddEdge(sidx, oidx, directed=True, dictionary=ed)
-            except Exception:
-                TGraph.AddEdge(graph, sidx, oidx, directed=True, dictionary=ed)
-        return graph
+            literal_index = {}
+            for s, p, o in rdf:
+                if s not in index_by_term:
+                    continue
+                sidx = index_by_term[s]
+                p_token = token(p)
+                p_label = label(p_token)
+                if isinstance(o, (rd["URIRef"], rd["BNode"])):
+                    oidx = index_by_term.get(o)
+                    if oidx is None:
+                        continue
+                    ed = {
+                        predicateKey: p_token,
+                        relationshipKey: p_label,
+                        "ontology_predicate": p_token,
+                        "ontology_class": "top:Relationship",
+                        "category": "semantic",
+                        "label": p_label,
+                    }
+                    graph.AddEdge(sidx, oidx, directed=True, dictionary=ed)
+                    continue
+
+                if includeLiterals and isinstance(o, rd["Literal"]):
+                    key = (str(o), str(o.datatype) if o.datatype else None, o.language)
+                    if key not in literal_index:
+                        literal_token = token(o)
+                        ld = {
+                            labelKey: str(o),
+                            "ontology_class": "top:Node",
+                            "category": "literal",
+                            "_rdf_literal": {
+                                "value": str(o),
+                                "datatype": str(o.datatype) if o.datatype else None,
+                                "language": o.language,
+                            },
+                        }
+                        literal_index[key] = graph.AddVertex(dictionary=ld)
+                    graph.AddEdge(
+                        sidx,
+                        literal_index[key],
+                        directed=True,
+                        dictionary={
+                            predicateKey: p_token,
+                            relationshipKey: p_label,
+                            "ontology_class": "top:Relationship",
+                            "category": "rdf_literal_projection",
+                            "label": p_label,
+                        },
+                    )
+            return graph
+        except Exception as exc:
+            if not silent:
+                print("KnowledgeGraph.ToTGraph - Error: Could not convert to TGraph. Returning None.")
+                print("Error:", exc)
+            return None
 
     @staticmethod
     def TGraphByKnowledgeGraph(knowledgeGraph: Any, **kwargs) -> Any:
@@ -1668,31 +1678,7 @@ class KnowledgeGraph:
             "rdflib_enabled": self._rdflib_enabled,
         }
     def Validate(self, parseWithRDFLib: bool = True, silent: bool = False) -> Dict[str, Any]:
-        """
-        Performs lightweight structural validation, ontology-vocabulary validation,
-        serializer-hygiene checks, and optional RDFLib Turtle parsing.
-
-        The method distinguishes between:
-
-        - errors: structural/RDF syntax issues that make the KnowledgeGraph invalid;
-        - warnings: semantically suspicious but parseable conditions, such as
-        non-canonical predicates, unknown top: predicates, unknown top: classes,
-        and leaked internal/control keys.
-
-        Parameters
-        ----------
-        parseWithRDFLib : bool , optional
-            If True, the generated Turtle is parsed with RDFLib when available.
-            Default is True.
-        silent : bool , optional
-            If True, messages are suppressed. Default is False.
-
-        Returns
-        -------
-        Dict[str, Any]
-            A validation report dictionary.
-        """
-
+        """Validates structure and conformance with the canonical TopologicPy ontology."""
         report = {
             "valid": True,
             "errors": [],
@@ -1705,241 +1691,83 @@ class KnowledgeGraph:
             "resource_count": 0,
             "unknown_top_predicates": [],
             "unknown_top_classes": [],
-            "noncanonical_predicates": [],
-            "noncanonical_classes": [],
             "internal_key_leaks": [],
         }
-
-        namespaces = dict(getattr(self, "_namespaces", {}) or {})
-        namespaces.setdefault("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#")
-        namespaces.setdefault("rdfs", "http://www.w3.org/2000/01/rdf-schema#")
-        namespaces.setdefault("owl", "http://www.w3.org/2002/07/owl#")
-        namespaces.setdefault("xsd", "http://www.w3.org/2001/XMLSchema#")
-        namespaces.setdefault("top", "http://w3id.org/topologicpy#")
-        namespaces.setdefault("dict", "http://w3id.org/topologicpy/dictionary#")
-        namespaces.setdefault("inst", "http://w3id.org/topologicpy/instance#")
-
+        namespaces = KnowledgeGraph.Namespaces(self._namespaces)
         Ontology = KnowledgeGraph._ontology_class()
 
-        rdf_schema_predicates = {
-            "rdf:type",
-            "rdfs:label",
-            "rdfs:comment",
-            "rdfs:subClassOf",
-            "rdfs:subPropertyOf",
-            "rdfs:domain",
-            "rdfs:range",
-            "owl:Class",
-            "owl:ObjectProperty",
-            "owl:DatatypeProperty",
-            "owl:equivalentClass",
-            "owl:equivalentProperty",
-            "owl:deprecated",
-            "owl:Ontology",
-        }
-
-        internal_keys = {
-            "active",
-            "directed",
-            "dictionary_mode",
-            "dictionaryMode",
-            "import_mode",
-            "importMode",
-            "color",
-            "colour",
-            "ontology_predicate",
-            "ontologyPredicate",
-            "inverse_predicate",
-            "inversePredicate",
-            "ifc_relationship",
-            "ifcRelationship",
-            "relationship_predicate",
-            "relationshipPredicate",
-        }
-
-        known_top_classes = set()
-        known_top_properties = set()
-        deprecated_properties = set()
-        canonical_property_map = {}
-        canonical_class_map = {}
-
+        known_classes = set()
+        known_properties = set()
         if Ontology is not None:
             try:
-                known_top_classes.update(getattr(Ontology, "TOP_SUPERCLASSES", {}).keys())
+                vocab = Ontology._vocabulary()
+                known_classes = set(vocab.get("classes", set()))
+                known_properties = (
+                    set(vocab.get("object", set()))
+                    | set(vocab.get("data", set()))
+                    | set(vocab.get("annotation", set()))
+                )
             except Exception:
                 pass
 
-            try:
-                known_top_properties.update(getattr(Ontology, "OBJECT_PROPERTIES", {}).keys())
-            except Exception:
-                pass
+        subjects, predicates, objects, resources, literals = set(), set(), set(), set(), set()
+        internal_keys = {
+            "active", "directed", "dictionary_mode", "dictionaryMode", "import_mode", "importMode",
+            "ontology_predicate", "ontologyPredicate", "inverse_predicate", "inversePredicate",
+            "relationship_predicate", "relationshipPredicate", "rdf_projection", "_rdf_uri",
+            "_rdf_types", "_rdf_properties", "_rdf_literal",
+        }
 
-            try:
-                known_top_properties.update(getattr(Ontology, "DATA_PROPERTIES", {}).keys())
-            except Exception:
-                pass
+        def add_error(message):
+            report["valid"] = False
+            if message not in report["errors"]:
+                report["errors"].append(message)
 
-            try:
-                known_top_properties.update(getattr(Ontology, "ANNOTATION_PROPERTIES", {}).keys())
-            except Exception:
-                pass
-
-            try:
-                for alias, canonical in (getattr(Ontology, "PROPERTY_ALIASES", {}) or {}).items():
-                    alias_q = alias if ":" in str(alias) else "top:" + str(alias)
-                    canonical_q = canonical if ":" in str(canonical) else "top:" + str(canonical)
-                    canonical_property_map[alias_q] = canonical_q
-                    known_top_properties.add(alias_q)
-                    known_top_properties.add(canonical_q)
-            except Exception:
-                pass
-
-            try:
-                for cls, canonical in (getattr(Ontology, "CLASS_ALIASES", {}) or {}).items():
-                    cls_q = cls if ":" in str(cls) else "top:" + str(cls)
-                    canonical_q = canonical if ":" in str(canonical) else "top:" + str(canonical)
-                    canonical_class_map[cls_q] = canonical_q
-                    known_top_classes.add(cls_q)
-                    known_top_classes.add(canonical_q)
-            except Exception:
-                pass
-
-            try:
-                deprecated_properties.update(getattr(Ontology, "DEPRECATED_PROPERTIES", set()) or set())
-            except Exception:
-                pass
-
-        # Ensure the Graph/TGraph alias pair is accepted even if an older Ontology.py
-        # does not expose CLASS_ALIASES.
-        known_top_classes.update({"top:Graph", "top:TGraph"})
-        canonical_class_map.setdefault("top:TGraph", "top:Graph")
-
-        def _append_unique(key: str, value: Any):
-            if value not in report[key]:
-                report[key].append(value)
-
-        def _warn(message: str):
-            if message not in report["warnings"]:
-                report["warnings"].append(message)
-
-        def _token_local_name(token: Any) -> str:
-            text = str(token or "").strip()
+        def qname(token):
+            text = str(token).strip()
             if text.startswith("<") and text.endswith(">"):
                 text = text[1:-1]
-            if "#" in text:
-                return text.rsplit("#", 1)[-1]
-            if "/" in text:
-                return text.rstrip("/").rsplit("/", 1)[-1]
-            if ":" in text:
-                return text.split(":", 1)[1]
-            return text
-
-        def _is_top_token(token: Any) -> bool:
-            text = str(token or "").strip()
-            if text.startswith("top:"):
-                return True
-            top_ns = namespaces.get("top", "")
-            if top_ns and text.startswith("<") and text.endswith(">"):
-                text = text[1:-1]
-            return bool(top_ns and text.startswith(top_ns))
-
-        def _to_qname(token: Any) -> Any:
-            text = str(token or "").strip()
-            if text.startswith("<") and text.endswith(">"):
-                text = text[1:-1]
-            try:
-                q = KnowledgeGraph.QName(text, namespaces=namespaces, defaultValue=None)
-                return q if q is not None else token
-            except Exception:
-                return token
-
-        def _canonical_predicate(predicate: Any) -> Any:
-            text = str(predicate or "").strip()
-            q = _to_qname(text)
-
-            if q in rdf_schema_predicates:
-                return q
-
-            if hasattr(KnowledgeGraph, "_canonical_predicate_token"):
-                try:
-                    return KnowledgeGraph._canonical_predicate_token(q, namespaces=namespaces)
-                except Exception:
-                    pass
-
-            if Ontology is not None:
-                try:
-                    if hasattr(Ontology, "PropertyQName"):
-                        return Ontology.PropertyQName(q)
-                except Exception:
-                    pass
-
-            return canonical_property_map.get(q, q)
-
-        def _canonical_class(cls: Any) -> Any:
-            text = str(cls or "").strip()
-            q = _to_qname(text)
-
-            if hasattr(KnowledgeGraph, "_canonical_class_token"):
-                try:
-                    return KnowledgeGraph._canonical_class_token(q, namespaces=namespaces)
-                except Exception:
-                    pass
-
-            if Ontology is not None:
-                try:
-                    if hasattr(Ontology, "CanonicalClass"):
-                        return Ontology.CanonicalClass(q)
-                except Exception:
-                    pass
-
-                try:
-                    if hasattr(Ontology, "ClassQName"):
-                        return Ontology.ClassQName(q)
-                except Exception:
-                    pass
-
-            return canonical_class_map.get(q, q)
-
-        # ------------------------------------------------------------------
-        # Structural validation.
-        # ------------------------------------------------------------------
-
-        subjects = set()
-        predicates = set()
-        objects = set()
-        resources = set()
-        literals = set()
+            return KnowledgeGraph.QName(text, namespaces=namespaces, defaultValue=token)
 
         for triple in self._triples:
             if not isinstance(triple, (list, tuple)) or len(triple) != 3:
-                report["valid"] = False
-                report["errors"].append("Invalid triple length: " + str(triple))
+                add_error("Invalid triple: " + str(triple))
                 continue
-
             s, p, o = triple
-            subjects.add(s)
-            predicates.add(p)
-            objects.add(o)
-
+            subjects.add(s); predicates.add(p); objects.add(o)
             if not KnowledgeGraph._is_resource_token(s, namespaces):
-                report["valid"] = False
-                report["errors"].append("Subject is not a resource token: " + str(s))
+                add_error("Subject is not a resource token: " + str(s))
             else:
                 resources.add(s)
-
             if not KnowledgeGraph._is_resource_token(p, namespaces):
-                report["valid"] = False
-                report["errors"].append("Predicate is not a resource token: " + str(p))
+                add_error("Predicate is not a resource token: " + str(p))
             else:
                 resources.add(p)
-
             if KnowledgeGraph._is_literal_token(o):
                 literals.add(o)
             elif KnowledgeGraph._is_resource_token(o, namespaces):
                 resources.add(o)
             else:
-                report["valid"] = False
-                report["errors"].append("Object is neither resource nor literal token: " + str(o))
+                add_error("Object is neither a resource nor a literal token: " + str(o))
+
+            pq = qname(p)
+            if isinstance(pq, str) and pq.startswith("top:") and pq not in known_properties:
+                if pq not in report["unknown_top_predicates"]:
+                    report["unknown_top_predicates"].append(pq)
+                add_error("Undeclared TopologicPy predicate: " + pq)
+
+            local = str(pq).split(":", 1)[-1] if ":" in str(pq) else str(pq)
+            if local in internal_keys:
+                if pq not in report["internal_key_leaks"]:
+                    report["internal_key_leaks"].append(pq)
+                add_error("Internal/control key leaked into RDF: " + str(pq))
+
+            if pq == "rdf:type":
+                oq = qname(o)
+                if isinstance(oq, str) and oq.startswith("top:") and oq not in known_classes:
+                    if oq not in report["unknown_top_classes"]:
+                        report["unknown_top_classes"].append(oq)
+                    add_error("Undeclared TopologicPy class: " + oq)
 
         report["subject_count"] = len(subjects)
         report["predicate_count"] = len(predicates)
@@ -1947,125 +1775,23 @@ class KnowledgeGraph:
         report["literal_count"] = len(literals)
         report["resource_count"] = len(resources)
 
-        # ------------------------------------------------------------------
-        # Ontology and serializer-hygiene validation.
-        # ------------------------------------------------------------------
-
-        for s, p, o in self._triples:
-            p_q = _to_qname(p)
-            o_q = _to_qname(o)
-
-            canonical_p = _canonical_predicate(p_q)
-            if canonical_p != p_q:
-                item = {"predicate": p_q, "canonical": canonical_p}
-                _append_unique("noncanonical_predicates", item)
-                _warn("Non-canonical predicate " + str(p_q) + " should be " + str(canonical_p) + ".")
-
-            # top: predicate must be declared in the ontology vocabulary, except
-            # standard RDF/RDFS/OWL predicates.
-            if isinstance(p_q, str) and p_q.startswith("top:"):
-                if p_q not in known_top_properties:
-                    _append_unique("unknown_top_predicates", p_q)
-                    _warn("Unknown top: predicate is not declared in the ontology: " + str(p_q) + ".")
-
-            # Deprecated properties are warnings, not errors.
-            if p_q in deprecated_properties:
-                _warn("Deprecated ontology predicate used: " + str(p_q) + ".")
-
-            # Internal/control keys should not leak into RDF as predicates.
-            local = _token_local_name(p_q)
-            if local in internal_keys:
-                _append_unique("internal_key_leaks", p_q)
-                _warn("Internal/control key appears as an RDF predicate and should normally be consumed or filtered: " + str(p_q) + ".")
-
-            # Unknown dictionary keys should be in dict:, not top:. This catches
-            # accidental top:foo pollution while allowing dict:foo.
-            if isinstance(p_q, str) and p_q.startswith("dict:"):
-                local = _token_local_name(p_q)
-                if local in internal_keys:
-                    _append_unique("internal_key_leaks", p_q)
-                    _warn("Internal/control key appears under dict: and should normally be consumed or filtered: " + str(p_q) + ".")
-
-            # Validate rdf:type classes.
-            if p_q == "rdf:type":
-                if isinstance(o_q, str) and o_q.startswith("top:"):
-                    canonical_o = _canonical_class(o_q)
-                    if canonical_o != o_q:
-                        item = {"class": o_q, "canonical": canonical_o}
-                        _append_unique("noncanonical_classes", item)
-                        _warn("Non-canonical class " + str(o_q) + " should be " + str(canonical_o) + ".")
-
-                    if o_q not in known_top_classes and canonical_o not in known_top_classes:
-                        _append_unique("unknown_top_classes", o_q)
-                        _warn("Unknown top: ontology class used as rdf:type object: " + str(o_q) + ".")
-
-                elif _is_top_token(o_q):
-                    q = _to_qname(o_q)
-                    if isinstance(q, str) and q.startswith("top:"):
-                        canonical_o = _canonical_class(q)
-                        if q not in known_top_classes and canonical_o not in known_top_classes:
-                            _append_unique("unknown_top_classes", q)
-                            _warn("Unknown top: ontology class used as rdf:type object: " + str(q) + ".")
-
-            # Warn if ontology class aliases appear in non-rdf:type object position.
-            if isinstance(o_q, str) and o_q.startswith("top:"):
-                canonical_o = _canonical_class(o_q)
-                if canonical_o != o_q and p_q != "rdf:type":
-                    _warn(
-                        "Non-canonical top: resource object "
-                        + str(o_q)
-                        + " appears with predicate "
-                        + str(p_q)
-                        + "; canonical form is "
-                        + str(canonical_o)
-                        + "."
-                    )
-
-        # ------------------------------------------------------------------
-        # Optional RDFLib Turtle parse validation.
-        # ------------------------------------------------------------------
-
         if parseWithRDFLib:
             rd = KnowledgeGraph._rdflib(silent=True)
             if rd is None:
-                _warn("RDFLib is not available; RDF syntax parse validation was skipped.")
+                report["warnings"].append("RDFLib is unavailable; RDF syntax validation was skipped.")
             else:
-                ttl = self.TurtleString(silent=True)
                 try:
+                    ttl = self.TurtleString(silent=True)
                     g = rd["Graph"]()
-                    for prefix, uri in namespaces.items():
-                        try:
-                            g.bind(prefix, uri)
-                        except Exception:
-                            pass
                     g.parse(data=ttl, format="turtle")
                 except Exception as exc:
-                    report["valid"] = False
-                    report["errors"].append("RDFLib Turtle parse failed: " + str(exc))
+                    add_error("RDFLib Turtle parse failed: " + str(exc))
 
-        # Keep derived lists stable for tests.
-        for key in [
-            "unknown_top_predicates",
-            "unknown_top_classes",
-            "noncanonical_predicates",
-            "noncanonical_classes",
-            "internal_key_leaks",
-        ]:
-            try:
-                report[key] = sorted(report[key], key=lambda x: str(x))
-            except Exception:
-                pass
-
-        if not silent:
-            if not report["valid"]:
-                print("KnowledgeGraph.Validate - Error: KnowledgeGraph is invalid.")
-                for error in report["errors"]:
-                    print(" -", error)
-            elif report["warnings"]:
-                print("KnowledgeGraph.Validate - Warning: KnowledgeGraph is valid but has warnings.")
-                for warning in report["warnings"]:
-                    print(" -", warning)
-
+        for key in ("unknown_top_predicates", "unknown_top_classes", "internal_key_leaks"):
+            report[key] = sorted(report[key], key=str)
+        if not silent and report["errors"]:
+            for error in report["errors"]:
+                print("KnowledgeGraph.Validate - Error:", error)
         return report
 
     # ---------------------------------------------------------------------

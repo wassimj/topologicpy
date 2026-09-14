@@ -263,7 +263,7 @@
 
 :room_101 a top:Room ;
   top:adjacentTo :corridor_1 ;
-  top:hasArea "24.6"^^xsd:double .</code></div>
+  top:area "24.6"^^xsd:double .</code></div>
       </div>
     </div>
   </header>
@@ -291,8 +291,7 @@
           <div class="card dark span-7">
             <h2 style="margin:0 0 1rem; font-size:clamp(2.1rem,4.5vw,4.2rem);">Today’s ontology work turned the idea into infrastructure.</h2>
             <p class="section-intro" style="margin:0; color:rgba(255,255,255,.72);">
-              The ontology is no longer just a specification file. It now connects importers, topology,
-              graph construction, graph databases, GQL, GraphRAG, PyG, RDF export, RDF import, and validation.
+              The ontology now has one canonical TTL source shared by importers, graph construction, reasoning, RDF export/import, tests, and this website.
             </p>
           </div>
           <div class="card span-5 strong">
@@ -304,7 +303,7 @@
           <div class="card span-12">
             <div class="journey">
               <div class="journey-item"><div><h3>Formal ontology specification</h3><p>The TTL file defines classes, properties, subclass relations, BIM concepts, topology concepts, graph concepts, provenance terms, analysis metrics, and BOT/Brick alignment.</p></div></div>
-              <div class="journey-item"><div><h3>Ontology.py became the semantic API</h3><p>The class now standardises annotation, class/category inference, IFC mapping, validation, Turtle export, Turtle validation, and RDF/Turtle graph import.</p></div></div>
+              <div class="journey-item"><div><h3>One canonical ontology became the semantic API</h3><p>The class now standardises annotation, class/category inference, IFC mapping, validation, Turtle export, Turtle validation, and RDF/Turtle graph import.</p></div></div>
               <div class="journey-item"><div><h3>IFC import became ontology-aware</h3><p>Imported IFC entities can be annotated with <span class="code-inline">ontology_class</span>, <span class="code-inline">ifc_class</span>, <span class="code-inline">ifc_guid</span>, <span class="code-inline">source</span>, category, label, and provenance.</p></div></div>
               <div class="journey-item"><div><h3>Graphs became semantic carriers</h3><p>Graph vertices and edges can preserve ontology classes and categories through construction, database round-trips, GQL queries, PyG datasets, and GraphRAG generation loops.</p></div></div>
               <div class="journey-item"><div><h3>Persistence and query layers were aligned</h3><p>GraphDB, Kuzu, Neo4j, GQL, Parser, and Executor were reconciled so ontology metadata can be stored, retrieved, matched, and projected consistently.</p></div></div>
@@ -320,7 +319,7 @@
         <h2>A semantic backbone for spatial computing.</h2>
         <p class="section-intro">The ontology turns TopologicPy dictionaries into a shared semantic contract. The same keys and classes can travel through geometry, topology, IFC, graph databases, graph machine learning, GQL, GraphRAG, and RDF.</p>
         <div class="grid">
-          <div class="card span-4"><h3>Core ontology keys</h3><p>Stable dictionary keys make semantic metadata portable across TopologicPy workflows.</p><ul class="pill-list"><li>ontology_class</li><li>ontology_uri</li><li>category</li><li>label</li><li>uri</li><li>source</li><li>generated_by</li><li>derived_from</li></ul></div>
+          <div class="card span-4"><h3>Core ontology keys</h3><p>Stable dictionary keys make semantic metadata portable across TopologicPy workflows.</p><ul class="pill-list"><li>ontology_class</li><li>uri</li><li>category</li><li>label</li><li>source</li><li>generated_by</li><li>derived_from</li></ul></div>
           <div class="card span-4"><h3>BIM provenance</h3><p>IFC imports can retain enough provenance to support quality control, traceability, and linked building data.</p><ul class="pill-list"><li>ifc_class</li><li>ifc_guid</li><li>ifc_name</li><li>source file</li><li>BOT alignment</li><li>Brick alignment</li></ul></div>
           <div class="card span-4"><h3>Graph intelligence</h3><p>Semantic graphs can support retrieval, reasoning, analytics, machine learning, and generative workflows.</p><ul class="pill-list"><li>AdjacencyGraph</li><li>VisibilityGraph</li><li>KnowledgeGraph</li><li>GraphDB</li><li>GQL</li><li>GraphRAG</li><li>PyG</li></ul></div>
         </div>
@@ -358,7 +357,7 @@ graph = IFC.SpaceAdjacencyGraph(
     ontology=True
 )
 
-report = Ontology.ValidateGraph(graph)</code></pre></div>
+report = Ontology.Validate(graph)</code></pre></div>
           <div class="card span-6 dark"><h3>RDF export and import</h3><p>TopologicPy can participate directly in linked-data and semantic-web workflows.</p><pre><code>Ontology.ExportTTL(
     graph,
     "building_graph.ttl",
@@ -366,7 +365,7 @@ report = Ontology.ValidateGraph(graph)</code></pre></div>
     includeBOT=True
 )
 
-restored = Ontology.GraphByTTLPath(
+restored = Ontology.GraphByTTL(
     "building_graph.ttl"
 )</code></pre></div>
         </div>
@@ -395,7 +394,7 @@ restored = Ontology.GraphByTTLPath(
             <div class="link-list">
               <div class="link-item"><a href="specification.html">Human-readable ontology specification</a><span class="small">HTML</span></div>
               <div class="link-item"><a href="ontology/topologicpy.ttl">Current ontology vocabulary</a><span class="small">TTL</span></div>
-              <div class="link-item"><a href="ontology/versions/0.1.0/topologicpy.ttl">Version 0.1.0</a><span class="small">TTL</span></div>
+              <div class="link-item"><a href="ontology/versions/0.3.0/topologicpy.ttl">Version 0.3.0</a><span class="small">TTL</span></div>
               <div class="link-item"><a href="https://github.com/wassimj/topologicpy/tree/main/ontology">Ontology source folder</a><span class="small">GitHub</span></div>
               <div class="link-item"><a href="http://w3id.org/topologicpy">Persistent ontology document</a><span class="small">w3id</span></div>
             </div>

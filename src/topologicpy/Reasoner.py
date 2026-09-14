@@ -225,46 +225,61 @@ class Reasoner:
     # ---------------------------------------------------------------------
 
     @staticmethod
+    @staticmethod
     def Namespaces() -> Dict[str, str]:
-        """Returns the namespace dictionary used by TopologicPy reasoning."""
+        """Returns the namespace dictionary used by TopologicPy reasoning.
+
+        Ontology.py is the authoritative source for TopologicPy namespaces. A
+        minimal standards-only fallback is retained so Reasoner can still inspect
+        arbitrary RDF graphs when Ontology.py is unavailable.
+        """
         Ontology = Reasoner._ontology_class()
         if Ontology is not None:
             try:
-                namespaces = dict(Ontology.NAMESPACES)
+                return dict(Ontology.Namespaces())
             except Exception:
-                namespaces = {}
-        else:
-            namespaces = {}
+                try:
+                    return dict(Ontology.NAMESPACES)
+                except Exception:
+                    pass
 
-        # Keep this fallback synchronized with the _005 ontology files.
-        namespaces.setdefault("bot", "https://w3id.org/bot#")
-        namespaces.setdefault("brick", "https://brickschema.org/schema/Brick#")
-        namespaces.setdefault("geo", "http://www.opengis.net/ont/geosparql#")
-        namespaces.setdefault("ifc", "https://standards.buildingsmart.org/IFC/DEV/IFC4/ADD2_TC1/OWL#")
-        namespaces.setdefault("prov", "http://www.w3.org/ns/prov#")
-        namespaces.setdefault("dcterms", "http://purl.org/dc/terms/")
-        namespaces.setdefault("vann", "http://purl.org/vocab/vann/")
-        namespaces.setdefault("skos", "http://www.w3.org/2004/02/skos/core#")
-        namespaces.setdefault("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#")
-        namespaces.setdefault("rdfs", "http://www.w3.org/2000/01/rdf-schema#")
-        namespaces.setdefault("xsd", "http://www.w3.org/2001/XMLSchema#")
-        namespaces.setdefault("owl", "http://www.w3.org/2002/07/owl#")
-        namespaces.setdefault("top", "http://w3id.org/topologicpy#")
-        namespaces.setdefault("dict", "http://w3id.org/topologicpy/dictionary#")
-        namespaces.setdefault("inst", "http://w3id.org/topologicpy/instance#")
-        return namespaces
+        return {
+            "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+            "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+            "owl": "http://www.w3.org/2002/07/owl#",
+            "xsd": "http://www.w3.org/2001/XMLSchema#",
+            "skos": "http://www.w3.org/2004/02/skos/core#",
+            "dcterms": "http://purl.org/dc/terms/",
+            "prov": "http://www.w3.org/ns/prov#",
+            "bot": "https://w3id.org/bot#",
+            "brick": "https://brickschema.org/schema/Brick#",
+            "geo": "http://www.opengis.net/ont/geosparql#",
+            "ifc": "https://standards.buildingsmart.org/IFC/DEV/IFC4/ADD2_TC1/OWL#",
+            "top": "http://w3id.org/topologicpy#",
+            "dict": "http://w3id.org/topologicpy/dictionary#",
+            "inst": "http://w3id.org/topologicpy/instance#",
+        }
 
     @staticmethod
+    @staticmethod
     def ExpandQName(term: Any, defaultValue: Any = None):
-        """Expands a QName such as top:Room, or a bracketed URI, to a URI string."""
+        """Expands a QName, bracketed URI, or absolute URI to a URI string."""
         if term is None:
             return defaultValue
+
+        Ontology = Reasoner._ontology_class()
+        if Ontology is not None:
+            try:
+                return Ontology.ExpandQName(term, defaultValue=defaultValue)
+            except Exception:
+                pass
+
         text = str(term).strip()
         if text == "":
             return defaultValue
         if text.startswith("<") and text.endswith(">"):
             return text[1:-1]
-        if text.startswith("http://") or text.startswith("https://"):
+        if text.startswith(("http://", "https://", "urn:")):
             return text
         if ":" not in text:
             return defaultValue
@@ -275,10 +290,24 @@ class Reasoner:
         return ns + local
 
     @staticmethod
+    @staticmethod
     def QName(uri: Any, defaultValue: Any = None) -> Any:
         """Compacts a URIRef or URI string to a QName when a namespace matches."""
         if uri is None:
             return defaultValue
+
+        Ontology = Reasoner._ontology_class()
+        if Ontology is not None:
+            try:
+                return Ontology.QName(uri, defaultValue=defaultValue)
+            except TypeError:
+                try:
+                    return Ontology.QName(uri, defaultValue)
+                except Exception:
+                    pass
+            except Exception:
+                pass
+
         text = str(uri).strip()
         if text.startswith("<") and text.endswith(">"):
             text = text[1:-1]
@@ -326,6 +355,7 @@ class Reasoner:
     # ---------------------------------------------------------------------
 
     @staticmethod
+    @staticmethod
     def RDFGraphByTopology(
         topology: Any,
         includeGraph: bool = True,
@@ -336,42 +366,41 @@ class Reasoner:
         instanceNamespace: str = "http://w3id.org/topologicpy/instance#",
         silent: bool = False,
     ):
-        """
-        Returns an RDFLib graph from a TopologicPy topology, legacy graph, or TGraph.
-
-        This method builds the instance graph through Reasoner.TriplesByTopology()
-        so direct-module imports and package imports behave consistently. Ontology
-        axioms are then added optionally.
-        """
-        rd = Reasoner._rdflib(silent=silent)
-        if rd is None or topology is None:
+        """Returns an RDFLib graph using Ontology.py as the sole serializer."""
+        if topology is None:
             return None
 
-        triples = Reasoner.TriplesByTopology(
-            topology,
-            includeGraph=includeGraph,
-            includeDictionaries=includeDictionaries,
-            includeBOT=includeBOT,
-            namespacePrefix=namespacePrefix,
-            silent=silent,
-        )
-        g = Reasoner.RDFGraphByTriples(triples, silent=silent)
+        Ontology = Reasoner._ontology_class()
+        if Ontology is None:
+            if not silent:
+                print("Reasoner.RDFGraphByTopology - Error: Ontology.py is required. Returning None.")
+            return None
+
+        try:
+            g = Ontology.RDFGraph(
+                topology,
+                includeGraph=includeGraph,
+                includeDictionaries=includeDictionaries,
+                includeBOT=includeBOT,
+                namespacePrefix=namespacePrefix,
+                instanceNamespace=instanceNamespace,
+                silent=silent,
+            )
+        except Exception as exc:
+            if not silent:
+                print("Reasoner.RDFGraphByTopology - Error: Could not create the RDF graph. Returning None.")
+                print("Error:", exc)
+            return None
+
         if g is None:
             return None
         Reasoner._bind_namespaces(g)
-
-        # Preserve the requested instance namespace binding.
-        try:
-            from rdflib import Namespace
-            g.bind(namespacePrefix, Namespace(instanceNamespace))
-        except Exception:
-            pass
-
         if includeOntologyAxioms:
             Reasoner.AddOntologyAxioms(g, includeBOT=includeBOT, silent=silent)
         return g
 
 
+    @staticmethod
     @staticmethod
     def TriplesByTopology(
         topology: Any,
@@ -381,57 +410,53 @@ class Reasoner:
         namespacePrefix: str = "inst",
         silent: bool = False,
     ) -> List[Tuple[str, str, str]]:
-        """Returns RDF-like triples from a TopologicPy object using Ontology/TGraph helpers."""
-        Ontology = Reasoner._ontology_class()
-        TGraph = Reasoner._tgraph_class()
+        """Returns canonical triples using Ontology.py as the sole vocabulary authority."""
         if topology is None:
             return []
-        if TGraph is not None:
-            try:
-                if isinstance(topology, TGraph):
-                    return TGraph.OntologyTriples(
-                        topology,
-                        includeVertices=includeGraph,
-                        includeEdges=includeGraph,
-                        includeDictionaries=includeDictionaries,
-                        includeBOT=includeBOT,
-                        namespacePrefix=namespacePrefix,
-                    )
-            except Exception:
-                pass
-        if Ontology is not None:
-            try:
-                if includeGraph and hasattr(Ontology, "GraphTriples"):
-                    return Ontology.GraphTriples(
-                        topology,
-                        includeVertices=True,
-                        includeEdges=True,
-                        includeDictionaries=includeDictionaries,
-                        includeBOT=includeBOT,
-                        namespacePrefix=namespacePrefix,
-                        silent=silent,
-                    )
-            except Exception:
-                pass
-            try:
-                return Ontology.Triples(
+
+        Ontology = Reasoner._ontology_class()
+        if Ontology is None:
+            if not silent:
+                print("Reasoner.TriplesByTopology - Error: Ontology.py is required. Returning an empty list.")
+            return []
+
+        try:
+            is_graph_like = bool(Ontology._is_graph_like(topology))
+        except Exception:
+            is_graph_like = False
+
+        try:
+            if is_graph_like:
+                return Ontology.GraphTriples(
                     topology,
+                    includeVertices=includeGraph,
+                    includeEdges=includeGraph,
                     includeDictionaries=includeDictionaries,
                     includeBOT=includeBOT,
                     namespacePrefix=namespacePrefix,
                     silent=silent,
                 )
-            except Exception:
-                pass
-        return []
+            return Ontology.Triples(
+                topology,
+                includeDictionaries=includeDictionaries,
+                includeBOT=includeBOT,
+                namespacePrefix=namespacePrefix,
+                silent=silent,
+            )
+        except Exception as exc:
+            if not silent:
+                print("Reasoner.TriplesByTopology - Error: Could not create triples. Returning an empty list.")
+                print("Error:", exc)
+            return []
 
     @staticmethod
+    @staticmethod
     def RDFGraphByTriples(triples: Iterable[Tuple[Any, Any, Any]], silent: bool = False):
-        """Builds an RDFLib graph from TopologicPy RDF-like triples.
+        """Builds an RDFLib graph while preserving explicit RDF vocabulary.
 
-        Predicate and rdf:type class tokens are canonicalised against _005
-        ontology semantics before conversion to RDFLib terms. Unknown
-        dictionary-style predicates are mapped to dict:, not arbitrary top:.
+        Explicit QNames and URIs retain their namespace exactly. Bare predicate
+        names are treated as Python dictionary keys and are mapped through
+        Ontology.PropertyQName, which places undeclared keys under ``dict:``.
         """
         rd = Reasoner._rdflib(silent=silent)
         if rd is None:
@@ -441,120 +466,97 @@ class Reasoner:
         Reasoner._bind_namespaces(g)
         URIRef = rd["URIRef"]
         Literal = rd["Literal"]
+        BNode = rd["BNode"]
+        Ontology = Reasoner._ontology_class()
+        namespaces = Reasoner.Namespaces()
 
         try:
             from rdflib.util import from_n3
         except Exception:
             from_n3 = None
 
-        Ontology = Reasoner._ontology_class()
-        namespaces = Reasoner.Namespaces()
-
-        def _safe_local(value):
+        def safe_local(value):
             text = "" if value is None else str(value).strip()
             text = re.sub(r"[^A-Za-z0-9_\-]+", "_", text)
-            text = re.sub(r"_+", "_", text).strip("_")
-            if not text:
-                text = "item"
+            text = re.sub(r"_+", "_", text).strip("_") or "item"
             if text[0].isdigit():
                 text = "id_" + text
             return text
 
-        def _looks_like_qname(value):
-            text = str(value or "").strip()
-            if ":" not in text:
-                return False
-            prefix, local = text.split(":", 1)
-            return bool(prefix) and bool(local) and prefix in namespaces
-
-        def canonical_predicate_token(value):
+        def explicit_resource(value):
             if value is None:
                 return None
-            if hasattr(value, "n3"):
-                return value
             text = str(value).strip()
-            if text == "":
-                return None
+            if text.startswith("_:"):
+                return BNode(text[2:])
             if text.startswith("<") and text.endswith(">"):
-                q = Reasoner.QName(text[1:-1], defaultValue=None)
-                text = q if q is not None else text
-            elif text.startswith("http://") or text.startswith("https://"):
-                q = Reasoner.QName(text, defaultValue=None)
-                text = q if q is not None else text
+                return URIRef(text[1:-1])
+            if text.startswith(("http://", "https://", "urn:")):
+                return URIRef(text)
+            if ":" in text:
+                prefix, local = text.split(":", 1)
+                ns = namespaces.get(prefix)
+                if ns is not None and local:
+                    return URIRef(ns + local)
+            return None
 
-            # Explicit QName/URI predicates must remain in their declared
-            # namespace.  In the full TopologicPy environment,
-            # Ontology.PropertyQName() may map unknown property names to dict:*.
-            # That is correct for bare dictionary keys such as "hasWeight", but
-            # it is incorrect for explicit predicates such as "top:hasPart"
-            # because RDFS domain/range/subPropertyOf axioms using top:hasPart
-            # would no longer match instance triples whose predicate was changed
-            # to dict:hasPart.
-            explicit_qname = _looks_like_qname(text)
-            if explicit_qname and text.startswith("top:"):
-                local = text.split(":", 1)[1]
-                aliases = {
-                    "hasStartVertex": "startsAt", "startVertex": "startsAt",
-                    "hasEndVertex": "endsAt", "endVertex": "endsAt",
-                    "hasX": "x", "hasY": "y", "hasZ": "z",
-                    "src": "srcId", "dst": "dstId",
-                }
-                if local in aliases:
-                    return "top:" + aliases[local]
+        def predicate_term(value):
+            if value is None:
+                return None
+            if isinstance(value, URIRef):
+                return value
+
+            explicit = explicit_resource(value)
+            if explicit is not None and not isinstance(explicit, BNode):
+                return explicit
 
             if Ontology is not None:
                 try:
-                    candidate = Ontology.PropertyQName(text)
-                    if explicit_qname and isinstance(candidate, str) and candidate.startswith("dict:"):
-                        return text
-                    return candidate
+                    qname = Ontology.PropertyQName(value, defaultPrefix="dict")
+                    if qname is None:
+                        return None
+                    expanded = Ontology.ExpandQName(qname, defaultValue=None)
+                    if expanded is not None:
+                        return URIRef(expanded)
                 except Exception:
                     pass
-            if explicit_qname:
-                return text
-            return "dict:" + _safe_local(text)
 
-        def canonical_object_token(predicate_token, value):
+            ns = namespaces.get("dict")
+            if ns is not None:
+                return URIRef(ns + safe_local(value))
+            return URIRef(str(value))
+
+        def term(value, role="object"):
             if value is None:
                 return None
-            if hasattr(value, "n3"):
-                return value
-            text = str(value).strip() if isinstance(value, str) else value
-            if str(predicate_token) == "rdf:type":
-                if isinstance(text, str):
-                    if text.startswith("<") and text.endswith(">"):
-                        q = Reasoner.QName(text[1:-1], defaultValue=None)
-                        text = q if q is not None else text
-                    elif text.startswith("http://") or text.startswith("https://"):
-                        q = Reasoner.QName(text, defaultValue=None)
-                        text = q if q is not None else text
-                if Ontology is not None:
-                    try:
-                        return Ontology.CanonicalClass(text, defaultValue=text)
-                    except Exception:
-                        pass
-                if str(text) == "top:TGraph":
-                    return "top:Graph"
-            return value
-
-        def node(value, role: str = "object"):
-            if value is None:
-                return None
-            if hasattr(value, "n3"):
+            if isinstance(value, (URIRef, Literal, BNode)):
                 return value
 
-            if isinstance(value, bool):
-                return Literal(value)
-            if isinstance(value, int) and not isinstance(value, bool):
-                return Literal(value)
-            if isinstance(value, float):
+            # Preserve Ontology._RDFLiteral values without importing the private class.
+            if all(hasattr(value, attr) for attr in ("lexical", "datatype", "language")):
+                datatype = getattr(value, "datatype", None)
+                language = getattr(value, "language", None)
+                dt = URIRef(str(datatype)) if datatype else None
+                return Literal(str(getattr(value, "lexical", "")), datatype=dt, lang=language)
+
+            if isinstance(value, (bool, int, float)):
                 return Literal(value)
 
             text = str(value).strip()
             if text == "":
                 return None
+            if role == "predicate":
+                return predicate_term(value)
 
-            if from_n3 is not None:
+            explicit = explicit_resource(value)
+            if explicit is not None:
+                return explicit
+
+            if role == "subject":
+                ns = namespaces.get("inst", "http://w3id.org/topologicpy/instance#")
+                return URIRef(ns + safe_local(text))
+
+            if from_n3 is not None and text.startswith(("\"", "'")):
                 try:
                     parsed = from_n3(text, nsm=g.namespace_manager)
                     if parsed is not None:
@@ -562,20 +564,7 @@ class Reasoner:
                 except Exception:
                     pass
 
-            expanded = Reasoner.ExpandQName(text, defaultValue=None)
-            if expanded is not None:
-                return URIRef(expanded)
-            if text.startswith("<") and text.endswith(">"):
-                return URIRef(text[1:-1])
-            if text.startswith("http://") or text.startswith("https://"):
-                return URIRef(text)
-
-            if role in ("subject", "predicate"):
-                prefix = "dict" if role == "predicate" else "inst"
-                expanded = Reasoner.ExpandQName(prefix + ":" + _safe_local(text), defaultValue=None)
-                return URIRef(expanded) if expanded is not None else URIRef(text)
-
-            return Literal(text)
+            return Literal(value)
 
         for triple in triples or []:
             if not isinstance(triple, (list, tuple)) or len(triple) != 3:
@@ -583,11 +572,9 @@ class Reasoner:
                     print("Reasoner.RDFGraphByTriples - Warning: Skipping invalid triple:", triple)
                 continue
             s, p, o = triple
-            p_token = canonical_predicate_token(p)
-            o_token = canonical_object_token(p_token, o)
-            ss = node(s, role="subject")
-            pp = node(p_token, role="predicate")
-            oo = node(o_token, role="object")
+            ss = term(s, "subject")
+            pp = term(p, "predicate")
+            oo = term(o, "object")
             if ss is None or pp is None or oo is None:
                 continue
             try:
@@ -599,107 +586,35 @@ class Reasoner:
         return g
 
     @staticmethod
+    @staticmethod
     def AddOntologyAxioms(rdfGraph, includeBOT: bool = True, silent: bool = False):
-        """
-        Adds TopologicPy ontology schema triples to an RDFLib graph.
-
-        The corrected implementation delegates to Ontology.OntologyTriples()
-        whenever possible so that class aliases, property aliases,
-        owl:equivalentClass, owl:equivalentProperty, labels, comments,
-        domain/range declarations, and BOT alignments cannot drift from the
-        canonical ontology helper.
-        """
-        rd = Reasoner._rdflib(silent=silent)
-        Ontology = Reasoner._ontology_class()
-        if rd is None or rdfGraph is None:
+        """Adds axioms from the single canonical TopologicPy ontology graph."""
+        if rdfGraph is None:
             return rdfGraph
 
-        Reasoner._bind_namespaces(rdfGraph)
-
-        if Ontology is not None:
-            try:
-                axiom_graph = Reasoner.RDFGraphByTriples(
-                    Ontology.OntologyTriples(includeBOT=includeBOT),
-                    silent=True,
-                )
-                if axiom_graph is not None:
-                    for triple in axiom_graph:
-                        rdfGraph.add(triple)
-                    Reasoner._bind_namespaces(rdfGraph)
-                    return rdfGraph
-            except Exception as exc:
-                if not silent:
-                    print("Reasoner.AddOntologyAxioms - Warning: Ontology.OntologyTriples failed; using fallback axioms.")
-                    print("Error:", exc)
-
-        URIRef = rd["URIRef"]
-        RDF = rd["RDF"]
-        RDFS = rd["RDFS"]
-        OWL = rd["OWL"]
-
-        def U(term):
-            return Reasoner._uri_ref(term, URIRef=URIRef)
+        Ontology = Reasoner._ontology_class()
+        if Ontology is None:
+            if not silent:
+                print("Reasoner.AddOntologyAxioms - Error: Ontology.py is required.")
+            return rdfGraph
 
         try:
-            top_graph = U("top:Graph")
-            top_tgraph = U("top:TGraph")
-            if top_graph is not None and top_tgraph is not None:
-                rdfGraph.add((top_graph, RDF.type, OWL.Class))
-                rdfGraph.add((top_tgraph, RDF.type, OWL.Class))
-                rdfGraph.add((top_tgraph, RDFS.subClassOf, top_graph))
-                rdfGraph.add((top_tgraph, OWL.equivalentClass, top_graph))
-                rdfGraph.add((top_graph, OWL.equivalentClass, top_tgraph))
+            axioms = Ontology.OntologyRDFGraph(silent=silent)
+            if axioms is None:
+                return rdfGraph
 
-            fallback_classes = {
-                "top:Node": "top:Vertex",
-                "top:Relationship": "top:Edge",
-                "top:AccessGraph": "top:SpatialGraph",
-                "top:AdjacencyGraph": "top:SpatialGraph",
-                "top:AnalysisGraph": "top:Graph",
-                "top:CirculationGraph": "top:SpatialGraph",
-                "top:ConnectivityGraph": "top:SpatialGraph",
-                "top:DualGraph": "top:Graph",
-                "top:HasseDiagramGraph": "top:Graph",
-                "top:IsovistGraph": "top:SpatialGraph",
-                "top:KnowledgeGraph": "top:Graph",
-                "top:LineGraph": "top:Graph",
-                "top:NavigationGraph": "top:SpatialGraph",
-                "top:PrimalGraph": "top:Graph",
-                "top:QuotientGraph": "top:Graph",
-                "top:SemanticGraph": "top:Graph",
-                "top:SpatialGraph": "top:Graph",
-                "top:TreeGraph": "top:Graph",
-                "top:VisibilityGraph": "top:SpatialGraph",
-            }
-            for cls, sup in fallback_classes.items():
-                c, s = U(cls), U(sup)
-                if c is not None:
-                    rdfGraph.add((c, RDF.type, OWL.Class))
-                if c is not None and s is not None:
-                    rdfGraph.add((c, RDFS.subClassOf, s))
+            namespaces = Ontology.Namespaces() if hasattr(Ontology, "Namespaces") else dict(Ontology.NAMESPACES)
+            bot_ns = namespaces.get("bot", "https://w3id.org/bot#")
 
-            equivalent_properties = [
-                ("top:startsAt", "top:hasStartVertex"),
-                ("top:endsAt", "top:hasEndVertex"),
-                ("top:x", "top:hasX"),
-                ("top:y", "top:hasY"),
-                ("top:z", "top:hasZ"),
-                ("top:length", "top:hasLength"),
-                ("top:area", "top:hasArea"),
-                ("top:volume", "top:hasVolume"),
-                ("top:mantissa", "top:hasMantissa"),
-                ("top:unit", "top:hasUnit"),
-            ]
-            for a, b in equivalent_properties:
-                pa, pb = U(a), U(b)
-                if pa is not None and pb is not None:
-                    rdfGraph.add((pa, OWL.equivalentProperty, pb))
-                    rdfGraph.add((pb, OWL.equivalentProperty, pa))
-                    rdfGraph.add((pa, RDFS.subPropertyOf, pb))
-                    rdfGraph.add((pb, RDFS.subPropertyOf, pa))
+            for s, p, o in axioms:
+                if not includeBOT and any(str(term).startswith(bot_ns) for term in (s, p, o)):
+                    continue
+                rdfGraph.add((s, p, o))
+
+            Reasoner._bind_namespaces(rdfGraph)
         except Exception as exc:
             if not silent:
-                print("Reasoner.AddOntologyAxioms - Warning: Could not add fallback ontology axioms.")
+                print("Reasoner.AddOntologyAxioms - Error: Could not add canonical ontology axioms.")
                 print("Error:", exc)
         return rdfGraph
 
@@ -798,7 +713,7 @@ class Reasoner:
 
         Supports rdfs:subClassOf, rdfs:subPropertyOf, rdfs:domain,
         rdfs:range, owl:equivalentClass, owl:equivalentProperty, and
-        owl:inverseOf, matching the _005 ontology files.
+        owl:inverseOf, using the canonical ontology axioms.
         """
         rd = Reasoner._rdflib(silent=silent)
         if rd is None or rdfGraph is None:
@@ -905,22 +820,23 @@ class Reasoner:
         return sorted(set(result))
 
     @staticmethod
+    @staticmethod
     def Difference(beforeGraph, afterGraph, compact: bool = True, limit: Optional[int] = None) -> List[Tuple[str, str, str]]:
         """Returns triples present in afterGraph but absent from beforeGraph."""
         if beforeGraph is None or afterGraph is None:
             return []
         diff = []
         for s, p, o in afterGraph:
-            if (s, p, o) not in beforeGraph:
-                if compact:
-                    so = Reasoner.QName(s)
-                    po = Reasoner.QName(p)
-                    oo = Reasoner.QName(o) if not getattr(o, "datatype", None) else str(o)
-                    diff.append((so, po, oo))
-                else:
-                    diff.append((str(s), str(p), str(o)))
-                if limit is not None and len(diff) >= int(limit):
-                    break
+            if (s, p, o) in beforeGraph:
+                continue
+            if compact:
+                triple = _reasoner_compact_triple((s, p, o))
+                if triple is not None:
+                    diff.append(triple)
+            else:
+                diff.append((str(s), str(p), str(o)))
+            if limit is not None and len(diff) >= int(limit):
+                break
         return diff
 
     @staticmethod
@@ -974,55 +890,89 @@ class Reasoner:
     # ---------------------------------------------------------------------
 
     @staticmethod
+    @staticmethod
     def _subject_for_dictionary(dictionary: Dict[str, Any], fallback: str, namespacePrefix: str = "inst") -> str:
-        """Returns the RDF subject used for a dictionary-bearing graph item.
+        """Returns the RDF subject used by the canonical Ontology serializer.
 
-        Mirrors the _005 URI policy: labels are never identity. Prefer explicit
-        URI, UUID, persistent ids, IFC GUIDs, then stable fallback/index values.
+        Labels are never used for identity. This method intentionally mirrors
+        Ontology._identity so inferred facts are applied to the same RDF resources
+        that were serialized from the TGraph.
         """
-        TGraph = Reasoner._tgraph_class()
-        if TGraph is not None:
+        d = dictionary if isinstance(dictionary, dict) else {}
+        fallback_text = str(fallback or "resource")
+
+        role = "resource"
+        fallback_index: Any = fallback_text
+        lower = fallback_text.lower()
+        if lower == "graph" or lower.startswith("graph_"):
+            role = "graph"
+            fallback_index = fallback_text[6:] if lower.startswith("graph_") else "graph"
+        elif lower.startswith("vertex_"):
+            role = "node"
+            fallback_index = fallback_text.split("_", 1)[1]
+        elif lower.startswith("node_"):
+            role = "node"
+            fallback_index = fallback_text.split("_", 1)[1]
+        elif lower.startswith("edge_"):
+            role = "relationship"
+            fallback_index = fallback_text.split("_", 1)[1]
+        elif lower.startswith("relationship_"):
+            role = "relationship"
+            fallback_index = fallback_text.split("_", 1)[1]
+
+        try:
+            if isinstance(fallback_index, str) and fallback_index.isdigit():
+                fallback_index = int(fallback_index)
+        except Exception:
+            pass
+
+        Ontology = Reasoner._ontology_class()
+        if Ontology is not None and hasattr(Ontology, "_identity"):
             try:
-                return TGraph._OntologySubjectFromDictionary(dictionary, fallback, namespacePrefix=namespacePrefix)
+                return Ontology._identity(
+                    d,
+                    role=role,
+                    fallbackIndex=fallback_index,
+                    prefix=namespacePrefix,
+                )
+            except TypeError:
+                try:
+                    return Ontology._identity(d, role, fallback_index, namespacePrefix)
+                except Exception:
+                    pass
             except Exception:
                 pass
-
-        d = dictionary if isinstance(dictionary, dict) else {}
 
         def safe(value):
             text = "" if value is None else str(value).strip()
             text = re.sub(r"[^A-Za-z0-9_\-]+", "_", text)
-            text = re.sub(r"_+", "_", text).strip("_")
-            if not text:
-                text = "item"
+            text = re.sub(r"_+", "_", text).strip("_") or "item"
             if text[0].isdigit():
                 text = "id_" + text
             return text
 
-        uri = d.get("uri")
-        if isinstance(uri, str) and uri.strip():
-            text = uri.strip()
-            if ":" in text or text.startswith("http://") or text.startswith("https://") or (text.startswith("<") and text.endswith(">")):
-                return text
-            return namespacePrefix + ":" + safe(text)
-
-        for key, prefix in [
-            ("uuid", "uuid"),
-            ("id", "id"),
-            ("ifc_guid", "ifc"),
-            ("ifcGUID", "ifc"),
-            ("IFC_global_id", "ifc"),
-            ("index", "index"),
-        ]:
+        for key in ("_rdf_uri", "uri", "URI"):
             value = d.get(key)
-            if value not in [None, ""]:
-                return namespacePrefix + ":" + prefix + "_" + safe(value)
-        return namespacePrefix + ":" + safe(fallback)
+            if isinstance(value, str) and value.strip():
+                value = value.strip()
+                if value.startswith(("http://", "https://", "urn:", "<", "_:")) or ":" in value:
+                    return value
+                return f"{namespacePrefix}:{safe(value)}"
+
+        for key in ("uuid", "UUID", "id", "ID", "ifc_guid", "ifcGUID", "GlobalId", "IFC_global_id"):
+            value = d.get(key)
+            if value not in (None, ""):
+                return f"{namespacePrefix}:{safe(value)}"
+
+        if d.get("index") not in (None, ""):
+            return f"{namespacePrefix}:{role}_{safe(d.get('index'))}"
+        return f"{namespacePrefix}:{role}_{safe(fallback_index)}"
 
     @staticmethod
     def _types_for_subject(rdfGraph, subjectQName: str) -> List[str]:
         return Reasoner.Types(rdfGraph, subjectQName, compact=True)
 
+    @staticmethod
     @staticmethod
     def ApplyInferences(
         graph: Any,
@@ -1036,18 +986,16 @@ class Reasoner:
         includeEdges: bool = True,
         silent: bool = False,
     ) -> Any:
-        """
-        Writes inferred rdf:type values back into TGraph dictionaries.
+        """Writes inferred canonical types back into TGraph dictionaries.
 
-        The canonical asserted ontology_class is not overwritten. Inferred classes
-        are stored as lists under `inferred_ontology_classes` and BOT bridge types
-        under `inferred_bot_classes`. Graph/TGraph aliases are canonicalised so
-        `top:TGraph` is not written back as a separate inferred TopologicPy class.
+        Only classes declared by the canonical TopologicPy ontology are written to
+        ``typeKey``. BOT classes are stored separately under ``botTypeKey``.
         """
         TGraph = Reasoner._tgraph_class()
         Ontology = Reasoner._ontology_class()
-        if TGraph is None or graph is None or inferredGraph is None:
+        if TGraph is None or Ontology is None or graph is None or inferredGraph is None:
             return graph
+
         try:
             if not isinstance(graph, TGraph):
                 return graph
@@ -1057,25 +1005,23 @@ class Reasoner:
         def canonical_class(cls):
             if cls is None:
                 return None
-            if Ontology is not None:
-                try:
-                    return Ontology.CanonicalClass(cls)
-                except Exception:
-                    pass
-            return "top:Graph" if str(cls) == "top:TGraph" else str(cls)
+            try:
+                return Ontology.CanonicalClass(cls, defaultValue=None)
+            except Exception:
+                return None
 
         def split_types(types: Sequence[str]) -> Tuple[List[str], List[str]]:
             top_types = []
             bot_types = []
-            for t in set(types):
-                if not isinstance(t, str):
+            for value in set(types or []):
+                if not isinstance(value, str):
                     continue
-                if t.startswith("top:"):
-                    ct = canonical_class(t)
-                    if ct is not None:
-                        top_types.append(ct)
-                elif t.startswith("bot:"):
-                    bot_types.append(t)
+                if value.startswith("top:"):
+                    canonical = canonical_class(value)
+                    if canonical is not None:
+                        top_types.append(canonical)
+                elif value.startswith("bot:"):
+                    bot_types.append(value)
             return sorted(set(top_types)), sorted(set(bot_types))
 
         def apply_to_dict(d: Dict[str, Any], fallback: str):
@@ -1085,38 +1031,40 @@ class Reasoner:
             types = Reasoner._types_for_subject(inferredGraph, subject)
             top_types, bot_types = split_types(types)
             asserted = canonical_class(d.get("ontology_class"))
-            inferred_top = [t for t in top_types if t != asserted]
-            if overwrite or typeKey not in d:
+            inferred_top = [value for value in top_types if value != asserted]
+
+            if overwrite:
                 d[typeKey] = inferred_top
+                d[botTypeKey] = bot_types
             else:
                 previous = d.get(typeKey, [])
                 if not isinstance(previous, list):
                     previous = [previous]
-                d[typeKey] = sorted(set([canonical_class(x) for x in previous if canonical_class(x)] + inferred_top))
-            if bot_types:
-                if overwrite or botTypeKey not in d:
-                    d[botTypeKey] = bot_types
-                else:
-                    previous = d.get(botTypeKey, [])
-                    if not isinstance(previous, list):
-                        previous = [previous]
-                    d[botTypeKey] = sorted(set(list(previous) + bot_types))
+                previous = [canonical_class(value) for value in previous]
+                d[typeKey] = sorted(set([value for value in previous if value] + inferred_top))
+
+                if bot_types:
+                    previous_bot = d.get(botTypeKey, [])
+                    if not isinstance(previous_bot, list):
+                        previous_bot = [previous_bot]
+                    d[botTypeKey] = sorted(set(previous_bot + bot_types))
 
         try:
             if includeGraph:
                 apply_to_dict(graph._dictionary, "graph")
             if includeVertices:
-                for v in graph._vertices:
-                    if v.get("active", True):
-                        apply_to_dict(v.get("dictionary", {}), f"vertex_{v.get('index')}")
+                for vertex in graph._vertices:
+                    if vertex.get("active", True):
+                        apply_to_dict(vertex.get("dictionary", {}), f"vertex_{vertex.get('index')}")
             if includeEdges:
-                for e in graph._edges:
-                    if e.get("active", True):
-                        apply_to_dict(e.get("dictionary", {}), f"edge_{e.get('index')}")
+                for edge in graph._edges:
+                    if edge.get("active", True):
+                        apply_to_dict(edge.get("dictionary", {}), f"edge_{edge.get('index')}")
         except Exception as exc:
             if not silent:
-                print("Reasoner.ApplyInferences - Warning: Could not apply all inferences to the TGraph dictionaries.")
+                print("Reasoner.ApplyInferences - Warning: Could not apply all inferences.")
                 print("Error:", exc)
+
         try:
             graph._invalidate_cache()
         except Exception:
@@ -1154,7 +1102,7 @@ class Reasoner:
 # Explainability and proof-graph extension methods
 # -----------------------------------------------------------------------------
 # These functions are attached to Reasoner at module load time to preserve
-# backwards compatibility with the original lightweight Reasoner implementation
+# the public Reasoner API while adding proof/explanation support
 # while adding proof/explanation support used by TGraph and Plotly.
 
 class _ReasonerFact:
@@ -1261,43 +1209,15 @@ def _reasoner_compact_node(node):
 
 
 def _reasoner_compact_triple(triple):
-    """Returns a compact, _005-canonical triple token tuple."""
+    """Returns a compact triple without rewriting ontology vocabulary."""
     if triple is None or len(triple) != 3:
         return None
     s, p, o = triple
-    ss = _reasoner_compact_node(s)
-    pp = _reasoner_compact_node(p)
-    oo = _reasoner_compact_node(o)
-    try:
-        Ontology = Reasoner._ontology_class()
-        legacy = {
-            "top:hasStartVertex": "top:startsAt",
-            "top:hasEndVertex": "top:endsAt",
-            "top:hasX": "top:x",
-            "top:hasY": "top:y",
-            "top:hasZ": "top:z",
-            "top:src": "top:srcId",
-            "top:dst": "top:dstId",
-        }
-        pp_original = legacy.get(pp, pp)
-        if Ontology is not None:
-            candidate = Ontology.PropertyQName(pp_original)
-            namespaces = Reasoner.Namespaces()
-            explicit_qname = isinstance(pp_original, str) and ":" in pp_original and pp_original.split(":", 1)[0] in namespaces
-            if explicit_qname and not pp_original.startswith("dict:") and isinstance(candidate, str) and candidate.startswith("dict:"):
-                pp = pp_original
-            else:
-                pp = candidate
-            if pp == "rdf:type":
-                oo = Ontology.CanonicalClass(oo, defaultValue=oo)
-        else:
-            pp = pp_original
-            if pp == "rdf:type" and oo == "top:TGraph":
-                oo = "top:Graph"
-    except Exception:
-        if pp == "rdf:type" and oo == "top:TGraph":
-            oo = "top:Graph"
-    return (ss, pp, oo)
+    return (
+        _reasoner_compact_node(s),
+        _reasoner_compact_node(p),
+        _reasoner_compact_node(o),
+    )
 
 def _reasoner_triples(obj):
     """Returns compact triples from rdflib Graph, KnowledgeGraph, InferenceResult, or iterable."""
