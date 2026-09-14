@@ -4,7 +4,7 @@
     *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;color:var(--ink);background:linear-gradient(180deg,#fff 0%,var(--bg) 45%,#fff 100%);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.55}a{color:var(--blue);text-decoration:none}a:hover{text-decoration:underline}code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}.nav{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.82);backdrop-filter:blur(22px);border-bottom:1px solid var(--line)}.nav-inner,.wrap{max-width:var(--max);margin:auto;padding:0 1.35rem}.nav-inner{min-height:3.5rem;display:flex;align-items:center;justify-content:space-between;gap:1rem}.nav-links{display:flex;gap:1rem}.hero{text-align:center;padding:6rem 0 4rem}.eyebrow,.badge{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:.35rem .65rem;background:rgba(255,255,255,.75);color:var(--muted);font-size:.8rem;font-weight:650}h1{font-size:clamp(3rem,7vw,6.4rem);line-height:.94;letter-spacing:-.065em;margin:1rem auto;max-width:980px}.lead{max-width:840px;margin:auto;color:var(--muted);font-size:1.2rem}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-top:2rem}.card,.term-card{background:rgba(255,255,255,.80);border:1px solid rgba(255,255,255,.9);border-radius:24px;box-shadow:0 16px 44px rgba(0,0,0,.055)}.card{padding:1.4rem}.stat{font-size:2.6rem;font-weight:760;letter-spacing:-.05em}.section{padding:3.5rem 0}.section-head{text-align:center;max-width:840px;margin:0 auto 1.6rem}.section-head h2{font-size:clamp(2rem,4.5vw,4rem);line-height:1;letter-spacing:-.05em;margin:.2rem 0 .7rem}.section-head p,.muted{color:var(--muted)}.rules{display:grid;grid-template-columns:repeat(2,1fr);gap:1rem}.rules .card h3{margin:.1rem 0 .45rem}.protocol{overflow:auto}.protocol pre{background:#1d1d1f;color:#f5f5f7;border-radius:18px;padding:1rem;overflow:auto}.term-grid{display:grid;gap:1rem}.term-card{padding:1.2rem;scroll-margin-top:4.5rem}.term-head{display:flex;justify-content:space-between;gap:1rem}.term-head h3{margin:0}.term-comment{color:var(--muted)}.spec-table{border-collapse:collapse;width:100%}.spec-table th,.spec-table td{text-align:left;vertical-align:top;border-top:1px solid var(--line);padding:.6rem}.spec-table th{width:22%;color:var(--muted)}.toc{display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center;margin-top:1rem}.toc a{border:1px solid var(--line);border-radius:999px;padding:.35rem .65rem;background:#fff}footer{padding:3rem 0;border-top:1px solid var(--line);color:var(--muted)}@media(max-width:800px){.stats,.rules{grid-template-columns:1fr 1fr}.nav-links{display:none}}@media(max-width:520px){.stats,.rules{grid-template-columns:1fr}}
     </style></head>
 <body><nav class="nav"><div class="nav-inner"><a href="index.html"><strong>TopologicPy Ontology</strong></a><div class="nav-links"><a href="#design">Design</a><a href="#classes">Classes</a><a href="#object-properties">Object properties</a><a href="#datatype-properties">Datatype properties</a><a href="ontology/topologicpy.ttl">TTL</a></div></div></nav>
-<header class="hero"><div class="wrap"><span class="eyebrow">Canonical ontology · v0.5.0</span><h1>One vocabulary. One semantic contract.</h1><p class="lead">This specification is generated directly from <code>ontology/topologicpy.ttl</code>. The TTL is the single human-edited source of truth used by the Python API, serializers, reasoner, tests, and website.</p><div class="stats"><div class="card"><span class="stat">54</span><div>Classes</div></div><div class="card"><span class="stat">42</span><div>Object properties</div></div><div class="card"><span class="stat">9</span><div>Datatype properties</div></div><div class="card"><span class="stat">0</span><div>Annotation properties</div></div></div><div class="toc"><a href="#design">Design rules</a><a href="#protocol">Graph protocol</a><a href="#classes">Classes</a><a href="#object-properties">Object properties</a><a href="#datatype-properties">Datatype properties</a></div></div></header>
+<header class="hero"><div class="wrap"><span class="eyebrow">Canonical ontology · v0.5.0</span><h1>One vocabulary. One semantic contract.</h1><p class="lead">This specification is generated directly from <code>ontology/topologicpy.ttl</code>. The TTL is the single human-edited source of truth used by the Python API, serializers, reasoner, tests, and website.</p><div class="stats"><div class="card"><span class="stat">54</span><div>Classes</div></div><div class="card"><span class="stat">42</span><div>Object properties</div></div><div class="card"><span class="stat">20</span><div>Datatype properties</div></div><div class="card"><span class="stat">0</span><div>Annotation properties</div></div></div><div class="toc"><a href="#design">Design rules</a><a href="#protocol">Graph protocol</a><a href="#classes">Classes</a><a href="#object-properties">Object properties</a><a href="#datatype-properties">Datatype properties</a></div></div></header>
 <main>
 <section class="section" id="design"><div class="wrap"><div class="section-head"><h2>Vocabulary design rules</h2><p>TopologicPy owns only terms it can define precisely; established external vocabularies keep their native terms.</p></div><div class="rules">
 <div class="card"><h3>Attributes are nouns</h3><p class="muted">Datatype properties use concise names such as <code>top:x</code>, <code>top:area</code>, <code>top:volume</code>, and <code>top:index</code>. They do not receive a mechanical <code>has</code> prefix.</p></div>
@@ -311,9 +311,9 @@ inst:n3 brick:feeds inst:n8 .</code></pre><p class="muted"><code>startsAt</code>
       <table class="spec-table compact"><tr><th>Domain</th><td><code>top:Topology</code></td></tr><tr><th>Range</th><td><code>top:Topology</code></td></tr></table>
     </article>
 <article class="term-card" id="endsAt">
-      <div class="term-head"><div><h3>has end vertex</h3><code>top:endsAt</code></div><span class="badge">Object property</span></div>
+      <div class="term-head"><div><h3>endsAt</h3><code>top:endsAt</code></div><span class="badge">Object property</span></div>
       <p class="term-comment">Associates an edge or relationship with its end vertex or target node.</p>
-      <table class="spec-table compact"><tr><th>Domain</th><td><code>top:Edge</code></td></tr><tr><th>Range</th><td><code>top:Vertex</code></td></tr></table>
+      <table class="spec-table compact"><tr><th>Domain</th><td><code>&lt;nfcf205fbe4c94dc2adc778a5d9cb5394b1&gt;</code></td></tr><tr><th>Range</th><td><code>&lt;nfcf205fbe4c94dc2adc778a5d9cb5394b4&gt;</code></td></tr></table>
     </article>
 <article class="term-card" id="fillsOpening">
       <div class="term-head"><div><h3>fills opening</h3><code>top:fillsOpening</code></div><span class="badge">Object property</span></div>
@@ -363,7 +363,7 @@ inst:n3 brick:feeds inst:n8 .</code></pre><p class="muted"><code>startsAt</code>
 <article class="term-card" id="hasMaterial">
       <div class="term-head"><div><h3>has material</h3><code>top:hasMaterial</code></div><span class="badge">Object property</span></div>
       <p class="term-comment">Associates a topology or element with a material or material set.</p>
-      <table class="spec-table compact"><tr><th>Domain</th><td><code>top:Topology</code></td></tr><tr><th>Range</th><td><code>&lt;nbbf76b1499f84963b7541f9e0dee9c1eb1&gt;</code></td></tr></table>
+      <table class="spec-table compact"><tr><th>Domain</th><td><code>top:Topology</code></td></tr><tr><th>Range</th><td><code>&lt;nfcf205fbe4c94dc2adc778a5d9cb5394b13&gt;</code></td></tr></table>
     </article>
 <article class="term-card" id="hasMissingOpening">
       <div class="term-head"><div><h3>has missing opening</h3><code>top:hasMissingOpening</code></div><span class="badge">Object property</span></div>
@@ -491,16 +491,16 @@ inst:n3 brick:feeds inst:n8 .</code></pre><p class="muted"><code>startsAt</code>
       <table class="spec-table compact"><tr><th>Domain</th><td><code>top:System</code></td></tr><tr><th>Range</th><td><code>top:Topology</code></td></tr></table>
     </article>
 <article class="term-card" id="startsAt">
-      <div class="term-head"><div><h3>has start vertex</h3><code>top:startsAt</code></div><span class="badge">Object property</span></div>
+      <div class="term-head"><div><h3>startsAt</h3><code>top:startsAt</code></div><span class="badge">Object property</span></div>
       <p class="term-comment">Associates an edge or relationship with its start vertex or source node.</p>
-      <table class="spec-table compact"><tr><th>Domain</th><td><code>top:Edge</code></td></tr><tr><th>Range</th><td><code>top:Vertex</code></td></tr></table>
+      <table class="spec-table compact"><tr><th>Domain</th><td><code>&lt;nfcf205fbe4c94dc2adc778a5d9cb5394b7&gt;</code></td></tr><tr><th>Range</th><td><code>&lt;nfcf205fbe4c94dc2adc778a5d9cb5394b10&gt;</code></td></tr></table>
     </article>
 <article class="term-card" id="violatesCoordinationRule">
       <div class="term-head"><div><h3>violates coordination rule</h3><code>top:violatesCoordinationRule</code></div><span class="badge">Object property</span></div>
       <p class="term-comment">Associates an entity with a violated coordination rule or relationship record.</p>
       <table class="spec-table compact"><tr><th>Domain</th><td><code>top:Topology</code></td></tr><tr><th>Range</th><td><code>top:Relationship</code></td></tr></table>
     </article></div></div></section>
-<section class="section" id="datatype-properties"><div class="wrap"><div class="section-head"><h2>Datatype properties</h2><p>9 literal-valued properties.</p></div><div class="term-grid"><article class="term-card" id="allowsParallelEdges">
+<section class="section" id="datatype-properties"><div class="wrap"><div class="section-head"><h2>Datatype properties</h2><p>20 literal-valued properties.</p></div><div class="term-grid"><article class="term-card" id="allowsParallelEdges">
       <div class="term-head"><div><h3>allowsParallelEdges</h3><code>top:allowsParallelEdges</code></div><span class="badge">Datatype property</span></div>
       <p class="term-comment">True when a graph permits parallel relationships between the same endpoints.</p>
       <table class="spec-table compact"><tr><th>Domain</th><td><code>top:Graph</code></td></tr><tr><th>Range</th><td><code>xsd:boolean</code></td></tr></table>
@@ -509,6 +509,11 @@ inst:n3 brick:feeds inst:n8 .</code></pre><p class="muted"><code>startsAt</code>
       <div class="term-head"><div><h3>allowsSelfLoops</h3><code>top:allowsSelfLoops</code></div><span class="badge">Datatype property</span></div>
       <p class="term-comment">True when a graph permits self-loop relationships.</p>
       <table class="spec-table compact"><tr><th>Domain</th><td><code>top:Graph</code></td></tr><tr><th>Range</th><td><code>xsd:boolean</code></td></tr></table>
+    </article>
+<article class="term-card" id="area">
+      <div class="term-head"><div><h3>area</h3><code>top:area</code></div><span class="badge">Datatype property</span></div>
+      <p class="term-comment">An area value associated with a geometric or topological resource.</p>
+      <table class="spec-table compact"><tr><th>Domain</th><td><code>owl:Thing</code></td></tr><tr><th>Range</th><td><code>xsd:double</code></td></tr></table>
     </article>
 <article class="term-card" id="category">
       <div class="term-head"><div><h3>category</h3><code>top:category</code></div><span class="badge">Datatype property</span></div>
@@ -520,29 +525,79 @@ inst:n3 brick:feeds inst:n8 .</code></pre><p class="muted"><code>startsAt</code>
       <p class="term-comment">True when a graph or relationship is directed.</p>
       <table class="spec-table compact"><tr><th>Domain</th><td><code>owl:Thing</code></td></tr><tr><th>Range</th><td><code>xsd:boolean</code></td></tr></table>
     </article>
+<article class="term-card" id="feature">
+      <div class="term-head"><div><h3>feature</h3><code>top:feature</code></div><span class="badge">Datatype property</span></div>
+      <p class="term-comment">A feature value used by an analytical or machine-learning workflow.</p>
+      <table class="spec-table compact"><tr><th>Domain</th><td><code>owl:Thing</code></td></tr><tr><th>Range</th><td><code>xsd:string</code></td></tr></table>
+    </article>
+<article class="term-card" id="featureVector">
+      <div class="term-head"><div><h3>featureVector</h3><code>top:featureVector</code></div><span class="badge">Datatype property</span></div>
+      <p class="term-comment">A serialized feature vector used by an analytical or machine-learning workflow.</p>
+      <table class="spec-table compact"><tr><th>Domain</th><td><code>owl:Thing</code></td></tr><tr><th>Range</th><td><code>xsd:string</code></td></tr></table>
+    </article>
 <article class="term-card" id="generatedByMethod">
       <div class="term-head"><div><h3>generatedByMethod</h3><code>top:generatedByMethod</code></div><span class="badge">Datatype property</span></div>
       <p class="term-comment">The TopologicPy method, function, script, or tool name that generated a resource.</p>
       <table class="spec-table compact"><tr><th>Domain</th><td><code>owl:Thing</code></td></tr><tr><th>Range</th><td><code>xsd:string</code></td></tr></table>
+    </article>
+<article class="term-card" id="ifcClass">
+      <div class="term-head"><div><h3>ifcClass</h3><code>top:ifcClass</code></div><span class="badge">Datatype property</span></div>
+      <p class="term-comment">The IFC entity class associated with a resource.</p>
+      <table class="spec-table compact"><tr><th>Domain</th><td><code>owl:Thing</code></td></tr><tr><th>Range</th><td><code>xsd:string</code></td></tr></table>
+    </article>
+<article class="term-card" id="ifcGUID">
+      <div class="term-head"><div><h3>ifcGUID</h3><code>top:ifcGUID</code></div><span class="badge">Datatype property</span></div>
+      <p class="term-comment">The IFC GlobalId associated with a resource.</p>
+      <table class="spec-table compact"><tr><th>Domain</th><td><code>owl:Thing</code></td></tr><tr><th>Range</th><td><code>xsd:string</code></td></tr></table>
+    </article>
+<article class="term-card" id="index">
+      <div class="term-head"><div><h3>index</h3><code>top:index</code></div><span class="badge">Datatype property</span></div>
+      <p class="term-comment">A graph-local or collection-local integer index.</p>
+      <table class="spec-table compact"><tr><th>Domain</th><td><code>owl:Thing</code></td></tr><tr><th>Range</th><td><code>xsd:integer</code></td></tr></table>
+    </article>
+<article class="term-card" id="length">
+      <div class="term-head"><div><h3>length</h3><code>top:length</code></div><span class="badge">Datatype property</span></div>
+      <p class="term-comment">A length value associated with a geometric or topological resource.</p>
+      <table class="spec-table compact"><tr><th>Domain</th><td><code>owl:Thing</code></td></tr><tr><th>Range</th><td><code>xsd:double</code></td></tr></table>
+    </article>
+<article class="term-card" id="mantissa">
+      <div class="term-head"><div><h3>mantissa</h3><code>top:mantissa</code></div><span class="badge">Datatype property</span></div>
+      <p class="term-comment">The numeric mantissa of a represented quantity.</p>
+      <table class="spec-table compact"><tr><th>Domain</th><td><code>owl:Thing</code></td></tr><tr><th>Range</th><td><code>xsd:double</code></td></tr></table>
     </article>
 <article class="term-card" id="relationship">
       <div class="term-head"><div><h3>relationship</h3><code>top:relationship</code></div><span class="badge">Datatype property</span></div>
       <p class="term-comment">A general-purpose relationship label emitted from TopologicPy dictionaries.</p>
       <table class="spec-table compact"><tr><th>Semantics</th><td>Defined by its label, comment, and ontology axioms.</td></tr></table>
     </article>
+<article class="term-card" id="unit">
+      <div class="term-head"><div><h3>unit</h3><code>top:unit</code></div><span class="badge">Datatype property</span></div>
+      <p class="term-comment">The unit associated with a represented quantity.</p>
+      <table class="spec-table compact"><tr><th>Domain</th><td><code>owl:Thing</code></td></tr><tr><th>Range</th><td><code>xsd:string</code></td></tr></table>
+    </article>
+<article class="term-card" id="volume">
+      <div class="term-head"><div><h3>volume</h3><code>top:volume</code></div><span class="badge">Datatype property</span></div>
+      <p class="term-comment">A volume value associated with a geometric or topological resource.</p>
+      <table class="spec-table compact"><tr><th>Domain</th><td><code>owl:Thing</code></td></tr><tr><th>Range</th><td><code>xsd:double</code></td></tr></table>
+    </article>
+<article class="term-card" id="weight">
+      <div class="term-head"><div><h3>weight</h3><code>top:weight</code></div><span class="badge">Datatype property</span></div>
+      <p class="term-comment">A numeric weight associated with a graph or analytical resource.</p>
+      <table class="spec-table compact"><tr><th>Domain</th><td><code>owl:Thing</code></td></tr><tr><th>Range</th><td><code>xsd:double</code></td></tr></table>
+    </article>
 <article class="term-card" id="x">
-      <div class="term-head"><div><h3>has X</h3><code>top:x</code></div><span class="badge">Datatype property</span></div>
-      <p class="term-comment">No comment supplied.</p>
+      <div class="term-head"><div><h3>x</h3><code>top:x</code></div><span class="badge">Datatype property</span></div>
+      <p class="term-comment">The X coordinate of a vertex or point-like resource.</p>
       <table class="spec-table compact"><tr><th>Domain</th><td><code>top:Vertex</code></td></tr><tr><th>Range</th><td><code>xsd:double</code></td></tr></table>
     </article>
 <article class="term-card" id="y">
-      <div class="term-head"><div><h3>has Y</h3><code>top:y</code></div><span class="badge">Datatype property</span></div>
-      <p class="term-comment">No comment supplied.</p>
+      <div class="term-head"><div><h3>y</h3><code>top:y</code></div><span class="badge">Datatype property</span></div>
+      <p class="term-comment">The Y coordinate of a vertex or point-like resource.</p>
       <table class="spec-table compact"><tr><th>Domain</th><td><code>top:Vertex</code></td></tr><tr><th>Range</th><td><code>xsd:double</code></td></tr></table>
     </article>
 <article class="term-card" id="z">
-      <div class="term-head"><div><h3>has Z</h3><code>top:z</code></div><span class="badge">Datatype property</span></div>
-      <p class="term-comment">No comment supplied.</p>
+      <div class="term-head"><div><h3>z</h3><code>top:z</code></div><span class="badge">Datatype property</span></div>
+      <p class="term-comment">The Z coordinate of a vertex or point-like resource.</p>
       <table class="spec-table compact"><tr><th>Domain</th><td><code>top:Vertex</code></td></tr><tr><th>Range</th><td><code>xsd:double</code></td></tr></table>
     </article></div></div></section>
 <section class="section" id="annotation-properties"><div class="wrap"><div class="section-head"><h2>Annotation properties</h2><p>0 annotation properties.</p></div><div class="term-grid"></div></div></section>

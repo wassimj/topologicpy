@@ -173,7 +173,46 @@ def main():
         if s == TOP.Graph or o == TOP.Graph:
             g.remove((s, p, o))
 
+    # Canonical datatype properties emitted by TopologicPy.  These are
+    # defined explicitly rather than relying on a legacy declaration being
+    # present in the bootstrap TTL.  This is important for clean-slate terms
+    # such as top:area, which may never have existed in an older ontology.
+    define_data_property(g, TOP.x, "x",
+        "The X coordinate of a vertex or point-like resource.", TOP.Vertex, XSD.double)
+    define_data_property(g, TOP.y, "y",
+        "The Y coordinate of a vertex or point-like resource.", TOP.Vertex, XSD.double)
+    define_data_property(g, TOP.z, "z",
+        "The Z coordinate of a vertex or point-like resource.", TOP.Vertex, XSD.double)
+    define_data_property(g, TOP.length, "length",
+        "A length value associated with a geometric or topological resource.", OWL.Thing, XSD.double)
+    define_data_property(g, TOP.area, "area",
+        "An area value associated with a geometric or topological resource.", OWL.Thing, XSD.double)
+    define_data_property(g, TOP.volume, "volume",
+        "A volume value associated with a geometric or topological resource.", OWL.Thing, XSD.double)
+    define_data_property(g, TOP["index"], "index",
+        "A graph-local or collection-local integer index.", OWL.Thing, XSD.integer)
+    define_data_property(g, TOP.mantissa, "mantissa",
+        "The numeric mantissa of a represented quantity.", OWL.Thing, XSD.double)
+    define_data_property(g, TOP.unit, "unit",
+        "The unit associated with a represented quantity.", OWL.Thing, XSD.string)
+    define_data_property(g, TOP.feature, "feature",
+        "A feature value used by an analytical or machine-learning workflow.", OWL.Thing, XSD.string)
+    define_data_property(g, TOP.featureVector, "featureVector",
+        "A serialized feature vector used by an analytical or machine-learning workflow.", OWL.Thing, XSD.string)
+    define_data_property(g, TOP.weight, "weight",
+        "A numeric weight associated with a graph or analytical resource.", OWL.Thing, XSD.double)
+    define_data_property(g, TOP.ifcClass, "ifcClass",
+        "The IFC entity class associated with a resource.", OWL.Thing, XSD.string)
+    define_data_property(g, TOP.ifcGUID, "ifcGUID",
+        "The IFC GlobalId associated with a resource.", OWL.Thing, XSD.string)
+
     # Core round-trip protocol terms.
+    define_object_property(g, TOP.startsAt, "startsAt",
+        "Associates an edge or relationship with its start vertex or source node.",
+        TOP.Relationship, TOP.Node)
+    define_object_property(g, TOP.endsAt, "endsAt",
+        "Associates an edge or relationship with its end vertex or target node.",
+        TOP.Relationship, TOP.Node)
     define_object_property(g, TOP.hasPredicate, "hasPredicate",
         "Associates a relationship record with the RDF predicate that gives the relationship its semantic meaning.",
         TOP.Relationship, RDF.Property)
@@ -188,10 +227,6 @@ def main():
         "True when a graph permits parallel relationships between the same endpoints.", TOP.Graph, XSD.boolean)
     define_data_property(g, TOP.generatedByMethod, "generatedByMethod",
         "The TopologicPy method, function, script, or tool name that generated a resource.", OWL.Thing, XSD.string)
-
-    # startsAt/endsAt are canonical, not aliases.
-    g.set((TOP.startsAt, RDFS.comment, Literal("Associates an edge or relationship with its start vertex or source node.")))
-    g.set((TOP.endsAt, RDFS.comment, Literal("Associates an edge or relationship with its end vertex or target node.")))
 
     # srcId/dstId are redundant with startsAt/endsAt and are removed from the
     # semantic vocabulary. top:index remains as optional graph-local ordering.

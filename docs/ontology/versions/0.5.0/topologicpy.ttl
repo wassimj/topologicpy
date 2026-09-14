@@ -193,6 +193,12 @@ top:allowsSelfLoops a owl:DatatypeProperty ;
     rdfs:domain top:Graph ;
     rdfs:range xsd:boolean .
 
+top:area a owl:DatatypeProperty ;
+    rdfs:label "area" ;
+    rdfs:comment "An area value associated with a geometric or topological resource." ;
+    rdfs:domain owl:Thing ;
+    rdfs:range xsd:double .
+
 top:category a owl:DatatypeProperty ;
     rdfs:label "category"@en ;
     rdfs:comment "A general-purpose category value emitted from TopologicPy dictionaries."@en .
@@ -218,10 +224,24 @@ top:directed a owl:DatatypeProperty ;
     rdfs:range xsd:boolean .
 
 top:endsAt a owl:ObjectProperty ;
-    rdfs:label "has end vertex"@en ;
+    rdfs:label "endsAt" ;
     rdfs:comment "Associates an edge or relationship with its end vertex or target node." ;
-    rdfs:domain top:Edge ;
-    rdfs:range top:Vertex .
+    rdfs:domain [ a owl:Class ;
+            owl:unionOf ( top:Edge top:Relationship ) ] ;
+    rdfs:range [ a owl:Class ;
+            owl:unionOf ( top:Vertex top:Node ) ] .
+
+top:feature a owl:DatatypeProperty ;
+    rdfs:label "feature" ;
+    rdfs:comment "A feature value used by an analytical or machine-learning workflow." ;
+    rdfs:domain owl:Thing ;
+    rdfs:range xsd:string .
+
+top:featureVector a owl:DatatypeProperty ;
+    rdfs:label "featureVector" ;
+    rdfs:comment "A serialized feature vector used by an analytical or machine-learning workflow." ;
+    rdfs:domain owl:Thing ;
+    rdfs:range xsd:string .
 
 top:generatedByMethod a owl:DatatypeProperty ;
     rdfs:label "generatedByMethod" ;
@@ -268,6 +288,24 @@ top:hasRelationship a owl:ObjectProperty ;
     rdfs:label "has relationship"@en ;
     rdfs:domain top:Graph ;
     rdfs:range top:Relationship .
+
+top:ifcClass a owl:DatatypeProperty ;
+    rdfs:label "ifcClass" ;
+    rdfs:comment "The IFC entity class associated with a resource." ;
+    rdfs:domain owl:Thing ;
+    rdfs:range xsd:string .
+
+top:ifcGUID a owl:DatatypeProperty ;
+    rdfs:label "ifcGUID" ;
+    rdfs:comment "The IFC GlobalId associated with a resource." ;
+    rdfs:domain owl:Thing ;
+    rdfs:range xsd:string .
+
+top:index a owl:DatatypeProperty ;
+    rdfs:label "index" ;
+    rdfs:comment "A graph-local or collection-local integer index." ;
+    rdfs:domain owl:Thing ;
+    rdfs:range xsd:integer .
 
 top:intersects a owl:ObjectProperty,
         owl:SymmetricProperty ;
@@ -328,11 +366,23 @@ top:isServedBy a owl:ObjectProperty ;
     rdfs:label "is served by"@en ;
     owl:inverseOf top:servesSpatialStructure .
 
+top:length a owl:DatatypeProperty ;
+    rdfs:label "length" ;
+    rdfs:comment "A length value associated with a geometric or topological resource." ;
+    rdfs:domain owl:Thing ;
+    rdfs:range xsd:double .
+
 top:locatedIn a owl:ObjectProperty ;
     rdfs:label "located in"@en ;
     rdfs:comment "Associates a topology or element with the containing or nearest spatial structure derived by geometric/spatial analysis."@en ;
     rdfs:domain top:Topology ;
     rdfs:range top:Topology .
+
+top:mantissa a owl:DatatypeProperty ;
+    rdfs:label "mantissa" ;
+    rdfs:comment "The numeric mantissa of a represented quantity." ;
+    rdfs:domain owl:Thing ;
+    rdfs:range xsd:double .
 
 top:passesThrough a owl:ObjectProperty ;
     rdfs:label "passes through"@en ;
@@ -358,10 +408,18 @@ top:servesBuilding a owl:ObjectProperty ;
     rdfs:subPropertyOf top:servesSpatialStructure .
 
 top:startsAt a owl:ObjectProperty ;
-    rdfs:label "has start vertex"@en ;
+    rdfs:label "startsAt" ;
     rdfs:comment "Associates an edge or relationship with its start vertex or source node." ;
-    rdfs:domain top:Edge ;
-    rdfs:range top:Vertex .
+    rdfs:domain [ a owl:Class ;
+            owl:unionOf ( top:Edge top:Relationship ) ] ;
+    rdfs:range [ a owl:Class ;
+            owl:unionOf ( top:Vertex top:Node ) ] .
+
+top:unit a owl:DatatypeProperty ;
+    rdfs:label "unit" ;
+    rdfs:comment "The unit associated with a represented quantity." ;
+    rdfs:domain owl:Thing ;
+    rdfs:range xsd:string .
 
 top:violatesCoordinationRule a owl:ObjectProperty ;
     rdfs:label "violates coordination rule"@en ;
@@ -369,18 +427,33 @@ top:violatesCoordinationRule a owl:ObjectProperty ;
     rdfs:domain top:Topology ;
     rdfs:range top:Relationship .
 
+top:volume a owl:DatatypeProperty ;
+    rdfs:label "volume" ;
+    rdfs:comment "A volume value associated with a geometric or topological resource." ;
+    rdfs:domain owl:Thing ;
+    rdfs:range xsd:double .
+
+top:weight a owl:DatatypeProperty ;
+    rdfs:label "weight" ;
+    rdfs:comment "A numeric weight associated with a graph or analytical resource." ;
+    rdfs:domain owl:Thing ;
+    rdfs:range xsd:double .
+
 top:x a owl:DatatypeProperty ;
-    rdfs:label "has X"@en ;
+    rdfs:label "x" ;
+    rdfs:comment "The X coordinate of a vertex or point-like resource." ;
     rdfs:domain top:Vertex ;
     rdfs:range xsd:double .
 
 top:y a owl:DatatypeProperty ;
-    rdfs:label "has Y"@en ;
+    rdfs:label "y" ;
+    rdfs:comment "The Y coordinate of a vertex or point-like resource." ;
     rdfs:domain top:Vertex ;
     rdfs:range xsd:double .
 
 top:z a owl:DatatypeProperty ;
-    rdfs:label "has Z"@en ;
+    rdfs:label "z" ;
+    rdfs:comment "The Z coordinate of a vertex or point-like resource." ;
     rdfs:domain top:Vertex ;
     rdfs:range xsd:double .
 
@@ -404,10 +477,6 @@ top:Material a owl:Class ;
 top:MaterialSet a owl:Class ;
     rdfs:label "MaterialSet"@en ;
     rdfs:comment "A material-set record, commonly mapped from IfcMaterialList, IfcMaterialLayerSet, or IfcMaterialConstituentSet."@en .
-
-top:Node a owl:Class ;
-    rdfs:label "Node"@en ;
-    rdfs:comment "A graph node record. TopologicPy TGraph vertices may be projected as nodes."@en .
 
 top:PropertySet a owl:Class ;
     rdfs:label "PropertySet"@en ;
@@ -507,18 +576,22 @@ top:servesSpatialStructure a owl:ObjectProperty ;
     rdfs:domain top:System ;
     rdfs:range top:Topology .
 
+top:Node a owl:Class ;
+    rdfs:label "Node"@en ;
+    rdfs:comment "A graph node record. TopologicPy TGraph vertices may be projected as nodes."@en .
+
 top:Port a owl:Class ;
     rdfs:label "Port"@en ;
     rdfs:comment "A distribution or connection port, commonly mapped from IfcDistributionPort."@en .
-
-top:Relationship a owl:Class ;
-    rdfs:label "Relationship"@en ;
-    rdfs:comment "A graph edge or relationship record. The semantic RDF predicate of such a record is carried by top:hasPredicate or by the emitted ontology_predicate dictionary value."@en .
 
 top:Vertex a owl:Class ;
     rdfs:label "Vertex"@en ;
     rdfs:comment "A zero-dimensional topological entity."@en ;
     rdfs:subClassOf top:Topology .
+
+top:Relationship a owl:Class ;
+    rdfs:label "Relationship"@en ;
+    rdfs:comment "A graph edge or relationship record. The semantic RDF predicate of such a record is carried by top:hasPredicate or by the emitted ontology_predicate dictionary value."@en .
 
 top:Graph a owl:Class ;
     rdfs:label "Graph"@en ;
