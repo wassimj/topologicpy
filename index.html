@@ -169,8 +169,8 @@ conda<span class="w"> </span>activate<span class="w"> </span>topologicpy
 </section>
 <section id="ontology-and-semantic-web-support">
 <h2>Ontology and Semantic Web Support<a class="headerlink" href="#ontology-and-semantic-web-support" title="Permalink to this heading"></a></h2>
-<p>topologicpy now includes a formal ontology specification that provides a semantic framework for representing geometry, topology, graphs, spatial relationships, building information, provenance, and analytical metrics.</p>
-<p>The ontology enables interoperability with:</p>
+<p>TopologicPy includes a formal ontology for representing topology, geometry, graphs, spatial relationships, building information, provenance, and analytical properties using RDF, RDFS, and OWL.</p>
+<p>The ontology is designed to interoperate with:</p>
 <ul class="simple">
 <li><p>RDF / RDFS / OWL</p></li>
 <li><p>BOT (Building Topology Ontology)</p></li>
@@ -179,9 +179,9 @@ conda<span class="w"> </span>activate<span class="w"> </span>topologicpy
 <li><p>Graph databases such as Neo4j and Kùzu</p></li>
 <li><p>GraphRAG and AI reasoning systems</p></li>
 </ul>
-<p>The canonical namespace is:</p>
+<p>The canonical TopologicPy namespace is:</p>
 <p><code class="docutils literal notranslate"><span class="pre">&#64;prefix</span> <span class="pre">top:</span> <span class="pre">&lt;http://w3id.org/topologicpy#&gt;</span> <span class="pre">.</span></code></p>
-<p>The ontology is persistently identified through w3id.org and physically hosted through GitHub Pages.</p>
+<p>The ontology is persistently identified through w3id.org. The canonical source is maintained in the repository under <code class="docutils literal notranslate"><span class="pre">ontology/topologicpy.ttl</span></code>; documentation copies are generated from that source.</p>
 <section id="ontology-resources">
 <h3>Ontology Resources<a class="headerlink" href="#ontology-resources" title="Permalink to this heading"></a></h3>
 <ul class="simple">
@@ -189,20 +189,33 @@ conda<span class="w"> </span>activate<span class="w"> </span>topologicpy
 <li><p>Ontology document: <code class="docutils literal notranslate"><span class="pre">http://w3id.org/topologicpy</span></code></p></li>
 <li><p>Current ontology specification:
 <code class="docutils literal notranslate"><span class="pre">https://wassimj.github.io/topologicpy/ontology/topologicpy.ttl</span></code></p></li>
-<li><p>Ontology source folder:
-<code class="docutils literal notranslate"><span class="pre">https://github.com/wassimj/topologicpy/tree/main/ontology</span></code></p></li>
+<li><p>Canonical ontology source:
+<code class="docutils literal notranslate"><span class="pre">https://github.com/wassimj/topologicpy/blob/main/ontology/topologicpy.ttl</span></code></p></li>
 </ul>
 </section>
 <section id="example">
 <h3>Example<a class="headerlink" href="#example" title="Permalink to this heading"></a></h3>
 <div class="highlight-ttl notranslate"><div class="highlight"><pre><span></span>@<span class="nv">prefix</span><span class="w"> </span><span class="nv">top</span>:<span class="w"> </span><span class="o">&lt;</span><span class="nv">http</span>:<span class="o">//</span><span class="nv">w3id</span>.<span class="nv">org</span><span class="o">/</span><span class="nv">topologicpy</span>#<span class="o">&gt;</span><span class="w"> </span>.
+@<span class="nv">prefix</span><span class="w"> </span><span class="nv">inst</span>:<span class="w"> </span><span class="o">&lt;</span><span class="nv">http</span>:<span class="o">//</span><span class="nv">w3id</span>.<span class="nv">org</span><span class="o">/</span><span class="nv">topologicpy</span><span class="o">/</span><span class="nv">instance</span>#<span class="o">&gt;</span><span class="w"> </span>.
+@<span class="nv">prefix</span><span class="w"> </span><span class="nv">rdfs</span>:<span class="w"> </span><span class="o">&lt;</span><span class="nv">http</span>:<span class="o">//</span><span class="nv">www</span>.<span class="nv">w3</span>.<span class="nv">org</span><span class="o">/</span><span class="mi">2000</span><span class="o">/</span><span class="mi">01</span><span class="o">/</span><span class="nv">rdf</span><span class="o">-</span><span class="nv">schema</span>#<span class="o">&gt;</span><span class="w"> </span>.
+@<span class="nv">prefix</span><span class="w"> </span><span class="nv">xsd</span>:<span class="w"> </span><span class="o">&lt;</span><span class="nv">http</span>:<span class="o">//</span><span class="nv">www</span>.<span class="nv">w3</span>.<span class="nv">org</span><span class="o">/</span><span class="mi">2001</span><span class="o">/</span><span class="nv">XMLSchema</span>#<span class="o">&gt;</span><span class="w"> </span>.
 
-<span class="nl">:room_101</span><span class="w"> </span><span class="nv">a</span><span class="w"> </span><span class="nv">top</span>:<span class="nv">Room</span><span class="w"> </span><span class="c1">;</span>
-<span class="w">    </span><span class="nv">top</span>:<span class="nv">hasArea</span><span class="w"> </span><span class="s2">"24.6"</span><span class="o">^^</span><span class="nv">xsd</span>:<span class="nv">double</span><span class="w"> </span><span class="c1">;</span>
-<span class="w">    </span><span class="nv">top</span>:<span class="nv">adjacentTo</span><span class="w"> </span>:<span class="nv">corridor_1</span><span class="w"> </span>.
+<span class="nv">inst</span>:<span class="nv">room_101</span><span class="w"> </span><span class="nv">a</span><span class="w"> </span><span class="nv">top</span>:<span class="nv">Room</span><span class="w"> </span><span class="c1">;</span>
+<span class="w">    </span><span class="nv">rdfs</span>:<span class="nv">label</span><span class="w"> </span><span class="s2">"Room 101"</span><span class="w"> </span><span class="c1">;</span>
+<span class="w">    </span><span class="nv">top</span>:<span class="nv">area</span><span class="w"> </span><span class="s2">"24.6"</span><span class="o">^^</span><span class="nv">xsd</span>:<span class="nv">double</span><span class="w"> </span><span class="c1">;</span>
+<span class="w">    </span><span class="nv">top</span>:<span class="nv">adjacentTo</span><span class="w"> </span><span class="nv">inst</span>:<span class="nv">corridor_1</span><span class="w"> </span>.
 
-<span class="nl">:wall_12</span><span class="w"> </span><span class="nv">a</span><span class="w"> </span><span class="nv">top</span>:<span class="nv">Wall</span><span class="w"> </span><span class="c1">;</span>
-<span class="w">    </span><span class="nv">top</span>:<span class="nv">bounds</span><span class="w"> </span>:<span class="nv">room_101</span><span class="w"> </span>.
+<span class="nv">inst</span>:<span class="nv">corridor_1</span><span class="w"> </span><span class="nv">a</span><span class="w"> </span><span class="nv">top</span>:<span class="nv">Space</span><span class="w"> </span><span class="c1">;</span>
+<span class="w">    </span><span class="nv">rdfs</span>:<span class="nv">label</span><span class="w"> </span><span class="s2">"Corridor 1"</span><span class="w"> </span>.
+</pre></div>
+</div>
+<p>For graph relationships, TopologicPy preserves both the structural edge and its semantic predicate:</p>
+<div class="highlight-ttl notranslate"><div class="highlight"><pre><span></span><span class="nv">inst</span>:<span class="nv">rel_0</span><span class="w"> </span><span class="nv">a</span><span class="w"> </span><span class="nv">top</span>:<span class="nv">Relationship</span><span class="w"> </span><span class="c1">;</span>
+<span class="w">    </span><span class="nv">top</span>:<span class="nv">startsAt</span><span class="w"> </span><span class="nv">inst</span>:<span class="nv">room_101</span><span class="w"> </span><span class="c1">;</span>
+<span class="w">    </span><span class="nv">top</span>:<span class="nv">endsAt</span><span class="w"> </span><span class="nv">inst</span>:<span class="nv">corridor_1</span><span class="w"> </span><span class="c1">;</span>
+<span class="w">    </span><span class="nv">top</span>:<span class="nv">hasPredicate</span><span class="w"> </span><span class="nv">top</span>:<span class="nv">adjacentTo</span><span class="w"> </span>.
+
+<span class="nv">inst</span>:<span class="nv">room_101</span><span class="w"> </span><span class="nv">top</span>:<span class="nv">adjacentTo</span><span class="w"> </span><span class="nv">inst</span>:<span class="nv">corridor_1</span><span class="w"> </span>.
 </pre></div>
 </div>
 </section>
