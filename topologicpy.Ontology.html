@@ -182,21 +182,51 @@ canonically from the reconstructed TGraph.</p></li>
 <col style="width: 90%" />
 </colgroup>
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Ontology.Ontology.CanonicalClass" title="topologicpy.Ontology.Ontology.CanonicalClass"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CanonicalClass</span></code></a>(value[, defaultValue])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Ontology.Ontology.AnnotateSubtopologies" title="topologicpy.Ontology.Ontology.AnnotateSubtopologies"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AnnotateSubtopologies</span></code></a>(topology[, ...])</p></td>
+<td><p>Annotates requested subtopologies using canonical TopologicPy classes.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Ontology.Ontology.CanonicalClass" title="topologicpy.Ontology.Ontology.CanonicalClass"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CanonicalClass</span></code></a>(value[, defaultValue])</p></td>
 <td><p>Returns a canonical class QName without inventing <code class="docutils literal notranslate"><span class="pre">top:</span></code> terms.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Ontology.Ontology.GraphTriples" title="topologicpy.Ontology.Ontology.GraphTriples"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GraphTriples</span></code></a>(graph[, includeVertices, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Ontology.Ontology.GraphTriples" title="topologicpy.Ontology.Ontology.GraphTriples"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GraphTriples</span></code></a>(graph[, includeVertices, ...])</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Ontology.Ontology.PropertyQName" title="topologicpy.Ontology.Ontology.PropertyQName"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PropertyQName</span></code></a>(key[, defaultPrefix])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Ontology.Ontology.IsQName" title="topologicpy.Ontology.Ontology.IsQName"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsQName</span></code></a>(value)</p></td>
+<td><p>Returns True when <code class="docutils literal notranslate"><span class="pre">value</span></code> is a QName with a registered prefix.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Ontology.Ontology.NormalizeDictionary" title="topologicpy.Ontology.Ontology.NormalizeDictionary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NormalizeDictionary</span></code></a>(topology[, inferClass, ...])</p></td>
+<td><p>Normalizes a TopologicPy/IFC dictionary without legacy RDF aliases.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Ontology.Ontology.PropertyQName" title="topologicpy.Ontology.Ontology.PropertyQName"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PropertyQName</span></code></a>(key[, defaultPrefix])</p></td>
 <td><p>Returns a canonical predicate QName without inventing <code class="docutils literal notranslate"><span class="pre">top:</span></code> terms.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Ontology.Ontology.SetURI" title="topologicpy.Ontology.Ontology.SetURI"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetURI</span></code></a>(obj, uri[, silent])</p></td>
+<td><p>Sets the explicit RDF resource identity under the canonical <code class="docutils literal notranslate"><span class="pre">uri</span></code> key.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Ontology.Ontology.SetValue" title="topologicpy.Ontology.Ontology.SetValue"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetValue</span></code></a>(obj, key, value[, silent])</p></td>
+<td><p>Sets one dictionary value and preserves the object returned by the adapter.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Ontology.Ontology.TurtleFromTriples" title="topologicpy.Ontology.Ontology.TurtleFromTriples"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TurtleFromTriples</span></code></a>(triples[, ...])</p></td>
+<td><p>Serializes triples to Turtle, with or without RDFLib.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Ontology.Ontology.Validate" title="topologicpy.Ontology.Ontology.Validate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Validate</span></code></a>(topology[, silent, requiredKeys])</p></td>
+<td><p>Validates ontology annotations against the canonical TTL vocabulary.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Ontology.Ontology.ValidateGraph" title="topologicpy.Ontology.Ontology.ValidateGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ValidateGraph</span></code></a>(graph[, silent])</p></td>
+<td><p>Validates a TGraph's ontology annotations and structural endpoints.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Ontology.Ontology.ValidateTTLString" title="topologicpy.Ontology.Ontology.ValidateTTLString"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ValidateTTLString</span></code></a>(ttlString[, silent])</p></td>
+<td><p>Validates Turtle syntax when RDFLib is available; fails gracefully otherwise.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Ontology.Ontology.Value" title="topologicpy.Ontology.Ontology.Value"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Value</span></code></a>(obj, key[, defaultValue])</p></td>
+<td><p>Returns a dictionary value from a topology, TGraph item, or plain dict.</p></td>
 </tr>
 </tbody>
 </table>
 <table class="docutils align-default">
 <colgroup>
-<col style="width: 70%" />
-<col style="width: 30%" />
+<col style="width: 68%" />
+<col style="width: 32%" />
 </colgroup>
 <tbody>
 <tr class="row-odd"><td><p><strong>Annotate</strong></p></td>
@@ -253,6 +283,12 @@ canonically from the reconstructed TGraph.</p></li>
 <tr class="row-even"><td><p><strong>IsA</strong></p></td>
 <td></td>
 </tr>
+<tr class="row-odd"><td><p><strong>IsClass</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><strong>IsProperty</strong></p></td>
+<td></td>
+</tr>
 <tr class="row-odd"><td><p><strong>IsResourceString</strong></p></td>
 <td></td>
 </tr>
@@ -265,46 +301,43 @@ canonically from the reconstructed TGraph.</p></li>
 <tr class="row-even"><td><p><strong>Namespaces</strong></p></td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><p><strong>NormalizeDictionary</strong></p></td>
+<tr class="row-odd"><td><p><strong>OntologyRDFGraph</strong></p></td>
 <td></td>
 </tr>
-<tr class="row-even"><td><p><strong>OntologyRDFGraph</strong></p></td>
+<tr class="row-even"><td><p><strong>OntologyTTLString</strong></p></td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><p><strong>OntologyTTLString</strong></p></td>
+<tr class="row-odd"><td><p><strong>OntologyTriples</strong></p></td>
 <td></td>
 </tr>
-<tr class="row-even"><td><p><strong>OntologyTriples</strong></p></td>
+<tr class="row-even"><td><p><strong>QName</strong></p></td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><p><strong>QName</strong></p></td>
+<tr class="row-odd"><td><p><strong>RDFGraph</strong></p></td>
 <td></td>
 </tr>
-<tr class="row-even"><td><p><strong>RDFGraph</strong></p></td>
+<tr class="row-even"><td><p><strong>RDFString</strong></p></td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><p><strong>RDFString</strong></p></td>
+<tr class="row-odd"><td><p><strong>SetCategory</strong></p></td>
 <td></td>
 </tr>
-<tr class="row-even"><td><p><strong>SetCategory</strong></p></td>
+<tr class="row-even"><td><p><strong>SetClass</strong></p></td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><p><strong>SetClass</strong></p></td>
+<tr class="row-odd"><td><p><strong>SetLabel</strong></p></td>
 <td></td>
 </tr>
-<tr class="row-even"><td><p><strong>SetLabel</strong></p></td>
+<tr class="row-even"><td><p><strong>TTLString</strong></p></td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><p><strong>TTLString</strong></p></td>
+<tr class="row-odd"><td><p><strong>Triples</strong></p></td>
 <td></td>
 </tr>
-<tr class="row-even"><td><p><strong>Triples</strong></p></td>
+<tr class="row-even"><td><p><strong>ValidateRDFGraph</strong></p></td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><p><strong>TurtleFromTriples</strong></p></td>
-<td></td>
-</tr>
-<tr class="row-even"><td><p><strong>Validate</strong></p></td>
+<tr class="row-odd"><td><p><strong>ValidateTTL</strong></p></td>
 <td></td>
 </tr>
 </tbody>
@@ -323,6 +356,15 @@ canonically from the reconstructed TGraph.</p></li>
 <dt class="sig sig-object py" id="topologicpy.Ontology.Ontology.AnnotateIFC">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AnnotateIFC</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ifcClass</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ifcGUID</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ifcName</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Ontology.Ontology.AnnotateIFC" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Ontology.Ontology.AnnotateSubtopologies">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AnnotateSubtopologies</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">topologyTypes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inferClass</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Ontology.Ontology.AnnotateSubtopologies" title="Permalink to this definition"></a></dt>
+<dd><p>Annotates requested subtopologies using canonical TopologicPy classes.</p>
+<p><code class="docutils literal notranslate"><span class="pre">topologyTypes</span></code> may contain names such as <code class="docutils literal notranslate"><span class="pre">&quot;Vertex&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;Face&quot;</span></code>.
+For convenience, boolean keyword flags such as <code class="docutils literal notranslate"><span class="pre">vertices=True</span></code> and
+<code class="docutils literal notranslate"><span class="pre">faces=True</span></code> are also accepted. The input topology is returned.</p>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Ontology.Ontology.BOTClassByClass">
@@ -464,6 +506,22 @@ their naming conventions.</p>
 <dd></dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Ontology.Ontology.IsClass">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">IsClass</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#topologicpy.Ontology.Ontology.IsClass" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Ontology.Ontology.IsProperty">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">IsProperty</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#topologicpy.Ontology.Ontology.IsProperty" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Ontology.Ontology.IsQName">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">IsQName</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#topologicpy.Ontology.Ontology.IsQName" title="Permalink to this definition"></a></dt>
+<dd><p>Returns True when <code class="docutils literal notranslate"><span class="pre">value</span></code> is a QName with a registered prefix.</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Ontology.Ontology.IsResourceString">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">IsResourceString</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#topologicpy.Ontology.Ontology.IsResourceString" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
@@ -495,8 +553,11 @@ their naming conventions.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Ontology.Ontology.NormalizeDictionary">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">NormalizeDictionary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Ontology.Ontology.NormalizeDictionary" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">NormalizeDictionary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inferClass</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Ontology.Ontology.NormalizeDictionary" title="Permalink to this definition"></a></dt>
+<dd><p>Normalizes a TopologicPy/IFC dictionary without legacy RDF aliases.</p>
+<p>IFC implementation keys are adapted to the canonical internal keys; no
+deprecated ontology predicate or class aliases are created.</p>
+</dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="topologicpy.Ontology.Ontology.OBJECT_PROPERTIES">
@@ -592,6 +653,18 @@ the <code class="docutils literal notranslate"><span class="pre">dict:</span></c
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SetLabel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obj</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Ontology.Ontology.SetLabel" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Ontology.Ontology.SetURI">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SetURI</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obj</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">uri</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Ontology.Ontology.SetURI" title="Permalink to this definition"></a></dt>
+<dd><p>Sets the explicit RDF resource identity under the canonical <code class="docutils literal notranslate"><span class="pre">uri</span></code> key.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Ontology.Ontology.SetValue">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SetValue</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obj</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Ontology.Ontology.SetValue" title="Permalink to this definition"></a></dt>
+<dd><p>Sets one dictionary value and preserves the object returned by the adapter.</p>
+</dd></dl>
+
 <dl class="py attribute">
 <dt class="sig sig-object py" id="topologicpy.Ontology.Ontology.TOP_SUPERCLASSES">
 <span class="sig-name descname"><span class="pre">TOP_SUPERCLASSES</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#topologicpy.Ontology.Ontology.TOP_SUPERCLASSES" title="Permalink to this definition"></a></dt>
@@ -615,7 +688,8 @@ the <code class="docutils literal notranslate"><span class="pre">dict:</span></c
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Ontology.Ontology.TurtleFromTriples">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">TurtleFromTriples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">triples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">namespacePrefix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'inst'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">instanceNamespace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'http://w3id.org/topologicpy/instance#'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">namespaces</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeHeader</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Ontology.Ontology.TurtleFromTriples" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Serializes triples to Turtle, with or without RDFLib.</p>
+</dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="topologicpy.Ontology.Ontology.URI_KEY">
@@ -624,8 +698,37 @@ the <code class="docutils literal notranslate"><span class="pre">dict:</span></c
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Ontology.Ontology.Validate">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Validate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#topologicpy.Ontology.Ontology.Validate" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Validate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">requiredKeys</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#topologicpy.Ontology.Ontology.Validate" title="Permalink to this definition"></a></dt>
+<dd><p>Validates ontology annotations against the canonical TTL vocabulary.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Ontology.Ontology.ValidateGraph">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ValidateGraph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#topologicpy.Ontology.Ontology.ValidateGraph" title="Permalink to this definition"></a></dt>
+<dd><p>Validates a TGraph’s ontology annotations and structural endpoints.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Ontology.Ontology.ValidateRDFGraph">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ValidateRDFGraph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rdfGraph</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#topologicpy.Ontology.Ontology.ValidateRDFGraph" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Ontology.Ontology.ValidateTTL">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ValidateTTL</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#topologicpy.Ontology.Ontology.ValidateTTL" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Ontology.Ontology.ValidateTTLString">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ValidateTTLString</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ttlString</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#topologicpy.Ontology.Ontology.ValidateTTLString" title="Permalink to this definition"></a></dt>
+<dd><p>Validates Turtle syntax when RDFLib is available; fails gracefully otherwise.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Ontology.Ontology.Value">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Value</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obj</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">defaultValue</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Ontology.Ontology.Value" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a dictionary value from a topology, TGraph item, or plain dict.</p>
+</dd></dl>
 
 </dd></dl>
 
