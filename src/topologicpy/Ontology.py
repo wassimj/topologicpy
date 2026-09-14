@@ -43,7 +43,6 @@ class _RDFLiteral:
     datatype: Optional[str] = None
     language: Optional[str] = None
 
-
 class Ontology:
     # Canonical dictionary keys used internally by TopologicPy.
     ONTOLOGY_CLASS_KEY = "ontology_class"
