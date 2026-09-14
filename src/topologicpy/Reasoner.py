@@ -225,7 +225,6 @@ class Reasoner:
     # ---------------------------------------------------------------------
 
     @staticmethod
-    @staticmethod
     def Namespaces() -> Dict[str, str]:
         """Returns the namespace dictionary used by TopologicPy reasoning.
 
@@ -261,7 +260,6 @@ class Reasoner:
         }
 
     @staticmethod
-    @staticmethod
     def ExpandQName(term: Any, defaultValue: Any = None):
         """Expands a QName, bracketed URI, or absolute URI to a URI string."""
         if term is None:
@@ -289,7 +287,6 @@ class Reasoner:
             return defaultValue
         return ns + local
 
-    @staticmethod
     @staticmethod
     def QName(uri: Any, defaultValue: Any = None) -> Any:
         """Compacts a URIRef or URI string to a QName when a namespace matches."""
@@ -355,7 +352,6 @@ class Reasoner:
     # ---------------------------------------------------------------------
 
     @staticmethod
-    @staticmethod
     def RDFGraphByTopology(
         topology: Any,
         includeGraph: bool = True,
@@ -400,7 +396,6 @@ class Reasoner:
         return g
 
 
-    @staticmethod
     @staticmethod
     def TriplesByTopology(
         topology: Any,
@@ -449,7 +444,6 @@ class Reasoner:
                 print("Error:", exc)
             return []
 
-    @staticmethod
     @staticmethod
     def RDFGraphByTriples(triples: Iterable[Tuple[Any, Any, Any]], silent: bool = False):
         """Builds an RDFLib graph while preserving explicit RDF vocabulary.
@@ -585,7 +579,6 @@ class Reasoner:
                     print("Error:", exc)
         return g
 
-    @staticmethod
     @staticmethod
     def AddOntologyAxioms(rdfGraph, includeBOT: bool = True, silent: bool = False):
         """Adds axioms from the single canonical TopologicPy ontology graph."""
@@ -820,7 +813,6 @@ class Reasoner:
         return sorted(set(result))
 
     @staticmethod
-    @staticmethod
     def Difference(beforeGraph, afterGraph, compact: bool = True, limit: Optional[int] = None) -> List[Tuple[str, str, str]]:
         """Returns triples present in afterGraph but absent from beforeGraph."""
         if beforeGraph is None or afterGraph is None:
@@ -889,7 +881,6 @@ class Reasoner:
     # Applying inferred facts back to TGraph dictionaries
     # ---------------------------------------------------------------------
 
-    @staticmethod
     @staticmethod
     def _subject_for_dictionary(dictionary: Dict[str, Any], fallback: str, namespacePrefix: str = "inst") -> str:
         """Returns the RDF subject used by the canonical Ontology serializer.
@@ -972,7 +963,6 @@ class Reasoner:
     def _types_for_subject(rdfGraph, subjectQName: str) -> List[str]:
         return Reasoner.Types(rdfGraph, subjectQName, compact=True)
 
-    @staticmethod
     @staticmethod
     def ApplyInferences(
         graph: Any,

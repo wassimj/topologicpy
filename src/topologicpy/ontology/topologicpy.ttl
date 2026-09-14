@@ -11,16 +11,18 @@
 <http://w3id.org/topologicpy> a owl:Ontology ;
     rdfs:label "TopologicPy Ontology"@en ;
     dcterms:contributor "Wassim Jabi"@en ;
+    dcterms:created "2026-09-14"^^xsd:date ;
     dcterms:creator "TopologicPy Project"@en ;
     dcterms:description "A compact OWL/RDFS vocabulary for TopologicPy topology, graph, IFC/BOT/Brick alignment, dictionary metadata, and semantic edge predicates emitted by TopologicPy."@en ;
     dcterms:issued "2026-05-24"^^xsd:date ;
-    dcterms:license <https://creativecommons.org/licenses/by/4.0/> ;
-    dcterms:modified "2026-06-29"^^xsd:date ;
+    dcterms:license <https://www.gnu.org/licenses/lgpl-3.0.html> ;
+    dcterms:modified "2026-09-14"^^xsd:date ;
     dcterms:title "TopologicPy Ontology"@en ;
     vann:preferredNamespacePrefix "top" ;
     vann:preferredNamespaceUri "http://w3id.org/topologicpy#" ;
-    rdfs:comment "The canonical namespace prefix is top:. Brick, BOT, GEO, and IFC terms are referenced for interoperability but are not redefined here."@en ;
-    owl:versionInfo "0.3.0" .
+    rdfs:comment "The canonical ontology for TopologicPy topology, spatial-semantic graphs, BIM/IFC interoperability, provenance and analysis."@en ;
+    owl:versionIRI <http://w3id.org/topologicpy/0.5.0> ;
+    owl:versionInfo "0.5.0" .
 
 top:AdjacencyGraph a owl:Class ;
     rdfs:label "AdjacencyGraph"@en ;
@@ -161,17 +163,6 @@ top:Storey a owl:Class ;
 top:ThermalZone a owl:Class ;
     rdfs:label "ThermalZone"@en ;
     rdfs:subClassOf top:Zone .
-
-top:TopologicPyOntology a owl:Ontology ;
-    rdfs:label "TopologicPy Ontology"@en ;
-    dcterms:created "2026-09-14"^^xsd:date ;
-    dcterms:license <https://www.gnu.org/licenses/lgpl-3.0.html> ;
-    dcterms:modified "2026-09-14"^^xsd:date ;
-    vann:preferredNamespacePrefix "top" ;
-    vann:preferredNamespaceUri "http://w3id.org/topologicpy#" ;
-    rdfs:comment "The canonical ontology for TopologicPy topology, spatial-semantic graphs, BIM/IFC interoperability, provenance and analysis."@en ;
-    owl:versionIRI <http://w3id.org/topologicpy/0.5.0> ;
-    owl:versionInfo "0.5.0" .
 
 top:Tree a owl:Class ;
     rdfs:label "Tree"@en ;

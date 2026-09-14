@@ -11442,7 +11442,6 @@ class TGraph:
                     # emit both top:Equipment and brick:* types without losing the
                     # canonical TopologicPy class.
                     d.setdefault("ontology_class", topologic_class)
-                    d.setdefault("ontology_uri", TGraph._OntologyExpandQName(topologic_class, defaultValue=None))
                     d["brick_class"] = brick_class
                     d["brick_uri"] = _brick_uri(brick_class)
                     d["topologic_class"] = topologic_class
@@ -34009,6 +34008,16 @@ class TGraph:
                 r["ok"] = False
                 report["errors"].append(f"Edge {idx}: Could not resolve edge start/end vertices.")
             report["edges"].append(r)
+        try:
+            canonical_report = Ontology.ValidateGraph(graph, silent=True)
+            for error in canonical_report.get("errors", []):
+                if error not in report["errors"]:
+                    report["errors"].append(error)
+            for warning in canonical_report.get("warnings", []):
+                if warning not in report["warnings"]:
+                    report["warnings"].append(warning)
+        except Exception:
+            pass
         report["ok"] = len(report["errors"]) == 0
         if not silent:
             for error in report["errors"]:

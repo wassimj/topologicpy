@@ -131,7 +131,12 @@ def normalise_multiple_domains_ranges(g: Graph):
 
 
 def set_metadata(g: Graph):
-    ontology = TOP.TopologicPyOntology
+    # The ontology document URI is the single ontology identity. Remove stale
+    # ontology resources inherited from bootstrap files before writing metadata.
+    ontology = URIRef("http://w3id.org/topologicpy")
+    for subject in list(g.subjects(RDF.type, OWL.Ontology)):
+        if subject != ontology:
+            remove_resource(g, subject)
     g.add((ontology, RDF.type, OWL.Ontology))
     g.set((ontology, RDFS.label, Literal("TopologicPy Ontology", lang="en")))
     g.set((ontology, RDFS.comment, Literal(

@@ -188,7 +188,6 @@ class KnowledgeGraph:
     # ---------------------------------------------------------------------
 
     @staticmethod
-    @staticmethod
     def Namespaces(extra: Optional[Dict[str, str]] = None) -> Dict[str, str]:
         """Returns the namespace dictionary used by TopologicPy knowledge graphs."""
         Ontology = KnowledgeGraph._ontology_class()
@@ -358,58 +357,44 @@ class KnowledgeGraph:
         return literal
 
     @staticmethod
-    @staticmethod
     def _canonical_predicate_token(predicate: Any, namespaces: Optional[Dict[str, str]] = None) -> Any:
         """Returns the canonical predicate token.
 
-        External vocabulary terms are preserved. Declared TopologicPy predicates
-        are accepted exactly as declared by Ontology.py. Undeclared explicit
-        ``top:`` predicates are rejected; unqualified application keys are mapped
-        by Ontology.PropertyQName, normally to ``dict:`` when they are not ontology
-        terms. No legacy alias rewriting is performed.
+        Explicit RDF QNames/URIs are preserved exactly. Bare Python-style keys
+        are canonicalized through Ontology.PropertyQName and therefore normally
+        become declared ``top:`` terms or ``dict:`` terms. This makes
+        KnowledgeGraph the arbitrary-RDF fidelity layer; conformance of explicit
+        undeclared ``top:`` terms is reported by :meth:`Validate`, not silently
+        rewritten.
         """
         if predicate is None:
             return None
         text = str(predicate).strip()
         if not text:
             return None
-
         ns = KnowledgeGraph.Namespaces(namespaces)
-        token = text
         if text.startswith("<") and text.endswith(">"):
             q = KnowledgeGraph.QName(text[1:-1], namespaces=ns, defaultValue=None)
-            token = q if q is not None else text
-        elif text.startswith(("http://", "https://", "urn:")):
+            return q if q is not None else text
+        if text.startswith(("http://", "https://", "urn:")):
             q = KnowledgeGraph.QName(text, namespaces=ns, defaultValue=None)
-            token = q if q is not None else "<" + text + ">"
-
+            return q if q is not None else "<" + text + ">"
+        if ":" in text:
+            prefix, local = text.split(":", 1)
+            if prefix in ns and local:
+                return text
+            return "<" + text + ">" if text.startswith("urn:") else None
         Ontology = KnowledgeGraph._ontology_class()
         if Ontology is not None:
             try:
-                if isinstance(token, str) and token.startswith("top:"):
-                    return Ontology.PropertyQName(token)
-                if isinstance(token, str) and ":" not in token and not token.startswith("<"):
-                    return Ontology.PropertyQName(token)
+                return Ontology.PropertyQName(text)
             except Exception:
-                return None
+                pass
+        return "dict:" + KnowledgeGraph._safe_local_name(text)
 
-        if isinstance(token, str) and token.startswith("top:"):
-            return None
-        if isinstance(token, str) and token.startswith("dict:"):
-            return "dict:" + KnowledgeGraph._safe_local_name(token.split(":", 1)[1])
-        if isinstance(token, str) and token.startswith("<") and token.endswith(">"):
-            return token
-        if isinstance(token, str) and ":" in token:
-            prefix, local = token.split(":", 1)
-            if prefix in ns and local:
-                return token
-            return None
-        return "dict:" + KnowledgeGraph._safe_local_name(token)
-
-    @staticmethod
     @staticmethod
     def _canonical_class_token(classToken: Any, namespaces: Optional[Dict[str, str]] = None) -> Any:
-        """Returns a canonical class token without legacy aliasing."""
+        """Returns a canonical class token without rewriting arbitrary RDF."""
         if classToken is None:
             return None
         text = str(classToken).strip()
@@ -425,19 +410,20 @@ class KnowledgeGraph:
             token = q if q is not None else "<" + text + ">"
 
         Ontology = KnowledgeGraph._ontology_class()
-        if Ontology is not None:
+        if Ontology is not None and isinstance(token, str) and token.startswith("top:"):
             try:
-                return Ontology.CanonicalClass(token, defaultValue=None)
+                canonical = Ontology.CanonicalClass(token, defaultValue=None)
+                if canonical is not None:
+                    return canonical
             except Exception:
                 pass
-
-        if isinstance(token, str) and token.startswith("top:"):
-            return None
+            # Explicit undeclared top:* terms are preserved for RDF fidelity;
+            # Validate() will flag them as non-conformant.
+            return token
         if isinstance(token, str) and (token.startswith("<") or ":" in token):
             return token
         return None
 
-    @staticmethod
     @staticmethod
     def _canonicalize_triple_tokens(
         subject: Any,
@@ -777,13 +763,10 @@ class KnowledgeGraph:
             if not silent:
                 print("KnowledgeGraph.AddTriple - Error: The predicate is not part of the canonical vocabulary. Returning None.")
             return None
-        if p == "rdf:type" and isinstance(str(o), str) and str(o).startswith("top:"):
+        if p == "rdf:type" and isinstance(o, str):
             canonical_class = KnowledgeGraph._canonical_class_token(o, namespaces=self._namespaces)
-            if canonical_class is None:
-                if not silent:
-                    print("KnowledgeGraph.AddTriple - Error: The TopologicPy class is not declared in the canonical ontology. Returning None.")
-                return None
-            o = canonical_class
+            if canonical_class is not None:
+                o = canonical_class
         triple = (s, p, o)
         self._triples.add(triple)
         if self._rdflib_enabled:
@@ -1005,7 +988,7 @@ class KnowledgeGraph:
         return KnowledgeGraph.ByTurtleString(ttlString, **kwargs)
 
     @staticmethod
-    def ByFile(path: str, format: Optional[str] = None, namespaces: Optional[Dict[str, str]] = None, silent: bool = False) -> Optional["KnowledgeGraph"]:
+    def ByFile(path: str, format: Optional[str] = None, namespaces: Optional[Dict[str, str]] = None, useRDFLib: bool = True, silent: bool = False) -> Optional["KnowledgeGraph"]:
         """Creates a KnowledgeGraph by parsing an RDF/Turtle/JSON-LD/N-Triples file.
 
         A ``.json`` file is treated as the native JSON representation returned by
@@ -1042,7 +1025,7 @@ class KnowledgeGraph:
                         merged.update(namespaces)
                         data = dict(data)
                         data["namespaces"] = merged
-                    return KnowledgeGraph.ByDictionary(data, useRDFLib=True, silent=silent)
+                    return KnowledgeGraph.ByDictionary(data, useRDFLib=useRDFLib, silent=silent)
                 if not silent:
                     print("KnowledgeGraph.ByFile - Error: JSON file is not a KnowledgeGraph dictionary. Returning None.")
                 return None
@@ -1091,7 +1074,6 @@ class KnowledgeGraph:
             return {}
 
     @staticmethod
-    @staticmethod
     def ByTopology(
         topology: Any,
         includeOntologyAxioms: bool = False,
@@ -1102,7 +1084,7 @@ class KnowledgeGraph:
         silent: bool = False,
         **kwargs,
     ) -> Optional["KnowledgeGraph"]:
-        """Creates a KnowledgeGraph using Ontology.py as the sole semantic authority."""
+        """Creates a KnowledgeGraph using Ontology.py as the semantic authority."""
         if topology is None:
             if not silent:
                 print("KnowledgeGraph.ByTopology - Error: The input topology is None. Returning None.")
@@ -1113,34 +1095,27 @@ class KnowledgeGraph:
                 print("KnowledgeGraph.ByTopology - Error: Ontology.py is required. Returning None.")
             return None
         try:
-            if Ontology._is_graph_like(topology):
+            detector = getattr(Ontology, "_is_graph_like", None)
+            is_graph = bool(detector(topology)) if callable(detector) else topology.__class__.__name__ in {"Graph", "TGraph"}
+            if is_graph and hasattr(Ontology, "GraphTriples"):
                 graph_kwargs = KnowledgeGraph._filtered_kwargs(Ontology.GraphTriples, kwargs)
                 triples = Ontology.GraphTriples(
-                    topology,
-                    includeDictionaries=includeDictionaries,
-                    includeBOT=includeBOT,
-                    namespacePrefix=namespacePrefix,
-                    silent=silent,
-                    **graph_kwargs,
-                )
-            else:
+                    topology, includeDictionaries=includeDictionaries, includeBOT=includeBOT,
+                    namespacePrefix=namespacePrefix, silent=silent, **graph_kwargs)
+            elif hasattr(Ontology, "Triples"):
                 topo_kwargs = KnowledgeGraph._filtered_kwargs(Ontology.Triples, kwargs)
                 triples = Ontology.Triples(
-                    topology,
-                    includeDictionaries=includeDictionaries,
-                    includeBOT=includeBOT,
-                    namespacePrefix=namespacePrefix,
-                    silent=silent,
-                    **topo_kwargs,
-                )
-            if includeOntologyAxioms:
-                triples = list(triples) + list(Ontology.OntologyTriples(includeBOT=includeBOT))
-            return KnowledgeGraph.ByTriples(
-                triples,
-                namespaces=Ontology.Namespaces(),
-                useRDFLib=useRDFLib,
-                silent=silent,
-            )
+                    topology, includeDictionaries=includeDictionaries, includeBOT=includeBOT,
+                    namespacePrefix=namespacePrefix, silent=silent, **topo_kwargs)
+            else:
+                return None
+            if includeOntologyAxioms and hasattr(Ontology, "OntologyTriples"):
+                triples = list(triples or []) + list(Ontology.OntologyTriples(includeBOT=includeBOT) or [])
+            if hasattr(Ontology, "Namespaces"):
+                namespaces = Ontology.Namespaces()
+            else:
+                namespaces = dict(getattr(Ontology, "NAMESPACES", {}) or {})
+            return KnowledgeGraph.ByTriples(triples or [], namespaces=namespaces, useRDFLib=useRDFLib, silent=silent)
         except Exception as exc:
             if not silent:
                 print("KnowledgeGraph.ByTopology - Error: Could not create a knowledge graph. Returning None.")
@@ -1181,12 +1156,14 @@ class KnowledgeGraph:
         Ontology = KnowledgeGraph._ontology_class()
         if Ontology is not None:
             try:
-                return Ontology.TurtleFromTriples(
+                text = Ontology.TurtleFromTriples(
                     self.Triples(sort=True),
                     namespaces=self._namespaces,
                     instanceNamespace=self._namespaces.get("inst", "http://w3id.org/topologicpy/instance#"),
                     includeHeader=includeHeader,
                 )
+                if text is not None:
+                    return text
             except Exception:
                 pass
         lines = []
@@ -1458,7 +1435,15 @@ class KnowledgeGraph:
                 silent=silent,
                 **kwargs,
             )
-            kg = KnowledgeGraph.ByRDFGraph(inferred, namespaces=self._namespaces, silent=silent)
+            if isinstance(inferred, KnowledgeGraph):
+                kg = inferred.Copy()
+            elif hasattr(inferred, "Triples") and not hasattr(inferred, "triples"):
+                try:
+                    kg = KnowledgeGraph.ByTriples(inferred.Triples(), namespaces=self._namespaces, useRDFLib=self._rdflib_enabled, silent=silent)
+                except Exception:
+                    kg = None
+            else:
+                kg = KnowledgeGraph.ByRDFGraph(inferred, namespaces=self._namespaces, silent=silent)
             if inplace and kg is not None:
                 self._triples = set(kg._triples)
                 self._rdf_graph = kg._rdf_graph
@@ -1496,21 +1481,22 @@ class KnowledgeGraph:
         """
         TGraph = KnowledgeGraph._tgraph_class()
         Ontology = KnowledgeGraph._ontology_class()
-        if TGraph is None or Ontology is None:
+        if TGraph is None:
             if not silent:
-                print("KnowledgeGraph.ToTGraph - Error: TGraph.py and Ontology.py are required. Returning None.")
+                print("KnowledgeGraph.ToTGraph - Error: TGraph.py is required. Returning None.")
             return None
 
         rdf = self.RDFGraph(rebuild=True, silent=silent)
         if rdf is None:
             return None
 
-        try:
-            canonical = Ontology.GraphByRDFGraph(rdf, silent=True)
-            if canonical is not None:
-                return canonical
-        except Exception:
-            pass
+        if Ontology is not None and hasattr(Ontology, "GraphByRDFGraph"):
+            try:
+                canonical = Ontology.GraphByRDFGraph(rdf, silent=True)
+                if canonical is not None:
+                    return canonical
+            except Exception:
+                pass
 
         try:
             rd = KnowledgeGraph._rdflib(silent=True)
@@ -1570,7 +1556,9 @@ class KnowledgeGraph:
                     if pred == rd["RDF"].type:
                         continue
                     try:
-                        encoded = Ontology._encoded_rdf_object(obj)
+                        encoded = Ontology._encoded_rdf_object(obj) if Ontology is not None else None
+                        if encoded is None:
+                            raise ValueError
                     except Exception:
                         if isinstance(obj, rd["URIRef"]):
                             encoded = {"kind": "uri", "value": str(obj)}
@@ -1588,7 +1576,7 @@ class KnowledgeGraph:
                 for t_uri in d["_rdf_types"]:
                     q = KnowledgeGraph.QName(t_uri, namespaces=self._namespaces, defaultValue=t_uri)
                     if isinstance(q, str) and q.startswith("top:"):
-                        c = Ontology.CanonicalClass(q, defaultValue=None)
+                        c = Ontology.CanonicalClass(q, defaultValue=None) if Ontology is not None else q
                         if c is not None:
                             top_types.append(c)
                 if top_types:
@@ -1677,6 +1665,7 @@ class KnowledgeGraph:
             "rdflib_available": KnowledgeGraph._rdflib(silent=True) is not None,
             "rdflib_enabled": self._rdflib_enabled,
         }
+
     def Validate(self, parseWithRDFLib: bool = True, silent: bool = False) -> Dict[str, Any]:
         """Validates structure and conformance with the canonical TopologicPy ontology."""
         report = {
