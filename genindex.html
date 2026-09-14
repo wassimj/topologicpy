@@ -313,7 +313,7 @@
       </ul></li>
       <li><a href="topologicpy.TGraph.html#topologicpy.TGraph.TGraph.AnnotateOntology">AnnotateOntology() (topologicpy.TGraph.TGraph static method)</a>
 </li>
-      <li><a href="topologicpy.Ontology.html#topologicpy.Ontology.Ontology.AnnotateSubtopologies">AnnotateSubtopologies() (topologicpy.Ontology.Ontology static method)</a>
+      <li><a href="topologicpy.Ontology.html#topologicpy.Ontology.Ontology.ANNOTATION_PROPERTIES">ANNOTATION_PROPERTIES (topologicpy.Ontology.Ontology attribute)</a>
 </li>
       <li><a href="topologicpy.Color.html#topologicpy.Color.Color.AnyToHex">AnyToHex() (topologicpy.Color.Color static method)</a>
 </li>
@@ -999,13 +999,13 @@
 </li>
       <li><a href="topologicpy.Ontology.html#topologicpy.Ontology.Ontology.CLASS_ALIASES">CLASS_ALIASES (topologicpy.Ontology.Ontology attribute)</a>
 </li>
-      <li><a href="topologicpy.Ontology.html#topologicpy.Ontology.Ontology.CLASS_COMMENTS">CLASS_COMMENTS (topologicpy.Ontology.Ontology attribute)</a>
-</li>
       <li><a href="topologicpy.Ontology.html#topologicpy.Ontology.Ontology.ClassByIFCClass">ClassByIFCClass() (topologicpy.Ontology.Ontology static method)</a>
 </li>
       <li><a href="topologicpy.Ontology.html#topologicpy.Ontology.Ontology.ClassByTopology">ClassByTopology() (topologicpy.Ontology.Ontology static method)</a>
 </li>
       <li><a href="topologicpy.IFC.html#topologicpy.IFC.IFCEntity.Classifications">Classifications (topologicpy.IFC.IFCEntity property)</a>
+</li>
+      <li><a href="topologicpy.Ontology.html#topologicpy.Ontology.Ontology.ClassQName">ClassQName() (topologicpy.Ontology.Ontology static method)</a>
 </li>
       <li><a href="topologicpy.Topology.html#topologicpy.Topology.Topology.Cleanup">Cleanup() (topologicpy.Topology.Topology static method)</a>
 </li>
@@ -2219,8 +2219,6 @@
         <li><a href="topologicpy.Wire.html#topologicpy.Wire.Wire.InteriorAngles">(topologicpy.Wire.Wire static method)</a>
 </li>
       </ul></li>
-      <li><a href="topologicpy.Ontology.html#topologicpy.Ontology.Ontology.INTERNAL_EXPORT_KEYS">INTERNAL_EXPORT_KEYS (topologicpy.Ontology.Ontology attribute)</a>
-</li>
       <li><a href="topologicpy.Cell.html#topologicpy.Cell.Cell.InternalBoundaries">InternalBoundaries() (topologicpy.Cell.Cell static method)</a>
 
       <ul>
@@ -2413,8 +2411,6 @@
       </ul></li>
       <li><a href="topologicpy.Wire.html#topologicpy.Wire.Wire.IsPolyline">IsPolyline() (topologicpy.Wire.Wire static method)</a>
 </li>
-      <li><a href="topologicpy.Ontology.html#topologicpy.Ontology.Ontology.IsQName">IsQName() (topologicpy.Ontology.Ontology static method)</a>
-</li>
       <li><a href="topologicpy.Ontology.html#topologicpy.Ontology.Ontology.IsResourceString">IsResourceString() (topologicpy.Ontology.Ontology static method)</a>
 </li>
       <li><a href="topologicpy.Topology.html#topologicpy.Topology.Topology.IsSame">IsSame() (topologicpy.Topology.Topology static method)</a>
@@ -2518,10 +2514,6 @@
       <li><a href="topologicpy.IFC.html#topologicpy.IFC.IFC.KnowledgeGraphByFile">KnowledgeGraphByFile() (topologicpy.IFC.IFC static method)</a>
 </li>
       <li><a href="topologicpy.TGraph.html#topologicpy.TGraph.TGraph.KnowledgeGraphView">KnowledgeGraphView() (topologicpy.TGraph.TGraph static method)</a>
-</li>
-      <li><a href="topologicpy.Ontology.html#topologicpy.Ontology.Ontology.KNOWN_TOP_CLASSES">KNOWN_TOP_CLASSES (topologicpy.Ontology.Ontology attribute)</a>
-</li>
-      <li><a href="topologicpy.Ontology.html#topologicpy.Ontology.Ontology.KNOWN_TOP_PROPERTIES">KNOWN_TOP_PROPERTIES (topologicpy.Ontology.Ontology attribute)</a>
 </li>
       <li><a href="topologicpy.Kuzu.html#topologicpy.Kuzu.Kuzu">Kuzu (class in topologicpy.Kuzu)</a>
 </li>
@@ -3062,8 +3054,6 @@
 </li>
       <li><a href="topologicpy.GQL.html#topologicpy.GQL.GQL.ONTOLOGY_PREFIX">ONTOLOGY_PREFIX (topologicpy.GQL.GQL attribute)</a>
 </li>
-      <li><a href="topologicpy.Ontology.html#topologicpy.Ontology.Ontology.ONTOLOGY_TRIPLES_005">ONTOLOGY_TRIPLES_005 (topologicpy.Ontology.Ontology attribute)</a>
-</li>
       <li><a href="topologicpy.GQL.html#topologicpy.GQL.GQL.ONTOLOGY_URI_KEY">ONTOLOGY_URI_KEY (topologicpy.GQL.GQL attribute)</a>
 
       <ul>
@@ -3090,11 +3080,13 @@
 </li>
       <li><a href="topologicpy.GraphDB.html#topologicpy.GraphDB.GraphDB.OntologyKeys">OntologyKeys() (topologicpy.GraphDB.GraphDB static method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="topologicpy.TGraph.html#topologicpy.TGraph.TGraph.OntologyLabel">OntologyLabel() (topologicpy.TGraph.TGraph static method)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="topologicpy.PyG.html#topologicpy.PyG.PyG.OntologyMetadata">OntologyMetadata() (topologicpy.PyG.PyG method)</a>
+</li>
+      <li><a href="topologicpy.Ontology.html#topologicpy.Ontology.Ontology.OntologyRDFGraph">OntologyRDFGraph() (topologicpy.Ontology.Ontology static method)</a>
 </li>
       <li><a href="topologicpy.Neo4j.html#topologicpy.Neo4j.Neo4j.OntologySummary">OntologySummary() (topologicpy.Neo4j.Neo4j static method)</a>
 </li>
@@ -3380,6 +3372,8 @@
 <h2 id="Q">Q</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="topologicpy.Ontology.html#topologicpy.Ontology.Ontology.QName">QName() (topologicpy.Ontology.Ontology static method)</a>
+</li>
       <li><a href="topologicpy.Edge.html#topologicpy.Edge.Edge.Quadrance">Quadrance() (topologicpy.Edge.Edge static method)</a>
 
       <ul>
@@ -3435,6 +3429,12 @@
       <li><a href="topologicpy.BVH.html#topologicpy.BVH.AABB.ray_intersect">ray_intersect() (topologicpy.BVH.AABB method)</a>
 </li>
       <li><a href="topologicpy.BVH.html#topologicpy.BVH.BVH.Raycast">Raycast() (topologicpy.BVH.BVH static method)</a>
+</li>
+      <li><a href="topologicpy.Ontology.html#topologicpy.Ontology.Ontology.RDF_PROPERTIES_KEY">RDF_PROPERTIES_KEY (topologicpy.Ontology.Ontology attribute)</a>
+</li>
+      <li><a href="topologicpy.Ontology.html#topologicpy.Ontology.Ontology.RDF_TYPES_KEY">RDF_TYPES_KEY (topologicpy.Ontology.Ontology attribute)</a>
+</li>
+      <li><a href="topologicpy.Ontology.html#topologicpy.Ontology.Ontology.RDF_URI_KEY">RDF_URI_KEY (topologicpy.Ontology.Ontology attribute)</a>
 </li>
       <li><a href="topologicpy.Ontology.html#topologicpy.Ontology.Ontology.RDFGraph">RDFGraph() (topologicpy.Ontology.Ontology static method)</a>
 
@@ -3512,14 +3512,14 @@
         <li><a href="topologicpy.TGraph.html#topologicpy.TGraph.TGraph.RemoveIsolatedEdges">(topologicpy.TGraph.TGraph static method)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="topologicpy.Graph.html#topologicpy.Graph.Graph.RemoveIsolatedVertices">RemoveIsolatedVertices() (topologicpy.Graph.Graph static method)</a>
 
       <ul>
         <li><a href="topologicpy.TGraph.html#topologicpy.TGraph.TGraph.RemoveIsolatedVertices">(topologicpy.TGraph.TGraph static method)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="topologicpy.Dictionary.html#topologicpy.Dictionary.Dictionary.RemoveKey">RemoveKey() (topologicpy.Dictionary.Dictionary static method)</a>
 </li>
       <li><a href="topologicpy.Helper.html#topologicpy.Helper.Helper.RemoveOdd">RemoveOdd() (topologicpy.Helper.Helper static method)</a>
@@ -3701,8 +3701,6 @@
       <li><a href="topologicpy.Cell.html#topologicpy.Cell.Cell.Sets">Sets() (topologicpy.Cell.Cell static method)</a>
 </li>
       <li><a href="topologicpy.Topology.html#topologicpy.Topology.Topology.SetSnapshot">SetSnapshot() (topologicpy.Topology.Topology static method)</a>
-</li>
-      <li><a href="topologicpy.Ontology.html#topologicpy.Ontology.Ontology.SetURI">SetURI() (topologicpy.Ontology.Ontology static method)</a>
 </li>
       <li><a href="topologicpy.Dictionary.html#topologicpy.Dictionary.Dictionary.SetValueAtKey">SetValueAtKey() (topologicpy.Dictionary.Dictionary static method)</a>
 </li>
@@ -3982,8 +3980,6 @@
 </li>
       <li><a href="topologicpy.Sun.html#topologicpy.Sun.Sun.Sunset">Sunset() (topologicpy.Sun.Sun static method)</a>
 </li>
-      <li><a href="topologicpy.Ontology.html#topologicpy.Ontology.Ontology.Superclasses">Superclasses() (topologicpy.Ontology.Ontology static method)</a>
-</li>
       <li><a href="topologicpy.Topology.html#topologicpy.Topology.Topology.SuperTopologies">SuperTopologies() (topologicpy.Topology.Topology static method)</a>
 </li>
       <li><a href="topologicpy.Cell.html#topologicpy.Cell.Cell.SurfaceArea">SurfaceArea() (topologicpy.Cell.Cell static method)</a>
@@ -4061,8 +4057,6 @@
       <li><a href="topologicpy.Neo4j.html#topologicpy.Neo4j.Neo4j.ToGraph">ToGraph() (topologicpy.Neo4j.Neo4j static method)</a>
 </li>
       <li><a href="topologicpy.TGraph.html#topologicpy.TGraph.TGraph.ToKnowledgeGraph">ToKnowledgeGraph() (topologicpy.TGraph.TGraph static method)</a>
-</li>
-      <li><a href="topologicpy.Ontology.html#topologicpy.Ontology.Ontology.TOP_CATEGORIES">TOP_CATEGORIES (topologicpy.Ontology.Ontology attribute)</a>
 </li>
       <li><a href="topologicpy.Ontology.html#topologicpy.Ontology.Ontology.TOP_SUPERCLASSES">TOP_SUPERCLASSES (topologicpy.Ontology.Ontology attribute)</a>
 </li>
@@ -4585,8 +4579,6 @@
         <li><a href="topologicpy.Neo4j.html#topologicpy.Neo4j.Neo4j.UpsertGraph">(topologicpy.Neo4j.Neo4j static method)</a>
 </li>
       </ul></li>
-      <li><a href="topologicpy.Ontology.html#topologicpy.Ontology.Ontology.URI">URI() (topologicpy.Ontology.Ontology static method)</a>
-</li>
       <li><a href="topologicpy.Ontology.html#topologicpy.Ontology.Ontology.URI_KEY">URI_KEY (topologicpy.Ontology.Ontology attribute)</a>
 </li>
       <li><a href="topologicpy.Topology.html#topologicpy.Topology.Topology.UUID">UUID() (topologicpy.Topology.Topology static method)</a>
@@ -4615,18 +4607,10 @@
       </ul></li>
       <li><a href="topologicpy.IFC.html#topologicpy.IFC.IFC.ValidateBrickMappings">ValidateBrickMappings() (topologicpy.IFC.IFC static method)</a>
 </li>
-      <li><a href="topologicpy.Ontology.html#topologicpy.Ontology.Ontology.ValidateGraph">ValidateGraph() (topologicpy.Ontology.Ontology static method)</a>
-</li>
       <li><a href="topologicpy.TGraph.html#topologicpy.TGraph.TGraph.ValidateOntology">ValidateOntology() (topologicpy.TGraph.TGraph static method)</a>
 </li>
-      <li><a href="topologicpy.Ontology.html#topologicpy.Ontology.Ontology.ValidateTTLFile">ValidateTTLFile() (topologicpy.Ontology.Ontology static method)</a>
+      <li><a href="topologicpy.TGraph.html#topologicpy.TGraph.TGraph.ValidateTTLString">ValidateTTLString() (topologicpy.TGraph.TGraph static method)</a>
 </li>
-      <li><a href="topologicpy.Ontology.html#topologicpy.Ontology.Ontology.ValidateTTLString">ValidateTTLString() (topologicpy.Ontology.Ontology static method)</a>
-
-      <ul>
-        <li><a href="topologicpy.TGraph.html#topologicpy.TGraph.TGraph.ValidateTTLString">(topologicpy.TGraph.TGraph static method)</a>
-</li>
-      </ul></li>
       <li><a href="topologicpy.Dictionary.html#topologicpy.Dictionary.Dictionary.ValueAtKey">ValueAtKey() (topologicpy.Dictionary.Dictionary static method)</a>
 </li>
       <li><a href="topologicpy.Dictionary.html#topologicpy.Dictionary.Dictionary.Values">Values() (topologicpy.Dictionary.Dictionary static method)</a>
@@ -4681,14 +4665,14 @@
 </li>
       <li><a href="topologicpy.Plotly.html#topologicpy.Plotly.Plotly.vertexData">vertexData() (topologicpy.Plotly.Plotly static method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="topologicpy.Graph.html#topologicpy.Graph.Graph.VertexDegree">VertexDegree() (topologicpy.Graph.Graph static method)</a>
 
       <ul>
         <li><a href="topologicpy.TGraph.html#topologicpy.TGraph.TGraph.VertexDegree">(topologicpy.TGraph.TGraph static method)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="topologicpy.TGraph.html#topologicpy.TGraph.TGraph.VertexDictionary">VertexDictionary() (topologicpy.TGraph.TGraph method)</a>
 </li>
       <li><a href="topologicpy.TGraph.html#topologicpy.TGraph.TGraph.VertexDictionaryStatic">VertexDictionaryStatic() (topologicpy.TGraph.TGraph static method)</a>
