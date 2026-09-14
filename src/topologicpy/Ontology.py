@@ -236,15 +236,20 @@ class Ontology:
         if Ontology._VOCAB_CACHE is not None:
             return Ontology._VOCAB_CACHE
 
-        result = {"classes": set(), "object": set(), "data": set(), "annotation": set(), "super": {}}
+        result = {"classes": set(), "object": set(), "data": set(), "annotation": set(), "property": set(), "super": {}}
         rd = Ontology._rdflib(silent=True)
         g = Ontology.OntologyRDFGraph(silent=True) if rd is not None else None
         if rd is not None and g is not None:
             RDF, RDFS, OWL = rd.RDF, rd.RDFS, rd.OWL
             for kind, bucket in ((OWL.Class, "classes"), (OWL.ObjectProperty, "object"),
-                                 (OWL.DatatypeProperty, "data"), (OWL.AnnotationProperty, "annotation")):
+                                 (OWL.DatatypeProperty, "data"), (OWL.AnnotationProperty, "annotation"),
+                                 (RDF.Property, "property")):
                 for subject in g.subjects(RDF.type, kind):
                     result[bucket].add(Ontology.QName(str(subject), defaultValue=str(subject)))
+            # Every OWL object/data/annotation property is also a property for
+            # TopologicPy membership/canonicalisation purposes, even when the
+            # source TTL does not repeat an explicit rdf:Property assertion.
+            result["property"].update(result["object"] | result["data"] | result["annotation"])
             for subject, parent in g.subject_objects(RDFS.subClassOf):
                 sq = Ontology.QName(str(subject), defaultValue=str(subject))
                 pq = Ontology.QName(str(parent), defaultValue=str(parent))
@@ -288,12 +293,15 @@ class Ontology:
                     result["data"].add(subject)
                 if re.search(r"(?:\ba\b|rdf:type)\s+[^.]*\bowl:AnnotationProperty\b", statement):
                     result["annotation"].add(subject)
+                if re.search(r"(?:\ba\b|rdf:type)\s+[^.]*\brdf:Property\b", statement):
+                    result["property"].add(subject)
                 sm = re.search(r"rdfs:subClassOf\s+([^;]+)", statement)
                 if sm:
                     parents = re.findall(r"(?:top|bot|brick|geo|prov|ifc):[A-Za-z_][A-Za-z0-9_.-]*", sm.group(1))
                     if parents:
                         result["super"].setdefault(subject, []).extend(parents)
 
+        result["property"].update(result["object"] | result["data"] | result["annotation"])
         Ontology._VOCAB_CACHE = result
         Ontology.TOP_SUPERCLASSES = {k: list(dict.fromkeys(v)) for k, v in result["super"].items()}
         Ontology.OBJECT_PROPERTIES = {q: None for q in result["object"]}
@@ -372,7 +380,7 @@ class Ontology:
     def IsProperty(value: Any) -> bool:
         q = Ontology.QName(value, defaultValue=value)
         vocab = Ontology._vocabulary()
-        return isinstance(q, str) and q in (vocab["object"] | vocab["data"] | vocab["annotation"])
+        return isinstance(q, str) and q in (vocab["object"] | vocab["data"] | vocab["annotation"] | vocab.get("property", set()))
 
     @staticmethod
     def CanonicalClass(value: Any, defaultValue: Any = None):
@@ -427,7 +435,8 @@ class Ontology:
         if text in adapter:
             return adapter[text]
         q = Ontology.QName(text, defaultValue=text)
-        known = Ontology._vocabulary()["object"] | Ontology._vocabulary()["data"] | Ontology._vocabulary()["annotation"]
+        vocab = Ontology._vocabulary()
+        known = vocab["object"] | vocab["data"] | vocab["annotation"] | vocab.get("property", set())
         if isinstance(q, str) and q.startswith("top:"):
             return q if q in known else None
         if isinstance(q, str) and ":" in q:
@@ -1047,7 +1056,23 @@ class Ontology:
 
     @staticmethod
     def ExportTTL(topology: Any, path: str, **kwargs):
-        return Ontology.ExportRDF(topology, path, format="turtle", **kwargs)
+        """Exports a topology/graph/dictionary as Turtle.
+
+        Unlike :meth:`ExportRDF`, this method does not require RDFLib. It uses
+        :meth:`TTLString`, whose deterministic fallback serializer preserves the
+        same canonical predicates when RDFLib is unavailable.
+        """
+        silent = bool(kwargs.pop("silent", False))
+        ttl = Ontology.TTLString(topology, silent=silent, **kwargs)
+        if ttl is None:
+            return None
+        try:
+            Path(path).write_text(ttl, encoding="utf-8")
+            return str(path)
+        except Exception as exc:
+            if not silent:
+                print("Ontology.ExportTTL - Error:", exc)
+            return None
 
     @staticmethod
     def ExportOntologyTTL(path: str, includeBOT: bool = True, silent: bool = False):
@@ -1313,7 +1338,8 @@ class Ontology:
         else:
             report["warnings"].append("No ontology_class is assigned.")
 
-        known = Ontology._vocabulary()["object"] | Ontology._vocabulary()["data"] | Ontology._vocabulary()["annotation"]
+        vocab = Ontology._vocabulary()
+        known = vocab["object"] | vocab["data"] | vocab["annotation"] | vocab.get("property", set())
         for key in d:
             pred = Ontology._predicate_for_internal_key(str(key))
             if pred and pred.startswith("top:") and pred not in known:
