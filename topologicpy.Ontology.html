@@ -188,37 +188,40 @@ canonically from the reconstructed TGraph.</p></li>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Ontology.Ontology.CanonicalClass" title="topologicpy.Ontology.Ontology.CanonicalClass"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CanonicalClass</span></code></a>(value[, defaultValue])</p></td>
 <td><p>Returns a canonical class QName without inventing <code class="docutils literal notranslate"><span class="pre">top:</span></code> terms.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Ontology.Ontology.GraphTriples" title="topologicpy.Ontology.Ontology.GraphTriples"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GraphTriples</span></code></a>(graph[, includeVertices, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Ontology.Ontology.ExportTTL" title="topologicpy.Ontology.Ontology.ExportTTL"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExportTTL</span></code></a>(topology, path, **kwargs)</p></td>
+<td><p>Exports a topology/graph/dictionary as Turtle.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Ontology.Ontology.GraphTriples" title="topologicpy.Ontology.Ontology.GraphTriples"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GraphTriples</span></code></a>(graph[, includeVertices, ...])</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Ontology.Ontology.IsQName" title="topologicpy.Ontology.Ontology.IsQName"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsQName</span></code></a>(value)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Ontology.Ontology.IsQName" title="topologicpy.Ontology.Ontology.IsQName"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsQName</span></code></a>(value)</p></td>
 <td><p>Returns True when <code class="docutils literal notranslate"><span class="pre">value</span></code> is a QName with a registered prefix.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Ontology.Ontology.NormalizeDictionary" title="topologicpy.Ontology.Ontology.NormalizeDictionary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NormalizeDictionary</span></code></a>(topology[, inferClass, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Ontology.Ontology.NormalizeDictionary" title="topologicpy.Ontology.Ontology.NormalizeDictionary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NormalizeDictionary</span></code></a>(topology[, inferClass, ...])</p></td>
 <td><p>Normalizes a TopologicPy/IFC dictionary without legacy RDF aliases.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Ontology.Ontology.PropertyQName" title="topologicpy.Ontology.Ontology.PropertyQName"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PropertyQName</span></code></a>(key[, defaultPrefix])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Ontology.Ontology.PropertyQName" title="topologicpy.Ontology.Ontology.PropertyQName"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PropertyQName</span></code></a>(key[, defaultPrefix])</p></td>
 <td><p>Returns a canonical predicate QName without inventing <code class="docutils literal notranslate"><span class="pre">top:</span></code> terms.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Ontology.Ontology.SetURI" title="topologicpy.Ontology.Ontology.SetURI"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetURI</span></code></a>(obj, uri[, silent])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Ontology.Ontology.SetURI" title="topologicpy.Ontology.Ontology.SetURI"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetURI</span></code></a>(obj, uri[, silent])</p></td>
 <td><p>Sets the explicit RDF resource identity under the canonical <code class="docutils literal notranslate"><span class="pre">uri</span></code> key.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Ontology.Ontology.SetValue" title="topologicpy.Ontology.Ontology.SetValue"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetValue</span></code></a>(obj, key, value[, silent])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Ontology.Ontology.SetValue" title="topologicpy.Ontology.Ontology.SetValue"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetValue</span></code></a>(obj, key, value[, silent])</p></td>
 <td><p>Sets one dictionary value and preserves the object returned by the adapter.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Ontology.Ontology.TurtleFromTriples" title="topologicpy.Ontology.Ontology.TurtleFromTriples"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TurtleFromTriples</span></code></a>(triples[, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Ontology.Ontology.TurtleFromTriples" title="topologicpy.Ontology.Ontology.TurtleFromTriples"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TurtleFromTriples</span></code></a>(triples[, ...])</p></td>
 <td><p>Serializes triples to Turtle, with or without RDFLib.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Ontology.Ontology.Validate" title="topologicpy.Ontology.Ontology.Validate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Validate</span></code></a>(topology[, silent, requiredKeys])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Ontology.Ontology.Validate" title="topologicpy.Ontology.Ontology.Validate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Validate</span></code></a>(topology[, silent, requiredKeys])</p></td>
 <td><p>Validates ontology annotations against the canonical TTL vocabulary.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Ontology.Ontology.ValidateGraph" title="topologicpy.Ontology.Ontology.ValidateGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ValidateGraph</span></code></a>(graph[, silent])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Ontology.Ontology.ValidateGraph" title="topologicpy.Ontology.Ontology.ValidateGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ValidateGraph</span></code></a>(graph[, silent])</p></td>
 <td><p>Validates a TGraph's ontology annotations and structural endpoints.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Ontology.Ontology.ValidateTTLString" title="topologicpy.Ontology.Ontology.ValidateTTLString"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ValidateTTLString</span></code></a>(ttlString[, silent])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Ontology.Ontology.ValidateTTLString" title="topologicpy.Ontology.Ontology.ValidateTTLString"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ValidateTTLString</span></code></a>(ttlString[, silent])</p></td>
 <td><p>Validates Turtle syntax when RDFLib is available; fails gracefully otherwise.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Ontology.Ontology.Value" title="topologicpy.Ontology.Ontology.Value"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Value</span></code></a>(obj, key[, defaultValue])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Ontology.Ontology.Value" title="topologicpy.Ontology.Ontology.Value"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Value</span></code></a>(obj, key[, defaultValue])</p></td>
 <td><p>Returns a dictionary value from a topology, TGraph item, or plain dict.</p></td>
 </tr>
 </tbody>
@@ -265,79 +268,76 @@ canonically from the reconstructed TGraph.</p></li>
 <tr class="row-even"><td><p><strong>ExportRDF</strong></p></td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><p><strong>ExportTTL</strong></p></td>
+<tr class="row-odd"><td><p><strong>GraphByRDFFile</strong></p></td>
 <td></td>
 </tr>
-<tr class="row-even"><td><p><strong>GraphByRDFFile</strong></p></td>
+<tr class="row-even"><td><p><strong>GraphByRDFGraph</strong></p></td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><p><strong>GraphByRDFGraph</strong></p></td>
+<tr class="row-odd"><td><p><strong>GraphByTTL</strong></p></td>
 <td></td>
 </tr>
-<tr class="row-even"><td><p><strong>GraphByTTL</strong></p></td>
+<tr class="row-even"><td><p><strong>GraphByTTLString</strong></p></td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><p><strong>GraphByTTLString</strong></p></td>
+<tr class="row-odd"><td><p><strong>IsA</strong></p></td>
 <td></td>
 </tr>
-<tr class="row-even"><td><p><strong>IsA</strong></p></td>
+<tr class="row-even"><td><p><strong>IsClass</strong></p></td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><p><strong>IsClass</strong></p></td>
+<tr class="row-odd"><td><p><strong>IsProperty</strong></p></td>
 <td></td>
 </tr>
-<tr class="row-even"><td><p><strong>IsProperty</strong></p></td>
+<tr class="row-even"><td><p><strong>IsResourceString</strong></p></td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><p><strong>IsResourceString</strong></p></td>
+<tr class="row-odd"><td><p><strong>Label</strong></p></td>
 <td></td>
 </tr>
-<tr class="row-even"><td><p><strong>Label</strong></p></td>
+<tr class="row-even"><td><p><strong>Namespace</strong></p></td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><p><strong>Namespace</strong></p></td>
+<tr class="row-odd"><td><p><strong>Namespaces</strong></p></td>
 <td></td>
 </tr>
-<tr class="row-even"><td><p><strong>Namespaces</strong></p></td>
+<tr class="row-even"><td><p><strong>OntologyRDFGraph</strong></p></td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><p><strong>OntologyRDFGraph</strong></p></td>
+<tr class="row-odd"><td><p><strong>OntologyTTLString</strong></p></td>
 <td></td>
 </tr>
-<tr class="row-even"><td><p><strong>OntologyTTLString</strong></p></td>
+<tr class="row-even"><td><p><strong>OntologyTriples</strong></p></td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><p><strong>OntologyTriples</strong></p></td>
+<tr class="row-odd"><td><p><strong>QName</strong></p></td>
 <td></td>
 </tr>
-<tr class="row-even"><td><p><strong>QName</strong></p></td>
+<tr class="row-even"><td><p><strong>RDFGraph</strong></p></td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><p><strong>RDFGraph</strong></p></td>
+<tr class="row-odd"><td><p><strong>RDFString</strong></p></td>
 <td></td>
 </tr>
-<tr class="row-even"><td><p><strong>RDFString</strong></p></td>
+<tr class="row-even"><td><p><strong>SetCategory</strong></p></td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><p><strong>SetCategory</strong></p></td>
+<tr class="row-odd"><td><p><strong>SetClass</strong></p></td>
 <td></td>
 </tr>
-<tr class="row-even"><td><p><strong>SetClass</strong></p></td>
+<tr class="row-even"><td><p><strong>SetLabel</strong></p></td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><p><strong>SetLabel</strong></p></td>
+<tr class="row-odd"><td><p><strong>TTLString</strong></p></td>
 <td></td>
 </tr>
-<tr class="row-even"><td><p><strong>TTLString</strong></p></td>
+<tr class="row-even"><td><p><strong>Triples</strong></p></td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><p><strong>Triples</strong></p></td>
+<tr class="row-odd"><td><p><strong>ValidateRDFGraph</strong></p></td>
 <td></td>
 </tr>
-<tr class="row-even"><td><p><strong>ValidateRDFGraph</strong></p></td>
-<td></td>
-</tr>
-<tr class="row-odd"><td><p><strong>ValidateTTL</strong></p></td>
+<tr class="row-even"><td><p><strong>ValidateTTL</strong></p></td>
 <td></td>
 </tr>
 </tbody>
@@ -453,7 +453,11 @@ their naming conventions.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Ontology.Ontology.ExportTTL">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ExportTTL</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Ontology.Ontology.ExportTTL" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Exports a topology/graph/dictionary as Turtle.</p>
+<p>Unlike <a class="reference internal" href="#topologicpy.Ontology.Ontology.ExportRDF" title="topologicpy.Ontology.Ontology.ExportRDF"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ExportRDF()</span></code></a>, this method does not require RDFLib. It uses
+<a class="reference internal" href="#topologicpy.Ontology.Ontology.TTLString" title="topologicpy.Ontology.Ontology.TTLString"><code class="xref py py-meth docutils literal notranslate"><span class="pre">TTLString()</span></code></a>, whose deterministic fallback serializer preserves the
+same canonical predicates when RDFLib is unavailable.</p>
+</dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="topologicpy.Ontology.Ontology.GENERATED_BY_KEY">
