@@ -87,9 +87,9 @@ conda activate topologicpy
 
 ## Ontology and Semantic Web Support
 
-topologicpy now includes a formal ontology specification that provides a semantic framework for representing geometry, topology, graphs, spatial relationships, building information, provenance, and analytical metrics.
+TopologicPy includes a formal ontology for representing topology, geometry, graphs, spatial relationships, building information, provenance, and analytical properties using RDF, RDFS, and OWL.
 
-The ontology enables interoperability with:
+The ontology is designed to interoperate with:
 
 * RDF / RDFS / OWL
 * BOT (Building Topology Ontology)
@@ -98,11 +98,11 @@ The ontology enables interoperability with:
 * Graph databases such as Neo4j and Kùzu
 * GraphRAG and AI reasoning systems
 
-The canonical namespace is:
+The canonical TopologicPy namespace is:
 
 `@prefix top: <http://w3id.org/topologicpy#> .`
 
-The ontology is persistently identified through w3id.org and physically hosted through GitHub Pages.
+The ontology is persistently identified through w3id.org. The canonical source is maintained in the repository under `ontology/topologicpy.ttl`; documentation copies are generated from that source.
 
 ### Ontology Resources
 
@@ -110,20 +110,35 @@ The ontology is persistently identified through w3id.org and physically hosted t
 * Ontology document: `http://w3id.org/topologicpy`
 * Current ontology specification:
   `https://wassimj.github.io/topologicpy/ontology/topologicpy.ttl`
-* Ontology source folder:
-  `https://github.com/wassimj/topologicpy/tree/main/ontology`
+* Canonical ontology source:
+  `https://github.com/wassimj/topologicpy/blob/main/ontology/topologicpy.ttl`
 
 ### Example
 
 ```ttl
 @prefix top: <http://w3id.org/topologicpy#> .
+@prefix inst: <http://w3id.org/topologicpy/instance#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
-:room_101 a top:Room ;
-    top:hasArea "24.6"^^xsd:double ;
-    top:adjacentTo :corridor_1 .
+inst:room_101 a top:Room ;
+    rdfs:label "Room 101" ;
+    top:area "24.6"^^xsd:double ;
+    top:adjacentTo inst:corridor_1 .
 
-:wall_12 a top:Wall ;
-    top:bounds :room_101 .
+inst:corridor_1 a top:Space ;
+    rdfs:label "Corridor 1" .
+```
+
+For graph relationships, TopologicPy preserves both the structural edge and its semantic predicate:
+
+```ttl
+inst:rel_0 a top:Relationship ;
+    top:startsAt inst:room_101 ;
+    top:endsAt inst:corridor_1 ;
+    top:hasPredicate top:adjacentTo .
+
+inst:room_101 top:adjacentTo inst:corridor_1 .
 ```
 
 ### Python Example
