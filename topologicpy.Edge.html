@@ -188,8 +188,8 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.ByNurbsParameters" title="topologicpy.Edge.Edge.ByNurbsParameters"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByNurbsParameters</span></code></a>(controlPoints[, weights, ...])</p></td>
 <td><p>Creates an edge from exact NURBS/B-spline parameters.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.ByOffset2D" title="topologicpy.Edge.Edge.ByOffset2D"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByOffset2D</span></code></a>([offset, tolerance])</p></td>
-<td><p>Creates an edge offset from the input edge in the XY plane.</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.ByOffset2D" title="topologicpy.Edge.Edge.ByOffset2D"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByOffset2D</span></code></a>(edge[, offset, tolerance, silent])</p></td>
+<td><p>Creates a single Edge offset from the input Edge in the XY plane.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.ByOriginDirectionLength" title="topologicpy.Edge.Edge.ByOriginDirectionLength"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByOriginDirectionLength</span></code></a>([origin, direction, ...])</p></td>
 <td><p>Creates a straight edge from the input parameters.</p></td>
@@ -225,7 +225,7 @@
 <td><p>Extends a geometrically linear edge by the input distance.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.ExtendToEdge" title="topologicpy.Edge.Edge.ExtendToEdge"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExtendToEdge</span></code></a>(edgeA, edgeB[, mantissa, step, ...])</p></td>
-<td><p>Extends the first input edge to meet the second input edge.</p></td>
+<td><p>Extends edgeA with a straight tangent continuation until it meets edgeB.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.ExternalBoundary" title="topologicpy.Edge.Edge.ExternalBoundary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExternalBoundary</span></code></a>(edge[, tolerance, silent])</p></td>
 <td><p>Returns the external boundary (cluster of end vertices) of the input edge.</p></td>
@@ -312,7 +312,7 @@
 <td><p>Trims the input edge by a geometric distance while preserving its geometry.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.TrimByEdge" title="topologicpy.Edge.Edge.TrimByEdge"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TrimByEdge</span></code></a>(edgeA, edgeB[, reverse, ...])</p></td>
-<td><p>Trims the first input edge by the second input edge.</p></td>
+<td><p>Trims edgeA at its intersection with edgeB while preserving the exact geometry and direction of edgeA.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.TrimByParameters" title="topologicpy.Edge.Edge.TrimByParameters"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TrimByParameters</span></code></a>(edge[, uA, uB, tolerance, ...])</p></td>
 <td><p>Returns the portion of the input edge between two normalized curve parameters.</p></td>
@@ -586,8 +586,35 @@ the list. If None, a uniform expanded knot vector is generated.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Edge.Edge.ByOffset2D">
-<span class="sig-name descname"><span class="pre">ByOffset2D</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">offset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Edge.Edge.ByOffset2D" title="Permalink to this definition"></a></dt>
-<dd><p>Creates an edge offset from the input edge in the XY plane.</p>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByOffset2D</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">edge</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Edge.Edge.ByOffset2D" title="Permalink to this definition"></a></dt>
+<dd><p>Creates a single Edge offset from the input Edge in the XY plane.</p>
+<p>Positive offsets are to the left of the Edge when travelling from its
+start Vertex to its end Vertex. Negative offsets are to the right.</p>
+<p>The input Edge must lie in a plane parallel to the XY plane. Curved,
+B-Spline, NURBS, circular, and other supported curve geometry is preserved
+by a backend-native offset operation when available.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>edge</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The input Edge.</p>
+</dd>
+<dt><strong>offset</strong><span class="classifier">float , optional</span></dt><dd><p>The desired signed offset distance. Positive values offset to the left
+of the Edge direction and negative values offset to the right.
+Default is 1.0.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, error and warning messages are suppressed. Default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>topologic_core.Edge</dt><dd><p>A single offset Edge.</p>
+</dd>
+</dl>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -937,25 +964,36 @@ Default is False.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Edge.Edge.ExtendToEdge">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ExtendToEdge</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">edgeA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeB</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">step</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Edge.Edge.ExtendToEdge" title="Permalink to this definition"></a></dt>
-<dd><p>Extends the first input edge to meet the second input edge.</p>
+<dd><p>Extends edgeA with a straight tangent continuation until it meets edgeB.</p>
+<p>For a linear edgeA, the resulting Edge remains linear.</p>
+<p>For a curved edgeA, the extension leaves the selected endpoint along the
+tangent to edgeA at that endpoint. The original curve and the straight
+extension are concatenated into one single Edge by the active backend.</p>
+<p>Both endpoints of edgeA are considered. If one or both outward tangent
+rays intersect edgeB, the shortest valid extension is selected. If a ray
+intersects edgeB at multiple points, the intersection closest to the
+corresponding endpoint of edgeA is selected.</p>
+<p>The original direction of edgeA is preserved.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>edgeA</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The first input edge. This edge will be extended to meet edgeB.</p>
+<dt><strong>edgeA</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The Edge to extend.</p>
 </dd>
-<dt><strong>edgeB</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The second input edge. This edge will be used to extend edgeA.</p>
+<dt><strong>edgeB</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The target Edge.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>Retained for backward API compatibility. Default is 6.</p>
+</dd>
+<dt><strong>step</strong><span class="classifier">bool , optional</span></dt><dd><p>Retained for backward API compatibility. Default is True.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, suppress diagnostic messages. Default is False.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Edge</dt><dd><p>The extended edge.</p>
+<dt>topologic_core.Edge</dt><dd><p>One extended Edge, or None if the operation cannot be completed.</p>
 </dd>
 </dl>
 </dd>
@@ -1722,25 +1760,38 @@ altering the curve geometry.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Edge.Edge.TrimByEdge">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">TrimByEdge</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">edgeA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeB</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reverse</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Edge.Edge.TrimByEdge" title="Permalink to this definition"></a></dt>
-<dd><p>Trims the first input edge by the second input edge.</p>
+<dd><p>Trims edgeA at its intersection with edgeB while preserving the exact
+geometry and direction of edgeA.</p>
+<p>If multiple internal intersections exist, the first intersection encountered
+from the start of edgeA is used when reverse is False. When reverse is True,
+the last intersection encountered from the start of edgeA is used.</p>
+<p>The returned Edge is created by trimming edgeA in its native parameter
+space. Curved, B-Spline, and NURBS geometry is therefore preserved and is
+never reconstructed from endpoint vertices.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>edgeA</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The first input edge. This edge will be trimmed by edgeB.</p>
+<dt><strong>edgeA</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The Edge to trim.</p>
 </dd>
-<dt><strong>edgeB</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The second input edge. This edge will be used to trim edgeA.</p>
+<dt><strong>edgeB</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The Edge used as the trimming geometry.</p>
 </dd>
-<dt><strong>reverse</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, which segment is preserved is reversed. Otherwise, it is not. Default is False.</p>
+<dt><strong>reverse</strong><span class="classifier">bool , optional</span></dt><dd><p>If False, retains the portion of edgeA from its start to the first
+intersection with edgeB. If True, retains the portion from the last
+intersection with edgeB to the end of edgeA. In both cases, the
+original direction of edgeA is preserved. Default is False.</p>
+</dd>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>Retained for backward API compatibility. Default is 6.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Edge</dt><dd><p>The trimmed edge.</p>
+<dt>topologic_core.Edge</dt><dd><p>The trimmed Edge. If no usable internal intersection exists, the
+original edgeA is returned.</p>
 </dd>
 </dl>
 </dd>

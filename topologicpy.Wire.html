@@ -207,7 +207,7 @@
 <td><p>Creates a circular Wire.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Close" title="topologicpy.Wire.Wire.Close"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Close</span></code></a>(wire[, mantissa, tolerance, silent])</p></td>
-<td><p>Closes the input wire</p></td>
+<td><p>Closes the input Wire by adding a straight Edge from its end Vertex back to its start Vertex.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.ConcaveCornerVertices" title="topologicpy.Wire.Wire.ConcaveCornerVertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ConcaveCornerVertices</span></code></a>(wire[, angTolerance, ...])</p></td>
 <td><p>Returns the concave corner vertices of the input wire.</p></td>
@@ -225,7 +225,7 @@
 <td><p>Creates a Cross-shape.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Cycles" title="topologicpy.Wire.Wire.Cycles"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Cycles</span></code></a>(wire[, maxVertices, ...])</p></td>
-<td><p>Returns the closed circuits of wires found within the input wire.</p></td>
+<td><p>Returns the closed circuits found within the input Wire.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Edges" title="topologicpy.Wire.Wire.Edges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Edges</span></code></a>(wire[, silent])</p></td>
 <td><p>Returns the edges of the input wire.</p></td>
@@ -333,13 +333,13 @@
 <td><p>Reverses wire traversal while preserving each edge's actual geometry.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Ribbon" title="topologicpy.Wire.Wire.Ribbon"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Ribbon</span></code></a>(wire[, thickness, thicknessKey, ...])</p></td>
-<td><p>Creates a ribbon (face or shell) wire from the input wire.</p></td>
+<td><p>Creates a ribbon from the input planar Wire.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Roof" title="topologicpy.Wire.Wire.Roof"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Roof</span></code></a>(face[, angle, boundary, tolerance])</p></td>
 <td><p>Creates a hipped roof through a straight skeleton. This method is contributed by 高熙鹏 xipeng gao &lt;<a class="reference external" href="mailto:gaoxipeng1998&#37;&#52;&#48;gmail&#46;com">gaoxipeng1998<span>&#64;</span>gmail<span>&#46;</span>com</a>&gt;</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Simplify" title="topologicpy.Wire.Wire.Simplify"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Simplify</span></code></a>(wire[, method, tolerance, silent])</p></td>
-<td><p>Simplifies a polyline Wire using a point-based simplification algorithm.</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Simplify" title="topologicpy.Wire.Wire.Simplify"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Simplify</span></code></a>(wire[, method, epsilon, tolerance, ...])</p></td>
+<td><p>Simplifies the linear portions of the input Wire while preserving curved Edges exactly.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Skeleton" title="topologicpy.Wire.Wire.Skeleton"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Skeleton</span></code></a>(face[, boundary, tolerance])</p></td>
 <td><p>Creates a straight skeleton.</p></td>
@@ -548,10 +548,10 @@ The default <code class="docutils literal notranslate"><span class="pre">offset<
 offsets lie to the left of the oriented Edge when viewed along the planar
 Wire normal; for an anti-clockwise closed Wire this is the interior side.</p>
 <p>Polylines retain the historical TopologicPy variable-offset algorithm.
-Under the PythonOCC backend, planar Wires containing circular, Bezier,
+When supported by the active backend, planar Wires containing circular,
 B-spline, or NURBS Edges can also use different per-Edge offsets without
 converting those curves to endpoint chords. Uniform and variable curved offsets use the same calibrated Edge-by-Edge
-exact OCCT offset path. Equal distances therefore do not select a different
+exact native offset path. Equal distances therefore do not select a different
 algorithm, offset side, join strategy, or smoothing path. At every
 joint the finite offset Edges are intersected first. If they already cross or
 overshoot one another, both are trimmed to the local finite intersection.
@@ -910,23 +910,28 @@ Default is False.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Wire.Wire.Close">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Close</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wire</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Wire.Wire.Close" title="Permalink to this definition"></a></dt>
-<dd><p>Closes the input wire</p>
+<dd><p>Closes the input Wire by adding a straight Edge from its end Vertex
+back to its start Vertex.</p>
+<p>The input Wire must be manifold and open. Existing Edges are preserved
+exactly and are not reconstructed from their Vertices. Thus, curved,
+B-Spline, and NURBS Edges remain unchanged.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>wire</strong><span class="classifier">topologic_core.Wire</span></dt><dd><p>The input wire.</p>
+<dt><strong>wire</strong><span class="classifier">topologic_core.Wire</span></dt><dd><p>The input Wire.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>Retained for backward compatibility. It is not used because no
+coordinate reconstruction or rounding is performed. Default is 6.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Wire</dt><dd><p>The closed version of the input wire.</p>
+<dt>topologic_core.Wire</dt><dd><p>The closed Wire.</p>
 </dd>
 </dl>
 </dd>
@@ -1096,17 +1101,31 @@ vertices close to 180 degrees are not returned.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Wire.Wire.Cycles">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Cycles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wire</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxVertices</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transferDictionaries</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="headerlink" href="#topologicpy.Wire.Wire.Cycles" title="Permalink to this definition"></a></dt>
-<dd><p>Returns the closed circuits of wires found within the input wire.</p>
+<dd><p>Returns the closed circuits found within the input Wire.</p>
+<p>This implementation is optimized for large non-manifold wire graphs.</p>
+<p>Existing Edge geometry is preserved exactly. Original Edges are reused
+directly whenever their orientation agrees with the cycle traversal.
+Otherwise Edge.Reverse is used, preserving curved, B-Spline, and NURBS
+geometry.</p>
+<p>Cycle detection uses:</p>
+<ol class="arabic simple">
+<li><p>Spatial hashing for tolerance-aware endpoint identification.</p></li>
+<li><p>Linear-time 2-core pruning to remove branches that cannot contain cycles.</p></li>
+<li><p>Tarjan biconnected-component decomposition.</p></li>
+<li><p>Depth-limited DFS restricted by maxVertices.</p></li>
+</ol>
+<p>5. Canonical start/orientation rules so each undirected cycle is generated
+only once, without post-processing duplicate detection.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>wire</strong><span class="classifier">topologic_core.Wire</span></dt><dd><p>The input wire.</p>
+<dt><strong>wire</strong><span class="classifier">topologic_core.Wire</span></dt><dd><p>The input Wire.</p>
 </dd>
-<dt><strong>maxVertices</strong><span class="classifier">int , optional</span></dt><dd><p>The maximum number of vertices of the circuits to be searched. Default is 4.</p>
+<dt><strong>maxVertices</strong><span class="classifier">int , optional</span></dt><dd><p>The maximum number of vertices permitted in a returned cycle.
+Default is 4.</p>
 </dd>
-<dt><strong>transferDictionaries</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, transfers the dictionaries of the original edges
-to the corresponding new edges in the resulting cycle wires.
-Default is False.</p>
+<dt><strong>transferDictionaries</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, dictionaries are transferred when constructing the returned
+cycle Wires. Default is False.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
@@ -1114,7 +1133,7 @@ Default is False.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>list</dt><dd><p>The list of circuits (closed wires) found within the input wire.</p>
+<dt>list</dt><dd><p>The list of closed cycle Wires.</p>
 </dd>
 </dl>
 </dd>
@@ -1469,8 +1488,8 @@ directly in 3D.</p>
 <dd><p>Creates intermediate Wires between successive input Wires.</p>
 <p>Polyline inputs retain the historical vertex-based interpolation. When
 one or more input Wires contain genuine curves, corresponding Edges are
-interpolated as genuine B-spline curves on the PythonOCC backend rather
-than being replaced by straight endpoint chords. Curved inputs must have
+interpolated as genuine B-spline curves when supported by the active backend
+rather than being replaced by straight endpoint chords. Curved inputs must have
 matching Edge counts and compatible open/closed topology.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1728,9 +1747,9 @@ A valid non-negative numerical value overrides <code class="docutils literal not
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Planarize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wire</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Wire.Wire.Planarize" title="Permalink to this definition"></a></dt>
 <dd><p>Returns a planarized version of the input Wire while preserving curve geometry.</p>
 <p>A best-fit plane normal is derived from the Wire vertices. If <code class="docutils literal notranslate"><span class="pre">origin</span></code> is
-None, the centroid of the Wire is used as the plane origin. On the PythonOCC
-backend the complete Wire is projected normally onto that plane using OCCT’s
-native normal-projection algorithm, preserving lines, circular arcs, B-splines,
+None, the centroid of the Wire is used as the plane origin. When supported by
+the active backend, the complete Wire is projected normally onto that plane
+using native geometry, preserving lines, circular arcs, B-splines,
 and NURBS curves. On backends without native curve projection, an exact fallback
 is used only for polylines.</p>
 <dl class="field-list simple">
@@ -1763,10 +1782,10 @@ Default is 6.</p>
 <dt class="sig sig-object py" id="topologicpy.Wire.Wire.Project">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Project</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wire</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">face</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Wire.Wire.Project" title="Permalink to this definition"></a></dt>
 <dd><p>Projects the input Wire onto the input Face while preserving curve geometry.</p>
-<p>On the PythonOCC backend the complete Wire is projected natively using
-OpenCascade’s cylindrical projection algorithm. Lines, circular arcs,
-B-splines, and NURBS curves therefore remain genuine curves. On backends
-without a native curve projection, a fallback is used only when both the
+<p>When supported by the active backend, the complete Wire is projected
+natively. Lines, circular arcs, B-splines, and NURBS curves therefore
+remain genuine curves. On backends without native curve projection, a
+fallback is used only when both the
 receiving Face is planar and the source Wire is a polyline, because in
 that case projecting each linear Edge by its endpoints is exact.</p>
 <dl class="field-list simple">
@@ -1904,48 +1923,61 @@ interior angles.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Wire.Wire.Ribbon">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Ribbon</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wire</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thickness</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thicknessKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'thickness'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offsetKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'offset'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stepOffsetA</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stepOffsetB</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stepOffsetKeyA</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'stepOffsetA'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stepOffsetKeyB</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'stepOffsetB'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reverse</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bisectors</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transferDictionaries</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epsilon</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.01</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">numWorkers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Wire.Wire.Ribbon" title="Permalink to this definition"></a></dt>
-<dd><p>Creates a ribbon (face or shell) wire from the input wire. A positive offset value results in an offset to the interior of an anti-clockwise wire.</p>
+<dd><p>Creates a ribbon from the input planar Wire.</p>
+<p>Two exact offset Wires define the sides of the ribbon. Existing curved,
+circular, B-Spline, and NURBS geometry produced by Wire.ByOffset is
+preserved and is never reconstructed from vertices.</p>
+<p>For an open input Wire, the two offset Wires are connected at their ends
+with straight cap Edges to create one closed boundary.</p>
+<p>For a closed input Wire, the larger offset loop becomes the external
+boundary and the smaller loop becomes an internal boundary.</p>
+<p>If bisectors is False, a Face is returned. If bisectors is True, the
+ribbon Face is sliced by the straight bisector/seam Edges and a Shell is
+returned.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>wire</strong><span class="classifier">topologic_core.Wire</span></dt><dd><p>The input wire.</p>
+<dt><strong>wire</strong><span class="classifier">topologic_core.Wire</span></dt><dd><p>The input planar manifold Wire.</p>
 </dd>
-<dt><strong>thickness</strong><span class="classifier">float , optional</span></dt><dd><p>The desired thickness of the ribbon. Default is 1.0.</p>
+<dt><strong>thickness</strong><span class="classifier">float , optional</span></dt><dd><p>The ribbon width. Default is 1.0.</p>
 </dd>
-<dt><strong>thicknessKey</strong><span class="classifier">str , optional</span></dt><dd><p>The edge dictionary key under which to find the thickness value. The thickness is the width of the ribbon. If a value cannot be found, the thickness input parameter value is used instead. Default is “thickness”.</p>
+<dt><strong>thicknessKey</strong><span class="classifier">str , optional</span></dt><dd><p>Edge dictionary key specifying the ribbon thickness. Default is
+“thickness”.</p>
 </dd>
-<dt><strong>offset</strong><span class="classifier">float , optional</span></dt><dd><p>The desired offset distance. An offset is measured prependicularly from the input wire to the nearest parallel edge that belongs to the ribbon. Default is 1.0.</p>
+<dt><strong>offset</strong><span class="classifier">float , optional</span></dt><dd><p>Distance from the input Wire to the first side of the ribbon.
+Default is 1.0.</p>
 </dd>
-<dt><strong>offsetKey</strong><span class="classifier">str , optional</span></dt><dd><p>The edge dictionary key under which to find the offset value. If a value cannot be found, the offset input parameter value is used instead. Default is “offset”.</p>
+<dt><strong>offsetKey</strong><span class="classifier">str , optional</span></dt><dd><p>Edge dictionary key specifying the initial offset. Default is “offset”.</p>
 </dd>
-<dt><strong>stepOffsetA</strong><span class="classifier">float , optional</span></dt><dd><p>The amount to offset along the previous edge when transitioning between parallel edges with different offsets. Default is 0.</p>
+<dt><strong>stepOffsetA</strong><span class="classifier">float , optional</span></dt><dd><p>Step offset applied along the preceding Edge. Default is 0.</p>
 </dd>
-<dt><strong>stepOffsetB</strong><span class="classifier">float , optional</span></dt><dd><p>The amount to offset along the next edge when transitioning between parallel edges with different offsets. Default is 0.</p>
+<dt><strong>stepOffsetB</strong><span class="classifier">float , optional</span></dt><dd><p>Step offset applied along the following Edge. Default is 0.</p>
 </dd>
-<dt><strong>stepOffsetKeyA</strong><span class="classifier">str , optional</span></dt><dd><p>The vertex dictionary key under which to find the step offset A value. If a value cannot be found, the stepOffsetA input parameter value is used instead. Default is “stepOffsetA”.</p>
+<dt><strong>stepOffsetKeyA</strong><span class="classifier">str , optional</span></dt><dd><p>Vertex dictionary key overriding stepOffsetA. Default is “stepOffsetA”.</p>
 </dd>
-<dt><strong>stepOffsetKeyB</strong><span class="classifier">str , optional</span></dt><dd><p>The vertex dictionary key under which to find the step offset B value. If a value cannot be found, the stepOffsetB input parameter value is used instead. Default is “stepOffsetB”.</p>
+<dt><strong>stepOffsetKeyB</strong><span class="classifier">str , optional</span></dt><dd><p>Vertex dictionary key overriding stepOffsetB. Default is “stepOffsetB”.</p>
 </dd>
-<dt><strong>reverse</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the direction of offsets is reversed. Otherwise, it is not. Default is False.</p>
+<dt><strong>reverse</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, reverses the offset direction. Default is False.</p>
 </dd>
-<dt><strong>bisectors</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, The bisectors (seams) edges will be included in the returned ribbon (i.e. shell). If not, the returned ribbon is a face. Default is False.</p>
+<dt><strong>bisectors</strong><span class="classifier">bool , optional</span></dt><dd><p>If False, returns one Face. If True, includes seam divisions and
+returns a Shell. Default is False.</p>
 </dd>
-<dt><strong>transferDictionaries</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the dictionaries of the original wire, its edges, and its vertices are transfered to the created ribbon. Otherwise, they are not. Default is False.</p>
+<dt><strong>transferDictionaries</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, transfers source dictionaries to the resulting topology.
+Default is False.</p>
 </dd>
-<dt><strong>epsilon</strong><span class="classifier">float , optional</span></dt><dd><p>The desired epsilon (another form of tolerance for shortest edge to remove). Default is 0.01. (This is set to a larger number as it was found to work better)</p>
+<dt><strong>epsilon</strong><span class="classifier">float , optional</span></dt><dd><p>Small extension applied to seam Edges before slicing. Default is 0.01.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired geometric tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, suppresses diagnostic messages. Default is False.</p>
 </dd>
-<dt><strong>numWorkers</strong><span class="classifier">int , optional</span></dt><dd><p>Number of workers run in parallel to process. If you set it to 1, no parallel processing will take place.
-The default is None which causes the algorithm to use twice the number of cpu cores in the host computer.</p>
+<dt><strong>numWorkers</strong><span class="classifier">int , optional</span></dt><dd><p>Number of workers used for dictionary transfer. Default is None.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Wire</dt><dd><p>The created wire.</p>
+<dt>topologic_core.Face or topologic_core.Shell</dt><dd><p>The created ribbon.</p>
 </dd>
 </dl>
 </dd>
@@ -1983,27 +2015,36 @@ This algorithm depends on the polyskel code which is included in the library. Po
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Wire.Wire.Simplify">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Simplify</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wire</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'douglas-peucker'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Wire.Wire.Simplify" title="Permalink to this definition"></a></dt>
-<dd><p>Simplifies a polyline Wire using a point-based simplification algorithm.</p>
-<p><code class="docutils literal notranslate"><span class="pre">Wire.Simplify</span></code> is intentionally a linear/polyline operation. Curved
-Edges are rejected rather than silently converted to endpoint chords.</p>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Simplify</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wire</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'douglas-peucker'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epsilon</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Wire.Wire.Simplify" title="Permalink to this definition"></a></dt>
+<dd><p>Simplifies the linear portions of the input Wire while preserving curved
+Edges exactly.</p>
+<p>Purely polygonal Wires are simplified as complete paths or cycles. For mixed
+Wires, each contiguous run of linear Edges is simplified independently,
+while circular, elliptical, B-Spline, NURBS, and other curved Edges are
+retained unchanged.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>wire</strong><span class="classifier">topologic_core.Wire</span></dt><dd><p>The input Wire.</p>
 </dd>
-<dt><strong>method</strong><span class="classifier">str , optional</span></dt><dd><p>One of <code class="docutils literal notranslate"><span class="pre">&quot;douglas-peucker&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;visvalingam-whyatt&quot;</span></code>, or
-<code class="docutils literal notranslate"><span class="pre">&quot;reumann-witkam&quot;</span></code>. Default is <code class="docutils literal notranslate"><span class="pre">&quot;douglas-peucker&quot;</span></code>.</p>
+<dt><strong>method</strong><span class="classifier">str , optional</span></dt><dd><p>The simplification method. Supported values are
+“douglas-peucker”, “visvalingam-whyatt”, and “reumann-witkam”.
+Default is “douglas-peucker”.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>Algorithm tolerance. Default is 0.0001.</p>
+<dt><strong>epsilon</strong><span class="classifier">float , optional</span></dt><dd><p>The simplification threshold. For Douglas-Peucker and Reumann-Witkam,
+this is a distance. For Visvalingam-Whyatt, this is an area.
+Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, suppress diagnostics. Default is False.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The topology construction and coincidence tolerance.
+Default is 0.0001.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Wire</dt><dd><p>The simplified polyline Wire.</p>
+<dt>topologic_core.Wire</dt><dd><p>The simplified Wire.</p>
 </dd>
 </dl>
 </dd>

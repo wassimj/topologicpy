@@ -161,8 +161,8 @@
 <col style="width: 90%" />
 </colgroup>
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.AddInternalBoundaries" title="topologicpy.Face.Face.AddInternalBoundaries"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AddInternalBoundaries</span></code></a>(face, wires)</p></td>
-<td><p>Adds internal boundaries (closed wires) to the input face.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.AddInternalBoundaries" title="topologicpy.Face.Face.AddInternalBoundaries"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AddInternalBoundaries</span></code></a>(face, wires[, ...])</p></td>
+<td><p>Adds internal boundaries (holes) to the input Face while preserving the Face's original support surface and existing boundary geometry.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.AddInternalBoundariesCluster" title="topologicpy.Face.Face.AddInternalBoundariesCluster"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AddInternalBoundariesCluster</span></code></a>(face, cluster)</p></td>
 <td><p>Adds the input cluster of internal boundaries (closed wires) to the input face.</p></td>
@@ -195,10 +195,10 @@
 <td><p>Creates an offset face from the input face based on the input area.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.ByShell" title="topologicpy.Face.Face.ByShell"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByShell</span></code></a>(shell[, origin, angTolerance, ...])</p></td>
-<td><p>Creates a face by merging the faces of the input shell.</p></td>
+<td><p>Creates a single Face by merging the Faces of the input Shell without flattening the Shell or reconstructing its geometry from Vertices or Wires.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.ByThickenedWire" title="topologicpy.Face.Face.ByThickenedWire"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByThickenedWire</span></code></a>(wire[, offsetA, offsetB, ...])</p></td>
-<td><p>Creates a face by thickening the input wire.</p></td>
+<td><p>Creates a planar Face by thickening the input Wire.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.ByVertices" title="topologicpy.Face.Face.ByVertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByVertices</span></code></a>(vertices[, tolerance, silent])</p></td>
 <td><p>Creates a face from the input list of vertices.</p></td>
@@ -261,129 +261,126 @@
 <td><p>Returns True if the input face is facing toward the input direction.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Fillet" title="topologicpy.Face.Face.Fillet"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Fillet</span></code></a>(face[, radius, sides, radiusKey, ...])</p></td>
-<td><p>Fillets (rounds) the interior and exterior corners of the input face given the input radius.</p></td>
+<td><p>Fillets the corners of the input planar Face while preserving its native support surface and boundary geometry.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Harmonize" title="topologicpy.Face.Face.Harmonize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Harmonize</span></code></a>(face[, tolerance, silent])</p></td>
-<td><p>Returns a harmonized version of the input face such that the <em>u</em> and <em>v</em> origins are always in the upperleft corner.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.IShape" title="topologicpy.Face.Face.IShape"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IShape</span></code></a>([origin, width, length, a, b, c, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.IShape" title="topologicpy.Face.Face.IShape"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IShape</span></code></a>([origin, width, length, a, b, c, ...])</p></td>
 <td><p>Creates an I-shape.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.InteriorAngles" title="topologicpy.Face.Face.InteriorAngles"><code class="xref py py-obj docutils literal notranslate"><span class="pre">InteriorAngles</span></code></a>(face[, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.InteriorAngles" title="topologicpy.Face.Face.InteriorAngles"><code class="xref py py-obj docutils literal notranslate"><span class="pre">InteriorAngles</span></code></a>(face[, ...])</p></td>
 <td><p>Returns the interior angles of the input face in degrees.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.InternalBoundaries" title="topologicpy.Face.Face.InternalBoundaries"><code class="xref py py-obj docutils literal notranslate"><span class="pre">InternalBoundaries</span></code></a>(face)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.InternalBoundaries" title="topologicpy.Face.Face.InternalBoundaries"><code class="xref py py-obj docutils literal notranslate"><span class="pre">InternalBoundaries</span></code></a>(face)</p></td>
 <td><p>Returns the internal boundaries (closed wires) of the input face.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.InternalVertex" title="topologicpy.Face.Face.InternalVertex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">InternalVertex</span></code></a>(face[, tolerance, silent])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.InternalVertex" title="topologicpy.Face.Face.InternalVertex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">InternalVertex</span></code></a>(face[, tolerance, silent])</p></td>
 <td><p>Creates a vertex guaranteed to be inside the input face.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Invert" title="topologicpy.Face.Face.Invert"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Invert</span></code></a>(face[, tolerance, silent])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Invert" title="topologicpy.Face.Face.Invert"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Invert</span></code></a>(face[, tolerance, silent])</p></td>
 <td><p>Reverses the orientation of the input Face without approximating its geometry.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.IsConvex" title="topologicpy.Face.Face.IsConvex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsConvex</span></code></a>(face[, mantissa, silent])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.IsConvex" title="topologicpy.Face.Face.IsConvex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsConvex</span></code></a>(face[, mantissa, silent])</p></td>
 <td><p>Returns True if the input face is convex.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.IsCoplanar" title="topologicpy.Face.Face.IsCoplanar"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsCoplanar</span></code></a>(faceA, faceB[, mantissa, tolerance])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.IsCoplanar" title="topologicpy.Face.Face.IsCoplanar"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsCoplanar</span></code></a>(faceA, faceB[, mantissa, tolerance])</p></td>
 <td><p>Returns True if the two input faces are coplanar.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.IsPlanar" title="topologicpy.Face.Face.IsPlanar"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsPlanar</span></code></a>(face[, tolerance, silent])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.IsPlanar" title="topologicpy.Face.Face.IsPlanar"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsPlanar</span></code></a>(face[, tolerance, silent])</p></td>
 <td><p>Returns True if the input Face lies on a plane.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Isovist" title="topologicpy.Face.Face.Isovist"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Isovist</span></code></a>(face, vertex[, obstacles, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Isovist" title="topologicpy.Face.Face.Isovist"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Isovist</span></code></a>(face, vertex[, obstacles, ...])</p></td>
 <td><p>Returns the face representing the isovist projection from the input viewpoint.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.LShape" title="topologicpy.Face.Face.LShape"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LShape</span></code></a>([origin, width, length, a, b, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.LShape" title="topologicpy.Face.Face.LShape"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LShape</span></code></a>([origin, width, length, a, b, ...])</p></td>
 <td><p>Creates an L-shape.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.MedialAxis" title="topologicpy.Face.Face.MedialAxis"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MedialAxis</span></code></a>(face[, resolution, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.MedialAxis" title="topologicpy.Face.Face.MedialAxis"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MedialAxis</span></code></a>(face[, resolution, ...])</p></td>
 <td><p>Returns a wire representing an approximation of the medial axis of the input topology.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Normal" title="topologicpy.Face.Face.Normal"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Normal</span></code></a>(face[, outputType, mantissa, silent])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Normal" title="topologicpy.Face.Face.Normal"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Normal</span></code></a>(face[, outputType, mantissa, silent])</p></td>
 <td><p>Returns the normal vector to the input face.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.NormalAtParameters" title="topologicpy.Face.Face.NormalAtParameters"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NormalAtParameters</span></code></a>(face[, u, v, outputType, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.NormalAtParameters" title="topologicpy.Face.Face.NormalAtParameters"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NormalAtParameters</span></code></a>(face[, u, v, outputType, ...])</p></td>
 <td><p>Returns the oriented unit normal vector to the input Face at the specified normalized U and V parameters.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.NormalEdge" title="topologicpy.Face.Face.NormalEdge"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NormalEdge</span></code></a>(face[, length, tolerance, silent])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.NormalEdge" title="topologicpy.Face.Face.NormalEdge"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NormalEdge</span></code></a>(face[, length, tolerance, silent])</p></td>
 <td><p>Returns an Edge representing the local surface normal of the input Face.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.NorthArrow" title="topologicpy.Face.Face.NorthArrow"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NorthArrow</span></code></a>([origin, radius, sides, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.NorthArrow" title="topologicpy.Face.Face.NorthArrow"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NorthArrow</span></code></a>([origin, radius, sides, ...])</p></td>
 <td><p>Creates a north arrow.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Planarize" title="topologicpy.Face.Face.Planarize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Planarize</span></code></a>(face[, origin, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Planarize" title="topologicpy.Face.Face.Planarize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Planarize</span></code></a>(face[, origin, tolerance])</p></td>
 <td><p>Planarizes the input face such that its center of mass is located at the input origin and its normal is pointed in the input direction.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.PlaneEquation" title="topologicpy.Face.Face.PlaneEquation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PlaneEquation</span></code></a>(face[, mantissa])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.PlaneEquation" title="topologicpy.Face.Face.PlaneEquation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PlaneEquation</span></code></a>(face[, mantissa])</p></td>
 <td><p>Returns the a, b, c, d coefficients of the plane equation of the input face.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Project" title="topologicpy.Face.Face.Project"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Project</span></code></a>(faceA, faceB[, direction, mantissa, ...])</p></td>
-<td><p>Creates a projection of the first input face unto the second input face.</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Project" title="topologicpy.Face.Face.Project"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Project</span></code></a>(faceA, faceB[, direction, mantissa, ...])</p></td>
+<td><p>Creates a projection of the first input Face onto the second input Face.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.RHS" title="topologicpy.Face.Face.RHS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RHS</span></code></a>([origin, width, length, thickness, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.RHS" title="topologicpy.Face.Face.RHS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RHS</span></code></a>([origin, width, length, thickness, ...])</p></td>
 <td><p>Creates a rectangular hollow section (RHS).</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Rectangle" title="topologicpy.Face.Face.Rectangle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Rectangle</span></code></a>([origin, width, length, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Rectangle" title="topologicpy.Face.Face.Rectangle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Rectangle</span></code></a>([origin, width, length, ...])</p></td>
 <td><p>Creates a rectangle.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.RemoveCollinearEdges" title="topologicpy.Face.Face.RemoveCollinearEdges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveCollinearEdges</span></code></a>(face[, angTolerance, ...])</p></td>
-<td><p>Removes any collinear edges in the input face.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.RemoveCollinearEdges" title="topologicpy.Face.Face.RemoveCollinearEdges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveCollinearEdges</span></code></a>(face[, angTolerance, ...])</p></td>
+<td><p>Removes redundant consecutive linear collinear Edges from the boundaries of the input Face while preserving the Face's original support surface and all curved boundary geometry.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Ring" title="topologicpy.Face.Face.Ring"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Ring</span></code></a>([origin, radius, thickness, sides, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Ring" title="topologicpy.Face.Face.Ring"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Ring</span></code></a>([origin, radius, thickness, sides, ...])</p></td>
 <td><p>Creates a circular ring.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.SHS" title="topologicpy.Face.Face.SHS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SHS</span></code></a>([origin, size, thickness, outerFillet, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.SHS" title="topologicpy.Face.Face.SHS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SHS</span></code></a>([origin, size, thickness, outerFillet, ...])</p></td>
 <td><p>Creates a square hollow section (SHS).</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Simplify" title="topologicpy.Face.Face.Simplify"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Simplify</span></code></a>(face[, method, tolerance, silent])</p></td>
-<td><p>Simplifies the input wire edges based on the selected algorithm: Douglas-Peucker or Visvalingam–Whyatt.</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Simplify" title="topologicpy.Face.Face.Simplify"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Simplify</span></code></a>(face[, method, epsilon, tolerance, ...])</p></td>
+<td><p>Simplifies the linear portions of the boundaries of a planar Face while preserving curved Edges.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Skeleton" title="topologicpy.Face.Face.Skeleton"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Skeleton</span></code></a>(face[, boundary, tolerance])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Skeleton" title="topologicpy.Face.Face.Skeleton"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Skeleton</span></code></a>(face[, boundary, tolerance])</p></td>
 <td><p>Creates a straight skeleton. This method is contributed by 高熙鹏 xipeng gao &lt;<a class="reference external" href="mailto:gaoxipeng1998&#37;&#52;&#48;gmail&#46;com">gaoxipeng1998<span>&#64;</span>gmail<span>&#46;</span>com</a>&gt;</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Square" title="topologicpy.Face.Face.Square"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Square</span></code></a>([origin, size, direction, placement, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Square" title="topologicpy.Face.Face.Square"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Square</span></code></a>([origin, size, direction, placement, ...])</p></td>
 <td><p>Creates a square.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Squircle" title="topologicpy.Face.Face.Squircle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Squircle</span></code></a>([origin, radius, sides, a, b, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Squircle" title="topologicpy.Face.Face.Squircle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Squircle</span></code></a>([origin, radius, sides, a, b, ...])</p></td>
 <td><p>Creates a Squircle which is a hybrid between a circle and a square.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Star" title="topologicpy.Face.Face.Star"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Star</span></code></a>([origin, radiusA, radiusB, rays, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Star" title="topologicpy.Face.Face.Star"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Star</span></code></a>([origin, radiusA, radiusB, rays, ...])</p></td>
 <td><p>Creates a star.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.TShape" title="topologicpy.Face.Face.TShape"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TShape</span></code></a>([origin, width, length, a, b, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.TShape" title="topologicpy.Face.Face.TShape"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TShape</span></code></a>([origin, width, length, a, b, ...])</p></td>
 <td><p>Creates a T-shape.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.TangentAtParameters" title="topologicpy.Face.Face.TangentAtParameters"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TangentAtParameters</span></code></a>(face[, u, v, axis, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.TangentAtParameters" title="topologicpy.Face.Face.TangentAtParameters"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TangentAtParameters</span></code></a>(face[, u, v, axis, ...])</p></td>
 <td><p>Returns one parametric tangent direction of the input Face at the specified normalized parameters.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.TangentsAtParameters" title="topologicpy.Face.Face.TangentsAtParameters"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TangentsAtParameters</span></code></a>(face[, u, v, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.TangentsAtParameters" title="topologicpy.Face.Face.TangentsAtParameters"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TangentsAtParameters</span></code></a>(face[, u, v, ...])</p></td>
 <td><p>Returns the U and V parametric tangent directions of the input Face at the specified normalized parameters.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.ThirdVertex" title="topologicpy.Face.Face.ThirdVertex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ThirdVertex</span></code></a>(face[, tolerance, silent])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.ThirdVertex" title="topologicpy.Face.Face.ThirdVertex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ThirdVertex</span></code></a>(face[, tolerance, silent])</p></td>
 <td><p>Returns a third vertex on the input face to enable rotation matrix creation.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Trapezoid" title="topologicpy.Face.Face.Trapezoid"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Trapezoid</span></code></a>([origin, widthA, widthB, offsetA, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Trapezoid" title="topologicpy.Face.Face.Trapezoid"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Trapezoid</span></code></a>([origin, widthA, widthB, offsetA, ...])</p></td>
 <td><p>Creates a trapezoid.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Triangulate" title="topologicpy.Face.Face.Triangulate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Triangulate</span></code></a>(face[, mode, meshSize, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Triangulate" title="topologicpy.Face.Face.Triangulate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Triangulate</span></code></a>(face[, mode, meshSize, ...])</p></td>
 <td><p>Triangulates the input face and returns a list of faces.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.TrimByWire" title="topologicpy.Face.Face.TrimByWire"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TrimByWire</span></code></a>(face, wire[, reverse, tolerance, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.TrimByWire" title="topologicpy.Face.Face.TrimByWire"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TrimByWire</span></code></a>(face, wire[, reverse, tolerance, ...])</p></td>
 <td><p>Trims the input face by the input wire.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.VertexByParameters" title="topologicpy.Face.Face.VertexByParameters"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VertexByParameters</span></code></a>(face[, u, v, tolerance, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.VertexByParameters" title="topologicpy.Face.Face.VertexByParameters"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VertexByParameters</span></code></a>(face[, u, v, tolerance, ...])</p></td>
 <td><p>Creates a vertex at normalized <code class="docutils literal notranslate"><span class="pre">u</span></code> and <code class="docutils literal notranslate"><span class="pre">v</span></code> parameters of the input face.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.VertexParameters" title="topologicpy.Face.Face.VertexParameters"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VertexParameters</span></code></a>(face, vertex[, outputType, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.VertexParameters" title="topologicpy.Face.Face.VertexParameters"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VertexParameters</span></code></a>(face, vertex[, outputType, ...])</p></td>
 <td><p>Returns normalized face parameters at the location of the input vertex.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Vertices" title="topologicpy.Face.Face.Vertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Vertices</span></code></a>(face)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Vertices" title="topologicpy.Face.Face.Vertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Vertices</span></code></a>(face)</p></td>
 <td><p>Returns the vertices of the input face.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Wire" title="topologicpy.Face.Face.Wire"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Wire</span></code></a>(face)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Wire" title="topologicpy.Face.Face.Wire"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Wire</span></code></a>(face)</p></td>
 <td><p>Returns the external boundary (closed wire) of the input face.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Wires" title="topologicpy.Face.Face.Wires"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Wires</span></code></a>(face)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Wires" title="topologicpy.Face.Face.Wires"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Wires</span></code></a>(face)</p></td>
 <td><p>Returns the wires of the input face.</p></td>
 </tr>
 </tbody>
@@ -401,20 +398,29 @@
 </table>
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Face.Face.AddInternalBoundaries">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AddInternalBoundaries</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">face</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wires</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Face.Face.AddInternalBoundaries" title="Permalink to this definition"></a></dt>
-<dd><p>Adds internal boundaries (closed wires) to the input face. Internal boundaries are considered holes in the input face.</p>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AddInternalBoundaries</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">face</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wires</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Face.Face.AddInternalBoundaries" title="Permalink to this definition"></a></dt>
+<dd><p>Adds internal boundaries (holes) to the input Face while preserving the
+Face’s original support surface and existing boundary geometry.</p>
+<p>The operation is delegated to the active geometry backend. The input Face
+is not reconstructed from its external and internal boundary Wires.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input face.</p>
+<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input Face.</p>
 </dd>
-<dt><strong>wires</strong><span class="classifier">list</span></dt><dd><p>The input list of internal boundaries (closed wires).</p>
+<dt><strong>wires</strong><span class="classifier">list</span></dt><dd><p>The input list of closed Wires to add as internal boundaries.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Face</dt><dd><p>The created face with internal boundaries added to it.</p>
+<dt>topologic_core.Face</dt><dd><p>The Face with the additional internal boundaries, or None if the
+active backend cannot perform the operation while preserving the
+original support surface.</p>
 </dd>
 </dl>
 </dd>
@@ -792,24 +798,37 @@ The default is None which causes the algorithm to use twice the number of cpu co
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Face.Face.ByShell">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByShell</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shell</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angTolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Face.Face.ByShell" title="Permalink to this definition"></a></dt>
-<dd><p>Creates a face by merging the faces of the input shell.</p>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByShell</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shell</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angTolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Face.Face.ByShell" title="Permalink to this definition"></a></dt>
+<dd><p>Creates a single Face by merging the Faces of the input Shell without
+flattening the Shell or reconstructing its geometry from Vertices or Wires.</p>
+<p>The input Faces must belong to one geometrically compatible supporting
+surface. Adjacent same-domain Faces are unified natively whenever the active
+backend supports that operation. Analytical, B-Spline, and NURBS curves and
+surfaces are retained.</p>
+<p>If the Shell is folded, non-coplanar, or otherwise cannot be represented as
+one trimmed Face on a common supporting surface, the method returns None
+rather than creating a planar approximation.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>shell</strong><span class="classifier">topologic_core.Shell</span></dt><dd><p>The input shell.</p>
+<dt><strong>shell</strong><span class="classifier">topologic_core.Shell</span></dt><dd><p>The input Shell.</p>
 </dd>
-<dt><strong>angTolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired angular tolerance. Default is 0.1.</p>
+<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>Retained for backward compatibility. It is not used because this method
+does not flatten or planarize the input Shell.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
+<dt><strong>angTolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The angular tolerance in degrees. Retained for API compatibility.
+Default is 0.1.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired geometric tolerance. Default is 0.0001.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Face</dt><dd><p>The created face.</p>
+<dt>topologic_core.Face</dt><dd><p>The unified Face, or None if the Shell cannot be represented as one
+Face without replacing its native geometry.</p>
 </dd>
 </dl>
 </dd>
@@ -819,25 +838,36 @@ The default is None which causes the algorithm to use twice the number of cpu co
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Face.Face.ByThickenedWire">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByThickenedWire</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wire</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offsetA</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offsetB</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Face.Face.ByThickenedWire" title="Permalink to this definition"></a></dt>
-<dd><p>Creates a face by thickening the input wire. This method assumes the wire is manifold and planar.</p>
+<dd><p>Creates a planar Face by thickening the input Wire.</p>
+<p>Two offset Wires are created on opposite sides of the input Wire.
+Their existing Edge geometry is preserved exactly. For an open Wire,
+only two new straight cap Edges are created between corresponding
+endpoints. Curved, circular, B-Spline, and NURBS offset Edges are never
+reconstructed from their Vertices.</p>
+<p>For a closed Wire, the larger offset loop is used as the external
+boundary and the smaller offset loop as the internal boundary.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>wire</strong><span class="classifier">topologic_core.Wire</span></dt><dd><p>The input wire to be thickened.</p>
+<dt><strong>wire</strong><span class="classifier">topologic_core.Wire</span></dt><dd><p>The input manifold planar Wire.</p>
 </dd>
-<dt><strong>offsetA</strong><span class="classifier">float , optional</span></dt><dd><p>The desired offset to the exterior of the wire. Default is 1.0.</p>
+<dt><strong>offsetA</strong><span class="classifier">float , optional</span></dt><dd><p>The desired offset distance on one side of the Wire. For a closed
+Wire this is intended to represent the exterior offset.
+Default is 1.0.</p>
 </dd>
-<dt><strong>offsetB</strong><span class="classifier">float , optional</span></dt><dd><p>The desired offset to the interior of the wire. Default is 0.0.</p>
+<dt><strong>offsetB</strong><span class="classifier">float , optional</span></dt><dd><p>The desired offset distance on the opposite side of the Wire. For
+a closed Wire this is intended to represent the interior offset.
+Default is 0.0.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Face</dt><dd><p>The created face.</p>
+<dt>topologic_core.Face</dt><dd><p>The thickened Face, or None if the operation fails.</p>
 </dd>
 </dl>
 </dd>
@@ -1049,7 +1079,7 @@ the active backend. Invalid or non-contained internal Wires are ignored.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Face.Face.Circle">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Circle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sides</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">16</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fromAngle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">toAngle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">360.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[0,</span> <span class="pre">0,</span> <span class="pre">1]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">placement</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'center'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">polyhderon</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">polyline</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Face.Face.Circle" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Circle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sides</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">16</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fromAngle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">toAngle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">360.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[0,</span> <span class="pre">0,</span> <span class="pre">1]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">placement</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'center'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">polyline</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Face.Face.Circle" title="Permalink to this definition"></a></dt>
 <dd><p>Creates a circular Face.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1069,14 +1099,9 @@ the number of exact circular-arc Edge subtopologies. Default is 16.</p>
 </dd>
 <dt><strong>placement</strong><span class="classifier">str , optional</span></dt><dd><p>The placement mode. Default is “center”.</p>
 </dd>
-<dt><strong>polyhderon</strong><span class="classifier">bool , optional</span></dt><dd><p>Historical misspelled compatibility parameter. If <code class="docutils literal notranslate"><span class="pre">polyline</span></code> is
-None, True creates the historical polygonal approximation and False
-creates exact circular Edges. Default is True.</p>
-</dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>polyline</strong><span class="classifier">bool , optional</span></dt><dd><p>Explicitly selects straight-segment or exact curved construction.
-If None, <code class="docutils literal notranslate"><span class="pre">polyhderon</span></code> is used for backward compatibility. Default is None.</p>
+<dt><strong>polyline</strong><span class="classifier">bool , optional</span></dt><dd><p>Explicitly selects straight-segment or exact curved construction. Default is False.</p>
 </dd>
 <dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, error and warning messages are suppressed. Default is False.</p>
 </dd>
@@ -1487,51 +1512,37 @@ internal boundaries are considered to be those interior to the original face. Th
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Face.Face.Fillet">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Fillet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">face</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sides</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">16</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radiusKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Face.Face.Fillet" title="Permalink to this definition"></a></dt>
-<dd><p>Fillets (rounds) the interior and exterior corners of the input face given the input radius. See <a class="reference external" href="https://en.wikipedia.org/wiki/Fillet_(mechanics">https://en.wikipedia.org/wiki/Fillet_(mechanics</a>)</p>
+<dd><p>Fillets the corners of the input planar Face while preserving its native
+support surface and boundary geometry.</p>
+<p>The operation is delegated to the active geometry backend. Existing
+boundary Edges and internal boundaries are not reconstructed from
+Vertices.</p>
+<p>Backends may provide an exact native planar-face fillet operation.
+Straight and circular boundary Edges are supported exactly. Unsupported
+curve configurations fail cleanly rather than being approximated.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input face.</p>
+<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input planar Face.</p>
 </dd>
-<dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The desired radius of the fillet. Default is 0.</p>
+<dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The default fillet radius. Default is 0.</p>
 </dd>
-<dt><strong>sides</strong><span class="classifier">int , optional</span></dt><dd><p>The number of sides (segments) of the fillet. Default is 16.</p>
+<dt><strong>sides</strong><span class="classifier">int , optional</span></dt><dd><p>Retained for backward API compatibility. Native fillets are exact
+circular arcs and are not segmented. Default is 16.</p>
 </dd>
-<dt><strong>radiusKey</strong><span class="classifier">str , optional</span></dt><dd><p>If specified, the dictionary of the vertices will be queried for this key to specify the desired fillet radius. Default is None.</p>
+<dt><strong>radiusKey</strong><span class="classifier">str , optional</span></dt><dd><p>If specified, each Vertex dictionary is queried for this key. A valid
+non-negative numerical value overrides the default radius at that
+Vertex. Default is None.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Face</dt><dd><p>The filleted face.</p>
-</dd>
-</dl>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="topologicpy.Face.Face.Harmonize">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Harmonize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">face</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Face.Face.Harmonize" title="Permalink to this definition"></a></dt>
-<dd><p>Returns a harmonized version of the input face such that the <em>u</em> and <em>v</em> origins are always in the upperleft corner.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input face.</p>
-</dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
-</dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>topologic_core.Face</dt><dd><p>The harmonized face.</p>
+<dt>topologic_core.Face</dt><dd><p>The filleted Face, or None if the operation fails.</p>
 </dd>
 </dl>
 </dd>
@@ -1656,7 +1667,7 @@ internal boundaries are considered to be those interior to the original face. Th
 <dd><p>Reverses the orientation of the input Face without approximating its
 geometry.</p>
 <p>Exact curved boundaries and NURBS surfaces are preserved. The preferred
-path reverses the backend-native OCCT Face directly. If native reversal
+path reverses the backend-native Face directly. If native reversal
 is unavailable, a planar fallback reverses the existing boundary Wires
 rather than rebuilding them from vertices.</p>
 <dl class="field-list simple">
@@ -2054,8 +2065,13 @@ Default is 0.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Face.Face.Project">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Project</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">faceA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">faceB</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Face.Face.Project" title="Permalink to this definition"></a></dt>
-<dd><p>Creates a projection of the first input face unto the second input face.</p>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Project</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">faceA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">faceB</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Face.Face.Project" title="Permalink to this definition"></a></dt>
+<dd><p>Creates a projection of the first input Face onto the second input Face.</p>
+<p>The projected boundary Wires are used to trim the receiving Face itself.
+The result therefore retains the receiving Face’s native supporting
+surface, including B-spline and NURBS surfaces, instead of asking
+<code class="docutils literal notranslate"><span class="pre">Face.ByWires</span></code> to infer a new surface from the projected boundaries.
+Native projected curve geometry is likewise retained.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
@@ -2068,6 +2084,9 @@ Default is 0.</p>
 <dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default
+is False.</p>
 </dd>
 </dl>
 </dd>
@@ -2161,23 +2180,30 @@ Default is 0.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Face.Face.RemoveCollinearEdges">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RemoveCollinearEdges</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">face</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angTolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Face.Face.RemoveCollinearEdges" title="Permalink to this definition"></a></dt>
-<dd><p>Removes any collinear edges in the input face.</p>
+<dd><p>Removes redundant consecutive linear collinear Edges from the boundaries
+of the input Face while preserving the Face’s original support surface and
+all curved boundary geometry.</p>
+<p>Only linear Edge chains are eligible for merging. Vertices incident to
+genuinely curved Edges are protected so curved, circular, B-Spline, and
+NURBS Edges remain unchanged.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input face.</p>
+<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input Face.</p>
 </dd>
-<dt><strong>angTolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired angular tolerance. Default is 0.1.</p>
+<dt><strong>angTolerance</strong><span class="classifier">float , optional</span></dt><dd><p>Maximum angular deviation in degrees for adjacent linear Edges to be
+considered collinear. Default is 0.1.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired geometric tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Face</dt><dd><p>The created face without any collinear edges.</p>
+<dt>topologic_core.Face</dt><dd><p>The simplified Face, or None if the active backend cannot perform the
+operation while preserving the original support surface.</p>
 </dd>
 </dl>
 </dd>
@@ -2256,30 +2282,33 @@ Default is 0.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Face.Face.Simplify">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Simplify</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">face</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'douglas-peucker'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Face.Face.Simplify" title="Permalink to this definition"></a></dt>
-<dd><p>Simplifies the input wire edges based on the selected algorithm: Douglas-Peucker or Visvalingam–Whyatt.</p>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Simplify</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">face</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'douglas-peucker'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epsilon</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Face.Face.Simplify" title="Permalink to this definition"></a></dt>
+<dd><p>Simplifies the linear portions of the boundaries of a planar Face while
+preserving curved Edges.</p>
+<p>Curved Edges are retained exactly. Purely polygonal boundaries and
+contiguous linear portions of mixed boundaries are simplified using
+<code class="docutils literal notranslate"><span class="pre">Wire.Simplify</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input face.</p>
+<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input Face.</p>
 </dd>
-<dt><strong>method</strong><span class="classifier">str, optional</span></dt><dd><p>The simplification method to use: ‘douglas-peucker’ or ‘visvalingam-whyatt’ or ‘reumann-witkam’.
-The default is ‘douglas-peucker’.</p>
+<dt><strong>method</strong><span class="classifier">str , optional</span></dt><dd><p>The simplification method. Supported values are
+“douglas-peucker”, “visvalingam-whyatt”, and “reumann-witkam”.
+Default is “douglas-peucker”.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance.
-If using the douglas-peucker method, edge lengths shorter than this amount will be removed.
-If using the visvalingam-whyatt method, triangulare areas less than is amount will be removed.
-If using the Reumann-Witkam method, the tolerance specifies the maximum perpendicular distance allowed
-between any point and the current line segment; points falling within this distance are discarded.
-The default is 0.0001.</p>
+<dt><strong>epsilon</strong><span class="classifier">float , optional</span></dt><dd><p>The simplification threshold. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The topology construction and coincidence tolerance.
+Default is 0.0001.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Face</dt><dd><p>The simplified face.</p>
+<dt>topologic_core.Face</dt><dd><p>The simplified Face.</p>
 </dd>
 </dl>
 </dd>

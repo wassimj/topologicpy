@@ -219,7 +219,7 @@ canonically from the reconstructed TGraph.</p></li>
 <td><p>Validates a TGraph's ontology annotations and structural endpoints.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Ontology.Ontology.ValidateTTLString" title="topologicpy.Ontology.Ontology.ValidateTTLString"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ValidateTTLString</span></code></a>(ttlString[, silent])</p></td>
-<td><p>Validates Turtle syntax when RDFLib is available; fails gracefully otherwise.</p></td>
+<td><p>Validates Turtle syntax and canonical TopologicPy vocabulary use.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Ontology.Ontology.Value" title="topologicpy.Ontology.Ontology.Value"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Value</span></code></a>(obj, key[, defaultValue])</p></td>
 <td><p>Returns a dictionary value from a topology, TGraph item, or plain dict.</p></td>
@@ -725,7 +725,10 @@ the <code class="docutils literal notranslate"><span class="pre">dict:</span></c
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Ontology.Ontology.ValidateTTLString">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ValidateTTLString</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ttlString</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#topologicpy.Ontology.Ontology.ValidateTTLString" title="Permalink to this definition"></a></dt>
-<dd><p>Validates Turtle syntax when RDFLib is available; fails gracefully otherwise.</p>
+<dd><p>Validates Turtle syntax and canonical TopologicPy vocabulary use.</p>
+<p>Every URI in the <code class="docutils literal notranslate"><span class="pre">top:</span></code> namespace must be declared by the canonical
+ontology as a class or property. Thus ingested Turtle is held to the
+same no-invented-terms rule as exported RDF.</p>
 </dd></dl>
 
 <dl class="py method">

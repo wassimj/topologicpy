@@ -389,15 +389,14 @@ Otherwise, they are not. Default is False.</p>
 <dt class="sig sig-object py" id="topologicpy.Shell.Shell.ByWires">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByWires</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wires</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">triangulate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">polyhedron</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Shell.Shell.ByWires" title="Permalink to this definition"></a></dt>
 <dd><p>Creates a Shell by lofting through the input Wires.</p>
-<p><code class="docutils literal notranslate"><span class="pre">polyhedron=True</span></code> preserves the historical faceted loft. With the
-PythonOCC backend this mode is delegated to the native TopologicPy
-backend implementation; with TopologicCore the established public-API
-faceted fallback is retained.</p>
+<p><code class="docutils literal notranslate"><span class="pre">polyhedron=True</span></code> preserves the historical faceted loft. When the
+active backend provides loft construction, this mode is delegated to
+it; otherwise the established public-API faceted fallback is retained.</p>
 <p><code class="docutils literal notranslate"><span class="pre">polyhedron=False</span></code> requests a genuine curve-preserving ruled Shell.
-On PythonOCC, OCCT lofts directly through the supplied section Wires so
-circular, B-spline, and NURBS Edges remain curved. TopologicCore does
-not expose an equivalent exact operation and therefore returns None
-rather than silently faceting the geometry.</p>
+A backend supporting exact lofting operates directly on the supplied
+section Wires so circular, B-spline, and NURBS Edges remain curved. If
+that capability is unavailable, the method returns None rather than
+silently faceting the geometry.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
@@ -407,7 +406,7 @@ rather than silently faceting the geometry.</p>
 triangulated. Default is True.</p>
 </dd>
 <dt><strong>polyhedron</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, construct the historical faceted/polyhedral loft. If False,
-construct a curve-preserving ruled Shell on PythonOCC. Default is True.</p>
+construct a curve-preserving ruled Shell. Default is True.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
@@ -438,7 +437,7 @@ is requested on an unsupported backend.</p>
 triangulated. Default is True.</p>
 </dd>
 <dt><strong>polyhedron</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, uses the historical faceted/polyhedral loft. If False,
-requests an exact curve-preserving ruled shell on the PythonOCC
+requests an exact curve-preserving ruled shell from the active
 backend. Default is True.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
@@ -882,7 +881,7 @@ Edge geometry whenever the active backend supports exact native projection.</p>
 <p>Plane inference is face-based rather than edge-sampling-based. This is
 essential for closed analytic and NURBS Edges, which may expose only one
 topological Vertex and for which direct curve sampling can be unsafe in
-some PythonOCC builds.</p>
+some geometry backends.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
@@ -1101,12 +1100,12 @@ This algorithm depends on the polyskel code which is included in the library. Po
 Distances are shortest-path distances constrained to that Face, including its
 outer and internal boundaries. UV-coordinate Euclidean distance is never used
 as the metric.</p>
-<p>On PythonOCC, intrinsic distances are approximated with the Kimmel-Sethian
+<p>When supported by the active backend, intrinsic distances are approximated with the Kimmel-Sethian
 Fast Marching Method on successively refined triangulations of the trimmed
 Face. <code class="docutils literal notranslate"><span class="pre">deflection</span></code> is interpreted as the finest permitted triangulation
 target; refinement starts coarser and never goes below it. Converged
 triangle-local interfaces are chained and reconstructed as degree-1 B-spline
-p-curves on the original OCCT surface before splitting, so the returned
+curves on the original support surface before splitting, so the returned
 topology does not inherit one Edge per computational triangle. Analytic and NURBS surface geometry is retained.
 UV-coordinate Euclidean distance and mesh-edge Dijkstra are not used as the
 intrinsic metric.</p>

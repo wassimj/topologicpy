@@ -175,9 +175,10 @@
 <p><code class="docutils literal notranslate"><span class="pre">mode=&quot;auto&quot;</span></code> uses an intuitive world-oriented planar grid for planar
 Faces and an intrinsic UV surface grid for non-planar Faces.</p>
 <p>In surface mode, U-family lines are constant-U surface isocurves and
-V-family lines are constant-V isocurves. Under PythonOCC these are exact
-OCCT curves trimmed by the input Face, so a grid on a curved/NURBS Face
-contains genuinely curved Edges rather than projected chords.</p>
+V-family lines are constant-V isocurves. When the active backend supports
+exact surface isocurves, they are trimmed by the input Face, so a grid on
+a curved/NURBS Face contains genuinely curved Edges rather than projected
+chords.</p>
 <p>Each family can be specified independently. Precedence is:</p>
 <ol class="arabic simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">uValues</span></code> / <code class="docutils literal notranslate"><span class="pre">vValues</span></code>: explicit normalized parameters in [0, 1].</p></li>
@@ -194,10 +195,10 @@ increments.</p>
 <p><code class="docutils literal notranslate"><span class="pre">mode=&quot;planar&quot;</span></code> can be forced for a planar Face and accepts
 <code class="docutils literal notranslate"><span class="pre">xDirection</span></code> to control its U direction. <code class="docutils literal notranslate"><span class="pre">mode=&quot;surface&quot;</span></code> can be
 forced on any Face to use its native parameterization.</p>
-<p>Exact non-planar surface isocurves require PythonOCC. By default this
-method returns None rather than flattening them if exact native curves
-are unavailable. Set <code class="docutils literal notranslate"><span class="pre">approximate=True</span></code> explicitly to permit a
-sampled polyline fallback.</p>
+<p>Exact non-planar surface isocurves require backend support. By default
+this method returns None rather than flattening them if exact native
+curves are unavailable. Set <code class="docutils literal notranslate"><span class="pre">approximate=True</span></code> explicitly to permit
+a sampled polyline fallback.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
@@ -227,7 +228,7 @@ sampled polyline fallback.</p>
 unavailable. Default is False.</p>
 </dd>
 <dt><strong>samples</strong><span class="classifier">int , optional</span></dt><dd><p>Samples used for physical surface metrics and fallback geometry.
-Does not control PythonOCC output curve geometry. Default is 128.</p>
+Does not control exact backend curve geometry. Default is 128.</p>
 </dd>
 <dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>Decimal precision used in metadata. Default is 6.</p>
 </dd>
