@@ -363,6 +363,305 @@ class Face(Topology):
     internals: list = field(default_factory=list)
 
     @staticmethod
+    def AddInternalBoundaries(
+        face,
+        wires,
+        tolerance: float = 0.0001
+    ):
+        """
+        Add closed internal boundary Wires to an existing Face while preserving
+        the Face's native OCCT support surface and existing trims.
+
+        The input Face is copied natively using BRepBuilderAPI_MakeFace.Init().
+        The new Wires are copied, supplied with p-curves on the existing support
+        surface when necessary, and then added as holes.
+
+        Parameters
+        ----------
+        face : Face
+            The input backend Face.
+        wires : list
+            Closed backend Wires to add as holes.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+
+        Returns
+        -------
+        Face
+            The modified Face, or None if construction fails.
+        """
+        import math
+
+        if not isinstance(face, Face):
+            return None
+
+        if not isinstance(wires, (list, tuple)):
+            return None
+
+        wires = [
+            wire
+            for wire in wires
+            if isinstance(wire, Wire)
+        ]
+
+        if len(wires) == 0:
+            return face
+
+        try:
+            tolerance = abs(float(tolerance))
+        except Exception:
+            return None
+
+        if not math.isfinite(tolerance) or tolerance <= 0.0:
+            return None
+
+        occ_face = _as_occ_face(face)
+
+        if occ_face is None:
+            return None
+
+        try:
+            from OCC.Core.BRepBuilderAPI import (
+                BRepBuilderAPI_Copy,
+                BRepBuilderAPI_MakeFace,
+            )
+            from OCC.Core.BRepCheck import BRepCheck_Analyzer
+            from OCC.Core.ShapeFix import ShapeFix_Edge
+            from OCC.Core.TopAbs import TopAbs_EDGE
+            from OCC.Core.TopExp import TopExp_Explorer
+            from OCC.Core.TopoDS import topods
+
+        except Exception:
+            return None
+
+        # ------------------------------------------------------------------
+        # Copy the EXISTING Face.
+        #
+        # This is the critical operation: the support surface, external trim,
+        # existing internal trims, location and orientation are retained.
+        # ------------------------------------------------------------------
+
+        try:
+            builder = BRepBuilderAPI_MakeFace()
+            builder.Init(occ_face)
+
+            if not builder.IsDone():
+                return None
+
+            working_face = builder.Face()
+
+            if working_face is None or working_face.IsNull():
+                return None
+
+        except Exception:
+            return None
+
+        # Existing external boundary orientation.
+        external_wire = _outer_wire_shape(face)
+
+        try:
+            external_orientation = (
+                external_wire.Orientation()
+                if external_wire is not None
+                else None
+            )
+        except Exception:
+            external_orientation = None
+
+        # ------------------------------------------------------------------
+        # Add each new hole.
+        # ------------------------------------------------------------------
+
+        for wire in wires:
+
+            occ_wire = _as_occ_wire(wire)
+
+            if occ_wire is None:
+                return None
+
+            # Never mutate the input Wire. Copy its topology and exact geometry.
+            try:
+                copier = BRepBuilderAPI_Copy(
+                    occ_wire,
+                    True,   # copy geometry
+                    False   # triangulation not needed
+                )
+
+                copied_shape = copier.Shape()
+
+                if copied_shape is None or copied_shape.IsNull():
+                    return None
+
+                hole_wire = topods.Wire(
+                    copied_shape
+                )
+
+            except Exception:
+                return None
+
+            # Internal wires must oppose the external boundary orientation.
+            if external_orientation is not None:
+                try:
+                    if hole_wire.Orientation() == external_orientation:
+                        hole_wire = topods.Wire(
+                            hole_wire.Reversed()
+                        )
+                except Exception:
+                    return None
+
+            # --------------------------------------------------------------
+            # Ensure every Edge has a p-curve on the ORIGINAL support surface.
+            #
+            # ShapeFix_Edge projects the existing exact 3D curve onto the
+            # surface to create the required 2D parametric representation.
+            # The 3D curve itself is not chorded or reconstructed.
+            # --------------------------------------------------------------
+
+            try:
+                edge_fixer = ShapeFix_Edge()
+
+                explorer = TopExp_Explorer(
+                    hole_wire,
+                    TopAbs_EDGE
+                )
+
+                while explorer.More():
+
+                    edge = topods.Edge(
+                        explorer.Current()
+                    )
+
+                    try:
+                        edge_fixer.FixAddPCurve(
+                            edge,
+                            working_face,
+                            False,
+                            tolerance
+                        )
+                    except Exception:
+                        return None
+
+                    try:
+                        edge_fixer.FixReversed2d(
+                            edge,
+                            working_face
+                        )
+                    except Exception:
+                        pass
+
+                    try:
+                        edge_fixer.FixSameParameter(
+                            edge,
+                            working_face,
+                            tolerance
+                        )
+                    except Exception:
+                        pass
+
+                    try:
+                        edge_fixer.FixVertexTolerance(
+                            edge,
+                            working_face
+                        )
+                    except Exception:
+                        pass
+
+                    explorer.Next()
+
+            except Exception:
+                return None
+
+            # Add the complete closed Wire as another trim of the copied Face.
+            try:
+                builder.Add(
+                    hole_wire
+                )
+            except Exception:
+                return None
+
+        # ------------------------------------------------------------------
+        # Retrieve and validate the completed Face.
+        # ------------------------------------------------------------------
+
+        try:
+            if not builder.IsDone():
+                return None
+
+            result_shape = builder.Face()
+
+            if (
+                result_shape is None
+                or result_shape.IsNull()
+            ):
+                return None
+
+            analyzer = BRepCheck_Analyzer(
+                result_shape
+            )
+
+            if not analyzer.IsValid():
+                return None
+
+        except Exception:
+            return None
+
+        # ------------------------------------------------------------------
+        # Wrap result and preserve metadata.
+        # ------------------------------------------------------------------
+
+        try:
+            result = Face.ByOcctShape(
+                result_shape
+            )
+        except Exception:
+            result = None
+
+        if not isinstance(result, Face):
+            return None
+
+        result = _wrap_metadata(
+            face,
+            result
+        )
+
+        # Preserve the original wrapper-level boundary references where
+        # available, and append the new hole Wires.
+        try:
+            external = getattr(
+                face,
+                "external",
+                None
+            )
+
+            if isinstance(external, Wire):
+                result.external = external
+        except Exception:
+            pass
+
+        try:
+            existing = getattr(
+                face,
+                "internals",
+                []
+            )
+
+            existing = [
+                wire
+                for wire in (existing or [])
+                if isinstance(wire, Wire)
+            ]
+
+            result.internals = (
+                existing
+                + list(wires)
+            )
+
+        except Exception:
+            pass
+
+        return result
+
+    @staticmethod
     def ByExternalBoundary(wire):
         """Create an exact Face from a closed Wire without chordalising curves."""
         if not isinstance(wire, Wire):
@@ -1308,32 +1607,372 @@ class FaceUtility:
             return None
 
     @staticmethod
-    def NormalAtParameters(face, u=0.5, v=0.5, tolerance: float = 0.0001):
-        """Return the oriented world-space unit normal at normalized UV parameters."""
-        mapped = _normalized_to_raw(face, u, v)
-        if mapped is None:
-            return None
-        _, raw_u, raw_v, _, _, _, _ = mapped
-        tol = _face_tolerance(tolerance)
+    def IsValid(topology):
+        """Return the native validity state of a backend topology."""
+        shape = _shape_from_topology(topology)
+        if _is_null_shape(shape):
+            return False
+        try:
+            from OCC.Core.BRepCheck import BRepCheck_Analyzer
+            return bool(BRepCheck_Analyzer(shape).IsValid())
+        except Exception:
+            return False
 
-        data = _surface_d1(face, raw_u, raw_v)
-        if data is None:
+    @staticmethod
+    def Fillet(face, vertexRadii, tolerance: float = 0.0001):
+        """Delegate native planar Face filleting to the backend Face API."""
+        return Face.Fillet(
+            face,
+            vertexRadii,
+            tolerance=tolerance,
+        )
+
+    @staticmethod
+    def RemoveCollinearEdges(
+        face,
+        angTolerance: float = 0.1,
+        tolerance: float = 0.0001,
+    ):
+        """Delegate native support-preserving boundary cleanup."""
+        return Face.RemoveCollinearEdges(
+            face,
+            angTolerance=angTolerance,
+            tolerance=tolerance,
+        )
+
+    @staticmethod
+    def ByShell(shell, angTolerance: float = 0.1, tolerance: float = 0.0001):
+        """Unify a same-domain Shell into one native Face."""
+        from .shell import Shell
+
+        if not isinstance(shell, Shell):
             return None
 
-        _, derivative_u, derivative_v = data
+        shell_shape = _shape_from_topology(shell)
+        if _is_null_shape(shell_shape):
+            return None
 
         try:
-            normal = derivative_u.Crossed(derivative_v)
-            result = [float(normal.X()), float(normal.Y()), float(normal.Z())]
-
-            from OCC.Core.TopAbs import TopAbs_REVERSED
-            occ_face = _as_occ_face(face)
-            if occ_face is not None and occ_face.Orientation() == TopAbs_REVERSED:
-                result = [-value for value in result]
-
-            return _normalized_vector(result, tolerance=tol)
+            angular_tolerance = math.radians(abs(float(angTolerance)))
+            linear_tolerance = _face_tolerance(tolerance)
         except Exception:
             return None
+
+        try:
+            from OCC.Core.BRepCheck import BRepCheck_Analyzer
+            from OCC.Core.ShapeUpgrade import ShapeUpgrade_UnifySameDomain
+            from OCC.Core.TopAbs import TopAbs_FACE
+            from OCC.Core.TopExp import TopExp_Explorer
+            from OCC.Core.TopoDS import topods
+
+            unifier = ShapeUpgrade_UnifySameDomain(
+                shell_shape,
+                True,
+                True,
+                True,
+            )
+            try:
+                unifier.SetLinearTolerance(linear_tolerance)
+            except Exception:
+                pass
+            try:
+                unifier.SetAngularTolerance(angular_tolerance)
+            except Exception:
+                pass
+            try:
+                unifier.AllowInternalEdges(False)
+            except Exception:
+                pass
+
+            unifier.Build()
+            unified_shape = unifier.Shape()
+            if _is_null_shape(unified_shape):
+                return None
+
+            faces = []
+            explorer = TopExp_Explorer(unified_shape, TopAbs_FACE)
+            while explorer.More():
+                candidate = topods.Face(explorer.Current())
+                if not _is_null_shape(candidate):
+                    faces.append(candidate)
+                explorer.Next()
+
+            if len(faces) != 1 or not BRepCheck_Analyzer(faces[0]).IsValid():
+                return None
+
+            return _wrap_metadata(shell, Face.ByOcctShape(faces[0]))
+        except Exception:
+            return None
+
+    @staticmethod
+    def ByBoundariesOnSurface(
+        face,
+        externalBoundary,
+        internalBoundaries=None,
+        tolerance: float = 0.0001
+    ):
+        """
+        Rebuilds a Face using new boundary Wires while retaining the exact
+        supporting surface of the input Face.
+
+        This is a primitive backend operation. It performs no simplification
+        itself.
+        """
+        import math
+
+        if not isinstance(face, Face):
+            return None
+
+        if not isinstance(externalBoundary, Wire):
+            return None
+
+        internalBoundaries = [
+            wire
+            for wire in (internalBoundaries or [])
+            if isinstance(wire, Wire)
+        ]
+
+        tol = _face_tolerance(
+            tolerance
+        )
+
+        # This primitive is currently used by planar boundary simplification.
+        if FaceUtility.IsPlanar(
+            face,
+            tolerance=tol
+        ) is not True:
+            return None
+
+        occ_face = _as_occ_face(
+            face
+        )
+
+        if occ_face is None:
+            return None
+
+        try:
+            from OCC.Core.BRep import BRep_Tool
+            from OCC.Core.BRepBuilderAPI import (
+                BRepBuilderAPI_Copy,
+                BRepBuilderAPI_MakeFace,
+            )
+            from OCC.Core.BRepCheck import BRepCheck_Analyzer
+            from OCC.Core.ShapeFix import ShapeFix_Edge
+            from OCC.Core.TopAbs import TopAbs_EDGE
+            from OCC.Core.TopExp import TopExp_Explorer
+            from OCC.Core.TopLoc import TopLoc_Location
+            from OCC.Core.TopoDS import topods
+
+        except Exception:
+            return None
+
+        # ------------------------------------------------------------------
+        # Retrieve the actual support surface.
+        #
+        # The no-location BRep_Tool.Surface(face) overload gives the transformed
+        # support surface, so the new world-space boundary Wires can be projected
+        # directly onto it.
+        # ------------------------------------------------------------------
+
+        try:
+            surface = BRep_Tool.Surface(
+                occ_face
+            )
+        except Exception:
+            surface = None
+
+        if surface is None:
+            return None
+
+        identity_location = TopLoc_Location()
+
+        # ------------------------------------------------------------------
+        # Copy one Wire and ensure all its Edges carry p-curves on the retained
+        # support surface.
+        # ------------------------------------------------------------------
+
+        def prepare_wire(wire):
+
+            occ_wire = _as_occ_wire(
+                wire
+            )
+
+            if occ_wire is None:
+                return None
+
+            try:
+                copier = BRepBuilderAPI_Copy(
+                    occ_wire,
+                    True,
+                    False
+                )
+
+                copied_shape = copier.Shape()
+
+                if (
+                    copied_shape is None
+                    or copied_shape.IsNull()
+                ):
+                    return None
+
+                result_wire = topods.Wire(
+                    copied_shape
+                )
+
+            except Exception:
+                return None
+
+            fixer = ShapeFix_Edge()
+
+            explorer = TopExp_Explorer(
+                result_wire,
+                TopAbs_EDGE
+            )
+
+            while explorer.More():
+
+                try:
+                    edge = topods.Edge(
+                        explorer.Current()
+                    )
+                except Exception:
+                    return None
+
+                try:
+                    fixer.FixAddPCurve(
+                        edge,
+                        surface,
+                        identity_location,
+                        False,
+                        tol
+                    )
+                except Exception:
+                    return None
+
+                try:
+                    fixer.FixSameParameter(
+                        edge,
+                        tol
+                    )
+                except Exception:
+                    return None
+
+                explorer.Next()
+
+            return result_wire
+
+        outer_wire = prepare_wire(
+            externalBoundary
+        )
+
+        if outer_wire is None:
+            return None
+
+        # ------------------------------------------------------------------
+        # Construct a new trim domain on the SAME support surface.
+        # ------------------------------------------------------------------
+
+        try:
+            maker = BRepBuilderAPI_MakeFace(
+                surface,
+                outer_wire,
+                True
+            )
+
+            if not maker.IsDone():
+                return None
+
+        except Exception:
+            return None
+
+        try:
+            outer_orientation = outer_wire.Orientation()
+        except Exception:
+            outer_orientation = None
+
+        # ------------------------------------------------------------------
+        # Add holes.
+        # ------------------------------------------------------------------
+
+        for internal in internalBoundaries:
+
+            hole = prepare_wire(
+                internal
+            )
+
+            if hole is None:
+                return None
+
+            if outer_orientation is not None:
+                try:
+                    if hole.Orientation() == outer_orientation:
+                        hole = topods.Wire(
+                            hole.Reversed()
+                        )
+                except Exception:
+                    return None
+
+            try:
+                maker.Add(
+                    hole
+                )
+            except Exception:
+                return None
+
+        # ------------------------------------------------------------------
+        # Validate.
+        # ------------------------------------------------------------------
+
+        try:
+            if not maker.IsDone():
+                return None
+
+            result_face = maker.Face()
+
+            if (
+                result_face is None
+                or result_face.IsNull()
+            ):
+                return None
+
+            # Preserve original Face orientation.
+            if result_face.Orientation() != occ_face.Orientation():
+                result_face = topods.Face(
+                    result_face.Reversed()
+                )
+
+            analyzer = BRepCheck_Analyzer(
+                result_face
+            )
+
+            if not analyzer.IsValid():
+                return None
+
+        except Exception:
+            return None
+
+        result = Face.ByOcctShape(
+            result_face
+        )
+
+        if not isinstance(result, Face):
+            return None
+
+        result = _wrap_metadata(
+            face,
+            result
+        )
+
+        # Keep the exact wrapper boundaries available.
+        try:
+            result.external = externalBoundary
+            result.internals = list(
+                internalBoundaries
+            )
+        except Exception:
+            pass
+
+        return result
 
     @staticmethod
     def Reverse(face):
@@ -1440,22 +2079,227 @@ class FaceUtility:
             return face.Edges()
         return []
 
+    @staticmethod
+    def Fillet(
+        face,
+        vertexRadii,
+        tolerance: float = 0.0001
+    ):
+        """
+        Fillet selected vertices of a planar Face using OCCT's native
+        BRepFilletAPI_MakeFillet2d operation.
+
+        The Face is modified natively. Its support surface, external boundary,
+        internal boundaries, and unaffected curve geometry are preserved.
+
+        Parameters
+        ----------
+        face : Face
+            The backend Face.
+        vertexRadii : list
+            List of (Vertex, radius) pairs.
+        tolerance : float , optional
+            The desired tolerance.
+
+        Returns
+        -------
+        Face
+            The resulting Face, or None on failure.
+        """
+        import math
+
+        occ_face = _as_occ_face(face)
+
+        if occ_face is None:
+            return None
+
+        if not isinstance(
+            vertexRadii,
+            (list, tuple)
+        ):
+            return None
+
+        try:
+            tolerance = abs(float(tolerance))
+        except Exception:
+            return None
+
+        if (
+            not math.isfinite(tolerance)
+            or tolerance <= 0.0
+        ):
+            return None
+
+        # ------------------------------------------------------------------
+        # Import OCCT fillet machinery.
+        # ------------------------------------------------------------------
+
+        try:
+            from OCC.Core.BRepFilletAPI import (
+                BRepFilletAPI_MakeFillet2d
+            )
+            from OCC.Core.BRepCheck import (
+                BRepCheck_Analyzer
+            )
+            from OCC.Core.ChFi2d import (
+                ChFi2d_IsDone
+            )
+            from OCC.Core.TopoDS import topods
+
+        except Exception:
+            return None
+
+        # ------------------------------------------------------------------
+        # Initialise the native planar Face fillet builder.
+        # ------------------------------------------------------------------
+
+        try:
+            builder = BRepFilletAPI_MakeFillet2d(
+                occ_face
+            )
+        except Exception:
+            return None
+
+        fillet_count = 0
+
+        # ------------------------------------------------------------------
+        # Apply every requested fillet to the ORIGINAL Face topology.
+        #
+        # The vertex passed to AddFillet is the actual TopoDS_Vertex belonging
+        # to the Face. There is no coordinate matching or reconstruction.
+        # ------------------------------------------------------------------
+
+        for item in vertexRadii:
+
+            if (
+                not isinstance(item, (list, tuple))
+                or len(item) != 2
+            ):
+                return None
+
+            vertex, radius = item
+
+            if not isinstance(vertex, Vertex):
+                return None
+
+            try:
+                radius = float(radius)
+            except Exception:
+                return None
+
+            if (
+                not math.isfinite(radius)
+                or radius <= tolerance
+            ):
+                continue
+
+            vertex_shape = _shape_from_topology(
+                vertex
+            )
+
+            if _is_null_shape(vertex_shape):
+                return None
+
+            try:
+                occ_vertex = topods.Vertex(
+                    vertex_shape
+                )
+            except Exception:
+                return None
+
+            try:
+                fillet_edge = builder.AddFillet(
+                    occ_vertex,
+                    radius
+                )
+            except Exception:
+                return None
+
+            # OCCT explicitly requires checking the construction status after
+            # every AddFillet call.
+            try:
+                if builder.Status() != ChFi2d_IsDone:
+                    return None
+            except Exception:
+                return None
+
+            try:
+                if fillet_edge.IsNull():
+                    return None
+            except Exception:
+                return None
+
+            fillet_count += 1
+
+        if fillet_count == 0:
+            return face
+
+        # ------------------------------------------------------------------
+        # Finalise and validate.
+        # ------------------------------------------------------------------
+
+        try:
+            builder.Build()
+
+            if not builder.IsDone():
+                return None
+
+            shape = builder.Shape()
+
+            if _is_null_shape(shape):
+                return None
+
+            analyzer = BRepCheck_Analyzer(
+                shape
+            )
+
+            if not analyzer.IsValid():
+                return None
+
+            occ_result = topods.Face(
+                shape
+            )
+
+        except Exception:
+            return None
+
+        result = Face.ByOcctShape(
+            occ_result
+        )
+
+        if not isinstance(result, Face):
+            return None
+
+        return _wrap_metadata(
+            face,
+            result
+        )
 
     @staticmethod
-    def VertexAtParameters(face, u=0.5, v=0.5):
-        """Return a world-space Vertex at normalized UV parameters."""
+    def NormalAtParameters(face, u=0.5, v=0.5, tolerance: float = 0.0001):
+        """Return the oriented world-space unit normal at normalized UV parameters."""
         mapped = _normalized_to_raw(face, u, v)
         if mapped is None:
             return None
         _, raw_u, raw_v, _, _, _, _ = mapped
+        tol = _face_tolerance(tolerance)
 
-        adaptor = _surface_adaptor(face)
-        if adaptor is None:
+        data = _surface_d1(face, raw_u, raw_v)
+        if data is None:
             return None
 
+        _, derivative_u, derivative_v = data
+
         try:
-            point = adaptor.Value(float(raw_u), float(raw_v))
-            return Vertex.ByCoordinates(point.X(), point.Y(), point.Z())
+            normal = derivative_u.Crossed(derivative_v)
+            result = [float(normal.X()), float(normal.Y()), float(normal.Z())]
+
+            from OCC.Core.TopAbs import TopAbs_REVERSED
+            occ_face = _as_occ_face(face)
+            if occ_face is not None and occ_face.Orientation() == TopAbs_REVERSED:
+                result = [-value for value in result]
+
+            return _normalized_vector(result, tolerance=tol)
         except Exception:
             return None
 
@@ -1537,6 +2381,310 @@ class FaceUtility:
             return state in (TopAbs_IN, TopAbs_ON)
         except Exception:
             return False
+
+    @staticmethod
+    def RemoveCollinearEdges(
+        face,
+        angTolerance: float = 0.1,
+        tolerance: float = 0.0001
+    ):
+        """
+        Removes redundant consecutive linear collinear Edges from a Face while
+        preserving its native OCCT support surface and curved boundary geometry.
+
+        Curved Edges are explicitly protected. Only vertices joining exclusively
+        linear Edges are eligible for removal.
+        """
+        import math
+
+        if not isinstance(face, Face):
+            return None
+
+        occ_face = _as_occ_face(face)
+
+        if occ_face is None:
+            return None
+
+        try:
+            angTolerance = abs(float(angTolerance))
+            tolerance = abs(float(tolerance))
+        except Exception:
+            return None
+
+        if (
+            not math.isfinite(angTolerance)
+            or not math.isfinite(tolerance)
+            or tolerance <= 0.0
+        ):
+            return None
+
+        try:
+            from OCC.Core.BRepCheck import BRepCheck_Analyzer
+            from OCC.Core.ShapeUpgrade import ShapeUpgrade_UnifySameDomain
+            from OCC.Core.TopAbs import TopAbs_EDGE, TopAbs_VERTEX
+            from OCC.Core.TopExp import TopExp_Explorer
+            from OCC.Core.TopoDS import topods
+
+            from .edge import EdgeUtility
+
+        except Exception:
+            return None
+
+        # ------------------------------------------------------------------
+        # Collect the original native Edges.
+        # ------------------------------------------------------------------
+
+        original_edges = []
+
+        explorer = TopExp_Explorer(
+            occ_face,
+            TopAbs_EDGE
+        )
+
+        while explorer.More():
+
+            try:
+                edge = topods.Edge(
+                    explorer.Current()
+                )
+
+                if not any(
+                    edge.IsSame(existing)
+                    for existing in original_edges
+                ):
+                    original_edges.append(edge)
+
+            except Exception:
+                pass
+
+            explorer.Next()
+
+        if len(original_edges) < 1:
+            return face
+
+        # ------------------------------------------------------------------
+        # Configure OCCT's same-domain unifier.
+        #
+        # UnifyEdges=True
+        # UnifyFaces=False
+        # ConcatBSplines=True
+        #
+        # Faces are NEVER merged or reconstructed. Only compatible boundary
+        # Edge chains may be combined.
+        # ------------------------------------------------------------------
+
+        try:
+            unifier = ShapeUpgrade_UnifySameDomain(
+                occ_face,
+                True,   # UnifyEdges
+                False,  # UnifyFaces
+                True    # ConcatBSplines
+            )
+
+            unifier.SetSafeInputMode(
+                True
+            )
+
+            unifier.SetLinearTolerance(
+                tolerance
+            )
+
+            unifier.SetAngularTolerance(
+                math.radians(
+                    angTolerance
+                )
+            )
+
+        except Exception:
+            return None
+
+        # ------------------------------------------------------------------
+        # Protect every Vertex belonging to a genuinely curved Edge.
+        #
+        # ShapeUpgrade_UnifySameDomain.KeepShape(vertex) prevents connected
+        # Edges from being merged through that Vertex.
+        #
+        # Therefore:
+        #
+        # linear -- linear
+        #          ^
+        #          eligible
+        #
+        # curved -- linear
+        #          ^
+        #          protected
+        #
+        # curved -- curved
+        #          ^
+        #          protected
+        # ------------------------------------------------------------------
+
+        curved_edge_count = 0
+
+        for occ_edge in original_edges:
+
+            backend_edge = Edge.ByOcctShape(
+                occ_edge
+            )
+
+            if not isinstance(
+                backend_edge,
+                Edge
+            ):
+                return None
+
+            try:
+                linear = EdgeUtility.IsLinear(
+                    backend_edge,
+                    tolerance=tolerance
+                )
+            except Exception:
+                return None
+
+            if linear:
+                continue
+
+            curved_edge_count += 1
+
+            vertex_explorer = TopExp_Explorer(
+                occ_edge,
+                TopAbs_VERTEX
+            )
+
+            while vertex_explorer.More():
+
+                try:
+                    vertex = topods.Vertex(
+                        vertex_explorer.Current()
+                    )
+
+                    unifier.KeepShape(
+                        vertex
+                    )
+
+                except Exception:
+                    return None
+
+                vertex_explorer.Next()
+
+        # ------------------------------------------------------------------
+        # Perform native edge unification.
+        # ------------------------------------------------------------------
+
+        try:
+            unifier.Build()
+
+            result_shape = unifier.Shape()
+
+            if (
+                result_shape is None
+                or result_shape.IsNull()
+            ):
+                return None
+
+            result_face = topods.Face(
+                result_shape
+            )
+
+        except Exception:
+            return None
+
+        # ------------------------------------------------------------------
+        # Validate the resulting BRep.
+        # ------------------------------------------------------------------
+
+        try:
+            analyzer = BRepCheck_Analyzer(
+                result_face
+            )
+
+            if not analyzer.IsValid():
+                return None
+
+        except Exception:
+            return None
+
+        # ------------------------------------------------------------------
+        # Count output Edges.
+        #
+        # If nothing was actually removed, return the ORIGINAL Face. This avoids
+        # replacing it with a newly generated but geometrically identical shape.
+        # ------------------------------------------------------------------
+
+        result_edges = []
+
+        explorer = TopExp_Explorer(
+            result_face,
+            TopAbs_EDGE
+        )
+
+        while explorer.More():
+
+            try:
+                edge = topods.Edge(
+                    explorer.Current()
+                )
+
+                if not any(
+                    edge.IsSame(existing)
+                    for existing in result_edges
+                ):
+                    result_edges.append(edge)
+
+            except Exception:
+                pass
+
+            explorer.Next()
+
+        if len(result_edges) >= len(original_edges):
+            return face
+
+        # ------------------------------------------------------------------
+        # Defensive check: the number of genuinely curved Edges must not have
+        # decreased.
+        # ------------------------------------------------------------------
+
+        result_curved_count = 0
+
+        for occ_edge in result_edges:
+
+            backend_edge = Edge.ByOcctShape(
+                occ_edge
+            )
+
+            if not isinstance(
+                backend_edge,
+                Edge
+            ):
+                return None
+
+            if not EdgeUtility.IsLinear(
+                backend_edge,
+                tolerance=tolerance
+            ):
+                result_curved_count += 1
+
+        if result_curved_count != curved_edge_count:
+            return None
+
+        # ------------------------------------------------------------------
+        # Wrap the SAME native Face support surface with its simplified trims.
+        # ------------------------------------------------------------------
+
+        result = Face.ByOcctShape(
+            result_face
+        )
+
+        if not isinstance(
+            result,
+            Face
+        ):
+            return None
+
+        return _wrap_metadata(
+            face,
+            result
+        )
 
     @staticmethod
     def TangentsAtParameters(
@@ -2492,6 +3640,24 @@ class FaceUtility:
             face,
             selected[0],
         )
+    
+    @staticmethod
+    def VertexAtParameters(face, u=0.5, v=0.5):
+        """Return a world-space Vertex at normalized UV parameters."""
+        mapped = _normalized_to_raw(face, u, v)
+        if mapped is None:
+            return None
+        _, raw_u, raw_v, _, _, _, _ = mapped
+
+        adaptor = _surface_adaptor(face)
+        if adaptor is None:
+            return None
+
+        try:
+            point = adaptor.Value(float(raw_u), float(raw_v))
+            return Vertex.ByCoordinates(point.X(), point.Y(), point.Z())
+        except Exception:
+            return None
 
 
 # ---------------------------------------------------------------------------

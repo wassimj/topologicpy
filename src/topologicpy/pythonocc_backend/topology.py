@@ -991,6 +991,7 @@ def _wrap_shape_as_topology(shape: Any, dictionary=None, contents=None, contexts
 
 
 def _compound_of_shapes(shapes: Iterable[Any]) -> Any:
+    from OCC.Core.BRep import BRep_Builder
     from OCC.Core.TopoDS import TopoDS_Compound
     builder = BRep_Builder()
     compound = TopoDS_Compound()
@@ -2945,6 +2946,1238 @@ class Topology:
         except Exception:
             return False, None
 
+    @staticmethod
+    def Deform(
+        topology,
+        deformation,
+        origin=None,
+        parameters=None,
+        subdivisions: int = 8,
+        degree: int = 3,
+        transferDictionaries: bool = True,
+        tolerance: float = 0.0001,
+        silent: bool = False,
+    ):
+        """
+        Deforms a topology by modifying its NURBS control geometry.
+
+        This is a PythonOCC-backend operation. Analytical curves and surfaces
+        are converted to bounded B-Spline/NURBS representations, degree-raised
+        and knot-refined without changing their shape, and their control points
+        are then deformed. Shared 3D edges are modified once and remain the
+        authoritative boundaries; face p-curves are rebuilt on the deformed
+        support surfaces.
+
+        ``deformation`` may be one of ``"taper"``, ``"twist"`` or ``"bend"``,
+        or a callable accepting ``(x, y, z)`` or ``(x, y, z, context)`` and
+        returning three coordinates. Named deformations receive their settings
+        through ``parameters``.
+
+        Parameters
+        ----------
+        topology : Topology
+            The backend topology to deform.
+        deformation : str or callable
+            The deformation field. Supported names are ``"taper"``,
+            ``"twist"`` and ``"bend"``.
+        origin : Vertex, optional
+            Origin used by named deformations. If None, the topology centroid
+            is used.
+        parameters : dict, optional
+            Parameters for the named deformation.
+        subdivisions : int, optional
+            Minimum number of B-Spline knot spans in each active parametric
+            direction. Default is 8.
+        degree : int, optional
+            Minimum B-Spline degree. Existing higher degrees are retained.
+            Default is 3.
+        transferDictionaries : bool, optional
+            If True, copies dictionaries onto corresponding converted
+            subtopologies. Default is True.
+        tolerance : float, optional
+            Geometric tolerance. Default is 0.0001.
+        silent : bool, optional
+            If True, suppresses diagnostic messages. Default is False.
+
+        Returns
+        -------
+        Topology
+            The deformed topology, or None on failure.
+        """
+        import inspect
+        import math
+
+        def _error(message, error=None):
+            if not silent:
+                print(f"Topology.Deform - Error: {message} Returning None.")
+                if error is not None:
+                    print("Error:", error)
+            return None
+
+        if not isinstance(topology, Topology):
+            return _error("The input topology parameter is not a valid PythonOCC backend topology.")
+
+        source_shape = _shape_from_topology(topology)
+
+        # Cluster.ByTopologies intentionally preserves its direct constituent
+        # wrappers and may therefore keep shape=None. Deformation still needs
+        # one temporary native Compound to calculate the aggregate bounds and
+        # shared deformation context. The Cluster branch below continues to
+        # deform and rebuild the cached direct members individually.
+        if _is_null_shape(source_shape) and _topology_type_name(topology) == "Cluster":
+            source_shape = _ensure_compound_shape(topology)
+
+        if _is_null_shape(source_shape):
+            return _error("The input topology does not contain a valid OCCT shape.")
+
+        if parameters is None:
+            parameters = {}
+        if not isinstance(parameters, dict):
+            return _error("The input parameters parameter must be a dictionary.")
+
+        try:
+            subdivisions = max(1, int(subdivisions))
+            degree = max(1, min(25, int(degree)))
+            tolerance = abs(float(tolerance))
+        except Exception as error:
+            return _error("One or more numeric parameters are invalid.", error)
+
+        if not math.isfinite(tolerance) or tolerance <= 0.0:
+            return _error("The input tolerance must be a finite number greater than zero.")
+
+        try:
+            from OCC.Core.Bnd import Bnd_Box
+            from OCC.Core.BRep import BRep_Builder, BRep_Tool
+            from OCC.Core.BRepAdaptor import BRepAdaptor_Surface
+            from OCC.Core.BRepBndLib import brepbndlib
+            from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_NurbsConvert
+            from OCC.Core.BRepLib import breplib
+            from OCC.Core.BRepCheck import BRepCheck_Analyzer
+            import OCC.Core.BRepTools as _breptools_module
+            from OCC.Core.Geom import Geom_BSplineCurve, Geom_BSplineSurface
+            from OCC.Core.Geom2d import Geom2d_Curve
+            from OCC.Core.GeomAbs import GeomAbs_C1
+            from OCC.Core.ShapeBuild import ShapeBuild_Edge
+            from OCC.Core.ShapeConstruct import shapeconstruct
+            from OCC.Core.ShapeFix import shapefix, ShapeFix_Edge, ShapeFix_Shape
+            from OCC.Core.TopAbs import (
+                TopAbs_VERTEX,
+                TopAbs_EDGE,
+                TopAbs_WIRE,
+                TopAbs_FACE,
+                TopAbs_SHELL,
+                TopAbs_SOLID,
+                TopAbs_COMPSOLID,
+                TopAbs_COMPOUND,
+            )
+            from OCC.Core.TopExp import TopExp_Explorer
+            from OCC.Core.TopLoc import TopLoc_Location
+            from OCC.Core.TopoDS import topods
+            from OCC.Core.gp import gp_Pnt
+        except Exception as error:
+            return _error("The PythonOCC deformation dependencies could not be imported.", error)
+
+        # --------------------------------------------------------------
+        # Exact evaluated bounds of the input geometry.
+        # --------------------------------------------------------------
+        try:
+            box = Bnd_Box()
+            brepbndlib.AddOptimal(source_shape, box, False, False)
+            xmin, ymin, zmin, xmax, ymax, zmax = [float(v) for v in box.Get()]
+            bounds = [xmin, ymin, zmin, xmax, ymax, zmax]
+            if not all(math.isfinite(v) for v in bounds):
+                raise RuntimeError("The topology has non-finite bounds.")
+        except Exception as error:
+            return _error("Could not determine the exact geometric bounds.", error)
+
+        width = xmax - xmin
+        length = ymax - ymin
+        height = zmax - zmin
+
+        # Named deformation origin. For a custom callback the origin is still
+        # exposed in the context when available.
+        if origin is None:
+            try:
+                origin = Topology.CenterOfMass(topology)
+            except Exception:
+                origin = None
+
+        if origin is not None and all(hasattr(origin, attr) for attr in ("x", "y", "z")):
+            try:
+                ox = float(origin.x)
+                oy = float(origin.y)
+                oz = float(origin.z)
+            except Exception:
+                origin = None
+
+        if origin is None:
+            ox = 0.5 * (xmin + xmax)
+            oy = 0.5 * (ymin + ymax)
+            oz = 0.5 * (zmin + zmax)
+            try:
+                from .vertex import Vertex
+                origin = Vertex.ByCoordinates(ox, oy, oz)
+            except Exception:
+                origin = None
+
+        context = {
+            "xmin": xmin,
+            "ymin": ymin,
+            "zmin": zmin,
+            "xmax": xmax,
+            "ymax": ymax,
+            "zmax": zmax,
+            "width": width,
+            "length": length,
+            "height": height,
+            "center": [
+                0.5 * (xmin + xmax),
+                0.5 * (ymin + ymax),
+                0.5 * (zmin + zmax),
+            ],
+            "origin": [ox, oy, oz],
+            "parameters": dict(parameters),
+        }
+
+        # --------------------------------------------------------------
+        # Construct the deformation field in the backend.
+        # --------------------------------------------------------------
+        deformation_name = None
+        deformation_function = None
+        use_context = True
+
+        if isinstance(deformation, str):
+            deformation_name = deformation.strip().lower()
+
+            if deformation_name == "taper":
+                ratio_range = parameters.get("ratioRange", [0, 1])
+                if not isinstance(ratio_range, (list, tuple)) or len(ratio_range) != 2:
+                    return _error("The taper ratioRange must contain exactly two numeric values.")
+                try:
+                    ratio0 = min(1.0, float(ratio_range[0]))
+                    ratio1 = min(1.0, float(ratio_range[1]))
+                except Exception as error:
+                    return _error("The taper ratioRange contains an invalid value.", error)
+                if not all(math.isfinite(v) for v in (ratio0, ratio1)):
+                    return _error("The taper ratioRange contains a non-finite value.")
+
+                if abs(ratio0) <= tolerance and abs(ratio1) <= tolerance:
+                    return topology
+
+                # A BRep cannot retain the cylinder's existing topological
+                # structure if a complete boundary loop is collapsed exactly
+                # to one vertex. Keep a tolerance-sized residual scale at the
+                # limiting ratio so ratio=1 remains a valid CAD deformation.
+                radial_extent = max(abs(width), abs(length), tolerance)
+                minimum_scale = max(1.0e-9, min(1.0e-2, tolerance / radial_extent))
+
+                if abs(ratio1 - ratio0) <= tolerance:
+                    scale = max(1.0 - 0.5 * (ratio0 + ratio1), minimum_scale)
+                    try:
+                        return topology.Scale(origin, scale, scale, 1.0)
+                    except Exception as error:
+                        return _error("Could not apply the constant taper as an exact affine scale.", error)
+
+                def deformation_function(x, y, z, _context):
+                    if abs(height) <= tolerance:
+                        return [x, y, z]
+                    t = (z - zmin) / height
+                    ratio = ratio0 + t * (ratio1 - ratio0)
+                    scale = max(1.0 - ratio, minimum_scale)
+                    return [
+                        ox + scale * (x - ox),
+                        oy + scale * (y - oy),
+                        z,
+                    ]
+
+            elif deformation_name == "twist":
+                angle_range = parameters.get("angleRange", [45, 90])
+                if not isinstance(angle_range, (list, tuple)) or len(angle_range) != 2:
+                    return _error("The twist angleRange must contain exactly two numeric values.")
+                try:
+                    angle0 = float(angle_range[0])
+                    angle1 = float(angle_range[1])
+                    ang_tolerance = abs(float(parameters.get("angTolerance", 0.01)))
+                except Exception as error:
+                    return _error("The twist angleRange or angTolerance contains an invalid value.", error)
+                if not all(math.isfinite(v) for v in (angle0, angle1, ang_tolerance)):
+                    return _error("The twist angleRange or angTolerance contains a non-finite value.")
+
+                if abs(angle0) < ang_tolerance and abs(angle1) < ang_tolerance:
+                    return topology
+
+                # A varying twist is undefined over a zero-height domain and
+                # geometrically acts as the identity. Return the original
+                # wrapper rather than performing a no-op NURBS conversion,
+                # preserving the established object-identity contract.
+                if abs(height) <= tolerance:
+                    return topology
+
+                if abs(angle1 - angle0) < ang_tolerance:
+                    try:
+                        return topology.Rotate(origin, 0.0, 0.0, 1.0, 0.5 * (angle0 + angle1))
+                    except Exception as error:
+                        return _error("Could not apply the constant twist as an exact rotation.", error)
+
+                def deformation_function(x, y, z, _context):
+                    if abs(height) <= tolerance:
+                        return [x, y, z]
+                    t = (z - zmin) / height
+                    angle = angle0 + t * (angle1 - angle0)
+                    radians = math.radians(angle)
+                    cosine = math.cos(radians)
+                    sine = math.sin(radians)
+                    dx = x - ox
+                    dy = y - oy
+                    return [
+                        ox + cosine * dx - sine * dy,
+                        oy + sine * dx + cosine * dy,
+                        z,
+                    ]
+
+            elif deformation_name == "bend":
+                try:
+                    angle = float(parameters.get("angle", 90.0))
+                    ang_tolerance = abs(float(parameters.get("angTolerance", 0.01)))
+                except Exception as error:
+                    return _error("The bend angle or angTolerance is invalid.", error)
+                if not math.isfinite(angle) or not math.isfinite(ang_tolerance):
+                    return _error("The bend angle or angTolerance is non-finite.")
+                if abs(angle) < ang_tolerance:
+                    return topology
+
+                direction = parameters.get("direction", [1, 0, 0])
+                if not isinstance(direction, (list, tuple)) or len(direction) != 3:
+                    return _error("The bend direction must contain exactly three numeric values.")
+                try:
+                    dx = float(direction[0])
+                    dy = float(direction[1])
+                except Exception as error:
+                    return _error("The bend direction contains an invalid value.", error)
+                magnitude = math.sqrt(dx * dx + dy * dy)
+                if not math.isfinite(magnitude) or magnitude <= tolerance:
+                    return _error("The XY projection of the bend direction has zero magnitude.")
+                dx /= magnitude
+                dy /= magnitude
+                sx = -dy
+                sy = dx
+                total_radians = math.radians(angle)
+
+                def deformation_function(x, y, z, _context):
+                    if abs(height) <= tolerance or abs(total_radians) <= 1.0e-15:
+                        return [x, y, z]
+
+                    axial = z - zmin
+                    theta = total_radians * axial / height
+                    radius = height / total_radians
+
+                    rx = x - ox
+                    ry = y - oy
+                    normal_offset = rx * dx + ry * dy
+                    side_offset = rx * sx + ry * sy
+
+                    neutral_normal = radius * (1.0 - math.cos(theta))
+                    neutral_z = zmin + radius * math.sin(theta)
+                    bent_normal = neutral_normal + normal_offset * math.cos(theta)
+                    bent_z = neutral_z - normal_offset * math.sin(theta)
+
+                    return [
+                        ox + bent_normal * dx + side_offset * sx,
+                        oy + bent_normal * dy + side_offset * sy,
+                        bent_z,
+                    ]
+
+            else:
+                return _error(
+                    "The named deformation is not supported. Expected 'taper', 'twist', or 'bend'."
+                )
+
+        elif callable(deformation):
+            deformation_function = deformation
+            try:
+                signature = inspect.signature(deformation_function)
+                positional = [
+                    p
+                    for p in signature.parameters.values()
+                    if p.kind in (
+                        inspect.Parameter.POSITIONAL_ONLY,
+                        inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                    )
+                ]
+                has_varargs = any(
+                    p.kind == inspect.Parameter.VAR_POSITIONAL
+                    for p in signature.parameters.values()
+                )
+                use_context = has_varargs or len(positional) >= 4
+            except Exception:
+                use_context = True
+        else:
+            return _error("The deformation parameter must be a supported name or a callable.")
+
+        def _map_point(point):
+            x = float(point.X())
+            y = float(point.Y())
+            z = float(point.Z())
+            try:
+                if use_context:
+                    mapped = deformation_function(x, y, z, context)
+                else:
+                    mapped = deformation_function(x, y, z)
+                if not isinstance(mapped, (list, tuple)) or len(mapped) != 3:
+                    raise ValueError("The deformation field must return exactly three coordinates.")
+                qx, qy, qz = [float(value) for value in mapped]
+                if not all(math.isfinite(value) for value in (qx, qy, qz)):
+                    raise ValueError("The deformation field returned a non-finite coordinate.")
+                return gp_Pnt(qx, qy, qz)
+            except Exception as error:
+                raise RuntimeError(
+                    f"The deformation field failed at ({x}, {y}, {z}): {error}"
+                ) from error
+
+        # A Vertex has no curve or surface control geometry to convert. Map
+        # its point directly; routing a vertex-only shape through
+        # BRepBuilderAPI_NurbsConvert is unnecessary and is unsupported by
+        # some OCCT/pythonocc versions.
+        if _topology_type_name(topology) == "Vertex":
+            try:
+                from .vertex import Vertex
+
+                mapped_point = _map_point(BRep_Tool.Pnt(topods.Vertex(source_shape)))
+                result = Vertex.ByCoordinates(
+                    float(mapped_point.X()),
+                    float(mapped_point.Y()),
+                    float(mapped_point.Z()),
+                )
+            except Exception as error:
+                return _error("Could not deform the input Vertex.", error)
+
+            if not isinstance(result, Topology):
+                return _error("The deformed point did not produce a valid Vertex.")
+
+            if transferDictionaries:
+                try:
+                    result.dictionary = copy.deepcopy(Topology.GetDictionary(topology))
+                except Exception:
+                    pass
+
+            for attr in ("contents", "contexts", "apertures"):
+                if hasattr(topology, attr) and hasattr(result, attr):
+                    try:
+                        setattr(result, attr, copy.deepcopy(getattr(topology, attr)))
+                    except Exception:
+                        pass
+
+            return result
+
+        # A heterogeneous Cluster must be deformed constituent by constituent.
+        # Passing its complete OCCT Compound through NurbsConvert can collapse
+        # or reorder the direct member hierarchy.  Capture the deformation
+        # field and the bounds/origin context computed from the complete
+        # Cluster, then reuse that one field for every direct member.
+        if _topology_type_name(topology) == "Cluster":
+            from .cluster import Cluster
+
+            def _shared_deformation(x, y, z, _member_context=None):
+                if use_context:
+                    return deformation_function(x, y, z, context)
+                return deformation_function(x, y, z)
+
+            # Prefer the wrappers cached by Cluster.ByTopologies. They retain
+            # the intended direct hierarchy even when the native Compound is
+            # capable of exposing the same children. Fall back to the direct
+            # TopoDS children only when that cache is unavailable.
+            members = list(getattr(topology, "topologies", None) or [])
+
+            if not members:
+                try:
+                    queried = topology.Topologies()
+                    members = list(queried or [])
+                except Exception:
+                    members = []
+
+            if not members:
+                try:
+                    from OCC.Core.TopoDS import TopoDS_Iterator
+
+                    iterator = TopoDS_Iterator(source_shape)
+                    while iterator.More():
+                        member = Topology.ByOcctShape(iterator.Value())
+                        if isinstance(member, Topology):
+                            members.append(member)
+                        iterator.Next()
+                except Exception:
+                    members = []
+
+            members = [member for member in members if isinstance(member, Topology)]
+            if not members:
+                return _error("Could not retrieve the direct Cluster members.")
+
+            transformed = []
+            for member in members:
+                transformed_member = Topology.Deform(
+                    member,
+                    _shared_deformation,
+                    origin=origin,
+                    parameters={},
+                    subdivisions=subdivisions,
+                    degree=degree,
+                    transferDictionaries=transferDictionaries,
+                    tolerance=tolerance,
+                    silent=silent,
+                )
+                if not isinstance(transformed_member, Topology):
+                    return _error(
+                        "Could not deform a direct Cluster member of type "
+                        f"{_topology_type_name(member)}."
+                    )
+                transformed.append(transformed_member)
+
+            # Build the aggregate explicitly. Cluster.ByTopologies may
+            # self-merge or normalize mixed-dimensional members depending on
+            # backend version; that is undesirable for a deformation, whose
+            # contract is to preserve the direct constituent hierarchy.
+            try:
+                result_shape = _compound_of_shapes(
+                    [_shape_from_topology(member) for member in transformed]
+                )
+                result = Cluster(
+                    shape=result_shape,
+                    topologies=transformed,
+                    dictionary=(
+                        copy.deepcopy(Topology.GetDictionary(topology))
+                        if transferDictionaries
+                        else {}
+                    ),
+                    contents=copy.deepcopy(getattr(topology, "contents", []) or []),
+                    contexts=copy.deepcopy(getattr(topology, "contexts", []) or []),
+                    apertures=copy.deepcopy(getattr(topology, "apertures", []) or []),
+                )
+            except Exception as error:
+                return _error("Could not rebuild the deformed Cluster.", error)
+
+            if not isinstance(result, Cluster):
+                return _error("The deformed members did not produce a valid Cluster.")
+            return result
+
+        # --------------------------------------------------------------
+        # Small OCCT/SWIG compatibility helpers.
+        # --------------------------------------------------------------
+        def _clean(shape):
+            try:
+                if hasattr(_breptools_module, "breptools"):
+                    _breptools_module.breptools.Clean(shape)
+                elif hasattr(_breptools_module, "breptools_Clean"):
+                    _breptools_module.breptools_Clean(shape)
+                elif hasattr(_breptools_module, "BRepTools") and hasattr(_breptools_module.BRepTools, "Clean_s"):
+                    _breptools_module.BRepTools.Clean_s(shape)
+            except Exception:
+                pass
+
+        def _uv_bounds(face):
+            """
+            Return finite parameter bounds without calling BRepTools.UVBounds.
+
+            Some pythonocc builds can terminate the interpreter inside the
+            UVBounds SWIG wrapper when a converted Face has incomplete native
+            state. BRepAdaptor_Surface performs checked Face construction and
+            exposes the same trimmed parameter bounds without that unsafe call.
+            """
+            if face is None or _is_null_shape(face):
+                raise RuntimeError("Cannot retrieve UV bounds from a null face.")
+
+            try:
+                occ_face = topods.Face(face)
+            except Exception as error:
+                raise RuntimeError("The supplied shape is not a valid face.") from error
+
+            if _is_null_shape(occ_face):
+                raise RuntimeError("The supplied face is null.")
+
+            try:
+                adaptor = BRepAdaptor_Surface(occ_face, True)
+                bounds = (
+                    float(adaptor.FirstUParameter()),
+                    float(adaptor.LastUParameter()),
+                    float(adaptor.FirstVParameter()),
+                    float(adaptor.LastVParameter()),
+                )
+            except Exception as error:
+                raise RuntimeError("Could not retrieve face parameter bounds.") from error
+
+            if not all(math.isfinite(value) for value in bounds):
+                raise RuntimeError("The face has non-finite parameter bounds.")
+
+            return bounds
+
+        def _curve_result(edge):
+            # Preferred overload: the returned curve remains in its local
+            # coordinate system and the associated location is supplied.
+            location = TopLoc_Location()
+            try:
+                curve, first, last = BRep_Tool.Curve(edge, location)
+                return curve, float(first), float(last), location
+            except Exception:
+                pass
+
+            # pythonocc's no-location overload is known to return
+            # (curve, first, last) and is also used elsewhere in this backend.
+            try:
+                curve, first, last = BRep_Tool.Curve(edge)
+                return curve, float(first), float(last), TopLoc_Location()
+            except Exception as error:
+                raise RuntimeError("Could not retrieve edge curve and parameter range.") from error
+
+        def _pcurve_result(edge, face):
+            try:
+                pcurve, first, last = BRep_Tool.CurveOnSurface(edge, face)
+                return pcurve, float(first), float(last)
+            except Exception as error:
+                raise RuntimeError("Could not retrieve edge p-curve and parameter range.") from error
+
+        def _copy_pcurve(pcurve):
+            """Return a concrete Geom2d_Curve handle suitable for BRep_Builder.UpdateEdge.
+
+            In pythonocc, Geom2d_Geometry.Copy() is typed as the abstract base
+            Geom2d_Geometry.  Passing that object directly to UpdateEdge makes
+            SWIG overload resolution fail even when the underlying OCCT object
+            is a curve.  DownCast restores the required Geom2d_Curve handle.
+            """
+            if pcurve is None:
+                return None
+            try:
+                copied = pcurve.Copy()
+                curve = Geom2d_Curve.DownCast(copied)
+                if curve is not None:
+                    return curve
+            except Exception:
+                pass
+            try:
+                curve = Geom2d_Curve.DownCast(pcurve)
+                if curve is not None:
+                    return curve
+            except Exception:
+                pass
+            return pcurve
+
+        def _edge_parameter(vertex, edge):
+            value = BRep_Tool.Parameter(vertex, edge)
+            if isinstance(value, (list, tuple)):
+                if len(value) == 0:
+                    raise RuntimeError("Could not retrieve a vertex parameter on an edge.")
+                value = value[-1]
+            return float(value)
+
+        def _unique(shapes):
+            buckets = {}
+            result = []
+            for shape in shapes:
+                try:
+                    key = hash(shape)
+                except Exception:
+                    key = id(shape)
+                bucket = buckets.setdefault(key, [])
+                duplicate = False
+                for existing in bucket:
+                    try:
+                        if shape.IsSame(existing):
+                            duplicate = True
+                            break
+                    except Exception:
+                        pass
+                if not duplicate:
+                    bucket.append(shape)
+                    result.append(shape)
+            return result
+
+        def _explore(shape, shape_type, caster):
+            items = []
+            explorer = TopExp_Explorer(shape, shape_type)
+            while explorer.More():
+                items.append(caster(explorer.Current()))
+                explorer.Next()
+            return items
+
+        def _refine_curve(curve):
+            target_degree = max(int(curve.Degree()), degree)
+            if target_degree > int(curve.Degree()):
+                curve.IncreaseDegree(target_degree)
+
+            current_spans = max(1, int(curve.NbKnots()) - 1)
+            if subdivisions > current_spans:
+                first = float(curve.Knot(curve.FirstUKnotIndex()))
+                last = float(curve.Knot(curve.LastUKnotIndex()))
+                if last > first:
+                    parametric_tolerance = max(1.0e-12, abs(last - first) * 1.0e-12)
+                    for index in range(1, subdivisions):
+                        parameter = first + (last - first) * float(index) / float(subdivisions)
+                        curve.InsertKnot(parameter, 1, parametric_tolerance, False)
+
+        def _refine_surface(surface):
+            target_u_degree = max(int(surface.UDegree()), degree)
+            target_v_degree = max(int(surface.VDegree()), degree)
+            if target_u_degree > int(surface.UDegree()) or target_v_degree > int(surface.VDegree()):
+                surface.IncreaseDegree(target_u_degree, target_v_degree)
+
+            u_spans = max(1, int(surface.NbUKnots()) - 1)
+            if subdivisions > u_spans:
+                first_u = float(surface.UKnot(surface.FirstUKnotIndex()))
+                last_u = float(surface.UKnot(surface.LastUKnotIndex()))
+                if last_u > first_u:
+                    u_tolerance = max(1.0e-12, abs(last_u - first_u) * 1.0e-12)
+                    for index in range(1, subdivisions):
+                        parameter = first_u + (last_u - first_u) * float(index) / float(subdivisions)
+                        surface.InsertUKnot(parameter, 1, u_tolerance, False)
+
+            v_spans = max(1, int(surface.NbVKnots()) - 1)
+            if subdivisions > v_spans:
+                first_v = float(surface.VKnot(surface.FirstVKnotIndex()))
+                last_v = float(surface.VKnot(surface.LastVKnotIndex()))
+                if last_v > first_v:
+                    v_tolerance = max(1.0e-12, abs(last_v - first_v) * 1.0e-12)
+                    for index in range(1, subdivisions):
+                        parameter = first_v + (last_v - first_v) * float(index) / float(subdivisions)
+                        surface.InsertVKnot(parameter, 1, v_tolerance, False)
+
+        # --------------------------------------------------------------
+        # Convert the complete BRep to NURBS while preserving topology.
+        # --------------------------------------------------------------
+        try:
+            converter = BRepBuilderAPI_NurbsConvert(source_shape, True)
+            shape = converter.Shape()
+            if _is_null_shape(shape):
+                raise RuntimeError("BRepBuilderAPI_NurbsConvert returned a null shape.")
+        except Exception as error:
+            return _error("OCCT could not convert the topology to NURBS geometry.", error)
+
+        # --------------------------------------------------------------
+        # Transfer dictionaries using OCCT's source->modified-shape mapping.
+        # The geometry below mutates the converted TShapes in place, so these
+        # attributes remain attached to the final result.
+        # --------------------------------------------------------------
+        if transferDictionaries:
+            manager = AttributeManager.GetInstance()
+
+            try:
+                manager.CopyDictionary(source_shape, shape)
+            except Exception:
+                pass
+
+            shape_types = (
+                TopAbs_VERTEX,
+                TopAbs_EDGE,
+                TopAbs_WIRE,
+                TopAbs_FACE,
+                TopAbs_SHELL,
+                TopAbs_SOLID,
+                TopAbs_COMPSOLID,
+                TopAbs_COMPOUND,
+            )
+
+            for shape_type in shape_types:
+                source_items = _iter_occ_subshapes_unique(source_shape, shape_type)
+                target_items = _iter_occ_subshapes_unique(shape, shape_type)
+
+                for index, source_item in enumerate(source_items):
+                    if not manager.HasDictionary(source_item):
+                        continue
+
+                    target_item = None
+                    try:
+                        candidate = converter.ModifiedShape(source_item)
+                        if not _is_null_shape(candidate):
+                            target_item = candidate
+                    except Exception:
+                        target_item = None
+
+                    if target_item is None and index < len(target_items):
+                        target_item = target_items[index]
+
+                    if target_item is not None and not _is_null_shape(target_item):
+                        try:
+                            manager.CopyDictionary(source_item, target_item)
+                        except Exception:
+                            pass
+
+        builder = BRep_Builder()
+        shape_edge_tool = ShapeBuild_Edge()
+        fix_edge_tool = ShapeFix_Edge()
+
+        # --------------------------------------------------------------
+        # Incidence helpers. For a BRep with faces, the face trimming data is
+        # authoritative: support surfaces and their p-curves are deformed
+        # together, then shared 3D edge curves are regenerated from those
+        # p-curves. This avoids independently approximating a nonlinear field
+        # on both a surface and its boundary curve.
+        # --------------------------------------------------------------
+        edges = _unique(_explore(shape, TopAbs_EDGE, topods.Edge))
+        faces = _unique(_explore(shape, TopAbs_FACE, topods.Face))
+
+        face_bound_edges = []
+        for face in faces:
+            face_bound_edges.extend(_explore(face, TopAbs_EDGE, topods.Edge))
+        face_bound_edges = _unique(face_bound_edges)
+
+        def _is_face_bound_edge(edge):
+            for candidate in face_bound_edges:
+                try:
+                    if edge.IsSame(candidate):
+                        return True
+                except Exception:
+                    pass
+            return False
+
+        def _pcurve_signature(pcurve, first, last):
+            try:
+                p0 = pcurve.Value(first)
+                p1 = pcurve.Value(last)
+                pm = pcurve.Value(0.5 * (first + last))
+                return tuple(round(float(value), 12) for value in (
+                    p0.X(), p0.Y(), pm.X(), pm.Y(), p1.X(), p1.Y()
+                ))
+            except Exception:
+                return id(pcurve)
+
+        # --------------------------------------------------------------
+        # 1. Deform stand-alone 3D curves (Edges/Wires that are not trimming
+        #    any Face). Face-bound edges are deliberately postponed until the
+        #    support surfaces and p-curves have been updated.
+        # --------------------------------------------------------------
+        for edge in edges:
+            if _is_face_bound_edge(edge):
+                continue
+            try:
+                if BRep_Tool.Degenerated(edge):
+                    continue
+
+                curve, first, last, location = _curve_result(edge)
+                if curve is None:
+                    try:
+                        fix_edge_tool.FixAddCurve3d(edge)
+                    except Exception:
+                        pass
+                    curve, first, last, location = _curve_result(edge)
+                if curve is None:
+                    raise RuntimeError("The edge has no usable 3D curve.")
+
+                bspline = Geom_BSplineCurve.DownCast(curve.Copy())
+                if bspline is not None:
+                    bspline.Segment(first, last)
+                else:
+                    bspline = shapeconstruct.ConvertCurveToBSpline(
+                        curve,
+                        first,
+                        last,
+                        tolerance,
+                        GeomAbs_C1,
+                        max(2, subdivisions),
+                        max(3, degree),
+                    )
+
+                if bspline is None:
+                    raise RuntimeError("Could not obtain a B-Spline representation of an edge.")
+
+                _refine_curve(bspline)
+
+                transform = location.Transformation()
+                inverse_transform = transform.Inverted()
+                for index in range(1, int(bspline.NbPoles()) + 1):
+                    local_point = bspline.Pole(index)
+                    world_point = local_point.Transformed(transform)
+                    mapped_world_point = _map_point(world_point)
+                    mapped_local_point = mapped_world_point.Transformed(inverse_transform)
+                    bspline.SetPole(index, mapped_local_point)
+
+                edge_tolerance = max(tolerance, float(BRep_Tool.Tolerance(edge)))
+                try:
+                    builder.UpdateEdge(edge, bspline, location, edge_tolerance)
+                except Exception:
+                    builder.UpdateEdge(edge, bspline, edge_tolerance)
+                builder.Range(edge, first, last, True)
+                builder.SameParameter(edge, False)
+                builder.SameRange(edge, False)
+
+            except Exception as error:
+                return _error("Could not deform a stand-alone edge NURBS control net.", error)
+
+        # --------------------------------------------------------------
+        # 2. Deform each Face support surface while preserving the original
+        #    p-curves in UV space. Moving the support-surface poles leaves its
+        #    parametric domain intact, so the p-curves remain the correct trim
+        #    definitions. They must, however, be re-attached to the new surface
+        #    handle after UpdateFace.
+        # --------------------------------------------------------------
+        for face in faces:
+            try:
+                u1, u2, v1, v2 = [float(value) for value in _uv_bounds(face)]
+                if not all(math.isfinite(value) for value in (u1, u2, v1, v2)):
+                    raise RuntimeError("The face has an unbounded parametric domain.")
+                if u2 <= u1 or v2 <= v1:
+                    raise RuntimeError("The face has an invalid parametric domain.")
+
+                location = TopLoc_Location()
+                try:
+                    surface = BRep_Tool.Surface(face, location)
+                except Exception:
+                    surface = BRep_Tool.Surface(face)
+                    location = TopLoc_Location()
+
+                if surface is None:
+                    raise RuntimeError("Could not retrieve the face support surface.")
+
+                # Cache p-curves BEFORE changing the support-surface handle.
+                # A seam edge occurs twice in the face traversal; retain both
+                # distinct p-curves so periodic surfaces remain valid.
+                occurrences = _explore(face, TopAbs_EDGE, topods.Edge)
+                cache = []
+                for occurrence in occurrences:
+                    try:
+                        pcurve, first, last = _pcurve_result(occurrence, face)
+                    except Exception:
+                        pcurve = None
+                    if pcurve is None:
+                        continue
+                    pcurve = _copy_pcurve(pcurve)
+                    if pcurve is None:
+                        continue
+                    cache.append({
+                        "edge": occurrence,
+                        "pcurve": pcurve,
+                        "first": float(first),
+                        "last": float(last),
+                        "signature": _pcurve_signature(pcurve, float(first), float(last)),
+                    })
+
+                # Group coedge occurrences by underlying TopoDS_Edge and
+                # cache seam status BEFORE changing the support surface.
+                grouped = []
+                for item in cache:
+                    group = None
+                    for candidate in grouped:
+                        try:
+                            if item["edge"].IsSame(candidate["edge"]):
+                                group = candidate
+                                break
+                        except Exception:
+                            pass
+                    if group is None:
+                        try:
+                            is_seam = bool(BRep_Tool.IsClosed(item["edge"], face))
+                        except Exception:
+                            is_seam = False
+                        group = {
+                            "edge": item["edge"],
+                            "items": [],
+                            "is_seam": is_seam,
+                        }
+                        grouped.append(group)
+                    if all(existing["signature"] != item["signature"] for existing in group["items"]):
+                        group["items"].append(item)
+
+                # Some pythonocc/OCCT combinations expose only one seam half
+                # through a face traversal. Explicitly query the reversed edge
+                # as a second chance; CurveOnSurface uses edge orientation when
+                # selecting between the two p-curves of a closed surface.
+                for group in grouped:
+                    if not group["is_seam"] or len(group["items"]) >= 2:
+                        continue
+                    try:
+                        reversed_edge = topods.Edge(group["edge"].Reversed())
+                        pcurve, first, last = _pcurve_result(reversed_edge, face)
+                        if pcurve is not None:
+                            pcurve = _copy_pcurve(pcurve)
+                            if pcurve is None:
+                                continue
+                            signature = _pcurve_signature(pcurve, float(first), float(last))
+                            if all(existing["signature"] != signature for existing in group["items"]):
+                                group["items"].append({
+                                    "edge": reversed_edge,
+                                    "pcurve": pcurve,
+                                    "first": float(first),
+                                    "last": float(last),
+                                    "signature": signature,
+                                })
+                    except Exception:
+                        pass
+
+                bspline_surface = Geom_BSplineSurface.DownCast(surface.Copy())
+                if bspline_surface is not None:
+                    bspline_surface.Segment(u1, u2, v1, v2)
+                else:
+                    bspline_surface = shapeconstruct.ConvertSurfaceToBSpline(
+                        surface,
+                        u1,
+                        u2,
+                        v1,
+                        v2,
+                        tolerance,
+                        GeomAbs_C1,
+                        max(2, subdivisions),
+                        max(3, degree),
+                    )
+
+                if bspline_surface is None:
+                    raise RuntimeError(
+                        "Could not obtain a B-Spline representation of a face support surface."
+                    )
+
+                _refine_surface(bspline_surface)
+
+                transform = location.Transformation()
+                inverse_transform = transform.Inverted()
+                for u_index in range(1, int(bspline_surface.NbUPoles()) + 1):
+                    for v_index in range(1, int(bspline_surface.NbVPoles()) + 1):
+                        local_point = bspline_surface.Pole(u_index, v_index)
+                        world_point = local_point.Transformed(transform)
+                        mapped_world_point = _map_point(world_point)
+                        mapped_local_point = mapped_world_point.Transformed(inverse_transform)
+                        bspline_surface.SetPole(u_index, v_index, mapped_local_point)
+
+                # Remove stale edge representations tied to the old surface.
+                for group in grouped:
+                    try:
+                        shape_edge_tool.RemovePCurve(group["edge"], surface, location)
+                    except Exception:
+                        try:
+                            shape_edge_tool.RemovePCurve(group["edge"], face)
+                        except Exception:
+                            pass
+
+                face_tolerance = max(tolerance, float(BRep_Tool.Tolerance(face)))
+                try:
+                    builder.UpdateFace(face, bspline_surface, location, face_tolerance)
+                except Exception:
+                    builder.UpdateFace(face, bspline_surface, face_tolerance)
+
+                # Reattach the old UV trims to the new support surface. For a
+                # closed/periodic face retain both seam p-curves when present.
+                for group in grouped:
+                    edge = group["edge"]
+                    items = group["items"]
+                    if not items:
+                        continue
+
+                    is_seam = bool(group.get("is_seam", False))
+                    edge_tolerance = max(tolerance, float(BRep_Tool.Tolerance(edge)))
+
+                    if is_seam and len(items) >= 2:
+                        builder.UpdateEdge(
+                            edge,
+                            items[0]["pcurve"],
+                            items[1]["pcurve"],
+                            bspline_surface,
+                            location,
+                            edge_tolerance,
+                        )
+                    else:
+                        builder.UpdateEdge(
+                            edge,
+                            items[0]["pcurve"],
+                            bspline_surface,
+                            location,
+                            edge_tolerance,
+                        )
+
+                    # Preserve the original trimming parameter range.
+                    first = items[0]["first"]
+                    last = items[0]["last"]
+                    try:
+                        builder.Range(edge, face, first, last)
+                    except Exception:
+                        pass
+
+            except Exception as error:
+                return _error("Could not deform a face NURBS control net.", error)
+
+        # --------------------------------------------------------------
+        # 3. Rebuild face-bound 3D edge curves FROM the deformed support
+        #    surfaces and their preserved p-curves. This is the key BRep
+        #    consistency step for nonlinear deformations such as Bend.
+        # --------------------------------------------------------------
+        for edge in face_bound_edges:
+            try:
+                if BRep_Tool.Degenerated(edge):
+                    continue
+                edge_tolerance = max(tolerance, float(BRep_Tool.Tolerance(edge)))
+
+                # Explicitly remove the stale 3D representation;
+                # ShapeBuild_Edge.RemoveCurve3d is unconditional, unlike the
+                # diagnostic ShapeFix_Edge.FixRemoveCurve3d method.
+                shape_edge_tool.RemoveCurve3d(edge)
+
+                built = False
+                try:
+                    built = bool(breplib.BuildCurve3d(
+                        edge,
+                        edge_tolerance,
+                        GeomAbs_C1,
+                        max(3, degree),
+                        max(30, subdivisions * 4),
+                    ))
+                except Exception:
+                    try:
+                        built = bool(breplib.BuildCurve3d(edge, edge_tolerance))
+                    except Exception:
+                        built = False
+
+                if not built:
+                    try:
+                        built = bool(shape_edge_tool.BuildCurve3d(edge))
+                    except Exception:
+                        built = False
+
+                if not built:
+                    try:
+                        built = bool(fix_edge_tool.FixAddCurve3d(edge))
+                    except Exception:
+                        built = False
+
+                curve, _, _, _ = _curve_result(edge)
+                if not built and curve is None:
+                    raise RuntimeError("Could not rebuild the shared 3D curve from its p-curve(s).")
+
+                builder.SameParameter(edge, False)
+                builder.SameRange(edge, False)
+
+            except Exception as error:
+                return _error("Could not rebuild a deformed face-bound edge.", error)
+
+        # --------------------------------------------------------------
+        # 4. Move vertices onto the regenerated shared 3D curves. When a
+        #    vertex belongs to several edges, average their evaluated endpoints
+        #    and enlarge the tolerance only by the observed spread.
+        # --------------------------------------------------------------
+        vertices = _unique(_explore(shape, TopAbs_VERTEX, topods.Vertex))
+        edge_vertex_cache = []
+        for edge in edges:
+            edge_vertices = _unique(_explore(edge, TopAbs_VERTEX, topods.Vertex))
+            edge_vertex_cache.append((edge, edge_vertices))
+
+        for vertex in vertices:
+            candidates = []
+            for edge, edge_vertices in edge_vertex_cache:
+                belongs = False
+                for edge_vertex in edge_vertices:
+                    try:
+                        if vertex.IsSame(edge_vertex):
+                            belongs = True
+                            break
+                    except Exception:
+                        pass
+                if not belongs:
+                    continue
+
+                try:
+                    if BRep_Tool.Degenerated(edge):
+                        continue
+                    parameter = _edge_parameter(vertex, edge)
+                    curve, _, _, location = _curve_result(edge)
+                    if curve is None:
+                        continue
+                    point = curve.Value(parameter)
+                    candidates.append(point.Transformed(location.Transformation()))
+                except Exception:
+                    continue
+
+            try:
+                # A topology vertex is an interpolation constraint, not a
+                # control point.  The rebuilt incident curves are approximate
+                # under a non-linear deformation, so averaging their evaluated
+                # endpoints can move a shared vertex away from the exact image
+                # of its source position (most visibly at hole boundaries).
+                # Keep the vertex itself exact and use the curve endpoints only
+                # to enlarge its tolerance enough to reconcile the BRep.
+                world_point = _map_point(BRep_Tool.Pnt(vertex))
+                spread = max(
+                    (world_point.Distance(point) for point in candidates),
+                    default=0.0,
+                )
+
+                vertex_location = vertex.Location()
+                local_point = world_point.Transformed(vertex_location.Transformation().Inverted())
+                vertex_tolerance = max(
+                    tolerance,
+                    float(BRep_Tool.Tolerance(vertex)),
+                    spread + tolerance,
+                )
+                builder.UpdateVertex(vertex, local_point, vertex_tolerance)
+
+            except Exception as error:
+                return _error("Could not update a deformed topology vertex.", error)
+
+        # --------------------------------------------------------------
+        # 5. Reconcile all 3D curves and p-curves and then validate. OCCT's
+        #    SameParameter operation is specifically intended to bring the 2D
+        #    and 3D representations of an edge into agreement.
+        # --------------------------------------------------------------
+        for edge in edges:
+            try:
+                if not BRep_Tool.Degenerated(edge):
+                    fix_edge_tool.FixSameParameter(edge, tolerance)
+                fix_edge_tool.FixVertexTolerance(edge)
+            except Exception:
+                pass
+
+        try:
+            shapefix.SameParameter(shape, True, tolerance)
+        except Exception:
+            pass
+
+        _clean(shape)
+
+        try:
+            analyzer = BRepCheck_Analyzer(shape, True)
+            if not analyzer.IsValid():
+                # A conservative final healing pass is appropriate here: the
+                # topology graph has not been rebuilt, only its geometric
+                # representations have been changed.
+                try:
+                    fixer = ShapeFix_Shape(shape)
+                    fixer.SetPrecision(tolerance)
+                    fixer.Perform()
+                    fixed_shape = fixer.Shape()
+                    if not _is_null_shape(fixed_shape):
+                        fixed_analyzer = BRepCheck_Analyzer(fixed_shape, True)
+                        if fixed_analyzer.IsValid():
+                            shape = fixed_shape
+                        else:
+                            return _error("The deformed OCCT BRep is not valid after healing.")
+                    else:
+                        return _error("The deformed OCCT BRep is not valid.")
+                except Exception:
+                    return _error("The deformed OCCT BRep is not valid.")
+        except Exception as error:
+            return _error("The deformed OCCT BRep could not be validated.", error)
+
+        # --------------------------------------------------------------
+        # Wrap the already-native OCCT shape. No BREP serialization roundtrip.
+        # --------------------------------------------------------------
+        try:
+            result = Topology.ByOcctShape(shape)
+        except Exception as error:
+            return _error("Could not wrap the deformed OCCT shape.", error)
+
+        if not isinstance(result, Topology):
+            return _error("The deformed OCCT shape did not produce a valid backend topology.")
+
+        result = Topology._rewrap_preserving_wrapper(result, topology)
+
+        # Preserve wrapper relationships. Dictionary transfer remains governed
+        # independently by transferDictionaries.
+        for attr in ("contents", "contexts", "apertures"):
+            if hasattr(topology, attr) and hasattr(result, attr):
+                try:
+                    setattr(result, attr, copy.deepcopy(getattr(topology, attr)))
+                except Exception:
+                    pass
+
+        if transferDictionaries:
+            try:
+                result.dictionary = copy.deepcopy(Topology.GetDictionary(topology))
+            except Exception:
+                pass
+
+        return result
+
     def Distance(
         self,
         otherTopology: Any,
@@ -4076,11 +5309,13 @@ class Topology:
             except Exception:
                 members = []
 
-            if not isinstance(
-                members,
-                list
-            ):
+            if members is None:
                 members = []
+            elif not isinstance(members, list):
+                try:
+                    members = list(members)
+                except Exception:
+                    members = []
 
             if len(members) == 0:
                 try:
@@ -4092,6 +5327,24 @@ class Topology:
                         )
                         or []
                     )
+                except Exception:
+                    members = []
+
+            # Compound-backed Clusters may not cache their direct wrappers.
+            # Recover DIRECT native children without recursively flattening
+            # their internal topology.
+            if len(members) == 0:
+                try:
+                    from OCC.Core.TopoDS import TopoDS_Iterator
+
+                    cluster_shape = _shape_from_topology(topology)
+                    if not _is_null_shape(cluster_shape):
+                        iterator = TopoDS_Iterator(cluster_shape)
+                        while iterator.More():
+                            member = Topology.ByOcctShape(iterator.Value())
+                            if isinstance(member, Topology):
+                                members.append(member)
+                            iterator.Next()
                 except Exception:
                     members = []
 

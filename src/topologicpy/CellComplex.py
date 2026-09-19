@@ -120,7 +120,6 @@ class CellComplex():
             The created CellComplex, or None on failure.
         """
         from topologicpy.Vertex import Vertex
-        from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
 
@@ -385,851 +384,1161 @@ class CellComplex():
             cc_faces = Topology.Faces(cc)
             cc_faces = Topology.Inherit(targets=cc_faces, sources=faces, exclusive=exclusive, tolerance=tolerance, silent=silent)
         return cc
-
-    
+ 
     @staticmethod
-    def _ByFaces(faces: list, tolerance: float = 0.0001, silent: bool = False):
+    def _ByFaces(
+        faces: list,
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
         """
-        Creates a cellcomplex by merging the input faces.
+        Creates a CellComplex directly from the input Faces using the active
+        topology backend.
+
+        This is a low-level constructor. The input Faces are passed to the
+        backend unchanged. No overlap resolution, merging, polygonisation,
+        triangulation, approximation, or geometry reconstruction is performed.
 
         Parameters
         ----------
         faces : list
-            The input faces.
+            The input list of Faces.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
+            If True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
         topologic_core.CellComplex
-            The created cellcomplex.
+            The created CellComplex, or None if construction fails.
 
         """
-        from topologicpy.Cluster import Cluster
+        import math
+
         from topologicpy.Topology import Topology
+
+        # ------------------------------------------------------------------
+        # Validate input.
+        # ------------------------------------------------------------------
 
         if not isinstance(faces, list):
             if not silent:
-                print("CellComplex.ByFaces - Error: The input faces parameter is not a valid list. Returning None.")
+                print(
+                    "CellComplex._ByFaces - Error: The input faces parameter "
+                    "is not a valid list. Returning None."
+                )
             return None
-        faces = [x for x in faces if Topology.IsInstance(x, "Face")]
-        if len(faces) < 1:
+
+        valid_faces = [
+            face
+            for face in faces
+            if Topology.IsInstance(face, "Face")
+        ]
+
+        if len(valid_faces) == 0:
             if not silent:
-                print("CellComplex.ByFaces - Error: The input faces parameter does not contain any valid faces. Returning None.")
+                print(
+                    "CellComplex._ByFaces - Error: The input faces parameter "
+                    "does not contain any valid Faces. Returning None."
+                )
             return None
+
         try:
-            cellComplex = Core.CellComplex.ByFaces(faces, tolerance, False)
-        except:
-            cellComplex = None
-        if not cellComplex:
+            tolerance = abs(float(tolerance))
+        except Exception:
             if not silent:
-                print("CellComplex.ByFaces - Warning: The default method failed. Attempting a workaround.")
-            cellComplex = faces[0]
-            for i in range(1,len(faces)):
-                newCellComplex = None
-                try:
-                    # newCellComplex = cellComplex.Merge(faces[i], False, tolerance) # H to Core
-                    newCellComplex = Core.InstanceCall(cellComplex, "Merge", faces[i], False, tolerance)
-                except:
-                    if not silent:
-                        print("CellComplex.ByFaces - Warning: Failed to merge face #"+str(i)+". Skipping.")
-                if newCellComplex:
-                    cellComplex = newCellComplex
-            if not Topology.Type(cellComplex) == Topology.TypeID("CellComplex"):
-                if not silent:
-                    print("CellComplex.ByFaces - Warning: The input faces do not form a cellcomplex")
-                if Topology.Type(cellComplex) == Topology.TypeID("Cluster"):
-                    returnCellComplexes = Cluster.CellComplexes(cellComplex)
-                    if len(returnCellComplexes) > 0:
-                        return returnCellComplexes[0]
-                    else:
-                        if not silent:
-                            print("CellComplex.ByFaces - Error: Could not create a cellcomplex. Returning None.")
-                        return None
-                else:
-                    if not silent:
-                        print("CellComplex.ByFaces - Error: Could not create a cellcomplex. Returning None.")
-                    return None
-        else:
-            return cellComplex
+                print(
+                    "CellComplex._ByFaces - Error: The input tolerance parameter "
+                    "is not a valid number. Returning None."
+                )
+            return None
 
-    def ByFacesTopologic(faces, tolerance: float = 0.0001, silent: bool = False):
+        if not math.isfinite(tolerance) or tolerance <= 0.0:
+            if not silent:
+                print(
+                    "CellComplex._ByFaces - Error: The input tolerance parameter "
+                    "must be greater than zero. Returning None."
+                )
+            return None
+
+        # ------------------------------------------------------------------
+        # Delegate directly to the active backend.
+        #
+        # The original Face objects are passed unchanged.
+        # ------------------------------------------------------------------
+
+        try:
+            result = Core.Call(
+                "CellComplex",
+                "ByFaces",
+                valid_faces,
+                tolerance,
+                False
+            )
+        except Exception as error:
+            if not silent:
+                print(
+                    "CellComplex._ByFaces - Error: The active backend could not "
+                    "construct a CellComplex from the input Faces. Returning None."
+                )
+                print("Error:", error)
+            return None
+
+        # ------------------------------------------------------------------
+        # Validate backend result.
+        # ------------------------------------------------------------------
+
+        if not Topology.IsInstance(result, "CellComplex"):
+            if not silent:
+                print(
+                    "CellComplex._ByFaces - Error: The active backend did not "
+                    "return a valid CellComplex. Returning None."
+                )
+            return None
+
+        return result
+    
+    # @staticmethod
+    # def ByFaces(faces, transferDictionaries: bool = False, tolerance: float = 0.0001, silent: bool = False):
+    #     """
+    #     Creates a CellComplex from the input faces after using Shapely to remove
+    #     coplanar face overlaps.
+
+    #     This method is intended as a faster pre-processing pathway for cases where
+    #     CellComplex.ByFaces is slow because the input contains overlapping coplanar
+    #     faces. Non-coplanar faces are passed through unchanged.
+
+    #     Parameters
+    #     ----------
+    #     faces : list
+    #         The input list of topologic_core.Face objects.
+    #     transferDictionaries : bool , optional
+    #         If set to True, any dictionaries in the faces are transferred to the faces of the created CellComplex.
+    #         Otherwise, they are not. Default is False.
+    #     tolerance : float , optional
+    #         The desired tolerance. Default is 0.0001.
+    #     silent : bool , optional
+    #         If set to True, error and warning messages are suppressed. Default is False.
+
+    #     Returns
+    #     -------
+    #     topologic_core.CellComplex or None
+    #         The created CellComplex.
+    #     """
+
+    #     import math
+
+    #     try:
+    #         from shapely.geometry import Polygon, MultiPolygon
+    #         from shapely.ops import unary_union
+    #         try:
+    #             from shapely.validation import make_valid
+    #         except Exception:
+    #             make_valid = None
+    #     except Exception:
+    #         if not silent:
+    #             print("CellComplex.ByFacesShapely - Error: Shapely is not installed. Please install it using: pip install shapely")
+    #         return None
+
+    #     from topologicpy.CellComplex import CellComplex
+    #     from topologicpy.Topology import Topology
+    #     from topologicpy.Vertex import Vertex
+    #     from topologicpy.Wire import Wire
+    #     from topologicpy.Face import Face
+    #     from topologicpy.Cluster import Cluster
+    #     from topologicpy.Dictionary import Dictionary
+
+    #     if not isinstance(faces, list):
+    #         if not silent:
+    #             print("CellComplex.ByFacesShapely - Error: The input faces parameter is not a valid list. Returning None.")
+    #         return None
+
+    #     faces = [f for f in faces if Topology.IsInstance(f, "Face")]
+
+    #     if len(faces) == 0:
+    #         if not silent:
+    #             print("CellComplex.ByFacesShapely - Error: The input faces list does not contain any valid faces. Returning None.")
+    #         return None
+
+    #     def _dot(a, b):
+    #         return a[0]*b[0] + a[1]*b[1] + a[2]*b[2]
+
+    #     def _cross(a, b):
+    #         return [
+    #             a[1]*b[2] - a[2]*b[1],
+    #             a[2]*b[0] - a[0]*b[2],
+    #             a[0]*b[1] - a[1]*b[0],
+    #         ]
+
+    #     def _sub(a, b):
+    #         return [a[0]-b[0], a[1]-b[1], a[2]-b[2]]
+
+    #     def _add(a, b):
+    #         return [a[0]+b[0], a[1]+b[1], a[2]+b[2]]
+
+    #     def _mul(a, s):
+    #         return [a[0]*s, a[1]*s, a[2]*s]
+
+    #     def _length(v):
+    #         return math.sqrt(_dot(v, v))
+
+    #     def _normalize(v):
+    #         l = _length(v)
+    #         if l <= tolerance:
+    #             return None
+    #         return [v[0]/l, v[1]/l, v[2]/l]
+
+    #     def _coords(vertex):
+    #         return [
+    #             Vertex.X(vertex, mantissa=12),
+    #             Vertex.Y(vertex, mantissa=12),
+    #             Vertex.Z(vertex, mantissa=12),
+    #         ]
+
+    #     def _face_vertices(face):
+    #         try:
+    #             return Topology.Vertices(face)
+    #         except Exception:
+    #             return []
+
+    #     def _boundary_vertices(face):
+    #         try:
+    #             eb = Face.ExternalBoundary(face)
+    #             return Topology.Vertices(eb)
+    #         except Exception:
+    #             return _face_vertices(face)
+
+    #     def _face_normal(face):
+    #         try:
+    #             n = Face.Normal(face)
+    #             if isinstance(n, tuple):
+    #                 n = list(n)
+    #             n = _normalize(n)
+    #             if n:
+    #                 return n
+    #         except Exception:
+    #             pass
+
+    #         vertices = _boundary_vertices(face)
+    #         if len(vertices) < 3:
+    #             return None
+
+    #         pts = [_coords(v) for v in vertices]
+
+    #         p0 = pts[0]
+    #         for i in range(1, len(pts)-1):
+    #             a = _sub(pts[i], p0)
+    #             b = _sub(pts[i+1], p0)
+    #             n = _normalize(_cross(a, b))
+    #             if n:
+    #                 return n
+
+    #         return None
+
+    #     def _canonical_normal(n):
+    #         # Make opposite normals group together.
+    #         # Pick the orientation where the first significant component is positive.
+    #         for c in n:
+    #             if abs(c) > tolerance:
+    #                 if c < 0:
+    #                     return [-n[0], -n[1], -n[2]]
+    #                 return n
+    #         return n
+
+    #     def _plane_key(face):
+    #         vertices = _boundary_vertices(face)
+    #         if len(vertices) < 3:
+    #             return None
+
+    #         n = _face_normal(face)
+    #         if not n:
+    #             return None
+
+    #         n = _canonical_normal(n)
+    #         p = _coords(vertices[0])
+    #         d = _dot(n, p)
+
+    #         q = max(tolerance, 1e-9)
+
+    #         return (
+    #             round(n[0] / q),
+    #             round(n[1] / q),
+    #             round(n[2] / q),
+    #             round(d / q),
+    #         )
+
+    #     def _plane_basis(face):
+    #         vertices = _boundary_vertices(face)
+    #         if len(vertices) < 3:
+    #             return None
+
+    #         n = _face_normal(face)
+    #         if not n:
+    #             return None
+
+    #         n = _canonical_normal(n)
+    #         origin = _coords(vertices[0])
+
+    #         # Choose a stable reference vector.
+    #         if abs(n[0]) < 0.9:
+    #             ref = [1.0, 0.0, 0.0]
+    #         else:
+    #             ref = [0.0, 1.0, 0.0]
+
+    #         u = _normalize(_cross(ref, n))
+    #         if not u:
+    #             return None
+
+    #         v = _normalize(_cross(n, u))
+    #         if not v:
+    #             return None
+
+    #         return origin, u, v, n
+
+    #     def _project_point(p, origin, u, v):
+    #         w = _sub(p, origin)
+    #         return (_dot(w, u), _dot(w, v))
+
+    #     def _unproject_point(p, origin, u, v):
+    #         return _add(origin, _add(_mul(u, p[0]), _mul(v, p[1])))
+
+    #     def _ring_to_polygon_coords(vertices, origin, u, v):
+    #         coords = []
+    #         last = None
+
+    #         for vertex in vertices:
+    #             p = _coords(vertex)
+    #             xy = _project_point(p, origin, u, v)
+
+    #             if last is None:
+    #                 coords.append(xy)
+    #                 last = xy
+    #             else:
+    #                 if math.dist(last, xy) > tolerance:
+    #                     coords.append(xy)
+    #                     last = xy
+
+    #         if len(coords) > 1 and math.dist(coords[0], coords[-1]) <= tolerance:
+    #             coords = coords[:-1]
+
+    #         if len(coords) < 3:
+    #             return None
+
+    #         return coords
+
+    #     def _face_to_polygon(face, origin, u, v):
+    #         exterior_vertices = _boundary_vertices(face)
+    #         exterior = _ring_to_polygon_coords(exterior_vertices, origin, u, v)
+
+    #         if not exterior:
+    #             return None
+
+    #         holes = []
+
+    #         try:
+    #             internal_boundaries = Face.InternalBoundaries(face)
+    #         except Exception:
+    #             internal_boundaries = []
+
+    #         if internal_boundaries:
+    #             for ib in internal_boundaries:
+    #                 try:
+    #                     ib_vertices = Topology.Vertices(ib)
+    #                     hole = _ring_to_polygon_coords(ib_vertices, origin, u, v)
+    #                     if hole and len(hole) >= 3:
+    #                         holes.append(hole)
+    #                 except Exception:
+    #                     continue
+
+    #         try:
+    #             polygon = Polygon(exterior, holes)
+    #         except Exception:
+    #             return None
+
+    #         if polygon.is_empty:
+    #             return None
+
+    #         if not polygon.is_valid:
+    #             if make_valid:
+    #                 polygon = make_valid(polygon)
+    #             else:
+    #                 polygon = polygon.buffer(0)
+
+    #         if polygon.is_empty:
+    #             return None
+
+    #         return polygon
+
+    #     def _polygon_to_faces(polygon, origin, u, v):
+    #         result = []
+
+    #         if polygon.is_empty:
+    #             return result
+
+    #         if isinstance(polygon, MultiPolygon):
+    #             for geom in polygon.geoms:
+    #                 result.extend(_polygon_to_faces(geom, origin, u, v))
+    #             return result
+
+    #         if polygon.geom_type != "Polygon":
+    #             return result
+
+    #         if polygon.area <= tolerance * tolerance:
+    #             return result
+
+    #         exterior_coords = list(polygon.exterior.coords)
+    #         if len(exterior_coords) < 4:
+    #             return result
+
+    #         exterior_vertices = []
+    #         for xy in exterior_coords[:-1]:
+    #             p = _unproject_point(xy, origin, u, v)
+    #             exterior_vertices.append(Vertex.ByCoordinates(p[0], p[1], p[2]))
+
+    #         if len(exterior_vertices) < 3:
+    #             return result
+
+    #         try:
+    #             external_wire = Wire.ByVertices(exterior_vertices, close=True, tolerance=tolerance, silent=True)
+    #         except TypeError:
+    #             external_wire = Wire.ByVertices(exterior_vertices, close=True, tolerance=tolerance)
+
+    #         if not external_wire:
+    #             return result
+
+    #         internal_wires = []
+
+    #         for interior in polygon.interiors:
+    #             interior_coords = list(interior.coords)
+    #             if len(interior_coords) < 4:
+    #                 continue
+
+    #             interior_vertices = []
+    #             for xy in interior_coords[:-1]:
+    #                 p = _unproject_point(xy, origin, u, v)
+    #                 interior_vertices.append(Vertex.ByCoordinates(p[0], p[1], p[2]))
+
+    #             if len(interior_vertices) < 3:
+    #                 continue
+
+    #             try:
+    #                 iw = Wire.ByVertices(interior_vertices, close=True, tolerance=tolerance, silent=True)
+    #             except TypeError:
+    #                 iw = Wire.ByVertices(interior_vertices, close=True, tolerance=tolerance)
+
+    #             if iw:
+    #                 internal_wires.append(iw)
+
+    #         face = None
+
+    #         if len(internal_wires) > 0:
+    #             try:
+    #                 face = Face.ByWires(external_wire, internal_wires, tolerance=tolerance, silent=True)
+    #             except Exception:
+    #                 face = None
+
+    #         if not face:
+    #             try:
+    #                 face = Face.ByWire(external_wire, tolerance=tolerance, silent=True)
+    #             except TypeError:
+    #                 face = Face.ByWire(external_wire, tolerance=tolerance)
+
+    #         if face:
+    #             result.append(face)
+
+    #         return result
+
+    #     def _clean_polygon(polygon):
+    #         if polygon is None:
+    #             return None
+
+    #         if polygon.is_empty:
+    #             return None
+
+    #         if not polygon.is_valid:
+    #             if make_valid:
+    #                 polygon = make_valid(polygon)
+    #             else:
+    #                 polygon = polygon.buffer(0)
+
+    #         if polygon.is_empty:
+    #             return None
+
+    #         if polygon.geom_type == "GeometryCollection":
+    #             polygons = [g for g in polygon.geoms if g.geom_type in ["Polygon", "MultiPolygon"] and not g.is_empty]
+    #             if len(polygons) == 0:
+    #                 return None
+    #             polygon = unary_union(polygons)
+
+    #         return polygon
+
+    #     # -------------------------------------------------------------------------
+    #     # 1. Group faces by quantised plane
+    #     # -------------------------------------------------------------------------
+
+    #     groups = {}
+    #     passthrough_faces = []
+
+    #     for face in faces:
+    #         key = _plane_key(face)
+    #         if key is None:
+    #             passthrough_faces.append(face)
+    #         else:
+    #             groups.setdefault(key, []).append(face)
+
+    #     cleaned_faces = list(passthrough_faces)
+
+    #     # -------------------------------------------------------------------------
+    #     # 2. Resolve coplanar overlaps group-by-group
+    #     # -------------------------------------------------------------------------
+
+    #     for _, group_faces in groups.items():
+    #         if len(group_faces) == 1:
+    #             cleaned_faces.append(group_faces[0])
+    #             continue
+
+    #         basis = _plane_basis(group_faces[0])
+    #         if not basis:
+    #             cleaned_faces.extend(group_faces)
+    #             continue
+
+    #         origin, u, v, _ = basis
+
+    #         items = []
+
+    #         for face in group_faces:
+    #             polygon = _face_to_polygon(face, origin, u, v)
+    #             polygon = _clean_polygon(polygon)
+
+    #             if polygon is None:
+    #                 cleaned_faces.append(face)
+    #                 continue
+
+    #             items.append((face, polygon))
+
+    #         if len(items) == 0:
+    #             continue
+
+    #         # Larger polygons first: this tends to preserve major surfaces and trim
+    #         # smaller/duplicate overlapping fragments.
+    #         items.sort(key=lambda item: item[1].area, reverse=True)
+
+    #         accepted_polygons = []
+
+    #         for original_face, polygon in items:
+    #             polygon = _clean_polygon(polygon)
+
+    #             if polygon is None:
+    #                 continue
+
+    #             if len(accepted_polygons) > 0:
+    #                 occupied = unary_union(accepted_polygons)
+    #                 polygon = polygon.difference(occupied)
+    #                 polygon = _clean_polygon(polygon)
+
+    #             if polygon is None:
+    #                 continue
+
+    #             new_faces = _polygon_to_faces(polygon, origin, u, v)
+
+    #             if len(new_faces) == 0:
+    #                 continue
+
+    #             cleaned_faces.extend(new_faces)
+
+    #             # Store the polygon actually accepted, not necessarily the original.
+    #             accepted_polygons.append(polygon)
+
+    #     if len(cleaned_faces) == 0:
+    #         if not silent:
+    #             print("CellComplex.ByFacesShapely - Error: No valid faces remained after Shapely processing. Returning None.")
+    #         return None
+
+    #     cc = CellComplex._ByFaces(cleaned_faces, tolerance=tolerance, silent=silent)
+    #     if not Topology.IsInstance(cc, "cellcomplex"):
+    #         if not silent:
+    #             print("CellComplex.ByFaces - Error: Could not create the CellComplex. Returning None.")
+    #         return None
+        
+    #     if transferDictionaries:
+    #         cc_faces = Topology.Faces(cc)
+    #         source_cluster = Cluster.ByTopologies(faces)
+
+    #         for cc_face in cc_faces:
+    #             internal_vertex = Topology.InternalVertex(cc_face, tolerance=tolerance)
+    #             enclosing_faces = Vertex.EnclosingFaces(internal_vertex,
+    #                                                     source_cluster,
+    #                                                     exclusive=False,
+    #                                                     tolerance=tolerance)
+    #             print("Enclosing Faces:", len(enclosing_faces))
+    #             if isinstance(enclosing_faces, list) and len(enclosing_faces) > 0:
+    #                 dictionaries = [Topology.Dictionary(face) for face in enclosing_faces]
+    #                 merged_dictionary = Dictionary.ByMergedDictionaries(dictionaries, silent=True)
+    #                 Topology.SetDictionary(cc_face, merged_dictionary)
+    #     return cc
+
+    @staticmethod
+    def ByFaces(
+        faces,
+        transferDictionaries: bool = False,
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
         """
-        Creates a CellComplex from the input faces after removing coplanar overlaps
-        using only TopologicPy / Topologic boolean operations.
+        Creates a CellComplex from the input Faces while preserving their exact
+        geometry.
 
-        The method keeps larger coplanar faces first and trims later faces by
-        subtracting already accepted coplanar regions. This avoids dissolving
-        coplanar subdivisions into a single merged face.
+        The method first attempts to assemble the original Faces directly using
+        the active backend. No preprocessing, polygonisation, triangulation, or
+        vertex-based reconstruction is performed.
+
+        If direct assembly fails, overlapping coplanar planar Faces are resolved
+        using native topology Boolean operations. Curved boundaries are therefore
+        retained as curves, and non-planar analytic/B-Spline/NURBS Faces are passed
+        through unchanged.
 
         Parameters
         ----------
         faces : list
-            The input list of topologic_core.Face objects.
+            The input list of Faces.
+        transferDictionaries : bool , optional
+            If True, dictionaries from the source Faces are transferred to the
+            corresponding Faces of the resulting CellComplex. Default is False.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
+            If True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
-        topologic_core.CellComplex or None
-            The created CellComplex.
-        """
+        topologic_core.CellComplex
+            The created CellComplex, or None if construction fails.
 
+        """
         import math
 
-        from topologicpy.CellComplex import CellComplex
-        from topologicpy.Topology import Topology
+        from topologicpy.Cluster import Cluster
+        from topologicpy.Dictionary import Dictionary
         from topologicpy.Face import Face
+        from topologicpy.Topology import Topology
         from topologicpy.Vertex import Vertex
+
+        # ------------------------------------------------------------------
+        # Validate.
+        # ------------------------------------------------------------------
 
         if not isinstance(faces, list):
             if not silent:
-                print("CellComplex.ByFacesTopologic - Error: The input faces parameter is not a valid list. Returning None.")
+                print(
+                    "CellComplex.ByFaces - Error: The input faces parameter is "
+                    "not a valid list. Returning None."
+                )
             return None
 
-        faces = [f for f in faces if Topology.IsInstance(f, "Face")]
+        source_faces = [
+            face for face in faces
+            if Topology.IsInstance(face, "Face")
+        ]
 
-        if len(faces) == 0:
+        if len(source_faces) == 0:
             if not silent:
-                print("CellComplex.ByFacesTopologic - Error: The input faces list does not contain any valid faces. Returning None.")
+                print(
+                    "CellComplex.ByFaces - Error: The input faces parameter "
+                    "does not contain any valid Faces. Returning None."
+                )
             return None
 
-        def _dot(a, b):
-            return a[0]*b[0] + a[1]*b[1] + a[2]*b[2]
+        try:
+            tolerance = abs(float(tolerance))
+        except Exception:
+            if not silent:
+                print(
+                    "CellComplex.ByFaces - Error: The input tolerance parameter "
+                    "is not a valid number. Returning None."
+                )
+            return None
 
-        def _length(v):
-            return math.sqrt(_dot(v, v))
+        if (
+            not math.isfinite(tolerance)
+            or tolerance <= 0.0
+        ):
+            if not silent:
+                print(
+                    "CellComplex.ByFaces - Error: The input tolerance parameter "
+                    "must be greater than zero. Returning None."
+                )
+            return None
 
-        def _normalize(v):
-            length = _length(v)
-            if length <= tolerance:
-                return None
-            return [v[0]/length, v[1]/length, v[2]/length]
+        area_tolerance = tolerance * tolerance
 
-        def _coords(vertex):
-            return [
-                Vertex.X(vertex, mantissa=12),
-                Vertex.Y(vertex, mantissa=12),
-                Vertex.Z(vertex, mantissa=12),
-            ]
+        # ------------------------------------------------------------------
+        # Dictionary transfer.
+        # ------------------------------------------------------------------
 
-        def _face_vertices(face):
+        def _transfer_dictionaries(cell_complex):
+
+            if not transferDictionaries:
+                return cell_complex
+
+            result_faces = Topology.Faces(
+                cell_complex,
+                silent=True
+            ) or []
+
+            if len(result_faces) == 0:
+                return cell_complex
+
             try:
-                return Topology.Vertices(face)
+                source_cluster = Cluster.ByTopologies(
+                    source_faces,
+                    silent=True
+                )
             except Exception:
-                return []
+                source_cluster = None
 
-        def _face_normal(face):
-            try:
-                n = Face.Normal(face)
-                if isinstance(n, tuple):
-                    n = list(n)
-                return _normalize(n)
-            except Exception:
-                return None
+            if not Topology.IsInstance(
+                source_cluster,
+                "Cluster"
+            ):
+                return cell_complex
 
-        def _canonical_normal(n):
-            """
-            Makes opposite normals equivalent for grouping coplanar faces.
-            """
-            if not n:
-                return None
+            for result_face in result_faces:
 
-            for c in n:
-                if abs(c) > tolerance:
-                    if c < 0:
-                        return [-n[0], -n[1], -n[2]]
-                    return n
+                internal_vertex = Topology.InternalVertex(
+                    result_face,
+                    tolerance=tolerance,
+                    silent=True
+                )
 
-            return n
+                if not Topology.IsInstance(
+                    internal_vertex,
+                    "Vertex"
+                ):
+                    continue
 
-        def _plane_key(face):
-            vertices = _face_vertices(face)
+                try:
+                    enclosing_faces = Vertex.EnclosingFaces(
+                        internal_vertex,
+                        source_cluster,
+                        exclusive=False,
+                        tolerance=tolerance
+                    )
+                except Exception:
+                    enclosing_faces = []
 
-            if len(vertices) < 3:
-                return None
+                if not isinstance(
+                    enclosing_faces,
+                    list
+                ):
+                    continue
 
-            n = _face_normal(face)
+                enclosing_faces = [
+                    face for face in enclosing_faces
+                    if Topology.IsInstance(face, "Face")
+                ]
 
-            if not n:
-                return None
+                if len(enclosing_faces) == 0:
+                    continue
 
-            n = _canonical_normal(n)
-            p = _coords(vertices[0])
-            d = _dot(n, p)
+                dictionaries = []
 
-            q = max(tolerance, 1e-9)
+                for face in enclosing_faces:
+                    dictionary = Topology.Dictionary(
+                        face,
+                        silent=True
+                    )
 
-            return (
-                round(n[0] / q),
-                round(n[1] / q),
-                round(n[2] / q),
-                round(d / q),
+                    if dictionary is not None:
+                        dictionaries.append(
+                            dictionary
+                        )
+
+                if len(dictionaries) == 0:
+                    continue
+
+                try:
+                    merged_dictionary = (
+                        Dictionary.ByMergedDictionaries(
+                            dictionaries,
+                            silent=True
+                        )
+                    )
+                except Exception:
+                    merged_dictionary = None
+
+                if merged_dictionary is not None:
+                    Topology.SetDictionary(
+                        result_face,
+                        merged_dictionary,
+                        silent=True
+                    )
+
+            return cell_complex
+
+        # ------------------------------------------------------------------
+        # 1. Exact fast path.
+        #
+        # Give the ORIGINAL Face objects directly to the backend.
+        # ------------------------------------------------------------------
+
+        cell_complex = CellComplex._ByFaces(
+            source_faces,
+            tolerance=tolerance,
+            silent=True
+        )
+
+        if Topology.IsInstance(
+            cell_complex,
+            "CellComplex"
+        ):
+            return _transfer_dictionaries(
+                cell_complex
             )
 
-        def _aabb(face):
-            vertices = _face_vertices(face)
+        # ------------------------------------------------------------------
+        # 2. Exact Boolean fallback.
+        #
+        # The direct assembly may fail when several planar input Faces occupy
+        # overlapping portions of the same plane.
+        #
+        # Only genuinely planar Faces are considered for overlap processing.
+        # Non-planar surfaces are never flattened or polygonised.
+        # ------------------------------------------------------------------
 
-            if len(vertices) == 0:
-                return None
-
-            xs = []
-            ys = []
-            zs = []
-
-            for v in vertices:
-                xs.append(Vertex.X(v, mantissa=12))
-                ys.append(Vertex.Y(v, mantissa=12))
-                zs.append(Vertex.Z(v, mantissa=12))
-
-            return [
-                min(xs), min(ys), min(zs),
-                max(xs), max(ys), max(zs),
-            ]
-
-        def _aabb_overlap(a, b):
-            if a is None or b is None:
-                return True
-
-            return not (
-                a[3] < b[0] - tolerance or b[3] < a[0] - tolerance or
-                a[4] < b[1] - tolerance or b[4] < a[1] - tolerance or
-                a[5] < b[2] - tolerance or b[5] < a[2] - tolerance
+        if not silent:
+            print(
+                "CellComplex.ByFaces - Warning: Direct assembly failed. "
+                "Attempting exact coplanar-overlap resolution."
             )
 
-        def _face_area(face):
+        planar_faces = []
+        passthrough_faces = []
+
+        for face in source_faces:
+
             try:
-                return abs(Face.Area(face))
+                is_planar = Face.IsPlanar(
+                    face,
+                    tolerance=tolerance,
+                    silent=True
+                )
+            except Exception:
+                is_planar = None
+
+            if is_planar is True:
+                planar_faces.append(
+                    face
+                )
+            else:
+                # Curved / NURBS / indeterminate surfaces are preserved
+                # exactly and are never subjected to planar preprocessing.
+                passthrough_faces.append(
+                    face
+                )
+
+        # ------------------------------------------------------------------
+        # Group genuinely planar Faces by plane.
+        #
+        # We deliberately use Face.IsCoplanar rather than deriving a plane from
+        # boundary vertices. Curved planar trims are therefore safe.
+        # ------------------------------------------------------------------
+
+        planar_groups = []
+
+        for face in planar_faces:
+
+            assigned = False
+
+            for group in planar_groups:
+
+                try:
+                    coplanar = Face.IsCoplanar(
+                        face,
+                        group[0],
+                        mantissa=12,
+                        tolerance=tolerance
+                    )
+                except Exception:
+                    coplanar = False
+
+                if coplanar is True:
+                    group.append(
+                        face
+                    )
+                    assigned = True
+                    break
+
+            if not assigned:
+                planar_groups.append(
+                    [face]
+                )
+
+        # ------------------------------------------------------------------
+        # Helpers for exact Boolean processing.
+        # ------------------------------------------------------------------
+
+        def _area(face):
+            try:
+                value = Face.Area(
+                    face,
+                    mantissa=12
+                )
+                return abs(float(value))
             except Exception:
                 return 0.0
 
         def _extract_faces(topology):
+
             if topology is None:
                 return []
 
             if isinstance(topology, list):
                 result = []
+
                 for item in topology:
-                    result.extend(_extract_faces(item))
+                    result.extend(
+                        _extract_faces(item)
+                    )
+
                 return result
 
-            if Topology.IsInstance(topology, "Face"):
+            if Topology.IsInstance(
+                topology,
+                "Face"
+            ):
                 return [topology]
 
             try:
-                extracted = Topology.Faces(topology)
-                return [f for f in extracted if Topology.IsInstance(f, "Face")]
+                result = Topology.Faces(
+                    topology,
+                    silent=True
+                ) or []
             except Exception:
-                return []
+                result = []
 
-        def _boolean(topology_a, topology_b, operation):
-            """
-            Tries a few common TopologicPy boolean call signatures.
-            This keeps the method tolerant of minor API differences between versions.
-            """
+            return [
+                face for face in result
+                if Topology.IsInstance(face, "Face")
+            ]
+
+        def _boolean(
+            topology_a,
+            topology_b,
+            operation
+        ):
             try:
-                return Topology.Boolean(topology_a, topology_b, operation=operation, tolerance=tolerance, silent=True)
+                return Topology.Boolean(
+                    topology_a,
+                    topology_b,
+                    operation=operation,
+                    tolerance=tolerance,
+                    silent=True
+                )
             except TypeError:
                 pass
             except Exception:
                 return None
 
             try:
-                return Topology.Boolean(topology_a, topology_b, operation=operation, tolerance=tolerance)
+                return Topology.Boolean(
+                    topology_a,
+                    topology_b,
+                    operation=operation,
+                    tolerance=tolerance
+                )
             except TypeError:
                 pass
             except Exception:
                 return None
 
             try:
-                return Topology.Boolean(topology_a, topology_b, operation=operation)
-            except TypeError:
-                pass
+                return Topology.Boolean(
+                    topology_a,
+                    topology_b,
+                    operation=operation
+                )
             except Exception:
                 return None
 
-            try:
-                return Topology.Boolean(topology_a, topology_b, operation)
-            except Exception:
-                return None
+        # ------------------------------------------------------------------
+        # Remove overlap within each planar group.
+        #
+        # Larger Faces are accepted first. A later Face is reduced only by
+        # regions already represented by previously accepted Faces.
+        #
+        # All resulting geometry is produced by the topology kernel itself.
+        # ------------------------------------------------------------------
 
-        def _intersects(face_a, face_b):
-            if not _aabb_overlap(_aabb(face_a), _aabb(face_b)):
-                return False
+        def _remove_overlaps(group):
 
-            intersection = _boolean(face_a, face_b, "Intersect")
-            intersection_faces = _extract_faces(intersection)
+            if len(group) <= 1:
+                return list(group)
 
-            if len(intersection_faces) == 0:
-                return False
-
-            return sum(_face_area(f) for f in intersection_faces) > tolerance * tolerance
-
-        def _difference(face_a, face_b):
-            difference = _boolean(face_a, face_b, "Difference")
-            difference_faces = _extract_faces(difference)
-
-            if len(difference_faces) == 0:
-                return []
-
-            return [f for f in difference_faces if _face_area(f) > tolerance * tolerance]
-
-        def _remove_overlaps_in_group(group_faces):
-            if len(group_faces) <= 1:
-                return group_faces
-
-            group_faces = sorted(group_faces, key=_face_area, reverse=True)
+            ordered = sorted(
+                group,
+                key=_area,
+                reverse=True
+            )
 
             accepted = []
-            accepted_aabbs = []
 
-            for face in group_faces:
-                pieces = [face]
+            for source_face in ordered:
 
-                for cutter, cutter_aabb in zip(accepted, accepted_aabbs):
-                    new_pieces = []
+                pieces = [
+                    source_face
+                ]
 
-                    for piece in pieces:
-                        piece_aabb = _aabb(piece)
-
-                        if not _aabb_overlap(piece_aabb, cutter_aabb):
-                            new_pieces.append(piece)
-                            continue
-
-                        if not _intersects(piece, cutter):
-                            new_pieces.append(piece)
-                            continue
-
-                        difference_faces = _difference(piece, cutter)
-
-                        if len(difference_faces) > 0:
-                            new_pieces.extend(difference_faces)
-
-                    pieces = new_pieces
+                for cutter in accepted:
 
                     if len(pieces) == 0:
                         break
 
-                for piece in pieces:
-                    if _face_area(piece) > tolerance * tolerance:
-                        accepted.append(piece)
-                        accepted_aabbs.append(_aabb(piece))
+                    next_pieces = []
+
+                    for piece in pieces:
+
+                        piece_area = _area(
+                            piece
+                        )
+
+                        if piece_area <= area_tolerance:
+                            continue
+
+                        # ----------------------------------------------
+                        # Determine whether there is a meaningful
+                        # two-dimensional overlap.
+                        # ----------------------------------------------
+
+                        intersection = _boolean(
+                            piece,
+                            cutter,
+                            "intersect"
+                        )
+
+                        intersection_faces = (
+                            _extract_faces(
+                                intersection
+                            )
+                        )
+
+                        overlap_area = sum(
+                            _area(face)
+                            for face in intersection_faces
+                        )
+
+                        if overlap_area <= area_tolerance:
+                            next_pieces.append(
+                                piece
+                            )
+                            continue
+
+                        # ----------------------------------------------
+                        # Fully covered.
+                        # ----------------------------------------------
+
+                        if (
+                            overlap_area
+                            >= piece_area - area_tolerance
+                        ):
+                            continue
+
+                        # ----------------------------------------------
+                        # Partial overlap: subtract using the native
+                        # topology kernel.
+                        # ----------------------------------------------
+
+                        difference = _boolean(
+                            piece,
+                            cutter,
+                            "difference"
+                        )
+
+                        difference_faces = [
+                            face
+                            for face in _extract_faces(
+                                difference
+                            )
+                            if _area(face) > area_tolerance
+                        ]
+
+                        if len(difference_faces) > 0:
+                            next_pieces.extend(
+                                difference_faces
+                            )
+
+                        else:
+                            # The Boolean failed to produce usable geometry.
+                            # Preserve the original exact Face rather than
+                            # silently deleting or approximating it.
+                            next_pieces.append(
+                                piece
+                            )
+
+                    pieces = next_pieces
+
+                accepted.extend(
+                    pieces
+                )
 
             return accepted
 
-        # -------------------------------------------------------------------------
-        # Group faces by approximately identical planes.
-        # -------------------------------------------------------------------------
+        # ------------------------------------------------------------------
+        # Resolve only the planar groups. Everything else passes through
+        # untouched.
+        # ------------------------------------------------------------------
 
-        groups = {}
-        passthrough_faces = []
+        cleaned_faces = list(
+            passthrough_faces
+        )
 
-        for face in faces:
-            key = _plane_key(face)
-
-            if key is None:
-                passthrough_faces.append(face)
-            else:
-                groups.setdefault(key, []).append(face)
-
-        cleaned_faces = list(passthrough_faces)
-
-        # -------------------------------------------------------------------------
-        # Remove coplanar overlaps using Topologic boolean Difference.
-        # -------------------------------------------------------------------------
-
-        for group_faces in groups.values():
-            cleaned_faces.extend(_remove_overlaps_in_group(group_faces))
-
-        if len(cleaned_faces) == 0:
-            if not silent:
-                print("CellComplex.ByFacesTopologic - Error: No valid faces remained after overlap removal. Returning None.")
-            return None
-
-        return CellComplex._ByFaces(cleaned_faces, tolerance=tolerance, silent=silent)
-    
-    @staticmethod
-    def ByFaces(faces, transferDictionaries: bool = False, tolerance: float = 0.0001, silent: bool = False):
-        """
-        Creates a CellComplex from the input faces after using Shapely to remove
-        coplanar face overlaps.
-
-        This method is intended as a faster pre-processing pathway for cases where
-        CellComplex.ByFaces is slow because the input contains overlapping coplanar
-        faces. Non-coplanar faces are passed through unchanged.
-
-        Parameters
-        ----------
-        faces : list
-            The input list of topologic_core.Face objects.
-        transferDictionaries : bool , optional
-            If set to True, any dictionaries in the faces are transferred to the faces of the created CellComplex.
-            Otherwise, they are not. Default is False.
-        tolerance : float , optional
-            The desired tolerance. Default is 0.0001.
-        silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
-
-        Returns
-        -------
-        topologic_core.CellComplex or None
-            The created CellComplex.
-        """
-
-        import math
-
-        try:
-            from shapely.geometry import Polygon, MultiPolygon
-            from shapely.ops import unary_union
-            try:
-                from shapely.validation import make_valid
-            except Exception:
-                make_valid = None
-        except Exception:
-            if not silent:
-                print("CellComplex.ByFacesShapely - Error: Shapely is not installed. Please install it using: pip install shapely")
-            return None
-
-        from topologicpy.CellComplex import CellComplex
-        from topologicpy.Topology import Topology
-        from topologicpy.Vertex import Vertex
-        from topologicpy.Wire import Wire
-        from topologicpy.Face import Face
-        from topologicpy.Cluster import Cluster
-        from topologicpy.Dictionary import Dictionary
-
-        if not isinstance(faces, list):
-            if not silent:
-                print("CellComplex.ByFacesShapely - Error: The input faces parameter is not a valid list. Returning None.")
-            return None
-
-        faces = [f for f in faces if Topology.IsInstance(f, "Face")]
-
-        if len(faces) == 0:
-            if not silent:
-                print("CellComplex.ByFacesShapely - Error: The input faces list does not contain any valid faces. Returning None.")
-            return None
-
-        def _dot(a, b):
-            return a[0]*b[0] + a[1]*b[1] + a[2]*b[2]
-
-        def _cross(a, b):
-            return [
-                a[1]*b[2] - a[2]*b[1],
-                a[2]*b[0] - a[0]*b[2],
-                a[0]*b[1] - a[1]*b[0],
-            ]
-
-        def _sub(a, b):
-            return [a[0]-b[0], a[1]-b[1], a[2]-b[2]]
-
-        def _add(a, b):
-            return [a[0]+b[0], a[1]+b[1], a[2]+b[2]]
-
-        def _mul(a, s):
-            return [a[0]*s, a[1]*s, a[2]*s]
-
-        def _length(v):
-            return math.sqrt(_dot(v, v))
-
-        def _normalize(v):
-            l = _length(v)
-            if l <= tolerance:
-                return None
-            return [v[0]/l, v[1]/l, v[2]/l]
-
-        def _coords(vertex):
-            return [
-                Vertex.X(vertex, mantissa=12),
-                Vertex.Y(vertex, mantissa=12),
-                Vertex.Z(vertex, mantissa=12),
-            ]
-
-        def _face_vertices(face):
-            try:
-                return Topology.Vertices(face)
-            except Exception:
-                return []
-
-        def _boundary_vertices(face):
-            try:
-                eb = Face.ExternalBoundary(face)
-                return Topology.Vertices(eb)
-            except Exception:
-                return _face_vertices(face)
-
-        def _face_normal(face):
-            try:
-                n = Face.Normal(face)
-                if isinstance(n, tuple):
-                    n = list(n)
-                n = _normalize(n)
-                if n:
-                    return n
-            except Exception:
-                pass
-
-            vertices = _boundary_vertices(face)
-            if len(vertices) < 3:
-                return None
-
-            pts = [_coords(v) for v in vertices]
-
-            p0 = pts[0]
-            for i in range(1, len(pts)-1):
-                a = _sub(pts[i], p0)
-                b = _sub(pts[i+1], p0)
-                n = _normalize(_cross(a, b))
-                if n:
-                    return n
-
-            return None
-
-        def _canonical_normal(n):
-            # Make opposite normals group together.
-            # Pick the orientation where the first significant component is positive.
-            for c in n:
-                if abs(c) > tolerance:
-                    if c < 0:
-                        return [-n[0], -n[1], -n[2]]
-                    return n
-            return n
-
-        def _plane_key(face):
-            vertices = _boundary_vertices(face)
-            if len(vertices) < 3:
-                return None
-
-            n = _face_normal(face)
-            if not n:
-                return None
-
-            n = _canonical_normal(n)
-            p = _coords(vertices[0])
-            d = _dot(n, p)
-
-            q = max(tolerance, 1e-9)
-
-            return (
-                round(n[0] / q),
-                round(n[1] / q),
-                round(n[2] / q),
-                round(d / q),
+        for group in planar_groups:
+            cleaned_faces.extend(
+                _remove_overlaps(
+                    group
+                )
             )
 
-        def _plane_basis(face):
-            vertices = _boundary_vertices(face)
-            if len(vertices) < 3:
-                return None
-
-            n = _face_normal(face)
-            if not n:
-                return None
-
-            n = _canonical_normal(n)
-            origin = _coords(vertices[0])
-
-            # Choose a stable reference vector.
-            if abs(n[0]) < 0.9:
-                ref = [1.0, 0.0, 0.0]
-            else:
-                ref = [0.0, 1.0, 0.0]
-
-            u = _normalize(_cross(ref, n))
-            if not u:
-                return None
-
-            v = _normalize(_cross(n, u))
-            if not v:
-                return None
-
-            return origin, u, v, n
-
-        def _project_point(p, origin, u, v):
-            w = _sub(p, origin)
-            return (_dot(w, u), _dot(w, v))
-
-        def _unproject_point(p, origin, u, v):
-            return _add(origin, _add(_mul(u, p[0]), _mul(v, p[1])))
-
-        def _ring_to_polygon_coords(vertices, origin, u, v):
-            coords = []
-            last = None
-
-            for vertex in vertices:
-                p = _coords(vertex)
-                xy = _project_point(p, origin, u, v)
-
-                if last is None:
-                    coords.append(xy)
-                    last = xy
-                else:
-                    if math.dist(last, xy) > tolerance:
-                        coords.append(xy)
-                        last = xy
-
-            if len(coords) > 1 and math.dist(coords[0], coords[-1]) <= tolerance:
-                coords = coords[:-1]
-
-            if len(coords) < 3:
-                return None
-
-            return coords
-
-        def _face_to_polygon(face, origin, u, v):
-            exterior_vertices = _boundary_vertices(face)
-            exterior = _ring_to_polygon_coords(exterior_vertices, origin, u, v)
-
-            if not exterior:
-                return None
-
-            holes = []
-
-            try:
-                internal_boundaries = Face.InternalBoundaries(face)
-            except Exception:
-                internal_boundaries = []
-
-            if internal_boundaries:
-                for ib in internal_boundaries:
-                    try:
-                        ib_vertices = Topology.Vertices(ib)
-                        hole = _ring_to_polygon_coords(ib_vertices, origin, u, v)
-                        if hole and len(hole) >= 3:
-                            holes.append(hole)
-                    except Exception:
-                        continue
-
-            try:
-                polygon = Polygon(exterior, holes)
-            except Exception:
-                return None
-
-            if polygon.is_empty:
-                return None
-
-            if not polygon.is_valid:
-                if make_valid:
-                    polygon = make_valid(polygon)
-                else:
-                    polygon = polygon.buffer(0)
-
-            if polygon.is_empty:
-                return None
-
-            return polygon
-
-        def _polygon_to_faces(polygon, origin, u, v):
-            result = []
-
-            if polygon.is_empty:
-                return result
-
-            if isinstance(polygon, MultiPolygon):
-                for geom in polygon.geoms:
-                    result.extend(_polygon_to_faces(geom, origin, u, v))
-                return result
-
-            if polygon.geom_type != "Polygon":
-                return result
-
-            if polygon.area <= tolerance * tolerance:
-                return result
-
-            exterior_coords = list(polygon.exterior.coords)
-            if len(exterior_coords) < 4:
-                return result
-
-            exterior_vertices = []
-            for xy in exterior_coords[:-1]:
-                p = _unproject_point(xy, origin, u, v)
-                exterior_vertices.append(Vertex.ByCoordinates(p[0], p[1], p[2]))
-
-            if len(exterior_vertices) < 3:
-                return result
-
-            try:
-                external_wire = Wire.ByVertices(exterior_vertices, close=True, tolerance=tolerance, silent=True)
-            except TypeError:
-                external_wire = Wire.ByVertices(exterior_vertices, close=True, tolerance=tolerance)
-
-            if not external_wire:
-                return result
-
-            internal_wires = []
-
-            for interior in polygon.interiors:
-                interior_coords = list(interior.coords)
-                if len(interior_coords) < 4:
-                    continue
-
-                interior_vertices = []
-                for xy in interior_coords[:-1]:
-                    p = _unproject_point(xy, origin, u, v)
-                    interior_vertices.append(Vertex.ByCoordinates(p[0], p[1], p[2]))
-
-                if len(interior_vertices) < 3:
-                    continue
-
-                try:
-                    iw = Wire.ByVertices(interior_vertices, close=True, tolerance=tolerance, silent=True)
-                except TypeError:
-                    iw = Wire.ByVertices(interior_vertices, close=True, tolerance=tolerance)
-
-                if iw:
-                    internal_wires.append(iw)
-
-            face = None
-
-            if len(internal_wires) > 0:
-                try:
-                    face = Face.ByWires(external_wire, internal_wires, tolerance=tolerance, silent=True)
-                except Exception:
-                    face = None
-
-            if not face:
-                try:
-                    face = Face.ByWire(external_wire, tolerance=tolerance, silent=True)
-                except TypeError:
-                    face = Face.ByWire(external_wire, tolerance=tolerance)
-
-            if face:
-                result.append(face)
-
-            return result
-
-        def _clean_polygon(polygon):
-            if polygon is None:
-                return None
-
-            if polygon.is_empty:
-                return None
-
-            if not polygon.is_valid:
-                if make_valid:
-                    polygon = make_valid(polygon)
-                else:
-                    polygon = polygon.buffer(0)
-
-            if polygon.is_empty:
-                return None
-
-            if polygon.geom_type == "GeometryCollection":
-                polygons = [g for g in polygon.geoms if g.geom_type in ["Polygon", "MultiPolygon"] and not g.is_empty]
-                if len(polygons) == 0:
-                    return None
-                polygon = unary_union(polygons)
-
-            return polygon
-
-        # -------------------------------------------------------------------------
-        # 1. Group faces by quantised plane
-        # -------------------------------------------------------------------------
-
-        groups = {}
-        passthrough_faces = []
-
-        for face in faces:
-            key = _plane_key(face)
-            if key is None:
-                passthrough_faces.append(face)
-            else:
-                groups.setdefault(key, []).append(face)
-
-        cleaned_faces = list(passthrough_faces)
-
-        # -------------------------------------------------------------------------
-        # 2. Resolve coplanar overlaps group-by-group
-        # -------------------------------------------------------------------------
-
-        for _, group_faces in groups.items():
-            if len(group_faces) == 1:
-                cleaned_faces.append(group_faces[0])
-                continue
-
-            basis = _plane_basis(group_faces[0])
-            if not basis:
-                cleaned_faces.extend(group_faces)
-                continue
-
-            origin, u, v, _ = basis
-
-            items = []
-
-            for face in group_faces:
-                polygon = _face_to_polygon(face, origin, u, v)
-                polygon = _clean_polygon(polygon)
-
-                if polygon is None:
-                    cleaned_faces.append(face)
-                    continue
-
-                items.append((face, polygon))
-
-            if len(items) == 0:
-                continue
-
-            # Larger polygons first: this tends to preserve major surfaces and trim
-            # smaller/duplicate overlapping fragments.
-            items.sort(key=lambda item: item[1].area, reverse=True)
-
-            accepted_polygons = []
-
-            for original_face, polygon in items:
-                polygon = _clean_polygon(polygon)
-
-                if polygon is None:
-                    continue
-
-                if len(accepted_polygons) > 0:
-                    occupied = unary_union(accepted_polygons)
-                    polygon = polygon.difference(occupied)
-                    polygon = _clean_polygon(polygon)
-
-                if polygon is None:
-                    continue
-
-                new_faces = _polygon_to_faces(polygon, origin, u, v)
-
-                if len(new_faces) == 0:
-                    continue
-
-                cleaned_faces.extend(new_faces)
-
-                # Store the polygon actually accepted, not necessarily the original.
-                accepted_polygons.append(polygon)
+        cleaned_faces = [
+            face for face in cleaned_faces
+            if (
+                Topology.IsInstance(face, "Face")
+                and _area(face) > area_tolerance
+            )
+        ]
 
         if len(cleaned_faces) == 0:
             if not silent:
-                print("CellComplex.ByFacesShapely - Error: No valid faces remained after Shapely processing. Returning None.")
+                print(
+                    "CellComplex.ByFaces - Error: No valid Faces remained after "
+                    "coplanar-overlap processing. Returning None."
+                )
             return None
 
-        cc = CellComplex._ByFaces(cleaned_faces, tolerance=tolerance, silent=silent)
-        if not Topology.IsInstance(cc, "cellcomplex"):
+        # ------------------------------------------------------------------
+        # 3. Assemble the exact processed Faces.
+        # ------------------------------------------------------------------
+
+        cell_complex = CellComplex._ByFaces(
+            cleaned_faces,
+            tolerance=tolerance,
+            silent=True
+        )
+
+        if not Topology.IsInstance(
+            cell_complex,
+            "CellComplex"
+        ):
             if not silent:
-                print("CellComplex.ByFaces - Error: Could not create the CellComplex. Returning None.")
+                print(
+                    "CellComplex.ByFaces - Error: Could not create a CellComplex "
+                    "from the input Faces. Returning None."
+                )
             return None
-        
-        if transferDictionaries:
-            cc_faces = Topology.Faces(cc)
-            source_cluster = Cluster.ByTopologies(faces)
 
-            for cc_face in cc_faces:
-                internal_vertex = Topology.InternalVertex(cc_face, tolerance=tolerance)
-                enclosing_faces = Vertex.EnclosingFaces(internal_vertex,
-                                                        source_cluster,
-                                                        exclusive=False,
-                                                        tolerance=tolerance)
-                print("Enclosing Faces:", len(enclosing_faces))
-                if isinstance(enclosing_faces, list) and len(enclosing_faces) > 0:
-                    dictionaries = [Topology.Dictionary(face) for face in enclosing_faces]
-                    merged_dictionary = Dictionary.ByMergedDictionaries(dictionaries, silent=True)
-                    Topology.SetDictionary(cc_face, merged_dictionary)
-        return cc
+        return _transfer_dictionaries(
+            cell_complex
+        )
 
     @staticmethod
     def ByFacesCluster(cluster, transferDictionaries: bool = False, tolerance: float = 0.0001, silent: bool = False):
@@ -1561,7 +1870,7 @@ class CellComplex():
             vertices = Topology.Vertices(cell)
         
         vertices = [v for v in vertices if Topology.IsInstance(v, "Vertex")]
-        if len(vertices) < 3:
+        if len(vertices) < 4:
             print("CellComplex/Delaunay - Error: The input vertices parameter does not contain enough valid vertices. Returning None.")
             return None
         # Get the vertices of the input cell
@@ -1569,26 +1878,31 @@ class CellComplex():
         # Compute Delaunay triangulation
         triangulation = SCIDelaunay(points, furthest_site=False)
 
-        faces = []
+        cells = []
         for simplex in triangulation.simplices:
-            tetrahedron_vertices = points[simplex]
-            verts = [Vertex.ByCoordinates(list(coord)) for coord in tetrahedron_vertices]
-            tri1 = [verts[0], verts[1], verts[2], verts[0]]
-            tri2 = [verts[0], verts[2], verts[3], verts[0]]
-            tri3 = [verts[0], verts[1], verts[3], verts[0]]
-            tri4 = [verts[1], verts[2], verts[3], verts[1]]
-            f1 = Face.ByVertices(tri1)
-            f2 = Face.ByVertices(tri2)
-            f3 = Face.ByVertices(tri3)
-            f4 = Face.ByVertices(tri4)
-            faces.append(f1)
-            faces.append(f2)
-            faces.append(f3)
-            faces.append(f4)
-        cc = Topology.RemoveCoplanarFaces(CellComplex.ByFaces(faces, tolerance=tolerance))
-        faces = [Topology.RemoveCollinearEdges(f) for f in Topology.Faces(cc)]
-        cc = CellComplex.ByFaces(faces)
-        return cc
+            if len(simplex) != 4:
+                continue
+            verts = [vertices[int(index)] for index in simplex]
+            face_indices = ((0, 1, 2), (0, 1, 3), (0, 2, 3), (1, 2, 3))
+            faces = [
+                Face.ByVertices(
+                    [verts[a], verts[b], verts[c]],
+                    tolerance=tolerance,
+                    silent=True,
+                )
+                for a, b, c in face_indices
+            ]
+            if not all(Topology.IsInstance(face, "Face") for face in faces):
+                continue
+            cell = Cell.ByFaces(faces, tolerance=tolerance, silent=True)
+            if Topology.IsInstance(cell, "Cell"):
+                cells.append(cell)
+
+        if len(cells) < 1:
+            print("CellComplex.Delaunay - Error: Could not construct any tetrahedral Cells. Returning None.")
+            return None
+
+        return CellComplex.ByCells(cells, tolerance=tolerance, silent=True)
     
     @staticmethod
     def Edges(cellComplex, silent: bool = False) -> list:
@@ -2281,8 +2595,8 @@ class CellComplex():
               polyhedron: bool = True):
         """Creates a toroidal CellComplex.
 
-        ``polyhedron=True`` preserves the existing faceted v0.9.68 construction.
-        ``polyhedron=False`` creates exact OCCT toroidal sectors on PythonOCC.
+        ``polyhedron=True`` preserves the existing faceted v0.9.68 construction
+        ``polyhedron=False`` creates exact OCCT toroidal sectors on PythonOCC
         """
         from topologicpy.Vertex import Vertex
         from topologicpy.Wire import Wire
@@ -2547,4 +2861,3 @@ class CellComplex():
         except Exception:
             wires = None
         return wires
-

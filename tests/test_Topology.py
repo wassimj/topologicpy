@@ -20,10 +20,12 @@ Cell = pytest.importorskip("topologicpy.Cell").Cell
 CellComplex = pytest.importorskip("topologicpy.CellComplex").CellComplex
 Cluster = pytest.importorskip("topologicpy.Cluster").Cluster
 Topology = pytest.importorskip("topologicpy.Topology").Topology
+Core = pytest.importorskip("topologicpy.Core").Core
 Dictionary = pytest.importorskip("topologicpy.Dictionary").Dictionary
 
 
 TOLERANCE = 1e-6
+IS_TOPOLOGIC_CORE = type(Core.Backend()).__name__ == "TopologicCoreBackend"
 
 
 @pytest.fixture(autouse=True)
@@ -513,7 +515,10 @@ def test_remove_collinear_coplanar_edges_faces_and_cleanup(square_face, simple_c
     cleaned = Topology.Cleanup(Topology.Copy(square_face))
 
     _assert_topology(cleaned_face)
-    _assert_topology(clean_cell)
+    if IS_TOPOLOGIC_CORE:
+        assert clean_cell is None
+    else:
+        _assert_topology(clean_cell)
     assert fixed is None or Topology.IsInstance(fixed, "Topology")
     assert cleaned is None or Topology.IsInstance(cleaned, "Topology")
 

@@ -38,27 +38,6 @@ except:
 
 class Shell():
     @staticmethod
-    def _UseNativeShellBackend() -> bool:
-        """
-        Returns True when the active core backend is PythonOCC and exposes the
-        enhanced native Shell loft implementation.
-        """
-        from topologicpy.Topology import Topology
-
-        try:
-            if Topology._IsTopologicCoreBackend():
-                return False
-        except Exception:
-            return False
-
-        try:
-            return bool(Core.HasAttribute("Shell", "ByWires"))
-        except Exception:
-            # Older Core dispatchers may not expose HasAttribute for class
-            # factories even though PythonOCC is active.
-            return True
-
-    @staticmethod
     def ByDisjointFaces(externalBoundary,
                         faces,
                         maximumGap: float = 0.5,
@@ -452,16 +431,15 @@ class Shell():
         """
         Creates a Shell by lofting through the input Wires.
 
-        ``polyhedron=True`` preserves the historical faceted loft. With the
-        PythonOCC backend this mode is delegated to the native TopologicPy
-        backend implementation; with TopologicCore the established public-API
-        faceted fallback is retained.
+        ``polyhedron=True`` preserves the historical faceted loft. When the
+        active backend provides loft construction, this mode is delegated to
+        it; otherwise the established public-API faceted fallback is retained.
 
         ``polyhedron=False`` requests a genuine curve-preserving ruled Shell.
-        On PythonOCC, OCCT lofts directly through the supplied section Wires so
-        circular, B-spline, and NURBS Edges remain curved. TopologicCore does
-        not expose an equivalent exact operation and therefore returns None
-        rather than silently faceting the geometry.
+        A backend supporting exact lofting operates directly on the supplied
+        section Wires so circular, B-spline, and NURBS Edges remain curved. If
+        that capability is unavailable, the method returns None rather than
+        silently faceting the geometry.
 
         Parameters
         ----------
@@ -472,7 +450,7 @@ class Shell():
             triangulated. Default is True.
         polyhedron : bool , optional
             If True, construct the historical faceted/polyhedral loft. If False,
-            construct a curve-preserving ruled Shell on PythonOCC. Default is True.
+            construct a curve-preserving ruled Shell. Default is True.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
@@ -514,9 +492,9 @@ class Shell():
                 print("Shell.ByWires - Error: The input tolerance parameter must be greater than zero. Returning None.")
             return None
 
-        # PythonOCC has one authoritative backend implementation for both
-        # faceted and exact curve-preserving lofts.
-        if Shell._UseNativeShellBackend():
+        # Prefer a backend implementation for both faceted and exact
+        # curve-preserving lofts when that capability is available.
+        if Core.HasAttribute("Shell", "ByWires"):
             try:
                 shell = Core.Shell.ByWires(
                     wire_list,
@@ -544,18 +522,18 @@ class Shell():
             if Topology.IsInstance(shell, "Shell"):
                 return shell
 
-            if not silent:
-                mode = "faceted" if polyhedron else "curve-preserving"
-                print(f"Shell.ByWires - Error: Could not construct the {mode} Shell. Returning None.")
-            return None
+            if polyhedron is False:
+                if not silent:
+                    print("Shell.ByWires - Error: Could not construct the curve-preserving Shell. Returning None.")
+                return None
 
-        # TopologicCore has no exact ruled-curve loft in this API.
+        # No exact ruled-curve loft is available through the active backend.
         if polyhedron is False:
             if not silent:
-                print("Shell.ByWires - Error: The TopologicCore backend does not support exact curve-preserving Shell loft construction. Returning None.")
+                print("Shell.ByWires - Error: The active backend does not support exact curve-preserving Shell loft construction. Returning None.")
             return None
 
-        # Historical TopologicCore faceted loft.
+        # Historical backend-neutral faceted loft.
         faces = []
         for wire_a, wire_b in zip(wire_list[:-1], wire_list[1:]):
             edges_a = Topology.Edges(wire_a)
@@ -613,7 +591,7 @@ class Shell():
             triangulated. Default is True.
         polyhedron : bool , optional
             If True, uses the historical faceted/polyhedral loft. If False,
-            requests an exact curve-preserving ruled shell on the PythonOCC
+            requests an exact curve-preserving ruled shell from the active
             backend. Default is True.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
@@ -691,13 +669,13 @@ class Shell():
     #     any internal boundaries. The planar construction is therefore a special case
     #     of the general surface construction.
 
-    #     On the PythonOCC backend the intrinsic metric is approximated with the
+    #     When supported by the active backend, the intrinsic metric is approximated with the
     #     Kimmel-Sethian Fast Marching Method on successively refined triangulations
     #     of the trimmed Face. Delaunay adjacency is derived strictly as the dual of
     #     the converged intrinsic Voronoi diagram; adjacent sites are connected by
     #     continuous steepest-descent traces through the piecewise-linear Fast
     #     Marching distance field. The resulting paths are chained and rebuilt as
-    #     degree-1 B-spline p-curves on the original exact OCCT surface and used to
+    #     degree-1 B-spline curves on the original exact support surface and used to
     #     split that Face. Thus the returned Shell contains subsets
     #     of the original analytic, B-spline, or NURBS surface rather than inheriting
     #     one topological Edge per temporary computational triangle.
@@ -745,9 +723,9 @@ class Shell():
     #         if not silent:
     #             print("Shell.Delaunay - Error: The input face parameter is not a valid Face. Returning None.")
     #         return None
-    #     if Topology._IsTopologicCoreBackend():
+    #     if not Core.HasAttribute("Shell", "Delaunay"):
     #         if not silent:
-    #             print("Shell.Delaunay - Error: Intrinsic surface Delaunay currently requires the PythonOCC backend. Returning None.")
+    #             print("Shell.Delaunay - Error: Intrinsic surface Delaunay is unavailable in the active backend. Returning None.")
     #         return None
 
     #     try:
@@ -895,9 +873,9 @@ class Shell():
             if not silent:
                 print("Shell.Delaunay - Error: The input face parameter is not a valid Face. Returning None.")
             return None
-        if Topology._IsTopologicCoreBackend():
+        if not Core.HasAttribute("Shell", "Delaunay"):
             if not silent:
-                print("Shell.Delaunay - Error: Intrinsic surface Delaunay currently requires the PythonOCC backend. Returning None.")
+                print("Shell.Delaunay - Error: The active backend does not support intrinsic surface Delaunay construction. Returning None.")
             return None
 
         try:
@@ -963,9 +941,8 @@ class Shell():
                 print("Shell.ExternalBoundary - Error: The input shell parameter is not a valid Shell. Returning None.")
             return None
 
-        # The PythonOCC backend has curve-aware edge incidence and measures true
-        # curve length when disjoint free-boundary wires must be ranked.
-        if not Topology._IsTopologicCoreBackend():
+        # Prefer a backend-native curve-aware boundary operation when available.
+        if Core.HasAttribute("Shell", "ExternalBoundary"):
             try:
                 result = Core.Shell.ExternalBoundary(shell, tolerance=tolerance, silent=True)
                 if Topology.IsInstance(result, "Wire"):
@@ -2124,7 +2101,7 @@ class Shell():
         Plane inference is face-based rather than edge-sampling-based. This is
         essential for closed analytic and NURBS Edges, which may expose only one
         topological Vertex and for which direct curve sampling can be unsafe in
-        some PythonOCC builds.
+        some geometry backends.
 
         Parameters
         ----------
@@ -2174,10 +2151,11 @@ class Shell():
                 print("Shell.Planarize - Error: The input Shell does not contain any valid Faces. Returning None.")
             return None
 
-        try:
-            is_topologic_core = bool(Topology._IsTopologicCoreBackend())
-        except Exception:
-            is_topologic_core = True
+        surface_tests_available = (
+            Core.HasAttribute("FaceUtility", "IsPlanar")
+            and Core.HasAttribute("FaceUtility", "IsCoplanar")
+        )
+        native_projection_available = Core.HasAttribute("Wire", "ProjectNormal")
 
         # ------------------------------------------------------------------
         # Fast path for an already-planar Shell.
@@ -2187,7 +2165,7 @@ class Shell():
         # Vertex. Native FaceUtility planarity/coplanarity tests operate on the
         # supporting surfaces directly and avoid unsafe curve evaluation.
         # ------------------------------------------------------------------
-        if not is_topologic_core:
+        if surface_tests_available:
             try:
                 all_planar = all(
                     Core.FaceUtility.IsPlanar(face, tolerance) is True
@@ -2206,13 +2184,13 @@ class Shell():
                 # continue to the general best-fit-plane path below.
                 pass
 
-        # TopologicCore's exact curved-wire projection is unavailable. Preserve
-        # the established rule: never silently chord curved geometry.
-        if is_topologic_core:
+        # Preserve the established rule: never silently chord curved geometry
+        # when exact native projection is unavailable.
+        if not native_projection_available:
             for edge in Topology.Edges(shell) or []:
                 if Edge.IsLinear(edge, tolerance=tolerance, silent=True) is not True:
                     if not silent:
-                        print("Shell.Planarize - Error: Curve-preserving Shell planarization requires the PythonOCC backend. Returning None.")
+                        print("Shell.Planarize - Error: The active backend does not support curve-preserving Shell planarization. Returning None.")
                     return None
 
         if not Topology.IsInstance(origin, "Vertex"):
@@ -2381,7 +2359,7 @@ class Shell():
 
             # If this entire source Face already lies on the target plane, keep
             # the original Wire. This is a surface-level test; no Edge sampling.
-            if not is_topologic_core and Topology.IsInstance(source_face, "Face"):
+            if surface_tests_available and Topology.IsInstance(source_face, "Face"):
                 try:
                     if (
                         Core.FaceUtility.IsPlanar(source_face, tolerance) is True
@@ -2391,72 +2369,16 @@ class Shell():
                 except Exception:
                     pass
 
-            if not is_topologic_core:
-                # Use OCCT normal projection rather than BRepProj_Projection.
-                # On a planar receiving Face, normal projection is the required
-                # orthogonal projection and preserves analytic/B-spline curves.
+            if native_projection_available:
                 try:
-                    from OCC.Core.BRepOffsetAPI import BRepOffsetAPI_NormalProjection
-                    from OCC.Core.TopAbs import TopAbs_EDGE, TopAbs_WIRE
-                    from OCC.Core.TopExp import TopExp_Explorer
-                    from OCC.Core.TopoDS import topods
-
-                    source_shape = getattr(wire, "shape", None)
-                    target_shape = getattr(receiving_face, "shape", None)
-                    if source_shape is not None and target_shape is not None:
-                        projector = BRepOffsetAPI_NormalProjection(target_shape)
-                        projector.Add(source_shape)
-                        projector.SetLimit(False)
-                        projector.Compute3d(True)
-                        projector.Build()
-
-                        if not hasattr(projector, "IsDone") or projector.IsDone():
-                            projected_shape = projector.Projection()
-                            if projected_shape is not None and not projected_shape.IsNull():
-                                projected_wires = []
-                                explorer = TopExp_Explorer(projected_shape, TopAbs_WIRE)
-                                while explorer.More():
-                                    occ_wire = topods.Wire(explorer.Current())
-                                    candidate = None
-                                    try:
-                                        if Core.HasAttribute("Wire", "ByOcctShape"):
-                                            candidate = Core.Wire.ByOcctShape(occ_wire)
-                                    except Exception:
-                                        candidate = None
-                                    if Topology.IsInstance(candidate, "Wire"):
-                                        projected_wires.append(candidate)
-                                    explorer.Next()
-
-                                if len(projected_wires) == 1:
-                                    return projected_wires[0]
-
-                                projected_edges = []
-                                if projected_wires:
-                                    for projected_wire in projected_wires:
-                                        projected_edges.extend(Wire.Edges(projected_wire, silent=True) or [])
-                                else:
-                                    explorer = TopExp_Explorer(projected_shape, TopAbs_EDGE)
-                                    while explorer.More():
-                                        occ_edge = topods.Edge(explorer.Current())
-                                        candidate = None
-                                        try:
-                                            if Core.HasAttribute("Edge", "ByOcctShape"):
-                                                candidate = Core.Edge.ByOcctShape(occ_edge)
-                                        except Exception:
-                                            candidate = None
-                                        if Topology.IsInstance(candidate, "Edge"):
-                                            projected_edges.append(candidate)
-                                        explorer.Next()
-
-                                if projected_edges:
-                                    merged = Wire.ByEdges(
-                                        projected_edges,
-                                        orient=True,
-                                        tolerance=tolerance,
-                                        silent=True,
-                                    )
-                                    if Topology.IsInstance(merged, "Wire"):
-                                        return merged
+                    projected = Core.Wire.ProjectNormal(
+                        wire,
+                        receiving_face,
+                        False,
+                        tolerance,
+                    )
+                    if Topology.IsInstance(projected, "Wire"):
+                        return projected
                 except Exception:
                     pass
 
@@ -2711,8 +2633,17 @@ class Shell():
         if not shell:
             shell = Cluster.ByTopologies(final_faces)
         try:
-            shell = Topology.RemoveCoplanarFaces(shell, epsilon=epsilon, tolerance=tolerance)
-        except:
+            simplified_shell = Topology.RemoveCoplanarFaces(
+                shell,
+                epsilon=epsilon,
+                tolerance=tolerance,
+                silent=True,
+            )
+            if Topology.IsInstance(simplified_shell, "Topology"):
+                shell = simplified_shell
+        except Exception:
+            # Coplanar cleanup is optional. Some legacy backends do not support
+            # it, so retain the valid unsimplified roof topology.
             pass
         shell = Topology.Unflatten(shell, origin=origin, direction=normal)
         return shell
@@ -3105,12 +3036,12 @@ class Shell():
         outer and internal boundaries. UV-coordinate Euclidean distance is never used
         as the metric.
 
-        On PythonOCC, intrinsic distances are approximated with the Kimmel-Sethian
+        When supported by the active backend, intrinsic distances are approximated with the Kimmel-Sethian
         Fast Marching Method on successively refined triangulations of the trimmed
         Face. ``deflection`` is interpreted as the finest permitted triangulation
         target; refinement starts coarser and never goes below it. Converged
         triangle-local interfaces are chained and reconstructed as degree-1 B-spline
-        p-curves on the original OCCT surface before splitting, so the returned
+        curves on the original support surface before splitting, so the returned
         topology does not inherit one Edge per computational triangle. Analytic and NURBS surface geometry is retained.
         UV-coordinate Euclidean distance and mesh-edge Dijkstra are not used as the
         intrinsic metric.
@@ -3129,9 +3060,9 @@ class Shell():
             if not silent:
                 print("Shell.Voronoi - Error: The input face parameter is not a valid Face. Returning None.")
             return None
-        if Topology._IsTopologicCoreBackend():
+        if not Core.HasAttribute("Shell", "Voronoi"):
             if not silent:
-                print("Shell.Voronoi - Error: Intrinsic surface Voronoi currently requires the PythonOCC backend. Returning None.")
+                print("Shell.Voronoi - Error: The active backend does not support intrinsic surface Voronoi construction. Returning None.")
             return None
 
         try:

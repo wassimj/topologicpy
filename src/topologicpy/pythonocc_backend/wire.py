@@ -2,6 +2,7 @@ from __future__ import annotations
 
 # REVISION: 2026-08-15 Wire Union semantic promotion 002
 
+import math
 from dataclasses import dataclass, field
 from .topology import Topology
 from .vertex import Vertex
@@ -228,6 +229,158 @@ class Wire(Topology):
         wire.apertures = list(apertures) if apertures else []
 
         return wire
+
+    @staticmethod
+    def BoundingRadius(wire, origin):
+        """Return the maximum OCCT bounding-box corner distance from origin."""
+        if not isinstance(wire, Wire) or not isinstance(origin, Vertex):
+            return None
+        try:
+            from OCC.Core.Bnd import Bnd_Box
+            from OCC.Core.BRepBndLib import brepbndlib
+            shape = getattr(wire, "shape", None)
+            if shape is None or shape.IsNull():
+                return None
+            box = Bnd_Box()
+            brepbndlib.Add(shape, box)
+            xmin, ymin, zmin, xmax, ymax, zmax = box.Get()
+            ox, oy, oz = float(origin.x), float(origin.y), float(origin.z)
+            return max(
+                math.sqrt((x-ox)**2 + (y-oy)**2 + (z-oz)**2)
+                for x in (xmin, xmax)
+                for y in (ymin, ymax)
+                for z in (zmin, zmax)
+            )
+        except Exception:
+            return None
+
+    @staticmethod
+    def ProjectNormal(wire, face, limit=False, tolerance=0.0001):
+        """Project a Wire normally onto a Face using native OCCT geometry."""
+        from .face import Face
+        if not isinstance(wire, Wire) or not isinstance(face, Face):
+            return None
+        try:
+            from OCC.Core.BRepOffsetAPI import BRepOffsetAPI_NormalProjection
+            from OCC.Core.TopAbs import TopAbs_EDGE, TopAbs_WIRE
+            from OCC.Core.TopExp import TopExp_Explorer
+            from OCC.Core.TopoDS import topods
+            source = getattr(wire, "shape", None)
+            target = getattr(face, "shape", None)
+            if source is None or target is None or source.IsNull() or target.IsNull():
+                return None
+            projector = BRepOffsetAPI_NormalProjection(target)
+            projector.Add(source)
+            projector.SetLimit(bool(limit))
+            projector.Compute3d(True)
+            projector.Build()
+            if hasattr(projector, "IsDone") and not projector.IsDone():
+                return None
+            shape = projector.Projection()
+            if shape is None or shape.IsNull():
+                return None
+            wires = []
+            explorer = TopExp_Explorer(shape, TopAbs_WIRE)
+            while explorer.More():
+                candidate = Wire.ByOcctShape(topods.Wire(explorer.Current()))
+                if isinstance(candidate, Wire):
+                    wires.append(candidate)
+                explorer.Next()
+            if len(wires) == 1:
+                return wires[0]
+            edges = []
+            if wires:
+                for candidate in wires:
+                    edges.extend(candidate.Edges() or [])
+            else:
+                explorer = TopExp_Explorer(shape, TopAbs_EDGE)
+                while explorer.More():
+                    edge = Edge.ByOcctShape(topods.Edge(explorer.Current()))
+                    if isinstance(edge, Edge):
+                        edges.append(edge)
+                    explorer.Next()
+            return Wire.ByEdges(edges, tolerance=tolerance) if edges else None
+        except Exception:
+            return None
+
+    @staticmethod
+    def Project(wire, face, direction, tolerance=0.0001):
+        """Project a Wire onto a Face along a constant direction."""
+        from .face import Face
+        if not isinstance(wire, Wire) or not isinstance(face, Face):
+            return None
+        try:
+            from OCC.Core.BRepProj import BRepProj_Projection
+            from OCC.Core.gp import gp_Dir
+            source = getattr(wire, "shape", None)
+            target = getattr(face, "shape", None)
+            values = [float(direction[0]), float(direction[1]), float(direction[2])]
+            if source is None or target is None or source.IsNull() or target.IsNull():
+                return None
+            projection = BRepProj_Projection(source, target, gp_Dir(*values))
+            if not projection.IsDone():
+                return None
+            wires = []
+            projection.Init()
+            while projection.More():
+                candidate = Wire.ByOcctShape(projection.Current())
+                if isinstance(candidate, Wire):
+                    wires.append(candidate)
+                projection.Next()
+            if len(wires) == 1:
+                return wires[0]
+            if len(wires) > 1:
+                edges = []
+                for candidate in wires:
+                    edges.extend(candidate.Edges() or [])
+                return Wire.ByEdges(edges, tolerance=tolerance)
+        except Exception:
+            pass
+        return None
+
+    @staticmethod
+    def InterpolateEdge(edgeA, edgeB, fraction, tolerance=0.0001):
+        """Create a native B-spline interpolation between two curved Edges."""
+        if not isinstance(edgeA, Edge) or not isinstance(edgeB, Edge):
+            return None
+        try:
+            from OCC.Core.BRepAdaptor import BRepAdaptor_Curve
+            from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakeEdge
+            from OCC.Core.GeomAPI import GeomAPI_Interpolate
+            from OCC.Core.TColgp import TColgp_HArray1OfPnt
+            from OCC.Core.gp import gp_Pnt
+            fraction = float(fraction)
+            tolerance = abs(float(tolerance))
+            closed_a = same_vertex(edgeA.start, edgeA.end, tolerance)
+            closed_b = same_vertex(edgeB.start, edgeB.end, tolerance)
+            if closed_a != closed_b:
+                return None
+            periodic = closed_a and closed_b
+            count = 16 if periodic else 17
+            adaptor_a = BRepAdaptor_Curve(edgeA.shape)
+            adaptor_b = BRepAdaptor_Curve(edgeB.shape)
+            a0, a1 = float(adaptor_a.FirstParameter()), float(adaptor_a.LastParameter())
+            b0, b1 = float(adaptor_b.FirstParameter()), float(adaptor_b.LastParameter())
+            points = TColgp_HArray1OfPnt(1, count)
+            for index in range(count):
+                u = float(index) / float(count if periodic else count - 1)
+                pa = adaptor_a.Value(a0 + u * (a1 - a0))
+                pb = adaptor_b.Value(b0 + u * (b1 - b0))
+                points.SetValue(index + 1, gp_Pnt(
+                    (1.0-fraction)*pa.X() + fraction*pb.X(),
+                    (1.0-fraction)*pa.Y() + fraction*pb.Y(),
+                    (1.0-fraction)*pa.Z() + fraction*pb.Z(),
+                ))
+            interpolator = GeomAPI_Interpolate(points, periodic, tolerance)
+            interpolator.Perform()
+            if not interpolator.IsDone():
+                return None
+            maker = BRepBuilderAPI_MakeEdge(interpolator.Curve())
+            if hasattr(maker, "IsDone") and not maker.IsDone():
+                return None
+            return Edge.ByOcctShape(maker.Edge())
+        except Exception:
+            return None
 
     def Union(self, otherTopology, transferDictionary: bool = False):
         """
@@ -510,6 +663,80 @@ class Wire(Topology):
 
 
 class WireUtility:
+    @staticmethod
+    def OffsetEdge(edge, distance, normal, calibrationParameter=0.5, targetDirection=None, tolerance=0.0001):
+        """Offset a curved Edge exactly on its supporting plane."""
+        if not isinstance(edge, Edge):
+            return None
+        try:
+            from OCC.Core.BRep import BRep_Tool
+            from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakeEdge
+            from OCC.Core.Geom import Geom_OffsetCurve
+            from OCC.Core.TopAbs import TopAbs_REVERSED
+            from OCC.Core.gp import gp_Dir
+            distance = float(distance)
+            parameter = float(calibrationParameter)
+            nx, ny, nz = [float(value) for value in normal]
+            target = [float(value) for value in targetDirection]
+            if len(target) != 3:
+                return None
+            shape = getattr(edge, "shape", None)
+            if shape is None or shape.IsNull():
+                return None
+            curve, first, last = BRep_Tool.Curve(shape)
+            if curve is None:
+                return None
+            first, last = float(first), float(last)
+            raw = last + parameter*(first-last) if shape.Orientation() == TopAbs_REVERSED else first + parameter*(last-first)
+            magnitude = abs(distance)
+            trial = Geom_OffsetCurve(curve, magnitude, gp_Dir(nx, ny, nz))
+            source_point = curve.Value(raw)
+            offset_point = trial.Value(raw)
+            displacement = [offset_point.X()-source_point.X(), offset_point.Y()-source_point.Y(), offset_point.Z()-source_point.Z()]
+            if sum(displacement[i]*target[i] for i in range(3)) < 0.0:
+                magnitude = -magnitude
+            offset_curve = Geom_OffsetCurve(curve, magnitude, gp_Dir(nx, ny, nz))
+            maker = BRepBuilderAPI_MakeEdge(offset_curve, first, last)
+            if hasattr(maker, "IsDone") and not maker.IsDone():
+                return None
+            occ_edge = maker.Edge()
+            if shape.Orientation() == TopAbs_REVERSED:
+                occ_edge.Reverse()
+            return Edge.ByOcctShape(occ_edge)
+        except Exception:
+            return None
+
+    @staticmethod
+    def IntersectionVertices(edgeA, edgeB, tolerance=0.0001):
+        """Return native finite Edge/Edge intersection Vertices."""
+        if not isinstance(edgeA, Edge) or not isinstance(edgeB, Edge):
+            return []
+        try:
+            from OCC.Core.BRep import BRep_Tool
+            from OCC.Core.BRepAlgoAPI import BRepAlgoAPI_Section
+            from OCC.Core.TopAbs import TopAbs_VERTEX
+            from OCC.Core.TopExp import TopExp_Explorer
+            from OCC.Core.TopoDS import topods
+            section = BRepAlgoAPI_Section(edgeA.shape, edgeB.shape, False)
+            try:
+                section.Approximation(False)
+                section.ComputePCurveOn1(False)
+                section.ComputePCurveOn2(False)
+            except Exception:
+                pass
+            section.Build()
+            if hasattr(section, "IsDone") and not section.IsDone():
+                return []
+            result = []
+            explorer = TopExp_Explorer(section.Shape(), TopAbs_VERTEX)
+            while explorer.More():
+                point = BRep_Tool.Pnt(topods.Vertex(explorer.Current()))
+                result.append(Vertex.ByCoordinates(point.X(), point.Y(), point.Z()))
+                explorer.Next()
+            return [vertex for vertex in result if isinstance(vertex, Vertex)]
+        except Exception:
+            return []
+
     @staticmethod
     def IsClosed(wire):
         if isinstance(wire, Wire):

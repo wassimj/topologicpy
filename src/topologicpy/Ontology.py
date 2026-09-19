@@ -62,6 +62,15 @@ class Ontology:
     RDF_PROPERTIES_KEY = "_rdf_properties"
     RDF_URI_KEY = "_rdf_uri"
 
+    # Importer mirrors that are either emitted canonically elsewhere or are
+    # processing/rendering configuration rather than graph semantics.
+    _NON_RDF_DICTIONARY_KEYS = {
+        "IFC_type", "IFC_global_id", "IFC_name",
+        "dictionary_mode", "dictionaryMode",
+        "import_mode", "importMode",
+        "color",
+    }
+
     NAMESPACES = {
         "top": "http://w3id.org/topologicpy#",
         "inst": "http://w3id.org/topologicpy/instance#",
@@ -734,7 +743,8 @@ class Ontology:
                 value = value.strip()
                 return value if Ontology.IsResourceString(value) else f"{prefix}:{Ontology._safe_local_name(value)}"
         # Stable identifiers. LABEL IS INTENTIONALLY ABSENT.
-        for key in ("uuid", "UUID", "id", "ID", Ontology.IFC_GUID_KEY, "ifc_guid", "ifcGUID", "GlobalId"):
+        for key in ("uuid", "UUID", "id", "ID", Ontology.IFC_GUID_KEY,
+                    "ifc_guid", "ifcGUID", "GlobalId", "IFC_global_id"):
             value = d.get(key)
             if value not in (None, ""):
                 return f"{prefix}:{Ontology._safe_local_name(value)}"
@@ -799,7 +809,7 @@ class Ontology:
                    Ontology.RDF_TYPES_KEY, Ontology.RDF_PROPERTIES_KEY, Ontology.RDF_URI_KEY,
                    "active", "representation", "src", "dst",
                    "ontology_predicate", "inverse_predicate", "predicate",
-                   "ontologyPredicate", "inversePredicate"}:
+                   "ontologyPredicate", "inversePredicate"} | Ontology._NON_RDF_DICTIONARY_KEYS:
             return None
         return Ontology.PropertyQName(key, defaultPrefix="dict")
 
@@ -816,14 +826,29 @@ class Ontology:
     def Triples(topology: Any, subject: str = None, includeDictionaries: bool = True,
                 includeBOT: bool = True, namespacePrefix: str = "inst", silent: bool = False):
         if topology is None: return []
-        d = Ontology._dictionary(topology)
+        d = dict(Ontology._dictionary(topology))
+
+        # Adapt common IFC importer mirrors locally so canonical RDF remains
+        # complete even when callers have not explicitly normalized the source
+        # dictionary. The source topology is not mutated.
+        if d.get(Ontology.IFC_CLASS_KEY) in (None, "") and d.get("IFC_type") not in (None, ""):
+            d[Ontology.IFC_CLASS_KEY] = d["IFC_type"]
+        if d.get(Ontology.IFC_GUID_KEY) in (None, "") and d.get("IFC_global_id") not in (None, ""):
+            d[Ontology.IFC_GUID_KEY] = d["IFC_global_id"]
+        if d.get(Ontology.LABEL_KEY) in (None, "") and d.get("IFC_name") not in (None, ""):
+            d[Ontology.LABEL_KEY] = d["IFC_name"]
+        if d.get(Ontology.ONTOLOGY_CLASS_KEY) in (None, ""):
+            inferred_class = Ontology.ClassByIFCClass(d.get(Ontology.IFC_CLASS_KEY), defaultValue=None)
+            if inferred_class is not None:
+                d[Ontology.ONTOLOGY_CLASS_KEY] = inferred_class
+
         subject = subject or Ontology._identity(topology, prefix=namespacePrefix)
         triples: List[Tuple[Any, Any, Any]] = []
 
         # Preserve every imported RDF type, then assert canonical TopologicPy type.
         for t in d.get(Ontology.RDF_TYPES_KEY, []) or []:
             triples.append((subject, "rdf:type", Ontology.QName(t, defaultValue=t)))
-        cls = Ontology.Class(topology)
+        cls = Ontology.CanonicalClass(d.get(Ontology.ONTOLOGY_CLASS_KEY), defaultValue=None)
         if cls:
             triples.append((subject, "rdf:type", cls))
             if includeBOT:
@@ -941,8 +966,13 @@ class Ontology:
                 if o is not None: triples.append((subject, "top:endsAt", o))
                 triples.append((subject, "top:index", Ontology._literal(idx)))
                 triples.append((subject, "top:directed", Ontology._literal(bool(e.get("directed", getattr(graph, "_directed", False))))))
-                pred = ed.get("ontology_predicate")
-                inv = ed.get("inverse_predicate")
+                pred = (
+                    ed.get("ontology_predicate")
+                    or ed.get("ontologyPredicate")
+                    or ed.get("predicate")
+                    or "top:connectsTo"
+                )
+                inv = ed.get("inverse_predicate") or ed.get("inversePredicate")
                 if pred:
                     pq = Ontology.PropertyQName(pred)
                     if pq and not pq.startswith("dict:"):
@@ -1434,8 +1464,63 @@ class Ontology:
         return topology
 
     @staticmethod
+    def _undeclared_top_terms(rdfGraph: Any) -> List[str]:
+        """Returns errors for undeclared resources in the ``top:`` namespace."""
+        rd = Ontology._rdflib(silent=True)
+        if rd is None or rdfGraph is None:
+            return []
+
+        vocab = Ontology._vocabulary()
+
+        def expanded(qnames):
+            return {
+                Ontology.ExpandQName(qname, defaultValue=str(qname))
+                for qname in qnames
+            }
+
+        classes = expanded(vocab["classes"])
+        properties = expanded(
+            vocab["object"]
+            | vocab["data"]
+            | vocab["annotation"]
+            | vocab.get("property", set())
+        )
+        declared = classes | properties
+        top_namespace = Ontology.NAMESPACES["top"]
+        rdf_type = str(rd.RDF.type)
+        has_predicate = top_namespace + "hasPredicate"
+        has_inverse_predicate = top_namespace + "hasInversePredicate"
+        errors = []
+
+        def is_top_uri(term):
+            return isinstance(term, rd.URIRef) and str(term).startswith(top_namespace)
+
+        for subject, predicate, obj in rdfGraph:
+            predicate_uri = str(predicate)
+
+            if is_top_uri(predicate) and predicate_uri not in properties:
+                errors.append("Unknown top: predicate: " + Ontology.QName(predicate_uri, predicate_uri))
+
+            if predicate_uri == rdf_type and is_top_uri(obj) and str(obj) not in classes:
+                errors.append("Unknown top: class: " + Ontology.QName(str(obj), str(obj)))
+            elif predicate_uri in {has_predicate, has_inverse_predicate} and is_top_uri(obj) and str(obj) not in properties:
+                errors.append("Unknown top: predicate resource: " + Ontology.QName(str(obj), str(obj)))
+            elif is_top_uri(obj) and str(obj) not in declared:
+                errors.append("Unknown top: resource: " + Ontology.QName(str(obj), str(obj)))
+
+            if is_top_uri(subject) and str(subject) not in declared:
+                errors.append("Unknown top: resource: " + Ontology.QName(str(subject), str(subject)))
+
+        return list(dict.fromkeys(errors))
+
+    @staticmethod
     def ValidateTTLString(ttlString: str, silent: bool = False) -> Dict[str, Any]:
-        """Validates Turtle syntax when RDFLib is available; fails gracefully otherwise."""
+        """Validates Turtle syntax and canonical TopologicPy vocabulary use.
+
+        Every URI in the ``top:`` namespace must be declared by the canonical
+        ontology as a class or property. Thus ingested Turtle is held to the
+        same no-invented-terms rule as exported RDF.
+        """
         report = {"available": False, "valid": None, "ok": None, "errors": [], "warnings": []}
         if not isinstance(ttlString, str) or not ttlString.strip():
             report["available"] = True
@@ -1450,8 +1535,9 @@ class Ontology:
         try:
             g = rd.Graph()
             g.parse(data=ttlString, format="turtle")
-            report["valid"] = report["ok"] = True
             report["triple_count"] = len(g)
+            report["errors"].extend(Ontology._undeclared_top_terms(g))
+            report["valid"] = report["ok"] = len(report["errors"]) == 0
         except Exception as exc:
             report["valid"] = report["ok"] = False
             report["errors"].append(str(exc))
@@ -1477,7 +1563,8 @@ class Ontology:
             return report
         try:
             list(rdfGraph)
-            report["valid"] = report["ok"] = True
+            report["errors"].extend(Ontology._undeclared_top_terms(rdfGraph))
+            report["valid"] = report["ok"] = len(report["errors"]) == 0
         except Exception as exc:
             report["valid"] = report["ok"] = False
             report["errors"].append(str(exc))

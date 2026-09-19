@@ -859,49 +859,231 @@ class Cell(Topology):
         cell,
         offset: float = 1.0,
         tolerance: float = 0.0001,
-        silent: bool = False,
+        silent: bool = False
     ):
-        """Offset a Cell using OCCT's native 3-D offset algorithm."""
+        """
+        Offsets a Cell using OCCT's native three-dimensional offset operation.
+
+        Offset Faces are joined by intersection rather than rolling-ball arcs. This
+        preserves analytical geometry wherever possible. For example, an analytical
+        cylinder remains composed of one cylindrical Face and two planar Faces
+        instead of being converted into a highly subdivided rounded result.
+
+        Parameters
+        ----------
+        cell : Cell
+            The input Cell.
+        offset : float , optional
+            The signed offset distance. Positive values offset outward and negative
+            values offset inward, subject to the orientation of the input solid.
+            Default is 1.0.
+        tolerance : float , optional
+            The desired geometric tolerance. Default is 0.0001.
+        silent : bool , optional
+            If True, error messages are suppressed. Default is False.
+
+        Returns
+        -------
+        Cell
+            The offset Cell, or None if the operation fails or produces multiple
+            disconnected solids.
+        """
         if not isinstance(cell, Cell):
             if not silent:
-                print("Cell.ByOffset - Error: Invalid Cell. Returning None.")
+                print(
+                    "Cell.ByOffset - Error: The input cell parameter is not a "
+                    "valid Cell. Returning None."
+                )
             return None
-        tol = Cell._native_tolerance(tolerance)
+
+        tolerance = Cell._native_tolerance(tolerance)
+
         try:
             offset = float(offset)
         except Exception:
             offset = float("nan")
-        if tol is None or not math.isfinite(offset):
+
+        if (
+            tolerance is None
+            or not math.isfinite(offset)
+        ):
+            if not silent:
+                print(
+                    "Cell.ByOffset - Error: The offset or tolerance parameter is "
+                    "invalid. Returning None."
+                )
             return None
-        if abs(offset) <= tol:
+
+        if abs(offset) <= tolerance:
             return cell
-        shape = getattr(cell, "shape", None)
-        if _is_null_shape(shape):
+
+        source_shape = getattr(cell, "shape", None)
+
+        if _is_null_shape(source_shape):
+            if not silent:
+                print(
+                    "Cell.ByOffset - Error: The input Cell does not contain a "
+                    "valid OCCT shape. Returning None."
+                )
             return None
+
         try:
+            from OCC.Core.BRepCheck import BRepCheck_Analyzer
             from OCC.Core.BRepOffset import BRepOffset_Skin
             from OCC.Core.BRepOffsetAPI import BRepOffsetAPI_MakeOffsetShape
-            from OCC.Core.GeomAbs import GeomAbs_Arc
-
-            maker = BRepOffsetAPI_MakeOffsetShape()
-            maker.PerformByJoin(
-                shape,
-                offset,
-                tol,
-                BRepOffset_Skin,
-                False,
-                False,
-                GeomAbs_Arc,
-                True,
-            )
-            if not maker.IsDone():
-                return None
-            result_shape = maker.Shape()
+            from OCC.Core.GeomAbs import GeomAbs_Intersection
+            from OCC.Core.TopAbs import TopAbs_SOLID
+            from OCC.Core.TopExp import TopExp_Explorer
+            from OCC.Core.TopoDS import topods
         except Exception:
             if not silent:
-                print("Cell.ByOffset - Error: Native OCCT offset failed. Returning None.")
+                print(
+                    "Cell.ByOffset - Error: Could not import the required OCCT "
+                    "classes. Returning None."
+                )
             return None
-        return Cell._native_result(result_shape, require_cell=False)
+
+        try:
+            offsetter = BRepOffsetAPI_MakeOffsetShape()
+
+            offsetter.PerformByJoin(
+                source_shape,
+                offset,
+                tolerance,
+                BRepOffset_Skin,
+
+                # Intersect the offset supporting surfaces to produce their proper
+                # boundaries. This retains sharp analytical intersections.
+                True,
+
+                # OCCT's general self-intersection treatment is expensive and can
+                # unnecessarily subdivide otherwise valid analytical results.
+                False,
+
+                # Do not create rolling-ball fillets between offset Faces.
+                GeomAbs_Intersection,
+
+                # Remove internal edges introduced only by the construction.
+                True
+            )
+
+            if not offsetter.IsDone():
+                if not silent:
+                    print(
+                        "Cell.ByOffset - Error: The native OCCT offset operation "
+                        "did not complete. Returning None."
+                    )
+                return None
+
+            result_shape = offsetter.Shape()
+
+        except Exception as error:
+            if not silent:
+                print(
+                    "Cell.ByOffset - Error: The native OCCT offset operation "
+                    "failed. Returning None."
+                )
+                print("Error:", error)
+            return None
+
+        if _is_null_shape(result_shape):
+            if not silent:
+                print(
+                    "Cell.ByOffset - Error: OCCT returned a null result. "
+                    "Returning None."
+                )
+            return None
+
+        # PerformByJoin can return either a Solid directly or a container holding
+        # one Solid. Resolve the result without rebuilding any Faces.
+        solids = []
+
+        try:
+            if result_shape.ShapeType() == TopAbs_SOLID:
+                solids = [topods.Solid(result_shape)]
+            else:
+                explorer = TopExp_Explorer(
+                    result_shape,
+                    TopAbs_SOLID
+                )
+
+                while explorer.More():
+                    solid = topods.Solid(
+                        explorer.Current()
+                    )
+
+                    if not _is_null_shape(solid):
+                        solids.append(solid)
+
+                    explorer.Next()
+        except Exception:
+            solids = []
+
+        if len(solids) != 1:
+            if not silent:
+                print(
+                    "Cell.ByOffset - Error: The offset operation did not produce "
+                    "exactly one solid. Returning None."
+                )
+            return None
+
+        result_shape = solids[0]
+
+        try:
+            analyzer = BRepCheck_Analyzer(
+                result_shape
+            )
+
+            if not analyzer.IsValid():
+                if not silent:
+                    print(
+                        "Cell.ByOffset - Error: The offset operation produced an "
+                        "invalid solid. Returning None."
+                    )
+                return None
+        except Exception:
+            if not silent:
+                print(
+                    "Cell.ByOffset - Error: Could not validate the offset solid. "
+                    "Returning None."
+                )
+            return None
+
+        result = Cell._native_result(
+            result_shape
+        )
+
+        if not isinstance(result, Cell):
+            if not silent:
+                print(
+                    "Cell.ByOffset - Error: Could not wrap the offset solid as a "
+                    "Cell. Returning None."
+                )
+            return None
+
+        # Preserve wrapper-level metadata without altering the OCCT geometry.
+        try:
+            result.dictionary = getattr(
+                cell,
+                "dictionary",
+                None
+            )
+
+            result.contents = list(
+                getattr(cell, "contents", []) or []
+            )
+
+            result.contexts = list(
+                getattr(cell, "contexts", []) or []
+            )
+
+            result.apertures = list(
+                getattr(cell, "apertures", []) or []
+            )
+        except Exception:
+            pass
+
+        return result
 
     def _native_thicken_shape(
         topology,

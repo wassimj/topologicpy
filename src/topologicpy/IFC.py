@@ -7701,6 +7701,7 @@ class IFC:
             "wall": ["IFCWALL", "IFCWALLSTANDARDCASE", "IFCWALLELEMENTEDCASE"],
             "slab": ["IFCSLAB", "IFCSLABSTANDARDCASE", "IFCSLABELEMENTEDCASE"],
             "door": ["IFCDOOR", "IFCDOORSTANDARDCASE"],
+            "window": ["IFCWINDOW", "IFCWINDOWSTANDARDCASE"],
             "opening": ["IFCOPENINGELEMENT"],
             "duct": ["IFCDUCTSEGMENT"],
             "pipe": ["IFCPIPESEGMENT"],
@@ -7725,6 +7726,13 @@ class IFC:
 
         def normalise_types(values):
             result = set()
+            known_types = {
+                str(entity.type).upper()
+                for entity in entities.values()
+                if getattr(entity, "type", None)
+            }
+            known_types.update(IFCFastTopology._PRODUCT_TYPES)
+
             for value in values:
                 name = "".join(
                     character
@@ -7751,6 +7759,19 @@ class IFC:
                         break
 
                 if not matched:
+                    # Prefer a candidate that is an actual IFC entity type.
+                    # This safely resolves unlisted plurals such as "beams"
+                    # without manufacturing invalid names such as IFCBEAMS.
+                    for candidate in candidates:
+                        ifc_type = ("ifc" + candidate).upper()
+                        if ifc_type in known_types:
+                            result.add(ifc_type)
+                            matched = True
+                            break
+
+                if not matched:
+                    # Preserve support for valid schema extensions or custom
+                    # entity names that are not present in this particular model.
                     result.add(("ifc" + base).upper())
             return result
 

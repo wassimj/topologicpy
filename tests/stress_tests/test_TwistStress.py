@@ -14,12 +14,18 @@ from topologicpy.Cell import Cell
 from topologicpy.CellComplex import CellComplex
 from topologicpy.Cluster import Cluster
 from topologicpy.Topology import Topology
+from topologicpy.Core import Core
 
 
 TOLERANCE = 0.0001
 POINT_TOLERANCE = 3.0e-5
 SEED = 20260815
 RANDOM_CASES = int(os.environ.get("TOPOLOGICPY_TWIST_STRESS_CASES", "100"))
+IS_TOPOLOGIC_CORE = type(Core.Backend()).__name__ == "TopologicCoreBackend"
+PYTHONOCC_DEFORMATION_ONLY = pytest.mark.skipif(
+    IS_TOPOLOGIC_CORE,
+    reason="NURBS control-geometry deformation is unsupported by topologic_core.",
+)
 
 
 def _vertex(x, y=0.0, z=0.0):
@@ -351,6 +357,7 @@ TRIANGULATED_FACTORIES = {
         ((-1.1, -0.9, 0.0), [15.0, 15.0]),
     ],
 )
+@PYTHONOCC_DEFORMATION_ONLY
 def test_twist_direct_coordinate_oracle(factory_name, origin_xyz, angle_range):
     topology = DIRECT_FACTORIES[factory_name]()
     original_type = Topology.TypeAsString(topology)
@@ -385,6 +392,7 @@ def test_twist_direct_coordinate_oracle(factory_name, origin_xyz, angle_range):
 
 
 @pytest.mark.parametrize("factory_name", list(DIRECT_FACTORIES))
+@PYTHONOCC_DEFORMATION_ONLY
 def test_twist_direct_random_stress(factory_name):
     rng = random.Random(f"{SEED}:{factory_name}")
 
@@ -441,6 +449,7 @@ def test_twist_direct_random_stress(factory_name):
         ((-1.4, 1.7, -0.3), [35.0, -20.0]),
     ],
 )
+@PYTHONOCC_DEFORMATION_ONLY
 def test_twist_triangulated_preserves_expected_type_counts_and_points(
     factory_name,
     origin_xyz,
@@ -588,6 +597,7 @@ def test_twist_rejects_invalid_angle_range(angle_range):
     assert result is None
 
 
+@PYTHONOCC_DEFORMATION_ONLY
 def test_twist_default_origin_matches_centroid_oracle():
     topology = _triangle_face()
 

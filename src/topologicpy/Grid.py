@@ -18,6 +18,8 @@ from __future__ import annotations
 
 import math
 
+from topologicpy.Core import Core
+
 
 class Grid:
     """
@@ -429,58 +431,6 @@ class Grid:
     # -------------------------------------------------------------------------
 
     @staticmethod
-    def _NativeSurface(face):
-        """Return (Geom_Surface, uMin, uMax, vMin, vMax), or None."""
-        from topologicpy.Topology import Topology
-
-        try:
-            shape = Topology.OCCTShape(face)
-            if shape is None:
-                return None
-            from OCC.Core.BRep import BRep_Tool
-            from OCC.Core.BRepAdaptor import BRepAdaptor_Surface
-
-            adaptor = BRepAdaptor_Surface(shape, True)
-            bounds = [
-                float(adaptor.FirstUParameter()),
-                float(adaptor.LastUParameter()),
-                float(adaptor.FirstVParameter()),
-                float(adaptor.LastVParameter()),
-            ]
-            if not all(math.isfinite(x) for x in bounds):
-                return None
-
-            try:
-                surface = BRep_Tool.Surface(shape)
-            except Exception:
-                surface = BRep_Tool.Surface_s(shape)
-
-            return (surface, *bounds)
-        except Exception:
-            return None
-
-    @staticmethod
-    def _NativeIso(face, axis, parameter, nativeSurface):
-        """Create one exact OCCT constant-U or constant-V Edge."""
-        from topologicpy.Topology import Topology
-        from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakeEdge
-
-        surface, u0, u1, v0, v1 = nativeSurface
-        try:
-            if axis == "u":
-                u = u0 + float(parameter) * (u1 - u0)
-                maker = BRepBuilderAPI_MakeEdge(surface.UIso(u), v0, v1)
-            else:
-                v = v0 + float(parameter) * (v1 - v0)
-                maker = BRepBuilderAPI_MakeEdge(surface.VIso(v), u0, u1)
-
-            if hasattr(maker, "IsDone") and not maker.IsDone():
-                return None
-            return Topology.ByOCCTShape(maker.Edge())
-        except Exception:
-            return None
-
-    @staticmethod
     def _Edges(result):
         from topologicpy.Topology import Topology
         if result is None:
@@ -628,9 +578,10 @@ class Grid:
         Faces and an intrinsic UV surface grid for non-planar Faces.
 
         In surface mode, U-family lines are constant-U surface isocurves and
-        V-family lines are constant-V isocurves. Under PythonOCC these are exact
-        OCCT curves trimmed by the input Face, so a grid on a curved/NURBS Face
-        contains genuinely curved Edges rather than projected chords.
+        V-family lines are constant-V isocurves. When the active backend supports
+        exact surface isocurves, they are trimmed by the input Face, so a grid on
+        a curved/NURBS Face contains genuinely curved Edges rather than projected
+        chords.
 
         Each family can be specified independently. Precedence is:
 
@@ -650,10 +601,10 @@ class Grid:
         ``xDirection`` to control its U direction. ``mode="surface"`` can be
         forced on any Face to use its native parameterization.
 
-        Exact non-planar surface isocurves require PythonOCC. By default this
-        method returns None rather than flattening them if exact native curves
-        are unavailable. Set ``approximate=True`` explicitly to permit a
-        sampled polyline fallback.
+        Exact non-planar surface isocurves require backend support. By default
+        this method returns None rather than flattening them if exact native
+        curves are unavailable. Set ``approximate=True`` explicitly to permit
+        a sampled polyline fallback.
 
         Parameters
         ----------
@@ -684,7 +635,7 @@ class Grid:
             unavailable. Default is False.
         samples : int , optional
             Samples used for physical surface metrics and fallback geometry.
-            Does not control PythonOCC output curve geometry. Default is 128.
+            Does not control exact backend curve geometry. Default is 128.
         mantissa : int , optional
             Decimal precision used in metadata. Default is 6.
         tolerance : float , optional
@@ -860,8 +811,8 @@ class Grid:
                     print("Grid.OnFace - Error: Could not derive surface positions. Returning None.")
                 return None
 
-            nativeSurface = Grid._NativeSurface(face)
-            if nativeSurface is None and not approximate:
+            nativeIsoAvailable = Core.HasAttribute("Grid", "IsoCurve")
+            if not nativeIsoAvailable and not approximate:
                 if not silent:
                     print(
                         "Grid.OnFace - Error: Exact surface isocurves are unavailable "
@@ -878,15 +829,24 @@ class Grid:
                 labels = Grid._Labels(len(positions), labelsSpec)
 
                 for index, parameter in enumerate(positions):
-                    if nativeSurface is not None:
-                        raw = Grid._NativeIso(face, axis, parameter, nativeSurface)
+                    raw = None
+                    if nativeIsoAvailable:
+                        try:
+                            raw = Core.Grid.IsoCurve(face, axis, parameter)
+                        except Exception:
+                            raw = None
+
+                    if Topology.IsInstance(raw, "Edge"):
                         clipped = Grid._Clip(raw, face, tol)
                         geometry = "isocurve"
-                    else:
+                    elif approximate:
                         clipped = Grid._ApproximateIso(
                             face, axis, parameter, samples, tol
                         )
                         geometry = "polyline"
+                    else:
+                        clipped = []
+                        geometry = "isocurve"
 
                     distance = Grid._LengthAtParameter(parameter, metric)
                     Grid._Append(

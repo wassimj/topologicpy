@@ -1082,65 +1082,218 @@ class Edge():
             silent=silent,
         )
 
-    def ByOffset2D(edge, offset: float = 1.0, tolerance: float = 0.0001):
+    @staticmethod
+    def ByOffset2D(
+        edge,
+        offset: float = 1.0,
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
         """
-        Creates an edge offset from the input edge in the XY plane.
+        Creates a single Edge offset from the input Edge in the XY plane.
+
+        Positive offsets are to the left of the Edge when travelling from its
+        start Vertex to its end Vertex. Negative offsets are to the right.
+
+        The input Edge must lie in a plane parallel to the XY plane. Curved,
+        B-Spline, NURBS, circular, and other supported curve geometry is preserved
+        by a backend-native offset operation when available.
+
+        Parameters
+        ----------
+        edge : topologic_core.Edge
+            The input Edge.
+        offset : float , optional
+            The desired signed offset distance. Positive values offset to the left
+            of the Edge direction and negative values offset to the right.
+            Default is 1.0.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        topologic_core.Edge
+            A single offset Edge.
+
         """
+        import math
+
         from topologicpy.Topology import Topology
         from topologicpy.Vertex import Vertex
-        from topologicpy.Edge import Edge
 
-        sv = Edge.StartVertex(edge)
-        ev = Edge.EndVertex(edge)
-
-        x1, y1, _ = Vertex.Coordinates(sv)
-        x2, y2, _ = Vertex.Coordinates(ev)
-
-        dx = x2 - x1
-        dy = y2 - y1
-        length = (dx**2 + dy**2)**0.5
-        if length < tolerance:
+        if not Topology.IsInstance(edge, "Edge"):
+            if not silent:
+                print(
+                    "Edge.ByOffset2D - Error: The input edge parameter is not "
+                    "a valid Edge. Returning None."
+                )
             return None
 
-        # Perpendicular vector to the left
-        nx = -dy / length
-        ny = dx / length
+        try:
+            offset = float(offset)
+            tolerance = abs(float(tolerance))
+        except Exception:
+            if not silent:
+                print(
+                    "Edge.ByOffset2D - Error: The input offset or tolerance "
+                    "parameter is invalid. Returning None."
+                )
+            return None
 
-        ox = nx * offset
-        oy = ny * offset
+        if not math.isfinite(offset):
+            if not silent:
+                print(
+                    "Edge.ByOffset2D - Error: The input offset parameter must "
+                    "be finite. Returning None."
+                )
+            return None
 
-        new_sv = Vertex.ByCoordinates(x1 + ox, y1 + oy, 0)
-        new_ev = Vertex.ByCoordinates(x2 + ox, y2 + oy, 0)
+        if not math.isfinite(tolerance) or tolerance <= 0.0:
+            if not silent:
+                print(
+                    "Edge.ByOffset2D - Error: The input tolerance parameter must "
+                    "be greater than zero. Returning None."
+                )
+            return None
 
-        return Edge.ByVertices(new_sv, new_ev)
-    # @staticmethod
-    # def ByOffset2D(edge, offset: float = 1.0, tolerance: float = 0.0001):
-    #     """
-    #     Creates and edge offset from the input edge. This method is intended for edges that are in the XY plane.
+        if abs(offset) <= 1.0e-15:
+            return edge
 
-    #     Parameters
-    #     ----------
-    #     edge : topologic_core.Edge
-    #         The input edge.
-    #     offset : float , optional
-    #         The desired offset. Default is 1.
-    #     tolerance : float , optional
-    #         The desired tolerance. Default is 0.0001.
+        # ------------------------------------------------------------------
+        # Prefer the backend-native implementation.
+        # ------------------------------------------------------------------
 
-    #     Returns
-    #     -------
-    #     topologic_core.Edge
-    #         An edge offset from the input edge.
+        try:
+            if Core.HasAttribute(
+                "EdgeUtility",
+                "ByOffset2D"
+            ):
+                result = Core.EdgeUtility.ByOffset2D(
+                    edge,
+                    offset,
+                    tolerance
+                )
 
-    #     """
-    #     from topologicpy.Topology import Topology
-    #     from topologicpy.Vector import Vector
+                if Topology.IsInstance(
+                    result,
+                    "Edge"
+                ):
+                    return result
 
-    #     n = Edge.Normal(edge)
-    #     n = Vector.Normalize(n)
-    #     n = Vector.Multiply(n, offset, tolerance=tolerance)
-    #     edge = Topology.Translate(edge, n[0], n[1], n[2])
-    #     return edge
+                if not silent:
+                    print(
+                        "Edge.ByOffset2D - Error: The active backend could not "
+                        "create the requested offset Edge. Returning None."
+                    )
+                return None
+
+        except Exception as error:
+            if not silent:
+                print(
+                    "Edge.ByOffset2D - Error: The backend offset operation "
+                    "failed. Returning None."
+                )
+                print("Error:", error)
+            return None
+
+        # ------------------------------------------------------------------
+        # Legacy TopologicCore fallback.
+        #
+        # A straight Edge can be offset exactly by translation. Do not attempt
+        # this for curves because translating endpoint vertices would destroy
+        # their geometry.
+        # ------------------------------------------------------------------
+
+        if not Edge.IsLinear(
+            edge,
+            tolerance=tolerance,
+            silent=True
+        ):
+            if not silent:
+                print(
+                    "Edge.ByOffset2D - Error: The active backend does not support "
+                    "curve-preserving 2D offset of curved Edges. Returning None."
+                )
+            return None
+
+        start = Edge.StartVertex(
+            edge,
+            silent=True
+        )
+
+        end = Edge.EndVertex(
+            edge,
+            silent=True
+        )
+
+        if (
+            not Topology.IsInstance(start, "Vertex")
+            or not Topology.IsInstance(end, "Vertex")
+        ):
+            return None
+
+        a = Vertex.Coordinates(
+            start,
+            mantissa=None
+        )
+
+        b = Vertex.Coordinates(
+            end,
+            mantissa=None
+        )
+
+        dx = float(b[0]) - float(a[0])
+        dy = float(b[1]) - float(a[1])
+        dz = float(b[2]) - float(a[2])
+
+        if abs(dz) > tolerance:
+            if not silent:
+                print(
+                    "Edge.ByOffset2D - Error: The input Edge is not parallel "
+                    "to the XY plane. Returning None."
+                )
+            return None
+
+        length_xy = math.hypot(
+            dx,
+            dy
+        )
+
+        if length_xy <= tolerance:
+            if not silent:
+                print(
+                    "Edge.ByOffset2D - Error: The input Edge has no usable "
+                    "direction in the XY plane. Returning None."
+                )
+            return None
+
+        # Left-hand normal relative to start -> end.
+        nx = -dy / length_xy
+        ny = dx / length_xy
+
+        result = Topology.Translate(
+            edge,
+            x=nx * offset,
+            y=ny * offset,
+            z=0.0,
+            transferDictionaries=True,
+            silent=True
+        )
+
+        if not Topology.IsInstance(
+            result,
+            "Edge"
+        ):
+            if not silent:
+                print(
+                    "Edge.ByOffset2D - Error: Could not offset the input Edge. "
+                    "Returning None."
+                )
+            return None
+
+        return result
 
     @staticmethod
     def ByStartVertexEndVertex(vertexA, vertexB, tolerance: float = 0.0001, silent=False):
@@ -2123,83 +2276,234 @@ class Edge():
         return result
 
     @staticmethod
-    def ExtendToEdge(edgeA, edgeB, mantissa: int = 6, step: bool = True, tolerance: float = 0.0001, silent: bool = False):
+    def ExtendToEdge(
+        edgeA,
+        edgeB,
+        mantissa: int = 6,
+        step: bool = True,
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
         """
-        Extends the first input edge to meet the second input edge.
+        Extends edgeA with a straight tangent continuation until it meets edgeB.
+
+        For a linear edgeA, the resulting Edge remains linear.
+
+        For a curved edgeA, the extension leaves the selected endpoint along the
+        tangent to edgeA at that endpoint. The original curve and the straight
+        extension are concatenated into one single Edge by the active backend.
+
+        Both endpoints of edgeA are considered. If one or both outward tangent
+        rays intersect edgeB, the shortest valid extension is selected. If a ray
+        intersects edgeB at multiple points, the intersection closest to the
+        corresponding endpoint of edgeA is selected.
+
+        The original direction of edgeA is preserved.
 
         Parameters
         ----------
         edgeA : topologic_core.Edge
-            The first input edge. This edge will be extended to meet edgeB.
+            The Edge to extend.
         edgeB : topologic_core.Edge
-            The second input edge. This edge will be used to extend edgeA.
+            The target Edge.
         mantissa : int , optional
-            The number of decimal places to round the result to. Default is 6.
+            Retained for backward API compatibility. Default is 6.
+        step : bool , optional
+            Retained for backward API compatibility. Default is True.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
-        
+            If True, suppress diagnostic messages. Default is False.
+
         Returns
         -------
         topologic_core.Edge
-            The extended edge.
+            One extended Edge, or None if the operation cannot be completed.
 
         """
-        from topologicpy.Vertex import Vertex
-        from topologicpy.Vector import Vector
-        from topologicpy.Cluster import Cluster
+        import math
+
         from topologicpy.Topology import Topology
-        from topologicpy.Helper import Helper
+        from topologicpy.Vertex import Vertex
 
         if not Topology.IsInstance(edgeA, "Edge"):
             if not silent:
-                print("Edge.ExtendToEdge - Error: The input edgeA parameter is not a valid topologic edge. Returning None.")
+                print(
+                    "Edge.ExtendToEdge - Error: The input edgeA parameter is not "
+                    "a valid Edge. Returning None."
+                )
             return None
+
         if not Topology.IsInstance(edgeB, "Edge"):
             if not silent:
-                print("Edge.ExtendToEdge - Error: The input edgeB parameter is not a valid topologic edge. Returning None.")
+                print(
+                    "Edge.ExtendToEdge - Error: The input edgeB parameter is not "
+                    "a valid Edge. Returning None."
+                )
             return None
-        if not Edge.IsCoplanar(edgeA, edgeB, mantissa=mantissa, tolerance=tolerance):
-            if not silent:
-                print("Edge.ExtendToEdge - Error: The input edges are not coplanar. Returning the original edge.")
-            return edgeA
-        if Edge.IsCollinear(edgeA, edgeB, tolerance=tolerance):
-            if not silent:
-                print("Edge.ExtendToEdge - Warning: The input edges are collinear. Connecting the edges instead. Check return value.")
-            return Edge.ConnectToEdge(edgeA, edgeB, tolerance=tolerance)
-        if Edge.IsParallel(edgeA, edgeB, tolerance=tolerance):
-            if not silent:
-                print("Edge.ExtendToEdge - Warning: The input edges are parallel. Connecting the edges instead. Returning a Wire.")
-            return Edge.ConnectToEdge(edgeA, edgeB, tolerance=tolerance)
-        
-        
-        sva = Edge.StartVertex(edgeA)
-        eva = Edge.EndVertex(edgeA)
-        d1 = Vertex.Distance(sva, edgeB)
-        d2 = Vertex.Distance(eva, edgeB)
-        edge_direction = Edge.Direction(edgeA)
-        if d1 < d2:
-            v1 = eva
-            v2 = sva
-            edge_direction = Vector.Reverse(edge_direction)
-        else:
-            v1 = sva
-            v2 = eva
-        
-        d = max(d1, d2)*2
-        v2 = Topology.TranslateByDirectionDistance(v2, direction=edge_direction, distance=d)
-        new_edge = Edge.ByVertices([v1, v2], tolerance=tolerance, silent=silent)
-        
-        svb = Edge.StartVertex(edgeB)
-        evb = Edge.EndVertex(edgeB)
 
-        intVertex = Topology.Intersect(new_edge, edgeB, tolerance=tolerance)
-        if intVertex:
-            return Edge.ByVertices([v1, intVertex], tolerance=tolerance, silent=silent)
-        if not silent:
-            print("Edge.ExtendToEdge - Warning: The operation failed. Connecting the edges instead. Returning a Wire.")
-        return Edge.ConnectToEdge(edgeA, edgeB, tolerance=tolerance)
+        try:
+            tolerance = abs(float(tolerance))
+        except Exception:
+            if not silent:
+                print(
+                    "Edge.ExtendToEdge - Error: The input tolerance parameter is "
+                    "not a valid number. Returning None."
+                )
+            return None
+
+        if not math.isfinite(tolerance) or tolerance <= 0.0:
+            if not silent:
+                print(
+                    "Edge.ExtendToEdge - Error: The input tolerance parameter must "
+                    "be greater than zero. Returning None."
+                )
+            return None
+
+        # If the active backend provides exact curve extension, use it first.
+        # This is the only acceptable route for a curved edge because it can
+        # concatenate the original curve and its tangent extension into one
+        # native Edge without destroying the curve geometry.
+        try:
+            if Core.HasAttribute("EdgeUtility", "ExtendToEdge"):
+                result = Core.EdgeUtility.ExtendToEdge(
+                    edgeA,
+                    edgeB,
+                    tolerance
+                )
+
+                if Topology.IsInstance(result, "Edge"):
+                    return result
+
+        except Exception:
+            pass
+
+        # A public, backend-neutral fallback is exact for a linear edgeA. For
+        # curved input the native operation above remains mandatory: rebuilding
+        # from endpoints would replace the original curve with a line.
+        if not Edge.IsLinear(edgeA, tolerance=tolerance, silent=True):
+            if not silent:
+                print(
+                    "Edge.ExtendToEdge - Error: The active backend could not "
+                    "perform exact single-edge tangent extension of the curved "
+                    "input edgeA. Returning None."
+                )
+            return None
+
+        start = Edge.StartVertex(edgeA, silent=True)
+        end = Edge.EndVertex(edgeA, silent=True)
+        if not Topology.IsInstance(start, "Vertex") or not Topology.IsInstance(end, "Vertex"):
+            if not silent:
+                print("Edge.ExtendToEdge - Error: Could not retrieve edgeA endpoints. Returning None.")
+            return None
+
+        try:
+            sx, sy, sz = [float(value) for value in Vertex.Coordinates(start, mantissa=None)]
+            ex, ey, ez = [float(value) for value in Vertex.Coordinates(end, mantissa=None)]
+            dx, dy, dz = ex - sx, ey - sy, ez - sz
+            magnitude = math.sqrt(dx * dx + dy * dy + dz * dz)
+        except Exception:
+            magnitude = 0.0
+
+        if magnitude <= tolerance:
+            if not silent:
+                print("Edge.ExtendToEdge - Error: edgeA has zero length. Returning None.")
+            return None
+
+        dx, dy, dz = dx / magnitude, dy / magnitude, dz / magnitude
+
+        # Base the first ray length on all available endpoint separations, then
+        # grow it geometrically. This remains scale-independent and also finds
+        # intersections far beyond the target Edge's own bounding interval.
+        target_vertices = [
+            Edge.StartVertex(edgeB, silent=True),
+            Edge.EndVertex(edgeB, silent=True),
+        ]
+        scale = max(magnitude, 1.0)
+        for source in (start, end):
+            for target in target_vertices:
+                if not Topology.IsInstance(target, "Vertex"):
+                    continue
+                try:
+                    distance = Vertex.Distance(source, target, mantissa=None)
+                    if distance is not None and math.isfinite(float(distance)):
+                        scale = max(scale, float(distance))
+                except Exception:
+                    pass
+
+        candidates = []
+
+        def collect(endpoint, direction, at_start):
+            px, py, pz = [float(value) for value in Vertex.Coordinates(endpoint, mantissa=None)]
+            ray_length = max(2.0 * scale, 10.0 * tolerance)
+
+            for _ in range(24):
+                ray = Edge.ByOriginDirectionLength(
+                    origin=endpoint,
+                    direction=direction,
+                    length=ray_length,
+                    tolerance=tolerance,
+                    silent=True,
+                )
+                if not Topology.IsInstance(ray, "Edge"):
+                    return
+
+                intersection = Topology.Intersect(ray, edgeB, tolerance=tolerance, silent=True)
+                vertices = []
+                if Topology.IsInstance(intersection, "Vertex"):
+                    vertices = [intersection]
+                elif Topology.IsInstance(intersection, "Topology"):
+                    vertices = Topology.Vertices(intersection, silent=True) or []
+
+                found = False
+                for vertex in vertices:
+                    try:
+                        x, y, z = [float(value) for value in Vertex.Coordinates(vertex, mantissa=None)]
+                        vx, vy, vz = x - px, y - py, z - pz
+                        forward = vx * direction[0] + vy * direction[1] + vz * direction[2]
+                        distance = math.sqrt(vx * vx + vy * vy + vz * vz)
+                    except Exception:
+                        continue
+                    if forward > tolerance and distance > tolerance:
+                        candidates.append((distance, at_start, vertex))
+                        found = True
+
+                if found:
+                    return
+                ray_length *= 2.0
+
+        collect(start, [-dx, -dy, -dz], True)
+        collect(end, [dx, dy, dz], False)
+
+        if not candidates:
+            if not silent:
+                print("Edge.ExtendToEdge - Error: No outward extension of edgeA intersects edgeB. Returning None.")
+            return None
+
+        _, at_start, intersection = min(candidates, key=lambda item: item[0])
+        if at_start:
+            result = Edge.ByStartVertexEndVertex(
+                intersection, end, tolerance=tolerance, silent=True
+            )
+        else:
+            result = Edge.ByStartVertexEndVertex(
+                start, intersection, tolerance=tolerance, silent=True
+            )
+
+        if not Topology.IsInstance(result, "Edge"):
+            if not silent:
+                print("Edge.ExtendToEdge - Error: Could not create the extended Edge. Returning None.")
+            return None
+
+        try:
+            dictionary = Topology.Dictionary(edgeA, silent=True)
+            updated = Topology.SetDictionary(result, dictionary, silent=True)
+            if Topology.IsInstance(updated, "Edge"):
+                result = updated
+        except Exception:
+            pass
+
+        return result
     
     @staticmethod
     def ExternalBoundary(edge, tolerance: float = 0.0001, silent: bool = False):
@@ -4981,78 +5285,286 @@ class Edge():
         )
 
     @staticmethod
-    def TrimByEdge(edgeA, edgeB, reverse: bool = False, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
+    def TrimByEdge(
+        edgeA,
+        edgeB,
+        reverse: bool = False,
+        mantissa: int = 6,
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
         """
-        Trims the first input edge by the second input edge.
+        Trims edgeA at its intersection with edgeB while preserving the exact
+        geometry and direction of edgeA.
+
+        If multiple internal intersections exist, the first intersection encountered
+        from the start of edgeA is used when reverse is False. When reverse is True,
+        the last intersection encountered from the start of edgeA is used.
+
+        The returned Edge is created by trimming edgeA in its native parameter
+        space. Curved, B-Spline, and NURBS geometry is therefore preserved and is
+        never reconstructed from endpoint vertices.
 
         Parameters
         ----------
         edgeA : topologic_core.Edge
-            The first input edge. This edge will be trimmed by edgeB.
+            The Edge to trim.
         edgeB : topologic_core.Edge
-            The second input edge. This edge will be used to trim edgeA.
+            The Edge used as the trimming geometry.
         reverse : bool , optional
-            If set to True, which segment is preserved is reversed. Otherwise, it is not. Default is False.
+            If False, retains the portion of edgeA from its start to the first
+            intersection with edgeB. If True, retains the portion from the last
+            intersection with edgeB to the end of edgeA. In both cases, the
+            original direction of edgeA is preserved. Default is False.
+        mantissa : int , optional
+            Retained for backward API compatibility. Default is 6.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
-        
+            If True, error and warning messages are suppressed. Default is False.
+
         Returns
         -------
         topologic_core.Edge
-            The trimmed edge.
+            The trimmed Edge. If no usable internal intersection exists, the
+            original edgeA is returned.
 
         """
+        import math
+
         from topologicpy.Vertex import Vertex
         from topologicpy.Topology import Topology
 
+        # ------------------------------------------------------------------
+        # Validate inputs.
+        # ------------------------------------------------------------------
+
         if not Topology.IsInstance(edgeA, "Edge"):
             if not silent:
-                print("Edge.TrimByEdge - Error: The input edgeA parameter is not a valid topologic edge. Returning None.")
+                print(
+                    "Edge.TrimByEdge - Error: The input edgeA parameter is not "
+                    "a valid Edge. Returning None."
+                )
             return None
+
         if not Topology.IsInstance(edgeB, "Edge"):
             if not silent:
-                print("Edge.TrimByEdge - Error: The input edgeB parameter is not a valid topologic edge. Returning None.")
+                print(
+                    "Edge.TrimByEdge - Error: The input edgeB parameter is not "
+                    "a valid Edge. Returning None."
+                )
             return None
-        if not Edge.IsCoplanar(edgeA, edgeB, mantissa=mantissa, tolerance=tolerance):
+
+        try:
+            tolerance = abs(float(tolerance))
+        except Exception:
             if not silent:
-                print("Edge.TrimByEdge - Error: The input edges are not coplanar. Returning the original edge.")
-            return edgeA
-        if Edge.IsParallel(edgeA, edgeB, tolerance=tolerance):
+                print(
+                    "Edge.TrimByEdge - Error: The input tolerance parameter is "
+                    "not a valid number. Returning None."
+                )
+            return None
+
+        if not math.isfinite(tolerance) or tolerance <= 0.0:
             if not silent:
-                print("Edge.TrimByEdge - Error: The input edges are parallel. Returning the original edge.")
+                print(
+                    "Edge.TrimByEdge - Error: The input tolerance parameter must "
+                    "be greater than zero. Returning None."
+                )
+            return None
+
+        # ------------------------------------------------------------------
+        # Collect candidate trimming vertices.
+        # ------------------------------------------------------------------
+
+        candidate_vertices = []
+
+        intersection = Topology.Intersect(
+            edgeA,
+            edgeB,
+            tolerance=tolerance,
+            silent=True
+        )
+
+        if Topology.IsInstance(intersection, "Vertex"):
+            candidate_vertices.append(intersection)
+
+        elif Topology.IsInstance(intersection, "Topology"):
+            candidate_vertices += Topology.Vertices(
+                intersection,
+                silent=True
+            ) or []
+
+        # Also consider edgeB's endpoints. This helps with coincident or
+        # overlapping portions where the Boolean intersection may itself be
+        # an Edge rather than a set of isolated Vertices.
+        for vertex in [
+            Edge.StartVertex(edgeB, silent=True),
+            Edge.EndVertex(edgeB, silent=True)
+        ]:
+            if not Topology.IsInstance(vertex, "Vertex"):
+                continue
+
+            u = Edge.ParameterAtVertex(
+                edgeA,
+                vertex,
+                mantissa=None,
+                tolerance=tolerance,
+                silent=True
+            )
+
+            if u is not None:
+                candidate_vertices.append(vertex)
+
+        if len(candidate_vertices) == 0:
             return edgeA
-        
-        sva = Edge.StartVertex(edgeA)
-        eva = Edge.EndVertex(edgeA)
-        svb = Edge.StartVertex(edgeB)
-        evb = Edge.EndVertex(edgeB)
-        intVertex = None
-        if Edge.IsCollinear(edgeA, edgeB, tolerance=tolerance):
-            if Vertex.IsInternal(svb, edgeA):
-                intVertex = svb
-            elif Vertex.IsInternal(evb, edgeA):
-                intVertex = evb
-            else:
-                intVertex = None
-            if intVertex:
-                if reverse:
-                        return Edge.ByVertices([eva, intVertex], tolerance=tolerance, silent=silent)
-                else:
-                    return Edge.ByVertices([sva, intVertex], tolerance=tolerance, silent=silent)
-            else:
-                return None
-        
-        sva = Edge.StartVertex(edgeA)
-        eva = Edge.EndVertex(edgeA)
-        intVertex = Topology.Intersect(edgeA, edgeB)
-        if intVertex and (Vertex.IsInternal(intVertex, edgeA)):
-            if reverse:
-                return Edge.ByVertices([eva, intVertex], tolerance=tolerance, silent=silent)
-            else:
-                return Edge.ByVertices([sva, intVertex], tolerance=tolerance, silent=silent)
-        return edgeA
+
+        # ------------------------------------------------------------------
+        # Convert candidate intersection vertices into normalized parameters
+        # on edgeA.
+        # ------------------------------------------------------------------
+
+        start_vertex = Edge.StartVertex(
+            edgeA,
+            silent=True
+        )
+
+        end_vertex = Edge.EndVertex(
+            edgeA,
+            silent=True
+        )
+
+        parameters = []
+
+        for vertex in candidate_vertices:
+
+            if not Topology.IsInstance(vertex, "Vertex"):
+                continue
+
+            # Intersections already coincident with an endpoint do not trim
+            # the edge.
+            try:
+                distance_to_start = Vertex.Distance(
+                    vertex,
+                    start_vertex,
+                    mantissa=None
+                )
+
+                if (
+                    distance_to_start is not None
+                    and distance_to_start <= tolerance
+                ):
+                    continue
+
+                distance_to_end = Vertex.Distance(
+                    vertex,
+                    end_vertex,
+                    mantissa=None
+                )
+
+                if (
+                    distance_to_end is not None
+                    and distance_to_end <= tolerance
+                ):
+                    continue
+
+            except Exception:
+                pass
+
+            u = Edge.ParameterAtVertex(
+                edgeA,
+                vertex,
+                mantissa=None,
+                tolerance=tolerance,
+                silent=True
+            )
+
+            if u is None:
+                continue
+
+            try:
+                u = float(u)
+            except Exception:
+                continue
+
+            if not math.isfinite(u):
+                continue
+
+            if u <= 0.0 or u >= 1.0:
+                continue
+
+            # Avoid duplicate parameters caused by coincident intersection
+            # vertices or overlapping topology.
+            if not any(
+                abs(existing_u - u) <= 1.0e-12
+                for existing_u in parameters
+            ):
+                parameters.append(u)
+
+        if len(parameters) == 0:
+            return edgeA
+
+        # ------------------------------------------------------------------
+        # Select the trim interval while preserving edgeA's direction.
+        #
+        # reverse=False:
+        #     [0.0, first intersection]
+        #
+        # reverse=True:
+        #     [last intersection, 1.0]
+        # ------------------------------------------------------------------
+
+        if reverse:
+            uA = 1.0
+            uB = max(parameters)
+        else:
+            uA = 0.0
+            uB = min(parameters)
+
+        # ------------------------------------------------------------------
+        # Trim the ORIGINAL edge in parameter space.
+        # ------------------------------------------------------------------
+
+        result = Edge.TrimByParameters(
+            edgeA,
+            uA=uA,
+            uB=uB,
+            tolerance=tolerance,
+            silent=silent
+        )
+
+        if not Topology.IsInstance(result, "Edge"):
+            if not silent:
+                print(
+                    "Edge.TrimByEdge - Error: Could not trim edgeA while "
+                    "preserving its geometry. Returning None."
+                )
+            return None
+
+        # ------------------------------------------------------------------
+        # Preserve edgeA's dictionary.
+        # ------------------------------------------------------------------
+
+        try:
+            dictionary = Topology.Dictionary(
+                edgeA,
+                silent=True
+            )
+
+            if dictionary is not None:
+                updated = Topology.SetDictionary(
+                    result,
+                    dictionary,
+                    silent=True
+                )
+
+                if Topology.IsInstance(updated, "Edge"):
+                    result = updated
+
+        except Exception:
+            pass
+
+        return result
 
     @staticmethod
     def TrimByParameters(

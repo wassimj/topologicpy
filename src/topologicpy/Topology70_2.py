@@ -3496,60 +3496,21 @@ class Topology():
         from topologicpy.Cell import Cell
         from topologicpy.CellComplex import CellComplex
         from topologicpy.Cluster import Cluster
-        def clean_polyhedral_face(face):
-            """Rebuild one explicitly polyhedral Face from simplified Wires."""
-            external = Face.ExternalBoundary(face, tolerance=tolerance, silent=True)
-            if not Topology.IsInstance(external, "Wire"):
-                return None
-
-            external = Wire.RemoveCollinearEdges(
-                external,
-                angTolerance=angTolerance,
-                tolerance=tolerance,
-                silent=True,
-            )
-            if not Topology.IsInstance(external, "Wire"):
-                return None
-
-            internals = []
-            for boundary in Face.InternalBoundaries(face) or []:
-                cleaned = Wire.RemoveCollinearEdges(
-                    boundary,
-                    angTolerance=angTolerance,
-                    tolerance=tolerance,
-                    silent=True,
-                )
-                if not Topology.IsInstance(cleaned, "Wire"):
-                    return None
-                internals.append(cleaned)
-
-            result = Face.ByWires(
-                external,
-                internals,
-                tolerance=tolerance,
-                silent=True,
-            )
-            if not Topology.IsInstance(result, "Face"):
-                return None
-
-            dictionary = Topology.Dictionary(face, silent=True)
-            if dictionary:
-                updated = Topology.SetDictionary(result, dictionary, silent=True)
-                if Topology.IsInstance(updated, "Face"):
-                    result = updated
-            return result
-
+        import inspect
         if not Topology.IsInstance(topology, "Topology"):
             if not silent:
                 print("Topology.RemoveCollinearEdges - Error: The input topology parameter is not a valid topology. Returning None.")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
             return None
         return_topology = topology
         if Topology.IsInstance(topology, "vertex") or Topology.IsInstance(topology, "edge"):
-            return_topology = topology
+            return_topoology = topology
         elif Topology.IsInstance(topology, "Wire"):
             return_topology = Wire.RemoveCollinearEdges(topology, angTolerance=angTolerance, tolerance=tolerance, silent=silent)
         elif Topology.IsInstance(topology, "Face"):
-            return_topology = clean_polyhedral_face(topology)
+            return_topology = Face.RemoveCollinearEdges(topology, angTolerance=angTolerance, tolerance=tolerance, silent=silent)
         elif Topology.IsInstance(topology, "Shell"):
             return_topology = Shell.RemoveCollinearEdges(topology, angTolerance=angTolerance, tolerance=tolerance, silent=silent)
         elif Topology.IsInstance(topology, "Cell"):
@@ -3562,12 +3523,14 @@ class Topology():
             topologies += Cluster.FreeEdges(topology)
             faces = Topology.Faces(topology)
             for face in faces:
-                clean_face = clean_polyhedral_face(face)
-                topologies.append(clean_face if Topology.IsInstance(clean_face, "Face") else face)
+                topologies.append(Face.RemoveCollinearEdges(face, angTolerance=angTolerance, tolerance=tolerance, silent=silent))
             return_topology = Topology.SelfMerge(Cluster.ByTopologies(topologies), tolerance=tolerance)
         else:
             if not silent:
                 print("Topology.RemoveCollinearEdges - Error: The input topology parameter is not a valid topology. Returning None.")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
             return_topology = None
         return return_topology
 
@@ -18819,15 +18782,6 @@ class Topology():
         ):
             return topology
 
-        if Topology._IsTopologicCoreBackend():
-            if not silent:
-                print(
-                    "Topology.RemoveCoplanarFaces - Error: The topologic_core "
-                    "backend does not support reliable support-surface-preserving "
-                    "coplanar Face unification. Returning None."
-                )
-            return None
-
         # ------------------------------------------------------------------
         # PythonOCC fast path
         # ------------------------------------------------------------------
@@ -18863,7 +18817,7 @@ class Topology():
             return topology
 
         # ------------------------------------------------------------------
-        # Compatibility implementation retained for non-standard backends.
+        # TopologicCore implementation
         # ------------------------------------------------------------------
 
         from topologicpy.Vertex import Vertex
@@ -29096,26 +29050,6 @@ class Topology():
         # triangulation changes the topology type.
         if abs(angle_range[0]) < angTolerance and abs(angle_range[1]) < angTolerance:
             return topology
-
-        # A topology with no Z extent receives one constant angle throughout.
-        # Preserve the established no-op identity contract rather than invoking
-        # a deformation backend (notably important for legacy topologic_core).
-        try:
-            from topologicpy.Vertex import Vertex
-            vertices = Topology.Vertices(topology, silent=True) or []
-            z_values = [float(Vertex.Z(vertex, mantissa=None)) for vertex in vertices]
-            if z_values and max(z_values) - min(z_values) <= tolerance:
-                return topology
-        except Exception:
-            pass
-
-        if Topology._IsTopologicCoreBackend():
-            if not silent:
-                print(
-                    "Topology.Twist - Error: Non-trivial Twist deformation is "
-                    "not supported by the topologic_core backend. Returning None."
-                )
-            return None
 
         working_topology = topology
 

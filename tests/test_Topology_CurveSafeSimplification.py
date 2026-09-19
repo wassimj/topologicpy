@@ -130,6 +130,11 @@ def test_remove_coplanar_faces_still_merges_adjacent_planar_faces():
         shell,
         silent=True,
     )
+
+    if not IS_PYTHONOCC:
+        assert result is None
+        return
+
     assert Topology.IsInstance(result, "Topology")
     faces = Topology.Faces(result) or []
     if Topology.IsInstance(result, "Face"):

@@ -209,6 +209,7 @@ class TopologicCoreBackend:
         self.CellComplex = getattr(topologic, "CellComplex", None)
         self.Cluster = getattr(topologic, "Cluster", None)
         self.Graph = getattr(topologic, "Graph", None)
+        self.Grid = getattr(topologic, "Grid", None)
 
         # Attribute/data namespaces.
         self.Dictionary = getattr(topologic, "Dictionary", None)
@@ -273,6 +274,7 @@ class Core:
     CellComplex = _NamespaceProxy("CellComplex")
     Cluster = _NamespaceProxy("Cluster")
     Graph = _NamespaceProxy("Graph")
+    Grid = _NamespaceProxy("Grid")
 
     # Attribute/data namespaces.
     Dictionary = _NamespaceProxy("Dictionary")

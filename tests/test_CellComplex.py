@@ -212,16 +212,14 @@ def test_by_disjointed_faces_rejects_invalid_inputs():
 
 
 
-def test_byfaces_public_variants_rebuild_from_existing_faces(simple_cellcomplex):
+def test_byfaces_rebuilds_from_existing_faces(simple_cellcomplex):
     faces = CellComplex.Faces(simple_cellcomplex)
     assert isinstance(faces, list)
     assert len(faces) > 0
 
     rebuilt = CellComplex.ByFaces(faces, silent=True)
-    rebuilt_topologic = CellComplex.ByFacesTopologic(faces, silent=True)
 
     _assert_cellcomplex(rebuilt)
-    _assert_topology(rebuilt_topologic)
 
 
 def test_invalid_inputs_return_none_for_public_builders_and_accessors():
@@ -230,8 +228,6 @@ def test_invalid_inputs_return_none_for_public_builders_and_accessors():
     assert CellComplex.ByCellsCluster(None, silent=True) is None
     assert CellComplex.ByFaces(None, silent=True) is None
     assert CellComplex.ByFaces([], silent=True) is None
-    assert CellComplex.ByFacesTopologic(None, silent=True) is None
-    assert CellComplex.ByFacesTopologic([], silent=True) is None
     assert CellComplex.ByFacesCluster(None, silent=True) is None
     assert CellComplex.ByWires(None) is None
     assert CellComplex.ByWires([]) is None

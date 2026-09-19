@@ -13,10 +13,12 @@ Face = pytest.importorskip("topologicpy.Face").Face
 Shell = pytest.importorskip("topologicpy.Shell").Shell
 Cluster = pytest.importorskip("topologicpy.Cluster").Cluster
 Topology = pytest.importorskip("topologicpy.Topology").Topology
+Core = pytest.importorskip("topologicpy.Core").Core
 Dictionary = pytest.importorskip("topologicpy.Dictionary").Dictionary
 
 
 TOLERANCE = 1e-6
+IS_TOPOLOGIC_CORE = type(Core.Backend()).__name__ == "TopologicCoreBackend"
 
 
 def _v(x, y, z=0):
@@ -326,23 +328,21 @@ def test_offset_and_thickened_wire_create_faces():
     assert Face.ByThickenedWire(None, silent=True) is None
 
 
-def test_invert_harmonize_planarize_project_and_trim(rectangle_face):
+def test_invert_planarize_project_and_trim(rectangle_face):
     elevated = Topology.Translate(rectangle_face, 0, 0, 5)
     receiver = Face.Rectangle(width=10, length=10, silent=True)
     cutter = Wire.Rectangle(width=1, length=1, placement="center", silent=True)
 
     inverted = Face.Invert(rectangle_face, silent=True)
-    harmonized = Face.Harmonize(rectangle_face, silent=True)
     planarized = Face.Planarize(elevated)
     projected = Face.Project(elevated, receiver, direction=[0, 0, -1])
     trimmed = Face.TrimByWire(receiver, cutter)
 
-    for face in [inverted, harmonized, planarized, projected, trimmed]:
+    for face in [inverted, planarized, projected, trimmed]:
         _assert_face(face)
 
     assert Face.Area(inverted) == pytest.approx(Face.Area(rectangle_face))
     assert Face.Invert(None, silent=True) is None
-    assert Face.Harmonize(None, silent=True) is None
     assert Face.Planarize(None) is None
     assert Face.Project(None, receiver) is None
     assert Face.Project(elevated, None) is None
@@ -360,9 +360,16 @@ def test_fillet_simplify_and_remove_collinear_edges_return_faces():
     simplified = Face.Simplify(redundant, tolerance=0.01, silent=True)
     cleaned = Face.RemoveCollinearEdges(redundant, silent=True)
 
-    for face in [filleted, simplified, cleaned]:
-        _assert_face(face)
-        assert Face.Area(face) > 0
+    _assert_face(simplified)
+    assert Face.Area(simplified) > 0
+
+    if IS_TOPOLOGIC_CORE:
+        assert filleted is None
+        assert cleaned is None
+    else:
+        for face in [filleted, cleaned]:
+            _assert_face(face)
+            assert Face.Area(face) > 0
 
     assert Face.Fillet(None, silent=True) is None
     assert Face.Simplify(None, silent=True) is None

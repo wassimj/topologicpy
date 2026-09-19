@@ -41,12 +41,19 @@ class Plotly:
 
     @staticmethod
     def _color_to_hex(value, default="rgba(0,0,0,0)"):
-        """Converts a TopologicPy colour input to a Plotly-compatible colour string."""
+        """Returns a Plotly-compatible colour while preserving alpha-bearing strings."""
+        if value is None:
+            value = default
+        # Plotly already accepts CSS/named/hex/rgb/rgba/hsl/hsla strings. Returning
+        # them unchanged is important because Color.AnyToHex intentionally drops alpha.
+        if isinstance(value, str) and value.strip():
+            return value.strip()
         try:
             from topologicpy.Color import Color
-            return Color.AnyToHex(value)
+            result = Color.AnyToHex(value, silent=True)
+            return result if isinstance(result, str) and result else default
         except Exception:
-            return value if isinstance(value, str) and value else default
+            return default
 
 
     @staticmethod
@@ -82,13 +89,22 @@ class Plotly:
             return {}
 
     @staticmethod
-    def _format_hover(dictionary=None, label=None, fallback=""):
-        """Creates stable HTML hover text from a source topology dictionary."""
+    def _format_hover(dictionary=None, label=None, fallback="", labelKey=None, excludeKeys=None):
+        """Creates concise, HTML-safe hover text from a topology dictionary.
+
+        The heading is shown once. The key used as the heading and visual-style keys
+        supplied in ``excludeKeys`` are omitted from the body, preventing the common
+        duplicate-label and implementation-detail hover output.
+        """
         import html
 
         data = Plotly._dictionary_python(dictionary)
-        lines = []
+        excluded = {str(k) for k in (excludeKeys or []) if k is not None}
+        if labelKey is not None:
+            excluded.add(str(labelKey))
+
         heading = label if label not in (None, "") else fallback
+        lines = []
         if heading not in (None, ""):
             lines.append("<b>" + html.escape(str(heading)) + "</b>")
 
@@ -99,18 +115,24 @@ class Plotly:
                 return ", ".join(str(v) for v in value)
             return str(value)
 
-        for key in sorted(data.keys(), key=lambda value: str(value)):
+        for key in sorted(data.keys(), key=lambda value: str(value).lower()):
             try:
+                key_text = str(key)
+                if key_text.startswith("_") or key_text in excluded:
+                    continue
                 value = data[key]
-                if value is None:
+                if value is None or value == "":
                     continue
                 lines.append(
-                    "<b>" + html.escape(str(key)) + ":</b> " +
+                    "<b>" + html.escape(key_text) + ":</b> " +
                     html.escape(format_value(value))
                 )
             except Exception:
                 continue
-        return "<br>".join(lines) if lines else html.escape(str(fallback or ""))
+
+        if lines:
+            return "<br>".join(lines)
+        return html.escape(str(fallback or ""))
 
     @staticmethod
     def _vertex_coordinates(vertex, mantissa=6):
@@ -309,13 +331,12 @@ class Plotly:
 
     @staticmethod
     def _face_render_mesh(face, quality="medium", mantissa=6, tolerance=0.0001):
-        """
-        Returns a Plotly-ready triangular render mesh for a Face.
+        """Returns a Plotly-ready triangular render mesh for a Face.
 
-        The preferred path is Topology.Tessellate, which tessellates the actual
-        OCCT BRep under PythonOCC and therefore respects curved/NURBS surfaces and
-        trimmed boundaries. A conservative Face.Triangulate fallback is retained
-        for backend compatibility.
+        The preferred path is ``Topology.Tessellate`` so curved and NURBS faces are
+        rendered from their actual supporting geometry. Polygonal tessellation cells
+        with more than three indices are triangulated as a fan instead of silently
+        discarding all indices after the first three.
         """
         from topologicpy.Face import Face
         from topologicpy.Topology import Topology
@@ -324,13 +345,14 @@ class Plotly:
             return None
 
         try:
+            tolerance = max(abs(float(tolerance)), 1.0e-12)
+        except Exception:
+            tolerance = 0.0001
+
+        try:
             mesh = Topology.Tessellate(
-                face,
-                quality=quality,
-                weld=True,
-                remesh=True,
-                mantissa=mantissa,
-                silent=True,
+                face, quality=quality, weld=True, remesh=True,
+                mantissa=mantissa, silent=True,
             )
         except TypeError:
             try:
@@ -341,12 +363,36 @@ class Plotly:
             mesh = None
 
         if isinstance(mesh, dict):
-            vertices = mesh.get("vertices", mesh.get("verts", []))
-            faces = mesh.get("faces", mesh.get("tris", []))
-            if isinstance(vertices, list) and isinstance(faces, list) and vertices and faces:
-                triangles = [list(f[:3]) for f in faces if isinstance(f, (list, tuple)) and len(f) >= 3]
-                if triangles:
-                    return {"vertices": vertices, "faces": triangles}
+            raw_vertices = mesh.get("vertices", mesh.get("verts", []))
+            raw_faces = mesh.get("faces", mesh.get("tris", []))
+            if isinstance(raw_vertices, (list, tuple)) and isinstance(raw_faces, (list, tuple)) and raw_vertices and raw_faces:
+                vertices = []
+                valid = True
+                for vertex in raw_vertices:
+                    try:
+                        vertices.append([float(vertex[0]), float(vertex[1]), float(vertex[2])])
+                    except Exception:
+                        valid = False
+                        break
+                if valid:
+                    triangles = []
+                    n_vertices = len(vertices)
+                    for polygon in raw_faces:
+                        if not isinstance(polygon, (list, tuple)) or len(polygon) < 3:
+                            continue
+                        try:
+                            indices = [int(i) for i in polygon]
+                        except Exception:
+                            continue
+                        if any(i < 0 or i >= n_vertices for i in indices):
+                            continue
+                        a = indices[0]
+                        for k in range(1, len(indices) - 1):
+                            b, c = indices[k], indices[k + 1]
+                            if a != b and b != c and c != a:
+                                triangles.append([a, b, c])
+                    if triangles:
+                        return {"vertices": vertices, "faces": triangles}
 
         try:
             triangles = Face.Triangulate(face, tolerance=tolerance, silent=True)
@@ -361,8 +407,7 @@ class Plotly:
         if not isinstance(triangles, list):
             return None
 
-        vertices = []
-        faces = []
+        vertices, faces = [], []
         for triangle in triangles:
             try:
                 tv = Topology.Vertices(triangle, silent=True) or []
@@ -371,73 +416,58 @@ class Plotly:
                     tv = Topology.Vertices(triangle) or []
                 except Exception:
                     tv = []
+            except Exception:
+                tv = []
             if len(tv) < 3:
                 continue
-            coords = [Plotly._vertex_coordinates(v, mantissa=mantissa) for v in tv[:3]]
-            if any(c is None for c in coords):
+            coords = [Plotly._vertex_coordinates(v, mantissa=mantissa) for v in tv]
+            coords = [c for c in coords if c is not None]
+            if len(coords) < 3:
                 continue
             base = len(vertices)
             vertices.extend(coords)
-            faces.append([base, base + 1, base + 2])
+            for k in range(1, len(coords) - 1):
+                faces.append([base, base + k, base + k + 1])
         return {"vertices": vertices, "faces": faces} if faces else None
 
     @staticmethod
     def AddColorBar(figure, values=None, nTicks=5, xPosition=-0.15, width=15,
                     outlineWidth=0, title="", subTitle="", units="",
                     colorScale="viridis", mantissa: int = 6):
-        """
-        Adds a scalar colour bar to a Plotly figure without adding visible data.
+        """Adds an independent scalar colour bar to a Plotly figure."""
+        import math
 
-        Parameters
-        ----------
-        figure : plotly.graph_objs._figure.Figure
-            The input Plotly figure.
-        values : list, optional
-            Numeric values used to derive the colour-bar range. If omitted or
-            empty, the method returns the input figure unchanged.
-        nTicks : int, optional
-            Number of tick labels to draw. Values below 2 are clamped to 2.
-        xPosition : float, optional
-            Horizontal colour-bar position in Plotly paper coordinates.
-        width : int, optional
-            Colour-bar thickness in pixels.
-        outlineWidth : int, optional
-            Colour-bar outline width in pixels.
-        title, subTitle, units : str, optional
-            Text displayed above the colour bar.
-        colorScale : str, optional
-            Plotly colour scale name or one of TopologicPy's colour-blind
-            friendly aliases: protanopia, deuteranopia, tritanopia.
-        mantissa : int, optional
-            Number of decimal places used for tick labels.
-
-        Returns
-        -------
-        plotly.graph_objects.Figure or None
-            The updated figure, or None if the input is not a Plotly figure.
-        """
-        if not Plotly._plotly_available(silent=True):
+        if not Plotly._plotly_available(silent=True) or not isinstance(figure, go.Figure):
             return None
-        try:
-            figure_class = go.Figure
-        except Exception:
-            return None
-        if not isinstance(figure, figure_class):
-            return None
-
         if values is None:
+            return figure
+        if isinstance(values, (int, float)):
+            values = [values]
+        try:
+            iterator = list(values)
+        except Exception:
             return figure
 
         clean_values = []
-        for value in values:
+        for value in iterator:
             try:
-                clean_values.append(float(value))
+                number = float(value)
+                if math.isfinite(number):
+                    clean_values.append(number)
             except Exception:
-                pass
+                continue
         if not clean_values:
             return figure
 
-        nTicks = max(2, int(nTicks or 2))
+        try:
+            nTicks = max(2, int(nTicks))
+        except Exception:
+            nTicks = 5
+        try:
+            mantissa = max(0, int(mantissa))
+        except Exception:
+            mantissa = 6
+
         minValue = min(clean_values)
         maxValue = max(clean_values)
         if maxValue == minValue:
@@ -446,7 +476,6 @@ class Plotly:
             step = (maxValue - minValue) / float(nTicks - 1)
             tickvals = [round(minValue + i * step, mantissa) for i in range(nTicks)]
             tickvals[-1] = round(maxValue, mantissa)
-        ticktext = [str(x) for x in tickvals]
 
         title_parts = []
         if title:
@@ -455,36 +484,29 @@ class Plotly:
             title_parts.append(str(subTitle))
         if units:
             title_parts.append("Units: " + str(units))
-        colorbar_title = "<br>".join(title_parts)
 
-        # Use a marker with transparent colour and no visible size. This is the
-        # lightest reliable way to attach an independent colour bar to a figure.
-        colorbar_trace = go.Scatter(
-            x=[None],
-            y=[None],
-            mode="markers",
-            showlegend=False,
-            hoverinfo="skip",
+        figure.add_trace(go.Scatter(
+            x=[None], y=[None], mode="markers", showlegend=False, hoverinfo="skip",
             marker=dict(
                 size=0,
+                color=[minValue],
                 colorscale=Plotly.ColorScale(colorScale),
                 cmin=minValue,
-                cmax=maxValue,
-                color=[minValue],
+                cmax=maxValue if maxValue != minValue else minValue + 1.0,
                 opacity=0,
+                showscale=True,
                 colorbar=dict(
-                    x=xPosition,
-                    title=colorbar_title,
+                    x=float(xPosition),
+                    title=dict(text="<br>".join(title_parts)),
                     ticks="outside",
                     tickvals=tickvals,
-                    ticktext=ticktext,
+                    ticktext=[str(x) for x in tickvals],
                     tickmode="array",
-                    thickness=width,
-                    outlinewidth=outlineWidth,
+                    thickness=max(1, int(width)),
+                    outlinewidth=max(0, int(outlineWidth)),
                 ),
             ),
-        )
-        figure.add_trace(colorbar_trace)
+        ))
         return figure
     
     @staticmethod
@@ -550,58 +572,30 @@ class Plotly:
 
     @staticmethod
     def ColorScale(colorScale: str = "viridis"):
-        
-        # Colors recommended by various sources for color-blind-friendly palettes
-        protanopia_colors = [
-            "#E69F00", # orange
-            "#56B4E9", # sky blue
-            "#009E73", # bluish green
-            "#F0E442", # yellow
-            "#0072B2", # blue
-            "#D55E00", # vermillion
-            "#CC79A7", # reddish purple
-        ]
+        """Returns a Plotly colorscale or a TopologicPy colour-blind-friendly scale."""
+        protanopia_colors = ["#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7"]
+        deuteranopia_colors = ["#377EB8", "#FF7F00", "#4DAF4A", "#F781BF", "#A65628", "#984EA3", "#999999"]
+        tritanopia_colors = ["#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7"]
 
-        deuteranopia_colors = [
-            "#377EB8", # blue
-            "#FF7F00", # orange
-            "#4DAF4A", # green
-            "#F781BF", # pink
-            "#A65628", # brown
-            "#984EA3", # purple
-            "#999999", # grey
-        ]
-
-        tritanopia_colors = [
-            "#E69F00", # orange
-            "#56B4E9", # sky blue
-            "#009E73", # bluish green
-            "#F0E442", # yellow
-            "#0072B2", # blue
-            "#D55E00", # vermillion
-            "#CC79A7", # reddish purple
-        ]
-
-        # Create colorscales for Plotly
         def create_colorscale(colors):
-            colorscale = []
-            num_colors = len(colors)
-            for i, color in enumerate(colors):
-                position = i / (num_colors - 1)
-                colorscale.append((position, color))
-            return colorscale
-        
-        if "prota" in colorScale.lower():
-            return create_colorscale(protanopia_colors)
-        elif "deutera" in colorScale.lower():
-            return create_colorscale(deuteranopia_colors)
-        elif "trita"in colorScale.lower():
-            return create_colorscale(tritanopia_colors)
-        else:
-            return colorScale
-    
-    @staticmethod
+            if len(colors) == 1:
+                return [[0.0, colors[0]], [1.0, colors[0]]]
+            return [[i / float(len(colors) - 1), color] for i, color in enumerate(colors)]
 
+        if colorScale is None:
+            return "viridis"
+        if isinstance(colorScale, (list, tuple)):
+            return list(colorScale)
+        name = str(colorScale).strip()
+        lower = name.lower()
+        if "prota" in lower:
+            return create_colorscale(protanopia_colors)
+        if "deutera" in lower:
+            return create_colorscale(deuteranopia_colors)
+        if "trita" in lower:
+            return create_colorscale(tritanopia_colors)
+        return name or "viridis"
+    
     @staticmethod
     def DataByGraph(graph,
                     sagitta: float = 0,
@@ -621,7 +615,7 @@ class Plotly:
                     vertexBorderColorKey: str = None,
                     vertexBorderWidthKey: float = None,
                     vertexGroupKey: str = None,
-                    vertexGroups: list = [],
+                    vertexGroups: list = None,
                     vertexMinGroup=None,
                     vertexMaxGroup=None,
                     showVertices: bool = True,
@@ -639,7 +633,7 @@ class Plotly:
                     edgeDashKey: str = None,
                     edgeLabelKey: str = None,
                     edgeGroupKey: str = None,
-                    edgeGroups: list = [],
+                    edgeGroups: list = None,
                     edgeMinGroup=None,
                     edgeMaxGroup=None,
                     showEdges: bool = True,
@@ -894,23 +888,13 @@ class Plotly:
                 return d.get(alt, default)
             return default
 
-        def _format_hover_dict(d, fallback=""):
-            if not isinstance(d, dict) or not d:
-                return str(fallback)
-            parts = []
-            for k in sorted(d.keys(), key=lambda x: str(x)):
-                if str(k) in _INTERNAL_KEYS:
-                    continue
-                try:
-                    v = d[k]
-                    if isinstance(v, dict):
-                        v = "; ".join(f"{kk}: {vv}" for kk, vv in v.items())
-                    elif isinstance(v, (list, tuple, set)):
-                        v = ", ".join(str(x) for x in v)
-                    parts.append(f"{k}: {v}")
-                except Exception:
-                    pass
-            return "<br>".join(parts) if parts else str(fallback)
+        def _format_hover_dict(d, fallback="", label=None, label_key=None, exclude=None):
+            excluded = set(_INTERNAL_KEYS)
+            excluded.update(str(k) for k in (exclude or []) if k is not None)
+            return Plotly._format_hover(
+                d, label=label, fallback=fallback, labelKey=label_key,
+                excludeKeys=excluded,
+            )
 
         def _number(value, default):
             try:
@@ -1026,6 +1010,19 @@ class Plotly:
         vertex_records = TGraph.Vertices(graph, asTopologic=False, active=True) or []
         edge_records = TGraph.Edges(graph, asTopologic=False, active=True) or []
 
+        if vertexGroupKey is not None and not vertexGroups:
+            for record in vertex_records:
+                d = record.get("dictionary", {}) if isinstance(record, dict) else {}
+                value = _value(d, vertexGroupKey, None)
+                if value is not None and value not in vertexGroups:
+                    vertexGroups.append(value)
+        if edgeGroupKey is not None and not edgeGroups:
+            for record in edge_records:
+                d = record.get("dictionary", {}) if isinstance(record, dict) else {}
+                value = _value(d, edgeGroupKey, None)
+                if value is not None and value not in edgeGroups:
+                    edgeGroups.append(value)
+
         coords_by_index = {}
         fallback_n = max(1, len(vertex_records))
         for i, record in enumerate(vertex_records):
@@ -1118,6 +1115,7 @@ class Plotly:
         if showEdges:
             edge_buckets = {}
             arrow_buckets = {}
+            self_loop_markers = {"x": [], "y": [], "z": [], "color": [], "hover": []}
             label_x, label_y, label_z, label_text, label_color = [], [], [], [], []
             for record in edge_records:
                 d = record.get("dictionary", {}) if isinstance(record, dict) else {}
@@ -1139,8 +1137,18 @@ class Plotly:
                     x, y, z = _solid_xyz(points)
                 bucket["x"].extend(x); bucket["y"].extend(y); bucket["z"].extend(z)
                 edge_label = _label(d, edgeLabelKey, "")
-                edge_hover = edge_label if edge_label else _format_hover_dict(d, fallback=f"edge {record.get('index', '')}")
+                edge_fallback = f"Edge {record.get('index', '')}"
+                edge_hover = _format_hover_dict(
+                    d, fallback=edge_fallback, label=edge_label or edge_fallback,
+                    label_key=edgeLabelKey,
+                    exclude=[edgeColorKey, edgeWidthKey, edgeDashKey, arrowSizeKey, edgeGroupKey],
+                )
                 bucket["text"].extend([edge_hover] * len(x))
+                if record.get("src") == record.get("dst") and float(selfLoopVertexSize or 0) > 0:
+                    anchor = coords_by_index.get(record.get("src"))
+                    if anchor is not None:
+                        self_loop_markers["x"].append(anchor[0]); self_loop_markers["y"].append(anchor[1]); self_loop_markers["z"].append(anchor[2])
+                        self_loop_markers["color"].append(this_color); self_loop_markers["hover"].append(edge_hover)
                 if showEdgeLabel and edgeLabelKey is not None and edge_label:
                     mp = points[len(points)//2]
                     label_x.append(mp[0]); label_y.append(mp[1]); label_z.append(mp[2]); label_text.append(edge_label); label_color.append(this_color)
@@ -1161,18 +1169,28 @@ class Plotly:
                 data.append(go.Scatter3d(x=bucket["x"], y=bucket["y"], z=bucket["z"], mode="lines",
                                          line=dict(color=this_color, width=this_width), name=edgeLegendLabel,
                                          legendgroup=str(edgeLegendGroup), legendrank=edgeLegendRank,
-                                         showlegend=bool(showEdgeLegend and first), hoverinfo="text",
-                                         hovertext=bucket["text"]))
+                                         showlegend=bool(showEdgeLegend and first),
+                                         hovertext=bucket["text"],
+                                         hovertemplate="%{hovertext}<extra></extra>",
+                                         hoverlabel=dict(align="left", namelength=-1)))
                 first = False
             if showEdgeLabel and label_text:
                 data.append(go.Scatter3d(x=label_x, y=label_y, z=label_z, mode="text", text=label_text,
-                                         textfont=dict(size=10), showlegend=False, hoverinfo="skip"))
+                                         textfont=dict(size=max(1, int(edgeLabelFontSize))),
+                                         showlegend=False, hoverinfo="skip"))
             for (this_color, this_arrow_size), bucket in arrow_buckets.items():
                 data.append(go.Cone(x=bucket["x"], y=bucket["y"], z=bucket["z"],
                                     u=bucket["u"], v=bucket["v"], w=bucket["w"],
                                     sizemode="absolute", sizeref=this_arrow_size, anchor="tip",
                                     showscale=False, colorscale=[[0, this_color], [1, this_color]],
                                     showlegend=False, hoverinfo="skip"))
+            if self_loop_markers["x"]:
+                data.append(go.Scatter3d(
+                    x=self_loop_markers["x"], y=self_loop_markers["y"], z=self_loop_markers["z"],
+                    mode="markers", marker=dict(size=max(0.1, float(selfLoopVertexSize)), color=self_loop_markers["color"]),
+                    hovertext=self_loop_markers["hover"], hovertemplate="%{hovertext}<extra></extra>",
+                    hoverlabel=dict(align="left", namelength=-1), showlegend=False,
+                ))
 
         if showVertices and vertex_records:
             vertex_items = []
@@ -1190,7 +1208,12 @@ class Plotly:
                 vertex_items.append({
                     "x": c[0], "y": c[1], "z": c[2],
                     "label": _label(d, vertexLabelKey, str(idx) if vertexLabelKey is None else ""),
-                    "hover": _format_hover_dict(d, fallback=str(idx)),
+                    "hover": _format_hover_dict(
+                        d, fallback=f"Vertex {idx}",
+                        label=_label(d, vertexLabelKey, f"Vertex {idx}"),
+                        label_key=vertexLabelKey,
+                        exclude=[vertexColorKey, vertexSizeKey, vertexShapeKey, vertexBorderColorKey, vertexBorderWidthKey, vertexGroupKey],
+                    ),
                     "color": this_color,
                     "size": _number(_value(d, vertexSizeKey, None), vertexSize),
                     "symbol": _plotly_symbol(_value(d, vertexShapeKey, vertexShape)),
@@ -1204,7 +1227,8 @@ class Plotly:
                     marker=dict(size=[i["size"] for i in vertex_items], color=[i["color"] for i in vertex_items],
                                 symbol=[i["symbol"] for i in vertex_items], line=dict(color=vertexBorderColor, width=vertexBorderWidth)),
                     text=[i["label"] for i in vertex_items] if showVertexLabel else None,
-                    textfont=dict(size=vertexLabelFontSize), hoverinfo="text", hovertext=[i["hover"] for i in vertex_items],
+                    textfont=dict(size=vertexLabelFontSize), hovertext=[i["hover"] for i in vertex_items],
+                    hovertemplate="%{hovertext}<extra></extra>", hoverlabel=dict(align="left", namelength=-1),
                     name=vertexLegendLabel, legendgroup=str(vertexLegendGroup), legendrank=vertexLegendRank,
                     showlegend=showVertexLegend))
             elif vertex_items:
@@ -1219,7 +1243,8 @@ class Plotly:
                         marker=dict(size=[i["size"] for i in items], color=[i["color"] for i in items], symbol=symbol,
                                     line=dict(color=border_color, width=border_width)),
                         text=[i["label"] for i in items] if showVertexLabel else None,
-                        textfont=dict(size=vertexLabelFontSize), hoverinfo="text", hovertext=[i["hover"] for i in items],
+                        textfont=dict(size=vertexLabelFontSize), hovertext=[i["hover"] for i in items],
+                        hovertemplate="%{hovertext}<extra></extra>", hoverlabel=dict(align="left", namelength=-1),
                         name=vertexLegendLabel, legendgroup=str(vertexLegendGroup), legendrank=vertexLegendRank,
                         showlegend=bool(showVertexLegend and first)))
                     first = False
@@ -1536,23 +1561,13 @@ class Plotly:
             "relationship_predicate", "relationshipPredicate",
         }
 
-        def _hover(d):
+        def _hover(d, label=None, label_key=None, fallback=""):
             if not hover:
                 return ""
-            parts = []
-            for k in sorted(d.keys(), key=lambda x: str(x)):
-                if str(k) in _INTERNAL_PROOF_KEYS:
-                    continue
-                try:
-                    v = d[k]
-                    if isinstance(v, (list, tuple, set)):
-                        v = ", ".join(str(x) for x in v)
-                    elif isinstance(v, dict):
-                        v = "; ".join(f"{kk}: {vv}" for kk, vv in v.items())
-                    parts.append(f"<b>{k}</b>: {v}")
-                except Exception:
-                    pass
-            return "<br>".join(parts)
+            return Plotly._format_hover(
+                d, label=label, fallback=fallback, labelKey=label_key,
+                excludeKeys=_INTERNAL_PROOF_KEYS,
+            )
 
         node_palette = {
             "conclusion": "#D55E00",
@@ -1800,7 +1815,8 @@ class Plotly:
                 bucket["y"].extend([c1[1], c2[1], None])
                 bucket["z"].extend([c1[2], c2[2], None])
                 elabel = _display_label(e, edgeLabelKey, e.get("role", ""))
-                bucket["text"].extend([elabel, elabel, None])
+                ehover = _hover(e, label=elabel or "Proof dependency", label_key=edgeLabelKey, fallback="Proof dependency")
+                bucket["text"].extend([ehover, ehover, None])
                 if showEdgeLabel and elabel:
                     label_x.append((c1[0] + c2[0]) * 0.5)
                     label_y.append((c1[1] + c2[1]) * 0.5)
@@ -1813,8 +1829,10 @@ class Plotly:
                     x=bucket["x"], y=bucket["y"], z=bucket["z"],
                     mode="lines",
                     line=dict(color=this_color, width=this_width),
-                    hoverinfo="text" if hover else "skip",
+                    hoverinfo="skip" if not hover else None,
                     hovertext=bucket["text"],
+                    hovertemplate="%{hovertext}<extra></extra>" if hover else None,
+                    hoverlabel=dict(align="left", namelength=-1),
                     name="Proof dependencies",
                     legendgroup="proof_edges",
                     showlegend=bool(showLegend and first),
@@ -1847,8 +1865,9 @@ class Plotly:
                 for d in items:
                     c = coords[d["id"]]
                     xs.append(c[0]); ys.append(c[1]); zs.append(c[2])
-                    labels.append(_display_label(d, nodeLabelKey, d["id"]))
-                    hovers.append(_hover(d))
+                    this_label = _display_label(d, nodeLabelKey, d["id"])
+                    labels.append(this_label)
+                    hovers.append(_hover(d, label=this_label, label_key=nodeLabelKey, fallback=str(d["id"])))
                     sizes.append(_node_size(d))
                 traces.append(go.Scatter3d(
                     x=xs, y=ys, z=zs,
@@ -1862,8 +1881,10 @@ class Plotly:
                     text=labels if showNodeLabel else None,
                     textposition="top center",
                     textfont=dict(size=10),
-                    hoverinfo="text" if hover else "skip",
+                    hoverinfo="skip" if not hover else None,
                     hovertext=hovers,
+                    hovertemplate="%{hovertext}<extra></extra>" if hover else None,
+                    hoverlabel=dict(align="left", namelength=-1),
                     name=ntype.replace("_", " ").title(),
                     legendgroup="proof_nodes_" + ntype,
                     showlegend=showLegend,
@@ -2076,31 +2097,14 @@ class Plotly:
 
 
     @staticmethod
-
-    @staticmethod
-    def vertexData(vertices,
-                   dictionaries=None,
-                   color="black",
-                   colorKey=None,
-                   size=1.1,
-                   sizeKey=None,
-                   borderColor="black",
-                   borderWidth=0,
-                   borderColorKey=None,
-                   borderWidthKey=None,
-                   labelKey=None,
-                   showVertexLabel=False,
-                   vertexLabelFontSize=5,
-                   groupKey=None,
-                   minGroup=None,
-                   maxGroup=None,
-                   groups=None,
-                   legendLabel="Topology Vertices",
-                   legendGroup=1,
-                   legendRank=1,
-                   showLegend=True,
-                   colorScale="Viridis"):
-        """Creates Plotly vertex traces with source-correct labels and hover text."""
+    def vertexData(vertices, dictionaries=None, color="black", colorKey=None,
+                   size=1.1, sizeKey=None, borderColor="black", borderWidth=0,
+                   borderColorKey=None, borderWidthKey=None, labelKey=None,
+                   showVertexLabel=False, vertexLabelFontSize=5, groupKey=None,
+                   minGroup=None, maxGroup=None, groups=None,
+                   legendLabel="Topology Vertices", legendGroup=1, legendRank=1,
+                   showLegend=True, colorScale="Viridis"):
+        """Creates Plotly vertex traces with source-correct labels, styles, and hover text."""
         from topologicpy.Color import Color
 
         if not vertices:
@@ -2110,50 +2114,63 @@ class Plotly:
 
         def as_float(value, default):
             try:
-                return float(value)
+                number = float(value)
+                return number if number == number else default
             except Exception:
                 return default
 
         def as_hex(value, default="black"):
+            return Plotly._color_to_hex(value, Plotly._color_to_hex(default, "black"))
+
+        observed_groups = []
+        if groupKey is not None:
+            for d in dictionaries:
+                value = Plotly._dictionary_value(d, groupKey, None)
+                if value is not None and value not in observed_groups:
+                    observed_groups.append(value)
+        domain = groups if groups else observed_groups
+        numeric_domain = []
+        numeric = bool(domain)
+        for item in domain:
             try:
-                return Color.AnyToHex(value)
+                numeric_domain.append(float(item))
             except Exception:
-                try:
-                    return Color.AnyToHex(default)
-                except Exception:
-                    return default
+                numeric = False
+                break
 
         def group_color(value, default):
             if value is None:
                 return default
-            try:
-                numeric = float(value)
-                numeric_groups = []
-                for item in groups:
-                    try:
-                        numeric_groups.append(float(item))
-                    except Exception:
-                        pass
-                lo = float(minGroup) if minGroup is not None else (min(numeric_groups) if numeric_groups else 0.0)
-                hi = float(maxGroup) if maxGroup is not None else (max(numeric_groups) if numeric_groups else 1.0)
-                numeric = max(lo, min(hi, numeric))
-                return as_hex(Color.ByValueInRange(numeric, minValue=lo, maxValue=hi, colorScale=colorScale), default)
-            except Exception:
-                pass
-            if groups and value in groups:
-                lo = 0 if minGroup is None else minGroup
-                hi = max(len(groups)-1, 1) if maxGroup is None else maxGroup
-                return as_hex(Color.ByValueInRange(groups.index(value), minValue=lo, maxValue=hi, colorScale=colorScale), default)
+            if numeric:
+                try:
+                    number = float(value)
+                    lo = float(minGroup) if minGroup is not None else min(numeric_domain)
+                    hi = float(maxGroup) if maxGroup is not None else max(numeric_domain)
+                    if hi < lo:
+                        lo, hi = hi, lo
+                    if abs(hi - lo) <= 1.0e-15:
+                        mapped = Color.ByValueInRange(0.5, minValue=0.0, maxValue=1.0, colorScale=colorScale)
+                    else:
+                        mapped = Color.ByValueInRange(max(lo, min(hi, number)), minValue=lo, maxValue=hi, colorScale=colorScale)
+                    return as_hex(mapped, default)
+                except Exception:
+                    return default
+            categorical = domain
+            if categorical and value in categorical:
+                index = categorical.index(value)
+                hi = max(len(categorical) - 1, 1)
+                return as_hex(Color.ByValueInRange(index, minValue=0, maxValue=hi, colorScale=colorScale), default)
             return default
 
         x, y, z = [], [], []
         sizes, labels, hovertexts, colors = [], [], [], []
-        border_colors, border_sizes = [], []
+        border_colors, border_sizes, border_widths = [], [], []
         default_color = as_hex(color)
         default_border = as_hex(borderColor)
         default_size = max(as_float(size, 1.1), 0.1)
         default_border_width = max(as_float(borderWidth, 0.0), 0.0)
         digits = len(str(max(1, len(vertices))))
+        exclude = [colorKey, sizeKey, borderColorKey, borderWidthKey, groupKey]
 
         for index, vertex in enumerate(vertices):
             try:
@@ -2161,10 +2178,10 @@ class Plotly:
             except Exception:
                 continue
             d = dictionaries[index] if index < len(dictionaries) else None
-            fallback = "Vertex_" + str(index + 1).zfill(digits)
+            fallback = "Vertex " + str(index + 1).zfill(digits)
             label_value = Plotly._dictionary_value(d, labelKey, None) if labelKey else None
             label = fallback if label_value in (None, "") else str(label_value)
-            hover = Plotly._format_hover(d, label=label, fallback=fallback)
+            hover = Plotly._format_hover(d, label=label, fallback=fallback, labelKey=labelKey, excludeKeys=exclude)
 
             this_size = max(as_float(Plotly._dictionary_value(d, sizeKey, default_size), default_size), 0.1) if sizeKey else default_size
             this_color = as_hex(Plotly._dictionary_value(d, colorKey, default_color), default_color) if colorKey else default_color
@@ -2175,14 +2192,14 @@ class Plotly:
 
             x.append(point[0]); y.append(point[1]); z.append(point[2])
             labels.append(label); hovertexts.append(hover); sizes.append(this_size); colors.append(this_color)
-            border_colors.append(this_border)
-            border_sizes.append(this_size + this_border_width * 2.0 if this_border_width > 0 else 0)
+            border_colors.append(this_border); border_widths.append(this_border_width)
+            border_sizes.append(this_size + this_border_width * 2.0 if this_border_width > 0 else 0.0)
 
         if not x:
             return []
 
         traces = []
-        if default_border_width > 0 or borderWidthKey:
+        if any(w > 0 for w in border_widths):
             traces.append(go.Scatter3d(
                 x=x, y=y, z=z, mode="markers",
                 marker=dict(color=border_colors, size=border_sizes, symbol="circle", opacity=1, line=dict(width=0), sizemode="diameter"),
@@ -2194,19 +2211,15 @@ class Plotly:
             x=x, y=y, z=z,
             mode="markers+text" if showVertexLabel else "markers",
             marker=dict(color=colors, size=sizes, symbol="circle", opacity=1, line=dict(width=0), sizemode="diameter"),
-            name=legendLabel,
-            showlegend=showLegend,
-            legendgroup=str(legendGroup),
-            legendrank=legendRank,
+            name=legendLabel, showlegend=bool(showLegend),
+            legendgroup=str(legendGroup), legendrank=legendRank,
             text=labels if showVertexLabel else None,
-            textfont=dict(size=vertexLabelFontSize),
-            customdata=labels,
+            textfont=dict(size=max(1, int(vertexLabelFontSize))),
             hovertext=hovertexts,
             hovertemplate="%{hovertext}<extra></extra>",
+            hoverlabel=dict(align="left", namelength=-1),
         ))
         return traces
-
-    @staticmethod
 
     @staticmethod
     def edgeData(vertices, edges, dictionaries=None, color="black", colorKey=None,
@@ -2215,15 +2228,7 @@ class Plotly:
                  showEdgeLabel=False, groupKey=None, minGroup=None, maxGroup=None,
                  groups=None, legendLabel="Topology Edges", legendGroup=2,
                  legendRank=2, showLegend=True, colorScale="Viridis"):
-        """
-        Creates Plotly line traces from indexed edge polylines.
-
-        Each item in ``edges`` may contain two indices (a straight segment) or
-        any number of indices (a sampled curved Edge). One source dictionary is
-        associated with one item in ``edges``, so labels, hover text, style, and
-        arrow direction remain attached to the original Topologic Edge rather
-        than to generated render segments.
-        """
+        """Creates Plotly line traces from indexed straight or sampled curved edges."""
         import math
         from topologicpy.Color import Color
 
@@ -2234,7 +2239,8 @@ class Plotly:
 
         def as_float(value, default):
             try:
-                return float(value)
+                number = float(value)
+                return number if math.isfinite(number) else default
             except Exception:
                 return default
 
@@ -2244,39 +2250,49 @@ class Plotly:
             if isinstance(value, (int, float)):
                 return bool(value)
             if isinstance(value, str):
-                return value.strip().lower() in ("true", "1", "yes", "y", "t")
+                return value.strip().lower() in ("true", "1", "yes", "y", "t", "on")
             return default
 
         def as_hex(value, default="black"):
+            return Plotly._color_to_hex(value, Plotly._color_to_hex(default, "black"))
+
+        observed_groups = []
+        if groupKey is not None:
+            for d in dictionaries:
+                value = Plotly._dictionary_value(d, groupKey, None)
+                if value is not None and value not in observed_groups:
+                    observed_groups.append(value)
+        domain = groups if groups else observed_groups
+        numeric_domain = []
+        numeric = bool(domain)
+        for item in domain:
             try:
-                return Color.AnyToHex(value)
+                numeric_domain.append(float(item))
             except Exception:
-                try:
-                    return Color.AnyToHex(default)
-                except Exception:
-                    return default
+                numeric = False
+                break
 
         def group_color(value, default):
             if value is None:
                 return default
-            try:
-                numeric = float(value)
-                numeric_groups = []
-                for item in groups:
-                    try:
-                        numeric_groups.append(float(item))
-                    except Exception:
-                        pass
-                lo = float(minGroup) if minGroup is not None else (min(numeric_groups) if numeric_groups else 0.0)
-                hi = float(maxGroup) if maxGroup is not None else (max(numeric_groups) if numeric_groups else 1.0)
-                numeric = max(lo, min(hi, numeric))
-                return as_hex(Color.ByValueInRange(numeric, minValue=lo, maxValue=hi, colorScale=colorScale), default)
-            except Exception:
-                pass
-            if groups and value in groups:
-                lo = 0 if minGroup is None else minGroup
-                hi = max(len(groups)-1, 1) if maxGroup is None else maxGroup
-                return as_hex(Color.ByValueInRange(groups.index(value), minValue=lo, maxValue=hi, colorScale=colorScale), default)
+            if numeric:
+                try:
+                    number = float(value)
+                    lo = float(minGroup) if minGroup is not None else min(numeric_domain)
+                    hi = float(maxGroup) if maxGroup is not None else max(numeric_domain)
+                    if hi < lo:
+                        lo, hi = hi, lo
+                    if abs(hi - lo) <= 1.0e-15:
+                        mapped = Color.ByValueInRange(0.5, minValue=0.0, maxValue=1.0, colorScale=colorScale)
+                    else:
+                        mapped = Color.ByValueInRange(max(lo, min(hi, number)), minValue=lo, maxValue=hi, colorScale=colorScale)
+                    return as_hex(mapped, default)
+                except Exception:
+                    return default
+            if domain and value in domain:
+                index = domain.index(value)
+                hi = max(len(domain)-1, 1)
+                return as_hex(Color.ByValueInRange(index, minValue=0, maxValue=hi, colorScale=colorScale), default)
             return default
 
         def direction(points):
@@ -2287,11 +2303,11 @@ class Plotly:
                     return (u/length, v/length, w/length)
             return None
 
-        buckets = {}
-        arrow_buckets = {}
+        buckets, arrow_buckets = {}, {}
         label_x, label_y, label_z, label_text, label_hover = [], [], [], [], []
         default_color = as_hex(color)
         digits = len(str(max(1, len(edges))))
+        exclude = [colorKey, widthKey, dashKey, arrowSizeKey, groupKey]
 
         for index, edge in enumerate(edges):
             if not isinstance(edge, (list, tuple)) or len(edge) < 2:
@@ -2309,40 +2325,31 @@ class Plotly:
                 continue
 
             d = dictionaries[index] if index < len(dictionaries) else None
-            fallback = "Edge_" + str(index + 1).zfill(digits)
+            fallback = "Edge " + str(index + 1).zfill(digits)
             label_value = Plotly._dictionary_value(d, labelKey, None) if labelKey else None
             label = fallback if label_value in (None, "") else str(label_value)
-            hover = Plotly._format_hover(d, label=label, fallback=fallback)
+            hover = Plotly._format_hover(d, label=label, fallback=fallback, labelKey=labelKey, excludeKeys=exclude)
 
             this_color = as_hex(Plotly._dictionary_value(d, colorKey, default_color), default_color) if colorKey else default_color
             if groupKey is not None:
                 this_color = group_color(Plotly._dictionary_value(d, groupKey, None), this_color)
-            this_width = as_float(Plotly._dictionary_value(d, widthKey, width), width) if widthKey else as_float(width, 1.0)
+            this_width = max(0.1, as_float(Plotly._dictionary_value(d, widthKey, width), width) if widthKey else as_float(width, 1.0))
             this_dash = as_bool(Plotly._dictionary_value(d, dashKey, dash), dash) if dashKey else bool(dash)
-            this_arrow_size = as_float(Plotly._dictionary_value(d, arrowSizeKey, arrowSize), arrowSize) if arrowSizeKey else as_float(arrowSize, 0.1)
+            this_arrow_size = max(0.0, as_float(Plotly._dictionary_value(d, arrowSizeKey, arrowSize), arrowSize) if arrowSizeKey else as_float(arrowSize, 0.1))
 
             key = (this_color, this_width, this_dash)
             bucket = buckets.setdefault(key, {"x": [], "y": [], "z": [], "hover": []})
-            if this_dash:
-                for segment_index, (a, b) in enumerate(zip(points[:-1], points[1:])):
-                    if segment_index % 2 != 0:
-                        continue
-                    bucket["x"].extend([a[0], b[0], None])
-                    bucket["y"].extend([a[1], b[1], None])
-                    bucket["z"].extend([a[2], b[2], None])
-                    bucket["hover"].extend([hover, hover, None])
-            else:
-                bucket["x"].extend([p[0] for p in points] + [None])
-                bucket["y"].extend([p[1] for p in points] + [None])
-                bucket["z"].extend([p[2] for p in points] + [None])
-                bucket["hover"].extend([hover] * len(points) + [None])
+            bucket["x"].extend([p[0] for p in points] + [None])
+            bucket["y"].extend([p[1] for p in points] + [None])
+            bucket["z"].extend([p[2] for p in points] + [None])
+            bucket["hover"].extend([hover] * len(points) + [None])
 
             midpoint = Plotly._polyline_midpoint(points)
             if showEdgeLabel and midpoint is not None:
                 label_x.append(midpoint[0]); label_y.append(midpoint[1]); label_z.append(midpoint[2])
                 label_text.append(label); label_hover.append(hover)
 
-            if directed:
+            if directed and this_arrow_size > 0:
                 vector = direction(points)
                 if vector is not None:
                     end = points[-1]
@@ -2357,22 +2364,24 @@ class Plotly:
             traces.append(go.Scatter3d(
                 x=bucket["x"], y=bucket["y"], z=bucket["z"],
                 mode="lines+markers" if this_dash else "lines",
-                line=dict(color=this_color, width=this_width),
-                marker=dict(size=max(1.0, this_width * 0.25), color=this_color) if this_dash else None,
+                line=dict(color=this_color, width=this_width, dash="dash" if this_dash else "solid"),
+                marker=dict(
+                    color=this_color,
+                    size=max(1.0, float(this_width)),
+                    opacity=1 if this_dash else 0,
+                ),
                 name=legendLabel, showlegend=bool(showLegend and first),
                 legendgroup=str(legendGroup), legendrank=legendRank,
                 hovertext=bucket["hover"], hovertemplate="%{hovertext}<extra></extra>",
-                connectgaps=False,
+                hoverlabel=dict(align="left", namelength=-1), connectgaps=False,
             ))
             first = False
 
         if showEdgeLabel and label_text:
             traces.append(go.Scatter3d(
-                x=label_x, y=label_y, z=label_z,
-                mode="text", text=label_text,
-                textfont=dict(size=10),
-                hovertext=label_hover,
-                hovertemplate="%{hovertext}<extra></extra>",
+                x=label_x, y=label_y, z=label_z, mode="text", text=label_text,
+                textfont=dict(size=10), hovertext=label_hover,
+                hovertemplate="%{hovertext}<extra></extra>", hoverlabel=dict(align="left", namelength=-1),
                 showlegend=False,
             ))
 
@@ -2387,92 +2396,86 @@ class Plotly:
         return traces
 
     @staticmethod
-
-    @staticmethod
     def DataByTopology(topology,
-                    showVertices=True,
-                    vertexSize=2.8,
-                    vertexSizeKey=None,
-                    vertexColor="black",
-                    vertexColorKey=None,
-                    vertexLabelKey=None,
-                    vertexBorderColor: str = "black",
-                    vertexBorderWidth: float = 0,
-                    vertexBorderColorKey: str = None,
-                    vertexBorderWidthKey: float = None,
-                    showVertexLabel=False,
-                    vertexLabelFontSize=5,
-                    vertexGroupKey=None,
-                    vertexGroups=[],
-                    vertexMinGroup=None,
-                    vertexMaxGroup=None,
-                    showVertexLegend=False,
-                    vertexLegendLabel="Topology Vertices",
-                    vertexLegendRank=1,
-                    vertexLegendGroup=1,
-                    directed=False,
-                    arrowSize=0.1,
-                    arrowSizeKey=None,
-                    showEdges=True,
-                    edgeWidth=1,
-                    edgeWidthKey=None,
-                    edgeColor="black",
-                    edgeColorKey=None,
-                    edgeDash=False,
-                    edgeDashKey=None,
-                    edgeLabelKey=None,
-                    showEdgeLabel=False,
-                    edgeGroupKey=None,
-                    edgeGroups=[],
-                    edgeMinGroup=None,
-                    edgeMaxGroup=None,
-                    showEdgeLegend=False,
-                    edgeLegendLabel="Topology Edges",
-                    edgeLegendRank=2,
-                    edgeLegendGroup=2,
-                    showFaces=True,
-                    faceOpacity=0.5,
-                    faceOpacityKey=None,
-                    faceColor="#FAFAFA",
-                    faceColorKey=None,
-                    faceLabelKey=None,
-                    faceGroupKey=None,
-                    faceGroups=[],
-                    faceMinGroup=None,
-                    faceMaxGroup=None,
-                    showFaceLegend=False,
-                    faceLegendLabel="Topology Faces",
-                    faceLegendRank=3,
-                    faceLegendGroup=3,
-                    intensityKey=None,
-                    intensities=[],
-                    material="default",
-                    materialKey=None,
-                    flatShading=False,
-                    ambient=None,
-                    ambientKey=None,
-                    diffuse=None,
-                    diffuseKey=None,
-                    specular=None,
-                    specularKey=None,
-                    roughness=None,
-                    roughnessKey=None,
-                    colorScale="viridis",
-                    mantissa=6,
-                    tolerance=0.0001,
-                    silent=False):
-        """
-        Creates Plotly data from a Topologic topology.
+                       showVertices=True,
+                       vertexSize=2.8,
+                       vertexSizeKey=None,
+                       vertexColor="black",
+                       vertexColorKey=None,
+                       vertexLabelKey=None,
+                       vertexBorderColor="black",
+                       vertexBorderWidth=0,
+                       vertexBorderColorKey=None,
+                       vertexBorderWidthKey=None,
+                       showVertexLabel=False,
+                       vertexLabelFontSize=5,
+                       vertexGroupKey=None,
+                       vertexGroups=None,
+                       vertexMinGroup=None,
+                       vertexMaxGroup=None,
+                       showVertexLegend=False,
+                       vertexLegendLabel="Topology Vertices",
+                       vertexLegendRank=1,
+                       vertexLegendGroup=1,
+                       directed=False,
+                       arrowSize=0.1,
+                       arrowSizeKey=None,
+                       showEdges=True,
+                       edgeWidth=1,
+                       edgeWidthKey=None,
+                       edgeColor="black",
+                       edgeColorKey=None,
+                       edgeDash=False,
+                       edgeDashKey=None,
+                       edgeLabelKey=None,
+                       showEdgeLabel=False,
+                       edgeGroupKey=None,
+                       edgeGroups=None,
+                       edgeMinGroup=None,
+                       edgeMaxGroup=None,
+                       showEdgeLegend=False,
+                       edgeLegendLabel="Topology Edges",
+                       edgeLegendRank=2,
+                       edgeLegendGroup=2,
+                       showFaces=True,
+                       faceOpacity=0.5,
+                       faceOpacityKey=None,
+                       faceColor="#FAFAFA",
+                       faceColorKey=None,
+                       faceLabelKey=None,
+                       faceGroupKey=None,
+                       faceGroups=None,
+                       faceMinGroup=None,
+                       faceMaxGroup=None,
+                       showFaceLegend=False,
+                       faceLegendLabel="Topology Faces",
+                       faceLegendRank=3,
+                       faceLegendGroup=3,
+                       intensityKey=None,
+                       intensities=None,
+                       material="default",
+                       materialKey=None,
+                       flatShading=False,
+                       ambient=None,
+                       ambientKey=None,
+                       diffuse=None,
+                       diffuseKey=None,
+                       specular=None,
+                       specularKey=None,
+                       roughness=None,
+                       roughnessKey=None,
+                       colorScale="viridis",
+                       mantissa=6,
+                       tolerance=0.0001,
+                       silent=False):
+        """Creates Plotly data from a Topologic topology.
 
-        Curved Edges are sampled only for display. Faces are tessellated from the
-        actual supporting geometry, so analytic and NURBS surfaces render with
-        their curvature instead of being flattened to boundary polygons. Render
-        primitives retain the dictionary and identity of their source topology,
-        keeping labels, hover text, groups, colours, and arrow tangents aligned.
+        Curved edges are sampled for display and faces are tessellated from their
+        actual geometry. Visual dictionary keys are resolved on each source
+        sub-topology, with the root topology dictionary acting only as a fallback.
         """
         import math
         from topologicpy.Color import Color
-        from topologicpy.Face import Face
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(topology, "Topology"):
@@ -2489,12 +2492,13 @@ class Plotly:
         curve_samples = 32
         face_quality = "medium"
 
+        try:
+            tolerance = max(abs(float(tolerance)), 1.0e-12)
+        except Exception:
+            tolerance = 0.0001
+
         def get(kind):
-            singular = {
-                "Vertices": "Vertex",
-                "Edges": "Edge",
-                "Faces": "Face",
-            }.get(kind, kind[:-1] if kind.endswith("s") else kind)
+            singular = {"Vertices": "Vertex", "Edges": "Edge", "Faces": "Face"}.get(kind, kind[:-1] if kind.endswith("s") else kind)
             if Topology.IsInstance(topology, singular):
                 return [topology]
             method = getattr(Topology, kind, None)
@@ -2522,15 +2526,24 @@ class Plotly:
             except Exception:
                 return None
 
+        def finite_number(value, default=None, lo=None, hi=None):
+            try:
+                number = float(value)
+                if not math.isfinite(number):
+                    return default
+                if lo is not None:
+                    number = max(float(lo), number)
+                if hi is not None:
+                    number = min(float(hi), number)
+                return number
+            except Exception:
+                return default
+
         root_dictionary = dictionary(topology)
         data = []
 
-        # ------------------------------------------------------------------
-        # Vertices: source topology vertices only.
-        # ------------------------------------------------------------------
         if showVertices:
-            vertex_coordinates = []
-            vertex_dictionaries = []
+            vertex_coordinates, vertex_dictionaries = [], []
             for vertex in get("Vertices"):
                 point = Plotly._vertex_coordinates(vertex, mantissa=mantissa)
                 if point is None:
@@ -2551,17 +2564,10 @@ class Plotly:
                 showLegend=showVertexLegend, colorScale=colorScale,
             ))
 
-        # ------------------------------------------------------------------
-        # Edges: actual source Edges sampled as render polylines.
-        # ------------------------------------------------------------------
         if showEdges:
-            render_vertices = []
-            render_edges = []
-            edge_dictionaries = []
+            render_vertices, render_edges, edge_dictionaries = [], [], []
             for edge in get("Edges"):
-                points = Plotly._edge_render_points(
-                    edge, samples=curve_samples, mantissa=mantissa, tolerance=tolerance
-                )
+                points = Plotly._edge_render_points(edge, samples=curve_samples, mantissa=mantissa, tolerance=tolerance)
                 if len(points) < 2:
                     continue
                 base = len(render_vertices)
@@ -2581,1804 +2587,199 @@ class Plotly:
                 showLegend=showEdgeLegend, colorScale=colorScale,
             ))
 
-        # ------------------------------------------------------------------
-        # Faces: tessellate each source Face independently and retain its source
-        # dictionary/label for every generated render triangle.
-        # ------------------------------------------------------------------
-        if showFaces:
-            source_faces = get("Faces")
-            mesh_vertices = []
-            mesh_faces = []
-            mesh_facecolors = []
-            mesh_hover = []
-            mesh_labels = []
-            source_intensity_samples = []
+        if not showFaces:
+            return data
 
-            if intensityKey is not None:
-                for vertex in get("Vertices"):
-                    point = Plotly._vertex_coordinates(vertex, mantissa=mantissa)
-                    value = Plotly._dictionary_value(dictionary(vertex), intensityKey, None)
+        source_faces = get("Faces")
+        if not source_faces:
+            return data
+        face_dicts = [dictionary(face) for face in source_faces]
+
+        source_intensity_samples = []
+        if intensityKey is not None:
+            for vertex in get("Vertices"):
+                point = Plotly._vertex_coordinates(vertex, mantissa=mantissa)
+                value = finite_number(Plotly._dictionary_value(dictionary(vertex), intensityKey, None), None)
+                if point is not None and value is not None:
+                    source_intensity_samples.append((point, value))
+
+        observed_groups = []
+        if faceGroupKey is not None:
+            for d in face_dicts:
+                value = Plotly._dictionary_value(d, faceGroupKey, None)
+                if value is not None and value not in observed_groups:
+                    observed_groups.append(value)
+        group_domain = faceGroups if faceGroups else observed_groups
+        numeric_domain = []
+        numeric_groups = bool(group_domain)
+        for value in group_domain:
+            try:
+                numeric_domain.append(float(value))
+            except Exception:
+                numeric_groups = False
+                break
+
+        try:
+            default_face_color = Color.AnyToHex(faceColor)
+        except Exception:
+            default_face_color = "#FAFAFA"
+
+        def group_color(group, default):
+            if group is None:
+                return default
+            try:
+                if numeric_groups:
+                    value = float(group)
+                    lo = float(faceMinGroup) if faceMinGroup is not None else min(numeric_domain)
+                    hi = float(faceMaxGroup) if faceMaxGroup is not None else max(numeric_domain)
+                    if hi < lo:
+                        lo, hi = hi, lo
+                    if abs(hi - lo) <= 1.0e-15:
+                        mapped = Color.ByValueInRange(0.5, minValue=0.0, maxValue=1.0, colorScale=colorScale)
+                    else:
+                        mapped = Color.ByValueInRange(max(lo, min(hi, value)), minValue=lo, maxValue=hi, colorScale=colorScale)
+                    return Plotly._color_to_hex(mapped, default)
+                if group_domain and group in group_domain:
+                    index = group_domain.index(group)
+                    mapped = Color.ByValueInRange(index, minValue=0, maxValue=max(1, len(group_domain)-1), colorScale=colorScale)
+                    return Plotly._color_to_hex(mapped, default)
+            except Exception:
+                pass
+            return default
+
+        def inherited_value(face_dictionary, key, fallback):
+            if key is None:
+                return fallback
+            value = Plotly._dictionary_value(face_dictionary, key, None)
+            if value is None:
+                value = Plotly._dictionary_value(root_dictionary, key, None)
+            return fallback if value is None else value
+
+        presets = {
+            "chalk": (1.0, 0.4, 0.0, 1.0),
+            "concrete": (0.85, 0.75, 0.05, 0.9),
+            "eggshell": (0.65, 0.85, 0.25, 0.45),
+            "glossy": (0.5, 0.9, 0.6, 0.1),
+            "matte": (0.9, 0.7, 0.0, 1.0),
+            "metallic": (0.3, 0.8, 0.9, 0.2),
+            "plastic": (0.6, 0.9, 0.2, 0.4),
+        }
+
+        def face_style(face_dictionary):
+            this_color = default_face_color
+            if faceColorKey is not None:
+                candidate = inherited_value(face_dictionary, faceColorKey, None)
+                if candidate is not None:
                     try:
-                        value = float(value)
+                        this_color = Plotly._color_to_hex(candidate, this_color)
                     except Exception:
-                        continue
-                    if point is not None and math.isfinite(value):
-                        source_intensity_samples.append((point, value))
+                        pass
+            if faceGroupKey is not None:
+                this_color = group_color(Plotly._dictionary_value(face_dictionary, faceGroupKey, None), this_color)
 
-            numeric_face_groups = []
-            for value in faceGroups:
+            this_opacity = finite_number(inherited_value(face_dictionary, faceOpacityKey, faceOpacity), finite_number(faceOpacity, 0.5), 0.0, 1.0)
+
+            material_name = str(inherited_value(face_dictionary, materialKey, material) or "default").lower()
+            base = presets.get(material_name)
+            lighting = {"facenormalsepsilon": 0}
+            if base is not None:
+                lighting.update(ambient=base[0], diffuse=base[1], specular=base[2], roughness=base[3])
+
+            parameters = (
+                ("ambient", ambient, ambientKey, 0.0, 1.0),
+                ("diffuse", diffuse, diffuseKey, 0.0, 1.0),
+                ("specular", specular, specularKey, 0.0, 2.0),
+                ("roughness", roughness, roughnessKey, 0.0, 1.0),
+            )
+            for name, explicit, key, lo, hi in parameters:
+                candidate = inherited_value(face_dictionary, key, explicit)
+                number = finite_number(candidate, None, lo, hi)
+                if number is not None:
+                    lighting[name] = number
+
+            lighting_key = tuple(sorted((k, float(v)) for k, v in lighting.items()))
+            return this_color, this_opacity, lighting, lighting_key
+
+        scale_values = []
+        for value in intensities:
+            number = finite_number(value, None)
+            if number is not None:
+                scale_values.append(number)
+        if not scale_values:
+            scale_values = [item[1] for item in source_intensity_samples]
+        cmin = min(scale_values) if scale_values else None
+        cmax = max(scale_values) if scale_values else None
+        if cmin is not None and cmax == cmin:
+            cmax = cmin + 1.0
+
+        buckets = {}
+        face_digits = len(str(max(1, len(source_faces))))
+        hover_exclude = [faceColorKey, faceOpacityKey, faceGroupKey, materialKey, ambientKey, diffuseKey, specularKey, roughnessKey]
+
+        for face_index, (face, face_dictionary) in enumerate(zip(source_faces, face_dicts)):
+            fallback = "Face " + str(face_index + 1).zfill(face_digits)
+            label_value = Plotly._dictionary_value(face_dictionary, faceLabelKey, None) if faceLabelKey else None
+            label = fallback if label_value in (None, "") else str(label_value)
+            hover = Plotly._format_hover(face_dictionary, label=label, fallback=fallback, labelKey=faceLabelKey, excludeKeys=hover_exclude)
+            render_mesh = Plotly._face_render_mesh(face, quality=face_quality, mantissa=mantissa, tolerance=tolerance)
+            if not render_mesh:
+                if not silent:
+                    print(f"Plotly.DataByTopology - Warning: Could not tessellate {fallback}. Skipping face.")
+                continue
+            local_vertices = render_mesh.get("vertices", [])
+            local_faces = render_mesh.get("faces", [])
+            this_color, this_opacity, lighting, lighting_key = face_style(face_dictionary)
+            bucket_key = (round(float(this_opacity), 12), lighting_key)
+            bucket = buckets.setdefault(bucket_key, {
+                "vertices": [], "faces": [], "facecolors": [], "hover": [], "intensity": [],
+                "opacity": this_opacity, "lighting": lighting,
+            })
+
+            for triangle in local_faces:
                 try:
-                    numeric_face_groups.append(float(value))
+                    coords = [local_vertices[int(triangle[q])] for q in range(3)]
+                    coords = [[float(p[0]), float(p[1]), float(p[2])] for p in coords]
                 except Exception:
-                    pass
-            numeric_groups = bool(faceGroups) and len(numeric_face_groups) == len(faceGroups)
-            if numeric_groups:
-                group_min = float(faceMinGroup) if faceMinGroup is not None else min(numeric_face_groups)
-                group_max = float(faceMaxGroup) if faceMaxGroup is not None else max(numeric_face_groups)
-            else:
-                group_min = 0 if faceMinGroup is None else faceMinGroup
-                group_max = max(1, len(faceGroups)-1) if faceMaxGroup is None else faceMaxGroup
-
-            def face_style(face_dictionary):
-                try:
-                    color_value = Color.AnyToHex(faceColor)
-                except Exception:
-                    color_value = "#FAFAFA"
-                if faceColorKey is not None:
-                    value = Plotly._dictionary_value(face_dictionary, faceColorKey, None)
-                    if value is None:
-                        value = Plotly._dictionary_value(root_dictionary, faceColorKey, None)
-                    if value is not None:
-                        try:
-                            color_value = Color.AnyToHex(value)
-                        except Exception:
-                            pass
-                if faceGroupKey is not None:
-                    group = Plotly._dictionary_value(face_dictionary, faceGroupKey, None)
-                    if group is not None:
-                        try:
-                            if numeric_groups or isinstance(group, (int, float)):
-                                value = min(max(float(group), float(group_min)), float(group_max))
-                                color_value = Color.AnyToHex(Color.ByValueInRange(value, minValue=group_min, maxValue=group_max, colorScale=colorScale))
-                            elif faceGroups and group in faceGroups:
-                                color_value = Color.AnyToHex(Color.ByValueInRange(faceGroups.index(group), minValue=group_min, maxValue=group_max, colorScale=colorScale))
-                        except Exception:
-                            pass
-                return color_value
-
-            face_digits = len(str(max(1, len(source_faces))))
-            for face_index, face in enumerate(source_faces):
-                face_dictionary = dictionary(face)
-                fallback = "Face_" + str(face_index + 1).zfill(face_digits)
-                label_value = Plotly._dictionary_value(face_dictionary, faceLabelKey, None) if faceLabelKey else None
-                label = fallback if label_value in (None, "") else str(label_value)
-                hover = Plotly._format_hover(face_dictionary, label=label, fallback=fallback)
-                render_mesh = Plotly._face_render_mesh(
-                    face, quality=face_quality, mantissa=mantissa, tolerance=tolerance
-                )
-                if not render_mesh:
-                    if not silent:
-                        print(f"Plotly.DataByTopology - Warning: Could not tessellate {fallback}. Skipping face.")
                     continue
-                local_vertices = render_mesh["vertices"]
-                local_faces = render_mesh["faces"]
-                this_color = face_style(face_dictionary)
+                base = len(bucket["vertices"])
+                bucket["vertices"].extend(coords)
+                bucket["faces"].append([base, base + 1, base + 2])
+                bucket["facecolors"].append(this_color)
+                bucket["hover"].extend([hover, hover, hover])
 
-                for triangle in local_faces:
-                    try:
-                        coords = [local_vertices[int(triangle[q])] for q in range(3)]
-                        coords = [[float(p[0]), float(p[1]), float(p[2])] for p in coords]
-                    except Exception:
-                        continue
-                    base = len(mesh_vertices)
-                    mesh_vertices.extend(coords)
-                    mesh_faces.append([base, base + 1, base + 2])
-                    mesh_facecolors.append(this_color)
-                    mesh_labels.append(label)
-                    # Mesh3d hover data are point-oriented. Duplicating triangle
-                    # vertices lets every triangle vertex inherit its source Face.
-                    mesh_hover.extend([hover, hover, hover])
-
-
-            if mesh_faces:
-                intensity_values = None
-                cmin = cmax = None
                 if source_intensity_samples:
-                    intensity_values = []
-                    for point in mesh_vertices:
-                        nearest = min(
-                            source_intensity_samples,
-                            key=lambda item: (
-                                (point[0]-item[0][0])**2 +
-                                (point[1]-item[0][1])**2 +
-                                (point[2]-item[0][2])**2
-                            )
-                        )
-                        intensity_values.append(nearest[1])
-                    scale = []
-                    for value in intensities:
-                        try:
-                            scale.append(float(value))
-                        except Exception:
-                            pass
-                    if not scale:
-                        scale = [item[1] for item in source_intensity_samples]
-                    if scale:
-                        cmin, cmax = min(scale), max(scale)
+                    for point in coords:
+                        nearest = min(source_intensity_samples, key=lambda item: (
+                            (point[0]-item[0][0])**2 + (point[1]-item[0][1])**2 + (point[2]-item[0][2])**2
+                        ))
+                        bucket["intensity"].append(nearest[1])
 
-                effective_opacity = faceOpacity
-                if faceOpacityKey is not None:
-                    value = Plotly._dictionary_value(root_dictionary, faceOpacityKey, None)
-                    if isinstance(value, (int, float)) and 0 <= value <= 1:
-                        effective_opacity = value
-
-                material_name = material.lower() if isinstance(material, str) else "default"
-                if materialKey is not None:
-                    candidate = Plotly._dictionary_value(root_dictionary, materialKey, None)
-                    if isinstance(candidate, str):
-                        material_name = candidate.lower()
-                presets = {
-                    "chalk": (1.0, 0.4, 0.0, 1.0),
-                    "concrete": (0.85, 0.75, 0.05, 0.9),
-                    "eggshell": (0.65, 0.85, 0.25, 0.45),
-                    "glossy": (0.5, 0.9, 0.6, 0.1),
-                    "matte": (0.9, 0.7, 0.0, 1.0),
-                    "metallic": (0.3, 0.8, 0.9, 0.2),
-                    "plastic": (0.6, 0.9, 0.2, 0.4),
-                }
-                lighting = {"facenormalsepsilon": 0}
-                if material_name != "default":
-                    pa, pd, ps, pr = presets.get(material_name, presets["plastic"])
-                    lighting = {
-                        "ambient": pa if ambient is None else ambient,
-                        "diffuse": pd if diffuse is None else diffuse,
-                        "specular": ps if specular is None else specular,
-                        "roughness": pr if roughness is None else roughness,
-                    }
-
-                mesh_trace = go.Mesh3d(
-                    x=[p[0] for p in mesh_vertices],
-                    y=[p[1] for p in mesh_vertices],
-                    z=[p[2] for p in mesh_vertices],
-                    i=[f[0] for f in mesh_faces],
-                    j=[f[1] for f in mesh_faces],
-                    k=[f[2] for f in mesh_faces],
-                    name=faceLegendLabel,
-                    showlegend=showFaceLegend,
-                    legendgroup=str(faceLegendGroup),
-                    legendrank=faceLegendRank,
-                    color=faceColor,
-                    facecolor=None if intensity_values is not None else mesh_facecolors,
-                    intensity=intensity_values,
-                    colorscale=Plotly.ColorScale(colorScale),
-                    cmin=cmin,
-                    cmax=cmax,
-                    opacity=effective_opacity,
-                    flatshading=bool(flatShading),
-                    lighting=lighting,
-                    hovertext=mesh_hover,
-                    hovertemplate="%{hovertext}<extra></extra>",
-                    showscale=False,
-                )
-                data.append(mesh_trace)
-
+        first = True
+        for bucket in buckets.values():
+            if not bucket["faces"]:
+                continue
+            vertices = bucket["vertices"]
+            faces = bucket["faces"]
+            intensity_values = bucket["intensity"] if source_intensity_samples else None
+            data.append(go.Mesh3d(
+                x=[p[0] for p in vertices], y=[p[1] for p in vertices], z=[p[2] for p in vertices],
+                i=[f[0] for f in faces], j=[f[1] for f in faces], k=[f[2] for f in faces],
+                name=faceLegendLabel,
+                showlegend=bool(showFaceLegend and first),
+                legendgroup=str(faceLegendGroup), legendrank=faceLegendRank,
+                color=default_face_color,
+                facecolor=None if intensity_values is not None else bucket["facecolors"],
+                intensity=intensity_values,
+                intensitymode="vertex" if intensity_values is not None else None,
+                colorscale=Plotly.ColorScale(colorScale), cmin=cmin, cmax=cmax,
+                opacity=bucket["opacity"], flatshading=bool(flatShading), lighting=bucket["lighting"],
+                hovertext=bucket["hover"], hovertemplate="%{hovertext}<extra></extra>",
+                hoverlabel=dict(align="left", namelength=-1), showscale=False,
+            ))
+            first = False
 
         return data
     
-    # @staticmethod
-    # def DataByTopology_old(topology,
-    #                 showVertices=True,
-    #                 vertexSize=2.8,
-    #                 vertexSizeKey=None,
-    #                 vertexColor="black",
-    #                 vertexColorKey=None,
-    #                 vertexLabelKey=None,
-    #                 vertexBorderColor: str = "black",
-    #                 vertexBorderWidth: float = 0,
-    #                 vertexBorderColorKey: str = None,
-    #                 vertexBorderWidthKey: float = None,
-    #                 showVertexLabel=False,
-    #                 vertexLabelFontSize=5,
-    #                 vertexGroupKey=None,
-    #                 vertexGroups=[],
-    #                 vertexMinGroup=None,
-    #                 vertexMaxGroup=None,
-    #                 showVertexLegend=False,
-    #                 vertexLegendLabel="Topology Vertices",
-    #                 vertexLegendRank=1,
-    #                 vertexLegendGroup=1,
-    #                 directed=False,
-    #                 arrowSize=0.1,
-    #                 arrowSizeKey=None,
-    #                 showEdges=True,
-    #                 edgeWidth=1,
-    #                 edgeWidthKey=None,
-    #                 edgeColor="black",
-    #                 edgeColorKey=None,
-    #                 edgeDash=False,
-    #                 edgeDashKey=None,
-    #                 edgeLabelKey=None,
-    #                 showEdgeLabel=False,
-    #                 edgeGroupKey=None,
-    #                 edgeGroups=[],
-    #                 edgeMinGroup=None,
-    #                 edgeMaxGroup=None,
-    #                 showEdgeLegend=False,
-    #                 edgeLegendLabel="Topology Edges",
-    #                 edgeLegendRank=2,
-    #                 edgeLegendGroup=2,
-    #                 showFaces=True,
-    #                 faceOpacity=0.5,
-    #                 faceOpacityKey=None,
-    #                 faceColor="#FAFAFA",
-    #                 faceColorKey=None,
-    #                 faceLabelKey=None,
-    #                 faceGroupKey=None,
-    #                 faceGroups=[],
-    #                 faceMinGroup=None,
-    #                 faceMaxGroup=None,
-    #                 showFaceLegend=False,
-    #                 faceLegendLabel="Topology Faces",
-    #                 faceLegendRank=3,
-    #                 faceLegendGroup=3,
-    #                 intensityKey=None,
-    #                 intensities=[],
-    #                 material="default",
-    #                 materialKey=None,
-    #                 flatShading=True,
-    #                 ambient=None,
-    #                 ambientKey=None,
-    #                 diffuse=None,
-    #                 diffuseKey=None,
-    #                 specular=None,
-    #                 specularKey=None,
-    #                 roughness=None,
-    #                 roughnessKey=None,
-    #                 colorScale="viridis",
-    #                 mantissa=6,
-    #                 tolerance=0.0001,
-    #                 silent=False):
-    #     """
-    #     Creates Plotly vertex, edge, and face data from a Topologic topology.
-
-    #     This replacement keeps the original public API, but improves performance and
-    #     robustness for large face-heavy topologies.
-
-    #     Main changes
-    #     ------------
-    #     1. Vertices are extracted only when needed.
-    #     2. Edges are extracted only when showEdges is True.
-    #     3. Face rendering avoids the expensive generated-triangles -> Cluster ->
-    #     Topology.Geometry pathway.
-    #     4. Direct fast triangulation is used only for triangles and convex quads.
-    #     5. Arbitrary n-gons, concave faces, faces with holes, and problematic faces
-    #     fall back to Face.Triangulate.
-    #     6. Face dictionaries are fetched once per source face and assigned to the
-    #     generated Plotly triangles.
-    #     7. Failed triangulations are skipped instead of failing the whole render.
-    #     """
-
-    #     from topologicpy.Vertex import Vertex
-    #     from topologicpy.Face import Face
-    #     from topologicpy.Wire import Wire
-    #     from topologicpy.Cluster import Cluster
-    #     from topologicpy.Topology import Topology
-    #     from topologicpy.Dictionary import Dictionary
-    #     from topologicpy.Color import Color
-
-    #     try:
-    #         import plotly.graph_objects as go
-    #     except Exception:
-    #         try:
-    #             from plotly import graph_objects as go
-    #         except Exception:
-    #             if not silent:
-    #                 print("Plotly.DataByTopology - Error: Could not import plotly.graph_objects. Returning None.")
-    #             return None
-
-    #     if not Topology.IsInstance(topology, "Topology"):
-    #         if not silent:
-    #             print("Plotly.DataByTopology - Error: The input is not a valid topology. Returning None.")
-    #         return None
-
-    #     materials = {
-    #         "chalk": {"ambient": 1.0, "diffuse": 0.4, "specular": 0.0, "roughness": 1.0},
-    #         "concrete": {"ambient": 0.85, "diffuse": 0.75, "specular": 0.05, "roughness": 0.9},
-    #         "eggshell": {"ambient": 0.65, "diffuse": 0.85, "specular": 0.25, "roughness": 0.45},
-    #         "glossy": {"ambient": 0.5, "diffuse": 0.9, "specular": 0.6, "roughness": 0.1},
-    #         "matte": {"ambient": 0.9, "diffuse": 0.7, "specular": 0.0, "roughness": 1.0},
-    #         "metallic": {"ambient": 0.3, "diffuse": 0.8, "specular": 0.9, "roughness": 0.2},
-    #         "plastic": {"ambient": 0.6, "diffuse": 0.9, "specular": 0.2, "roughness": 0.4},
-    #         "default": {"ambient": None, "diffuse": None, "specular": None, "roughness": None},
-    #     }
-
-    #     # -------------------------------------------------------------------------
-    #     # Basic helpers
-    #     # -------------------------------------------------------------------------
-
-    #     def _dict_value(d, key, default=None):
-    #         if d is None or key is None:
-    #             return default
-
-    #         if isinstance(d, dict):
-    #             value = d.get(key, default)
-    #             return default if value is None else value
-
-    #         try:
-    #             value = Dictionary.ValueAtKey(d, key=key, defaultValue=default)
-    #             return default if value is None else value
-    #         except TypeError:
-    #             try:
-    #                 value = Dictionary.ValueAtKey(d, key)
-    #                 return default if value is None else value
-    #             except Exception:
-    #                 return default
-    #         except Exception:
-    #             return default
-
-    #     def _topology_dictionary(tp):
-    #         try:
-    #             return Topology.Dictionary(tp, silent=True)
-    #         except TypeError:
-    #             try:
-    #                 return Topology.Dictionary(tp)
-    #             except Exception:
-    #                 return None
-    #         except Exception:
-    #             return None
-
-    #     def _vertex_coordinates(v):
-    #         try:
-    #             c = Vertex.Coordinates(v, mantissa=mantissa)
-    #             if isinstance(c, (list, tuple)) and len(c) >= 3:
-    #                 return [float(c[0]), float(c[1]), float(c[2])]
-    #         except Exception:
-    #             pass
-
-    #         try:
-    #             return [
-    #                 float(Vertex.X(v, mantissa=mantissa)),
-    #                 float(Vertex.Y(v, mantissa=mantissa)),
-    #                 float(Vertex.Z(v, mantissa=mantissa)),
-    #             ]
-    #         except Exception:
-    #             return None
-
-    #     def _point_key_from_vertex(v):
-    #         c = _vertex_coordinates(v)
-
-    #         if c is None:
-    #             return None
-
-    #         try:
-    #             return (
-    #                 round(float(c[0]), mantissa),
-    #                 round(float(c[1]), mantissa),
-    #                 round(float(c[2]), mantissa),
-    #             )
-    #         except Exception:
-    #             return None
-
-    #     def _clean_polygon_indices(indices):
-    #         if not indices:
-    #             return []
-
-    #         clean = []
-
-    #         for idx in indices:
-    #             if idx is None:
-    #                 continue
-
-    #             if not clean or clean[-1] != idx:
-    #                 clean.append(idx)
-
-    #         if len(clean) > 1 and clean[0] == clean[-1]:
-    #             clean.pop()
-
-    #         return clean
-
-    #     def _triangle_area_squared_from_indices(vertices, tri):
-    #         try:
-    #             a = vertices[tri[0]]
-    #             b = vertices[tri[1]]
-    #             c = vertices[tri[2]]
-    #         except Exception:
-    #             return 0.0
-
-    #         ux = b[0] - a[0]
-    #         uy = b[1] - a[1]
-    #         uz = b[2] - a[2]
-
-    #         vx = c[0] - a[0]
-    #         vy = c[1] - a[1]
-    #         vz = c[2] - a[2]
-
-    #         cx = uy * vz - uz * vy
-    #         cy = uz * vx - ux * vz
-    #         cz = ux * vy - uy * vx
-
-    #         return cx * cx + cy * cy + cz * cz
-
-    #     def _polygon_normal(points):
-    #         """
-    #         Computes an approximate polygon normal using Newell's method.
-    #         """
-    #         if not isinstance(points, list) or len(points) < 3:
-    #             return None
-
-    #         nx = 0.0
-    #         ny = 0.0
-    #         nz = 0.0
-    #         n = len(points)
-
-    #         for i in range(n):
-    #             x1, y1, z1 = points[i]
-    #             x2, y2, z2 = points[(i + 1) % n]
-
-    #             nx += (y1 - y2) * (z1 + z2)
-    #             ny += (z1 - z2) * (x1 + x2)
-    #             nz += (x1 - x2) * (y1 + y2)
-
-    #         length = (nx * nx + ny * ny + nz * nz) ** 0.5
-
-    #         if length <= 1e-12:
-    #             return None
-
-    #         return (nx / length, ny / length, nz / length)
-
-    #     def _is_convex_quad(points, eps=1e-9):
-    #         """
-    #         Returns True only if the four ordered points form a simple convex quad.
-    #         """
-    #         if not isinstance(points, list) or len(points) != 4:
-    #             return False
-
-    #         normal = _polygon_normal(points)
-
-    #         if normal is None:
-    #             return False
-
-    #         signs = []
-
-    #         for i in range(4):
-    #             p0 = points[i]
-    #             p1 = points[(i + 1) % 4]
-    #             p2 = points[(i + 2) % 4]
-
-    #             ux = p1[0] - p0[0]
-    #             uy = p1[1] - p0[1]
-    #             uz = p1[2] - p0[2]
-
-    #             vx = p2[0] - p1[0]
-    #             vy = p2[1] - p1[1]
-    #             vz = p2[2] - p1[2]
-
-    #             cx = uy * vz - uz * vy
-    #             cy = uz * vx - ux * vz
-    #             cz = ux * vy - uy * vx
-
-    #             dot = cx * normal[0] + cy * normal[1] + cz * normal[2]
-
-    #             if abs(dot) <= eps:
-    #                 return False
-
-    #             signs.append(dot > 0)
-
-    #         return all(signs) or not any(signs)
-
-    #     def _safe_direct_triangles(indices, vertices, tolerance=0.0001):
-    #         """
-    #         Conservative direct triangulation.
-
-    #         Accepts only:
-    #         - true triangles
-    #         - convex quads
-
-    #         Returns None for all arbitrary n-gons, concave faces, or degenerate
-    #         cases so that the caller can fall back to Face.Triangulate.
-    #         """
-    #         indices = _clean_polygon_indices(indices)
-
-    #         if len(indices) < 3:
-    #             return None
-
-    #         tol2 = tolerance * tolerance
-
-    #         if len(indices) == 3:
-    #             tri = [indices[0], indices[1], indices[2]]
-
-    #             if len(set(tri)) != 3:
-    #                 return None
-
-    #             if _triangle_area_squared_from_indices(vertices, tri) <= tol2:
-    #                 return None
-
-    #             return [tri]
-
-    #         if len(indices) == 4:
-    #             if len(set(indices)) != 4:
-    #                 return None
-
-    #             points = [vertices[i] for i in indices]
-
-    #             if not _is_convex_quad(points):
-    #                 return None
-
-    #             tri1 = [indices[0], indices[1], indices[2]]
-    #             tri2 = [indices[0], indices[2], indices[3]]
-
-    #             if _triangle_area_squared_from_indices(vertices, tri1) <= tol2:
-    #                 return None
-
-    #             if _triangle_area_squared_from_indices(vertices, tri2) <= tol2:
-    #                 return None
-
-    #             return [tri1, tri2]
-
-    #         return None
-
-    #     def _face_has_internal_boundaries(face):
-    #         try:
-    #             ib = Face.InternalBoundaries(face)
-    #             return isinstance(ib, list) and len(ib) > 0
-    #         except Exception:
-    #             return False
-
-    #     def _face_external_vertices_ordered(face):
-    #         """
-    #         Returns ordered external-boundary vertices.
-
-    #         This is safer than Face.Vertices(face), because Face.Vertices may return
-    #         a set-like collection that is not always boundary ordered.
-    #         """
-    #         try:
-    #             eb = Face.ExternalBoundary(face)
-    #             if eb is not None:
-    #                 verts = Wire.Vertices(eb)
-    #                 if isinstance(verts, list) and len(verts) > 0:
-    #                     return verts
-    #         except Exception:
-    #             pass
-
-    #         try:
-    #             verts = Face.Vertices(face)
-    #             if isinstance(verts, list) and len(verts) > 0:
-    #                 return verts
-    #         except Exception:
-    #             pass
-
-    #         try:
-    #             verts = Topology.Vertices(face, silent=True)
-    #             if isinstance(verts, list):
-    #                 return verts
-    #         except TypeError:
-    #             try:
-    #                 verts = Topology.Vertices(face)
-    #                 if isinstance(verts, list):
-    #                     return verts
-    #             except Exception:
-    #                 pass
-    #         except Exception:
-    #             pass
-
-    #         return []
-
-    #     def _closest_index(input_value, values):
-    #         return int(min(range(len(values)), key=lambda i: abs(values[i] - input_value)))
-
-    #     # -------------------------------------------------------------------------
-    #     # Plotly face trace helper
-    #     # -------------------------------------------------------------------------
-
-    #     def faceData(vertices, faces, dictionaries=None,
-    #                 color="#FAFAFA",
-    #                 colorKey=None,
-    #                 opacity=0.5,
-    #                 opacityKey=None,
-    #                 ambient=0.6,
-    #                 diffuse=0.9,
-    #                 specular=0.2,
-    #                 roughness=0.4,
-    #                 labelKey=None,
-    #                 groupKey=None,
-    #                 minGroup=None,
-    #                 maxGroup=None,
-    #                 groups=[],
-    #                 legendLabel="Topology Faces",
-    #                 legendGroup=3,
-    #                 legendRank=3,
-    #                 showLegend=True,
-    #                 intensities=None,
-    #                 colorScale="viridis"):
-
-    #         if dictionaries is None:
-    #             dictionaries = []
-
-    #         if not isinstance(vertices, list) or not isinstance(faces, list):
-    #             return None
-
-    #         if len(vertices) == 0 or len(faces) == 0:
-    #             return None
-
-    #         x = []
-    #         y = []
-    #         z = []
-
-    #         for v in vertices:
-    #             x.append(v[0])
-    #             y.append(v[1])
-    #             z.append(v[2])
-
-    #         i = []
-    #         j = []
-    #         k = []
-
-    #         labels = []
-    #         groupList = []
-
-    #         try:
-    #             base_color = Color.AnyToHex(color)
-    #         except Exception:
-    #             base_color = "#FAFAFA"
-
-    #         use_face_metadata = (
-    #             colorKey is not None or
-    #             labelKey is not None or
-    #             groupKey is not None or
-    #             opacityKey is not None
-    #         )
-
-    #         if groups and len(groups) > 0:
-    #             if isinstance(groups[0], (int, float)):
-    #                 if minGroup is None:
-    #                     minGroup = min(groups)
-    #                 if maxGroup is None:
-    #                     maxGroup = max(groups)
-    #             else:
-    #                 if minGroup is None:
-    #                     minGroup = 0
-    #                 if maxGroup is None:
-    #                     maxGroup = max(1, len(groups) - 1)
-    #         else:
-    #             if minGroup is None:
-    #                 minGroup = 0
-    #             if maxGroup is None:
-    #                 maxGroup = 1
-
-    #         n_digits = len(str(max(1, len(faces))))
-
-    #         for m, f in enumerate(faces):
-    #             if not isinstance(f, (list, tuple)) or len(f) < 3:
-    #                 continue
-
-    #             if f[0] == f[1] or f[1] == f[2] or f[2] == f[0]:
-    #                 continue
-
-    #             i.append(f[0])
-    #             j.append(f[1])
-    #             k.append(f[2])
-
-    #             label = "Face_" + str(m + 1).zfill(n_digits)
-    #             face_color = base_color
-
-    #             d = dictionaries[m] if m < len(dictionaries) else None
-
-    #             if use_face_metadata and d is not None:
-    #                 if colorKey is not None:
-    #                     d_color = _dict_value(d, colorKey, None)
-    #                     if d_color is not None:
-    #                         try:
-    #                             face_color = Color.AnyToHex(d_color)
-    #                         except Exception:
-    #                             face_color = base_color
-
-    #                 if labelKey is not None:
-    #                     d_label = _dict_value(d, labelKey, None)
-    #                     if d_label is not None:
-    #                         label = str(d_label)
-
-    #                 if groupKey is not None:
-    #                     group = _dict_value(d, groupKey, None)
-
-    #                     if group is not None:
-    #                         try:
-    #                             if isinstance(group, (int, float)):
-    #                                 g = float(group)
-
-    #                                 if g < minGroup:
-    #                                     g = minGroup
-    #                                 if g > maxGroup:
-    #                                     g = maxGroup
-
-    #                                 face_color = Color.AnyToHex(
-    #                                     Color.ByValueInRange(
-    #                                         g,
-    #                                         minValue=minGroup,
-    #                                         maxValue=maxGroup,
-    #                                         colorScale=colorScale,
-    #                                     )
-    #                                 )
-    #                             else:
-    #                                 if groups and group in groups:
-    #                                     g_index = groups.index(group)
-    #                                     face_color = Color.AnyToHex(
-    #                                         Color.ByValueInRange(
-    #                                             g_index,
-    #                                             minValue=minGroup,
-    #                                             maxValue=maxGroup,
-    #                                             colorScale=colorScale,
-    #                                         )
-    #                                     )
-    #                         except Exception:
-    #                             pass
-
-    #             labels.append(label)
-    #             groupList.append(face_color)
-
-    #         if len(i) == 0:
-    #             return None
-
-    #         facecolor = groupList if (use_face_metadata or groupKey is not None) else None
-    #         text = labels if len(labels) > 0 else ""
-
-    #         if material == "default":
-    #             lighting = {"facenormalsepsilon": 0}
-    #         else:
-    #             lighting = dict(
-    #                 ambient=ambient,
-    #                 diffuse=diffuse,
-    #                 specular=specular,
-    #                 roughness=roughness,
-    #             )
-
-    #         return go.Mesh3d(
-    #             x=x,
-    #             y=y,
-    #             z=z,
-    #             i=i,
-    #             j=j,
-    #             k=k,
-    #             name=legendLabel,
-    #             showlegend=showLegend,
-    #             legendgroup=legendGroup,
-    #             legendrank=legendRank,
-    #             color=base_color,
-    #             facecolor=facecolor,
-    #             colorscale=Plotly.ColorScale(colorScale),
-    #             cmin=0,
-    #             cmax=1,
-    #             intensity=intensities,
-    #             opacity=opacity,
-    #             hoverinfo="text",
-    #             text=text,
-    #             hovertext=text,
-    #             showscale=False,
-    #             flatshading=flatShading,
-    #             lighting=lighting,
-    #         )
-
-    #     # -------------------------------------------------------------------------
-    #     # Conservative face mesh extraction
-    #     # -------------------------------------------------------------------------
-
-    #     def _mesh_from_faces_fast(tp_faces, mantissa=6, tolerance=0.0001, silent=False):
-    #         """
-    #         Builds Plotly-ready vertices/faces from Topologic faces.
-
-    #         Fast path:
-    #             - boundary-ordered triangles
-    #             - boundary-ordered convex quads
-
-    #         Fallback:
-    #             - Face.Triangulate for n-gons, concave faces, faces with holes,
-    #             malformed faces, or anything not confidently handled by the fast
-    #             path.
-
-    #         This keeps most of the speed benefit by avoiding Cluster.ByTopologies
-    #         and Topology.Geometry on generated triangles.
-    #         """
-    #         vertices = []
-    #         faces = []
-    #         dictionaries = []
-    #         vertex_map = {}
-
-    #         def add_vertex(v):
-    #             key = _point_key_from_vertex(v)
-
-    #             if key is None:
-    #                 return None
-
-    #             if key in vertex_map:
-    #                 return vertex_map[key]
-
-    #             idx = len(vertices)
-    #             vertex_map[key] = idx
-    #             vertices.append([key[0], key[1], key[2]])
-    #             return idx
-
-    #         def add_triangle_from_vertices(tri_vertices, source_dictionary):
-    #             if not isinstance(tri_vertices, list) or len(tri_vertices) < 3:
-    #                 return
-
-    #             indices = [add_vertex(v) for v in tri_vertices]
-
-    #             if any(idx is None for idx in indices):
-    #                 return
-
-    #             indices = _clean_polygon_indices(indices)
-
-    #             if len(indices) != 3:
-    #                 tris = _safe_direct_triangles(indices, vertices, tolerance=tolerance)
-    #                 if not tris:
-    #                     return
-    #             else:
-    #                 tris = [indices]
-
-    #             tol2 = tolerance * tolerance
-
-    #             for tri in tris:
-    #                 if len(set(tri)) != 3:
-    #                     continue
-
-    #                 if _triangle_area_squared_from_indices(vertices, tri) <= tol2:
-    #                     continue
-
-    #                 faces.append(tri)
-    #                 dictionaries.append(source_dictionary)
-
-    #         for tp_face in tp_faces:
-    #             d = _topology_dictionary(tp_face)
-
-    #             use_fallback = _face_has_internal_boundaries(tp_face)
-
-    #             if not use_fallback:
-    #                 ordered_vertices = _face_external_vertices_ordered(tp_face)
-    #                 indices = [add_vertex(v) for v in ordered_vertices]
-
-    #                 if not any(idx is None for idx in indices):
-    #                     direct_tris = _safe_direct_triangles(indices, vertices, tolerance=tolerance)
-
-    #                     if direct_tris:
-    #                         for tri in direct_tris:
-    #                             faces.append(tri)
-    #                             dictionaries.append(d)
-    #                         continue
-
-    #             # Fallback path for anything not safely handled above.
-    #             try:
-    #                 triangles = Face.Triangulate(tp_face, tolerance=tolerance, silent=True)
-    #             except Exception as e:
-    #                 if not silent:
-    #                     print("Plotly.DataByTopology - Warning: Face triangulation failed. Skipping face.")
-    #                     print("Error:", e)
-    #                 continue
-
-    #             if not isinstance(triangles, list):
-    #                 continue
-
-    #             for tri in triangles:
-    #                 try:
-    #                     tri_vertices = Topology.Vertices(tri, silent=True)
-    #                 except TypeError:
-    #                     try:
-    #                         tri_vertices = Topology.Vertices(tri)
-    #                     except Exception:
-    #                         tri_vertices = []
-    #                 except Exception:
-    #                     tri_vertices = []
-
-    #                 add_triangle_from_vertices(tri_vertices, d)
-
-    #         return vertices, faces, dictionaries
-
-    #     # -------------------------------------------------------------------------
-    #     # Start processing
-    #     # -------------------------------------------------------------------------
-
-    #     data = []
-
-    #     if not isinstance(colorScale, str):
-    #         colorScale = "viridis"
-
-    #     if isinstance(intensities, list) and len(intensities) == 0:
-    #         intensities = None
-
-    #     topology_type = Topology.Type(topology)
-    #     vertex_type = Topology.TypeID("Vertex")
-    #     edge_type = Topology.TypeID("Edge")
-    #     face_type = Topology.TypeID("Face")
-
-    #     # -------------------------------------------------------------------------
-    #     # Vertex data
-    #     # -------------------------------------------------------------------------
-
-    #     intensityList = None
-    #     tp_vertices = []
-
-    #     needs_vertices = bool(showVertices or intensityKey is not None)
-
-    #     if needs_vertices:
-    #         if topology_type == vertex_type:
-    #             tp_vertices = [topology]
-    #         else:
-    #             try:
-    #                 tp_vertices = Topology.Vertices(topology, silent=True)
-    #             except TypeError:
-    #                 try:
-    #                     tp_vertices = Topology.Vertices(topology)
-    #                 except Exception:
-    #                     tp_vertices = []
-    #             except Exception:
-    #                 tp_vertices = []
-
-    #         if tp_vertices is None:
-    #             tp_vertices = []
-
-    #     if len(tp_vertices) > 0:
-    #         vertices = []
-    #         v_dictionaries = []
-    #         alt_intensities = []
-    #         v_list = []
-
-    #         if intensityKey is not None:
-    #             for tp_v in tp_vertices:
-    #                 c = _vertex_coordinates(tp_v)
-    #                 if c is not None:
-    #                     vertices.append(c)
-
-    #                 d = _topology_dictionary(tp_v)
-    #                 v = _dict_value(d, intensityKey, 0)
-
-    #                 try:
-    #                     v = float(v)
-    #                 except Exception:
-    #                     v = 0
-
-    #                 alt_intensities.append(v)
-    #                 v_list.append(v)
-
-    #             alt_intensities = list(set(alt_intensities))
-    #             alt_intensities.sort()
-
-    #             if isinstance(intensities, list) and len(intensities) > 0:
-    #                 alt_intensities = intensities
-
-    #             if len(alt_intensities) > 0:
-    #                 min_i = min(alt_intensities)
-    #                 max_i = max(alt_intensities)
-    #                 intensityList = []
-
-    #                 for v in v_list:
-    #                     ci = _closest_index(v, alt_intensities)
-    #                     value = (
-    #                         intensities[ci]
-    #                         if isinstance(intensities, list) and len(intensities) > ci
-    #                         else alt_intensities[ci]
-    #                     )
-
-    #                     if (max_i - min_i) == 0:
-    #                         value = 0
-    #                     else:
-    #                         value = (value - min_i) / (max_i - min_i)
-
-    #                     intensityList.append(value)
-
-    #                 if all(x == 0 for x in intensityList):
-    #                     intensityList = None
-
-    #         if showVertices:
-    #             if len(vertices) == 0:
-    #                 for tp_v in tp_vertices:
-    #                     if (
-    #                         vertexColorKey is not None or
-    #                         vertexSizeKey is not None or
-    #                         vertexBorderColorKey is not None or
-    #                         vertexBorderWidthKey is not None or
-    #                         vertexLabelKey is not None or
-    #                         vertexGroupKey is not None
-    #                     ):
-    #                         v_dictionaries.append(_topology_dictionary(tp_v))
-
-    #                     c = _vertex_coordinates(tp_v)
-    #                     if c is not None:
-    #                         vertices.append(c)
-
-    #             if len(vertices) > 0:
-    #                 data.extend(
-    #                     Plotly.vertexData(
-    #                         vertices,
-    #                         dictionaries=v_dictionaries,
-    #                         color=vertexColor,
-    #                         colorKey=vertexColorKey,
-    #                         size=vertexSize,
-    #                         sizeKey=vertexSizeKey,
-    #                         borderColor=vertexBorderColor,
-    #                         borderWidth=vertexBorderWidth,
-    #                         borderColorKey=vertexBorderColorKey,
-    #                         borderWidthKey=vertexBorderWidthKey,
-    #                         labelKey=vertexLabelKey,
-    #                         showVertexLabel=showVertexLabel,
-    #                         vertexLabelFontSize=vertexLabelFontSize,
-    #                         groupKey=vertexGroupKey,
-    #                         minGroup=vertexMinGroup,
-    #                         maxGroup=vertexMaxGroup,
-    #                         groups=vertexGroups,
-    #                         legendLabel=vertexLegendLabel,
-    #                         legendGroup=vertexLegendGroup,
-    #                         legendRank=vertexLegendRank,
-    #                         showLegend=showVertexLegend,
-    #                         colorScale=colorScale,
-    #                     )
-    #                 )
-
-    #     # -------------------------------------------------------------------------
-    #     # Edge data
-    #     # -------------------------------------------------------------------------
-
-    #     if showEdges and topology_type > vertex_type:
-    #         if topology_type == edge_type:
-    #             tp_edges = [topology]
-    #         else:
-    #             try:
-    #                 tp_edges = Topology.Edges(topology, silent=True)
-    #             except TypeError:
-    #                 try:
-    #                     tp_edges = Topology.Edges(topology)
-    #                 except Exception:
-    #                     tp_edges = []
-    #             except Exception:
-    #                 tp_edges = []
-
-    #         if tp_edges is None:
-    #             tp_edges = []
-
-    #         if len(tp_edges) > 0:
-    #             e_dictionaries = []
-
-    #             if (
-    #                 edgeColorKey is not None or
-    #                 edgeWidthKey is not None or
-    #                 edgeLabelKey is not None or
-    #                 edgeGroupKey is not None or
-    #                 edgeDashKey is not None or
-    #                 arrowSizeKey is not None
-    #             ):
-    #                 for tp_edge in tp_edges:
-    #                     e_dictionaries.append(_topology_dictionary(tp_edge))
-
-    #             try:
-    #                 e_cluster = Cluster.ByTopologies(tp_edges)
-    #                 geo = Topology.Geometry(e_cluster, mantissa=mantissa)
-
-    #                 e_vertices = geo.get("vertices", [])
-    #                 e_edges = geo.get("edges", [])
-
-    #                 if len(e_edges) > 0:
-    #                     data.extend(
-    #                         Plotly.edgeData(
-    #                             e_vertices,
-    #                             e_edges,
-    #                             dictionaries=e_dictionaries,
-    #                             color=edgeColor,
-    #                             colorKey=edgeColorKey,
-    #                             width=edgeWidth,
-    #                             widthKey=edgeWidthKey,
-    #                             dash=edgeDash,
-    #                             dashKey=edgeDashKey,
-    #                             directed=directed,
-    #                             arrowSize=arrowSize,
-    #                             arrowSizeKey=arrowSizeKey,
-    #                             labelKey=edgeLabelKey,
-    #                             showEdgeLabel=showEdgeLabel,
-    #                             groupKey=edgeGroupKey,
-    #                             minGroup=edgeMinGroup,
-    #                             maxGroup=edgeMaxGroup,
-    #                             groups=edgeGroups,
-    #                             legendLabel=edgeLegendLabel,
-    #                             legendGroup=edgeLegendGroup,
-    #                             legendRank=edgeLegendRank,
-    #                             showLegend=showEdgeLegend,
-    #                             colorScale=colorScale,
-    #                         )
-    #                     )
-    #             except Exception as e:
-    #                 if not silent:
-    #                     print("Plotly.DataByTopology - Warning: Could not create edge data. Skipping edges.")
-    #                     print("Error:", e)
-
-    #     # -------------------------------------------------------------------------
-    #     # Face data
-    #     # -------------------------------------------------------------------------
-
-    #     if showFaces and topology_type >= face_type:
-    #         d_topology = _topology_dictionary(topology)
-
-    #         if faceColorKey is not None:
-    #             faceColor = _dict_value(d_topology, faceColorKey, faceColor)
-
-    #         if faceOpacityKey is not None:
-    #             d_opacity = _dict_value(d_topology, faceOpacityKey, None)
-    #             if isinstance(d_opacity, (int, float)) and 0 <= d_opacity <= 1:
-    #                 faceOpacity = d_opacity
-
-    #         if materialKey is not None:
-    #             d_material = _dict_value(d_topology, materialKey, None)
-    #             if isinstance(d_material, str) and d_material.lower() in materials:
-    #                 material = d_material.lower()
-
-    #         if material is not None and isinstance(material, str):
-    #             material = material.lower()
-
-    #         if material not in materials:
-    #             material = "plastic"
-
-    #         if ambientKey is not None:
-    #             d_ambient = _dict_value(d_topology, ambientKey, None)
-    #             if isinstance(d_ambient, (int, float)) and 0 <= d_ambient <= 1:
-    #                 ambient = d_ambient
-
-    #         if diffuseKey is not None:
-    #             d_diffuse = _dict_value(d_topology, diffuseKey, None)
-    #             if isinstance(d_diffuse, (int, float)) and 0 <= d_diffuse <= 1:
-    #                 diffuse = d_diffuse
-
-    #         if specularKey is not None:
-    #             d_specular = _dict_value(d_topology, specularKey, None)
-    #             if isinstance(d_specular, (int, float)) and 0 <= d_specular <= 1:
-    #                 specular = d_specular
-
-    #         if roughnessKey is not None:
-    #             d_roughness = _dict_value(d_topology, roughnessKey, None)
-    #             if isinstance(d_roughness, (int, float)) and 0 <= d_roughness <= 1:
-    #                 roughness = d_roughness
-
-    #         if ambient is None:
-    #             ambient = materials[material]["ambient"]
-    #         if diffuse is None:
-    #             diffuse = materials[material]["diffuse"]
-    #         if specular is None:
-    #             specular = materials[material]["specular"]
-    #         if roughness is None:
-    #             roughness = materials[material]["roughness"]
-
-    #         if Topology.IsInstance(topology, "Face"):
-    #             tp_faces = [topology]
-    #         else:
-    #             try:
-    #                 tp_faces = Topology.Faces(topology, silent=True)
-    #             except TypeError:
-    #                 try:
-    #                     tp_faces = Topology.Faces(topology)
-    #                 except Exception:
-    #                     tp_faces = []
-    #             except Exception:
-    #                 tp_faces = []
-
-    #         if tp_faces is None:
-    #             tp_faces = []
-
-    #         if len(tp_faces) > 0:
-    #             f_vertices, f_faces, f_dictionaries = _mesh_from_faces_fast(
-    #                 tp_faces,
-    #                 mantissa=mantissa,
-    #                 tolerance=tolerance,
-    #                 silent=silent,
-    #             )
-
-    #             if len(f_faces) > 0:
-    #                 f_data = faceData(
-    #                     f_vertices,
-    #                     f_faces,
-    #                     dictionaries=f_dictionaries,
-    #                     color=faceColor,
-    #                     colorKey=faceColorKey,
-    #                     opacity=faceOpacity,
-    #                     opacityKey=faceOpacityKey,
-    #                     ambient=ambient,
-    #                     diffuse=diffuse,
-    #                     specular=specular,
-    #                     roughness=roughness,
-    #                     labelKey=faceLabelKey,
-    #                     groupKey=faceGroupKey,
-    #                     minGroup=faceMinGroup,
-    #                     maxGroup=faceMaxGroup,
-    #                     groups=faceGroups,
-    #                     legendLabel=faceLegendLabel,
-    #                     legendGroup=faceLegendGroup,
-    #                     legendRank=faceLegendRank,
-    #                     showLegend=showFaceLegend,
-    #                     intensities=None,
-    #                     colorScale=colorScale,
-    #                 )
-
-    #                 if f_data is not None:
-    #                     data.append(f_data)
-
-    #     return data
-
-    # @staticmethod
-    # def DataByTopolog_orig(topology,
-    #                    showVertices=True,
-    #                    vertexSize=2.8,
-    #                    vertexSizeKey=None,
-    #                    vertexColor="black",
-    #                    vertexColorKey=None,
-    #                    vertexLabelKey=None,
-    #                    vertexBorderColor: str = "black",
-    #                    vertexBorderWidth: float = 0,
-    #                    vertexBorderColorKey: str = None,
-    #                    vertexBorderWidthKey: float = None,
-    #                    showVertexLabel=False,
-    #                    vertexLabelFontSize = 5,
-    #                    vertexGroupKey=None,
-    #                    vertexGroups=[], 
-    #                    vertexMinGroup=None,
-    #                    vertexMaxGroup=None, 
-    #                    showVertexLegend=False,
-    #                    vertexLegendLabel="Topology Vertices",
-    #                    vertexLegendRank=1,
-    #                    vertexLegendGroup=1,
-    #                    directed=False,
-    #                    arrowSize=0.1,
-    #                    arrowSizeKey=None,
-    #                    showEdges=True,
-    #                    edgeWidth=1,
-    #                    edgeWidthKey=None,
-    #                    edgeColor="black",
-    #                    edgeColorKey=None,
-    #                    edgeDash=False,
-    #                    edgeDashKey=None,
-    #                    edgeLabelKey=None,
-    #                    showEdgeLabel=False,
-    #                    edgeGroupKey=None,
-    #                    edgeGroups=[], 
-    #                    edgeMinGroup=None,
-    #                    edgeMaxGroup=None, 
-    #                    showEdgeLegend=False,
-    #                    edgeLegendLabel="Topology Edges",
-    #                    edgeLegendRank=2, 
-    #                    edgeLegendGroup=2,
-    #                    showFaces=True,
-    #                    faceOpacity=0.5,
-    #                    faceOpacityKey=None,
-    #                    faceColor="#FAFAFA",
-    #                    faceColorKey=None,
-    #                    faceLabelKey=None,
-    #                    faceGroupKey=None,
-    #                    faceGroups=[], 
-    #                    faceMinGroup=None,
-    #                    faceMaxGroup=None, 
-    #                    showFaceLegend=False,
-    #                    faceLegendLabel="Topology Faces",
-    #                    faceLegendRank=3,
-    #                    faceLegendGroup=3, 
-    #                    intensityKey=None,
-    #                    intensities=[],
-    #                    material = "default",
-    #                    materialKey=None,
-    #                    flatShading = True,
-    #                    ambient = None,
-    #                    ambientKey=None,
-    #                    diffuse = None,
-    #                    diffuseKey=None,
-    #                    specular = None,
-    #                    specularKey=None,
-    #                    roughness = None,
-    #                    roughnessKey=None,
-    #                    colorScale="viridis",
-    #                    mantissa=6,
-    #                    tolerance=0.0001,
-    #                    silent=False):
-    #     """
-    #     Creates plotly face, edge, and vertex data.
-
-    #     Parameters
-    #     ----------
-    #     topology : topologic_core.Topology
-    #         The input topology. This must contain faces and or edges.
-
-    #     showVertices : bool , optional
-    #         If set to True the vertices will be drawn. Otherwise, they will not be drawn. Default is True.
-    #     vertexSize : float , optional
-    #         The desired size of the output vertices. Default is 1.1.
-    #     vertexSizeKey : str , optional
-    #         The dictionary key under which to find the vertex size.The default is None.
-    #     vertexColor : str , optional
-    #         The desired color of the output vertices. This can be any plotly color string and may be specified as:
-    #         - A hex string (e.g. '#ff0000')
-    #         - An rgb/rgba string (e.g. 'rgb(255,0,0)')
-    #         - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
-    #         - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
-    #         - A named CSS color.
-    #         The default is "black".
-    #     vertexColorKey : str , optional
-    #         The dictionary key under which to find the vertex color.The default is None.
-    #     vertexBorderWidth : float , optional
-    #         The desired width of the border of the output vertices. Default is 0.
-    #     vertexBorderColor : str , optional
-    #         The desired color of the border of the output vertices. This can be any plotly color string and may be specified as:
-    #         - A hex string (e.g. '#ff0000')
-    #         - An rgb/rgba string (e.g. 'rgb(255,0,0)')
-    #         - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
-    #         - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
-    #         - A named CSS color.
-    #         The default is "black".
-    #     vertexLabelKey : str , optional
-    #         The dictionary key to use to display the vertex label. Default is None.
-    #     vertexLabelFontSize : int , optional
-    #         The font size to use for vertex labels. Default is 5.
-    #     vertexGroupKey : str , optional
-    #         The dictionary key to use to display the vertex group. Default is None.
-    #     vertexGroups : list , optional
-    #         The list of vertex groups against which to index the color of the vertex. Default is [].
-    #     vertexMinGroup : int or float , optional
-    #         For numeric vertexGroups, vertexMinGroup is the desired minimum value for the scaling of colors. This should match the type of value associated with the vertexGroupKey. If set to None, it is set to the minimum value in vertexGroups. Default is None.
-    #     vertexMaxGroup : int or float , optional
-    #         For numeric vertexGroups, vertexMaxGroup is the desired maximum value for the scaling of colors. This should match the type of value associated with the vertexGroupKey. If set to None, it is set to the maximum value in vertexGroups. Default is None.
-    #     showVertexLegend : bool, optional
-    #         If set to True, the legend for the vertices of this topology is shown. Otherwise, it isn't. Default is False.
-    #     vertexLegendLabel : str , optional
-    #         The legend label string used to identify vertices. Default is "Topology Vertices".
-    #     vertexLegendRank : int , optional
-    #         The legend rank order of the vertices of this topology. Default is 1.
-    #     vertexLegendGroup : int , optional
-    #         The number of the vertex legend group to which the vertices of this topology belong. Default is 1.
-    #     directed : bool , optional
-    #         If set to True, arrowheads are drawn to show direction. Default is False.
-    #     arrowSize : int, optional
-    #         The desired size of arrowheads for directed graphs. Default is 0.1.
-    #     arrowSizeKey: str , optional
-    #         The edge dictionary key under which to find the arrowhead size. Default is None.
-    #     showEdges : bool , optional
-    #         If set to True the edges will be drawn. Otherwise, they will not be drawn. Default is True.
-    #     edgeWidth : float , optional
-    #         The desired thickness of the output edges. Default is 1.
-    #     edgeWidthKey : str , optional
-    #         The dictionary key under which to find the edge width.The default is None.
-    #     edgeColor : str , optional
-    #         The desired color of the output edges. This can be any plotly color string and may be specified as:
-    #         - A hex string (e.g. '#ff0000')
-    #         - An rgb/rgba string (e.g. 'rgb(255,0,0)')
-    #         - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
-    #         - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
-    #         - A named CSS color.
-    #         The default is "black".
-    #     edgeColorKey : str , optional
-    #         The dictionary key under which to find the edge color.The default is None.
-    #     edgeDash : bool , optional
-    #         If set to True, the edges are drawn as dashed lines. Default is False.
-    #     edgeDashKey : str , optional
-    #         The key under which to find the boolean flag to draw edges as dashed lines. Default is None.
-    #     edgeLabelKey : str , optional
-    #         The dictionary key to use to display the edge label. Default is None.
-    #     edgeGroupKey : str , optional
-    #         The dictionary key to use to display the edge group. Default is None.
-    #     edgeGroups : list , optional
-    #         The list of edge groups against which to index the color of the edge. Default is [].
-    #     edgeMinGroup : int or float , optional
-    #         For numeric edgeGroups, edgeMinGroup is the desired minimum value for the scaling of colors. This should match the type of value associated with the edgeGroupKey. If set to None, it is set to the minimum value in edgeGroups. Default is None.
-    #     edgeMaxGroup : int or float , optional
-    #         For numeric edgeGroups, edgeMaxGroup is the desired maximum value for the scaling of colors. This should match the type of value associated with the edgeGroupKey. If set to None, it is set to the maximum value in edgeGroups. Default is None.
-    #     showEdgeLegend : bool, optional
-    #         If set to True, the legend for the edges of this topology is shown. Otherwise, it isn't. Default is False.
-    #     edgeLegendLabel : str , optional
-    #         The legend label string used to identify edges. Default is "Topology Edges".
-    #     edgeLegendRank : int , optional
-    #         The legend rank order of the edges of this topology. Default is 2.
-    #     edgeLegendGroup : int , optional
-    #         The number of the edge legend group to which the edges of this topology belong. Default is 2.
-    #     showFaces : bool , optional
-    #         If set to True the faces will be drawn. Otherwise, they will not be drawn. Default is True.
-    #     faceOpacity : float , optional
-    #         The desired opacity of the output faces (0=transparent, 1=opaque). Default is 0.5.
-    #     faceOpacityKey : str , optional
-    #         The dictionary key under which to find the face opacity.The default is None.
-    #     faceColor : str , optional
-    #         The desired color of the output faces. This can be any plotly color string and may be specified as:
-    #         - A hex string (e.g. '#ff0000')
-    #         - An rgb/rgba string (e.g. 'rgb(255,0,0)')
-    #         - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
-    #         - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
-    #         - A named CSS color.
-    #         The default is "#FAFAFA".
-    #     faceColorKey : str , optional
-    #         The dictionary key under which to find the face color.The default is None.
-    #     faceLabelKey : str , optional
-    #         The dictionary key to use to display the face label. Default is None.
-    #     faceGroupKey : str , optional
-    #         The dictionary key to use to display the face group. Default is None.
-    #     faceGroups : list , optional
-    #         The list of face groups against which to index the color of the face. This can bhave numeric or string values. This should match the type of value associated with the faceGroupKey. Default is [].
-    #     faceMinGroup : int or float , optional
-    #         For numeric faceGroups, minGroup is the desired minimum value for the scaling of colors. This should match the type of value associated with the faceGroupKey. If set to None, it is set to the minimum value in faceGroups. Default is None.
-    #     faceMaxGroup : int or float , optional
-    #         For numeric faceGroups, maxGroup is the desired maximum value for the scaling of colors. This should match the type of value associated with the faceGroupKey. If set to None, it is set to the maximum value in faceGroups. Default is None.
-    #     showFaceLegend : bool, optional
-    #         If set to True, the legend for the faces of this topology is shown. Otherwise, it isn't. Default is False.
-    #     faceLegendLabel : str , optional
-    #         The legend label string used to idenitfy edges. Default is "Topology Faces".
-    #     faceLegendRank : int , optional
-    #         The legend rank order of the faces of this topology. Default is 3.
-    #     faceLegendGroup : int , optional
-    #         The number of the face legend group to which the faces of this topology belong. Default is 3.
-    #     intensityKey : str, optional
-    #         If not None, the dictionary of each vertex is searched for the value associated with the intensity key. This value is then used to color-code the vertex based on the colorScale. Default is None.
-    #     intensities : list , optional
-    #         The list of intensities against which to index the intensity of the vertex. Default is [].
-    #     material : str , optional
-    #         The type of object material. Supported pre-built materials are:
-    #         Preset     Ambient  Diffuse  Specular  Roughness  Description
-    #         --------------------------------------------------------------
-    #         chalk        1.0      0.4       0.0        1.0     Very soft shading, low contrast
-    #         concrete     0.85     0.75      0.05       0.9     Highly matte, micro-rough surface, minimal specular reflection
-    #         eggshell     0.65     0.85      0.25       0.45    Slight sheen, soft highlights without gloss
-    #         glossy       0.5      0.9       0.6        0.1     Highly polished appearance
-    #         matte        0.9      0.7       0.0        1.0     Flat, non-reflective surfaces
-    #         metallic     0.3      0.8       0.9        0.2     Strong, sharp reflections
-    #         plastic      0.6      0.9       0.2        0.4     Soft highlights, good shape readability
-    #         default      N/A      N/A       N/A        N/A     Flat shading is applied.
-    #         Default is plastic.
-    #     materialKey : str , optional
-    #         The dictionary key under which the material string is stored. Default is None.
-    #     flatShading : bool , optional
-    #         If set to True, the model is rendered with flat shading with no clear light source. Default is True.
-    #     ambient : float , optional
-    #         Controls the strength of ambient light applied uniformly to the surface.
-    #         Higher values reduce shading contrast by increasing overall brightness.
-    #         Typical range is [0, 1]. This over-rides the material pre-sets. Default is 0.6.
-    #     ambientKey : str , optional
-    #         The dictionary key under which the ambient value (float) is stored. Default is None.
-    #     diffuse : float , optional
-    #         Controls the strength of diffuse (Lambertian) lighting based on the angle
-    #         between the light direction and the surface normal.
-    #         Higher values enhance shape perception through shading.
-    #         Typical range is [0, 1]. This over-rides the material pre-sets. Default is None.
-    #     diffuseKey : str , optional
-    #         The dictionary key under which the diffuse value (float) is stored. Default is None.
-    #     specular : float , optional
-    #         Controls the intensity of specular (mirror-like) highlights on the surface.
-    #         Higher values produce sharper and brighter highlights, giving a glossy appearance.
-    #         Typical range is [0, 1]. This over-rides the material pre-sets. Default is None.
-    #     specularKey : str , optional
-    #         The dictionary key under which the specular value (float) is stored. Default is None.
-    #     roughness : float , optional
-    #         Controls the spread of specular highlights on the surface.
-    #         Lower values result in sharp, concentrated highlights (smooth surfaces),
-    #         while higher values produce broader, softer highlights (rough surfaces).
-    #         Typical range is [0, 1]. This over-rides the material pre-sets. Default is None.
-    #     roughnessKey : str , optional
-    #         The dictionary key under which the roughness value (float) is stored. Default is None.
-    #     colorScale : str , optional
-    #         The desired type of plotly color scales to use (e.g. "Viridis", "Plasma"). Default is "Viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
-    #     mantissa : int , optional
-    #         The number of decimal places to round the result to. Default is 6.
-    #     tolerance : float , optional
-    #         The desired tolerance. Default is 0.0001.
-        
-    #     Returns
-    #     -------
-    #     list
-    #         The vertex, edge, and face data list.
-
-    #     """
-    #     from topologicpy.Vertex import Vertex
-    #     from topologicpy.Face import Face
-    #     from topologicpy.Cluster import Cluster
-    #     from topologicpy.Topology import Topology
-    #     from topologicpy.Dictionary import Dictionary
-    #     from topologicpy.Color import Color
-    #     from topologicpy.Helper import Helper
-    #     from time import time
-        
-    #     materials = {
-    #         "chalk": {"ambient":1.0, "diffuse":0.4, "specular":0.0, "roughness":1.0},
-    #         "concrete": {"ambient":0.85, "diffuse":0.75, "specular":0.05, "roughness":0.9},
-    #         "eggshell": {"ambient":0.65, "diffuse":0.85, "specular":0.25, "roughness":0.45},
-    #         "glossy": {"ambient":0.5, "diffuse":0.9, "specular":0.6, "roughness":0.1},
-    #         "matte": {"ambient":0.9, "diffuse":0.7, "specular":0.0, "roughness":1.0},
-    #         "metallic": {"ambient":0.3, "diffuse":0.8, "specular":0.9, "roughness":0.2},
-    #         "plastic": {"ambient":0.6, "diffuse":0.9, "specular":0.2, "roughness":0.4},
-    #         "default": {"ambient":None, "diffuse":None, "specular":None, "roughness":None}
-    #     }
-    #     def closest_index(input_value, values):
-    #         return int(min(range(len(values)), key=lambda i: abs(values[i] - input_value)))
-
-
-    #     def faceData(vertices, faces, dictionaries=None,
-    #                  color="#FAFAFA",
-    #                  colorKey=None,
-    #                  opacity=0.5,
-    #                  opacityKey=None,
-    #                  ambient=0.6,
-    #                  diffuse=0.9,
-    #                  specular=0.2,
-    #                  roughness=0.4,
-    #                  labelKey=None, groupKey=None,
-    #                  minGroup=None, maxGroup=None, groups=[], legendLabel="Topology Faces",
-    #                  legendGroup=3, legendRank=3, showLegend=True, intensities=None, colorScale="viridis"):
-    #         x = []
-    #         y = []
-    #         z = []
-    #         for v in vertices:
-    #             x.append(v[0])
-    #             y.append(v[1])
-    #             z.append(v[2])
-    #         i = []
-    #         j = []
-    #         k = []
-    #         labels = []
-    #         groupList = []
-    #         label = ""
-    #         group = ""
-    #         color = Color.AnyToHex(color)
-    #         if colorKey or labelKey or groupKey:
-    #             if groups:
-    #                 if len(groups) > 0:
-    #                     if type(groups[0]) == int or type(groups[0]) == float:
-    #                         if not minGroup:
-    #                             minGroup = min(groups)
-    #                         if not maxGroup:
-    #                             maxGroup = max(groups)
-    #                     else:
-    #                         minGroup = 0
-    #                         maxGroup = len(groups) - 1
-    #             else:
-    #                 minGroup = 0
-    #                 maxGroup = 1
-    #             n = len(str(len(faces)))
-    #             for m, f in enumerate(faces):
-    #                 i.append(f[0])
-    #                 j.append(f[1])
-    #                 k.append(f[2])
-    #                 label = ""
-    #                 group = None
-    #                 groupList.append(Color.AnyToHex(color)) # Store a default color for that face
-    #                 labels.append("Face_"+str(m+1).zfill(n))
-    #                 if len(dictionaries) > 0:
-    #                     d = dictionaries[m]
-    #                     if d:
-    #                         if not colorKey == None:
-    #                             d_color = Dictionary.ValueAtKey(d, key=colorKey) or color
-    #                             groupList[m] = Color.AnyToHex(d_color) #Replace the default color by the dictionary color.
-    #                         if not labelKey == None:
-    #                             label = Dictionary.ValueAtKey(d, key=labelKey)
-    #                             if not label == None:
-    #                                 labels[m] = str(label) # Replace the default label with the dictionary label
-    #                         if not groupKey == None:
-    #                             group = Dictionary.ValueAtKey(d, key=groupKey) or None
-                        
-    #                     if group == None:
-    #                         pass # do nothing because the default color will be used.
-    #                     elif type(group) == int or type(group) == float:
-    #                         if group < minGroup:
-    #                             group = minGroup
-    #                         if group > maxGroup:
-    #                             group = maxGroup
-    #                         f_color = Color.ByValueInRange(group, minValue=minGroup, maxValue=maxGroup, colorScale=colorScale)
-    #                         groupList[m] = Color.AnyToHex(f_color) # Replace the default color by the group value.
-    #                     else:
-    #                         f_color = Color.ByValueInRange(groups.index(group), minValue=minGroup, maxValue=maxGroup, colorScale=colorScale)
-    #                         groupList[m] = Color.AnyToHex(f_color)
-    #         else:
-    #             for f in faces:
-    #                 i.append(f[0])
-    #                 j.append(f[1])
-    #                 k.append(f[2])
-
-    #         if len(groupList) == 0:
-    #             groupList = None
-    #         if len(labels) == 0:
-    #             labels = ""
-    #         if material == "default":
-    #             lighting = {"facenormalsepsilon": 0}
-    #         else:
-    #             lighting = dict(ambient=ambient, diffuse=diffuse, specular=specular, roughness=roughness)
-    #         fData = go.Mesh3d(
-    #                 x = x,
-    #                 y = y,
-    #                 z = z,
-    #                 i = i,
-    #                 j = j,
-    #                 k = k,
-    #                 name = legendLabel,
-    #                 showlegend = showLegend,
-    #                 legendgroup = legendGroup,
-    #                 legendrank = legendRank,
-    #                 color = color,
-    #                 facecolor = groupList,
-    #                 colorscale = Plotly.ColorScale(colorScale),
-    #                 cmin = 0,
-    #                 cmax = 1,
-    #                 intensity = intensities,
-    #                 opacity = opacity,
-    #                 hoverinfo = 'text',
-    #                 text = labels,
-    #                 hovertext = labels,
-    #                 showscale = False,
-    #                 flatshading = flatShading,
-    #                 lighting = lighting
-    #             )
-    #         return fData
-
-    #     if not Topology.IsInstance(topology, "Topology"):
-    #         return None
-    
-    #     intensityList = []
-    #     alt_intensities = []
-    #     data = []
-    #     v_list = []
-        
-    #     if not isinstance(colorScale, str):
-    #         colorScale = "viridis"
-    #     if Topology.Type(topology) == Topology.TypeID("Vertex"):
-    #         tp_vertices = [topology]
-    #     else:
-    #         tp_vertices = Topology.Vertices(topology, silent=True)
-        
-    #     if isinstance(intensities, list):
-    #         if len(intensities) == 0:
-    #             intensities = None
-    
-    #     if not (tp_vertices == None or tp_vertices == []):
-    #         vertices = []
-    #         v_dictionaries = []
-    #         intensityList = []
-            
-    #         if intensityKey:
-    #             for i, tp_v in enumerate(tp_vertices):
-    #                 vertices.append([Vertex.X(tp_v, mantissa=mantissa), Vertex.Y(tp_v, mantissa=mantissa), Vertex.Z(tp_v, mantissa=mantissa)])
-    #                 d = Topology.Dictionary(tp_v)
-    #                 if d:
-    #                     v = Dictionary.ValueAtKey(d, key=intensityKey)
-    #                     if not v == None:
-    #                         alt_intensities.append(v)
-    #                         v_list.append(v)
-    #                     else:
-    #                         alt_intensities.append(0)
-    #                         v_list.append(0)
-    #                 else:
-    #                     alt_intensities.append(0)
-    #                     v_list.append(0)
-    #             alt_intensities = list(set(alt_intensities))
-    #             alt_intensities.sort()
-    #             if isinstance(intensities, list):
-    #                 if len(intensities) > 0:
-    #                     alt_intensities = intensities
-    #             min_i = min(alt_intensities)
-    #             max_i = max(alt_intensities)
-    #             for i, tp_v in enumerate(tp_vertices):
-    #                 v = v_list[i]      
-    #                 ci = closest_index(v_list[i], alt_intensities)
-    #                 value = (intensities[ci] if isinstance(intensities, list) and len(intensities) > ci else alt_intensities[ci])
-    #                 if (max_i - min_i) == 0:
-    #                     value = 0
-    #                 else:
-    #                     value = (value - min_i)/(max_i - min_i)
-    #                 intensityList.append(value)
-    #         if all(x == 0 for x in intensityList):
-    #             intensityList = None
-    #         if showVertices:
-    #             if len(vertices) == 0:
-    #                 for i, tp_v in enumerate(tp_vertices):
-    #                     if vertexColorKey or vertexSizeKey or vertexBorderColorKey or vertexBorderWidthKey or vertexLabelKey or vertexGroupKey:
-    #                         d = Topology.Dictionary(tp_v)
-    #                         v_dictionaries.append(d)
-    #                     vertices.append([Vertex.X(tp_v, mantissa=mantissa), Vertex.Y(tp_v, mantissa=mantissa), Vertex.Z(tp_v, mantissa=mantissa)])
-    #             data.extend(Plotly.vertexData(vertices,
-    #                                           dictionaries=v_dictionaries,
-    #                                           color=vertexColor,
-    #                                           colorKey=vertexColorKey,
-    #                                           size=vertexSize,
-    #                                           sizeKey=vertexSizeKey,
-    #                                           borderColor=vertexBorderColor,
-    #                                           borderWidth=vertexBorderWidth,
-    #                                           borderColorKey=vertexBorderColorKey,
-    #                                           borderWidthKey=vertexBorderWidthKey,
-    #                                           labelKey=vertexLabelKey,
-    #                                           showVertexLabel=showVertexLabel,
-    #                                           vertexLabelFontSize=vertexLabelFontSize,
-    #                                           groupKey=vertexGroupKey,
-    #                                           minGroup=vertexMinGroup,
-    #                                           maxGroup=vertexMaxGroup,
-    #                                           groups=vertexGroups,
-    #                                           legendLabel=vertexLegendLabel,
-    #                                           legendGroup=vertexLegendGroup,
-    #                                           legendRank=vertexLegendRank,
-    #                                           showLegend=showVertexLegend,
-    #                                           colorScale=colorScale))
-            
-    #     if showEdges and Topology.Type(topology) > Topology.TypeID("Vertex"):
-    #         if Topology.Type(topology) == Topology.TypeID("Edge"):
-    #             tp_edges = [topology]
-    #         else:
-    #             tp_edges = Topology.Edges(topology)
-    #         if not (tp_edges == None or tp_edges == []):
-    #             e_dictionaries = []
-    #             if edgeColorKey or edgeWidthKey or edgeLabelKey or edgeGroupKey:
-    #                 for tp_edge in tp_edges:
-    #                     e_dictionaries.append(Topology.Dictionary(tp_edge))
-                        
-    #             e_cluster = Cluster.ByTopologies(tp_edges)
-    #             geo = Topology.Geometry(e_cluster, mantissa=mantissa)
-    #             vertices = geo['vertices']
-    #             edges = geo['edges']
-    #             if len(edges) > 0:
-    #                 data.extend(Plotly.edgeData(vertices, edges, dictionaries=e_dictionaries, color=edgeColor, colorKey=edgeColorKey, width=edgeWidth, widthKey=edgeWidthKey, dash=edgeDash, dashKey=edgeDashKey, directed=directed, arrowSize=arrowSize, arrowSizeKey=arrowSizeKey, labelKey=edgeLabelKey, showEdgeLabel=showEdgeLabel, groupKey=edgeGroupKey, minGroup=edgeMinGroup, maxGroup=edgeMaxGroup, groups=edgeGroups, legendLabel=edgeLegendLabel, legendGroup=edgeLegendGroup, legendRank=edgeLegendRank, showLegend=showEdgeLegend, colorScale=colorScale))
-        
-    #     if showFaces and Topology.Type(topology) >= Topology.TypeID("Face"):
-    #         d = Topology.Dictionary(topology)
-    #         if not faceColorKey == None:
-    #             faceColor = Dictionary.ValueAtKey(d, faceColorKey, faceColor)
-    #         if not faceOpacityKey == None:
-    #             d_opacity = Dictionary.ValueAtKey(d, key=faceOpacityKey)
-    #             if not d_opacity == None:
-    #                 if 0 <= d_opacity <= 1:
-    #                     faceOpacity = d_opacity
-
-    #         if not materialKey == None:
-    #             d_material = Dictionary.ValueAtKey(d, key=materialKey)
-    #             if not d_material == None and isinstance(d_material, str):
-    #                 if d_material.lower() in list(materials.keys()):
-    #                     material = d_material
-    #         if not material == None and isinstance(material, str):
-    #             material = material.lower()
-    #         if not material in list(materials.keys()):
-    #             material = "plastic"
-    #         if not ambientKey == None:
-    #             d_ambient = Dictionary.ValueAtKey(d, key=ambientKey)
-    #             if not d_ambient == None:
-    #                 if 0 <= d_ambient <= 1:
-    #                     ambient = d_ambient
-    #         if not diffuseKey == None:
-    #             d_diffuse = Dictionary.ValueAtKey(d, key=diffuseKey)
-    #             if not d_diffuse == None:
-    #                 if 0 <= d_diffuse <= 1:
-    #                     diffuse = d_diffuse
-    #         if not specularKey == None:
-    #             d_specular = Dictionary.ValueAtKey(d, key=specularKey)
-    #             if not d_specular == None:
-    #                 if 0 <= d_specular <= 1:
-    #                     specular = d_specular
-    #         if not roughnessKey == None:
-    #             d_roughness = Dictionary.ValueAtKey(d, key=roughnessKey)
-    #             if not d_roughness == None:
-    #                 if 0 <= d_roughness <= 1:
-    #                     roughness = d_roughness
-    #         if ambient == None:
-    #             ambient = materials[material]['ambient']
-    #         if diffuse == None:
-    #             diffuse = materials[material]['diffuse']
-    #         if specular == None:
-    #             specular = materials[material]['specular']
-    #         if roughness == None:
-    #             roughness = materials[material]['roughness']
-    #         if Topology.IsInstance(topology, "Face"):
-    #             tp_faces = [topology]
-    #         else:
-    #             tp_faces = Topology.Faces(topology)
-    #         if not(tp_faces == None or tp_faces == []):
-    #             f_dictionaries = []
-    #             all_triangles = []
-    #             for tp_face in tp_faces:
-    #                 triangles = Face.Triangulate(tp_face, tolerance=tolerance, silent=silent)
-    #                 if isinstance(triangles, list):
-    #                     for tri in triangles:
-    #                         d = Topology.Dictionary(tp_face)
-    #                         f_dictionaries.append(d)
-    #                         if d:
-    #                             tri = Topology.SetDictionary(tri, d, silent=True)
-    #                         all_triangles.append(tri)
-    #             if len(all_triangles) > 0:
-    #                 f_cluster = Cluster.ByTopologies(all_triangles)
-    #                 geo = Topology.Geometry(f_cluster, mantissa=mantissa)
-    #                 vertices = geo['vertices']
-    #                 faces = geo['faces']
-    #                 if len(faces) > 0:
-    #                     data.append(faceData(vertices, faces, dictionaries=f_dictionaries, color=faceColor, colorKey=faceColorKey, opacity=faceOpacity, opacityKey=faceOpacityKey,
-    #                                          ambient=ambient, diffuse=diffuse, specular=specular, roughness=roughness,
-    #                                          labelKey=faceLabelKey, groupKey=faceGroupKey, minGroup=faceMinGroup, maxGroup=faceMaxGroup, groups=faceGroups, legendLabel=faceLegendLabel, legendGroup=faceLegendGroup, legendRank=faceLegendRank, showLegend=showFaceLegend, intensities=intensityList, colorScale=colorScale))
-    #     return data
-
     @staticmethod
     def FigureByConfusionMatrix(matrix,
             categories=None,
@@ -4461,22 +2862,18 @@ class Plotly:
         # Local imports (TopologicPy style)
         from topologicpy.Color import Color
 
-        # Ensure Plotly class is accessible in this scope
-        # (This method lives inside topologicpy.Plotly.Plotly)
-        try:
-            Plotly  # noqa: B018
-        except NameError:
-            # Fallback import if called from elsewhere
-            from topologicpy.Plotly import Plotly as Plotly  # type: ignore
-
         # --- Validate matrix
         if not isinstance(matrix, (list, np.ndarray)):
             warnings.warn("Plotly.FigureByConfusionMatrix - Error: The input matrix is not a list or numpy array. Returning None.")
             return None
 
-        m = np.array(matrix)
-        if m.ndim != 2:
-            warnings.warn("Plotly.FigureByConfusionMatrix - Error: The input matrix is not 2D. Returning None.")
+        try:
+            m = np.asarray(matrix, dtype=float)
+        except Exception:
+            warnings.warn("Plotly.FigureByConfusionMatrix - Error: The matrix must contain numeric values. Returning None.")
+            return None
+        if m.ndim != 2 or m.shape[0] == 0 or m.shape[1] == 0:
+            warnings.warn("Plotly.FigureByConfusionMatrix - Error: The input matrix must be a non-empty 2D matrix. Returning None.")
             return None
 
         n_rows, n_cols = int(m.shape[0]), int(m.shape[1])
@@ -4498,10 +2895,13 @@ class Plotly:
             cats = cats[:needed]
 
         # --- Derive min/max if needed
+        finite_values = m[np.isfinite(m)]
         if minValue is None:
-            minValue = float(np.nanmin(m)) if m.size else 0.0
+            minValue = float(np.min(finite_values)) if finite_values.size else 0.0
         if maxValue is None:
-            maxValue = float(np.nanmax(m)) if m.size else 1.0
+            maxValue = float(np.max(finite_values)) if finite_values.size else 1.0
+        if maxValue < minValue:
+            minValue, maxValue = maxValue, minValue
 
         # --- Build the figure using existing robust matrix plotter
         figure = Plotly.FigureByMatrix(
@@ -4517,7 +2917,7 @@ class Plotly:
             showScale=showScale,
             colorScale=Plotly.ColorScale(colorScale),
             colorSamples=colorSamples,
-            backgroundColor=Color.AnyToHex(backgroundColor),
+            backgroundColor=Plotly._color_to_hex(backgroundColor),
             marginLeft=marginLeft,
             marginRight=marginRight,
             marginTop=marginTop,
@@ -4641,18 +3041,17 @@ class Plotly:
             warnings.warn("Plotly.FigureByMatrix - Error: Could not import numpy. Please install numpy manually. Returning None.")
             return None
 
-        try:
-            Plotly  # noqa: B018
-        except NameError:
-            from topologicpy.Plotly import Plotly as Plotly  # type: ignore
-
         if not isinstance(matrix, (list, np.ndarray)):
             warnings.warn("Plotly.FigureByMatrix - Error: The input matrix is not a list or numpy array. Returning None.")
             return None
 
-        m = np.array(matrix)
-        if m.ndim != 2:
-            warnings.warn("Plotly.FigureByMatrix - Error: The input matrix is not 2D. Returning None.")
+        try:
+            m = np.asarray(matrix, dtype=float)
+        except Exception:
+            warnings.warn("Plotly.FigureByMatrix - Error: The matrix must contain numeric values. Returning None.")
+            return None
+        if m.ndim != 2 or m.shape[0] == 0 or m.shape[1] == 0:
+            warnings.warn("Plotly.FigureByMatrix - Error: The input matrix must be a non-empty 2D matrix. Returning None.")
             return None
 
         n_rows, n_cols = int(m.shape[0]), int(m.shape[1])
@@ -4684,12 +3083,25 @@ class Plotly:
         # -----------------------------
         # Min/Max (None-safe; allow 0)
         # -----------------------------
+        finite_values = m[np.isfinite(m)]
         if minValue is None:
-            minValue = float(np.nanmin(m)) if m.size else 0.0
+            minValue = float(np.min(finite_values)) if finite_values.size else 0.0
+        else:
+            try:
+                minValue = float(minValue)
+            except Exception:
+                minValue = float(np.min(finite_values)) if finite_values.size else 0.0
         if maxValue is None:
-            maxValue = float(np.nanmax(m)) if m.size else 1.0
+            maxValue = float(np.max(finite_values)) if finite_values.size else 1.0
+        else:
+            try:
+                maxValue = float(maxValue)
+            except Exception:
+                maxValue = float(np.max(finite_values)) if finite_values.size else 1.0
+        if maxValue < minValue:
+            minValue, maxValue = maxValue, minValue
 
-        denom = (maxValue - minValue) if (maxValue - minValue) != 0 else 1.0
+        denom = (maxValue - minValue) if abs(maxValue - minValue) > 1.0e-15 else 1.0
 
         # -----------------------------
         # Grayscale "publication" mode
@@ -4708,8 +3120,8 @@ class Plotly:
             forced_color_scale = "Greys"
             forced_samples = max(int(colorSamples), 2)
         else:
-            paper_bg = Color.AnyToHex(backgroundColor)
-            plot_bg = Color.AnyToHex(backgroundColor)
+            paper_bg = Plotly._color_to_hex(backgroundColor)
+            plot_bg = Plotly._color_to_hex(backgroundColor)
             template_name = "plotly_white"
             forced_color_scale = None
             forced_samples = None
@@ -4789,7 +3201,8 @@ class Plotly:
         for i in range(n_rows):
             for j in range(n_cols):
                 val = m[i, j]
-                t = float((val - minValue) / denom)
+                t = float((val - minValue) / denom) if np.isfinite(val) else 0.5
+                t = max(0.0, min(1.0, t))
                 rgb = _interp_color(t)
                 lum = _rel_luminance(rgb)
 
@@ -4894,435 +3307,182 @@ class Plotly:
         return fig
     
     @staticmethod
-    def FigureByCorrelation(actual,
-                            predicted,
+    def FigureByCorrelation(actual, predicted,
                             title="Correlation between Actual and Predicted Values",
-                            xTitle="Actual Values",
-                            yTitle="Predicted Values",
-                            showIdentity=True,
-                            showBestFit=True,
-                            dotSize=6,
-                            dotColor="blue",
-                            lineColor="red",
-                            width=800,
-                            height=600,
-                            theme='default',
-                            backgroundColor='rgba(0,0,0,0)',
-                            marginLeft=0,
-                            marginRight=0,
-                            marginTop=40,
-                            marginBottom=0,
-                            ):
-        """
-        Returns a Plotly Figure showing the correlation between the input actual and predicted values. Actual values are displayed on the X-Axis, Predicted values are displayed on the Y-Axis.
-
-        Parameters
-        ----------
-        actual : list
-            The actual values to display.
-        predicted : list
-            The predicted values to display.
-        title : str , optional
-            The desired title to display. Default is "Correlation between Actual and Predicted Values".
-        xTitle : str , optional
-            The desired X-axis title to display. Default is "Actual Values".
-        yTitle : str , optional
-            The desired Y-axis title to display. Default is "Predicted Values".
-        showIdentity : bool, optional
-            If set to true, shows the 45 degree line.
-        showBestFit : bool, optional
-            If set to True, draws the best fit line through the data.
-        dotSize : int, optional
-            The marker size
-        dotColor : str , optional
-            The desired color of the dots. This can be any plotly color string and may be specified as:
-            - A hex string (e.g. '#ff0000')
-            - An rgb/rgba string (e.g. 'rgb(255,0,0)')
-            - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
-            - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
-            - A named CSS color.
-            The default is 'blue'.
-        lineColor : str , optional
-            The desired color of the best fit line. This can be any plotly color string and may be specified as:
-            - A hex string (e.g. '#ff0000')
-            - An rgb/rgba string (e.g. 'rgb(255,0,0)')
-            - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
-            - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
-            - A named CSS color.
-            The default is 'red'.
-        width : int , optional
-            The desired width of the figure. Default is 800.
-        height : int , optional
-            The desired height of the figure. Default is 600.
-        theme : str , optional
-            The plotly color scheme to use. The options are "dark", "light", "default". Default is "default".
-        backgroundColor : list or str , optional
-            The desired background color. This can be any color list or plotly color string and may be specified as:
-            - An rgb list (e.g. [255,0,0])
-            - A cmyk list (e.g. [0.5, 0, 0.25, 0.2])
-            - A hex string (e.g. '#ff0000')
-            - An rgb/rgba string (e.g. 'rgb(255,0,0)')
-            - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
-            - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
-            - A named CSS color.
-            The default is 'rgba(0,0,0,0)' (transparent).
-        marginLeft : int , optional
-            The desired left margin in pixels. Default is 0.
-        marginRight : int , optional
-            The desired right margin in pixels. Default is 0.
-        marginTop : int , optional
-            The desired top margin in pixels. Default is 40.
-        marginBottom : int , optional
-            The desired bottom margin in pixels. Default is 0.
-        
-        Returns
-        -------
-        plotly.Figure
-            The created plotly figure.
-        
-        """
-
+                            xTitle="Actual Values", yTitle="Predicted Values",
+                            showIdentity=True, showBestFit=True,
+                            dotSize=6, dotColor="blue", lineColor="red",
+                            width=800, height=600, theme="default",
+                            backgroundColor="rgba(0,0,0,0)",
+                            marginLeft=0, marginRight=0, marginTop=40, marginBottom=0):
+        """Creates a parity/correlation plot for paired actual and predicted values."""
         import numpy as np
         import plotly.graph_objects as go
 
-        # --- Safety
         if actual is None or predicted is None:
             return None
-
-        x = np.array(actual).reshape(-1).astype(float)
-        y = np.array(predicted).reshape(-1).astype(float)
-
+        try:
+            x = np.asarray(actual, dtype=float).reshape(-1)
+            y = np.asarray(predicted, dtype=float).reshape(-1)
+        except Exception:
+            return None
+        if len(x) == 0 or len(x) != len(y):
+            return None
+        mask = np.isfinite(x) & np.isfinite(y)
+        x, y = x[mask], y[mask]
         if len(x) == 0:
             return None
 
-        # --- Metrics
-        eps = 1e-12
         mae = float(np.mean(np.abs(y - x)))
         rmse = float(np.sqrt(np.mean((y - x) ** 2)))
         ss_res = float(np.sum((x - y) ** 2))
         ss_tot = float(np.sum((x - np.mean(x)) ** 2))
-        r2 = 1.0 - ss_res / (ss_tot + eps)
+        r2 = float("nan") if ss_tot <= 1.0e-15 else 1.0 - ss_res / ss_tot
 
-        # --- Figure
         fig = go.Figure()
-
-        # Scatter
         fig.add_trace(go.Scatter(
-            x=x,
-            y=y,
-            mode="markers",
-            name="Predictions",
-            marker=dict(
-                size=int(dotSize),
-                color=dotColor,
-                opacity=0.8
-            )
+            x=x, y=y, mode="markers", name="Predictions",
+            marker=dict(size=max(1, int(dotSize)), color=dotColor, opacity=0.8),
+            hovertemplate=f"{xTitle}: %{{x}}<br>{yTitle}: %{{y}}<extra></extra>",
         ))
 
         mn = float(min(np.min(x), np.min(y)))
         mx = float(max(np.max(x), np.max(y)))
+        if mn == mx:
+            pad = max(abs(mn) * 0.05, 0.5)
+            mn, mx = mn - pad, mx + pad
 
-        # Identity line
         if showIdentity:
-            fig.add_trace(go.Scatter(
-                x=[mn, mx],
-                y=[mn, mx],
-                mode="lines",
-                name="Identity (y=x)",
-                line=dict(color="black", dash="dash"),
-                hoverinfo="skip"
-            ))
+            fig.add_trace(go.Scatter(x=[mn, mx], y=[mn, mx], mode="lines", name="Identity (y=x)", line=dict(color="black", dash="dash"), hoverinfo="skip"))
 
-        # Best-fit line
-        if showBestFit and len(x) >= 2:
+        if showBestFit and len(x) >= 2 and float(np.ptp(x)) > 1.0e-15:
             a, b = np.polyfit(x, y, 1)
-            fig.add_trace(go.Scatter(
-                x=[mn, mx],
-                y=[a * mn + b, a * mx + b],
-                mode="lines",
-                name=f"Best fit (y={a:.3g}x+{b:.3g})",
-                line=dict(color=lineColor),
-                hoverinfo="skip"
-            ))
+            fig.add_trace(go.Scatter(x=[mn, mx], y=[a * mn + b, a * mx + b], mode="lines", name=f"Best fit (y={a:.3g}x+{b:.3g})", line=dict(color=lineColor), hoverinfo="skip"))
 
-        # --- Layout
+        metrics = f"MAE={mae:.4g}, RMSE={rmse:.4g}"
+        if np.isfinite(r2):
+            metrics += f", R²={r2:.4g}"
+        theme_name = str(theme or "default").lower()
+        template = {"default": "plotly_white", "light": "plotly_white", "dark": "plotly_dark"}.get(theme_name, "plotly_white")
+        background = Plotly._color_to_hex(backgroundColor)
         fig.update_layout(
-            title=f"{title} — MAE={mae:.4g}, RMSE={rmse:.4g}, R²={r2:.4g}",
-            xaxis_title=xTitle,
-            yaxis_title=yTitle,
-            width=width,
-            height=height,
-            template="plotly_white" if theme == "default" else f"plotly_{theme}",
-            paper_bgcolor=backgroundColor,
-            plot_bgcolor=backgroundColor,
-            margin=dict(
-                l=marginLeft,
-                r=marginRight,
-                t=marginTop,
-                b=marginBottom
-            )
+            title=f"{title} — {metrics}", xaxis_title=xTitle, yaxis_title=yTitle,
+            width=width, height=height, template=template,
+            paper_bgcolor=background, plot_bgcolor=background,
+            margin=dict(l=marginLeft, r=marginRight, t=marginTop, b=marginBottom),
+            hoverlabel=dict(align="left", namelength=-1),
         )
-
-        # --- Enforce square axes (important for parity plots)
-        fig.update_xaxes(scaleanchor="y", scaleratio=1)
         fig.update_yaxes(scaleanchor="x", scaleratio=1)
-
         return fig
 
     @staticmethod
-    def FigureByDataFrame(dataFrame,
-             labels=[],
-             width=950,
-             height=500,
-             title="Untitled",
-             xTitle="X Axis",
-             xSpacing=1,
-             yTitle="Y Axis",
-             ySpacing=1.0,
-             useMarkers=False,
-             chartType="Line",
-             backgroundColor='rgba(0,0,0,0)',
-             gridColor = 'lightgray',
-             marginLeft=0,
-             marginRight=0,
-             marginTop=40,
-             marginBottom=0):
-        
-        """
-        Returns a Plotly Figure of the input dataframe
-
-        Parameters
-        ----------
-        df : pandas.df
-            The pandas dataframe to display.
-        data_labels : list
-            The labels to use for the data.
-        width : int , optional
-            The desired width of the figure. Default is 950.
-        height : int , optional
-            The desired height of the figure. Default is 500.
-        title : str , optional
-            The chart title. Default is "Training and Testing Results".
-        xTitle : str , optional
-            The X-axis title. Default is "Epochs".
-        xSpacing : float , optional
-            The X-axis spacing. Default is 1.0.
-        yTitle : str , optional
-            The Y-axis title. Default is "Accuracy and Loss".
-        ySpacing : float , optional
-            The Y-axis spacing. Default is 0.1.
-        useMarkers : bool , optional
-            If set to True, markers will be displayed. Default is False.
-        chartType : str , optional
-            The desired type of chart. The options are "Line", "Bar", or "Scatter". It is case insensitive. Default is "Line".
-        backgroundColor : list or str , optional
-            The desired background color. This can be any color list or plotly color string and may be specified as:
-            - An rgb list (e.g. [255,0,0])
-            - A cmyk list (e.g. [0.5, 0, 0.25, 0.2])
-            - A hex string (e.g. '#ff0000')
-            - An rgb/rgba string (e.g. 'rgb(255,0,0)')
-            - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
-            - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
-            - A named CSS color.
-            The default is 'rgba(0,0,0,0)' (transparent).
-        grid : str , optional
-            The desired background color. This can be any plotly color string and may be specified as:
-            - A hex string (e.g. '#ff0000')
-            - An rgb/rgba string (e.g. 'rgb(255,0,0)')
-            - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
-            - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
-            - A named CSS color.
-            The default is 'lightgray'
-        marginLeft : int , optional
-            The desired left margin in pixels. Default is 0.
-        marginRight : int , optional
-            The desired right margin in pixels. Default is 0.
-        marginTop : int , optional
-            The desired top margin in pixels. Default is 40.
-        marginBottom : int , optional
-            The desired bottom margin in pixels. Default is 0.
-
-        Returns
-        -------
-        None.
-
-        """
+    def FigureByDataFrame(dataFrame, labels=None, width=950, height=500,
+                          title="Untitled", xTitle="X Axis", xSpacing=1,
+                          yTitle="Y Axis", ySpacing=1.0, useMarkers=False,
+                          chartType="Line", backgroundColor="rgba(0,0,0,0)",
+                          gridColor="lightgray", marginLeft=0, marginRight=0,
+                          marginTop=40, marginBottom=0):
+        """Returns a Plotly figure from a pandas-compatible dataframe."""
         import plotly.express as px
-        from topologicpy.Color import Color
-        
-        if chartType.lower() == "line":
-            figure = px.line(dataFrame, x=labels[0], y=labels[1:], title=title, markers=useMarkers)
-        elif chartType.lower() == "bar":
+
+        if dataFrame is None or not hasattr(dataFrame, "columns"):
+            raise TypeError("Plotly.FigureByDataFrame - Error: The input dataFrame parameter is not a valid dataframe.")
+        columns = list(dataFrame.columns)
+        labels = list(labels) if labels is not None else columns
+        if not labels:
+            labels = columns
+        if len(labels) < 2:
+            return None
+        if any(label not in columns for label in labels):
+            return None
+
+        chart = str(chartType or "line").lower()
+        if chart == "line":
+            figure = px.line(dataFrame, x=labels[0], y=labels[1:], title=title, markers=bool(useMarkers))
+        elif chart == "bar":
             figure = px.bar(dataFrame, x=labels[0], y=labels[1:], title=title)
-        elif chartType.lower() == "scatter":
+        elif chart == "scatter":
             figure = px.scatter(dataFrame, x=labels[0], y=labels[1:], title=title)
         else:
-            raise NotImplementedError
-        
-        layout = {
-            "width": width,
-            "height": height,
-            "title": title,
-            "xaxis": {"title": xTitle, "dtick": xSpacing, 'gridcolor': gridColor},
-            "yaxis": {"title": yTitle, "dtick": ySpacing, 'gridcolor': gridColor},
-            "paper_bgcolor": Color.AnyToHex(backgroundColor),
-            "plot_bgcolor": Color.AnyToHex(backgroundColor),
-            "margin":dict(l=marginLeft, r=marginRight, t=marginTop, b=marginBottom)
-        }
-        figure.update_layout(layout)
+            return None
+
+        figure.update_layout(
+            width=width, height=height, title=title,
+            xaxis=dict(title=xTitle, dtick=xSpacing, gridcolor=Plotly._color_to_hex(gridColor, gridColor)),
+            yaxis=dict(title=yTitle, dtick=ySpacing, gridcolor=Plotly._color_to_hex(gridColor, gridColor)),
+            paper_bgcolor=Plotly._color_to_hex(backgroundColor),
+            plot_bgcolor=Plotly._color_to_hex(backgroundColor),
+            margin=dict(l=marginLeft, r=marginRight, t=marginTop, b=marginBottom),
+            hoverlabel=dict(align="left", namelength=-1),
+        )
         return figure
 
 
     @staticmethod
     def FigureByData(data, width=950, height=500,
                      xAxis=False, yAxis=False, zAxis=False,
-                     axisSize=1, backgroundColor='rgba(0,0,0,0)',
+                     axisSize=1, backgroundColor="rgba(0,0,0,0)",
                      marginLeft=0, marginRight=0,
                      marginTop=20, marginBottom=0,
-                     tolerance = 0.0001):
-        """
-        Creates a plotly figure.
-
-        Parameters
-        ----------
-        data : list
-            The input list of plotly data.
-        width : int , optional
-            The width in pixels of the figure. The default value is 950.
-        height : int , optional
-            The height in pixels of the figure. The default value is 950.
-        xAxis : bool , optional
-            If set to True the x axis is drawn. Otherwise it is not drawn. Default is False.
-        yAxis : bool , optional
-            If set to True the y axis is drawn. Otherwise it is not drawn. Default is False.
-        zAxis : bool , optional
-            If set to True the z axis is drawn. Otherwise it is not drawn. Default is False.
-        axisSize : float , optional
-            The size of the X, Y, Z, axes. Default is 1.
-        backgroundColor : list or str , optional
-            The desired background color. This can be any color list or plotly color string and may be specified as:
-            - An rgb list (e.g. [255,0,0])
-            - A cmyk list (e.g. [0.5, 0, 0.25, 0.2])
-            - A hex string (e.g. '#ff0000')
-            - An rgb/rgba string (e.g. 'rgb(255,0,0)')
-            - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
-            - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
-            - A named CSS color.
-            The default is 'rgba(0,0,0,0)' (transparent).
-        marginLeft : int , optional
-            The size in pixels of the left margin. The default value is 0.
-        marginRight : int , optional
-            The size in pixels of the right margin. The default value is 0.
-        marginTop : int , optional
-            The size in pixels of the top margin. The default value is 20.
-        marginBottom : int , optional
-            The size in pixels of the bottom margin. The default value is 0.
-        tolerance : float , optional
-            The desired tolerance. Default is 0.0001.
-        
-        Returns
-        -------
-        plotly.graph_objs._figure.Figure
-            The created plotly figure.
-
-        """
-        if not Plotly._plotly_available(silent=True):
-            return None
-        if not isinstance(data, list):
+                     tolerance=0.0001):
+        """Creates a Plotly figure from a list of traces."""
+        if not Plotly._plotly_available(silent=True) or not isinstance(data, list):
             return None
 
+        traces = list(data)
         if xAxis or yAxis or zAxis:
             try:
                 from topologicpy.Vertex import Vertex
                 from topologicpy.Edge import Edge
-            except Exception:
-                Vertex = None
-                Edge = None
-            if Vertex is not None and Edge is not None:
                 v0 = Vertex.ByCoordinates(0, 0, 0)
-                v1 = Vertex.ByCoordinates(axisSize,0,0)
-                v2 = Vertex.ByCoordinates(0,axisSize,0)
-                v3 = Vertex.ByCoordinates(0,0,axisSize)
-
+                v1 = Vertex.ByCoordinates(axisSize, 0, 0)
+                v2 = Vertex.ByCoordinates(0, axisSize, 0)
+                v3 = Vertex.ByCoordinates(0, 0, axisSize)
                 if xAxis:
-                    xEdge = Edge.ByVertices([v0,v1], tolerance=tolerance)
-                    xData = Plotly.DataByTopology(xEdge, edgeColor="red", edgeWidth=6, showFaces=False, showEdges=True, showVertices=False, edgeLegendLabel="X-Axis") or []
-                    data = data + xData
+                    axis_data = Plotly.DataByTopology(Edge.ByVertices([v0, v1], tolerance=tolerance), edgeColor="red", edgeWidth=6, showFaces=False, showEdges=True, showVertices=False, edgeLegendLabel="X-Axis") or []
+                    traces.extend(axis_data)
                 if yAxis:
-                    yEdge = Edge.ByVertices([v0,v2], tolerance=tolerance)
-                    yData = Plotly.DataByTopology(yEdge, edgeColor="green", edgeWidth=6, showFaces=False, showEdges=True, showVertices=False, edgeLegendLabel="Y-Axis") or []
-                    data = data + yData
+                    axis_data = Plotly.DataByTopology(Edge.ByVertices([v0, v2], tolerance=tolerance), edgeColor="green", edgeWidth=6, showFaces=False, showEdges=True, showVertices=False, edgeLegendLabel="Y-Axis") or []
+                    traces.extend(axis_data)
                 if zAxis:
-                    zEdge = Edge.ByVertices([v0,v3], tolerance=tolerance)
-                    zData = Plotly.DataByTopology(zEdge, edgeColor="blue", edgeWidth=6, showFaces=False, showEdges=True, showVertices=False, edgeLegendLabel="Z-Axis") or []
-                    data = data + zData
+                    axis_data = Plotly.DataByTopology(Edge.ByVertices([v0, v3], tolerance=tolerance), edgeColor="blue", edgeWidth=6, showFaces=False, showEdges=True, showVertices=False, edgeLegendLabel="Z-Axis") or []
+                    traces.extend(axis_data)
+            except Exception:
+                pass
 
-        figure = go.Figure(data=data)
+        figure = go.Figure(data=traces)
         figure.update_layout(
-            width=width,
-            height=height,
-            showlegend=True,
-            scene = dict(
-                xaxis = dict(visible=False),
-                yaxis = dict(visible=False),
-                zaxis =dict(visible=False),
-                ),
-            scene_aspectmode='data',
+            width=width, height=height, showlegend=True,
+            scene=dict(xaxis=dict(visible=False), yaxis=dict(visible=False), zaxis=dict(visible=False), aspectmode="data"),
             paper_bgcolor=Plotly._color_to_hex(backgroundColor),
             plot_bgcolor=Plotly._color_to_hex(backgroundColor),
             margin=dict(l=marginLeft, r=marginRight, t=marginTop, b=marginBottom),
-            )
+            hoverlabel=dict(align="left", namelength=-1),
+        )
         figure.update_xaxes(showgrid=False, zeroline=False, visible=False)
         figure.update_yaxes(showgrid=False, zeroline=False, visible=False)
         return figure
 
     @staticmethod
     def FigureByJSONFile(file):
-        """
-        Imports a plotly figure from a JSON file.
-
-        Parameters
-        ----------
-        file : file object
-            The JSON file.
-
-        Returns
-        -------
-        plotly.graph_objs._figure.Figure
-            The imported figure.
-
-        """
-        figure = None
-        if not file:
+        """Imports a Plotly figure from an open JSON file object or path-like object."""
+        if not Plotly._plotly_available(silent=True) or file is None:
             return None
-        figure = plotly.io.read_json(file, output_type='Figure', skip_invalid=True, engine=None)
-        file.close()
-        return figure
+        try:
+            return plotly.io.read_json(file, output_type="Figure", skip_invalid=False, engine=None)
+        except Exception:
+            return None
     
     @staticmethod
     def FigureByJSONPath(path):
-        """
-        Imports a plotly figure from a JSON file path.
-
-        Parameters
-        ----------
-        path : str
-            The path to the BRep file.
-
-        Returns
-        -------
-        plotly.graph_objs._figure.Figure
-            The imported figure.
-
-        """
-        if not path:
+        """Imports a Plotly figure from a JSON file path."""
+        if not Plotly._plotly_available(silent=True) or not isinstance(path, (str, os.PathLike)):
             return None
         try:
-            file = open(path)
-        except:
-            print("Plotly.FigureByJSONPath - Error: the JSON file is not a valid file. Returning None.")
+            return plotly.io.read_json(path, output_type="Figure", skip_invalid=False, engine=None)
+        except Exception:
+            print("Plotly.FigureByJSONPath - Error: The JSON path is not a valid Plotly JSON file. Returning None.")
             return None
-        return Plotly.FigureByJSONFile(file)
 
     @staticmethod
     def FigureByPieChart(data, values, names):
@@ -5365,341 +3525,136 @@ class Plotly:
             return None
     
     @staticmethod
-
-    @staticmethod
     def FigureByTopology(topology,
-                 showVertices=True, vertexSize=1.1, vertexColor="black", 
-                 vertexLabelKey=None, vertexGroupKey=None, vertexGroups=[], 
-                 vertexMinGroup=None, vertexMaxGroup=None, 
-                 showVertexLegend=False, vertexLegendLabel="Topology Vertices", vertexLegendRank=1, 
-                 vertexLegendGroup=1, 
-    
-                 showEdges=True, edgeWidth=1, edgeColor="black", 
-                 edgeLabelKey=None, edgeGroupKey=None, edgeGroups=[], 
-                 edgeMinGroup=None, edgeMaxGroup=None, 
-                 showEdgeLegend=False, edgeLegendLabel="Topology Edges", edgeLegendRank=2, 
-                 edgeLegendGroup=2, 
-    
-                 showFaces=True, faceOpacity=0.5, faceColor="#FAFAFA",
-                 faceLabelKey=None, faceGroupKey=None, faceGroups=[], 
-                 faceMinGroup=None, faceMaxGroup=None, 
-                 showFaceLegend=False, faceLegendLabel="Topology Faces", faceLegendRank=3,
-                 faceLegendGroup=3, 
-                 intensityKey=None,
-                 
-                 width=950, height=500,
-                 xAxis=False, yAxis=False, zAxis=False, axisSize=1, backgroundColor='rgba(0,0,0,0)',
-                 marginLeft=0, marginRight=0, marginTop=20, marginBottom=0, showScale=False,
-                 
-                 cbValues=[], cbTicks=5, cbX=-0.15, cbWidth=15, cbOutlineWidth=0, cbTitle="",
-                 cbSubTitle="", cbUnits="", colorScale="viridis", mantissa=6, tolerance=0.0001):
-            """
-            Creates a figure from the input topology.
-    
-            Parameters
-            ----------
-            topology : topologic_core.Topology
-                The input topology. This must contain faces and or edges.
-    
-            showVertices : bool , optional
-                If set to True the vertices will be drawn. Otherwise, they will not be drawn. Default is True.
-            vertexSize : float , optional
-                The desired size of the vertices. Default is 1.1.
-            vertexColor : str , optional
-                The desired color of the output vertices. This can be any plotly color string and may be specified as:
-                - A hex string (e.g. '#ff0000')
-                - An rgb/rgba string (e.g. 'rgb(255,0,0)')
-                - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
-                - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
-                - A named CSS color.
-                The default is "black".
-            vertexLabelKey : str , optional
-                The dictionary key to use to display the vertex label. Default is None.
-            vertexGroupKey : str , optional
-                The dictionary key to use to display the vertex group. Default is None.
-            vertexGroups : list , optional
-                The list of vertex groups against which to index the color of the vertex. Default is [].
-            vertexMinGroup : int or float , optional
-                For numeric vertexGroups, vertexMinGroup is the desired minimum value for the scaling of colors. This should match the type of value associated with the vertexGroupKey. If set to None, it is set to the minimum value in vertexGroups. Default is None.
-            edgeMaxGroup : int or float , optional
-                For numeric vertexGroups, vertexMaxGroup is the desired maximum value for the scaling of colors. This should match the type of value associated with the vertexGroupKey. If set to None, it is set to the maximum value in vertexGroups. Default is None.
-            showVertexLegend : bool, optional
-                If set to True, the legend for the vertices of this topology is shown. Otherwise, it isn't. Default is False.
-            vertexLegendLabel : str , optional
-                The legend label string used to identify vertices. Default is "Topology Vertices".
-            vertexLegendRank : int , optional
-                The legend rank order of the vertices of this topology. Default is 1.
-            vertexLegendGroup : int , optional
-                The number of the vertex legend group to which the vertices of this topology belong. Default is 1.
-            
-            showEdges : bool , optional
-                If set to True the edges will be drawn. Otherwise, they will not be drawn. Default is True.
-            edgeWidth : float , optional
-                The desired thickness of the output edges. Default is 1.
-            edgeColor : str , optional
-                The desired color of the output edges. This can be any plotly color string and may be specified as:
-                - A hex string (e.g. '#ff0000')
-                - An rgb/rgba string (e.g. 'rgb(255,0,0)')
-                - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
-                - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
-                - A named CSS color.
-                The default is "black".
-            edgeLabelKey : str , optional
-                The dictionary key to use to display the edge label. Default is None.
-            edgeGroupKey : str , optional
-                The dictionary key to use to display the edge group. Default is None.
-            edgeGroups : list , optional
-                The list of edge groups against which to index the color of the edge. Default is [].
-            edgeMinGroup : int or float , optional
-                For numeric edgeGroups, edgeMinGroup is the desired minimum value for the scaling of colors. This should match the type of value associated with the edgeGroupKey. If set to None, it is set to the minimum value in edgeGroups. Default is None.
-            edgeMaxGroup : int or float , optional
-                For numeric edgeGroups, edgeMaxGroup is the desired maximum value for the scaling of colors. This should match the type of value associated with the edgeGroupKey. If set to None, it is set to the maximum value in edgeGroups. Default is None.
-            showEdgeLegend : bool, optional
-                If set to True, the legend for the edges of this topology is shown. Otherwise, it isn't. Default is False.
-            edgeLegendLabel : str , optional
-                The legend label string used to identify edges. Default is "Topology Edges".
-            edgeLegendRank : int , optional
-                The legend rank order of the edges of this topology. Default is 2.
-            edgeLegendGroup : int , optional
-                The number of the edge legend group to which the edges of this topology belong. Default is 2.
-            
-            showFaces : bool , optional
-                If set to True the faces will be drawn. Otherwise, they will not be drawn. Default is True.
-            faceOpacity : float , optional
-                The desired opacity of the output faces (0=transparent, 1=opaque). Default is 0.5.
-            faceColor : str , optional
-                The desired color of the output faces. This can be any plotly color string and may be specified as:
-                - A hex string (e.g. '#ff0000')
-                - An rgb/rgba string (e.g. 'rgb(255,0,0)')
-                - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
-                - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
-                - A named CSS color.
-                The default is "#FAFAFA".
-            faceLabelKey : str , optional
-                The dictionary key to use to display the face label. Default is None.
-            faceGroupKey : str , optional
-                The dictionary key to use to display the face group. Default is None.
-            faceGroups : list , optional
-                The list of face groups against which to index the color of the face. This can bhave numeric or string values. This should match the type of value associated with the faceGroupKey. Default is [].
-            faceMinGroup : int or float , optional
-                For numeric faceGroups, minGroup is the desired minimum value for the scaling of colors. This should match the type of value associated with the faceGroupKey. If set to None, it is set to the minimum value in faceGroups. Default is None.
-            faceMaxGroup : int or float , optional
-                For numeric faceGroups, maxGroup is the desired maximum value for the scaling of colors. This should match the type of value associated with the faceGroupKey. If set to None, it is set to the maximum value in faceGroups. Default is None.
-            showFaceLegend : bool, optional
-                If set to True, the legend for the faces of this topology is shown. Otherwise, it isn't. Default is False.
-            faceLegendLabel : str , optional
-                The legend label string used to idenitfy edges. Default is "Topology Faces".
-            faceLegendRank : int , optional
-                The legend rank order of the faces of this topology. Default is 3.
-            faceLegendGroup : int , optional
-                The number of the face legend group to which the faces of this topology belong. Default is 3.
-            width : int , optional
-                The width in pixels of the figure. The default value is 950.
-            height : int , optional
-                The height in pixels of the figure. The default value is 950.
-            xAxis : bool , optional
-                If set to True the x axis is drawn. Otherwise it is not drawn. Default is False.
-            yAxis : bool , optional
-                If set to True the y axis is drawn. Otherwise it is not drawn. Default is False.
-            zAxis : bool , optional
-                If set to True the z axis is drawn. Otherwise it is not drawn. Default is False.
-            backgroundColor : list or str , optional
-                The desired background color. This can be any color list or plotly color string and may be specified as:
-                - An rgb list (e.g. [255,0,0])
-                - A cmyk list (e.g. [0.5, 0, 0.25, 0.2])
-                - A hex string (e.g. '#ff0000')
-                - An rgb/rgba string (e.g. 'rgb(255,0,0)')
-                - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
-                - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
-                - A named CSS color.
-                The default is 'rgba(0,0,0,0)' (transparent).
-            marginLeft : int , optional
-                The size in pixels of the left margin. The default value is 0.
-            marginRight : int , optional
-                The size in pixels of the right margin. The default value is 0.
-            marginTop : int , optional
-                The size in pixels of the top margin. The default value is 20.
-            marginBottom : int , optional
-                The size in pixels of the bottom margin. The default value is 0.
-            camera : list , optional
-                The desired location of the camera). Default is [-1.25, -1.25, 1.25].
-            center : list , optional
-                The desired center (camera target). Default is [0, 0, 0].
-            up : list , optional
-                The desired up vector. Default is [0, 0, 1].
-            renderer : str , optional
-                The desired renderer. See Plotly.Renderers(). Default is "notebook".
-            intensityKey : str , optional
-                If not None, the dictionary of each vertex is searched for the value associated with the intensity key. This value is then used to color-code the vertex based on the colorScale. Default is None.
-            showScale : bool , optional
-                If set to True, the colorbar is shown. Default is False.
-            cbValues : list , optional
-                The input list of values to use for the colorbar. Default is [].
-            cbTicks : int , optional
-                The number of ticks to use on the colorbar. Default is 5.
-            cbX : float , optional
-                The x location of the colorbar. Default is -0.15.
-            cbWidth : int , optional
-                The width in pixels of the colorbar. Default is 15
-            cbOutlineWidth : int , optional
-                The width in pixels of the outline of the colorbar. Default is 0.
-            cbTitle : str , optional
-                The title of the colorbar. Default is "".
-            cbSubTitle : str , optional
-                The subtitle of the colorbar. Default is "".
-            cbUnits: str , optional
-                The units used in the colorbar. Default is ""
-            colorScale : str , optional
-                The desired type of plotly color scales to use (e.g. "viridis", "plasma"). Default is "viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
-            mantissa : int , optional
-                The desired length of the mantissa for the values listed on the colorbar. Default is 6.
-            tolerance : float , optional
-                The desired tolerance. Default is 0.0001.
-    
-            Returns
-            -------
-            Plotly figure
-    
-            """
-            from topologicpy.Topology import Topology
-            from topologicpy.Color import Color
-    
-            if not Topology.IsInstance(topology, "Topology"):
-                print("Plotly.FigureByTopology - Error: the input topology is not a valid topology. Returning None.")
-                return None
-            data = Plotly.DataByTopology(topology=topology,
-                           showVertices=showVertices, vertexSize=vertexSize, vertexColor=vertexColor, 
-                           vertexLabelKey=vertexLabelKey, vertexGroupKey=vertexGroupKey, vertexGroups=vertexGroups, 
-                           vertexMinGroup=vertexMinGroup, vertexMaxGroup=vertexMaxGroup, 
-                           showVertexLegend=showVertexLegend, vertexLegendLabel=vertexLegendLabel, vertexLegendRank=vertexLegendRank,
-                           vertexLegendGroup=vertexLegendGroup,
-                           showEdges=showEdges, edgeWidth=edgeWidth, edgeColor=edgeColor, 
-                           edgeLabelKey=edgeLabelKey, edgeGroupKey=edgeGroupKey, edgeGroups=edgeGroups, 
-                           edgeMinGroup=edgeMinGroup, edgeMaxGroup=edgeMaxGroup, 
-                           showEdgeLegend=showEdgeLegend, edgeLegendLabel=edgeLegendLabel, edgeLegendRank=edgeLegendRank, 
-                           edgeLegendGroup=edgeLegendGroup,
-                           showFaces=showFaces, faceOpacity=faceOpacity, faceColor=faceColor,
-                           faceLabelKey=faceLabelKey, faceGroupKey=faceGroupKey, faceGroups=faceGroups, 
-                           faceMinGroup=faceMinGroup, faceMaxGroup=faceMaxGroup, 
-                           showFaceLegend=showFaceLegend, faceLegendLabel=faceLegendLabel, faceLegendRank=faceLegendRank,
-                           faceLegendGroup=faceLegendGroup, 
-                           intensityKey=intensityKey, colorScale=colorScale, mantissa=mantissa, tolerance=tolerance)
-            figure = Plotly.FigureByData(data=data, width=width, height=height,
-                                         xAxis=xAxis, yAxis=yAxis, zAxis=zAxis, axisSize=axisSize,
-                                         backgroundColor=Color.AnyToHex(backgroundColor),
-                                         marginLeft=marginLeft, marginRight=marginRight,
-                                         marginTop=marginTop, marginBottom=marginBottom,
-                                         tolerance=tolerance)
-            if showScale:
-                figure = Plotly.AddColorBar(figure, values=cbValues, nTicks=cbTicks, xPosition=cbX, width=cbWidth, outlineWidth=cbOutlineWidth, title=cbTitle, subTitle=cbSubTitle, units=cbUnits, colorScale=colorScale, mantissa=mantissa)
-            return figure
+                         showVertices=True, vertexSize=1.1, vertexColor="black",
+                         vertexLabelKey=None, vertexGroupKey=None, vertexGroups=None,
+                         vertexMinGroup=None, vertexMaxGroup=None,
+                         showVertexLegend=False, vertexLegendLabel="Topology Vertices", vertexLegendRank=1,
+                         vertexLegendGroup=1,
+                         showEdges=True, edgeWidth=1, edgeColor="black",
+                         edgeLabelKey=None, edgeGroupKey=None, edgeGroups=None,
+                         edgeMinGroup=None, edgeMaxGroup=None,
+                         showEdgeLegend=False, edgeLegendLabel="Topology Edges", edgeLegendRank=2,
+                         edgeLegendGroup=2,
+                         showFaces=True, faceOpacity=0.5, faceColor="#FAFAFA",
+                         faceLabelKey=None, faceGroupKey=None, faceGroups=None,
+                         faceMinGroup=None, faceMaxGroup=None,
+                         showFaceLegend=False, faceLegendLabel="Topology Faces", faceLegendRank=3,
+                         faceLegendGroup=3, intensityKey=None,
+                         width=950, height=500,
+                         xAxis=False, yAxis=False, zAxis=False, axisSize=1,
+                         backgroundColor="rgba(0,0,0,0)",
+                         marginLeft=0, marginRight=0, marginTop=20, marginBottom=0, showScale=False,
+                         cbValues=None, cbTicks=5, cbX=-0.15, cbWidth=15, cbOutlineWidth=0, cbTitle="",
+                         cbSubTitle="", cbUnits="", colorScale="viridis", mantissa=6, tolerance=0.0001,
+                         # Extended styling arguments are appended to preserve the
+                         # positional API of earlier TopologicPy releases.
+                         vertexSizeKey=None, vertexColorKey=None,
+                         vertexBorderColor="black", vertexBorderWidth=0,
+                         vertexBorderColorKey=None, vertexBorderWidthKey=None,
+                         showVertexLabel=False, vertexLabelFontSize=5,
+                         directed=False, arrowSize=0.1, arrowSizeKey=None,
+                         edgeWidthKey=None, edgeColorKey=None, edgeDash=False, edgeDashKey=None,
+                         showEdgeLabel=False,
+                         faceOpacityKey=None, faceColorKey=None, intensities=None,
+                         material="default", materialKey=None, flatShading=False,
+                         ambient=None, ambientKey=None, diffuse=None, diffuseKey=None,
+                         specular=None, specularKey=None, roughness=None, roughnessKey=None,
+                         silent=False):
+        """Creates a Plotly figure from a Topologic topology."""
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(topology, "Topology"):
+            if not silent:
+                print("Plotly.FigureByTopology - Error: The input topology is not valid. Returning None.")
+            return None
+
+        data = Plotly.DataByTopology(
+            topology=topology,
+            showVertices=showVertices, vertexSize=vertexSize, vertexSizeKey=vertexSizeKey,
+            vertexColor=vertexColor, vertexColorKey=vertexColorKey, vertexLabelKey=vertexLabelKey,
+            vertexBorderColor=vertexBorderColor, vertexBorderWidth=vertexBorderWidth,
+            vertexBorderColorKey=vertexBorderColorKey, vertexBorderWidthKey=vertexBorderWidthKey,
+            showVertexLabel=showVertexLabel, vertexLabelFontSize=vertexLabelFontSize,
+            vertexGroupKey=vertexGroupKey, vertexGroups=vertexGroups,
+            vertexMinGroup=vertexMinGroup, vertexMaxGroup=vertexMaxGroup,
+            showVertexLegend=showVertexLegend, vertexLegendLabel=vertexLegendLabel,
+            vertexLegendRank=vertexLegendRank, vertexLegendGroup=vertexLegendGroup,
+            directed=directed, arrowSize=arrowSize, arrowSizeKey=arrowSizeKey,
+            showEdges=showEdges, edgeWidth=edgeWidth, edgeWidthKey=edgeWidthKey,
+            edgeColor=edgeColor, edgeColorKey=edgeColorKey, edgeDash=edgeDash,
+            edgeDashKey=edgeDashKey, edgeLabelKey=edgeLabelKey, showEdgeLabel=showEdgeLabel,
+            edgeGroupKey=edgeGroupKey, edgeGroups=edgeGroups,
+            edgeMinGroup=edgeMinGroup, edgeMaxGroup=edgeMaxGroup,
+            showEdgeLegend=showEdgeLegend, edgeLegendLabel=edgeLegendLabel,
+            edgeLegendRank=edgeLegendRank, edgeLegendGroup=edgeLegendGroup,
+            showFaces=showFaces, faceOpacity=faceOpacity, faceOpacityKey=faceOpacityKey,
+            faceColor=faceColor, faceColorKey=faceColorKey, faceLabelKey=faceLabelKey,
+            faceGroupKey=faceGroupKey, faceGroups=faceGroups,
+            faceMinGroup=faceMinGroup, faceMaxGroup=faceMaxGroup,
+            showFaceLegend=showFaceLegend, faceLegendLabel=faceLegendLabel,
+            faceLegendRank=faceLegendRank, faceLegendGroup=faceLegendGroup,
+            intensityKey=intensityKey, intensities=intensities,
+            material=material, materialKey=materialKey, flatShading=flatShading,
+            ambient=ambient, ambientKey=ambientKey, diffuse=diffuse, diffuseKey=diffuseKey,
+            specular=specular, specularKey=specularKey, roughness=roughness, roughnessKey=roughnessKey,
+            colorScale=colorScale, mantissa=mantissa, tolerance=tolerance, silent=silent,
+        )
+        if data is None:
+            return None
+        figure = Plotly.FigureByData(
+            data=data, width=width, height=height,
+            xAxis=xAxis, yAxis=yAxis, zAxis=zAxis, axisSize=axisSize,
+            backgroundColor=backgroundColor,
+            marginLeft=marginLeft, marginRight=marginRight,
+            marginTop=marginTop, marginBottom=marginBottom,
+            tolerance=tolerance,
+        )
+        if figure is not None and showScale:
+            values = cbValues if cbValues is not None else intensities
+            figure = Plotly.AddColorBar(
+                figure, values=values, nTicks=cbTicks, xPosition=cbX,
+                width=cbWidth, outlineWidth=cbOutlineWidth,
+                title=cbTitle, subTitle=cbSubTitle, units=cbUnits,
+                colorScale=colorScale, mantissa=mantissa,
+            )
+        return figure
     
     @staticmethod
     def FigureExportToJSON(figure, path, overwrite=False):
-        """
-        Exports the input plotly figure to a JSON file.
-
-        Parameters
-        ----------
-        figure : plotly.graph_objs._figure.Figure
-            The input plotly figure.
-        path : str
-            The input file path.
-        overwrite : bool , optional
-            If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won't.
-
-        Returns
-        -------
-        bool
-            True if the export operation is successful. False otherwise.
-
-        """
-        if not isinstance(figure, plotly.graph_objs._figure.Figure):
-            print("Plotly.FigureExportToJSON - Error: The input figure is not a plolty figure. Returning None.")
+        """Exports a Plotly figure to JSON."""
+        if not Plotly._plotly_available(silent=False) or not isinstance(figure, go.Figure):
             return None
-        if not isinstance(path, str):
-            print("Plotly.FigureExportToJSON - Error: The input path is not a string. Returning None.")
+        if not isinstance(path, (str, os.PathLike)):
             return None
-        # Make sure the file extension is .json
-        ext = path[len(path)-5:len(path)]
-        if ext.lower() != ".json":
-            path = path+".json"
-        f = None
+        path = os.fspath(path)
+        if not path.lower().endswith(".json"):
+            path += ".json"
+        if not overwrite and os.path.exists(path):
+            print("Plotly.FigureExportToJSON - Error: A file already exists at this location and overwrite is False. Returning None.")
+            return None
         try:
-            if overwrite == True:
-                f = open(path, "w")
-            else:
-                f = open(path, "x") # Try to create a new File
-        except:
-           print("Plotly.FigureExportToJSON - Error: Could not create a new file at the following location: "+path+". Returning None.")
-           return None
-        try:
-            if f:
-                plotly.io.write_json(figure, f, validate=True, pretty=False, remove_uids=True, engine=None)
-                f.close()
-                return True
+            plotly.io.write_json(figure, path, validate=True, pretty=False, remove_uids=True, engine=None)
+            return True
         except Exception as exc:
-            if f:
-                try:
-                    f.close()
-                except Exception:
-                    pass
-            if not overwrite and os.path.exists(path):
-                try:
-                    os.remove(path)
-                except Exception:
-                    pass
             print(f"Plotly.FigureExportToJSON - Error: {exc}. Returning None.")
             return None
-        if f:
-            try:
-                f.close()
-            except Exception:
-                pass
-        return False
 
     @staticmethod
     def FigureExportToPDF(figure, path, width=1920, height=1200, overwrite=False):
-        """
-        Exports the input plotly figure to a PDF file.
-
-        Parameters
-        ----------
-        figure : plotly.graph_objs._figure.Figure
-            The input plotly figure.
-        path : str
-            The input file path.
-        width : int, optional
-            The width of the exported image in pixels. Default is 1920.
-        height : int , optional
-            The height of the exported image in pixels. Default is 1200.
-        overwrite : bool , optional
-            If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won't.
-
-        Returns
-        -------
-        bool
-            True if the export operation is successful. False otherwise.
-
-        """
-        import os
-        if not isinstance(figure, plotly.graph_objs._figure.Figure):
-            print("Plotly.FigureExportToPDF - Error: The input figure is not a plolty figure. Returning None.")
+        """Exports a Plotly figure to PDF."""
+        if not Plotly._plotly_available(silent=False) or not isinstance(figure, go.Figure):
             return None
-        if not isinstance(path, str):
-            print("Plotly.FigureExportToPDF - Error: The input path is not a string. Returning None.")
+        if not isinstance(path, (str, os.PathLike)):
             return None
-        # Make sure the file extension is .pdf
-        ext = path[len(path)-4:len(path)]
-        if ext.lower() != ".pdf":
-            path = path+".pdf"
-        
-        if overwrite == False and os.path.exists(path):
-            print("Plotly.FigureExportToPDF - Error: A file already exists at this location and overwrite is set to False. Returning None.")
+        path = os.fspath(path)
+        if not path.lower().endswith(".pdf"):
+            path += ".pdf"
+        if not overwrite and os.path.exists(path):
+            print("Plotly.FigureExportToPDF - Error: A file already exists at this location and overwrite is False. Returning None.")
             return None
-
         try:
-            plotly.io.write_image(figure, path, format='pdf', scale=1, width=width, height=height, validate=True, engine='auto')
+            plotly.io.write_image(figure, path, format="pdf", scale=1, width=int(width), height=int(height), validate=True)
             return True
         except Exception as exc:
             print(f"Plotly.FigureExportToPDF - Error: {exc}. Returning None.")
@@ -5707,46 +3662,19 @@ class Plotly:
     
     @staticmethod
     def FigureExportToPNG(figure, path, width=1920, height=1200, overwrite=False):
-        """
-        Exports the input plotly figure to a PNG file.
-
-        Parameters
-        ----------
-        figure : plotly.graph_objs._figure.Figure
-            The input plotly figure.
-        path : str
-            The input file path.
-        width : int, optional
-            The width of the exported image in pixels. Default is 1920.
-        height : int , optional
-            The height of the exported image in pixels. Default is 1200.
-        overwrite : bool , optional
-            If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won't.
-
-        Returns
-        -------
-        bool
-            True if the export operation is successful. False otherwise.
-
-        """
-        import os
-        if not isinstance(figure, plotly.graph_objs._figure.Figure):
-            print("Plotly.FigureExportToPNG - Error: The input figure is not a plolty figure. Returning None.")
+        """Exports a Plotly figure to PNG."""
+        if not Plotly._plotly_available(silent=False) or not isinstance(figure, go.Figure):
             return None
-        if not isinstance(path, str):
-            print("Plotly.FigureExportToPNG - Error: The input path is not a string. Returning None.")
+        if not isinstance(path, (str, os.PathLike)):
             return None
-        # Make sure the file extension is .png
-        ext = path[len(path)-4:len(path)]
-        if ext.lower() != ".png":
-            path = path+".png"
-        
-        if overwrite == False and os.path.exists(path):
-            print("Plotly.FigureExportToPNG - Error: A file already exists at this location and overwrite is set to False. Returning None.")
+        path = os.fspath(path)
+        if not path.lower().endswith(".png"):
+            path += ".png"
+        if not overwrite and os.path.exists(path):
+            print("Plotly.FigureExportToPNG - Error: A file already exists at this location and overwrite is False. Returning None.")
             return None
-
         try:
-            plotly.io.write_image(figure, path, format='png', scale=1, width=width, height=height, validate=True, engine='auto')
+            plotly.io.write_image(figure, path, format="png", scale=1, width=int(width), height=int(height), validate=True)
             return True
         except Exception as exc:
             print(f"Plotly.FigureExportToPNG - Error: {exc}. Returning None.")
@@ -5754,46 +3682,19 @@ class Plotly:
     
     @staticmethod
     def FigureExportToSVG(figure, path, width=1920, height=1200, overwrite=False):
-        """
-        Exports the input plotly figure to a SVG file.
-
-        Parameters
-        ----------
-        figure : plotly.graph_objs._figure.Figure
-            The input plotly figure.
-        path : str
-            The input file path.
-        width : int, optional
-            The width of the exported image in pixels. Default is 1920.
-        height : int , optional
-            The height of the exported image in pixels. Default is 1200.
-        overwrite : bool , optional
-            If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won't.
-
-        Returns
-        -------
-        bool
-            True if the export operation is successful. False otherwise.
-
-        """
-        import os
-        if not isinstance(figure, plotly.graph_objs._figure.Figure):
-            print("Plotly.FigureExportToSVG - Error: The input figure is not a plolty figure. Returning None.")
+        """Exports a Plotly figure to SVG."""
+        if not Plotly._plotly_available(silent=False) or not isinstance(figure, go.Figure):
             return None
-        if not isinstance(path, str):
-            print("Plotly.FigureExportToSVG - Error: The input path is not a string. Returning None.")
+        if not isinstance(path, (str, os.PathLike)):
             return None
-        # Make sure the file extension is .svg
-        ext = path[len(path)-4:len(path)]
-        if ext.lower() != ".svg":
-            path = path+".svg"
-        
-        if overwrite == False and os.path.exists(path):
-            print("Plotly.FigureExportToSVG - Error: A file already exists at this location and overwrite is set to False. Returning None.")
+        path = os.fspath(path)
+        if not path.lower().endswith(".svg"):
+            path += ".svg"
+        if not overwrite and os.path.exists(path):
+            print("Plotly.FigureExportToSVG - Error: A file already exists at this location and overwrite is False. Returning None.")
             return None
-
         try:
-            plotly.io.write_image(figure, path, format='svg', scale=1, width=width, height=height, validate=True, engine='auto')
+            plotly.io.write_image(figure, path, format="svg", scale=1, width=int(width), height=int(height), validate=True)
             return True
         except Exception as exc:
             print(f"Plotly.FigureExportToSVG - Error: {exc}. Returning None.")
@@ -5801,120 +3702,82 @@ class Plotly:
     
     @staticmethod
     def SetCamera(figure, camera=None, center=None, up=None, projection="perspective"):
-        """
-        Sets the camera for the input figure.
-
-        Parameters
-        ----------
-        figure : plotly.graph_objs._figure.Figure
-            The input plotly figure.
-        camera : list , optional
-            The desired location of the camera. Default is [-1.25, -1.25, 1.25].
-        center : list , optional
-            The desired center (camera target). Default is [0, 0, 0].
-        up : list , optional
-            The desired up vector. Default is [0, 0, 1].
-        projection : str , optional
-            The desired type of projection. The options are "orthographic" or "perspective". It is case insensitive. Default is "perspective"
-        
-        Returns
-        -------
-        plotly.graph_objs._figure.Figure
-            The updated figure
-
-        """
-        if not Plotly._plotly_available(silent=True):
+        """Sets the 3D scene camera of a Plotly figure."""
+        if not Plotly._plotly_available(silent=True) or not isinstance(figure, go.Figure):
             return None
-        if not isinstance(figure, plotly.graph_objs._figure.Figure):
-            return None
-        if not isinstance(camera, list) or len(camera) < 3:
-            camera = [-1.25, -1.25, 1.25]
-        if not isinstance(center, list) or len(center) < 3:
-            center = [0, 0, 0]
-        if not isinstance(up, list) or len(up) < 3:
-            up = [0, 0, 1]
-        projection = str(projection or "perspective").lower()
-        if "ortho" in projection:
-            projection = "orthographic"
-        else:
-            projection = "perspective"
-        scene_camera = dict(
-        up=dict(x=up[0], y=up[1], z=up[2]),
-        eye=dict(x=camera[0], y=camera[1], z=camera[2]),
-        center=dict(x=center[0], y=center[1], z=center[2]),
-        projection=dict(type=projection)
-        )
-        figure.update_layout(scene_camera=scene_camera)
+
+        def vector(value, default):
+            if isinstance(value, (list, tuple)) and len(value) >= 3:
+                try:
+                    return [float(value[0]), float(value[1]), float(value[2])]
+                except Exception:
+                    pass
+            return list(default)
+
+        eye = vector(camera, [-1.25, -1.25, 1.25])
+        target = vector(center, [0.0, 0.0, 0.0])
+        up_vector = vector(up, [0.0, 0.0, 1.0])
+        projection_name = "orthographic" if "ortho" in str(projection or "perspective").lower() else "perspective"
+        figure.update_layout(scene_camera=dict(
+            eye=dict(x=eye[0], y=eye[1], z=eye[2]),
+            center=dict(x=target[0], y=target[1], z=target[2]),
+            up=dict(x=up_vector[0], y=up_vector[1], z=up_vector[2]),
+            projection=dict(type=projection_name),
+        ))
         return figure
 
     @staticmethod
-    def Show(figure, camera=None, center=None, up=None, renderer=None, projection="perspective"):
+    def Show(figure, camera=None, center=None, up=None, renderer=None, projection=None):
+        """Displays a Plotly figure without silently overwriting its existing camera.
+
+        Camera components are changed only when the corresponding arguments are
+        explicitly supplied. This preserves camera settings applied with
+        ``figure.update_layout`` or ``Plotly.SetCamera``.
         """
-        Shows the input figure.
-
-        Parameters
-        ----------
-        figure : plotly.graph_objs._figure.Figure
-            The input plotly figure.
-        camera : list , optional
-            The desired location of the camera. Default is [0, 0, 0].
-        center : list , optional
-            The desired center (camera target). Default is [0, 0, 0].
-        up : list , optional
-            The desired up vector. Default is [0, 0, 1].
-        renderer : str , optional
-            The desired renderer. See Plotly.Renderers(). If set to None, the code will attempt to discover the most suitable renderer. Default is None.
-        projection : str, optional
-            The desired type of projection. The options are "orthographic" or "perspective". It is case insensitive. Default is "perspective"
-
-        
-        Returns
-        -------
-        None
-            
-        """
-
         if not Plotly._plotly_available(silent=False):
             return None
-        if figure == None:
-            print("Plotly.Show - Error: The input is NULL. Returning None.")
+        if not isinstance(figure, go.Figure):
+            print("Plotly.Show - Error: The input is not a Plotly figure. Returning None.")
             return None
-        if not isinstance(camera, list) or len(camera) < 3:
-            camera = [-1.25, -1.25, 1.25]
-        if not isinstance(center, list) or len(center) < 3:
-            center = [0, 0, 0]
-        if not isinstance(up, list) or len(up) < 3:
-            up = [0, 0, 1]
-        if not isinstance(figure, plotly.graph_objs._figure.Figure):
-            print("Plotly.Show - Error: The input is not a figure. Returning None.")
-            return None
-        if renderer == None:
-            renderer = Plotly.Renderer()
-        if not isinstance(renderer, str) or not renderer.lower() in Plotly.Renderers():
-            print("Plotly.Show - Error: The input renderer is not in the approved list of renderers. Returning None.")
-            return None
-        # Set up camera projection
-        if "ortho" in projection.lower():
-            camera_settings = dict(eye=dict(x=camera[0], y=camera[1], z=camera[2]),
-                                center=dict(x=center[0], y=center[1], z=center[2]),
-                                up=dict(x=up[0], y=up[1], z=up[2]),
-                                projection=dict(type="orthographic"))
-        else:
-            camera_settings = dict(eye=dict(x=camera[0], y=camera[1], z=camera[2]),
-                                center=dict(x=center[0], y=center[1], z=center[2]),
-                                up=dict(x=up[0], y=up[1], z=up[2]),
-                                projection=dict(type="perspective"))
 
-        figure.update_layout(
-            scene_camera = camera_settings,
-            scene=dict(aspectmode="data"),
-            autosize=True,
-            margin=dict(l=40, r=40, t=40, b=40)
-            )
-        if renderer.lower() == "offline":
+        if any(value is not None for value in (camera, center, up, projection)):
+            existing = figure.layout.scene.camera.to_plotly_json() if figure.layout.scene.camera else {}
+
+            def vector(value, current, default):
+                if value is None:
+                    raw = current or {}
+                    return [raw.get("x", default[0]), raw.get("y", default[1]), raw.get("z", default[2])]
+                if isinstance(value, (list, tuple)) and len(value) >= 3:
+                    try:
+                        return [float(value[0]), float(value[1]), float(value[2])]
+                    except Exception:
+                        pass
+                return list(default)
+
+            eye = vector(camera, existing.get("eye"), [-1.25, -1.25, 1.25])
+            target = vector(center, existing.get("center"), [0.0, 0.0, 0.0])
+            up_vector = vector(up, existing.get("up"), [0.0, 0.0, 1.0])
+            current_projection = (existing.get("projection") or {}).get("type", "perspective")
+            projection_name = current_projection if projection is None else ("orthographic" if "ortho" in str(projection).lower() else "perspective")
+            figure.update_layout(scene_camera=dict(
+                eye=dict(x=eye[0], y=eye[1], z=eye[2]),
+                center=dict(x=target[0], y=target[1], z=target[2]),
+                up=dict(x=up_vector[0], y=up_vector[1], z=up_vector[2]),
+                projection=dict(type=projection_name),
+            ))
+
+        renderer = Plotly.Renderer() if renderer is None else str(renderer).lower()
+        if renderer == "offline":
+            if ofl is None:
+                return None
             ofl.plot(figure)
-        else:
-            figure.show(renderer=renderer)
+            return None
+
+        available = Plotly.Renderers()
+        if renderer not in available:
+            print("Plotly.Show - Error: The input renderer is not available. Returning None.")
+            return None
+        figure.show(renderer=renderer)
         return None
 
     @staticmethod
@@ -5949,58 +3812,30 @@ class Plotly:
 
     @staticmethod
     def Renderers():
-        """
-        Returns a list of the available plotly renderers.
-
-        Parameters
-        ----------
-        
-        Returns
-        -------
-        list
-            The list of the available plotly renderers.
-
-        """
-        return ['plotly_mimetype', 'jupyterlab', 'nteract', 'vscode',
-         'notebook', 'notebook_connected', 'kaggle', 'azure', 'colab',
-         'cocalc', 'databricks', 'json', 'png', 'jpeg', 'jpg', 'svg',
-         'pdf', 'browser', 'firefox', 'chrome', 'chromium', 'iframe',
-         'iframe_connected', 'sphinx_gallery', 'sphinx_gallery_png', 'offline']
+        """Returns the Plotly renderers available in the current installation."""
+        if not Plotly._plotly_available(silent=True):
+            return []
+        try:
+            names = list(plotly.io.renderers)
+        except Exception:
+            names = []
+        if "offline" not in names:
+            names.append("offline")
+        return names
 
     @staticmethod
-    def ExportToImage(figure, path, format="png", width="1920", height="1080"):
-        """
-        Exports the plotly figure to an image.
-
-        Parameters
-        ----------
-        figure : plotly.graph_objs._figure.Figure
-            The input plotly figure.
-        path : str
-            The image file path.
-        format : str , optional
-            The desired format. This can be any of "jpg", "jpeg", "pdf", "png", "svg", or "webp". It is case insensitive. Default is "png". 
-        width : int , optional
-            The width in pixels of the figure. The default value is 1920.
-        height : int , optional
-            The height in pixels of the figure. The default value is 1080.
-        
-        Returns
-        -------
-        bool
-            True if the image was exported sucessfully. False otherwise.
-
-        """
-        if not isinstance(figure, plotly.graph_objs._figure.Figure):
+    def ExportToImage(figure, path, format="png", width=1920, height=1080):
+        """Exports a Plotly figure to a static image using the current Kaleido pathway."""
+        if not Plotly._plotly_available(silent=True) or not isinstance(figure, go.Figure):
             return None
-        if not isinstance(path, str):
+        if not isinstance(path, (str, os.PathLike)):
             return None
-        if not format.lower() in ["jpg", "jpeg", "pdf", "png", "svg", "webp"]:
+        fmt = str(format or "png").lower()
+        if fmt not in ["jpg", "jpeg", "pdf", "png", "svg", "webp"]:
             return None
-        returnStatus = False
+        path = os.fspath(path)
         try:
-            plotly.io.write_image(figure, path, format=format.lower(), scale=None, width=width, height=height, validate=True, engine='auto')
-            returnStatus = True
-        except:
-            returnStatus = False
-        return returnStatus
+            plotly.io.write_image(figure, path, format=fmt, width=int(width), height=int(height), validate=True)
+            return True
+        except Exception:
+            return False

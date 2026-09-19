@@ -37,18 +37,6 @@ except:
 
 class Face():
     @staticmethod
-    def _UseNativeFaceBackend() -> bool:
-        """Returns True when the active TopologicPy core backend is PythonOCC."""
-        from topologicpy.Topology import Topology
-        try:
-            return not bool(Topology._IsTopologicCoreBackend())
-        except Exception:
-            try:
-                return Core.Backend().__class__.__name__ == "PythonOCCBackend"
-            except Exception:
-                return False
-
-    @staticmethod
     def _EnsurePrimitivePositiveZ(face, tolerance: float = 0.0001, silent: bool = False):
         """
         Ensures that a planar primitive created in the XY plane has a +Z normal.
@@ -120,41 +108,187 @@ class Face():
 
         return face
 
+    # @staticmethod
+    # def AddInternalBoundaries(face, wires: list):
+    #     """
+    #     Adds internal boundaries (closed wires) to the input face. Internal boundaries are considered holes in the input face.
+
+    #     Parameters
+    #     ----------
+    #     face : topologic_core.Face
+    #         The input face.
+    #     wires : list
+    #         The input list of internal boundaries (closed wires).
+
+    #     Returns
+    #     -------
+    #     topologic_core.Face
+    #         The created face with internal boundaries added to it.
+
+    #     """
+    #     from topologicpy.Topology import Topology
+
+    #     if not Topology.IsInstance(face, "Face"):
+    #         print("Face.AddInternalBoundaries - Error: The input face parameter is not a valid topologic face. Returning None.")
+    #         return None
+    #     if not isinstance(wires, list):
+    #         print("Face.AddInternalBoundaries - Warning: The input wires parameter is not a valid list. Returning the input face.")
+    #         return face
+    #     wireList = [w for w in wires if Topology.IsInstance(w, "Wire")]
+    #     if len(wireList) < 1:
+    #         print("Face.AddInternalBoundaries - Warning: The input wires parameter does not contain any valid wires. Returning the input face.")
+    #         return face
+    #     faceeb = Face.ExternalBoundary(face)
+    #     faceibList = Face.InternalBoundaries(face)
+    #     for wire in wires:
+    #         faceibList.append(wire)
+    #     return Face.ByWires(faceeb, faceibList)
+
     @staticmethod
-    def AddInternalBoundaries(face, wires: list):
+    def AddInternalBoundaries(
+        face,
+        wires: list,
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
         """
-        Adds internal boundaries (closed wires) to the input face. Internal boundaries are considered holes in the input face.
+        Adds internal boundaries (holes) to the input Face while preserving the
+        Face's original support surface and existing boundary geometry.
+
+        The operation is delegated to the active geometry backend. The input Face
+        is not reconstructed from its external and internal boundary Wires.
 
         Parameters
         ----------
         face : topologic_core.Face
-            The input face.
+            The input Face.
         wires : list
-            The input list of internal boundaries (closed wires).
+            The input list of closed Wires to add as internal boundaries.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
         topologic_core.Face
-            The created face with internal boundaries added to it.
-
+            The Face with the additional internal boundaries, or None if the
+            active backend cannot perform the operation while preserving the
+            original support surface.
         """
+        import math
+
         from topologicpy.Topology import Topology
+        from topologicpy.Wire import Wire
 
         if not Topology.IsInstance(face, "Face"):
-            print("Face.AddInternalBoundaries - Error: The input face parameter is not a valid topologic face. Returning None.")
+            if not silent:
+                print(
+                    "Face.AddInternalBoundaries - Error: The input face parameter "
+                    "is not a valid Face. Returning None."
+                )
             return None
+
         if not isinstance(wires, list):
-            print("Face.AddInternalBoundaries - Warning: The input wires parameter is not a valid list. Returning the input face.")
+            if not silent:
+                print(
+                    "Face.AddInternalBoundaries - Warning: The input wires "
+                    "parameter is not a valid list. Returning the input Face."
+                )
             return face
-        wireList = [w for w in wires if Topology.IsInstance(w, "Wire")]
-        if len(wireList) < 1:
-            print("Face.AddInternalBoundaries - Warning: The input wires parameter does not contain any valid wires. Returning the input face.")
-            return face
-        faceeb = Face.ExternalBoundary(face)
-        faceibList = Face.InternalBoundaries(face)
+
+        try:
+            tolerance = abs(float(tolerance))
+        except Exception:
+            if not silent:
+                print(
+                    "Face.AddInternalBoundaries - Error: The input tolerance "
+                    "parameter is invalid. Returning None."
+                )
+            return None
+
+        if not math.isfinite(tolerance) or tolerance <= 0.0:
+            if not silent:
+                print(
+                    "Face.AddInternalBoundaries - Error: The tolerance must be "
+                    "greater than zero. Returning None."
+                )
+            return None
+
+        valid_wires = []
+
         for wire in wires:
-            faceibList.append(wire)
-        return Face.ByWires(faceeb, faceibList)
+
+            if not Topology.IsInstance(wire, "Wire"):
+                if not silent:
+                    print(
+                        "Face.AddInternalBoundaries - Warning: Ignoring an "
+                        "invalid Wire."
+                    )
+                continue
+
+            try:
+                closed = Wire.IsClosed(
+                    wire,
+                    tolerance=tolerance,
+                    silent=True
+                )
+            except Exception:
+                closed = False
+
+            if not closed:
+                if not silent:
+                    print(
+                        "Face.AddInternalBoundaries - Warning: Ignoring an open "
+                        "Wire."
+                    )
+                continue
+
+            valid_wires.append(wire)
+
+        if len(valid_wires) == 0:
+            return face
+
+        result = None
+
+        if Core.HasAttribute("Face", "AddInternalBoundaries"):
+            try:
+                result = Core.Call(
+                    "Face",
+                    "AddInternalBoundaries",
+                    face,
+                    valid_wires,
+                    tolerance
+                )
+            except Exception:
+                result = None
+
+        if not Topology.IsInstance(result, "Face"):
+            # Compatibility path: subtract each closed Wire as a native reverse
+            # trim. TrimByWire retains the current support surface and exact
+            # boundary curves, so this does not fall back to Face.ByWires or
+            # reconstruct the Face from vertices.
+            result = face
+
+            for wire in valid_wires:
+                result = Face.TrimByWire(
+                    result,
+                    wire,
+                    reverse=True,
+                    tolerance=tolerance,
+                    silent=True,
+                )
+
+                if not Topology.IsInstance(result, "Face"):
+                    if not silent:
+                        print(
+                            "Face.AddInternalBoundaries - Error: The backend "
+                            "could not add an internal boundary while preserving "
+                            "the support surface. Returning None."
+                        )
+                    return None
+
+        return result
 
     @staticmethod
     def AddInternalBoundariesCluster(face, cluster):
@@ -719,13 +853,11 @@ class Face():
 
         from topologicpy.Topology import Topology
 
-        # TopologicCore's current Python bindings do not expose
-        # Face.ByNurbsParameters.
-        if not Face._UseNativeFaceBackend():
+        if not Core.HasAttribute("Face", "ByNurbsParameters"):
             if not silent:
                 print(
-                    "Face.ByNurbsParameters - Error: The TopologicCore backend "
-                    "does not support NURBS surface construction. Returning None."
+                    "Face.ByNurbsParameters - Error: The active backend does not "
+                    "support NURBS surface construction. Returning None."
                 )
             return None
 
@@ -1444,37 +1576,11 @@ class Face():
             return result
 
         def native_is_valid(topology):
-            """
-            Use OCCT BRep validation when the active backend exposes a native
-            TopoDS_Shape. On other backends this becomes a no-op.
-            """
-
-            shape = getattr(
-                topology,
-                "shape",
-                None,
-            )
-
-            if shape is None:
-                try:
-                    shape = topology.GetOcctShape()
-                except Exception:
-                    shape = None
-
-            if shape is None:
+            """Use backend-native validation when it is available."""
+            if not Core.HasAttribute("FaceUtility", "IsValid"):
                 return True
-
             try:
-                from OCC.Core.BRepCheck import BRepCheck_Analyzer
-
-                analyzer = BRepCheck_Analyzer(
-                    shape
-                )
-
-                return bool(
-                    analyzer.IsValid()
-                )
-
+                return bool(Core.FaceUtility.IsValid(topology))
             except Exception:
                 return True
 
@@ -2136,8 +2242,8 @@ class Face():
         # ------------------------------------------------------------------
         # Normalize every hole to the canonical external boundary traversal.
         #
-        # Face.ByWires will later restore the opposite native orientation that
-        # OCCT requires for holes.
+        # Face.ByWires will later restore the opposite native orientation
+        # required for holes.
         # ------------------------------------------------------------------
 
         external_normal = wire_normal(
@@ -2611,190 +2717,872 @@ class Face():
         return return_face
 
     @staticmethod
-    def ByShell(shell, origin= None, angTolerance: float = 0.1, tolerance: float = 0.0001, silent=False):
+    def ByShell(
+        shell,
+        origin=None,
+        angTolerance: float = 0.1,
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
         """
-        Creates a face by merging the faces of the input shell.
+        Creates a single Face by merging the Faces of the input Shell without
+        flattening the Shell or reconstructing its geometry from Vertices or Wires.
+
+        The input Faces must belong to one geometrically compatible supporting
+        surface. Adjacent same-domain Faces are unified natively whenever the active
+        backend supports that operation. Analytical, B-Spline, and NURBS curves and
+        surfaces are retained.
+
+        If the Shell is folded, non-coplanar, or otherwise cannot be represented as
+        one trimmed Face on a common supporting surface, the method returns None
+        rather than creating a planar approximation.
 
         Parameters
         ----------
         shell : topologic_core.Shell
-            The input shell.
+            The input Shell.
+        origin : topologic_core.Vertex , optional
+            Retained for backward compatibility. It is not used because this method
+            does not flatten or planarize the input Shell.
         angTolerance : float , optional
-            The desired angular tolerance. Default is 0.1.
+            The angular tolerance in degrees. Retained for API compatibility.
+            Default is 0.1.
         tolerance : float , optional
-            The desired tolerance. Default is 0.0001.
+            The desired geometric tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
-        
+            If True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
         topologic_core.Face
-            The created face.
-
+            The unified Face, or None if the Shell cannot be represented as one
+            Face without replacing its native geometry.
         """
-        from topologicpy.Vertex import Vertex
-        from topologicpy.Wire import Wire
-        from topologicpy.Shell import Shell
+        import math
+
         from topologicpy.Cluster import Cluster
-        from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
-        from topologicpy.Helper import Helper
-        
-        def planarizeList(wireList):
-            returnList = []
-            for aWire in wireList:
-                returnList.append(Wire.Planarize(aWire))
-            return returnList
-        
-        if not Topology.IsInstance(shell, "Shell"):
-            print("Face.ByShell - Error: The input shell parameter is not a valid toplogic shell. Returning None.")
-            return None
-        
-        if not Topology.IsInstance(origin, "Vertex"):
-            origin = Topology.Centroid(shell)
-        if not Topology.IsInstance(origin, "Vertex"):
-            print("Face.ByShell - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
-            return None
-        
-        # Try the simple method first
-        face = None
-        ext_boundary = Wire.RemoveCollinearEdges(Shell.ExternalBoundary(shell), tolerance=tolerance, silent=silent)
-        if Topology.IsInstance(ext_boundary, "Wire"):
-            face = Face.ByWire(ext_boundary, silent=silent)
-        elif Topology.IsInstance(ext_boundary, "Cluster"):
-            wires = Topology.Wires(ext_boundary)
-            faces = [Face.ByWire(w, silent=silent) for w in wires]
-            areas = [Face.Area(f) for f in faces]
-            wires = Helper.Sort(wires, areas, reverseFlags=[True])
-            face = Face.ByWires(wires[0], wires[1:], silent=silent)
+        from topologicpy.Topology import Topology
 
-        if Topology.IsInstance(face, "Face"):
-            return face
-        world_origin = Vertex.Origin()
-        planar_shell = Shell.Planarize(shell)
-        normal = Face.Normal(Topology.Faces(planar_shell)[0])
-        planar_shell = Topology.Flatten(planar_shell, origin=origin, direction=normal)
-        vertices = Topology.Vertices(planar_shell)
-        new_vertices = []
-        for v in vertices:
-            x, y, z = Vertex.Coordinates(v)
-            new_v = Vertex.ByCoordinates(x,y,0)
-            new_vertices.append(new_v)
-        planar_shell = Topology.SelfMerge(Topology.ReplaceVertices(planar_shell, verticesA=vertices, verticesB=new_vertices), tolerance=tolerance)
-        ext_boundary = Shell.ExternalBoundary(planar_shell, tolerance=tolerance)
-        ext_boundary = Topology.RemoveCollinearEdges(ext_boundary, angTolerance=angTolerance, tolerance=tolerance, silent=silent)
-        if not Topology.IsInstance(ext_boundary, "Topology"):
-            print("Face.ByShell - Error: Could not derive the external boundary of the input shell parameter. Returning None.")
+        def _error(message):
+            if not silent:
+                print(f"Face.ByShell - Error: {message} Returning None.")
             return None
 
-        if Topology.IsInstance(ext_boundary, "Wire"):
-            if not Topology.IsPlanar(ext_boundary, tolerance=tolerance):
-                ext_boundary = Wire.Planarize(ext_boundary, origin=origin, tolerance=tolerance)
-            ext_boundary = Topology.RemoveCollinearEdges(ext_boundary, angTolerance=angTolerance, tolerance=tolerance, silent=silent)
+        def _copy_dictionary(source, target):
+            if not Topology.IsInstance(target, "Face"):
+                return target
+
             try:
-                face = Face.ByWire(ext_boundary, tolerance=tolerance, silent=silent)
-                face = Topology.Unflatten(face, origin=origin, direction=normal)
-                return face
-            except:
-                print("Face.ByShell - Error: The operation failed. Returning None.")
-                return None
-        elif Topology.IsInstance(ext_boundary, "Cluster"): # The shell has holes.
-            wires = Topology.Wires(ext_boundary)
-            faces = []
-            areas = []
-            for wire in wires:
-                aFace = Face.ByWire(wire, tolerance=tolerance)
-                if not Topology.IsInstance(aFace, "Face"):
-                    print("Face.ByShell - Error: The operation failed. Returning None.")
-                    return None
-                anArea = abs(Face.Area(aFace))
-                faces.append(aFace)
-                areas.append(anArea)
-            max_index = areas.index(max(areas))
-            ext_boundary = faces[max_index]
-            int_boundaries = list(set(faces) - set([ext_boundary]))
-            int_wires = []
-            for int_boundary in int_boundaries:
-                temp_wires = Topology.Wires(int_boundary)
-                int_wires.append(Topology.RemoveCollinearEdges(temp_wires[0], angTolerance=angTolerance, tolerance=tolerance, silent=silent))
-                #int_wires.append(temp_wires[0])
+                dictionary = Topology.Dictionary(
+                    source,
+                    silent=True
+                )
+            except Exception:
+                dictionary = None
 
-            temp_wires = Topology.Wires(ext_boundary)
-            ext_wire = Topology.RemoveCollinearEdges(temp_wires[0], angTolerance=angTolerance, tolerance=tolerance, silent=silent)
-            #ext_wire = temp_wires[0]
-            face = Face.ByWires(ext_wire, int_wires)
-            face = Topology.Unflatten(face, origin=origin, direction=normal)
-            return face
-        else:
-            return None
+            if dictionary is None:
+                return target
+
+            try:
+                keys = Dictionary.Keys(dictionary)
+            except Exception:
+                keys = []
+
+            if not keys:
+                return target
+
+            try:
+                updated = Topology.SetDictionary(
+                    target,
+                    dictionary,
+                    silent=True
+                )
+            except Exception:
+                updated = None
+
+            return (
+                updated
+                if Topology.IsInstance(updated, "Face")
+                else target
+            )
+
+        if not Topology.IsInstance(shell, "Shell"):
+            return _error(
+                "The input shell parameter is not a valid Shell."
+            )
+
+        try:
+            tolerance = abs(float(tolerance))
+            angTolerance = abs(float(angTolerance))
+        except Exception:
+            return _error(
+                "The tolerance or angTolerance parameter is invalid."
+            )
+
+        if not math.isfinite(tolerance) or tolerance <= 0.0:
+            return _error(
+                "The tolerance parameter must be a finite number greater than zero."
+            )
+
+        if not math.isfinite(angTolerance):
+            return _error(
+                "The angTolerance parameter must be finite."
+            )
+
+        if angTolerance > 180.0:
+            angTolerance = 180.0
+
+        try:
+            source_faces = Topology.Faces(
+                shell,
+                silent=True
+            ) or []
+        except Exception:
+            source_faces = []
+
+        source_faces = [
+            face for face in source_faces
+            if Topology.IsInstance(face, "Face")
+        ]
+
+        if len(source_faces) == 0:
+            return _error(
+                "The input Shell does not contain any valid Faces."
+            )
+
+        if len(source_faces) == 1:
+            return source_faces[0]
+
+        # Prefer a backend-native same-domain unification. This preserves the
+        # supplied surfaces, curves, trims, and p-curves.
+        if Core.HasAttribute("FaceUtility", "ByShell"):
+            try:
+                result = Core.FaceUtility.ByShell(
+                    shell,
+                    angTolerance,
+                    tolerance,
+                )
+            except Exception:
+                result = None
+
+            if Topology.IsInstance(result, "Face"):
+                return _copy_dictionary(shell, result)
+
+        # ------------------------------------------------------------------
+        # Backend-independent exact attempts.
+        #
+        # These operations use the supplied Faces directly. A result is accepted
+        # only if the backend produces one Face. No boundary extraction,
+        # planarization, flattening, vertex replacement, or Face.ByWire operation
+        # is permitted.
+        # ------------------------------------------------------------------
+
+        try:
+            merged = Topology.SelfMerge(
+                shell,
+                transferDictionaries=False,
+                tolerance=tolerance,
+                silent=True
+            )
+        except TypeError:
+            try:
+                merged = Topology.SelfMerge(
+                    shell,
+                    tolerance=tolerance
+                )
+            except Exception:
+                merged = None
+        except Exception:
+            merged = None
+
+        if Topology.IsInstance(merged, "Face"):
+            return _copy_dictionary(
+                shell,
+                merged
+            )
+
+        try:
+            face_cluster = Cluster.ByTopologies(
+                source_faces,
+                silent=True
+            )
+        except Exception:
+            face_cluster = None
+
+        if Topology.IsInstance(face_cluster, "Cluster"):
+            try:
+                merged = Topology.SelfMerge(
+                    face_cluster,
+                    transferDictionaries=False,
+                    tolerance=tolerance,
+                    silent=True
+                )
+            except TypeError:
+                try:
+                    merged = Topology.SelfMerge(
+                        face_cluster,
+                        tolerance=tolerance
+                    )
+                except Exception:
+                    merged = None
+            except Exception:
+                merged = None
+
+            if Topology.IsInstance(merged, "Face"):
+                return _copy_dictionary(
+                    shell,
+                    merged
+                )
+
+        # Try an exact union of the supplied Faces. This does not reconstruct
+        # their boundaries or supporting surfaces.
+        result = source_faces[0]
+
+        for source_face in source_faces[1:]:
+            try:
+                candidate = Topology.Union(
+                    result,
+                    source_face,
+                    transferDictionary=False,
+                    tolerance=tolerance,
+                    silent=True
+                )
+            except TypeError:
+                try:
+                    candidate = Topology.Union(
+                        result,
+                        source_face,
+                        tolerance=tolerance
+                    )
+                except Exception:
+                    candidate = None
+            except Exception:
+                candidate = None
+
+            if not Topology.IsInstance(candidate, "Topology"):
+                result = None
+                break
+
+            result = candidate
+
+        if Topology.IsInstance(result, "Face"):
+            return _copy_dictionary(
+                shell,
+                result
+            )
+
+        return _error(
+            "The Shell Faces do not form one Face on a common supporting surface."
+        )
     
+    # @staticmethod
+    # def ByThickenedWire(wire, offsetA: float = 1.0, offsetB: float = 0.0, tolerance: float = 0.0001, silent: bool = False):
+    #     """
+    #     Creates a face by thickening the input wire. This method assumes the wire is manifold and planar.
+
+    #     Parameters
+    #     ----------
+    #     wire : topologic_core.Wire
+    #         The input wire to be thickened.
+    #     offsetA : float , optional
+    #         The desired offset to the exterior of the wire. Default is 1.0.
+    #     offsetB : float , optional
+    #         The desired offset to the interior of the wire. Default is 0.0.
+    #     tolerance : float , optional
+    #         The desired tolerance. Default is 0.0001.
+    #     silent : bool , optional
+    #         If set to True, error and warning messages are suppressed. Default is False.
+
+    #     Returns
+    #     -------
+    #     topologic_core.Face
+    #         The created face.
+
+    #     """
+    #     from topologicpy.Vertex import Vertex
+    #     from topologicpy.Edge import Edge
+    #     from topologicpy.Wire import Wire
+    #     from topologicpy.Vector import Vector
+    #     from topologicpy.Topology import Topology
+
+    #     if not Topology.IsInstance(wire, "Wire"):
+    #         print("Face.ByThickenedWire - Error: The input wire parameter is not a valid wire. Returning None.")
+    #         return None
+    #     if not Wire.IsManifold(wire):
+    #         print("Face.ByThickenedWire - Error: The input wire parameter is not a manifold wire. Returning None.")
+    #         return None
+    #     three_vertices = Topology.Vertices(wire)[0:3]
+    #     temp_w = Wire.ByVertices(three_vertices, close=True, tolerance=tolerance, silent=silent)
+    #     flat_face = Face.ByWire(temp_w, tolerance=tolerance)
+    #     origin = Vertex.Origin()
+    #     normal = Face.Normal(flat_face)
+    #     flat_wire = Topology.Flatten(wire, origin=origin, direction=normal)
+    #     outside_wire = Wire.ByOffset(flat_wire, offset=abs(offsetA)*-1, bisectors = False, tolerance=tolerance)
+    #     inside_wire = Wire.ByOffset(flat_wire, offset=abs(offsetB), bisectors = False, tolerance=tolerance)
+    #     inside_wire = Wire.Reverse(inside_wire)
+    #     if not Wire.IsClosed(flat_wire):
+    #         sv = Topology.Vertices(flat_wire)[0]
+    #         ev = Topology.Vertices(flat_wire)[-1]
+    #         edges = Topology.Edges(flat_wire)
+    #         first_edge = Topology.SuperTopologies(sv, flat_wire, topologyType="edge")[0]
+    #         first_normal = Edge.Normal(first_edge)
+    #         last_edge = Topology.SuperTopologies(ev, flat_wire, topologyType="edge")[0]
+    #         last_normal = Edge.Normal(last_edge)
+    #         sv1 = Topology.TranslateByDirectionDistance(sv, first_normal, abs(offsetB))
+    #         sv2 = Topology.TranslateByDirectionDistance(sv, Vector.Reverse(first_normal), abs(offsetA))
+    #         ev1 = Topology.TranslateByDirectionDistance(ev, last_normal, abs(offsetB))
+    #         ev2 = Topology.TranslateByDirectionDistance(ev, Vector.Reverse(last_normal), abs(offsetA))
+    #         out_vertices = Topology.Vertices(outside_wire)[1:-1]
+    #         in_vertices = Topology.Vertices(inside_wire)[1:-1]
+    #         vertices = [sv2] + out_vertices + [ev2,ev1] + in_vertices + [sv1]
+    #         return_face = Face.ByWire(Wire.ByVertices(vertices, close=True, tolerance=tolerance, silent=silent))
+    #     else:
+    #         return_face = Face.ByWires(outside_wire, [inside_wire])
+    #     return_face = Topology.Unflatten(return_face, origin=origin, direction=normal)
+    #     return return_face
+
     @staticmethod
-    def ByThickenedWire(wire, offsetA: float = 1.0, offsetB: float = 0.0, tolerance: float = 0.0001, silent: bool = False):
+    def ByThickenedWire(
+        wire,
+        offsetA: float = 1.0,
+        offsetB: float = 0.0,
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
         """
-        Creates a face by thickening the input wire. This method assumes the wire is manifold and planar.
+        Creates a planar Face by thickening the input Wire.
+
+        Two offset Wires are created on opposite sides of the input Wire.
+        Their existing Edge geometry is preserved exactly. For an open Wire,
+        only two new straight cap Edges are created between corresponding
+        endpoints. Curved, circular, B-Spline, and NURBS offset Edges are never
+        reconstructed from their Vertices.
+
+        For a closed Wire, the larger offset loop is used as the external
+        boundary and the smaller offset loop as the internal boundary.
 
         Parameters
         ----------
         wire : topologic_core.Wire
-            The input wire to be thickened.
+            The input manifold planar Wire.
         offsetA : float , optional
-            The desired offset to the exterior of the wire. Default is 1.0.
+            The desired offset distance on one side of the Wire. For a closed
+            Wire this is intended to represent the exterior offset.
+            Default is 1.0.
         offsetB : float , optional
-            The desired offset to the interior of the wire. Default is 0.0.
+            The desired offset distance on the opposite side of the Wire. For
+            a closed Wire this is intended to represent the interior offset.
+            Default is 0.0.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
+            If True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
         topologic_core.Face
-            The created face.
+            The thickened Face, or None if the operation fails.
 
         """
-        from topologicpy.Vertex import Vertex
+        import math
+
         from topologicpy.Edge import Edge
-        from topologicpy.Wire import Wire
-        from topologicpy.Vector import Vector
         from topologicpy.Topology import Topology
+        from topologicpy.Wire import Wire
+        from topologicpy.Vertex import Vertex
+
+        # ------------------------------------------------------------------
+        # Validate input.
+        # ------------------------------------------------------------------
 
         if not Topology.IsInstance(wire, "Wire"):
-            print("Face.ByThickenedWire - Error: The input wire parameter is not a valid wire. Returning None.")
+            if not silent:
+                print(
+                    "Face.ByThickenedWire - Error: The input wire parameter "
+                    "is not a valid Wire. Returning None."
+                )
             return None
-        if not Wire.IsManifold(wire):
-            print("Face.ByThickenedWire - Error: The input wire parameter is not a manifold wire. Returning None.")
+
+        if not Wire.IsManifold(
+            wire,
+            tolerance=tolerance,
+            silent=True
+        ):
+            if not silent:
+                print(
+                    "Face.ByThickenedWire - Error: The input Wire is not "
+                    "manifold. Returning None."
+                )
             return None
-        three_vertices = Topology.Vertices(wire)[0:3]
-        temp_w = Wire.ByVertices(three_vertices, close=True, tolerance=tolerance, silent=silent)
-        flat_face = Face.ByWire(temp_w, tolerance=tolerance)
-        origin = Vertex.Origin()
-        normal = Face.Normal(flat_face)
-        flat_wire = Topology.Flatten(wire, origin=origin, direction=normal)
-        outside_wire = Wire.ByOffset(flat_wire, offset=abs(offsetA)*-1, bisectors = False, tolerance=tolerance)
-        inside_wire = Wire.ByOffset(flat_wire, offset=abs(offsetB), bisectors = False, tolerance=tolerance)
-        inside_wire = Wire.Reverse(inside_wire)
-        if not Wire.IsClosed(flat_wire):
-            sv = Topology.Vertices(flat_wire)[0]
-            ev = Topology.Vertices(flat_wire)[-1]
-            edges = Topology.Edges(flat_wire)
-            first_edge = Topology.SuperTopologies(sv, flat_wire, topologyType="edge")[0]
-            first_normal = Edge.Normal(first_edge)
-            last_edge = Topology.SuperTopologies(ev, flat_wire, topologyType="edge")[0]
-            last_normal = Edge.Normal(last_edge)
-            sv1 = Topology.TranslateByDirectionDistance(sv, first_normal, abs(offsetB))
-            sv2 = Topology.TranslateByDirectionDistance(sv, Vector.Reverse(first_normal), abs(offsetA))
-            ev1 = Topology.TranslateByDirectionDistance(ev, last_normal, abs(offsetB))
-            ev2 = Topology.TranslateByDirectionDistance(ev, Vector.Reverse(last_normal), abs(offsetA))
-            out_vertices = Topology.Vertices(outside_wire)[1:-1]
-            in_vertices = Topology.Vertices(inside_wire)[1:-1]
-            vertices = [sv2] + out_vertices + [ev2,ev1] + in_vertices + [sv1]
-            return_face = Face.ByWire(Wire.ByVertices(vertices, close=True, tolerance=tolerance, silent=silent))
-        else:
-            return_face = Face.ByWires(outside_wire, [inside_wire])
-        return_face = Topology.Unflatten(return_face, origin=origin, direction=normal)
-        return return_face
-    
+
+        try:
+            offsetA = abs(float(offsetA))
+            offsetB = abs(float(offsetB))
+            tolerance = abs(float(tolerance))
+        except Exception:
+            if not silent:
+                print(
+                    "Face.ByThickenedWire - Error: The offset or tolerance "
+                    "parameter is invalid. Returning None."
+                )
+            return None
+
+        if (
+            not math.isfinite(offsetA)
+            or not math.isfinite(offsetB)
+            or not math.isfinite(tolerance)
+            or tolerance <= 0.0
+        ):
+            if not silent:
+                print(
+                    "Face.ByThickenedWire - Error: The offset parameters must "
+                    "be finite and tolerance must be greater than zero. "
+                    "Returning None."
+                )
+            return None
+
+        if (
+            offsetA <= tolerance
+            and offsetB <= tolerance
+        ):
+            if not silent:
+                print(
+                    "Face.ByThickenedWire - Error: At least one offset must be "
+                    "greater than tolerance. Returning None."
+                )
+            return None
+
+        try:
+            planar = bool(
+                Topology.IsPlanar(
+                    wire,
+                    tolerance=tolerance
+                )
+            )
+        except Exception:
+            planar = False
+
+        if not planar:
+            if not silent:
+                print(
+                    "Face.ByThickenedWire - Error: The input Wire is not "
+                    "planar. Returning None."
+                )
+            return None
+
+        closed = Wire.IsClosed(
+            wire,
+            tolerance=tolerance,
+            silent=True
+        )
+
+        # ------------------------------------------------------------------
+        # Create the two exact offset Wires.
+        #
+        # Wire.ByOffset defines positive as left of traversal and negative as
+        # right. Using opposite signs therefore creates the two ribbon sides.
+        # ------------------------------------------------------------------
+
+        side_a = Wire.ByOffset(
+            wire,
+            offset=-offsetA,
+            bisectors=False,
+            transferDictionaries=False,
+            tolerance=tolerance,
+            silent=True
+        )
+
+        side_b = Wire.ByOffset(
+            wire,
+            offset=offsetB,
+            bisectors=False,
+            transferDictionaries=False,
+            tolerance=tolerance,
+            silent=True
+        )
+
+        if not Topology.IsInstance(side_a, "Wire"):
+            if not silent:
+                print(
+                    "Face.ByThickenedWire - Error: Could not create offset "
+                    "side A. Returning None."
+                )
+            return None
+
+        if not Topology.IsInstance(side_b, "Wire"):
+            if not silent:
+                print(
+                    "Face.ByThickenedWire - Error: Could not create offset "
+                    "side B. Returning None."
+                )
+            return None
+
+        # ==================================================================
+        # CLOSED WIRE
+        # ==================================================================
+
+        if closed:
+
+            if (
+                not Wire.IsClosed(
+                    side_a,
+                    tolerance=tolerance,
+                    silent=True
+                )
+                or not Wire.IsClosed(
+                    side_b,
+                    tolerance=tolerance,
+                    silent=True
+                )
+            ):
+                if not silent:
+                    print(
+                        "Face.ByThickenedWire - Error: Offsetting the closed "
+                        "Wire did not produce two closed Wires. Returning None."
+                    )
+                return None
+
+            # Determine exterior/interior geometrically rather than assuming
+            # the input Wire orientation is counter-clockwise.
+            face_a = Face.ByWire(
+                side_a,
+                tolerance=tolerance,
+                silent=True
+            )
+
+            face_b = Face.ByWire(
+                side_b,
+                tolerance=tolerance,
+                silent=True
+            )
+
+            if (
+                not Topology.IsInstance(face_a, "Face")
+                or not Topology.IsInstance(face_b, "Face")
+            ):
+                if not silent:
+                    print(
+                        "Face.ByThickenedWire - Error: Could not construct "
+                        "Faces from the offset Wires. Returning None."
+                    )
+                return None
+
+            area_a = Face.Area(
+                face_a,
+                mantissa=None,
+                silent=True
+            )
+
+            area_b = Face.Area(
+                face_b,
+                mantissa=None,
+                silent=True
+            )
+
+            if (
+                area_a is None
+                or area_b is None
+            ):
+                if not silent:
+                    print(
+                        "Face.ByThickenedWire - Error: Could not determine "
+                        "the areas of the offset Wires. Returning None."
+                    )
+                return None
+
+            area_a = abs(float(area_a))
+            area_b = abs(float(area_b))
+
+            if abs(area_a - area_b) <= tolerance * tolerance:
+                if not silent:
+                    print(
+                        "Face.ByThickenedWire - Error: The two offset Wires "
+                        "do not define a measurable thickened region. "
+                        "Returning None."
+                    )
+                return None
+
+            if area_a > area_b:
+                external_wire = side_a
+                internal_wire = side_b
+            else:
+                external_wire = side_b
+                internal_wire = side_a
+
+            result = Face.ByWires(
+                external_wire,
+                [internal_wire],
+                tolerance=tolerance,
+                silent=True
+            )
+
+            if not Topology.IsInstance(result, "Face"):
+                if not silent:
+                    print(
+                        "Face.ByThickenedWire - Error: Could not construct the "
+                        "thickened Face from the closed offset Wires. "
+                        "Returning None."
+                    )
+                return None
+
+            return result
+
+        # ==================================================================
+        # OPEN WIRE
+        # ==================================================================
+
+        if (
+            Wire.IsClosed(
+                side_a,
+                tolerance=tolerance,
+                silent=True
+            )
+            or Wire.IsClosed(
+                side_b,
+                tolerance=tolerance,
+                silent=True
+            )
+        ):
+            if not silent:
+                print(
+                    "Face.ByThickenedWire - Error: Offsetting the open Wire "
+                    "unexpectedly produced a closed Wire. Returning None."
+                )
+            return None
+
+        # ------------------------------------------------------------------
+        # Get corresponding endpoints.
+        # ------------------------------------------------------------------
+
+        start_a = Wire.StartVertex(
+            side_a,
+            silent=True
+        )
+
+        end_a = Wire.EndVertex(
+            side_a,
+            silent=True
+        )
+
+        start_b = Wire.StartVertex(
+            side_b,
+            silent=True
+        )
+
+        end_b = Wire.EndVertex(
+            side_b,
+            silent=True
+        )
+
+        if not all(
+            Topology.IsInstance(vertex, "Vertex")
+            for vertex in [
+                start_a,
+                end_a,
+                start_b,
+                end_b
+            ]
+        ):
+            if not silent:
+                print(
+                    "Face.ByThickenedWire - Error: Could not determine the "
+                    "endpoints of the offset Wires. Returning None."
+                )
+            return None
+
+        # ------------------------------------------------------------------
+        # Preserve the exact ordered Edges of side A.
+        # ------------------------------------------------------------------
+
+        edges_a = Wire._OrderedEdges(
+            side_a,
+            tolerance=tolerance,
+            silent=True
+        )
+
+        if not isinstance(edges_a, list) or len(edges_a) == 0:
+            if not silent:
+                print(
+                    "Face.ByThickenedWire - Error: Could not retrieve the "
+                    "ordered Edges of offset side A. Returning None."
+                )
+            return None
+
+        # ------------------------------------------------------------------
+        # Reverse side B geometrically.
+        #
+        # Wire.Reverse reverses the actual Edge geometry; it does not rebuild
+        # the Edges from endpoint Vertices.
+        # ------------------------------------------------------------------
+
+        side_b_reversed = Wire.Reverse(
+            side_b,
+            transferDictionaries=False,
+            tolerance=tolerance,
+            silent=True
+        )
+
+        if not Topology.IsInstance(
+            side_b_reversed,
+            "Wire"
+        ):
+            if not silent:
+                print(
+                    "Face.ByThickenedWire - Error: Could not reverse offset "
+                    "side B while preserving its geometry. Returning None."
+                )
+            return None
+
+        edges_b = Wire._OrderedEdges(
+            side_b_reversed,
+            tolerance=tolerance,
+            silent=True
+        )
+
+        if not isinstance(edges_b, list) or len(edges_b) == 0:
+            if not silent:
+                print(
+                    "Face.ByThickenedWire - Error: Could not retrieve the "
+                    "ordered Edges of offset side B. Returning None."
+                )
+            return None
+
+        boundary_edges = list(edges_a)
+
+        # ------------------------------------------------------------------
+        # End cap:
+        #
+        #     side A end -> side B end
+        #
+        # This is intentionally a new straight Edge.
+        # ------------------------------------------------------------------
+
+        if not Vertex.IsCoincident(
+            end_a,
+            end_b,
+            tolerance=tolerance,
+            silent=True
+        ):
+            end_cap = Edge.ByStartVertexEndVertex(
+                end_a,
+                end_b,
+                tolerance=tolerance,
+                silent=True
+            )
+
+            if not Topology.IsInstance(
+                end_cap,
+                "Edge"
+            ):
+                if not silent:
+                    print(
+                        "Face.ByThickenedWire - Error: Could not create the "
+                        "end cap Edge. Returning None."
+                    )
+                return None
+
+            boundary_edges.append(
+                end_cap
+            )
+
+        # Exact reversed side B.
+        boundary_edges.extend(
+            edges_b
+        )
+
+        # ------------------------------------------------------------------
+        # Start cap:
+        #
+        #     side B start -> side A start
+        # ------------------------------------------------------------------
+
+        if not Vertex.IsCoincident(
+            start_b,
+            start_a,
+            tolerance=tolerance,
+            silent=True
+        ):
+            start_cap = Edge.ByStartVertexEndVertex(
+                start_b,
+                start_a,
+                tolerance=tolerance,
+                silent=True
+            )
+
+            if not Topology.IsInstance(
+                start_cap,
+                "Edge"
+            ):
+                if not silent:
+                    print(
+                        "Face.ByThickenedWire - Error: Could not create the "
+                        "start cap Edge. Returning None."
+                    )
+                return None
+
+            boundary_edges.append(
+                start_cap
+            )
+
+        # ------------------------------------------------------------------
+        # Build the closed boundary from the ORIGINAL offset Edges plus the
+        # two straight caps.
+        # ------------------------------------------------------------------
+
+        boundary = Wire.ByEdges(
+            boundary_edges,
+            orient=False,
+            tolerance=tolerance,
+            silent=True
+        )
+
+        if not Topology.IsInstance(
+            boundary,
+            "Wire"
+        ):
+            if not silent:
+                print(
+                    "Face.ByThickenedWire - Error: Could not construct the "
+                    "thickened boundary Wire. Returning None."
+                )
+            return None
+
+        if not Wire.IsClosed(
+            boundary,
+            tolerance=tolerance,
+            silent=True
+        ):
+            if not silent:
+                print(
+                    "Face.ByThickenedWire - Error: The resulting boundary "
+                    "Wire is not closed. Returning None."
+                )
+            return None
+
+        # ------------------------------------------------------------------
+        # Construct the planar Face directly from the exact boundary.
+        # ------------------------------------------------------------------
+
+        result = Face.ByWire(
+            boundary,
+            tolerance=tolerance,
+            silent=True
+        )
+
+        if not Topology.IsInstance(
+            result,
+            "Face"
+        ):
+            if not silent:
+                print(
+                    "Face.ByThickenedWire - Error: Could not construct the "
+                    "thickened Face. Returning None."
+                )
+            return None
+
+        return result
+
     @staticmethod
     def ByVertices(vertices: list, tolerance: float = 0.0001, silent: bool = False):
         
@@ -3224,9 +4012,8 @@ class Face():
                toAngle: float = 360.0,
                direction: list = [0, 0, 1],
                placement: str = "center",
-               polyhderon: bool = True,
                tolerance: float = 0.0001,
-               polyline: bool = None,
+               polyline: bool = True,
                silent: bool = False):
         """
         Creates a circular Face.
@@ -3248,15 +4035,10 @@ class Face():
             The vector representing the Face normal. Default is [0, 0, 1].
         placement : str , optional
             The placement mode. Default is "center".
-        polyhderon : bool , optional
-            Historical misspelled compatibility parameter. If ``polyline`` is
-            None, True creates the historical polygonal approximation and False
-            creates exact circular Edges. Default is True.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         polyline : bool , optional
-            Explicitly selects straight-segment or exact curved construction.
-            If None, ``polyhderon`` is used for backward compatibility. Default is None.
+            Explicitly selects straight-segment or exact curved construction. Default is False.
         silent : bool , optional
             If True, error and warning messages are suppressed. Default is False.
 
@@ -3268,10 +4050,8 @@ class Face():
         from topologicpy.Topology import Topology
         from topologicpy.Wire import Wire
 
-        if polyline is None:
-            polyline = bool(polyhderon)
-        else:
-            polyline = bool(polyline)
+        
+        polyline = bool(polyline)
 
         wire = Wire.Circle(
             origin=origin,
@@ -4917,109 +5697,295 @@ class Face():
             return False
         return True
 
-    @staticmethod
-    def Fillet(face, radius: float = 0, sides: int = 16, radiusKey: str = None, tolerance: float = 0.0001, silent: bool = False):
-        """
-        Fillets (rounds) the interior and exterior corners of the input face given the input radius. See https://en.wikipedia.org/wiki/Fillet_(mechanics)
+    # @staticmethod
+    # def Fillet(face, radius: float = 0, sides: int = 16, radiusKey: str = None, tolerance: float = 0.0001, silent: bool = False):
+    #     """
+    #     Fillets (rounds) the interior and exterior corners of the input face given the input radius. See https://en.wikipedia.org/wiki/Fillet_(mechanics)
 
-        Parameters
-        ----------
-        face : topologic_core.Face
-            The input face.
-        radius : float , optional
-            The desired radius of the fillet. Default is 0.
-        sides : int , optional
-            The number of sides (segments) of the fillet. Default is 16.
-        radiusKey : str , optional
-            If specified, the dictionary of the vertices will be queried for this key to specify the desired fillet radius. Default is None.
-        tolerance : float , optional
-            The desired tolerance. Default is 0.0001.
-        silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
+    #     Parameters
+    #     ----------
+    #     face : topologic_core.Face
+    #         The input face.
+    #     radius : float , optional
+    #         The desired radius of the fillet. Default is 0.
+    #     sides : int , optional
+    #         The number of sides (segments) of the fillet. Default is 16.
+    #     radiusKey : str , optional
+    #         If specified, the dictionary of the vertices will be queried for this key to specify the desired fillet radius. Default is None.
+    #     tolerance : float , optional
+    #         The desired tolerance. Default is 0.0001.
+    #     silent : bool , optional
+    #         If set to True, error and warning messages are suppressed. Default is False.
 
-        Returns
-        -------
-        topologic_core.Face
-            The filleted face.
+    #     Returns
+    #     -------
+    #     topologic_core.Face
+    #         The filleted face.
 
-        """
-        from topologicpy.Wire import Wire
-        from topologicpy.Topology import Topology
+    #     """
+    #     from topologicpy.Wire import Wire
+    #     from topologicpy.Topology import Topology
 
-        if not Topology.IsInstance(face, "Face"):
-            if not silent:
-                print("Face.Fillet - Error: The input face parameter is not a valid face. Returning None.")
-            return None
+    #     if not Topology.IsInstance(face, "Face"):
+    #         if not silent:
+    #             print("Face.Fillet - Error: The input face parameter is not a valid face. Returning None.")
+    #         return None
         
-        eb = Topology.Copy(Face.ExternalBoundary(face))
-        ib_list = Face.InternalBoundaries(face)
-        ib_list = [Topology.Copy(ib) for ib in ib_list]
-        f_vertices = Topology.Vertices(face)
-        if isinstance(radiusKey, str):
-            eb = Topology.TransferDictionariesBySelectors(eb, selectors=f_vertices, tranVertices=True)
-        eb = Wire.Fillet(eb, radius=radius, sides=sides, radiusKey=radiusKey, tolerance=tolerance, silent=True)
-        if not Topology.IsInstance(eb, "Wire"):
-            if not silent:
-                print("Face.Fillet - Error: The operation failed. Returning None.")
-            return None
-        ib_wires = []
-        for ib in ib_list:
-            ib = Wire.ByVertices(Topology.Vertices(ib), close=True, tolerance=tolerance, silent=silent)
-            ib = Wire.Reverse(ib)
-            if isinstance(radiusKey, str):
-                ib = Topology.TransferDictionariesBySelectors(ib, selectors=f_vertices, tranVertices=True)
+    #     eb = Topology.Copy(Face.ExternalBoundary(face))
+    #     ib_list = Face.InternalBoundaries(face)
+    #     ib_list = [Topology.Copy(ib) for ib in ib_list]
+    #     f_vertices = Topology.Vertices(face)
+    #     if isinstance(radiusKey, str):
+    #         eb = Topology.TransferDictionariesBySelectors(eb, selectors=f_vertices, tranVertices=True)
+    #     eb = Wire.Fillet(eb, radius=radius, sides=sides, radiusKey=radiusKey, tolerance=tolerance, silent=True)
+    #     if not Topology.IsInstance(eb, "Wire"):
+    #         if not silent:
+    #             print("Face.Fillet - Error: The operation failed. Returning None.")
+    #         return None
+    #     ib_wires = []
+    #     for ib in ib_list:
+    #         ib = Wire.ByVertices(Topology.Vertices(ib), close=True, tolerance=tolerance, silent=silent)
+    #         ib = Wire.Reverse(ib)
+    #         if isinstance(radiusKey, str):
+    #             ib = Topology.TransferDictionariesBySelectors(ib, selectors=f_vertices, tranVertices=True)
             
-            ib_wire = Wire.Fillet(ib, radius=radius, sides=sides, radiusKey=radiusKey, tolerance=tolerance, silent=True)
-            if Topology.IsInstance(ib, "Wire"):
-                ib_wires.append(ib_wire)
-            else:
-                if not silent:
-                    print("Face.Fillet - Error: The operation for one of the interior boundaries failed. Skipping.")
-        return Face.ByWires(eb, ib_wires)
+    #         ib_wire = Wire.Fillet(ib, radius=radius, sides=sides, radiusKey=radiusKey, tolerance=tolerance, silent=True)
+    #         if Topology.IsInstance(ib, "Wire"):
+    #             ib_wires.append(ib_wire)
+    #         else:
+    #             if not silent:
+    #                 print("Face.Fillet - Error: The operation for one of the interior boundaries failed. Skipping.")
+    #     return Face.ByWires(eb, ib_wires)
 
     @staticmethod
-    def Harmonize(face, tolerance: float = 0.0001, silent: bool = False):
+    def Fillet(
+        face,
+        radius: float = 0,
+        sides: int = 16,
+        radiusKey: str = None,
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
         """
-        Returns a harmonized version of the input face such that the *u* and *v* origins are always in the upperleft corner.
+        Fillets the corners of the input planar Face while preserving its native
+        support surface and boundary geometry.
+
+        The operation is delegated to the active geometry backend. Existing
+        boundary Edges and internal boundaries are not reconstructed from
+        Vertices.
+
+        Backends may provide an exact native planar-face fillet operation.
+        Straight and circular boundary Edges are supported exactly. Unsupported
+        curve configurations fail cleanly rather than being approximated.
 
         Parameters
         ----------
         face : topologic_core.Face
-            The input face.
+            The input planar Face.
+        radius : float , optional
+            The default fillet radius. Default is 0.
+        sides : int , optional
+            Retained for backward API compatibility. Native fillets are exact
+            circular arcs and are not segmented. Default is 16.
+        radiusKey : str , optional
+            If specified, each Vertex dictionary is queried for this key. A valid
+            non-negative numerical value overrides the default radius at that
+            Vertex. Default is None.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
+            If True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
         topologic_core.Face
-            The harmonized face.
+            The filleted Face, or None if the operation fails.
 
         """
-        from topologicpy.Vertex import Vertex
-        from topologicpy.Wire import Wire
-        from topologicpy.Topology import Topology
+        import math
+
         from topologicpy.Dictionary import Dictionary
+        from topologicpy.Topology import Topology
+
+        # ------------------------------------------------------------------
+        # Validate.
+        # ------------------------------------------------------------------
 
         if not Topology.IsInstance(face, "Face"):
             if not silent:
-                print("Face.Harmonize - Error: The input face parameter is not a valid face. Returning None.")
+                print(
+                    "Face.Fillet - Error: The input face parameter is not a "
+                    "valid Face. Returning None."
+                )
             return None
-        normal = Face.Normal(face)
-        origin = Topology.Centroid(face)
-        flatFace = Topology.Flatten(face, origin=origin, direction=normal)
-        world_origin = Vertex.Origin()
-        vertices = Topology.Vertices(Face.ExternalBoundary(flatFace))
-        harmonizedEB = Wire.ByVertices(vertices, close=True, tolerance=tolerance, silent=silent)
-        internalBoundaries = Face.InternalBoundaries(flatFace)
-        harmonizedIB = []
-        for ib in internalBoundaries:
-            ibVertices = Topology.Vertices(ib)
-            harmonizedIB.append(Wire.ByVertices(ibVertices, close=True, tolerance=tolerance, silent=silent))
-        harmonizedFace = Face.ByWires(harmonizedEB, harmonizedIB, tolerance=tolerance)
-        harmonizedFace = Topology.Unflatten(harmonizedFace, origin=origin, direction=normal)
-        return harmonizedFace
+
+        try:
+            radius = abs(float(radius))
+            tolerance = abs(float(tolerance))
+        except Exception:
+            if not silent:
+                print(
+                    "Face.Fillet - Error: The radius or tolerance parameter is "
+                    "invalid. Returning None."
+                )
+            return None
+
+        if (
+            not math.isfinite(radius)
+            or not math.isfinite(tolerance)
+            or tolerance <= 0.0
+        ):
+            if not silent:
+                print(
+                    "Face.Fillet - Error: The radius must be finite and the "
+                    "tolerance must be greater than zero. Returning None."
+                )
+            return None
+
+        # Face filleting is intrinsically a planar-face operation.
+        if Face.IsPlanar(
+            face,
+            tolerance=tolerance,
+            silent=True
+        ) is not True:
+            if not silent:
+                print(
+                    "Face.Fillet - Error: The input Face is not planar. "
+                    "Returning None."
+                )
+            return None
+
+        # OCCT's 2D fillet builder cannot fillet a redundant 180-degree
+        # vertex. Remove only linear-collinear vertices before collecting the
+        # corners to fillet. The native operation preserves the support surface
+        # and protects every genuinely curved boundary Edge.
+        working_face = Face.RemoveCollinearEdges(
+            face,
+            angTolerance=0.1,
+            tolerance=tolerance,
+            silent=True,
+        )
+
+        if not Topology.IsInstance(working_face, "Face"):
+            working_face = face
+
+        # ------------------------------------------------------------------
+        # Determine the requested radius at each original Face Vertex.
+        #
+        # Pass the actual topology Vertices to the backend. Do not identify
+        # corners from reconstructed coordinates.
+        # ------------------------------------------------------------------
+
+        vertices = Topology.Vertices(
+            working_face,
+            silent=True
+        ) or []
+
+        vertex_radii = []
+
+        for vertex in vertices:
+
+            if not Topology.IsInstance(
+                vertex,
+                "Vertex"
+            ):
+                continue
+
+            vertex_radius = radius
+
+            if isinstance(radiusKey, str):
+
+                dictionary = Topology.Dictionary(
+                    vertex,
+                    silent=True
+                )
+
+                if dictionary is not None:
+                    try:
+                        value = Dictionary.ValueAtKey(
+                            dictionary,
+                            radiusKey
+                        )
+                    except Exception:
+                        value = None
+
+                    if isinstance(value, (int, float)):
+                        try:
+                            value = float(value)
+
+                            if (
+                                math.isfinite(value)
+                                and value >= 0.0
+                            ):
+                                vertex_radius = value
+                        except Exception:
+                            pass
+
+            if vertex_radius > tolerance:
+                vertex_radii.append(
+                    (vertex, vertex_radius)
+                )
+
+        # Nothing to fillet.
+        if len(vertex_radii) == 0:
+            return face
+
+        # ------------------------------------------------------------------
+        # Native backend operation.
+        # ------------------------------------------------------------------
+
+        if not Core.HasAttribute(
+            "FaceUtility",
+            "Fillet"
+        ):
+            if not silent:
+                print(
+                    "Face.Fillet - Error: The active backend does not support "
+                    "native curve-preserving Face filleting. Returning None."
+                )
+            return None
+
+        try:
+            result = Core.Call(
+                "FaceUtility",
+                "Fillet",
+                working_face,
+                vertex_radii,
+                tolerance
+            )
+
+        except Exception as error:
+            if not silent:
+                print(
+                    "Face.Fillet - Error: The backend fillet operation failed. "
+                    "Returning None."
+                )
+                print("Error:", error)
+            return None
+
+        if not Topology.IsInstance(
+            result,
+            "Face"
+        ):
+            if not silent:
+                print(
+                    "Face.Fillet - Error: The backend could not construct the "
+                    "filleted Face. Returning None."
+                )
+            return None
+
+        # Preserve the parent Face dictionary even when the preliminary native
+        # collinear cleanup produced a new wrapper.
+        try:
+            dictionary = Topology.Dictionary(face, silent=True)
+            if dictionary is not None:
+                updated = Topology.SetDictionary(result, dictionary, silent=True)
+                if Topology.IsInstance(updated, "Face"):
+                    result = updated
+        except Exception:
+            pass
+
+        return result
 
     @staticmethod
     def InteriorAngles(face, includeInternalBoundaries: bool = False, mantissa: int = 6) -> list:
@@ -5602,7 +6568,7 @@ class Face():
         geometry.
 
         Exact curved boundaries and NURBS surfaces are preserved. The preferred
-        path reverses the backend-native OCCT Face directly. If native reversal
+        path reverses the backend-native Face directly. If native reversal
         is unavailable, a planar fallback reverses the existing boundary Wires
         rather than rebuilding them from vertices.
 
@@ -5641,42 +6607,27 @@ class Face():
         except Exception:
             pass
 
-        # Preferred path: reverse the native OCCT Face. Reversing the TopoDS
-        # orientation preserves the underlying surface, trimming curves, p-curves,
-        # and exact NURBS geometry.
-        try:
-            shape = Topology.OCCTShape(face, silent=True)
-        except Exception:
-            shape = None
-
-        if shape is not None:
+        # Preferred path: reverse the native Face. This preserves the underlying
+        # surface, trimming curves, p-curves, and exact NURBS geometry.
+        if Core.HasAttribute("FaceUtility", "Reverse"):
             try:
-                reversed_shape = shape.Reversed()
+                result = Core.FaceUtility.Reverse(face)
             except Exception:
-                reversed_shape = None
+                result = None
 
-            if reversed_shape is not None:
-                try:
-                    result = Topology.ByOCCTShape(
-                        reversed_shape,
-                        silent=True,
-                    )
-                except Exception:
-                    result = None
-
-                if Topology.IsInstance(result, "Face"):
-                    if face_dictionary:
-                        try:
-                            candidate = Topology.SetDictionary(
-                                result,
-                                face_dictionary,
-                                silent=True,
-                            )
-                            if Topology.IsInstance(candidate, "Face"):
-                                result = candidate
-                        except Exception:
-                            pass
-                    return result
+            if Topology.IsInstance(result, "Face"):
+                if face_dictionary:
+                    try:
+                        candidate = Topology.SetDictionary(
+                            result,
+                            face_dictionary,
+                            silent=True,
+                        )
+                        if Topology.IsInstance(candidate, "Face"):
+                            result = candidate
+                    except Exception:
+                        pass
+                return result
 
         # Exact planar fallback. Wire.Reverse reverses the actual Edge geometry,
         # so arcs, B-splines and NURBS are retained instead of being chordalised.
@@ -8779,11 +9730,65 @@ class Face():
         plan_face = Face.ByWires(plan_eb, plan_ib_list)
         return plan_face
 
+    # @staticmethod
+    # def Project(faceA, faceB, direction : list = None,
+    #             mantissa: int = 6, tolerance: float = 0.0001):
+    #     """
+    #     Creates a projection of the first input face unto the second input face.
+
+    #     Parameters
+    #     ----------
+    #     faceA : topologic_core.Face
+    #         The face to be projected.
+    #     faceB : topologic_core.Face
+    #         The face unto which the first input face will be projected.
+    #     direction : list, optional
+    #         The vector direction of the projection. If None, the reverse vector of the receiving face normal will be used. Default is None.
+    #     mantissa : int , optional
+    #         The number of decimal places to round the result to. Default is 6.
+    #     tolerance : float , optional
+    #         The desired tolerance. Default is 0.0001.
+
+    #     Returns
+    #     -------
+    #     topologic_core.Face
+    #         The projected Face.
+
+    #     """
+    #     from topologicpy.Wire import Wire
+    #     from topologicpy.Topology import Topology
+
+    #     if not faceA:
+    #         return None
+    #     if not Topology.IsInstance(faceA, "Face"):
+    #         return None
+    #     if not faceB:
+    #         return None
+    #     if not Topology.IsInstance(faceB, "Face"):
+    #         return None
+
+    #     eb = Face.ExternalBoundary(faceA)
+    #     ib_list = Face.InternalBoundaries(faceA)
+    #     p_eb = Wire.Project(wire=eb, face = faceB, direction=direction, mantissa=mantissa, tolerance=tolerance)
+    #     p_ib_list = []
+    #     for ib in ib_list:
+    #         temp_ib = Wire.Project(wire=ib, face = faceB, direction=direction, mantissa=mantissa, tolerance=tolerance)
+    #         if temp_ib:
+    #             p_ib_list.append(temp_ib)
+    #     return Face.ByWires(p_eb, p_ib_list, tolerance=tolerance)
+
     @staticmethod
-    def Project(faceA, faceB, direction : list = None,
-                mantissa: int = 6, tolerance: float = 0.0001):
+    def Project(faceA, faceB, direction: list = None,
+                mantissa: int = 6, tolerance: float = 0.0001,
+                silent: bool = False):
         """
-        Creates a projection of the first input face unto the second input face.
+        Creates a projection of the first input Face onto the second input Face.
+
+        The projected boundary Wires are used to trim the receiving Face itself.
+        The result therefore retains the receiving Face's native supporting
+        surface, including B-spline and NURBS surfaces, instead of asking
+        ``Face.ByWires`` to infer a new surface from the projected boundaries.
+        Native projected curve geometry is likewise retained.
 
         Parameters
         ----------
@@ -8797,6 +9802,9 @@ class Face():
             The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default
+            is False.
 
         Returns
         -------
@@ -8807,25 +9815,106 @@ class Face():
         from topologicpy.Wire import Wire
         from topologicpy.Topology import Topology
 
-        if not faceA:
-            return None
         if not Topology.IsInstance(faceA, "Face"):
-            return None
-        if not faceB:
+            if not silent:
+                print("Face.Project - Error: The input faceA parameter is not a valid Face. Returning None.")
             return None
         if not Topology.IsInstance(faceB, "Face"):
+            if not silent:
+                print("Face.Project - Error: The input faceB parameter is not a valid Face. Returning None.")
             return None
 
-        eb = Face.ExternalBoundary(faceA)
-        ib_list = Face.InternalBoundaries(faceA)
-        p_eb = Wire.Project(wire=eb, face = faceB, direction=direction, mantissa=mantissa, tolerance=tolerance)
-        p_ib_list = []
-        for ib in ib_list:
-            temp_ib = Wire.Project(wire=ib, face = faceB, direction=direction, mantissa=mantissa, tolerance=tolerance)
-            if temp_ib:
-                p_ib_list.append(temp_ib)
-        return Face.ByWires(p_eb, p_ib_list, tolerance=tolerance)
+        try:
+            tolerance = abs(float(tolerance))
+        except Exception:
+            if not silent:
+                print("Face.Project - Error: The input tolerance parameter is invalid. Returning None.")
+            return None
 
+        if tolerance <= 0.0 or not math.isfinite(tolerance):
+            if not silent:
+                print("Face.Project - Error: The tolerance must be greater than zero. Returning None.")
+            return None
+
+        external = Face.ExternalBoundary(faceA)
+        projected_external = Wire.Project(
+            wire=external,
+            face=faceB,
+            direction=direction,
+            mantissa=mantissa,
+            tolerance=tolerance,
+            silent=True,
+        )
+
+        if not Topology.IsInstance(projected_external, "Wire"):
+            if not silent:
+                print("Face.Project - Error: Could not project the external boundary. Returning None.")
+            return None
+
+        # Trim faceB rather than rebuilding a Face from the projected Wire. This
+        # is the essential surface-preserving step: native TrimByWire operates on
+        # faceB's existing support and keeps the projected Edge curves and
+        # p-curves intact.
+        result = Face.TrimByWire(
+            faceB,
+            projected_external,
+            reverse=False,
+            tolerance=tolerance,
+            silent=True,
+        )
+
+        if not Topology.IsInstance(result, "Face"):
+            if not silent:
+                print("Face.Project - Error: Could not trim the receiving Face by the projected external boundary. Returning None.")
+            return None
+
+        projected_internals = []
+        for internal in Face.InternalBoundaries(faceA):
+            projected_internal = Wire.Project(
+                wire=internal,
+                face=faceB,
+                direction=direction,
+                mantissa=mantissa,
+                tolerance=tolerance,
+                silent=True,
+            )
+            if not Topology.IsInstance(projected_internal, "Wire"):
+                if not silent:
+                    print("Face.Project - Error: Could not project an internal boundary. Returning None.")
+                return None
+            projected_internals.append(projected_internal)
+
+        if not projected_internals:
+            return result
+
+        # Prefer the backend operation that adds all holes directly to the
+        # retained support. Older backends may not expose it, so use native
+        # reverse trims as a surface-preserving compatibility path.
+        if Core.HasAttribute("Face", "AddInternalBoundaries"):
+            with_holes = Face.AddInternalBoundaries(
+                result,
+                projected_internals,
+                tolerance=tolerance,
+                silent=True,
+            )
+            if Topology.IsInstance(with_holes, "Face"):
+                return with_holes
+
+        for projected_internal in projected_internals:
+            result = Face.TrimByWire(
+                result,
+                projected_internal,
+                reverse=True,
+                tolerance=tolerance,
+                silent=True,
+            )
+            if not Topology.IsInstance(result, "Face"):
+                if not silent:
+                    print("Face.Project - Error: Could not create a projected internal boundary without rebuilding the support surface. Returning None.")
+                return None
+
+        return result
+    
     @staticmethod
     def RectangleByPlaneEquation(origin= None, width: float = 1.0, length: float = 1.0, placement: str = "center", equation: dict = None, tolerance: float = 0.0001):
         from topologicpy.Vertex import Vertex
@@ -8880,42 +9969,151 @@ class Face():
             return None
         return Face._PrimitiveFaceByWire(wire, origin=origin, direction=direction, tolerance=tolerance, silent=silent)
     
+    # @staticmethod
+    # def RemoveCollinearEdges(face, angTolerance: float = 0.1, tolerance: float = 0.0001, silent: bool = False):
+    #     """
+    #     Removes any collinear edges in the input face.
+
+    #     Parameters
+    #     ----------
+    #     face : topologic_core.Face
+    #         The input face.
+    #     angTolerance : float , optional
+    #         The desired angular tolerance. Default is 0.1.
+    #     tolerance : float , optional
+    #         The desired tolerance. Default is 0.0001.
+    #     silent : bool , optional
+    #         If set to True, error and warning messages are suppressed. Default is False.
+
+    #     Returns
+    #     -------
+    #     topologic_core.Face
+    #         The created face without any collinear edges.
+
+    #     """
+    #     from topologicpy.Wire import Wire
+    #     from topologicpy.Topology import Topology
+    #     import inspect
+        
+    #     if not Topology.IsInstance(face, "Face"):
+    #         if not silent:
+    #             print("Face.RemoveCollinearEdges - Error: The input face parameter is not a valid face. Returning None.")
+    #             curframe = inspect.currentframe()
+    #             calframe = inspect.getouterframes(curframe, 2)
+    #             print('caller name:', calframe[1][3])
+    #         return None
+    #     eb = Wire.RemoveCollinearEdges(Face.Wire(face), angTolerance=angTolerance, tolerance=tolerance, silent=silent)
+    #     ib = [Wire.RemoveCollinearEdges(w, angTolerance=angTolerance, tolerance=tolerance, silent=silent) for w in Face.InternalBoundaries(face)]
+    #     return Face.ByWires(eb, ib, silent=silent)
+
     @staticmethod
-    def RemoveCollinearEdges(face, angTolerance: float = 0.1, tolerance: float = 0.0001, silent: bool = False):
+    def RemoveCollinearEdges(
+        face,
+        angTolerance: float = 0.1,
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
         """
-        Removes any collinear edges in the input face.
+        Removes redundant consecutive linear collinear Edges from the boundaries
+        of the input Face while preserving the Face's original support surface and
+        all curved boundary geometry.
+
+        Only linear Edge chains are eligible for merging. Vertices incident to
+        genuinely curved Edges are protected so curved, circular, B-Spline, and
+        NURBS Edges remain unchanged.
 
         Parameters
         ----------
         face : topologic_core.Face
-            The input face.
+            The input Face.
         angTolerance : float , optional
-            The desired angular tolerance. Default is 0.1.
+            Maximum angular deviation in degrees for adjacent linear Edges to be
+            considered collinear. Default is 0.1.
         tolerance : float , optional
-            The desired tolerance. Default is 0.0001.
+            The desired geometric tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
+            If True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
         topologic_core.Face
-            The created face without any collinear edges.
-
+            The simplified Face, or None if the active backend cannot perform the
+            operation while preserving the original support surface.
         """
-        from topologicpy.Wire import Wire
+        import math
+
         from topologicpy.Topology import Topology
-        import inspect
-        
+
         if not Topology.IsInstance(face, "Face"):
             if not silent:
-                print("Face.RemoveCollinearEdges - Error: The input face parameter is not a valid face. Returning None.")
-                curframe = inspect.currentframe()
-                calframe = inspect.getouterframes(curframe, 2)
-                print('caller name:', calframe[1][3])
+                print(
+                    "Face.RemoveCollinearEdges - Error: The input face parameter "
+                    "is not a valid Face. Returning None."
+                )
             return None
-        eb = Wire.RemoveCollinearEdges(Face.Wire(face), angTolerance=angTolerance, tolerance=tolerance, silent=silent)
-        ib = [Wire.RemoveCollinearEdges(w, angTolerance=angTolerance, tolerance=tolerance, silent=silent) for w in Face.InternalBoundaries(face)]
-        return Face.ByWires(eb, ib, silent=silent)
+
+        try:
+            angTolerance = abs(float(angTolerance))
+            tolerance = abs(float(tolerance))
+        except Exception:
+            if not silent:
+                print(
+                    "Face.RemoveCollinearEdges - Error: The angular tolerance "
+                    "or tolerance parameter is invalid. Returning None."
+                )
+            return None
+
+        if (
+            not math.isfinite(angTolerance)
+            or not math.isfinite(tolerance)
+            or tolerance <= 0.0
+        ):
+            if not silent:
+                print(
+                    "Face.RemoveCollinearEdges - Error: The tolerance values "
+                    "are invalid. Returning None."
+                )
+            return None
+
+        if not Core.HasAttribute(
+            "FaceUtility",
+            "RemoveCollinearEdges"
+        ):
+            if not silent:
+                print(
+                    "Face.RemoveCollinearEdges - Error: The active backend does "
+                    "not support support-surface-preserving removal of collinear "
+                    "Edges. Returning None."
+                )
+            return None
+
+        try:
+            result = Core.Call(
+                "FaceUtility",
+                "RemoveCollinearEdges",
+                face,
+                angTolerance,
+                tolerance
+            )
+
+        except Exception as error:
+            if not silent:
+                print(
+                    "Face.RemoveCollinearEdges - Error: The backend operation "
+                    "failed. Returning None."
+                )
+                print("Error:", error)
+            return None
+
+        if not Topology.IsInstance(result, "Face"):
+            if not silent:
+                print(
+                    "Face.RemoveCollinearEdges - Error: The backend did not "
+                    "return a valid Face. Returning None."
+                )
+            return None
+
+        return result
     
     @staticmethod
     def RHS(origin= None, width: float = 1.0, length: float = 1.0, thickness: float = 0.25, outerFillet: float = 0.0, innerFillet: float = 0.0, sides: int = 16, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001, silent: bool = False):
@@ -9253,53 +10451,270 @@ class Face():
         
         return Face.RHS(origin = origin, width = size, length = size, thickness = thickness, outerFillet = outerFillet, innerFillet = innerFillet, sides = sides, direction = direction, placement = placement, tolerance = tolerance, silent = silent)
     
-    @staticmethod
-    def Simplify(face, method='douglas-peucker', tolerance=0.0001, silent=False):
-        """
-        Simplifies the input wire edges based on the selected algorithm: Douglas-Peucker or Visvalingam–Whyatt.
+    # @staticmethod
+    # def Simplify(face, method='douglas-peucker', tolerance=0.0001, silent=False):
+    #     """
+    #     Simplifies the input wire edges based on the selected algorithm: Douglas-Peucker or Visvalingam–Whyatt.
         
+    #     Parameters
+    #     ----------
+    #     face : topologic_core.Face
+    #         The input face.
+    #     method : str, optional
+    #         The simplification method to use: 'douglas-peucker' or 'visvalingam-whyatt' or 'reumann-witkam'.
+    #         The default is 'douglas-peucker'.
+    #     tolerance : float , optional
+    #         The desired tolerance.
+    #         If using the douglas-peucker method, edge lengths shorter than this amount will be removed.
+    #         If using the visvalingam-whyatt method, triangulare areas less than is amount will be removed.
+    #         If using the Reumann-Witkam method, the tolerance specifies the maximum perpendicular distance allowed
+    #         between any point and the current line segment; points falling within this distance are discarded.
+    #         The default is 0.0001.
+    #     silent : bool , optional
+    #         If set to True, error and warning messages are suppressed. Default is False.
+            
+    #     Returns
+    #     -------
+    #     topologic_core.Face
+    #         The simplified face.
+        
+    #     """
+    #     from topologicpy.Wire import Wire
+    #     from topologicpy.Topology import Topology
+
+    #     if not Topology.IsInstance(face, "Face"):
+    #         if not silent:
+    #             print("Face.Simplify - Error: The input face parameter is not a valid face. Returning None.")
+    #         return None
+        
+    #     eb = Face.ExternalBoundary(face)
+    #     eb = Wire.Simplify(eb, method=method, tolerance=tolerance, silent=silent)
+    #     ibList = Face.InternalBoundaries(face)
+    #     ibList = [Wire.Simplify(ib, method=method, tolerance=tolerance, silent=silent) for ib in ibList]
+    #     return_face = Face.ByWires(eb, ibList, tolerance=tolerance, silent=silent)
+    #     if not Topology.IsInstance(return_face, "Face"):
+    #         if not silent:
+    #             print("Face.Simplify - Error: Could not simplify the face. Returning the original input face.")
+    #         return face
+    #     return return_face
+    
+    @staticmethod
+    def Simplify(
+        face,
+        method: str = "douglas-peucker",
+        epsilon: float = 0.0001,
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
+        """
+        Simplifies the linear portions of the boundaries of a planar Face while
+        preserving curved Edges.
+
+        Curved Edges are retained exactly. Purely polygonal boundaries and
+        contiguous linear portions of mixed boundaries are simplified using
+        ``Wire.Simplify``.
+
         Parameters
         ----------
         face : topologic_core.Face
-            The input face.
-        method : str, optional
-            The simplification method to use: 'douglas-peucker' or 'visvalingam-whyatt' or 'reumann-witkam'.
-            The default is 'douglas-peucker'.
+            The input Face.
+        method : str , optional
+            The simplification method. Supported values are
+            "douglas-peucker", "visvalingam-whyatt", and "reumann-witkam".
+            Default is "douglas-peucker".
+        epsilon : float , optional
+            The simplification threshold. Default is 0.0001.
         tolerance : float , optional
-            The desired tolerance.
-            If using the douglas-peucker method, edge lengths shorter than this amount will be removed.
-            If using the visvalingam-whyatt method, triangulare areas less than is amount will be removed.
-            If using the Reumann-Witkam method, the tolerance specifies the maximum perpendicular distance allowed
-            between any point and the current line segment; points falling within this distance are discarded.
-            The default is 0.0001.
+            The topology construction and coincidence tolerance.
+            Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
-            
+            If True, error and warning messages are suppressed. Default is False.
+
         Returns
         -------
         topologic_core.Face
-            The simplified face.
-        
+            The simplified Face.
         """
-        from topologicpy.Wire import Wire
+        import math
+
         from topologicpy.Topology import Topology
+        from topologicpy.Wire import Wire
 
         if not Topology.IsInstance(face, "Face"):
             if not silent:
-                print("Face.Simplify - Error: The input face parameter is not a valid face. Returning None.")
+                print(
+                    "Face.Simplify - Error: The input face parameter is not a "
+                    "valid Face. Returning None."
+                )
             return None
-        
-        eb = Face.ExternalBoundary(face)
-        eb = Wire.Simplify(eb, method=method, tolerance=tolerance, silent=silent)
-        ibList = Face.InternalBoundaries(face)
-        ibList = [Wire.Simplify(ib, method=method, tolerance=tolerance, silent=silent) for ib in ibList]
-        return_face = Face.ByWires(eb, ibList, tolerance=tolerance, silent=silent)
-        if not Topology.IsInstance(return_face, "Face"):
+
+        try:
+            epsilon = abs(float(epsilon))
+            tolerance = abs(float(tolerance))
+        except Exception:
             if not silent:
-                print("Face.Simplify - Error: Could not simplify the face. Returning the original input face.")
+                print(
+                    "Face.Simplify - Error: The epsilon or tolerance parameter is "
+                    "invalid. Returning None."
+                )
+            return None
+
+        if not math.isfinite(epsilon) or epsilon <= 0.0:
+            if not silent:
+                print(
+                    "Face.Simplify - Error: The epsilon parameter must be greater "
+                    "than zero. Returning None."
+                )
+            return None
+
+        if not math.isfinite(tolerance) or tolerance <= 0.0:
+            if not silent:
+                print(
+                    "Face.Simplify - Error: The tolerance parameter must be greater "
+                    "than zero. Returning None."
+                )
+            return None
+
+        if Face.IsPlanar(
+            face,
+            tolerance=tolerance,
+            silent=True
+        ) is not True:
+            if not silent:
+                print(
+                    "Face.Simplify - Warning: The input Face is not planar. "
+                    "Returning the original Face."
+                )
             return face
-        return return_face
-    
+
+        external = Face.ExternalBoundary(
+            face,
+            silent=True
+        )
+
+        if not Topology.IsInstance(external, "Wire"):
+            if not silent:
+                print(
+                    "Face.Simplify - Error: Could not retrieve the external "
+                    "boundary. Returning the original Face."
+                )
+            return face
+
+        internals = Face.InternalBoundaries(face) or []
+
+        def simplify_boundary(boundary):
+            if not Topology.IsInstance(boundary, "Wire"):
+                return boundary, False
+
+            old_edges = Topology.Edges(
+                boundary,
+                silent=True
+            ) or []
+
+            candidate = Wire.Simplify(
+                boundary,
+                method=method,
+                epsilon=epsilon,
+                tolerance=tolerance,
+                silent=True
+            )
+
+            if not Topology.IsInstance(candidate, "Wire"):
+                return boundary, False
+
+            if not Wire.IsClosed(
+                candidate,
+                tolerance=tolerance,
+                silent=True
+            ):
+                return boundary, False
+
+            new_edges = Topology.Edges(
+                candidate,
+                silent=True
+            ) or []
+
+            if len(new_edges) >= len(old_edges):
+                return boundary, False
+
+            return candidate, True
+
+        simplified_external, external_changed = simplify_boundary(
+            external
+        )
+
+        simplified_internals = []
+        changed = external_changed
+
+        for internal in internals:
+            simplified_internal, internal_changed = simplify_boundary(
+                internal
+            )
+
+            simplified_internals.append(
+                simplified_internal
+            )
+
+            changed = changed or internal_changed
+
+        if not changed:
+            return face
+
+        result = None
+
+        # Preferred path: replace the trimming boundaries while retaining the
+        # original supporting surface.
+        if Core.HasAttribute(
+            "FaceUtility",
+            "ByBoundariesOnSurface"
+        ):
+            try:
+                result = Core.Call(
+                    "FaceUtility",
+                    "ByBoundariesOnSurface",
+                    face,
+                    simplified_external,
+                    simplified_internals,
+                    tolerance
+                )
+            except Exception:
+                result = None
+
+        # The Face has already been verified as planar. This fallback retains all
+        # unchanged curved Edges and constructs only the simplified linear segments.
+        if not Topology.IsInstance(result, "Face"):
+            result = Face.ByWires(
+                simplified_external,
+                simplified_internals,
+                tolerance=tolerance,
+                silent=True
+            )
+
+        if not Topology.IsInstance(result, "Face"):
+            if not silent:
+                print(
+                    "Face.Simplify - Error: Could not construct the simplified "
+                    "Face. Returning the original Face."
+                )
+            return face
+
+        dictionary = Topology.Dictionary(
+            face,
+            silent=True
+        )
+
+        if dictionary:
+            updated = Topology.SetDictionary(
+                result,
+                dictionary,
+                silent=True
+            )
+
+            if Topology.IsInstance(updated, "Face"):
+                result = updated
+
+        return result
+
     @staticmethod
     def Skeleton(face, boundary: bool = True, tolerance: float = 0.001):
         """
@@ -10142,7 +11557,7 @@ class Face():
         if not Topology.IsInstance(wire, "Wire"):
             return face
 
-        if Face._UseNativeFaceBackend():
+        if Core.HasAttribute("FaceUtility", "TrimByWire"):
             try:
                 result = Core.FaceUtility.TrimByWire(face, wire, reverse, tolerance)
             except TypeError:
