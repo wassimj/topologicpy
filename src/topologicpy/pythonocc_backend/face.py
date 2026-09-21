@@ -819,76 +819,80 @@ class Face(Topology):
         # ------------------------------------------------------------------
         # Add internal boundaries.
         #
-        # OCCT requires hole wires to have the opposite orientation to the
-        # external boundary. Do not modify the original Wire wrapper or its
-        # stored TopoDS_Wire; create an orientation-adjusted TopoDS_Wire copy.
+        # A TopoDS_Wire's FORWARD/REVERSED flag does not describe its signed
+        # traversal in the supporting plane. Comparing those flags can invert
+        # a Rhino face so that the hole becomes the positive region. Instead,
+        # try both directions and retain the candidate whose area is closest to
+        # ``outer area - accumulated hole area``.
         # ------------------------------------------------------------------
 
         try:
-            external_orientation = external_wire.Orientation()
+            from OCC.Core.GProp import GProp_GProps
+            from OCC.Core.BRepGProp import brepgprop
+
+            def _face_area(occ_face):
+                properties = GProp_GProps()
+                brepgprop.SurfaceProperties(occ_face, properties)
+                return abs(float(properties.Mass()))
+
+            outer_area = _face_area(builder.Face())
         except Exception:
-            external_orientation = None
+            outer_area = None
+
+        selected_holes = []
+        accumulated_hole_area = 0.0
+
+        def _candidate_face(hole_wires):
+            candidate_builder = BRepBuilderAPI_MakeFace(external_wire, True)
+            if not candidate_builder.IsDone():
+                return None
+            for candidate_hole in hole_wires:
+                candidate_builder.Add(candidate_hole)
+            if not candidate_builder.IsDone():
+                return None
+            return candidate_builder.Face()
 
         for internalBoundary in internalBoundaries:
-
-            internal_shape = getattr(
-                internalBoundary,
-                "shape",
-                None
-            )
-
+            internal_shape = getattr(internalBoundary, "shape", None)
             if internal_shape is None:
                 try:
                     internal_shape = internalBoundary.GetOcctShape()
                 except Exception:
                     return None
-
             try:
-                if internal_shape.IsNull():
-                    return None
-            except Exception:
-                pass
-
-            try:
-                internal_wire = topods.Wire(
-                    internal_shape
-                )
+                internal_wire = topods.Wire(internal_shape)
+                reversed_wire = topods.Wire(internal_wire.Reversed())
             except Exception:
                 return None
 
-            # --------------------------------------------------------------
-            # The internal boundary must oppose the external boundary.
-            #
-            # Use Reversed() rather than Reverse() so the input Wire's native
-            # orientation is not mutated.
-            # --------------------------------------------------------------
+            hole_area = _wire_area(internal_wire)
+            if outer_area is not None and hole_area is not None:
+                target_area = outer_area - accumulated_hole_area - hole_area
+                choices = []
+                for candidate_wire in (internal_wire, reversed_wire):
+                    candidate_face = _candidate_face(selected_holes + [candidate_wire])
+                    if candidate_face is None:
+                        continue
+                    try:
+                        error = abs(_face_area(candidate_face) - target_area)
+                    except Exception:
+                        continue
+                    choices.append((error, candidate_wire))
+                if choices:
+                    choices.sort(key=lambda item: item[0])
+                    selected_holes.append(choices[0][1])
+                    accumulated_hole_area += hole_area
+                    continue
 
+            # Defensive fallback when mass properties are unavailable.
+            selected_holes.append(reversed_wire)
+
+        builder = BRepBuilderAPI_MakeFace(external_wire, True)
+        if not builder.IsDone():
+            return None
+        for internal_wire in selected_holes:
             try:
-                internal_orientation = internal_wire.Orientation()
-
-                if (
-                    external_orientation is not None
-                    and internal_orientation == external_orientation
-                ):
-                    internal_wire = topods.Wire(
-                        internal_wire.Reversed()
-                    )
-
-            except Exception:
-                # If orientation inspection is unavailable, conservatively
-                # reverse the hole. This matches the normal case where both
-                # independently created wires initially have FORWARD orientation.
-                try:
-                    internal_wire = topods.Wire(
-                        internal_wire.Reversed()
-                    )
-                except Exception:
-                    return None
-
-            try:
-                builder.Add(
-                    internal_wire
-                )
+                builder.Add(internal_wire)
             except Exception:
                 return None
 
@@ -1364,6 +1368,89 @@ class Face(Topology):
 
         except Exception:
             return None
+
+    @staticmethod
+    def ByNurbsParametersAndWires(
+        controlPoints,
+        weights,
+        uKnots,
+        vKnots,
+        isRational,
+        isUPeriodic,
+        isVPeriodic,
+        uDegree,
+        vDegree,
+        externalBoundary,
+        internalBoundaries=None,
+        reverse: bool = False,
+        tolerance: float = 0.0001,
+    ):
+        """Create an exact trimmed NURBS face from a support surface and wires.
+
+        The supplied three-dimensional wires are projected by OCCT onto the
+        exact NURBS support. No tessellation or control-point fitting occurs.
+        """
+        if not isinstance(externalBoundary, Wire):
+            return None
+        internalBoundaries = list(internalBoundaries or [])
+        if not all(isinstance(wire, Wire) for wire in internalBoundaries):
+            return None
+
+        support_face = Face.ByNurbsParameters(
+            controlPoints, weights, uKnots, vKnots, isRational,
+            isUPeriodic, isVPeriodic, uDegree, vDegree, tolerance,
+        )
+        if not isinstance(support_face, Face):
+            return None
+
+        try:
+            from OCC.Core.BRep import BRep_Tool
+            from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakeFace
+            from OCC.Core.BRepLib import breplib
+            from OCC.Core.ShapeFix import ShapeFix_Face
+            from OCC.Core.TopoDS import topods
+
+            support_shape = topods.Face(support_face.shape)
+            try:
+                surface = BRep_Tool.Surface(support_shape)
+            except Exception:
+                surface = BRep_Tool.Surface_s(support_shape)
+            outer_wire = topods.Wire(externalBoundary.shape)
+            maker = BRepBuilderAPI_MakeFace(surface, outer_wire, True)
+            if not maker.IsDone():
+                return None
+
+            outer_orientation = outer_wire.Orientation()
+            for boundary in internalBoundaries:
+                hole = topods.Wire(boundary.shape)
+                if hole.Orientation() == outer_orientation:
+                    hole = topods.Wire(hole.Reversed())
+                maker.Add(hole)
+            if not maker.IsDone():
+                return None
+            face_shape = maker.Face()
+            try:
+                breplib.BuildCurves3d(face_shape)
+            except Exception:
+                pass
+            try:
+                fixer = ShapeFix_Face(face_shape)
+                fixer.SetPrecision(_face_tolerance(tolerance))
+                fixer.Perform()
+                face_shape = fixer.Face()
+            except Exception:
+                pass
+            if bool(reverse):
+                face_shape = topods.Face(face_shape.Reversed())
+            result = Face.ByOcctShape(face_shape)
+        except Exception:
+            return None
+
+        if not isinstance(result, Face):
+            return None
+        result.external = externalBoundary
+        result.internals = internalBoundaries
+        return result
 
     @staticmethod
     def ByOcctShape(

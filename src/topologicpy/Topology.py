@@ -7091,6 +7091,52 @@ class Topology():
         return st
 
     @staticmethod
+    def By3DMFile(
+        file,
+        objectNames: list = None,
+        layerNames: list = None,
+        transferDictionaries: bool = True,
+        tolerance: float = None,
+        silent: bool = False,
+    ):
+        """Imports exact supported geometry from a Rhino ``File3dm`` object.
+
+        This is a convenience wrapper around :meth:`topologicpy.Rhino.Rhino.By3DMFile`.
+        Curves and surfaces retain their NURBS control points, weights, degrees,
+        and knots; B-reps retain their ordered trimming loops where supported by
+        the active backend. No mesh fallback is performed.
+        """
+        from topologicpy.Rhino import Rhino
+        return Rhino.By3DMFile(
+            file,
+            objectNames=objectNames,
+            layerNames=layerNames,
+            transferDictionaries=transferDictionaries,
+            tolerance=tolerance,
+            silent=silent,
+        )
+
+    @staticmethod
+    def By3DMPath(
+        path: str,
+        objectNames: list = None,
+        layerNames: list = None,
+        transferDictionaries: bool = True,
+        tolerance: float = None,
+        silent: bool = False,
+    ):
+        """Imports exact supported geometry from a Rhino ``.3dm`` file path."""
+        from topologicpy.Rhino import Rhino
+        return Rhino.By3DMPath(
+            path,
+            objectNames=objectNames,
+            layerNames=layerNames,
+            transferDictionaries=transferDictionaries,
+            tolerance=tolerance,
+            silent=silent,
+        )
+    
+    @staticmethod
     def ByBIMFile(file,
                   guidKey: str = "guid",
                   colorKey: str = "color",
@@ -13948,7 +13994,53 @@ class Topology():
             newTopologies.append(newTopology)
 
         return Cluster.ByTopologies(newTopologies, silent=silent)
-    
+
+    @staticmethod
+    def ExportTo3DM(
+        topologies,
+        path: str,
+        overwrite: bool = False,
+        version: int = 8,
+        tolerance: float = 0.0001,
+        silent: bool = False,
+    ) -> bool:
+        """Exports topology to a Rhino ``.3dm`` file.
+
+        This is a thin convenience wrapper around
+        :meth:`topologicpy.Rhino.Rhino.ExportTo3DM`. An unchanged complete list
+        returned by :meth:`Topology.By3DMPath` is round-tripped losslessly.
+
+        Parameters
+        ----------
+        topologies : list or topologic_core.Topology
+            The input topology or list of topologies.
+        path : str or os.PathLike
+            The output file path. ``.3dm`` is appended when absent.
+        overwrite : bool, optional
+            If True, an existing file may be overwritten. Default is False.
+        version : int, optional
+            Rhino archive version used for newly-created documents. Default is 8.
+        tolerance : float, optional
+            Model and tessellation tolerance. Default is 0.0001.
+        silent : bool, optional
+            If True, suppress warnings and errors. Default is False.
+
+        Returns
+        -------
+        bool
+            True when the file was written successfully, otherwise False.
+        """
+        from topologicpy.Rhino import Rhino
+
+        return Rhino.ExportTo3DM(
+            topologies,
+            path,
+            overwrite=overwrite,
+            version=version,
+            tolerance=tolerance,
+            silent=silent,
+        )
+
     @staticmethod
     def ExportToBIM(topologies,
                     path : str,

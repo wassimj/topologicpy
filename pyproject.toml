@@ -34,6 +34,9 @@ dependencies = [
 test = [
   "pytest-xdist>=2.4.0",
 ]
+rhino = [
+  "rhino3dm>=8.17.0",
+]
 
 [project.urls]
 "Homepage" = "https://github.com/wassimj/TopologicPy"
