@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy package &mdash; topologicpy 0.9.72 documentation</title>
+  <title>topologicpy package &mdash; topologicpy 0.9.73 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.9.72
+                0.9.73
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -557,6 +557,7 @@
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.ByNurbsParameters"><code class="docutils literal notranslate"><span class="pre">Face.ByNurbsParameters()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.ByOffset"><code class="docutils literal notranslate"><span class="pre">Face.ByOffset()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.ByOffsetArea"><code class="docutils literal notranslate"><span class="pre">Face.ByOffsetArea()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.ByParametricFunction"><code class="docutils literal notranslate"><span class="pre">Face.ByParametricFunction()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.ByShell"><code class="docutils literal notranslate"><span class="pre">Face.ByShell()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.ByThickenedWire"><code class="docutils literal notranslate"><span class="pre">Face.ByThickenedWire()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.ByVertices"><code class="docutils literal notranslate"><span class="pre">Face.ByVertices()</span></code></a></li>
@@ -566,10 +567,12 @@
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.ByWiresCluster"><code class="docutils literal notranslate"><span class="pre">Face.ByWiresCluster()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.CHS"><code class="docutils literal notranslate"><span class="pre">Face.CHS()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.CShape"><code class="docutils literal notranslate"><span class="pre">Face.CShape()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.Catenoid"><code class="docutils literal notranslate"><span class="pre">Face.Catenoid()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.Circle"><code class="docutils literal notranslate"><span class="pre">Face.Circle()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.Compactness"><code class="docutils literal notranslate"><span class="pre">Face.Compactness()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.CompassAngle"><code class="docutils literal notranslate"><span class="pre">Face.CompassAngle()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.ConcaveCornerVertices"><code class="docutils literal notranslate"><span class="pre">Face.ConcaveCornerVertices()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.Conoid"><code class="docutils literal notranslate"><span class="pre">Face.Conoid()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.ConvexCornerVertices"><code class="docutils literal notranslate"><span class="pre">Face.ConvexCornerVertices()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.CrossShape"><code class="docutils literal notranslate"><span class="pre">Face.CrossShape()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.CurvatureAtParameters"><code class="docutils literal notranslate"><span class="pre">Face.CurvatureAtParameters()</span></code></a></li>
@@ -580,6 +583,8 @@
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.ExternalBoundary"><code class="docutils literal notranslate"><span class="pre">Face.ExternalBoundary()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.FacingToward"><code class="docutils literal notranslate"><span class="pre">Face.FacingToward()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.Fillet"><code class="docutils literal notranslate"><span class="pre">Face.Fillet()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.Helicoid"><code class="docutils literal notranslate"><span class="pre">Face.Helicoid()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.HyperbolicParaboloid"><code class="docutils literal notranslate"><span class="pre">Face.HyperbolicParaboloid()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.IShape"><code class="docutils literal notranslate"><span class="pre">Face.IShape()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.InteriorAngles"><code class="docutils literal notranslate"><span class="pre">Face.InteriorAngles()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.InternalBoundaries"><code class="docutils literal notranslate"><span class="pre">Face.InternalBoundaries()</span></code></a></li>
@@ -595,6 +600,7 @@
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.NormalAtParameters"><code class="docutils literal notranslate"><span class="pre">Face.NormalAtParameters()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.NormalEdge"><code class="docutils literal notranslate"><span class="pre">Face.NormalEdge()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.NorthArrow"><code class="docutils literal notranslate"><span class="pre">Face.NorthArrow()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.Paraboloid"><code class="docutils literal notranslate"><span class="pre">Face.Paraboloid()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.Planarize"><code class="docutils literal notranslate"><span class="pre">Face.Planarize()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.PlaneEquation"><code class="docutils literal notranslate"><span class="pre">Face.PlaneEquation()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.Project"><code class="docutils literal notranslate"><span class="pre">Face.Project()</span></code></a></li>
@@ -604,6 +610,7 @@
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.RemoveCollinearEdges"><code class="docutils literal notranslate"><span class="pre">Face.RemoveCollinearEdges()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.Ring"><code class="docutils literal notranslate"><span class="pre">Face.Ring()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.SHS"><code class="docutils literal notranslate"><span class="pre">Face.SHS()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.Scherk"><code class="docutils literal notranslate"><span class="pre">Face.Scherk()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.Simplify"><code class="docutils literal notranslate"><span class="pre">Face.Simplify()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.Skeleton"><code class="docutils literal notranslate"><span class="pre">Face.Skeleton()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.Square"><code class="docutils literal notranslate"><span class="pre">Face.Square()</span></code></a></li>
