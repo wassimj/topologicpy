@@ -108,42 +108,6 @@ class Face():
 
         return face
 
-    # @staticmethod
-    # def AddInternalBoundaries(face, wires: list):
-    #     """
-    #     Adds internal boundaries (closed wires) to the input face. Internal boundaries are considered holes in the input face.
-
-    #     Parameters
-    #     ----------
-    #     face : topologic_core.Face
-    #         The input face.
-    #     wires : list
-    #         The input list of internal boundaries (closed wires).
-
-    #     Returns
-    #     -------
-    #     topologic_core.Face
-    #         The created face with internal boundaries added to it.
-
-    #     """
-    #     from topologicpy.Topology import Topology
-
-    #     if not Topology.IsInstance(face, "Face"):
-    #         print("Face.AddInternalBoundaries - Error: The input face parameter is not a valid topologic face. Returning None.")
-    #         return None
-    #     if not isinstance(wires, list):
-    #         print("Face.AddInternalBoundaries - Warning: The input wires parameter is not a valid list. Returning the input face.")
-    #         return face
-    #     wireList = [w for w in wires if Topology.IsInstance(w, "Wire")]
-    #     if len(wireList) < 1:
-    #         print("Face.AddInternalBoundaries - Warning: The input wires parameter does not contain any valid wires. Returning the input face.")
-    #         return face
-    #     faceeb = Face.ExternalBoundary(face)
-    #     faceibList = Face.InternalBoundaries(face)
-    #     for wire in wires:
-    #         faceibList.append(wire)
-    #     return Face.ByWires(faceeb, faceibList)
-
     @staticmethod
     def AddInternalBoundaries(
         face,
@@ -2717,6 +2681,70 @@ class Face():
         return return_face
 
     @staticmethod
+    def ByParametricFunction(
+        function,
+        uRange: list = [0.0, 1.0],
+        vRange: list = [0.0, 1.0],
+        uSamples: int = 16,
+        vSamples: int = 16,
+        uDegree: int = 3,
+        vDegree: int = 3,
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
+        """Creates a genuine BSpline Face fitted to ``function(u, v)``.
+
+        The function must return ``[x, y, z]``, ``(x, y, z)``, or a
+        TopologicPy Vertex. Sampling is used only to fit the BSpline support;
+        the returned topology is not a mesh or a collection of planar Faces.
+        """
+        import math
+        from topologicpy.Topology import Topology
+
+        if not callable(function):
+            if not silent:
+                print("Face.ByParametricFunction - Error: The input function parameter is not callable. Returning None.")
+            return None
+        if not Core.HasAttribute("Face", "ByParametricFunction"):
+            if not silent:
+                print("Face.ByParametricFunction - Error: The active backend does not support parametric surface construction. Returning None.")
+            return None
+        try:
+            uRange = [float(uRange[0]), float(uRange[1])]
+            vRange = [float(vRange[0]), float(vRange[1])]
+            uSamples = int(uSamples)
+            vSamples = int(vSamples)
+            uDegree = int(uDegree)
+            vDegree = int(vDegree)
+            tolerance = abs(float(tolerance))
+        except Exception:
+            if not silent:
+                print("Face.ByParametricFunction - Error: One or more numerical parameters are invalid. Returning None.")
+            return None
+        values = uRange + vRange + [tolerance]
+        if any(not math.isfinite(value) for value in values) or uRange[0] >= uRange[1] or vRange[0] >= vRange[1] or tolerance <= 0.0:
+            if not silent:
+                print("Face.ByParametricFunction - Error: The ranges and tolerance must be finite, positive, and non-degenerate. Returning None.")
+            return None
+        if uSamples < 2 or vSamples < 2:
+            if not silent:
+                print("Face.ByParametricFunction - Error: uSamples and vSamples must each be at least 2. Returning None.")
+            return None
+        if uDegree < 1 or vDegree < 1 or uDegree >= uSamples or vDegree >= vSamples:
+            if not silent:
+                print("Face.ByParametricFunction - Error: Each degree must be at least 1 and smaller than its sample count. Returning None.")
+            return None
+        try:
+            face = Core.Face.ByParametricFunction(function, uRange, vRange, uSamples, vSamples, uDegree, vDegree, tolerance)
+        except Exception:
+            face = None
+        if not Topology.IsInstance(face, "Face"):
+            if not silent:
+                print("Face.ByParametricFunction - Error: The active backend could not construct the parametric Face. Returning None.")
+            return None
+        return face
+    
+    @staticmethod
     def ByShell(
         shell,
         origin=None,
@@ -3936,6 +3964,32 @@ class Face():
         return Face.ByWires(externalBoundary, internalBoundaries, tolerance=tolerance, silent=silent)
 
     @staticmethod
+    def Catenoid(
+        origin=None,
+        radius: float = 0.5,
+        height: float = 1.0,
+        sides: int = 64,
+        rings: int = 24,
+        direction: list = [0, 0, 1],
+        placement: str = "center",
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
+        """Creates a catenoid minimal-surface Face as a BSpline."""
+        from topologicpy.Topology import Topology
+        from topologicpy.Vertex import Vertex
+        if not Core.HasAttribute("Face", "Catenoid"):
+            if not silent: print("Face.Catenoid - Error: The active backend does not support this constructor. Returning None.")
+            return None
+        if not Topology.IsInstance(origin, "Vertex"): origin = Vertex.Origin()
+        try: face = Core.Face.Catenoid(origin, radius, height, sides, rings, direction, placement, tolerance)
+        except Exception: face = None
+        if not Topology.IsInstance(face, "Face"):
+            if not silent: print("Face.Catenoid - Error: Could not construct the Face. Returning None.")
+            return None
+        return face
+    
+    @staticmethod
     def CHS(origin= None, radius: float = 0.5, thickness: float = 0.25, sides: int = 16, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001, silent: bool = False):
         """
         Creates a circular hollow section (CHS).
@@ -4615,6 +4669,32 @@ class Face():
 
         return corner_vertices
 
+    @staticmethod
+    def Conoid(
+        origin=None,
+        width: float = 1.0,
+        length: float = 1.0,
+        height: float = 1.0,
+        uSamples: int = 24,
+        vSamples: int = 16,
+        direction: list = [0, 0, 1],
+        placement: str = "center",
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
+        """Creates a parabolic conoid with straight rulings in the V direction."""
+        from topologicpy.Topology import Topology
+        from topologicpy.Vertex import Vertex
+        if not Core.HasAttribute("Face", "Conoid"):
+            if not silent: print("Face.Conoid - Error: The active backend does not support this constructor. Returning None.")
+            return None
+        if not Topology.IsInstance(origin, "Vertex"): origin = Vertex.Origin()
+        try: face = Core.Face.Conoid(origin, width, length, height, uSamples, vSamples, direction, placement, tolerance)
+        except Exception: face = None
+        if not Topology.IsInstance(face, "Face"):
+            if not silent: print("Face.Conoid - Error: Could not construct the Face. Returning None.")
+            return None
+        return face
 
     @staticmethod
     def ConvexCornerVertices(
@@ -5987,6 +6067,58 @@ class Face():
 
         return result
 
+    @staticmethod
+    def Helicoid(
+        origin=None,
+        radius: float = 0.5,
+        height: float = 1.0,
+        turns: float = 1.0,
+        radialSamples: int = 16,
+        angularSamples: int = 64,
+        direction: list = [0, 0, 1],
+        placement: str = "bottom",
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
+        """Creates a helicoid minimal-surface Face as a BSpline."""
+        from topologicpy.Topology import Topology
+        from topologicpy.Vertex import Vertex
+        if not Core.HasAttribute("Face", "Helicoid"):
+            if not silent: print("Face.Helicoid - Error: The active backend does not support this constructor. Returning None.")
+            return None
+        if not Topology.IsInstance(origin, "Vertex"): origin = Vertex.Origin()
+        try: face = Core.Face.Helicoid(origin, radius, height, turns, radialSamples, angularSamples, direction, placement, tolerance)
+        except Exception: face = None
+        if not Topology.IsInstance(face, "Face"):
+            if not silent: print("Face.Helicoid - Error: Could not construct the Face. Returning None.")
+            return None
+        return face
+
+    @staticmethod
+    def HyperbolicParaboloid(
+        origin=None,
+        width: float = 1.0,
+        length: float = 1.0,
+        height: float = 1.0,
+        direction: list = [0, 0, 1],
+        placement: str = "center",
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
+        """Creates an exact bilinear hyperbolic-paraboloid (hypar) Face."""
+        from topologicpy.Topology import Topology
+        from topologicpy.Vertex import Vertex
+        if not Core.HasAttribute("Face", "HyperbolicParaboloid"):
+            if not silent: print("Face.HyperbolicParaboloid - Error: The active backend does not support this constructor. Returning None.")
+            return None
+        if not Topology.IsInstance(origin, "Vertex"): origin = Vertex.Origin()
+        try: face = Core.Face.HyperbolicParaboloid(origin, width, length, height, direction, placement, tolerance)
+        except Exception: face = None
+        if not Topology.IsInstance(face, "Face"):
+            if not silent: print("Face.HyperbolicParaboloid - Error: Could not construct the Face. Returning None.")
+            return None
+        return face
+    
     @staticmethod
     def InteriorAngles(face, includeInternalBoundaries: bool = False, mantissa: int = 6) -> list:
         """
@@ -9661,6 +9793,32 @@ class Face():
             )
 
         return arrow if Topology.IsInstance(arrow, "Face") else None
+
+    @staticmethod
+    def Paraboloid(
+        origin=None,
+        radius: float = 0.5,
+        height: float = 1.0,
+        sides: int = 64,
+        rings: int = 16,
+        direction: list = [0, 0, 1],
+        placement: str = "bottom",
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
+        """Creates an elliptic paraboloid Face as a tolerance-controlled BSpline."""
+        from topologicpy.Topology import Topology
+        from topologicpy.Vertex import Vertex
+        if not Core.HasAttribute("Face", "Paraboloid"):
+            if not silent: print("Face.Paraboloid - Error: The active backend does not support this constructor. Returning None.")
+            return None
+        if not Topology.IsInstance(origin, "Vertex"): origin = Vertex.Origin()
+        try: face = Core.Face.Paraboloid(origin, radius, height, sides, rings, direction, placement, tolerance)
+        except Exception: face = None
+        if not Topology.IsInstance(face, "Face"):
+            if not silent: print("Face.Paraboloid - Error: Could not construct the Face. Returning None.")
+            return None
+        return face
     
     @staticmethod
     def PlaneEquation(face, mantissa: int = 6) -> dict:
@@ -10393,6 +10551,34 @@ class Face():
                         placement=placement,
                         tolerance=tolerance,
                         silent=silent)
+
+    @staticmethod
+    def Scherk(
+        origin=None,
+        width: float = 1.0,
+        length: float = 1.0,
+        height: float = 1.0,
+        uSamples: int = 32,
+        vSamples: int = 32,
+        direction: list = [0, 0, 1],
+        placement: str = "center",
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
+        """Creates Scherk's first minimal surface as a BSpline Face."""
+        from topologicpy.Topology import Topology
+        from topologicpy.Vertex import Vertex
+        if not Core.HasAttribute("Face", "Scherk"):
+            if not silent: print("Face.Scherk - Error: The active backend does not support this constructor. Returning None.")
+            return None
+        if not Topology.IsInstance(origin, "Vertex"): origin = Vertex.Origin()
+        try: face = Core.Face.Scherk(origin, width, length, height, uSamples, vSamples, direction, placement, tolerance)
+        except Exception: face = None
+        if not Topology.IsInstance(face, "Face"):
+            if not silent: print("Face.Scherk - Error: Could not construct the Face. Returning None.")
+            return None
+        return face
+    
     @staticmethod
     def SHS(origin= None, size: float = 1.0, thickness: float = 0.25, outerFillet: float = 0.0, innerFillet: float = 0.0, sides: int = 16, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001, silent: bool = False):
         """

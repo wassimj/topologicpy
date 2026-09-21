@@ -79,6 +79,15 @@ jobs:
         run: pip install --verbose .
       - name: Build docs
         run: cd docs && make html
+      - name: Publish the canonical ontology with the documentation
+        run: |
+          test -f ontology/topologicpy.ttl
+          mkdir -p docs/build/html/ontology
+          cp ontology/topologicpy.ttl docs/build/html/ontology/topologicpy.ttl
+          cp ontology/topologicpy.ttl docs/build/html/topologicpy.ttl
+          cmp --silent ontology/topologicpy.ttl docs/build/html/ontology/topologicpy.ttl
+          cmp --silent ontology/topologicpy.ttl docs/build/html/topologicpy.ttl
+          grep -Eq 'owl:versionInfo[[:space:]]+"[^"]+"' docs/build/html/ontology/topologicpy.ttl
       - name: Upload artifacts
         uses: actions/upload-artifact@v6
         with:

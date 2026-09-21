@@ -1978,17 +1978,19 @@ class IFCFastTopology:
             "IFCRELCONNECTSPORTS": {
                 "relationship": "connects_ports",
                 "ontology_predicate": "top:connectsPort",
-                "inverse_predicate": "top:isConnectedPortOf",
+                # A symmetric property is its own inverse.
+                "inverse_predicate": "top:connectsPort",
             },
             "IFCRELCONNECTSPORTTOELEMENT": {
                 "relationship": "connects_port_to_element",
-                "ontology_predicate": "top:connectsPort",
+                "ontology_predicate": "top:connectsPortToElement",
                 "inverse_predicate": "top:hasConnectedPort",
             },
             "IFCRELCONNECTSELEMENTS": {
                 "relationship": "connects_elements",
                 "ontology_predicate": "top:connectsTo",
-                "inverse_predicate": "top:isConnectedTo",
+                # A symmetric property is its own inverse.
+                "inverse_predicate": "top:connectsTo",
             },
             "IFCRELCONNECTSPATHELEMENTS": {
                 "relationship": "connects_path_elements",
@@ -2241,6 +2243,9 @@ class IFCFastTopology:
             "IFCMATERIALLAYERSET": "top:MaterialSet",
             "IFCMATERIALCONSTITUENTSET": "top:MaterialSet",
             "IFCCLASSIFICATIONREFERENCE": "top:ClassificationReference",
+            "IFCAPPROVAL": "top:Approval",
+            "IFCCONSTRAINT": "top:Constraint",
+            "IFCDOCUMENTREFERENCE": "top:DocumentReference",
 
             "IFCELEMENTQUANTITY": "top:Quantity",
             "IFCPROPERTYSET": "top:PropertySet",
@@ -7895,6 +7900,14 @@ class IFC:
             if not ((a_node or a_connector) and (b_node or b_connector)):
                 return
 
+            predicate_metadata = (
+                IFCFastTopology._relationship_predicate_by_ifc_class(
+                    relationship.type,
+                    defaultValue=None,
+                )
+                if relationship is not None
+                else {}
+            )
             evidence = {
                 "source": "semantic",
                 "relationship_id": (
@@ -7902,6 +7915,12 @@ class IFC:
                 ),
                 "relationship_type": (
                     relationship.type if relationship is not None else None
+                ),
+                "ontology_predicate": predicate_metadata.get(
+                    "ontology_predicate"
+                ),
+                "inverse_predicate": predicate_metadata.get(
+                    "inverse_predicate"
                 ),
             }
 
@@ -7954,6 +7973,24 @@ class IFC:
 
             for relationship in relationships:
                 relation_type = relationship.type
+
+                if (
+                    relation_type == "IFCRELCONTAINEDINSPATIALSTRUCTURE"
+                    and len(relationship.args) > 5
+                ):
+                    # IFC stores RelatedElements at index 4 and the
+                    # RelatingStructure at index 5. Preserve the semantic
+                    # direction: structure --bot:containsElement--> element.
+                    for structure in referenced_entities(relationship.args[5]):
+                        for element in referenced_entities(relationship.args[4]):
+                            add_link(structure, element, relationship)
+                    continue
+
+                if relation_type == "IFCRELAGGREGATES" and len(relationship.args) > 5:
+                    for whole in referenced_entities(relationship.args[4]):
+                        for part in referenced_entities(relationship.args[5]):
+                            add_link(whole, part, relationship)
+                    continue
 
                 if relation_type in boundary_types and len(relationship.args) > 5:
                     for node in referenced_entities(relationship.args[4]):
@@ -8156,6 +8193,8 @@ class IFC:
                         "relationship_source": "semantic",
                         "relationship_id": evidence["relationship_id"],
                         "relationship_type": evidence["relationship_type"],
+                        "ontology_predicate": evidence["ontology_predicate"],
+                        "inverse_predicate": evidence["inverse_predicate"],
                     },
                 )
 
@@ -8175,6 +8214,8 @@ class IFC:
                             "relationship_source": "semantic",
                             "relationship_id": evidence["relationship_id"],
                             "relationship_type": evidence["relationship_type"],
+                            "ontology_predicate": evidence["ontology_predicate"],
+                            "inverse_predicate": evidence["inverse_predicate"],
                         },
                     )
 
@@ -8184,6 +8225,16 @@ class IFC:
                     or connector_b not in entity_graph_index
                 ):
                     continue
+                ontology_predicates = sorted({
+                    item["ontology_predicate"]
+                    for item in evidence
+                    if item["ontology_predicate"] is not None
+                })
+                inverse_predicates = sorted({
+                    item["inverse_predicate"]
+                    for item in evidence
+                    if item["inverse_predicate"] is not None
+                })
                 graph.AddEdge(
                     entity_graph_index[connector_a],
                     entity_graph_index[connector_b],
@@ -8201,6 +8252,18 @@ class IFC:
                             for item in evidence
                             if item["relationship_type"] is not None
                         }),
+                        "ontology_predicates": ontology_predicates,
+                        "inverse_predicates": inverse_predicates,
+                        "ontology_predicate": (
+                            ontology_predicates[0]
+                            if len(ontology_predicates) == 1
+                            else None
+                        ),
+                        "inverse_predicate": (
+                            inverse_predicates[0]
+                            if len(inverse_predicates) == 1
+                            else None
+                        ),
                     },
                 )
 
@@ -8225,6 +8288,16 @@ class IFC:
                     for evidence in linked_nodes.values()
                     if evidence["relationship_type"] is not None
                 })
+                ontology_predicates = sorted({
+                    evidence["ontology_predicate"]
+                    for evidence in linked_nodes.values()
+                    if evidence["ontology_predicate"] is not None
+                })
+                inverse_predicates = sorted({
+                    evidence["inverse_predicate"]
+                    for evidence in linked_nodes.values()
+                    if evidence["inverse_predicate"] is not None
+                })
 
                 for node_a, node_b in combinations(adjacent_nodes, 2):
                     edge_dictionary = python_dictionary(connector)
@@ -8233,6 +8306,18 @@ class IFC:
                         "relationship_source": "semantic",
                         "relationship_ids": relationship_ids,
                         "relationship_types": relationship_types,
+                        "ontology_predicates": ontology_predicates,
+                        "inverse_predicates": inverse_predicates,
+                        "ontology_predicate": (
+                            ontology_predicates[0]
+                            if len(ontology_predicates) == 1
+                            else None
+                        ),
+                        "inverse_predicate": (
+                            inverse_predicates[0]
+                            if len(inverse_predicates) == 1
+                            else None
+                        ),
                         "connecting_element_id": connector.id,
                         "connecting_element_type": (
                             IFCFastTopology._ifc_display_class(connector.type)

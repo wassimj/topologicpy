@@ -113,6 +113,8 @@ class Ontology:
         "IfcMaterialLayerSet": "top:MaterialSet", "IfcMaterialProfileSet": "top:MaterialSet",
         "IfcPropertySet": "top:PropertySet", "IfcElementQuantity": "top:Quantity",
         "IfcClassificationReference": "top:ClassificationReference",
+        "IfcApproval": "top:Approval", "IfcConstraint": "top:Constraint",
+        "IfcDocumentReference": "top:DocumentReference",
     }
 
     TOP_TO_BOT = {
