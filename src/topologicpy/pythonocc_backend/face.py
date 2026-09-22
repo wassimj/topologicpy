@@ -1666,6 +1666,202 @@ class Face(Topology):
             return 0
         return result
 
+    @staticmethod
+    def ByParametricFunction(
+        function,
+        uRange,
+        vRange,
+        uSamples,
+        vSamples,
+        uDegree,
+        vDegree,
+        tolerance: float = 0.0001
+    ):
+        """Fit one OCCT BSpline surface through samples of a Python function."""
+        try:
+            from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakeFace
+            from OCC.Core.GeomAbs import GeomAbs_C2
+            from OCC.Core.GeomAPI import GeomAPI_PointsToBSplineSurface
+            from OCC.Core.TColgp import TColgp_Array2OfPnt
+            from OCC.Core.gp import gp_Pnt
+        except Exception:
+            return None
+        try:
+            u0, u1 = float(uRange[0]), float(uRange[1])
+            v0, v1 = float(vRange[0]), float(vRange[1])
+            nu, nv = int(uSamples), int(vSamples)
+            du, dv = int(uDegree), int(vDegree)
+            tol = _face_tolerance(tolerance)
+        except Exception:
+            return None
+        if not callable(function) or nu < 2 or nv < 2 or du < 1 or dv < 1 or du >= nu or dv >= nv or u0 >= u1 or v0 >= v1:
+            return None
+        points = TColgp_Array2OfPnt(1, nu, 1, nv)
+        for i in range(nu):
+            u = u0 + (u1 - u0) * float(i) / float(nu - 1)
+            for j in range(nv):
+                v = v0 + (v1 - v0) * float(j) / float(nv - 1)
+                try:
+                    value = function(u, v)
+                    if isinstance(value, Vertex):
+                        x, y, z = float(value.x), float(value.y), float(value.z)
+                    elif isinstance(value, (list, tuple)) and len(value) >= 3:
+                        x, y, z = float(value[0]), float(value[1]), float(value[2])
+                    else:
+                        return None
+                    if not all(math.isfinite(q) for q in (x, y, z)):
+                        return None
+                    points.SetValue(i + 1, j + 1, gp_Pnt(x, y, z))
+                except Exception:
+                    return None
+        try:
+            degree_min = max(1, min(du, dv))
+            degree_max = max(degree_min, max(du, dv))
+            degree_max = min(degree_max, nu - 1, nv - 1)
+            fitter = GeomAPI_PointsToBSplineSurface(points, degree_min, degree_max, GeomAbs_C2, tol)
+            if not fitter.IsDone():
+                return None
+            surface = fitter.Surface()
+            builder = BRepBuilderAPI_MakeFace(surface, tol)
+            if not builder.IsDone():
+                return None
+            result = Face.ByOcctShape(builder.Face())
+            return result if isinstance(result, Face) else None
+        except Exception:
+            return None
+
+    @staticmethod
+    def HyperbolicParaboloid(origin, width, length, height, direction, placement, tolerance=0.0001):
+        """Construct an exact bilinear hypar patch."""
+        try:
+            from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakeFace
+            from OCC.Core.Geom import Geom_BezierSurface
+            from OCC.Core.TColgp import TColgp_Array2OfPnt
+            from OCC.Core.gp import gp_Pnt
+            width, length, height = abs(float(width)), abs(float(length)), float(height)
+            tol = _face_tolerance(tolerance)
+            if width <= tol or length <= tol or abs(height) <= tol:
+                return None
+            if not isinstance(origin, Vertex) or not isinstance(direction, (list, tuple)) or len(direction) != 3:
+                return None
+            dx, dy, dz = [float(q) for q in direction]
+            mag = math.sqrt(dx*dx + dy*dy + dz*dz)
+            if mag <= tol: return None
+            nz = (dx/mag, dy/mag, dz/mag)
+            ref = (0.0, 0.0, 1.0) if abs(nz[2]) < 0.9 else (1.0, 0.0, 0.0)
+            nx = (ref[1]*nz[2]-ref[2]*nz[1], ref[2]*nz[0]-ref[0]*nz[2], ref[0]*nz[1]-ref[1]*nz[0])
+            n = math.sqrt(sum(q*q for q in nx)); nx = tuple(q/n for q in nx)
+            ny = (nz[1]*nx[2]-nz[2]*nx[1], nz[2]*nx[0]-nz[0]*nx[2], nz[0]*nx[1]-nz[1]*nx[0])
+            p = str(placement).lower()
+            zoff = -height if p == "top" else (0.0 if p == "center" else height)
+            ox, oy, oz = float(origin.x), float(origin.y), float(origin.z)
+            def world(x, y, z):
+                z += zoff
+                return gp_Pnt(ox+x*nx[0]+y*ny[0]+z*nz[0], oy+x*nx[1]+y*ny[1]+z*nz[1], oz+x*nx[2]+y*ny[2]+z*nz[2])
+            poles = TColgp_Array2OfPnt(1, 2, 1, 2)
+            poles.SetValue(1, 1, world(-width/2, -length/2,  height))
+            poles.SetValue(2, 1, world( width/2, -length/2, -height))
+            poles.SetValue(1, 2, world(-width/2,  length/2, -height))
+            poles.SetValue(2, 2, world( width/2,  length/2,  height))
+            surface = Geom_BezierSurface(poles)
+            builder = BRepBuilderAPI_MakeFace(surface, tol)
+            if not builder.IsDone(): return None
+            result = Face.ByOcctShape(builder.Face())
+            return result if isinstance(result, Face) else None
+        except Exception:
+            return None
+
+    @staticmethod
+    def Paraboloid(origin, radius, height, sides, rings, direction, placement, tolerance=0.0001):
+        try:
+            radius, height = abs(float(radius)), float(height)
+            sides, rings = int(sides), int(rings)
+            tol = _face_tolerance(tolerance)
+            if radius <= tol or abs(height) <= tol or sides < 8 or rings < 4 or not isinstance(origin, Vertex): return None
+            dx, dy, dz = [float(q) for q in direction]; mag = math.sqrt(dx*dx+dy*dy+dz*dz)
+            if mag <= tol: return None
+            nz=(dx/mag,dy/mag,dz/mag); ref=(0.,0.,1.) if abs(nz[2])<0.9 else (1.,0.,0.)
+            nx=(ref[1]*nz[2]-ref[2]*nz[1],ref[2]*nz[0]-ref[0]*nz[2],ref[0]*nz[1]-ref[1]*nz[0]); n=math.sqrt(sum(q*q for q in nx)); nx=tuple(q/n for q in nx)
+            ny=(nz[1]*nx[2]-nz[2]*nx[1],nz[2]*nx[0]-nz[0]*nx[2],nz[0]*nx[1]-nz[1]*nx[0])
+            p=str(placement).lower(); zoff=0. if p=="bottom" else (-height if p=="top" else -height/2.)
+            ox,oy,oz=float(origin.x),float(origin.y),float(origin.z)
+            def fn(u,v):
+                r=radius*u; a=2.*math.pi*v; x=r*math.cos(a); y=r*math.sin(a); z=height*u*u+zoff
+                return [ox+x*nx[0]+y*ny[0]+z*nz[0],oy+x*nx[1]+y*ny[1]+z*nz[1],oz+x*nx[2]+y*ny[2]+z*nz[2]]
+            return Face.ByParametricFunction(fn,[0.,1.],[0.,1.],rings,sides,3,3,tol)
+        except Exception: return None
+
+    @staticmethod
+    def Catenoid(origin, radius, height, sides, rings, direction, placement, tolerance=0.0001):
+        try:
+            radius, height = abs(float(radius)), abs(float(height)); sides, rings = int(sides), int(rings); tol=_face_tolerance(tolerance)
+            if radius<=tol or height<=tol or sides<8 or rings<4 or not isinstance(origin,Vertex): return None
+            dx,dy,dz=[float(q) for q in direction]; mag=math.sqrt(dx*dx+dy*dy+dz*dz)
+            if mag<=tol:return None
+            nz=(dx/mag,dy/mag,dz/mag); ref=(0.,0.,1.) if abs(nz[2])<0.9 else (1.,0.,0.)
+            nx=(ref[1]*nz[2]-ref[2]*nz[1],ref[2]*nz[0]-ref[0]*nz[2],ref[0]*nz[1]-ref[1]*nz[0]); n=math.sqrt(sum(q*q for q in nx)); nx=tuple(q/n for q in nx)
+            ny=(nz[1]*nx[2]-nz[2]*nx[1],nz[2]*nx[0]-nz[0]*nx[2],nz[0]*nx[1]-nz[1]*nx[0]); p=str(placement).lower(); zoff=height/2. if p=="bottom" else (-height/2. if p=="top" else 0.)
+            ox,oy,oz=float(origin.x),float(origin.y),float(origin.z)
+            def fn(u,v):
+                z=-height/2.+height*u+zoff; r=radius*math.cosh(z/radius); a=2.*math.pi*v; x=r*math.cos(a); y=r*math.sin(a)
+                return [ox+x*nx[0]+y*ny[0]+z*nz[0],oy+x*nx[1]+y*ny[1]+z*nz[1],oz+x*nx[2]+y*ny[2]+z*nz[2]]
+            return Face.ByParametricFunction(fn,[0.,1.],[0.,1.],rings,sides,3,3,tol)
+        except Exception:return None
+
+    @staticmethod
+    def Helicoid(origin, radius, height, turns, radialSamples, angularSamples, direction, placement, tolerance=0.0001):
+        try:
+            radius,height,turns=abs(float(radius)),float(height),float(turns); nr,na=int(radialSamples),int(angularSamples); tol=_face_tolerance(tolerance)
+            if radius<=tol or abs(height)<=tol or abs(turns)<=tol or nr<2 or na<4 or not isinstance(origin,Vertex):return None
+            dx,dy,dz=[float(q) for q in direction]; mag=math.sqrt(dx*dx+dy*dy+dz*dz)
+            if mag<=tol:return None
+            nz=(dx/mag,dy/mag,dz/mag); ref=(0.,0.,1.) if abs(nz[2])<0.9 else (1.,0.,0.)
+            nx=(ref[1]*nz[2]-ref[2]*nz[1],ref[2]*nz[0]-ref[0]*nz[2],ref[0]*nz[1]-ref[1]*nz[0]); n=math.sqrt(sum(q*q for q in nx)); nx=tuple(q/n for q in nx)
+            ny=(nz[1]*nx[2]-nz[2]*nx[1],nz[2]*nx[0]-nz[0]*nx[2],nz[0]*nx[1]-nz[1]*nx[0]); p=str(placement).lower(); zoff=0. if p=="bottom" else (-height if p=="top" else -height/2.)
+            ox,oy,oz=float(origin.x),float(origin.y),float(origin.z)
+            def fn(u,v):
+                a=2.*math.pi*turns*v; r=radius*u; x=r*math.cos(a); y=r*math.sin(a); z=height*v+zoff
+                return [ox+x*nx[0]+y*ny[0]+z*nz[0],oy+x*nx[1]+y*ny[1]+z*nz[1],oz+x*nx[2]+y*ny[2]+z*nz[2]]
+            return Face.ByParametricFunction(fn,[0.,1.],[0.,1.],nr,na,3,3,tol)
+        except Exception:return None
+
+    @staticmethod
+    def Conoid(origin, width, length, height, uSamples, vSamples, direction, placement, tolerance=0.0001):
+        try:
+            width,length,height=abs(float(width)),abs(float(length)),float(height); nu,nv=int(uSamples),int(vSamples); tol=_face_tolerance(tolerance)
+            if width<=tol or length<=tol or abs(height)<=tol or nu<4 or nv<2 or not isinstance(origin,Vertex):return None
+            dx,dy,dz=[float(q) for q in direction]; mag=math.sqrt(dx*dx+dy*dy+dz*dz)
+            if mag<=tol:return None
+            nz=(dx/mag,dy/mag,dz/mag); ref=(0.,0.,1.) if abs(nz[2])<0.9 else (1.,0.,0.)
+            nx=(ref[1]*nz[2]-ref[2]*nz[1],ref[2]*nz[0]-ref[0]*nz[2],ref[0]*nz[1]-ref[1]*nz[0]); n=math.sqrt(sum(q*q for q in nx)); nx=tuple(q/n for q in nx)
+            ny=(nz[1]*nx[2]-nz[2]*nx[1],nz[2]*nx[0]-nz[0]*nx[2],nz[0]*nx[1]-nz[1]*nx[0]); p=str(placement).lower(); zoff=-height if p=="top" else (0. if p=="bottom" else -height/2.)
+            ox,oy,oz=float(origin.x),float(origin.y),float(origin.z)
+            def fn(u,v):
+                s=2.*u-1.; x=width*(u-.5); y=length*(v-.5); z=height*(1.-s*s)*v+zoff
+                return [ox+x*nx[0]+y*ny[0]+z*nz[0],oy+x*nx[1]+y*ny[1]+z*nz[1],oz+x*nx[2]+y*ny[2]+z*nz[2]]
+            return Face.ByParametricFunction(fn,[0.,1.],[0.,1.],nu,nv,3,1,tol)
+        except Exception:return None
+
+    @staticmethod
+    def Scherk(origin, width, length, height, uSamples, vSamples, direction, placement, tolerance=0.0001):
+        try:
+            width,length,height=abs(float(width)),abs(float(length)),float(height); nu,nv=int(uSamples),int(vSamples); tol=_face_tolerance(tolerance)
+            if width<=tol or length<=tol or abs(height)<=tol or nu<4 or nv<4 or not isinstance(origin,Vertex):return None
+            dx,dy,dz=[float(q) for q in direction]; mag=math.sqrt(dx*dx+dy*dy+dz*dz)
+            if mag<=tol:return None
+            nz=(dx/mag,dy/mag,dz/mag); ref=(0.,0.,1.) if abs(nz[2])<0.9 else (1.,0.,0.)
+            nx=(ref[1]*nz[2]-ref[2]*nz[1],ref[2]*nz[0]-ref[0]*nz[2],ref[0]*nz[1]-ref[1]*nz[0]); n=math.sqrt(sum(q*q for q in nx)); nx=tuple(q/n for q in nx)
+            ny=(nz[1]*nx[2]-nz[2]*nx[1],nz[2]*nx[0]-nz[0]*nx[2],nz[0]*nx[1]-nz[1]*nx[0]); ox,oy,oz=float(origin.x),float(origin.y),float(origin.z)
+            # The 0.95 factor keeps the finite patch away from Scherk's singular asymptotes.
+            z_extent=abs(height*math.log(math.cos(.475*math.pi))/math.pi)
+            def fn(u,v):
+                x=width*(u-.5); y=length*(v-.5); ax=.95*math.pi*(u-.5); ay=.95*math.pi*(v-.5); z=height*math.log(math.cos(ay)/math.cos(ax))/math.pi
+                if str(placement).lower()=="bottom": z+=z_extent
+                elif str(placement).lower()=="top": z-=z_extent
+                return [ox+x*nx[0]+y*ny[0]+z*nz[0],oy+x*nx[1]+y*ny[1]+z*nz[1],oz+x*nx[2]+y*ny[2]+z*nz[2]]
+            return Face.ByParametricFunction(fn,[0.,1.],[0.,1.],nu,nv,3,3,tol)
+        except Exception:return None
+
 
 class FaceUtility:
     @staticmethod
