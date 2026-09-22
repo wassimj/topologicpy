@@ -32,8 +32,11 @@ dependencies = [
 # Removed "topologic_core>=7.0.1"
 [project.optional-dependencies]
 test = [
-  "pytest-xdist>=2.4.0",
-]
+    "pytest-xdist>=2.4.0",
+    "rdflib>=6.0.0",
+    "pyshacl>=0.20.0",
+    "owlrl>=6.0.2",
+    ]
 rhino = [
   "rhino3dm>=8.17.0",
 ]

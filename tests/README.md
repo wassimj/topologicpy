@@ -70,7 +70,40 @@ remain centralized in `backend_exceptions.json`.
 - `test_<Module>.py`: broad public API contracts.
 - focused `*_Curve*`, `*_Native*`, `*_STEP`, `*_TPY`, `*_Tessellate`, and
   `*_regressions` modules: high-value exactness/regression contracts.
+- `test_Ontology_conformance.py`: end-to-end RDF export contracts (see below).
 - `stress_tests/`: backend-neutral deterministic stress tests.
+
+## Ontology export contracts
+
+`test_Ontology.py` unit-tests the vocabulary helpers in isolation.
+`test_Ontology_conformance.py` complements it by exercising *real* exports
+against the *shipped* `ontology/topologicpy.ttl`, guarding the invariants that
+keep the export layer and the ontology in sync:
+
+- **Conformance.** Every `top:` term a real TGraph or IFC export emits must be
+  declared in the ontology, including when unknown dictionary keys are present
+  (they must route to `dict:`, never `top:`).
+- **Round-trip.** A TTL export re-imported through `KnowledgeGraph` must
+  preserve triple, node and relationship counts and literal datatypes.
+- **SHACL.** A real export must satisfy the Node/Relationship/Graph contract
+  shapes (`startsAt`/`endsAt` resolving to `Node`, typed coordinates, etc.).
+- **Competency questions.** Node/relationship counts, absence of dangling
+  endpoints, adjacency traversal, and IFC `ifcClass`/`ifcGUID` retrieval must
+  answer via SPARQL.
+- **Coherence.** The shipped ontology must parse, have no dangling `top:`
+  domain/range targets, and survive a pure-Python OWL-RL closure with no term
+  entailed to be `owl:Nothing`.
+
+These tests use `pytest.importorskip` and skip cleanly when `rdflib`, `pyshacl`,
+`owlrl`, `ifcopenshell`, or a geometry backend are unavailable. `rdflib`,
+`pyshacl` and `owlrl` are declared in the `test` optional-dependency extra so
+the core contracts run in CI; the IFC tests additionally require `ifcopenshell`
+and skip without it.
+
+Full DL reasoning (HermiT, Pellet) and the external pitfall/FAIR scanners
+(OOPS!, FOOPS!) are intentionally **not** part of the automated suite: they
+require Java or live web services and are non-deterministic in CI. Run them as
+an occasional manual audit when the vocabulary changes materially.
 
 ## Donor decisions
 
