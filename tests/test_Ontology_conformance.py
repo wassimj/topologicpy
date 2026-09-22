@@ -1,19 +1,12 @@
 """End-to-end conformance tests for the RDF/ontology export layer.
 
-These complement ``test_Ontology.py`` (which unit-tests the vocabulary helpers
-in isolation) by exercising *real* exports against the *shipped* ontology:
-
-* every ``top:`` term a real export emits must be declared in
-  ``ontology/topologicpy.ttl`` (the invariant behind issue #96);
-* a TTL export must round-trip through :class:`KnowledgeGraph` without losing
-  node/relationship counts, coordinates, datatypes or attributes;
+These complement ``test_Ontology.py`` (which unit-tests the vocabulary helpers in isolation) by exercising *real* exports against the *shipped* ontology:
+* every ``top:`` term a real export emits must be declared in ``ontology/topologicpy.ttl`` (see issue #96);
+* a TTL export must round-trip through :class:`KnowledgeGraph` without losing node/relationship counts, coordinates, datatypes or attributes;
 * a real export must satisfy the SHACL contract for Node/Relationship/Graph;
 * the ontology must answer a set of competency questions via SPARQL.
 
-Every test degrades gracefully: tests that need ``rdflib``, ``pyshacl``,
-``ifcopenshell`` or a geometry backend are skipped (not failed) when those are
-unavailable, matching the project's optional-dependency convention.
-"""
+Every test degrades: tests that need ``rdflib``, ``pyshacl``, ``ifcopenshell`` or a geometry backend are skipped (not failed) when those are unavailable, matching the project's optional-dependency convention."""
 
 import pytest
 
@@ -323,3 +316,40 @@ def test_shipped_ontology_parses_and_generated_triples_are_declared():
     }
     missing = sorted(t for t in generated_subjects if t not in declared)
     assert missing == [], f"generator emits undeclared subjects: {missing}"
+
+
+def test_shipped_ontology_has_no_dangling_domain_or_range():
+    """Every top: class used as an rdfs:domain/range must be declared.
+    Guards against the "untyped class" pitfall for internal terms without
+    needing a network call to an external pitfall scanner.
+    """
+    rdflib = pytest.importorskip("rdflib")
+    from rdflib import RDFS, OWL
+
+    _, g = _declared_terms(rdflib)
+    classes = set(g.subjects(rdflib.RDF.type, OWL.Class))
+    dangling = []
+    for prop in (RDFS.domain, RDFS.range):
+        for subj, obj in g.subject_objects(prop):
+            if str(obj).startswith(TOP) and obj not in classes:
+                dangling.append((str(subj)[len(TOP):], str(obj)[len(TOP):]))
+    assert dangling == [], f"dangling top: domain/range targets: {dangling}"
+
+
+def test_shipped_ontology_is_coherent():
+    rdflib = pytest.importorskip("rdflib")
+    owlrl = pytest.importorskip("owlrl")
+    from rdflib import RDF, OWL
+
+    text = Ontology.OntologyTTLString(silent=True)
+    if not text:
+        pytest.skip("Shipped ontology could not be loaded")
+    g = rdflib.Graph()
+    g.parse(data=text, format="turtle")
+
+    equated_to_nothing = [s for s, p, o in g if p == OWL.equivalentClass and o == OWL.Nothing]
+    assert equated_to_nothing == [], "a class is declared equivalent to owl:Nothing"
+
+    owlrl.DeductiveClosure(owlrl.OWLRL_Semantics).expand(g)
+    unsatisfiable = [s for s, p, o in g if p == RDF.type and o == OWL.Nothing]
+    assert unsatisfiable == [], f"OWL-RL closure entailed owl:Nothing members: {unsatisfiable}"
