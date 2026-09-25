@@ -492,6 +492,27 @@ Existing application history remains available.</p>
 <dt class="sig sig-object py" id="topologicpy.ShapeGrammar.ShapeGrammar.Origins">
 <span class="sig-name descname"><span class="pre">Origins</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">application</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="headerlink" href="#topologicpy.ShapeGrammar.ShapeGrammar.Origins" title="Permalink to this definition"></a></dt>
 <dd><p>Trace a result subtopology backwards to terminal rule-application sources.</p>
+<p>Identity/self-loop lineage records such as <code class="docutils literal notranslate"><span class="pre">unchanged</span></code> relationships are
+treated as terminal provenance steps rather than as upstream predecessors.
+This prevents a source topology from being incorrectly considered its own
+ancestor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>topology</strong><span class="classifier">topologicpy topology</span></dt><dd><p>The result topology whose origins are to be traced.</p>
+</dd>
+<dt><strong>application</strong><span class="classifier">int, optional</span></dt><dd><p>If specified, restrict the search to this rule application. If None,
+all recorded applications are searched.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>list</dt><dd><p>A list of dictionaries describing the terminal origins.</p>
+</dd>
+</dl>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
