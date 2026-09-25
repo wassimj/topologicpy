@@ -16768,10 +16768,10 @@ class Topology():
 
         Returns
         -------
-        [bool, list]
-            True if the input topologies are similar, False otherwise and the matrix needed to tranform topologyA to match topologyB.
+        tuple
+            True if the input topologies are similar, False otherwise, together
+            with the matrix needed to transform topologyA to match topologyB.
             If the topologies are not similar, the transformation matrix is None.
-
         """
         from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
@@ -16779,7 +16779,24 @@ class Topology():
         from topologicpy.Cell import Cell
         from topologicpy.Matrix import Matrix
         from topologicpy.Vector import Vector
-        from topologicpy.Dictionary import Dictionary
+
+        def _subtopologies(topology, topology_type, method):
+            """Return subtopologies without asking a topology for itself."""
+            if Topology.IsInstance(topology, topology_type):
+                return [topology]
+            try:
+                return method(topology, silent=True) or []
+            except TypeError:
+                # Defensive fallback for backends/methods without silent.
+                return method(topology) or []
+            except Exception:
+                return []
+
+        def _count_mismatch(count_a, count_b):
+            max_len = max(count_a, count_b)
+            if max_len <= 0:
+                return False
+            return abs(count_a - count_b) / max_len > epsilon
 
         if not Topology.IsInstance(topologyA, "topology"):
             if not silent:
@@ -16789,20 +16806,8 @@ class Topology():
             if not silent:
                 print("Topology.IsSimilar - Error: The input topologyB parameter is not a valid topology. Returning None.")
             return None
-        if removeCoplanarFaces == True:
-            topologyA = Topology.RemoveCoplanarFaces(topologyA, epsilon=epsilon, tolerance=tolerance)
-            topologyB = Topology.RemoveCoplanarFaces(topologyB, epsilon=epsilon, tolerance=tolerance)
-        len_vertices_a = len(Topology.Vertices(topologyA))
-        if len_vertices_a < 1 and not Topology.IsInstance(topologyA, "vertex"):
-            if not silent:
-                print("Topology.IsSimilar - Error: The input topologyA parameter is not a valid topology. Returning None.")
-            return None
-        len_vertices_b = len(Topology.Vertices(topologyB))
-        if len_vertices_b < 1 and not Topology.IsInstance(topologyB, "vertex"):
-            if not silent:
-                print("Topology.IsSimilar - Error: The input topologyB parameter is not a valid topology. Returning None.")
-            return None
-        if not isinstance(epsilon, int) and not isinstance(epsilon, float):
+
+        if not isinstance(epsilon, (int, float)):
             if not silent:
                 print("Topology.IsSimilar - Error: The input epsilon parameter is not a valid float. Returning None.")
             return None
@@ -16810,67 +16815,98 @@ class Topology():
             if not silent:
                 print("Topology.IsSimilar - Error: The input epsilon parameter is not within a valid range. Returning None.")
             return None
-        # Trivial cases - All vertices are similar to each other.
-        if Topology.IsInstance(topologyA, "vertex") and Topology.IsInstance(topologyB, "vertex"):
-            centroid_a = Topology.Centroid(topologyA)
-            centroid_b = Topology.Centroid(topologyB)
-            trans_matrix_a = Matrix.ByTranslation(-Vertex.X(centroid_a), -Vertex.Y(centroid_a), -Vertex.Z(centroid_a))
-            trans_matrix_b = Matrix.ByTranslation(Vertex.X(centroid_b), Vertex.Y(centroid_b), Vertex.Z(centroid_b))
-            combined_matrix = Matrix.Multiply(trans_matrix_b, trans_matrix_a)
-            return True, combined_matrix
-        
-        # EXCLUSION TESTS
-        # Topology Type
+
+        if removeCoplanarFaces:
+            topologyA = Topology.RemoveCoplanarFaces(topologyA, epsilon=epsilon, tolerance=tolerance)
+            topologyB = Topology.RemoveCoplanarFaces(topologyB, epsilon=epsilon, tolerance=tolerance)
+            if topologyA is None or topologyB is None:
+                if not silent:
+                    print("Topology.IsSimilar - Error: Could not remove coplanar faces. Returning None.")
+                return None
+
+        # EXCLUSION TEST: topology type. Do this before descendant traversal.
         if Topology.Type(topologyA) != Topology.Type(topologyB):
             return False, None
+
+        # Trivial case: all vertices are similar to each other.
+        if Topology.IsInstance(topologyA, "vertex"):
+            centroid_a = Topology.Centroid(topologyA)
+            centroid_b = Topology.Centroid(topologyB)
+            trans_matrix_a = Matrix.ByTranslation(
+                -Vertex.X(centroid_a),
+                -Vertex.Y(centroid_a),
+                -Vertex.Z(centroid_a),
+            )
+            trans_matrix_b = Matrix.ByTranslation(
+                Vertex.X(centroid_b),
+                Vertex.Y(centroid_b),
+                Vertex.Z(centroid_b),
+            )
+            combined_matrix = Matrix.Multiply(trans_matrix_b, trans_matrix_a)
+            return True, combined_matrix
+
+        # EXCLUSION TESTS
         # Number of vertices
-        max_len = max([len_vertices_a, len_vertices_b])
-        if abs(len_vertices_a - len_vertices_b)/max_len > epsilon:
+        vertices_a = _subtopologies(topologyA, "vertex", Topology.Vertices)
+        vertices_b = _subtopologies(topologyB, "vertex", Topology.Vertices)
+        len_vertices_a = len(vertices_a)
+        len_vertices_b = len(vertices_b)
+        if len_vertices_a < 1:
+            if not silent:
+                print("Topology.IsSimilar - Error: The input topologyA parameter does not contain vertices. Returning None.")
+            return None
+        if len_vertices_b < 1:
+            if not silent:
+                print("Topology.IsSimilar - Error: The input topologyB parameter does not contain vertices. Returning None.")
+            return None
+        if _count_mismatch(len_vertices_a, len_vertices_b):
             if not silent:
                 print("Topology.IsSimilar - Info: Failed number of vertices check. Returning False.")
             return False, None
+
         # Number of edges
-        len_edges_a = len(Topology.Edges(topologyA))
-        len_edges_b = len(Topology.Edges(topologyB))
-        max_len = max([len_edges_a, len_edges_b])
-        if max_len > 0: # Check only if the topologies do actually have edges
-            if abs(len_edges_a - len_edges_b)/max_len > epsilon:
-                if not silent:
-                    print("Topology.IsSimilar - Info: Failed number of edges check. Returning False.")
-                return False, None
+        len_edges_a = len(_subtopologies(topologyA, "edge", Topology.Edges))
+        len_edges_b = len(_subtopologies(topologyB, "edge", Topology.Edges))
+        if _count_mismatch(len_edges_a, len_edges_b):
+            if not silent:
+                print("Topology.IsSimilar - Info: Failed number of edges check. Returning False.")
+            return False, None
+
         # Number of faces
-        len_faces_a = len(Topology.Faces(topologyA))
-        len_faces_b = len(Topology.Faces(topologyB))
-        max_len = max([len_faces_a, len_faces_b])
-        if max_len > 0: # Check only if the topologies do actually have faces
-            if abs(len_faces_a - len_faces_b)/max_len > epsilon:
-                if not silent:
-                    print("Topology.IsSimilar - Info: Failed number of faces check. Returning False.")
-                return False, None
-        # Number of cells
-        len_cells_a = len(Topology.Cells(topologyA))
-        len_cells_b = len(Topology.Cells(topologyB))
-        max_len = max([len_cells_a, len_cells_b])
-        if max_len > 0: # Check only if the topologies do actually have cells
-            if abs(len_cells_a - len_cells_b)/max_len > epsilon:
-                if not silent:
-                    print("Topology.IsSimilar - Info: Failed number of cells check. Returning False.")
-                return False, None
+        faces_a = _subtopologies(topologyA, "face", Topology.Faces)
+        faces_b = _subtopologies(topologyB, "face", Topology.Faces)
+        len_faces_a = len(faces_a)
+        len_faces_b = len(faces_b)
+        if _count_mismatch(len_faces_a, len_faces_b):
+            if not silent:
+                print("Topology.IsSimilar - Info: Failed number of faces check. Returning False.")
+            return False, None
+
+        # Number of cells. A Cell is its own sole Cell, so do not call
+        # Topology.Cells(cell), which correctly returns [cell] but emits a warning.
+        len_cells_a = len(_subtopologies(topologyA, "cell", Topology.Cells))
+        len_cells_b = len(_subtopologies(topologyB, "cell", Topology.Cells))
+        if _count_mismatch(len_cells_a, len_cells_b):
+            if not silent:
+                print("Topology.IsSimilar - Info: Failed number of cells check. Returning False.")
+            return False, None
+
         if Topology.IsInstance(topologyA, "face"):
             compactness_a = Face.Compactness(topologyA, mantissa=mantissa)
             compactness_b = Face.Compactness(topologyB, mantissa=mantissa)
-            max_compactness = max([compactness_a, compactness_b])
-            if max_compactness > 0: # Check only if the topologies do actually have compactness
-                if abs(compactness_a - compactness_b)/max_compactness >= epsilon:
+            max_compactness = max(compactness_a, compactness_b)
+            if max_compactness > 0:
+                if abs(compactness_a - compactness_b) / max_compactness >= epsilon:
                     if not silent:
                         print("Topology.IsSimilar - Info: Failed compactness check. Returning False.")
                     return False, None
+
         if Topology.IsInstance(topologyA, "cell"):
             compactness_a = Cell.Compactness(topologyA, mantissa=mantissa)
             compactness_b = Cell.Compactness(topologyB, mantissa=mantissa)
-            max_compactness = max([compactness_a, compactness_b])
-            if max_compactness > 0: # Check only if the topologies do actually have compactness
-                if abs(compactness_a - compactness_b)/max_compactness > epsilon:
+            max_compactness = max(compactness_a, compactness_b)
+            if max_compactness > 0:
+                if abs(compactness_a - compactness_b) / max_compactness > epsilon:
                     if not silent:
                         print("Topology.IsSimilar - Info: Failed compactness check. Returning False.")
                     return False, None
@@ -16880,56 +16916,97 @@ class Topology():
             largest_faces_a = [topologyA]
             largest_faces_b = [topologyB]
         else:
-            faces_a = Topology.Faces(topologyA)
-            faces_b = Topology.Faces(topologyB)
+            # Reuse the already-computed face lists. This avoids two additional
+            # topology traversals compared with the previous implementation.
             if len(faces_a) > 0 and len(faces_b) > 0:
                 largest_faces_a = Topology.LargestFaces(topologyA)
                 largest_faces_b = Topology.LargestFaces(topologyB)
             else:
                 if not silent:
-                    print("Topology.IsSimilar - Error: The topologies do not have faces. Returning None.")
+                    print("Topology.IsSimilar - Error: The topologies do not have faces. Returning False.")
                 return False, None
 
-    # Process largest faces
-        for face_a in largest_faces_a:
-            l_edge_a = Topology.LongestEdges(face_a)[0]
-            length_a = Edge.Length(l_edge_a)
-            centroid_a = Topology.Centroid(face_a)
-            origin_a = Vertex.Coordinates(centroid_a)
-            zaxis_a = Face.Normal(face_a)
-            third_vertex_a = Face.ThirdVertex(face_a)  # Pick a third vertex for orientation
-            xaxis_a = Vector.Normalize(Vector.ByVertices(centroid_a, third_vertex_a))
-            yaxis_a = Vector.Cross(xaxis_a, zaxis_a)
-            # Build Coordinate System matrix. The origin will be (0,0,0) once the trans matrix is applied.
-            cs_a = [[0,0,0]]+[xaxis_a]+[yaxis_a]+[zaxis_a]
-            tran_matrix_a = Matrix.ByTranslation(translateX=-origin_a[0], translateY=-origin_a[1], translateZ=-origin_a[2])
+        if not largest_faces_a or not largest_faces_b:
+            return False, None
 
-            # Check against the faces of B:
+        # Process largest faces
+        for face_a in largest_faces_a:
+            try:
+                longest_edges_a = Topology.LongestEdges(face_a)
+                if not longest_edges_a:
+                    continue
+                l_edge_a = longest_edges_a[0]
+                length_a = Edge.Length(l_edge_a)
+                if length_a is None or abs(length_a) <= tolerance:
+                    continue
+
+                centroid_a = Topology.Centroid(face_a)
+                origin_a = Vertex.Coordinates(centroid_a)
+                zaxis_a = Face.Normal(face_a)
+                third_vertex_a = Face.ThirdVertex(face_a)
+                if third_vertex_a is None:
+                    continue
+                xaxis_a = Vector.Normalize(Vector.ByVertices(centroid_a, third_vertex_a))
+                yaxis_a = Vector.Cross(xaxis_a, zaxis_a)
+                cs_a = [[0, 0, 0], xaxis_a, yaxis_a, zaxis_a]
+                tran_matrix_a = Matrix.ByTranslation(
+                    translateX=-origin_a[0],
+                    translateY=-origin_a[1],
+                    translateZ=-origin_a[2],
+                )
+            except Exception:
+                continue
+
+            # Check against the faces of B.
             for face_b in largest_faces_b:
-                l_edge_b = Topology.LongestEdges(face_b)[0]
-                length_b = Edge.Length(l_edge_b)
-                scale_factor = length_b/length_a
-                scale_matrix = Matrix.ByScaling(scaleX=scale_factor, scaleY=scale_factor, scaleZ=scale_factor)
-                centroid_b = Topology.Centroid(face_b)
-                origin_b = Vertex.Coordinates(centroid_b)
-                zaxis_b = Face.Normal(face_b)
-                third_vertex_b = Face.ThirdVertex(face_b)
-                xaxis_b = Vector.Normalize(Vector.ByVertices(centroid_b, third_vertex_b))
-                yaxis_b = Vector.Cross(xaxis_b, zaxis_b)
-                cs_b = [origin_b]+[xaxis_b]+[yaxis_b]+[zaxis_b]
-                # Compute transformation matrix
-                # translate to origin, scale, then transform coordinate systems
-                combined_matrix = Matrix.Multiply(scale_matrix, tran_matrix_a)
-                matching_matrix = Matrix.ByCoordinateSystems(cs_a, cs_b)
-                combined_matrix = Matrix.Multiply(matching_matrix, combined_matrix)
-                # Apply transformation and compare
                 try:
+                    longest_edges_b = Topology.LongestEdges(face_b)
+                    if not longest_edges_b:
+                        continue
+                    l_edge_b = longest_edges_b[0]
+                    length_b = Edge.Length(l_edge_b)
+                    if length_b is None:
+                        continue
+
+                    scale_factor = length_b / length_a
+                    scale_matrix = Matrix.ByScaling(
+                        scaleX=scale_factor,
+                        scaleY=scale_factor,
+                        scaleZ=scale_factor,
+                    )
+
+                    centroid_b = Topology.Centroid(face_b)
+                    origin_b = Vertex.Coordinates(centroid_b)
+                    zaxis_b = Face.Normal(face_b)
+                    third_vertex_b = Face.ThirdVertex(face_b)
+                    if third_vertex_b is None:
+                        continue
+                    xaxis_b = Vector.Normalize(Vector.ByVertices(centroid_b, third_vertex_b))
+                    yaxis_b = Vector.Cross(xaxis_b, zaxis_b)
+                    cs_b = [origin_b, xaxis_b, yaxis_b, zaxis_b]
+
+                    # Translate to origin, scale, then transform coordinate systems.
+                    combined_matrix = Matrix.Multiply(scale_matrix, tran_matrix_a)
+                    matching_matrix = Matrix.ByCoordinateSystems(cs_a, cs_b)
+                    if matching_matrix is None:
+                        continue
+                    combined_matrix = Matrix.Multiply(matching_matrix, combined_matrix)
+
                     transformedA = Topology.Transform(topologyA, combined_matrix)
-                    status = Topology.IsVertexCongruent(transformedA, topologyB, mantissa=mantissa, epsilon=epsilon, tolerance=tolerance, silent=silent)
+                    if transformedA is None:
+                        continue
+                    status = Topology.IsVertexCongruent(
+                        transformedA,
+                        topologyB,
+                        mantissa=mantissa,
+                        epsilon=epsilon,
+                        tolerance=tolerance,
+                        silent=True,
+                    )
                     if status:
                         return True, combined_matrix
-                except:
-                    pass
+                except Exception:
+                    continue
 
         return False, None
 

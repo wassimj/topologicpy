@@ -1,423 +1,270 @@
-"""Unit tests for topologicpy.ShapeGrammar.
-
-These tests use small fake TopologicPy geometry modules so they can run without
-TopologicCore. They focus on the ShapeGrammar control flow, operation dispatch,
-validation, and regression fixes in the audited source.
-"""
-
 from __future__ import annotations
 
-import importlib
 import math
-import sys
-import types
-from pathlib import Path
-
 import pytest
 
-
-@pytest.fixture(autouse=True)
-def _suppress_expected_topologicpy_output(capfd):
-    """Keep expected TopologicPy diagnostic prints out of normal pytest output."""
-    capfd.readouterr()
-    yield
-    capfd.readouterr()
-
-
-class FakeVertex:
-    def __init__(self, x=0.0, y=0.0, z=0.0):
-        self.x = float(x)
-        self.y = float(y)
-        self.z = float(z)
-
-    def __repr__(self):
-        return f"FakeVertex({self.x}, {self.y}, {self.z})"
-
-
-class FakeTopo:
-    def __init__(self, name, dictionary=None, signature=None, bbox=None, vertices=None, children=None, history=None):
-        self.name = str(name)
-        self.dictionary = dict(dictionary or {})
-        self.signature = signature if signature is not None else self.name
-        self.bbox = bbox if bbox is not None else [0.0, 0.0, 0.0, 1.0, 1.0, 1.0]
-        self.vertices = list(vertices) if vertices is not None else [
-            FakeVertex(self.bbox[0], self.bbox[1], self.bbox[2]),
-            FakeVertex(self.bbox[3], self.bbox[4], self.bbox[5]),
-        ]
-        self.children = list(children or [])
-        self.history = list(history or [])
-
-    def clone(self, name=None, history_item=None):
-        history = list(self.history)
-        if history_item is not None:
-            history.append(history_item)
-        return FakeTopo(
-            name or self.name,
-            dictionary=self.dictionary,
-            signature=self.signature,
-            bbox=list(self.bbox),
-            vertices=list(self.vertices),
-            children=list(self.children),
-            history=history,
-        )
-
-    def __repr__(self):
-        return f"FakeTopo({self.name!r})"
-
-
-@pytest.fixture
-def fake_topologicpy(monkeypatch):
-    """Install fake TopologicPy submodules required by ShapeGrammar methods."""
-
-    class Topology:
-        @staticmethod
-        def IsInstance(obj, type_name):
-            return isinstance(obj, FakeTopo) and str(type_name).lower() in {"topology", "cluster", "cell", "face"}
-
-        @staticmethod
-        def Dictionary(obj):
-            return getattr(obj, "dictionary", {}) if isinstance(obj, FakeTopo) else {}
-
-        @staticmethod
-        def IsSimilar(a, b):
-            if getattr(a, "signature", None) == getattr(b, "signature", None):
-                return True, [[1, 0, 0, 10], [0, 1, 0, 20], [0, 0, 1, 30], [0, 0, 0, 1]]
-            return False, None
-
-        @staticmethod
-        def Transform(obj, matrix):
-            return obj.clone(name=f"Transform({obj.name})", history_item=("Transform", matrix))
-
-        @staticmethod
-        def Union(a, b):
-            return FakeTopo("Union", children=[a, b], history=[("Union", a, b)])
-
-        @staticmethod
-        def Difference(a, b):
-            return FakeTopo("Difference", children=[a, b], history=[("Difference", a, b)])
-
-        @staticmethod
-        def SymmetricDifference(a, b):
-            return FakeTopo("SymmetricDifference", children=[a, b], history=[("SymmetricDifference", a, b)])
-
-        @staticmethod
-        def Intersect(a, b):
-            return FakeTopo("Intersect", children=[a, b], history=[("Intersect", a, b)])
-
-        @staticmethod
-        def Merge(a, b):
-            return FakeTopo("Merge", children=[a, b], history=[("Merge", a, b)])
-
-        @staticmethod
-        def Slice(a, b, tolerance=0.0001):
-            return FakeTopo("Slice", children=[a, b], history=[("Slice", a, b, tolerance)])
-
-        @staticmethod
-        def Impose(a, b):
-            return FakeTopo("Impose", children=[a, b], history=[("Impose", a, b)])
-
-        @staticmethod
-        def Imprint(a, b):
-            return FakeTopo("Imprint", children=[a, b], history=[("Imprint", a, b)])
-
-        @staticmethod
-        def Vertices(obj, silent=True):
-            return list(getattr(obj, "vertices", []))
-
-        @staticmethod
-        def Translate(obj, x=0, y=0, z=0):
-            return obj.clone(name=f"Translate({obj.name})", history_item=("Translate", x, y, z))
-
-        @staticmethod
-        def Scale(obj, x=1, y=1, z=1):
-            return obj.clone(name=f"Scale({obj.name})", history_item=("Scale", x, y, z))
-
-        @staticmethod
-        def Rotate(obj, axis=None, angle=0):
-            return obj.clone(name=f"Rotate({obj.name})", history_item=("Rotate", tuple(axis or []), angle))
-
-        @staticmethod
-        def BoundingBox(obj):
-            bb = list(getattr(obj, "bbox", [0, 0, 0, 1, 1, 1]))
-            return FakeTopo(
-                f"BoundingBox({obj.name})",
-                dictionary={"xmin": bb[0], "ymin": bb[1], "zmin": bb[2], "xmax": bb[3], "ymax": bb[4], "zmax": bb[5]},
-                bbox=bb,
-            )
-
-        @staticmethod
-        def Centroid(obj):
-            bb = list(getattr(obj, "bbox", [0, 0, 0, 0, 0, 0]))
-            return FakeVertex((bb[0] + bb[3]) * 0.5, (bb[1] + bb[4]) * 0.5, (bb[2] + bb[5]) * 0.5)
-
-        @staticmethod
-        def Place(obj, originA=None, originB=None):
-            return obj.clone(name=f"Place({obj.name})", history_item=("Place", originA, originB))
-
-    class Dictionary:
-        @staticmethod
-        def ValueAtKey(d, key, default=None):
-            return d.get(key, default) if isinstance(d, dict) else default
-
-    class Vertex:
-        @staticmethod
-        def X(v, mantissa=None):
-            return round(v.x, mantissa) if mantissa is not None else v.x
-
-        @staticmethod
-        def Y(v, mantissa=None):
-            return round(v.y, mantissa) if mantissa is not None else v.y
-
-        @staticmethod
-        def Z(v, mantissa=None):
-            return round(v.z, mantissa) if mantissa is not None else v.z
-
-        @staticmethod
-        def ByCoordinates(x=0, y=0, z=0):
-            return FakeVertex(x, y, z)
-
-        @staticmethod
-        def Origin():
-            return FakeVertex(0, 0, 0)
-
-    class Face:
-        @staticmethod
-        def Rectangle(origin=None, width=1, length=1, direction=None):
-            origin = origin or FakeVertex()
-            return FakeTopo(
-                "Rectangle",
-                bbox=[origin.x, origin.y, origin.z, origin.x + float(width), origin.y + float(length), origin.z],
-                history=[("Rectangle", width, length, tuple(direction or [0, 0, 1]))],
-            )
-
-    class Cluster:
-        @staticmethod
-        def ByTopologies(items):
-            return FakeTopo("Cluster", children=list(items or []), history=[("Cluster", len(list(items or [])))])
-
-    class Cell:
-        @staticmethod
-        def Cylinder(radius=1, height=1, placement="center"):
-            return FakeTopo("Cylinder", history=[("Cylinder", radius, height, placement)])
-
-        @staticmethod
-        def Cone(baseRadius=1, topRadius=0, height=1, placement="center"):
-            return FakeTopo("Cone", history=[("Cone", baseRadius, topRadius, height, placement)])
-
-    class Plotly:
-        @staticmethod
-        def DataByTopology(topology):
-            return [{"topology": getattr(topology, "name", "unknown")}]
-
-        @staticmethod
-        def FigureByData(data):
-            return {"figure_data": data}
-
-    for mod_name, cls_name, cls in [
-        ("topologicpy.Topology", "Topology", Topology),
-        ("topologicpy.Dictionary", "Dictionary", Dictionary),
-        ("topologicpy.Vertex", "Vertex", Vertex),
-        ("topologicpy.Face", "Face", Face),
-        ("topologicpy.Cluster", "Cluster", Cluster),
-        ("topologicpy.Cell", "Cell", Cell),
-        ("topologicpy.Plotly", "Plotly", Plotly),
-    ]:
-        module = types.ModuleType(mod_name)
-        setattr(module, cls_name, cls)
-        monkeypatch.setitem(sys.modules, mod_name, module)
-
-    return types.SimpleNamespace(
-        Topology=Topology,
-        Dictionary=Dictionary,
-        Vertex=Vertex,
-        Face=Face,
-        Cluster=Cluster,
-        Cell=Cell,
-        Plotly=Plotly,
-        topo=lambda name, **kwargs: FakeTopo(name, **kwargs),
-    )
-
-
-@pytest.fixture
-def sg(fake_topologicpy):
-    from topologicpy.ShapeGrammar import ShapeGrammar
-
-    return ShapeGrammar()
-
-
-def matrix(dx=0):
-    return [[1, 0, 0, dx], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]]
-
-
-def test_operation_titles_and_lookup_are_case_insensitive(sg):
-    titles = sg.OperationTitles()
-    assert titles[0] == "Replace"
-    assert "Symmetric Difference" in titles
-    assert sg.OperationByTitle("replace")["title"] == "Replace"
-    assert sg.OperationByTitle("sym")["title"] == "Symmetric Difference"
-    assert sg.OperationByTitle("DIFFERENCE")["title"] == "Difference"
-    assert sg.OperationByTitle(None) is None
-    assert sg.OperationByTitle("") is None
-
-
-
-
-def test_add_rule_default_replace_and_validation_paths(sg, fake_topologicpy):
-    a = fake_topologicpy.topo("input", signature="room")
-    b = fake_topologicpy.topo("output", signature="room")
-
-    assert sg.AddRule(a, b, matrix=matrix(2), title="r1") is None
-    assert len(sg.rules) == 1
-    rule = sg.rules[0]
-    assert rule["title"] == "r1"
-    assert rule["operation"]["title"] == "Replace"
-    assert rule["matrix"] == matrix(2)
-    assert rule["matrix"] is not matrix(2)
-
-    assert sg.AddRule("not topology", b, silent=True) is None
-    assert sg.AddRule(a, "not topology", silent=True) is None
-    assert sg.AddRule(a, b, operation="not an operation", silent=True) is None
-    assert sg.AddRule(a, b, matrix=[[1]], silent=True) is None
-    assert len(sg.rules) == 1
-
-
-def test_add_rule_accepts_operation_titles_and_copied_divide_overrides(sg, fake_topologicpy):
-    a = fake_topologicpy.topo("input")
-    b = fake_topologicpy.topo("output")
-    copied_divide = {"title": "Divide", "uSides": 3, "vSides": 4, "wSides": 5}
-
-    sg.AddRule(a, b, operation="Union")
-    sg.AddRule(a, None, operation=copied_divide)
-
-    assert sg.rules[0]["operation"]["title"] == "Union"
-    assert sg.rules[1]["operation"]["title"] == "Divide"
-    assert sg.rules[1]["operation"]["uSides"] == 3
-    assert sg.rules[1]["operation"]["vSides"] == 4
-    assert sg.rules[1]["operation"]["wSides"] == 5
-
-
-def test_applicable_rules_use_dictionary_keys_and_similarity_tuple(sg, fake_topologicpy):
-    pattern = fake_topologicpy.topo("pattern", signature="cell", dictionary={"type": "A", "level": 2})
-    other = fake_topologicpy.topo("other", signature="cell", dictionary={"type": "B", "level": 2})
-    output = fake_topologicpy.topo("output")
-    target = fake_topologicpy.topo("target", signature="cell", dictionary={"type": "A", "level": 2})
-
-    sg.AddRule(pattern, output, title="match")
-    sg.AddRule(other, output, title="no semantic match")
-
-    rules, transforms = sg.ApplicableRules(target, keys=["type", "level"])
-    assert [r["title"] for r in rules] == ["match"]
-    assert transforms[0][0][3] == 10
-    assert sg.ApplicableRules("bad", silent=True) is None
-
-
-def test_apply_rule_none_returns_topology_or_final_transform(sg, fake_topologicpy):
-    topo = fake_topologicpy.topo("target")
-    assert sg.ApplyRule(topo) is topo
-    transformed = sg.ApplyRule(topo, matrix=matrix(9))
-    assert transformed.name == "Transform(target)"
-    assert transformed.history[-1] == ("Transform", matrix(9))
-    assert sg.ApplyRule("bad", silent=True) is None
-    assert sg.ApplyRule(topo, matrix=[[1]], silent=True) is None
-
-
-def test_apply_rule_default_replace_and_rule_matrix(sg, fake_topologicpy):
-    input_topo = fake_topologicpy.topo("input")
-    output_topo = fake_topologicpy.topo("output")
-    sg.AddRule(input_topo, output_topo, matrix=matrix(4))
-
-    result = sg.ApplyRule(fake_topologicpy.topo("target"), sg.rules[0])
-    assert result.name == "Transform(output)"
-    assert result.history[-1] == ("Transform", matrix(4))
-
-    final = sg.ApplyRule(fake_topologicpy.topo("target"), sg.rules[0], matrix=matrix(8))
-    assert final.name == "Transform(Transform(output))"
-    assert final.history[-1] == ("Transform", matrix(8))
-
-
-def test_apply_rule_dispatches_binary_operations_and_symmetric_difference_first(sg, fake_topologicpy):
-    input_topo = fake_topologicpy.topo("input")
-    output_topo = fake_topologicpy.topo("output")
-    expectations = {
-        "Union": "Union",
-        "Difference": "Difference",
-        "Symmetric Difference": "SymmetricDifference",
-        "Intersect": "Intersect",
-        "Merge": "Merge",
-        "Slice": "Slice",
-        "Impose": "Impose",
-        "Imprint": "Imprint",
-    }
-    for title, expected_name in expectations.items():
-        rule = {"input": input_topo, "output": output_topo, "operation": title, "matrix": None}
-        result = sg.ApplyRule(input_topo, rule)
-        assert result.name == expected_name
-
-
-def test_apply_rule_transform_operation_uses_rule_matrix_or_identity_behaviour(sg, fake_topologicpy):
-    input_topo = fake_topologicpy.topo("input")
-    rule = {"input": input_topo, "output": None, "operation": "Transform", "matrix": matrix(3)}
-    result = sg.ApplyRule(input_topo, rule)
-    assert result.name == "Transform(input)"
-    assert result.history[-1] == ("Transform", matrix(3))
-
-    no_matrix_rule = {"input": input_topo, "output": None, "operation": "Transform", "matrix": None}
-    assert sg.ApplyRule(input_topo, no_matrix_rule) is input_topo
-
-
-def test_apply_rule_divide_dispatches_slice_when_sides_create_cutters(sg, fake_topologicpy):
-    input_topo = fake_topologicpy.topo("box", bbox=[0, 0, 0, 10, 8, 6])
-    divide_op = {"title": "Divide", "uSides": 2, "vSides": 2, "wSides": 2}
-    rule = {"input": input_topo, "output": None, "operation": divide_op, "matrix": None}
-    result = sg.ApplyRule(input_topo, rule)
-    assert result.name == "Slice"
-    assert result.history[-1][0] == "Slice"
-
-    degenerate = fake_topologicpy.topo("point", bbox=[0, 0, 0, 0, 0, 0], vertices=[FakeVertex(0, 0, 0)])
-    deg_rule = {"input": degenerate, "output": None, "operation": divide_op, "matrix": None}
-    assert sg.ApplyRule(degenerate, deg_rule) is degenerate
-
-
-def test_apply_rule_rejects_invalid_rule_inputs_outputs_operations_and_matrices(sg, fake_topologicpy):
-    topo = fake_topologicpy.topo("input")
-    output = fake_topologicpy.topo("output")
-    assert sg.ApplyRule(topo, rule="bad", silent=True) is None
-    assert sg.ApplyRule(topo, {"input": "bad", "output": output, "operation": "Replace"}, silent=True) is None
-    assert sg.ApplyRule(topo, {"input": topo, "output": "bad", "operation": "Replace"}, silent=True) is None
-    assert sg.ApplyRule(topo, {"input": topo, "output": output, "operation": "Invalid"}, silent=True) is None
-    assert sg.ApplyRule(topo, {"input": topo, "output": output, "operation": "Replace", "matrix": [[1]]}, silent=True) is None
-
-
-def test_cluster_and_figure_helpers(fake_topologicpy, sg):
-    input_topo = fake_topologicpy.topo("input", bbox=[0, 0, 0, 2, 4, 6])
-    output_topo = fake_topologicpy.topo("output", bbox=[0, 0, 0, 1, 1, 1])
-
-    cluster = sg.ClusterByInputOutput(input_topo, output_topo)
-    assert isinstance(cluster, FakeTopo)
-    assert cluster.name.startswith("Place(")
-    assert sg.ClusterByInputOutput("bad", output_topo, silent=True) is None
-    assert sg.ClusterByInputOutput(input_topo, "bad", silent=True) is None
-
-    figure = sg.FigureByInputOutput(input_topo, output_topo)
-    assert "figure_data" in figure
-    assert sg.FigureByInputOutput("bad", output_topo, silent=True) is None
-
-
-def test_cluster_by_rule_and_figure_by_rule(fake_topologicpy, sg):
-    input_topo = fake_topologicpy.topo("input")
-    output_topo = fake_topologicpy.topo("output")
-    sg.AddRule(input_topo, output_topo, title="replace")
-    rule = sg.rules[0]
-
-    cluster = sg.ClusterByRule(rule)
-    assert isinstance(cluster, FakeTopo)
-    figure = sg.FigureByRule(rule)
-    assert "figure_data" in figure
-
-    assert sg.ClusterByRule("bad", silent=True) is None
-    assert sg.FigureByRule("bad", silent=True) is None
+from topologicpy.ShapeGrammar import ShapeGrammar
+from topologicpy.Cell import Cell
+from topologicpy.Topology import Topology
+from topologicpy.Vertex import Vertex
+
+
+def _box(width=2.0, length=2.0, height=2.0, **kwargs):
+    return Cell.Prism(width=width, length=length, height=height, **kwargs)
+
+
+def _translation(x=0.0, y=0.0, z=0.0):
+    return [
+        [1.0, 0.0, 0.0, float(x)],
+        [0.0, 1.0, 0.0, float(y)],
+        [0.0, 0.0, 1.0, float(z)],
+        [0.0, 0.0, 0.0, 1.0],
+    ]
+
+
+def _centroid_xyz(topology):
+    c = Topology.Centroid(topology)
+    return (Vertex.X(c), Vertex.Y(c), Vertex.Z(c))
+
+
+def test_operation_surface_is_canonical_and_deterministic():
+    sg = ShapeGrammar()
+    assert sg.OperationTitles() == [
+        "Replace", "Transform", "Union", "Difference", "Symmetric Difference",
+        "Intersect", "Merge", "Slice", "Impose", "Imprint", "Divide",
+    ]
+    assert sg.OperationByTitle("xor")["operation"] == "xor"
+    assert sg.OperationByTitle("Symmetric Difference")["operation"] == "xor"
+    assert sg.OperationByTitle("common")["operation"] == "intersection"
+    assert sg.OperationByTitle("not-an-operation") is None
+
+
+def test_add_rule_returns_stable_id_and_public_descriptor():
+    sg = ShapeGrammar(title="Grammar")
+    pattern = _box()
+    output = _box(0.5, 0.5, 0.5)
+    rule = sg.AddRule(pattern, output, title="Pocket", operation="Difference", metadata={"kind": "test"})
+    assert rule == 0
+    d = sg.Rule(rule)
+    assert d["id"] == 0
+    assert d["title"] == "Pocket"
+    assert d["canonicalOperation"] == "difference"
+    assert d["metadata"] == {"kind": "test"}
+    assert len(sg.Rules()) == 1
+
+
+def test_rule_validation_is_operation_specific():
+    sg = ShapeGrammar()
+    pattern = _box()
+    output = _box(0.5, 0.5, 0.5)
+    assert sg.AddRule(pattern, None, operation="Difference", silent=True) is None
+    assert sg.AddRule(pattern, output, operation="Transform", matrix=_translation(1), silent=True) is None
+    assert sg.AddRule(pattern, None, operation="Transform", silent=True) is None
+    assert sg.AddRule(pattern, None, operation="Divide", uSides=0, silent=True) is None
+    assert sg.AddRule(pattern, output, operation="Replace") == 0
+
+
+def test_compile_builds_rule_index():
+    sg = ShapeGrammar()
+    pattern = _box()
+    sg.AddRule(pattern, _box(0.5, 0.5, 0.5), operation="Replace")
+    summary = sg.Compile()
+    assert summary["rules"] == 1
+    assert summary["compiledRules"] == 1
+    assert summary["types"] == 1
+
+
+def test_applicable_rules_matches_translated_similar_target():
+    sg = ShapeGrammar()
+    pattern = _box()
+    rule = sg.AddRule(pattern, _box(0.5, 0.5, 0.5), title="Replace", operation="Replace")
+    target = Topology.Translate(pattern, 5, -2, 3)
+    matches = sg.ApplicableRules(target)
+    assert matches
+    assert matches[0]["rule"] == rule
+    assert len(matches[0]["matrix"]) == 4
+
+
+def test_matching_cache_avoids_second_similarity_test():
+    sg = ShapeGrammar()
+    pattern = _box()
+    sg.AddRule(pattern, _box(0.5, 0.5, 0.5), operation="Replace")
+    target = Topology.Translate(pattern, 1, 2, 3)
+    assert sg.ApplicableRules(target)
+    first = sg.Status()
+    assert sg.ApplicableRules(target)
+    second = sg.Status()
+    assert second["matchCacheHits"] == first["matchCacheHits"] + 1
+    assert second["similarityTests"] == first["similarityTests"]
+
+
+def test_replace_maps_output_into_target_frame():
+    sg = ShapeGrammar()
+    pattern = _box(2, 2, 2)
+    output = _box(1, 1, 1)
+    rule = sg.AddRule(pattern, output, operation="Replace")
+    target = Topology.Translate(pattern, 7, -4, 2)
+    result = sg.ApplyRule(target, rule)
+    assert Topology.IsInstance(result, "Topology")
+    cx, cy, cz = _centroid_xyz(result)
+    tx, ty, tz = _centroid_xyz(target)
+    assert cx == pytest.approx(tx, abs=1e-4)
+    assert cy == pytest.approx(ty, abs=1e-4)
+    assert cz == pytest.approx(tz, abs=1e-4)
+
+
+@pytest.mark.parametrize(
+    "operation",
+    ["Union", "Difference", "Symmetric Difference", "Intersect", "Merge", "Slice", "Impose", "Imprint"],
+)
+def test_boolean_operations_execute_against_actual_target(operation):
+    sg = ShapeGrammar()
+    pattern = _box(2, 2, 2)
+    tool = _box(1, 1, 3)
+    rule = sg.AddRule(pattern, tool, operation=operation)
+    target = Topology.Translate(pattern, 3, 0, 0)
+    result = sg.ApplyRule(target, rule)
+    assert result is not None
+    assert Topology.IsInstance(result, "Topology")
+
+
+def test_rule_preparation_matrix_and_match_matrix_are_composed_once():
+    sg = ShapeGrammar()
+    pattern = _box(2, 2, 2)
+    output = _box(0.5, 0.5, 0.5)
+    rule = sg.AddRule(pattern, output, operation="Replace", matrix=_translation(0.5, 0, 0))
+    target = Topology.Translate(pattern, 10, 0, 0)
+    result = sg.ApplyRule(target, rule)
+    cx, _, _ = _centroid_xyz(result)
+    tx, _, _ = _centroid_xyz(target)
+    assert cx == pytest.approx(tx + 0.5, abs=1e-4)
+
+
+def test_transform_rule_is_expressed_in_rule_local_frame():
+    sg = ShapeGrammar()
+    pattern = _box()
+    rule = sg.AddRule(pattern, None, operation="Transform", matrix=_translation(1, 0, 0))
+    target = Topology.Translate(pattern, 10, 0, 0)
+    before = _centroid_xyz(target)
+    result = sg.ApplyRule(target, rule)
+    after = _centroid_xyz(result)
+    assert after[0] == pytest.approx(before[0] + 1, abs=1e-4)
+
+
+def test_divide_compiles_rule_local_cutters_and_slices_target():
+    sg = ShapeGrammar()
+    pattern = _box(4, 4, 4)
+    rule = sg.AddRule(pattern, None, operation="Divide", uSides=2, vSides=2, wSides=2)
+    target = Topology.Translate(pattern, 5, 0, 0)
+    result = sg.ApplyRule(target, rule)
+    assert result is not None
+    cells = Topology.Cells(result, silent=True) or []
+    assert len(cells) >= 2
+
+
+def test_apply_cache_reuses_result_and_records_application_event():
+    sg = ShapeGrammar()
+    pattern = _box()
+    rule = sg.AddRule(pattern, _box(0.5, 0.5, 0.5), operation="Difference")
+    target = Topology.Translate(pattern, 2, 0, 0)
+    first = sg.ApplyRule(target, rule)
+    status1 = sg.Status()
+    second = sg.ApplyRule(target, rule)
+    status2 = sg.Status()
+    assert second is first
+    assert status2["applyCacheHits"] == status1["applyCacheHits"] + 1
+    assert status2["applications"] == 2
+    assert sg.Application()["cached"] is True
+
+
+def test_replace_identity_has_explicit_unchanged_lineage():
+    sg = ShapeGrammar()
+    pattern = _box()
+    output = _box(1, 1, 1)
+    rule = sg.AddRule(pattern, output, operation="Replace")
+    result = sg.ApplyRule(pattern, rule, matrix=ShapeGrammar._identity_matrix(), lineage=True)
+    assert result is output
+    history = sg.History(application=sg.Status()["lastApplication"])
+    assert history
+    assert any(record["relation"] == "unchanged" for record in history)
+
+
+def test_pythonocc_boolean_history_uses_brepgraph_when_available():
+    try:
+        from topologicpy.pythonocc_backend._brepgraph import is_available
+    except Exception:
+        pytest.skip("PythonOCC BRepGraph adapter unavailable")
+    if not is_available():
+        pytest.skip("BRepGraph unavailable/disabled")
+
+    sg = ShapeGrammar()
+    pattern = _box(2, 2, 2)
+    rule = sg.AddRule(pattern, _box(1, 1, 3), operation="Difference")
+    target = Topology.Translate(pattern, 2, 0, 0)
+    assert sg.ApplyRule(target, rule, lineage=True) is not None
+    history = sg.History(application=sg.Status()["lastApplication"])
+    assert history
+    assert any(record.get("usedBRepGraph") for record in history)
+
+
+def test_history_queries_and_lineage_graph():
+    sg = ShapeGrammar()
+    pattern = _box(2, 2, 2)
+    rule = sg.AddRule(pattern, _box(1, 1, 3), operation="Difference")
+    target = Topology.Translate(pattern, 2, 0, 0)
+    result = sg.ApplyRule(target, rule, lineage=True)
+    app = sg.Status()["lastApplication"]
+    assert result is not None
+    assert isinstance(sg.History(application=app), list)
+    assert isinstance(sg.GeneratedBy(app), list)
+    assert isinstance(sg.ModifiedBy(app), list)
+    assert isinstance(sg.DeletedBy(app), list)
+    graph = sg.LineageGraph(app)
+    assert graph is not None
+
+
+def test_derivation_graph_tracks_rule_application_sequence():
+    sg = ShapeGrammar()
+    pattern = _box()
+    rule = sg.AddRule(pattern, _box(0.75, 0.75, 0.75), operation="Replace")
+    target = Topology.Translate(pattern, 1, 0, 0)
+    first = sg.ApplyRule(target, rule)
+    # Force is intentional: the replacement is not required to match the pattern.
+    second = sg.ApplyRule(first, rule, matrix=ShapeGrammar._identity_matrix(), force=True)
+    assert second is not None
+    graph = sg.DerivationGraph()
+    assert graph is not None
+
+
+def test_json_roundtrip_preserves_rules_not_runtime_state():
+    sg = ShapeGrammar(title="Roundtrip", description="test")
+    pattern = _box()
+    rule = sg.AddRule(pattern, _box(0.5, 0.5, 0.5), title="R", operation="Difference", metadata={"a": 1})
+    target = Topology.Translate(pattern, 1, 0, 0)
+    assert sg.ApplyRule(target, rule) is not None
+    assert sg.Status()["applications"] == 1
+
+    string = sg.JSONString()
+    restored = ShapeGrammar.ByJSONString(string)
+    assert restored is not None
+    assert restored.title == "Roundtrip"
+    assert restored.Rule(rule)["title"] == "R"
+    assert restored.Rule(rule)["metadata"] == {"a": 1}
+    assert restored.Status()["applications"] == 0
+
+
+def test_remove_rule_invalidates_runtime_caches():
+    sg = ShapeGrammar()
+    pattern = _box()
+    rule = sg.AddRule(pattern, _box(0.5, 0.5, 0.5), operation="Replace")
+    target = Topology.Translate(pattern, 1, 0, 0)
+    assert sg.ApplicableRules(target)
+    assert sg.Status()["matchCacheEntries"] > 0
+    assert sg.RemoveRule(rule)
+    assert sg.Rule(rule) is None
+    assert sg.Status()["matchCacheEntries"] == 0
 
 
 def test_public_exports():
-    module = importlib.import_module("topologicpy.ShapeGrammar")
+    import topologicpy.ShapeGrammar as module
     assert module.__all__ == ["ShapeGrammar"]
