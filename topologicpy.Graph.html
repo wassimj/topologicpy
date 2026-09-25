@@ -192,7 +192,7 @@
 <td><p>Returns the adjacency matrix of the input Graph.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.AdjacencyMatrixCSVString" title="topologicpy.Graph.Graph.AdjacencyMatrixCSVString"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AdjacencyMatrixCSVString</span></code></a>(graph[, vertexKey, ...])</p></td>
-<td><p>Returns the adjacency matrix CSV string of the input Graph.</p></td>
+<td><p>Returns the adjacency matrix of the input Graph as a CSV string.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.AdjacencyMatrixFigure" title="topologicpy.Graph.Graph.AdjacencyMatrixFigure"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AdjacencyMatrixFigure</span></code></a>(graph[, vertexKey, ...])</p></td>
 <td><p>Returns a Plotly table figure visualizing the adjacency matrix of a Graph.</p></td>
@@ -1005,43 +1005,10 @@ If the vertexLabelKey does not exist, it will be created and the vertices are la
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Graph.Graph.AdjacencyMatrixCSVString">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AdjacencyMatrixCSVString</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reverse</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeKeyFwd</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeKeyBwd</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bidirKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bidirectional</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">useEdgeIndex</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">useEdgeLength</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.AdjacencyMatrixCSVString" title="Permalink to this definition"></a></dt>
-<dd><p>Returns the adjacency matrix CSV string of the input Graph. See <a class="reference external" href="https://en.wikipedia.org/wiki/Adjacency_matrix">https://en.wikipedia.org/wiki/Adjacency_matrix</a>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>graph</strong><span class="classifier">topologic_core.Graph</span></dt><dd><p>The input graph.</p>
-</dd>
-<dt><strong>vertexKey</strong><span class="classifier">str , optional</span></dt><dd><p>If set, the returned list of vertices is sorted according to the dictionary values stored under this key. Default is None.</p>
-</dd>
-<dt><strong>reverse</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the vertices are sorted in reverse order (only if vertexKey is set). Otherwise, they are not. Default is False.</p>
-</dd>
-<dt><strong>edgeKeyFwd</strong><span class="classifier">str , optional</span></dt><dd><p>If set, the value at this key in the connecting edge from start vertex to end vertex (forward) will be used instead of the value 1. Default is None. useEdgeIndex and useEdgeLength override this setting.</p>
-</dd>
-<dt><strong>edgeKeyBwd</strong><span class="classifier">str , optional</span></dt><dd><p>If set, the value at this key in the connecting edge from end vertex to start vertex (backward) will be used instead of the value 1. Default is None. useEdgeIndex and useEdgeLength override this setting.</p>
-</dd>
-<dt><strong>bidirKey</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True or False, this key in the connecting edge will be used to determine is the edge is supposed to be bidirectional or not. If set to None, the input variable bidrectional will be used instead. Default is None</p>
-</dd>
-<dt><strong>bidirectional</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the edges in the graph that do not have a bidireKey in their dictionaries will be treated as being bidirectional. Otherwise, the start vertex and end vertex of the connecting edge will determine the direction. Default is True.</p>
-</dd>
-<dt><strong>useEdgeIndex</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the adjacency matrix values will the index of the edge in Graph.Edges(graph). Default is False. Both useEdgeIndex, useEdgeLength should not be True at the same time. If they are, useEdgeLength will be used.</p>
-</dd>
-<dt><strong>useEdgeLength</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the adjacency matrix values will the length of the edge in Graph.Edges(graph). Default is False. Both useEdgeIndex, useEdgeLength should not be True at the same time. If they are, useEdgeLength will be used.</p>
-</dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
-</dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>str</dt><dd><p>A string in CSV format representing the adjacency matrix.
-Returns an empty string if conversion fails.</p>
-</dd>
-</dl>
-</dd>
-</dl>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AdjacencyMatrixCSVString</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reverse</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeKeyFwd</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeKeyBwd</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bidirKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bidirectional</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">useEdgeIndex</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">useEdgeLength</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.AdjacencyMatrixCSVString" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the adjacency matrix of the input Graph as a CSV string.</p>
+<p>Returns an empty string if the adjacency matrix cannot be created or
+converted.</p>
 </dd></dl>
 
 <dl class="py method">
