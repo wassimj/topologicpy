@@ -162,6 +162,22 @@ def test_divide_compiles_rule_local_cutters_and_slices_target():
     assert len(cells) >= 2
 
 
+def test_boolean_call_prefers_public_trandict_contract(monkeypatch):
+    sg = ShapeGrammar()
+    calls = []
+
+    def fake_difference(a, b, **kwargs):
+        calls.append(dict(kwargs))
+        return "ok"
+
+    monkeypatch.setattr(Topology, "Difference", staticmethod(fake_difference))
+
+    assert sg._boolean_call("difference", object(), object(), silent=True) == "ok"
+    assert len(calls) == 1
+    assert calls[0].get("tranDict") is True
+    assert calls[0].get("silent") is True
+
+
 def test_apply_cache_reuses_result_and_records_application_event():
     sg = ShapeGrammar()
     pattern = _box()
@@ -201,10 +217,35 @@ def test_pythonocc_boolean_history_uses_brepgraph_when_available():
     pattern = _box(2, 2, 2)
     rule = sg.AddRule(pattern, _box(1, 1, 3), operation="Difference")
     target = Topology.Translate(pattern, 2, 0, 0)
+
     assert sg.ApplyRule(target, rule, lineage=True) is not None
     history = sg.History(application=sg.Status()["lastApplication"])
     assert history
-    assert any(record.get("usedBRepGraph") for record in history)
+
+    # The tool alignment itself also produces exact transform history.  The
+    # important regression check is that the subsequent Boolean contributes
+    # its own native Difference records rather than merely inheriting those
+    # transform records.
+    difference_history = [
+        record
+        for record in history
+        if record.get("operation") == "Difference"
+    ]
+    assert difference_history
+    assert any(record.get("usedBRepGraph") is True for record in difference_history)
+    assert {
+        record.get("relation")
+        for record in difference_history
+    } & {"modified", "generated", "unchanged", "deleted"}
+
+    # A volumetric cut should expose at least one Face relationship from the
+    # Boolean history. OCCT may classify the interface as modified or generated,
+    # so the test deliberately does not require one specific relation.
+    assert any(
+        record.get("sourceType") == "Face"
+        or record.get("resultType") == "Face"
+        for record in difference_history
+    )
 
 
 def test_history_queries_and_lineage_graph():

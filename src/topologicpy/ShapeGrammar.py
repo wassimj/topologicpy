@@ -625,33 +625,114 @@ class ShapeGrammar:
         return self._unique_topologies([r.get("source") for r in records if r.get("source") is not None])
 
     def Origins(self, topology, application: Optional[int] = None) -> list:
-        """Trace a result subtopology backwards to terminal rule-application sources."""
+        """
+        Trace a result subtopology backwards to terminal rule-application sources.
+
+        Identity/self-loop lineage records such as ``unchanged`` relationships are
+        treated as terminal provenance steps rather than as upstream predecessors.
+        This prevents a source topology from being incorrectly considered its own
+        ancestor.
+
+        Parameters
+        ----------
+        topology : topologicpy topology
+            The result topology whose origins are to be traced.
+        application : int, optional
+            If specified, restrict the search to this rule application. If None,
+            all recorded applications are searched.
+
+        Returns
+        -------
+        list
+            A list of dictionaries describing the terminal origins.
+        """
+        if topology is None:
+            return []
+
         records = self.History(application=application)
+        if not records:
+            return []
+
         frontier = [topology]
         seen = set()
         origins = []
+
+        def is_self_loop(record) -> bool:
+            """Return True when a lineage record maps a topology to itself."""
+            source = record.get("source")
+            result = record.get("result")
+
+            if source is None or result is None:
+                return False
+
+            return self._same_topology(source, result)
+
+        def has_upstream_producer(source, current_record) -> bool:
+            """
+            Return True if ``source`` was produced by another non-trivial lineage
+            record.
+
+            Identity/unchanged records are deliberately ignored because they do
+            not represent an earlier geometric derivation.
+            """
+            for prior in records:
+                if prior is current_record:
+                    continue
+
+                prior_result = prior.get("result")
+                if prior_result is None:
+                    continue
+
+                if not self._same_topology(prior_result, source):
+                    continue
+
+                # An unchanged/self-loop relationship does not constitute an
+                # upstream producer. Following it would create a provenance cycle.
+                if is_self_loop(prior):
+                    continue
+
+                return True
+
+            return False
+
         while frontier:
             current = frontier.pop()
+
+            if current is None:
+                continue
+
             key = self._topology_identity_key(current)
             if key in seen:
                 continue
             seen.add(key)
+
             incoming = [
-                record for record in records
-                if record.get("result") is not None and self._same_topology(record.get("result"), current)
+                record
+                for record in records
+                if (
+                    record.get("result") is not None
+                    and self._same_topology(record.get("result"), current)
+                )
             ]
+
             for record in incoming:
                 source = record.get("source")
                 if source is None:
                     continue
-                upstream = any(
-                    prior.get("result") is not None and self._same_topology(prior.get("result"), source)
-                    for prior in records
-                )
-                if upstream:
-                    frontier.append(source)
+
+                if has_upstream_producer(source, record):
+                    source_key = self._topology_identity_key(source)
+                    if source_key not in seen:
+                        frontier.append(source)
                     continue
-                role = str(record.get("sourceNode", record.get("sourceRole", "source")))
+
+                role = str(
+                    record.get(
+                        "sourceNode",
+                        record.get("sourceRole", "source"),
+                    )
+                )
+
                 if role == "target":
                     kind = "target"
                 elif role == "ruleOutput":
@@ -660,13 +741,17 @@ class ShapeGrammar:
                     kind = "proceduralTool"
                 else:
                     kind = "source"
-                origins.append({
-                    "kind": kind,
-                    "application": record.get("application"),
-                    "rule": record.get("rule"),
-                    "source": source,
-                    "relation": record.get("relation"),
-                })
+
+                origins.append(
+                    {
+                        "kind": kind,
+                        "application": record.get("application"),
+                        "rule": record.get("rule"),
+                        "source": source,
+                        "relation": record.get("relation"),
+                    }
+                )
+
         return self._unique_origin_records(origins)
 
     def Descendants(self, topology, application: Optional[int] = None) -> list:
@@ -1262,6 +1347,14 @@ class ShapeGrammar:
         return result, self._materialise_history(sink, application, rule.index)
 
     def _boolean_call(self, operation: str, a, b, silent: bool = False):
+        """Execute one binary TopologicPy Boolean with exact provenance enabled.
+
+        The public TopologicPy Boolean API uses ``tranDict``. On the PythonOCC
+        backend that public flag reaches the native ``transferDictionary`` path,
+        which is also where BRepTools history is exposed to the private lineage
+        capture hook. The fallback spellings are retained only for backend/API
+        compatibility; ``tranDict=True`` is deliberately attempted first.
+        """
         from topologicpy.Topology import Topology
 
         names = {
@@ -1273,22 +1366,34 @@ class ShapeGrammar:
             "impose": "Impose",
             "imprint": "Imprint",
         }
+
         if operation == "xor":
-            fn = getattr(Topology, "SymmetricDifference", None) or getattr(Topology, "SymDif", None)
+            fn = (
+                getattr(Topology, "SymmetricDifference", None)
+                or getattr(Topology, "SymDif", None)
+            )
         else:
             fn = getattr(Topology, names.get(operation, ""), None)
+
         if not callable(fn):
             return None
+
+        try:
+            return fn(a, b, tranDict=True, silent=silent)
+        except TypeError:
+            pass
+        try:
+            return fn(a, b, transferDictionary=True, silent=silent)
+        except TypeError:
+            pass
         try:
             return fn(a, b, transferDictionaries=True, silent=silent)
         except TypeError:
-            try:
-                return fn(a, b, transferDictionary=True, silent=silent)
-            except TypeError:
-                try:
-                    return fn(a, b, silent=silent)
-                except TypeError:
-                    return fn(a, b)
+            pass
+        try:
+            return fn(a, b, silent=silent)
+        except TypeError:
+            return fn(a, b)
 
     def _materialise_history(self, records: list, application: int, rule: int) -> list:
         output = []
