@@ -176,6 +176,48 @@ def _drop_open_shells(shape):
         return shape
 
 
+
+# BRepGraph Tranche 2: CellComplex incidence helpers
+def _brepgraph_faces_by_cell_incidence(cell_complex, min_count=None, max_count=None):
+    """Return Face wrappers classified by distinct Solid ancestry, or None.
+
+    None means the BRepGraph path is unavailable/unreliable and the caller must
+    retain the established legacy implementation.  An empty list is an
+    authoritative graph result.
+    """
+    shape = getattr(cell_complex, "shape", None)
+    if _is_null_shape(shape):
+        return None
+    try:
+        from ._brepgraph import cached_index as _cached_brepgraph_index
+        index = _cached_brepgraph_index(cell_complex, shape)
+        native_shapes = (
+            index.subshapes_by_ancestor_count(
+                TopAbs_FACE,
+                TopAbs_SOLID,
+                min_count=min_count,
+                max_count=max_count,
+            )
+            if index is not None
+            else None
+        )
+    except Exception:
+        native_shapes = None
+
+    if native_shapes is None:
+        return None
+
+    result = []
+    for native_shape in native_shapes:
+        try:
+            wrapped = Topology.ByOcctShape(native_shape)
+        except Exception:
+            wrapped = None
+        if wrapped is not None:
+            result.append(wrapped)
+    return result
+
+
 @dataclass(eq=False)
 class CellComplex(Topology):
     cells: list = field(default_factory=list)
@@ -479,14 +521,24 @@ class CellComplex(Topology):
 
     def NonManifoldFaces(self, faces=None):
         """
-        Returns the Faces shared by two or more of this CellComplex's Cells
-        (the non-manifold internal boundaries). Identity is decided by OCCT
-        shape equality (TopoDS_Shape.IsSame), NOT Python object/identity
-        hashing: BOPAlgo_MakerVolume rebuilds the shared face as a
-        distinct TopoDS_Face object inside each Cell, so two copies of the
-        same geometric face have different Python identities and hashes yet
-        are the same topology. IsSame is the only correct test here.
+        Returns Faces incident to two or more Cells.
+
+        # BRepGraph Tranche 2: CellComplex.NonManifoldFaces
+        On OCCT 8 this is an exact Face -> Solid incidence query over the
+        CellComplex's cached BRepGraph.  The historical pairwise IsSame scan is
+        retained as the authoritative fallback for older/disabled BRepGraph or
+        for graph-import cases that cannot be answered safely.
         """
+        native = _brepgraph_faces_by_cell_incidence(self, min_count=2, max_count=None)
+        if native is not None:
+            result = native
+            if faces is not None:
+                faces.extend(result)
+                return 0
+            return result
+
+        # Legacy fallback: compare each Cell's unique Faces by native OCCT
+        # topology identity.  This intentionally remains unchanged in meaning.
         per_cell = []
         for cell in self.Cells():
             seen = []
@@ -494,22 +546,20 @@ class CellComplex(Topology):
                 shape = getattr(face, "shape", None)
                 if _is_null_shape(shape):
                     continue
-                # de-dupe within a single cell first
                 if not any(_shape_same(shape, s) for s, _ in seen):
                     seen.append((shape, face))
             if seen:
                 per_cell.append(seen)
 
         result = []
-        used = set()
+        used_shapes = []
         for i in range(len(per_cell)):
             for j in range(i + 1, len(per_cell)):
                 for s_i, f_i in per_cell[i]:
-                    for s_j, f_j in per_cell[j]:
+                    for s_j, _f_j in per_cell[j]:
                         if _shape_same(s_i, s_j):
-                            key = id(f_i)
-                            if key not in used:
-                                used.add(key)
+                            if not any(_shape_same(s_i, existing) for existing in used_shapes):
+                                used_shapes.append(s_i)
                                 result.append(f_i)
         if faces is not None:
             faces.extend(result)

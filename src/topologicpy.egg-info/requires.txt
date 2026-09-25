@@ -6,6 +6,14 @@ plotly
 lark
 webcolors
 nbformat
+requests
+packaging
+
+[rhino]
+rhino3dm>=8.17.0
 
 [test]
 pytest-xdist>=2.4.0
+rdflib>=6.0.0
+pyshacl>=0.20.0
+owlrl>=6.0.2

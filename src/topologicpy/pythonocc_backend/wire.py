@@ -560,7 +560,20 @@ class Wire(Topology):
         return result
 
     def Wires(self, hostTopology=None, wires=None):
-        result = [self]
+        # BRepGraph Tranche 1: when a host is supplied this method is also
+        # the backend utility entry point for same-dimensional adjacency.
+        if hostTopology is not None:
+            try:
+                from .topology import _brepgraph_adjacent_wrappers, TopAbs_WIRE
+                native = _brepgraph_adjacent_wrappers(self, hostTopology, TopAbs_WIRE)
+            except Exception:
+                native = None
+            if native is not None:
+                result = native
+            else:
+                result = [self]
+        else:
+            result = [self]
         if wires is not None:
             wires.extend(result)
             return 0

@@ -62,6 +62,19 @@ class Vertex(Topology):
         """Vertices in hostTopology connected to self by a shared edge."""
         result = []
         if hostTopology is not None:
+            # BRepGraph Tranche 1: exact indexed vertex adjacency on OCCT 8.
+            try:
+                from .topology import _brepgraph_adjacent_wrappers, TopAbs_VERTEX
+                native = _brepgraph_adjacent_wrappers(self, hostTopology, TopAbs_VERTEX)
+            except Exception:
+                native = None
+            if native is not None:
+                result = native
+                if output is not None:
+                    output.extend(result)
+                    return 0
+                return result
+
             edges = Topology.Edges(hostTopology) or []
             for e in edges:
                 if not hasattr(e, "start") or not hasattr(e, "end"):

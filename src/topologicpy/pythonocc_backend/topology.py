@@ -40,6 +40,10 @@ from typing import Any, Iterable, Optional
 from .helpers import new_uuid as _new_uuid, distance3, vertex_key
 
 from .attribute_manager import AttributeManager
+from ._brepgraph import (  # BRepGraph Tranche 1
+    cached_index as _cached_brepgraph_index,
+    shared_shapes as _brepgraph_shared_shapes,
+)
 
 
 # -----------------------------------------------------------------------------
@@ -381,24 +385,69 @@ def _iter_occ_subshapes_unique(shape: Any, shape_type: Any) -> list:
         return []
 
 def _downward_wrappers(topology: Any, shape_type: Any) -> list:
-    """
-    Returns backend topology wrappers for the unique OCCT subshapes of
-    the requested type.
+    """Return exact native descendants, preferring the OCCT 8 BRepGraph index.
+
+    ``None`` from the private BRepGraph adapter means that the feature is not
+    available (pythonocc-core < 8, disabled by environment, or the graph could
+    not answer the query).  In that case the established TopExp path remains
+    authoritative.
     """
     shape = _shape_from_topology(topology)
-
     if _is_null_shape(shape):
         return []
 
+    subshapes = None
+    try:
+        index = _cached_brepgraph_index(topology, shape)
+        if index is not None:
+            subshapes = index.subshapes(shape, shape_type)
+    except Exception:
+        subshapes = None
+
+    if subshapes is None:
+        subshapes = _iter_occ_subshapes_unique(shape, shape_type)
+
     result = []
-
-    for subshape in _iter_occ_subshapes_unique(shape, shape_type):
-        item = Topology.ByOcctShape(subshape)
-
+    for subshape in subshapes or []:
+        try:
+            item = Topology.ByOcctShape(subshape)
+        except Exception:
+            item = None
         if item is not None:
             result.append(item)
+    return _deduplicate_by_identity(result)
 
-    return result
+
+def _brepgraph_adjacent_wrappers(topology: Any, hostTopology: Any, shape_type: Any):
+    """Return same-dimensional adjacent wrappers using BRepGraph, or ``None``.
+
+    ``None`` is deliberately distinct from an empty list: it means the graph
+    path could not answer and the caller must execute its legacy implementation.
+    """
+    source_shape = _shape_from_topology(topology)
+    host_shape = _shape_from_topology(hostTopology)
+    if _is_null_shape(source_shape) or _is_null_shape(host_shape):
+        return None
+    try:
+        index = _cached_brepgraph_index(hostTopology, host_shape)
+        if index is None:
+            return None
+        shapes = index.adjacent_shapes(source_shape, shape_type)
+    except Exception:
+        return None
+    if shapes is None:
+        return None
+
+    result = []
+    for shape in shapes:
+        try:
+            item = Topology.ByOcctShape(shape)
+        except Exception:
+            item = None
+        if item is not None:
+            result.append(item)
+    return _deduplicate_by_identity(result)
+
 
 def _deduplicate_by_identity(items: list) -> list:
     """
@@ -2132,41 +2181,15 @@ class Topology:
 
         # ------------------------------------------------------------------
         # 2. If no cached wrappers were available, inspect the native OCCT
-        #    topology.
+        #    topology. BRepGraph is preferred on OCCT 8; _downward_wrappers
+        #    retains the exact legacy TopExp fallback.
         # ------------------------------------------------------------------
 
         if not result:
-
-            shape = _shape_from_topology(
-                self
-            )
-
-            if (
-                not _is_null_shape(shape)
-                and shape_type is not None
-            ):
-
-                try:
-                    subshapes = _iter_occ_subshapes(
-                        shape,
-                        shape_type
-                    )
-                except Exception:
-                    subshapes = []
-
-                for subshape in subshapes:
-
-                    try:
-                        item = Topology.ByOcctShape(
-                            subshape
-                        )
-                    except Exception:
-                        item = None
-
-                    if item is not None:
-                        result.append(
-                            item
-                        )
+            try:
+                result = _downward_wrappers(self, shape_type)
+            except Exception:
+                result = []
 
         # ------------------------------------------------------------------
         # 3. Aggregate / wrapper fallback.
@@ -6763,6 +6786,41 @@ class Topology:
         self_shape = _shape_from_topology(self)
         host_shape = _shape_from_topology(hostTopology)
 
+        # BRepGraph Tranche 1: exact indexed reverse incidence on OCCT 8.
+        # Returning an empty list is authoritative; returning None means the
+        # adapter could not answer and the established ancestry paths below
+        # remain the fallback.
+        if (
+            source_type is not None
+            and target_type is not None
+            and not _is_null_shape(self_shape)
+            and not _is_null_shape(host_shape)
+        ):
+            try:
+                index = _cached_brepgraph_index(hostTopology, host_shape)
+                ancestor_shapes = (
+                    index.super_shapes(self_shape, target_type)
+                    if index is not None
+                    else None
+                )
+            except Exception:
+                ancestor_shapes = None
+
+            if ancestor_shapes is not None:
+                for ancestor_shape in ancestor_shapes:
+                    try:
+                        wrapped = Topology.ByOcctShape(ancestor_shape)
+                    except Exception:
+                        wrapped = None
+                    if wrapped is not None:
+                        result.append(wrapped)
+
+                result = _deduplicate_by_identity(result)
+                if output is not None:
+                    output.extend(result)
+                    return 0
+                return result
+
         # Face -> Cell ancestry needs a host-side native remap because boolean /
         # container construction can preserve the same geometric Face while giving
         # the query wrapper a different OCCT TShape identity. Keep all other
@@ -9885,6 +9943,49 @@ class Topology:
             if output is not None:
                 return 0
             return []
+
+        # BRepGraph Tranche 1: determine exact sharing from one graph containing
+        # both roots. The old pairwise IsSame implementation below remains the
+        # fallback for pythonocc-core < 8 and lightweight/shapeless topologies.
+        native_type_map = {
+            "vertex": TopAbs_VERTEX,
+            "edge": TopAbs_EDGE,
+            "wire": TopAbs_WIRE,
+            "face": TopAbs_FACE,
+            "shell": TopAbs_SHELL,
+            "cell": TopAbs_SOLID,
+            "cellcomplex": TopAbs_COMPSOLID,
+            "cluster": TopAbs_COMPOUND,
+        }
+        requested_native_type = native_type_map.get(type_name or "vertex")
+        shape_a = _shape_from_topology(self)
+        shape_b = _shape_from_topology(otherTopology)
+        if (
+            requested_native_type is not None
+            and not _is_null_shape(shape_a)
+            and not _is_null_shape(shape_b)
+        ):
+            try:
+                shared_native = _brepgraph_shared_shapes(
+                    shape_a, shape_b, requested_native_type
+                )
+            except Exception:
+                shared_native = None
+
+            if shared_native is not None:
+                result = []
+                for shared_shape in shared_native:
+                    try:
+                        wrapped = Topology.ByOcctShape(shared_shape)
+                    except Exception:
+                        wrapped = None
+                    if wrapped is not None:
+                        result.append(wrapped)
+                result = _deduplicate_by_identity(result)
+                if output is not None:
+                    output.extend(result)
+                    return 0
+                return result
 
         try:
             my_items = getattr(Topology, getter_name)(self) or []

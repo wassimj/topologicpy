@@ -496,6 +496,19 @@ class Edge(Topology):
 
         result = []
         if hostTopology is not None:
+            # BRepGraph Tranche 1: exact indexed edge adjacency on OCCT 8.
+            try:
+                from .topology import _brepgraph_adjacent_wrappers, TopAbs_EDGE
+                native = _brepgraph_adjacent_wrappers(self, hostTopology, TopAbs_EDGE)
+            except Exception:
+                native = None
+            if native is not None:
+                result = native
+                if output is not None:
+                    output.extend(result)
+                    return 0
+                return result
+
             candidates = Topology.Edges(hostTopology) or []
             for other in candidates:
                 if (

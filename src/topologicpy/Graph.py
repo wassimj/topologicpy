@@ -1323,64 +1323,51 @@ class Graph:
     
 
     @staticmethod
-    def AdjacencyMatrixCSVString(graph, vertexKey=None, reverse=False, edgeKeyFwd=None, edgeKeyBwd=None, bidirKey=None, bidirectional=True, useEdgeIndex=False, useEdgeLength=False, mantissa: int = 6, tolerance=0.0001):
+    def AdjacencyMatrixCSVString(
+        graph,
+        vertexKey=None,
+        reverse=False,
+        edgeKeyFwd=None,
+        edgeKeyBwd=None,
+        bidirKey=None,
+        bidirectional=True,
+        useEdgeIndex=False,
+        useEdgeLength=False,
+        mantissa: int = 6,
+        tolerance: float = 0.0001
+    ):
         """
-        Returns the adjacency matrix CSV string of the input Graph. See https://en.wikipedia.org/wiki/Adjacency_matrix.
+        Returns the adjacency matrix of the input Graph as a CSV string.
 
-        Parameters
-        ----------
-        graph : topologic_core.Graph
-            The input graph.
-        vertexKey : str , optional
-            If set, the returned list of vertices is sorted according to the dictionary values stored under this key. Default is None.
-        reverse : bool , optional
-            If set to True, the vertices are sorted in reverse order (only if vertexKey is set). Otherwise, they are not. Default is False.
-        edgeKeyFwd : str , optional
-            If set, the value at this key in the connecting edge from start vertex to end vertex (forward) will be used instead of the value 1. Default is None. useEdgeIndex and useEdgeLength override this setting.
-        edgeKeyBwd : str , optional
-            If set, the value at this key in the connecting edge from end vertex to start vertex (backward) will be used instead of the value 1. Default is None. useEdgeIndex and useEdgeLength override this setting.
-        bidirKey : bool , optional
-            If set to True or False, this key in the connecting edge will be used to determine is the edge is supposed to be bidirectional or not. If set to None, the input variable bidrectional will be used instead. Default is None
-        bidirectional : bool , optional
-            If set to True, the edges in the graph that do not have a bidireKey in their dictionaries will be treated as being bidirectional. Otherwise, the start vertex and end vertex of the connecting edge will determine the direction. Default is True.
-        useEdgeIndex : bool , optional
-            If set to True, the adjacency matrix values will the index of the edge in Graph.Edges(graph). Default is False. Both useEdgeIndex, useEdgeLength should not be True at the same time. If they are, useEdgeLength will be used.
-        useEdgeLength : bool , optional
-            If set to True, the adjacency matrix values will the length of the edge in Graph.Edges(graph). Default is False. Both useEdgeIndex, useEdgeLength should not be True at the same time. If they are, useEdgeLength will be used.
-        mantissa : int , optional
-            The number of decimal places to round the result to. Default is 6.
-        tolerance : float , optional
-            The desired tolerance. Default is 0.0001.
-
-        Returns
-        -------
-        str
-            A string in CSV format representing the adjacency matrix.
-            Returns an empty string if conversion fails.
+        Returns an empty string if the adjacency matrix cannot be created or
+        converted.
         """
+        import csv
         import io
 
-        adj_matrix = Graph.AdjacencyMatrix(graph,
-                                           vertexKey=vertexKey,
-                                           reverse=reverse,
-                                           edgeKeyFwd=edgeKeyFwd,
-                                           edgeKeyBwd=edgeKeyBwd,
-                                           bidirKey=bidirKey,
-                                           bidirectional=bidirectional,
-                                           useEdgeIndex=useEdgeIndex,
-                                           useEdgeLength=useEdgeLength,
-                                           mantissa=mantissa,
-                                           tolerance=tolerance)
+        adjacency_matrix = Graph.AdjacencyMatrix(
+            graph,
+            vertexKey=vertexKey,
+            reverse=reverse,
+            edgeKeyFwd=edgeKeyFwd,
+            edgeKeyBwd=edgeKeyBwd,
+            bidirKey=bidirKey,
+            bidirectional=bidirectional,
+            useEdgeIndex=useEdgeIndex,
+            useEdgeLength=useEdgeLength,
+            mantissa=mantissa,
+            tolerance=tolerance
+        )
+
+        if not isinstance(adjacency_matrix, (list, tuple)):
+            return ""
 
         try:
-            # Convert the adjacency matrix (nested list) to a DataFrame
-            adjacency_matrix_df = pd.DataFrame(adj_matrix)
-
-            # Use a buffer to get the CSV output as a string
-            csv_buffer = io.StringIO()
-            adjacency_matrix_df.to_csv(csv_buffer, index=False, header=False)
-            return csv_buffer.getvalue()
-        except Exception as e:
+            buffer = io.StringIO(newline="")
+            writer = csv.writer(buffer, lineterminator="\n")
+            writer.writerows(adjacency_matrix)
+            return buffer.getvalue()
+        except (csv.Error, TypeError, ValueError):
             return ""
 
     @staticmethod

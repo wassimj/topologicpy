@@ -1648,6 +1648,19 @@ class Face(Topology):
         """Faces in hostTopology (other than self) that share an edge with self."""
         result = []
         if hostTopology is not None:
+            # BRepGraph Tranche 1: exact indexed face adjacency on OCCT 8.
+            try:
+                from .topology import _brepgraph_adjacent_wrappers, TopAbs_FACE
+                native = _brepgraph_adjacent_wrappers(self, hostTopology, TopAbs_FACE)
+            except Exception:
+                native = None
+            if native is not None:
+                result = native
+                if output is not None:
+                    output.extend(result)
+                    return 0
+                return result
+
             self_keys = {edge_key(e) for e in self.Edges() if isinstance(e, Edge)}
             candidates = Topology.Faces(hostTopology) or []
             for other in candidates:

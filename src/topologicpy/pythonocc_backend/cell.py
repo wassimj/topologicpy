@@ -1523,7 +1523,20 @@ class Cell(Topology):
         return result
 
     def Cells(self, hostTopology=None, cells=None):
-        result = [self]
+        # BRepGraph Tranche 1: when a host is supplied this method is also
+        # the backend utility entry point for same-dimensional adjacency.
+        if hostTopology is not None:
+            try:
+                from .topology import _brepgraph_adjacent_wrappers, TopAbs_SOLID
+                native = _brepgraph_adjacent_wrappers(self, hostTopology, TopAbs_SOLID)
+            except Exception:
+                native = None
+            if native is not None:
+                result = native
+            else:
+                result = [self]
+        else:
+            result = [self]
         if cells is not None:
             cells.extend(result)
             return 0

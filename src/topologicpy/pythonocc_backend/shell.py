@@ -17,6 +17,51 @@ from .occ_utils import make_occ_shell
 from .helpers import unique_by_uuid, vertex_key
 
 
+
+# BRepGraph Tranche 2: CoEdge-aware Shell incidence helpers
+def _brepgraph_shell_edges(
+    shell,
+    min_use_count=None,
+    max_use_count=None,
+    min_face_count=None,
+    max_face_count=None,
+):
+    """Return Edge wrappers selected by native CoEdge/Face incidence, or None."""
+    if not isinstance(shell, Shell):
+        return None
+    shape = getattr(shell, "shape", None)
+    if _is_null_shape(shape):
+        return None
+    try:
+        from ._brepgraph import cached_index as _cached_brepgraph_index
+        index = _cached_brepgraph_index(shell, shape)
+        native_shapes = (
+            index.edge_shapes_by_incidence(
+                min_use_count=min_use_count,
+                max_use_count=max_use_count,
+                min_face_count=min_face_count,
+                max_face_count=max_face_count,
+            )
+            if index is not None
+            else None
+        )
+    except Exception:
+        native_shapes = None
+
+    if native_shapes is None:
+        return None
+
+    result = []
+    for native_shape in native_shapes:
+        try:
+            wrapped = Topology.ByOcctShape(native_shape)
+        except Exception:
+            wrapped = None
+        if isinstance(wrapped, Edge):
+            result.append(wrapped)
+    return result
+
+
 @dataclass(eq=False)
 class Shell(Topology):
     def __init__(self, shape=None, dictionary=None, contents=None, contexts=None, apertures=None, faces=None):
@@ -3317,61 +3362,123 @@ class Shell(Topology):
 
     @staticmethod
     def _boundary_first_ordering(edges, host=None, tolerance: float = 0.0001):
-        """Order free boundary chains first without conflating distinct curved Edges."""
+        """Order true free-boundary chains first.
+
+        # BRepGraph Tranche 2: Shell._boundary_first_ordering
+        With OCCT 8, free boundaries are Edges with exactly one CoEdge use.
+        This is seam-safe: a cylindrical seam has two CoEdge uses on one Face
+        and therefore is not incorrectly promoted to the free boundary.
+        """
         from .wire import Wire
-        edges=[e for e in edges if isinstance(e,Edge)]
-        incidence=Shell._edge_face_incidence(host.Faces() or [],tolerance=tolerance) if isinstance(host,Shell) else None
-        boundary_edges=[]; other_edges=[]
-        for edge in edges:
-            if incidence is not None:
-                owning=Shell._IncidencePairs(incidence,edge,tolerance=tolerance)
-            else:
-                faces_method=getattr(edge,'Faces',None)
-                owning=faces_method(host) if callable(faces_method) else None
-            if isinstance(owning,list) and len(owning)==1:
-                if not any(Shell._EdgesSame(edge,e,tolerance=tolerance) for e in boundary_edges):
-                    boundary_edges.append(edge)
-            else:
-                other_edges.append(edge)
+        edges = [e for e in edges if isinstance(e, Edge)]
+
+        native_boundary = (
+            _brepgraph_shell_edges(host, min_use_count=1, max_use_count=1)
+            if isinstance(host, Shell)
+            else None
+        )
+
+        boundary_edges = []
+        other_edges = []
+        if native_boundary is not None:
+            for edge in edges:
+                if any(Shell._EdgesSame(edge, candidate, tolerance=tolerance) for candidate in native_boundary):
+                    if not any(Shell._EdgesSame(edge, e, tolerance=tolerance) for e in boundary_edges):
+                        boundary_edges.append(edge)
+                else:
+                    other_edges.append(edge)
+        else:
+            incidence = (
+                Shell._edge_face_incidence(host.Faces() or [], tolerance=tolerance)
+                if isinstance(host, Shell)
+                else None
+            )
+            for edge in edges:
+                if incidence is not None:
+                    owning = Shell._IncidencePairs(incidence, edge, tolerance=tolerance)
+                else:
+                    faces_method = getattr(edge, "Faces", None)
+                    owning = faces_method(host) if callable(faces_method) else None
+                if isinstance(owning, list) and len(owning) == 1:
+                    if not any(Shell._EdgesSame(edge, e, tolerance=tolerance) for e in boundary_edges):
+                        boundary_edges.append(edge)
+                else:
+                    other_edges.append(edge)
+
         if not boundary_edges:
             return edges
-        remaining=list(boundary_edges); ordered_boundary=[]
+        remaining = list(boundary_edges)
+        ordered_boundary = []
         while remaining:
-            chain=Wire._order_edges(remaining,tolerance=tolerance)
+            chain = Wire._order_edges(remaining, tolerance=tolerance)
             if chain is not None:
-                ordered_boundary.extend(chain); break
-            component=[remaining[0]]; rest=remaining[1:]; changed=True
+                ordered_boundary.extend(chain)
+                break
+            component = [remaining[0]]
+            rest = remaining[1:]
+            changed = True
             while changed:
-                changed=False
-                comp_vertices=[]
+                changed = False
+                comp_vertices = []
                 for e in component:
-                    if isinstance(e.start,Vertex): comp_vertices.append(vertex_key(e.start,tolerance))
-                    if isinstance(e.end,Vertex): comp_vertices.append(vertex_key(e.end,tolerance))
-                for i,candidate in enumerate(rest):
-                    keys=(vertex_key(candidate.start,tolerance),vertex_key(candidate.end,tolerance))
+                    if isinstance(e.start, Vertex):
+                        comp_vertices.append(vertex_key(e.start, tolerance))
+                    if isinstance(e.end, Vertex):
+                        comp_vertices.append(vertex_key(e.end, tolerance))
+                for i, candidate in enumerate(rest):
+                    keys = (
+                        vertex_key(candidate.start, tolerance),
+                        vertex_key(candidate.end, tolerance),
+                    )
                     if keys[0] in comp_vertices or keys[1] in comp_vertices:
-                        component.append(candidate); rest.pop(i); changed=True; break
-            sub_order=Wire._order_edges(component,tolerance=tolerance)
+                        component.append(candidate)
+                        rest.pop(i)
+                        changed = True
+                        break
+            sub_order = Wire._order_edges(component, tolerance=tolerance)
             ordered_boundary.extend(sub_order if sub_order is not None else component)
-            remaining=rest
-        return ordered_boundary+other_edges
+            remaining = rest
+        return ordered_boundary + other_edges
 
     def Shells(self, hostTopology=None, shells=None):
-        result = [self]
+        # BRepGraph Tranche 1: when a host is supplied this method is also
+        # the backend utility entry point for same-dimensional adjacency.
+        if hostTopology is not None:
+            try:
+                from .topology import _brepgraph_adjacent_wrappers, TopAbs_SHELL
+                native = _brepgraph_adjacent_wrappers(self, hostTopology, TopAbs_SHELL)
+            except Exception:
+                native = None
+            if native is not None:
+                result = native
+            else:
+                result = [self]
+        else:
+            result = [self]
         if shells is not None:
             shells.extend(result)
             return 0
         return result
 
     def IsClosed(self, tolerance: float = 0.0001):
+        """Return True when the Shell has no free boundary Edge.
+
+        # BRepGraph Tranche 2: Shell.IsClosed
+        Native classification uses CoEdge-use count rather than unique owning
+        Face count, which correctly handles seam Edges.
         """
-        A shell is closed when it has no free (boundary) edges, i.e. every
-        edge is shared by exactly two of the shell's faces.
-        """
+        native_boundary = _brepgraph_shell_edges(self, min_use_count=1, max_use_count=1)
+        if native_boundary is not None:
+            return len(native_boundary) == 0
+
         faces = self.Faces() or []
         if not faces:
             return False
-        return len(Shell._boundary_edges(faces, tolerance=tolerance, min_count=1, max_count=1)) == 0
+        return len(
+            Shell._boundary_edges(
+                faces, tolerance=tolerance, min_count=1, max_count=1
+            )
+        ) == 0
 
     @staticmethod
     def _boundary_edges(faces, tolerance: float = 0.0001, min_count=None, max_count=None):
@@ -3410,43 +3517,59 @@ class Shell(Topology):
 
     @staticmethod
     def ExternalBoundary(shell, tolerance: float = 0.0001, silent: bool = False):
-        """Return the longest free/boundary Wire of an open Shell."""
-        if not isinstance(shell,Shell):
+        """Return the longest free/boundary Wire of an open Shell.
+
+        # BRepGraph Tranche 2: Shell.ExternalBoundary
+        A free boundary is a native Edge with exactly one CoEdge use.  This
+        deliberately differs from counting unique Faces so seam Edges remain
+        internal to their periodic Face.
+        """
+        if not isinstance(shell, Shell):
             if not silent:
                 print("Shell.ExternalBoundary - Error: The input shell parameter is not a valid Shell. Returning None.")
             return None
-        faces=shell.Faces() or []
-        boundary_edges=Shell._boundary_edges(faces,tolerance=tolerance,min_count=1,max_count=1)
+
+        boundary_edges = _brepgraph_shell_edges(shell, min_use_count=1, max_use_count=1)
+        if boundary_edges is None:
+            faces = shell.Faces() or []
+            boundary_edges = Shell._boundary_edges(
+                faces, tolerance=tolerance, min_count=1, max_count=1
+            )
+
         if not boundary_edges:
             if not silent:
                 print("Shell.ExternalBoundary - Error: External boundary could not be found. Returning None.")
             return None
-        merged=Shell._merge_boundary_edges(boundary_edges,tolerance=tolerance)
+        merged = Shell._merge_boundary_edges(boundary_edges, tolerance=tolerance)
         if merged is None:
             return None
-        if Topology.IsInstance(merged,'Wire'):
+        if Topology.IsInstance(merged, "Wire"):
             return merged
-        wires=[w for w in getattr(merged,'topologies',[]) or [] if Topology.IsInstance(w,'Wire')]
+        wires = [
+            w
+            for w in getattr(merged, "topologies", []) or []
+            if Topology.IsInstance(w, "Wire")
+        ]
         if not wires:
             try:
-                wires=Topology.Wires(merged) or []
+                wires = Topology.Wires(merged) or []
             except Exception:
-                wires=[]
+                wires = []
         if not wires:
             return None
 
         def wire_length(wire):
-            total=0.0
+            total = 0.0
             try:
                 for edge in wire.Edges() or []:
-                    value=EdgeUtility.Length(edge,tolerance=tolerance)
+                    value = EdgeUtility.Length(edge, tolerance=tolerance)
                     if value is not None:
                         total += abs(float(value))
             except Exception:
                 return 0.0
             return total
 
-        return max(wires,key=wire_length)
+        return max(wires, key=wire_length)
 
     def Slice(self, otherTopology, transferDictionary: bool = False):
         """
@@ -3548,16 +3671,22 @@ class ShellUtility:
 
     @staticmethod
     def InternalBoundaries(shell, tolerance: float = 0.0001):
-        """
-        Returns the internal (non-manifold, shared-by-2-faces) boundary wires
-        of the shell -- i.e. every wire made of edges that are NOT part of the
-        shell's single external boundary. For a simple open shell each such
-        internal edge is shared by exactly two faces.
+        """Return wires composed of Edges genuinely shared by >=2 Faces.
+
+        # BRepGraph Tranche 2: ShellUtility.InternalBoundaries
+        Unique Face incidence is used here rather than CoEdge-use count: a seam
+        Edge has two uses but only one owning Face and is therefore not an
+        internal shared boundary.
         """
         if not isinstance(shell, Shell):
             return []
-        faces = shell.Faces() or []
-        internal_edges = Shell._boundary_edges(faces, tolerance=tolerance, min_count=2, max_count=None)
+
+        internal_edges = _brepgraph_shell_edges(shell, min_face_count=2)
+        if internal_edges is None:
+            faces = shell.Faces() or []
+            internal_edges = Shell._boundary_edges(
+                faces, tolerance=tolerance, min_count=2, max_count=None
+            )
         if not internal_edges:
             return []
         merged = Shell._merge_boundary_edges(internal_edges, tolerance=tolerance)
@@ -3565,7 +3694,11 @@ class ShellUtility:
             return []
         if Topology.IsInstance(merged, "Wire"):
             return [merged]
-        return [w for w in getattr(merged, "topologies", []) or [] if Topology.IsInstance(w, "Wire")]
+        return [
+            w
+            for w in getattr(merged, "topologies", []) or []
+            if Topology.IsInstance(w, "Wire")
+        ]
 
 
 
