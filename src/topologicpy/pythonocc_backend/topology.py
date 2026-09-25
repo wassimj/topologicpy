@@ -40,6 +40,12 @@ from typing import Any, Iterable, Optional
 from .helpers import new_uuid as _new_uuid, distance3, vertex_key
 
 from .attribute_manager import AttributeManager
+from ._provenance import (
+    transfer_by_history as _provenance_transfer_history,
+    transfer_by_modifier as _provenance_transfer_modifier,
+    root_dictionary as _provenance_root_dictionary,
+    set_root_dictionary as _provenance_set_root_dictionary,
+)
 from ._brepgraph import (  # BRepGraph Tranche 1
     cached_index as _cached_brepgraph_index,
     shared_shapes as _brepgraph_shared_shapes,
@@ -616,10 +622,12 @@ def _postprocess_boolean_result(shape: Any) -> Any:
 
 def _unify_same_domain(shape: Any) -> Any:
     """
-    ShapeUpgrade_UnifySameDomain for Merge/Union only: MakeContainers keeps operands'
-    internal grid subdivisions, and merged material must collapse to its minimal
-    representation (verified vs topologic_core). Solid-containing shapes only -- too
-    aggressive for pure-2D merges where just-touching coplanar faces must stay separate.
+    ShapeUpgrade_UnifySameDomain for Merge/Union only.
+
+    # BRepGraph Tranche 3: provenance-aware same-domain unification
+    If the incoming result already carries shape-keyed dictionaries, compose
+    the unifier's exact BRepTools_History so metadata follows the final native
+    Faces/Edges/Solids instead of stopping at the pre-unified Boolean result.
     """
     if _is_null_shape(shape) or ShapeUpgrade_UnifySameDomain is None:
         return shape
@@ -630,6 +638,18 @@ def _unify_same_domain(shape: Any) -> Any:
         unifier.Build()
         unified = unifier.Shape()
         if not _is_null_shape(unified):
+            try:
+                manager = AttributeManager.GetInstance()
+                root_dictionary = manager.GetDictionary(shape) if manager.HasDictionary(shape) else None
+                _provenance_transfer_history(
+                    unified,
+                    unifier.History(),
+                    [("source", shape, root_dictionary)],
+                    root_policy="source",
+                    operation="UnifySameDomain",
+                )
+            except Exception:
+                pass
             return unified
     except Exception:
         pass
@@ -1052,9 +1072,13 @@ def _compound_of_shapes(shapes: Iterable[Any]) -> Any:
 
 def _make_occ_merge(topology: Any, other_topology: Any = None, transfer_dictionary: bool = False) -> Any:
     """
-    PythonOCC Topology.Merge: BOPAlgo_CellsBuilder + AddAllToResult (keep ALL material)
-    then MakeContainers(), so the operands' shared face survives as a real internal
-    (non-manifold) boundary -- the result is a CellComplex, not one dissolved Cell.
+    PythonOCC Topology.Merge using BOPAlgo_CellsBuilder while preserving the
+    operands' shared interfaces.
+
+    # BRepGraph Tranche 3: exact dictionary provenance
+    The CellsBuilder's BRepTools_History supplies subtopology lineage.  The
+    result root uses an explicit first-source-wins merge policy rather than
+    accidental ``dict.update`` ordering.
     """
     if topology is None:
         return None
@@ -1074,32 +1098,19 @@ def _make_occ_merge(topology: Any, other_topology: Any = None, transfer_dictiona
 
     shapes_a = _collect_boolean_operand_shapes(topology)
     shapes_b = _collect_boolean_operand_shapes(other_topology)
-
     if not shapes_a or not shapes_b:
         print("Topology.Merge - Error: Could not collect valid OCCT operands. Returning None.")
         return None
-
-    # Merge/Union in Topologic preserves the *interface* between the two
-    # operands as a real internal (non-manifold) boundary, so the result is a
-    # CellComplex -- not a single dissolved Cell. A true BRepAlgoAPI_Fuse
-    # welds overlapping/flush-touching solids into one Solid and erases that
-    # interface, which is why the old Fuse path returned a Cell and failed
-    # test_09Topology.py (Topology.Merge should be a CellComplex).
-    #
-    # BOPAlgo_CellsBuilder is the right tool here: with every operand added as
-    # an argument and AddAllToResult() (NO geometric classification filter --
-    # Merge keeps *all* material from both operands, unlike Divide/Slice which
-    # keep only self's fragments), MakeContainers() partitions the fused space
-    # into cells that keep the shared face between the operands as a genuine
-    # internal boundary. _promote_to_compsolid_if_multi_solid then turns the
-    # resulting COMPOUND of solids into a CompSolid so ByOcctShape wraps it as
-    # a CellComplex.
     if BOPAlgo_CellsBuilder is None:
         print("Topology.Merge - Error: PythonOCC BOPAlgo_CellsBuilder is not available. Returning None.")
         return None
 
     try:
         builder = BOPAlgo_CellsBuilder()
+        try:
+            builder.SetToFillHistory(True)
+        except Exception:
+            pass
         for shape in shapes_a:
             builder.AddArgument(shape)
         for shape in shapes_b:
@@ -1108,9 +1119,9 @@ def _make_occ_merge(topology: Any, other_topology: Any = None, transfer_dictiona
         if hasattr(builder, "HasErrors") and builder.HasErrors():
             print("Topology.Merge - Error: BOPAlgo_CellsBuilder failed. Returning None.")
             return None
-
         builder.AddAllToResult()
         result_shape = builder.Shape()
+        history = builder.History() if transfer_dictionary else None
     except Exception:
         print("Topology.Merge - Error: BOPAlgo_CellsBuilder raised. Returning None.")
         return None
@@ -1119,16 +1130,42 @@ def _make_occ_merge(topology: Any, other_topology: Any = None, transfer_dictiona
         print("Topology.Merge - Error: Boolean result is null. Returning None.")
         return None
 
+    source_shape_a = shapes_a[0] if len(shapes_a) == 1 else _compound_of_shapes(shapes_a)
+    source_shape_b = shapes_b[0] if len(shapes_b) == 1 else _compound_of_shapes(shapes_b)
+    sources = [
+        {
+            "role": "self",
+            "shape": source_shape_a,
+            "dictionary": None,
+            "root_dictionary": Topology.Dictionary(topology),
+        },
+        {
+            "role": "other",
+            "shape": source_shape_b,
+            "dictionary": None,
+            "root_dictionary": Topology.Dictionary(other_topology),
+        },
+    ]
+    if transfer_dictionary:
+        try:
+            _provenance_transfer_history(
+                result_shape,
+                history,
+                sources,
+                root_policy="merge",
+                operation="Merge",
+            )
+        except Exception:
+            pass
+
     result_shape = _postprocess_boolean_result(result_shape)
     result_shape = _unify_same_domain(result_shape)
     result_shape = _promote_to_compsolid_if_multi_solid(result_shape)
 
     result_dictionary = {}
     if transfer_dictionary:
-        result_dictionary = _merge_backend_dictionaries(
-            Topology.Dictionary(topology),
-            Topology.Dictionary(other_topology),
-        )
+        result_dictionary = _provenance_root_dictionary(sources, policy="merge")[0]
+        _provenance_set_root_dictionary(result_shape, sources, policy="merge")
 
     result = Topology.ByOcctShape(
         result_shape,
@@ -1137,14 +1174,12 @@ def _make_occ_merge(topology: Any, other_topology: Any = None, transfer_dictiona
         contexts=[],
         apertures=[],
     )
-
     if result is None:
         print("Topology.Merge - Error: Could not convert OCCT result to backend topology. Returning None.")
         return None
 
     _transfer_contents(topology, result)
     _transfer_contents(other_topology, result)
-
     return result
 
 
@@ -1282,6 +1317,7 @@ def _make_occ_union(
             return None
 
         result_shape = fuse.Shape()
+        fuse_history = fuse.History() if transfer_dictionary else None
 
     except Exception:
         print(
@@ -1296,6 +1332,33 @@ def _make_occ_union(
             "Returning None."
         )
         return None
+
+    # BRepGraph Tranche 3: Topology.Union provenance
+    provenance_sources = [
+        {
+            "role": "self",
+            "shape": shape_a,
+            "dictionary": None,
+            "root_dictionary": Topology.Dictionary(topology),
+        },
+        {
+            "role": "other",
+            "shape": shape_b,
+            "dictionary": None,
+            "root_dictionary": Topology.Dictionary(other_topology),
+        },
+    ]
+    if transfer_dictionary:
+        try:
+            _provenance_transfer_history(
+                result_shape,
+                fuse_history,
+                provenance_sources,
+                root_policy="merge",
+                operation="Union",
+            )
+        except Exception:
+            pass
 
     # ------------------------------------------------------------------
     # Face / Face semantic normalization
@@ -1349,9 +1412,23 @@ def _make_occ_union(
 
                 unified_shape = unifier.Shape()
 
-                if not _is_null_shape(
-                    unified_shape
-                ):
+                if not _is_null_shape(unified_shape):
+                    try:
+                        manager = AttributeManager.GetInstance()
+                        root_dictionary = (
+                            manager.GetDictionary(result_shape)
+                            if manager.HasDictionary(result_shape)
+                            else None
+                        )
+                        _provenance_transfer_history(
+                            unified_shape,
+                            unifier.History(),
+                            [("source", result_shape, root_dictionary)],
+                            root_policy="source",
+                            operation="Union.UnifySameDomain",
+                        )
+                    except Exception:
+                        pass
                     result_shape = unified_shape
 
     except Exception:
@@ -1393,9 +1470,23 @@ def _make_occ_union(
 
             unified_shape = unifier.Shape()
 
-            if not _is_null_shape(
-                unified_shape
-            ):
+            if not _is_null_shape(unified_shape):
+                try:
+                    manager = AttributeManager.GetInstance()
+                    root_dictionary = (
+                        manager.GetDictionary(result_shape)
+                        if manager.HasDictionary(result_shape)
+                        else None
+                    )
+                    _provenance_transfer_history(
+                        unified_shape,
+                        unifier.History(),
+                        [("source", result_shape, root_dictionary)],
+                        root_policy="source",
+                        operation="Union.UnifySameDomain",
+                    )
+                except Exception:
+                    pass
                 result_shape = unified_shape
 
         except Exception:
@@ -1416,13 +1507,14 @@ def _make_occ_union(
     result_dictionary = {}
 
     if transfer_dictionary:
-        result_dictionary = _merge_backend_dictionaries(
-            Topology.Dictionary(
-                topology
-            ),
-            Topology.Dictionary(
-                other_topology
-            ),
+        result_dictionary = _provenance_root_dictionary(
+            provenance_sources,
+            policy="merge",
+        )[0]
+        _provenance_set_root_dictionary(
+            result_shape,
+            provenance_sources,
+            policy="merge",
         )
 
     # ------------------------------------------------------------------
@@ -1475,7 +1567,7 @@ def _make_occ_union(
                     wire_result.Edges() or []
                 ) == len(edges)
             ):
-                wire_result.dictionary = result_dictionary
+                wire_result.SetDictionary(result_dictionary)
 
                 _transfer_contents(
                     topology,
@@ -4450,130 +4542,95 @@ class Topology:
         occt_op_class,
         transferDictionary: bool = False
     ):
-        """
-        Executes a binary OCCT Boolean operation.
+        """Execute Cut/Common with exact OCCT dictionary provenance.
 
-        Parameters
-        ----------
-        otherTopology : Topology
-            The second input topology.
-        occt_op_class : type
-            The OCCT Boolean operation class.
-        transferDictionary : bool , optional
-            If True, dictionaries from the input topologies are transferred to
-            the result. Default is False.
-
-        Returns
-        -------
-        Topology
-            The resulting topology, or None if the Boolean result is empty or
-            the operation fails.
+        # BRepGraph Tranche 3: Topology._binary_boolean
+        Difference is asymmetric: its root dictionary follows ``self``.
+        Common/Intersect merges root dictionaries deterministically with the
+        first source winning conflicting keys.  Subtopology dictionaries follow
+        Modified/Generated BRepTools_History images.
         """
         if occt_op_class is None:
             return None
 
         shape_a = _shape_from_topology(self)
         shape_b = _shape_from_topology(otherTopology)
-
         if _is_null_shape(shape_a) or _is_null_shape(shape_b):
             return None
 
         try:
             op = occt_op_class(shape_a, shape_b)
+            try:
+                op.SetToFillHistory(True)
+            except Exception:
+                pass
             op.Build()
-
             if not op.IsDone():
                 return None
-
             result_shape = op.Shape()
-
+            history = op.History() if transferDictionary else None
         except Exception:
             return None
 
         if _is_null_shape(result_shape):
             return None
 
-        # ------------------------------------------------------------------
-        # OCCT may return a non-null empty Compound. A Boolean result with no
-        # vertices at all is genuinely empty for both Cut and Common.
-        # ------------------------------------------------------------------
-
         if occt_op_class in (BRepAlgoAPI_Cut, BRepAlgoAPI_Common):
             if not _iter_occ_subshapes(result_shape, TopAbs_VERTEX):
                 return None
 
-        # ------------------------------------------------------------------
-        # Difference cleanup
-        #
-        # For Cut, Face-or-higher-dimensional operands can leave only
-        # lower-dimensional fragments at coincident/shared boundaries.
-        # These are not meaningful remnants of the minuend and should be
-        # treated as an empty Difference result.
-        #
-        # IMPORTANT:
-        # Do NOT apply this rule to Common/Intersect. A lower-dimensional
-        # intersection is legitimate:
-        #
-        #     Cell ∩ Cell -> Face / Edge / Vertex
-        #     Face ∩ Face -> Edge / Vertex
-        #
-        # and is required by spatial predicates such as Touches.
-        # ------------------------------------------------------------------
-
         if occt_op_class is BRepAlgoAPI_Cut:
-
             operand_dimension = min(
                 Topology._max_shape_dimension(shape_a),
                 Topology._max_shape_dimension(shape_b),
             )
-
             if operand_dimension >= 2:
-
-                solids = _iter_occ_subshapes(
-                    result_shape,
-                    TopAbs_SOLID
-                )
-
+                solids = _iter_occ_subshapes(result_shape, TopAbs_SOLID)
                 if not solids:
-
-                    faces = _iter_occ_subshapes(
-                        result_shape,
-                        TopAbs_FACE
-                    )
-
+                    faces = _iter_occ_subshapes(result_shape, TopAbs_FACE)
                     if not faces:
                         return None
-
                     if Topology._total_face_area(result_shape) <= 1e-9:
                         return None
 
-        # ------------------------------------------------------------------
-        # Validate/fix only if required.
-        # ------------------------------------------------------------------
+        sources = [
+            {
+                "role": "self",
+                "shape": shape_a,
+                "dictionary": None,
+                "root_dictionary": Topology.GetDictionary(self),
+            },
+            {
+                "role": "tool",
+                "shape": shape_b,
+                "dictionary": None,
+                "root_dictionary": Topology.GetDictionary(otherTopology),
+            },
+        ]
+        root_policy = "self" if occt_op_class is BRepAlgoAPI_Cut else "merge"
 
-        result_shape = _postprocess_boolean_result(
-            result_shape
-        )
+        # Transfer against the raw algorithm result while its history images are
+        # guaranteed to refer to the exact native output entities.
+        if transferDictionary:
+            try:
+                _provenance_transfer_history(
+                    result_shape,
+                    history,
+                    sources,
+                    root_policy=root_policy,
+                    operation=("Difference" if occt_op_class is BRepAlgoAPI_Cut else "Intersect"),
+                )
+            except Exception:
+                pass
 
+        result_shape = _postprocess_boolean_result(result_shape)
         if _is_null_shape(result_shape):
             return None
 
-        # ------------------------------------------------------------------
-        # Dictionaries
-        # ------------------------------------------------------------------
-
-        result_dictionary = {}
-
         if transferDictionary:
-            result_dictionary = _merge_backend_dictionaries(
-                Topology.GetDictionary(self),
-                Topology.GetDictionary(otherTopology)
-            )
+            _provenance_set_root_dictionary(result_shape, sources, policy=root_policy)
 
-        return Topology.ByOcctShape(
-            result_shape,
-            dictionary=result_dictionary
-        )
+        return Topology.ByOcctShape(result_shape)
 
     def Difference(self, otherTopology: Any, transferDictionary: bool = False):
         return self._binary_boolean(otherTopology, BRepAlgoAPI_Cut, transferDictionary)
@@ -4584,6 +4641,7 @@ class Topology:
         transferDictionary: bool = False
     ):
         """
+        # BRepGraph Tranche 3: Topology.Intersect wrapper provenance
         Returns the intersection of this topology and the input topology.
 
         The primary operation uses BRepAlgoAPI_Common. For selected same-type
@@ -4651,9 +4709,14 @@ class Topology:
 
                 if cluster is not None:
                     if transferDictionary:
-                        cluster.dictionary = _merge_backend_dictionaries(
-                            Topology.GetDictionary(self),
-                            Topology.GetDictionary(otherTopology)
+                        cluster.SetDictionary(
+                            _provenance_root_dictionary(
+                                [
+                                    ("self", _shape_from_topology(self), Topology.GetDictionary(self)),
+                                    ("other", _shape_from_topology(otherTopology), Topology.GetDictionary(otherTopology)),
+                                ],
+                                policy="merge",
+                            )[0]
                         )
 
                     return cluster
@@ -4764,9 +4827,14 @@ class Topology:
 
                                     if cluster is not None:
                                         if transferDictionary:
-                                            cluster.dictionary = _merge_backend_dictionaries(
-                                                Topology.GetDictionary(self),
-                                                Topology.GetDictionary(otherTopology)
+                                            cluster.SetDictionary(
+                                                _provenance_root_dictionary(
+                                                    [
+                                                        ("self", _shape_from_topology(self), Topology.GetDictionary(self)),
+                                                        ("other", _shape_from_topology(otherTopology), Topology.GetDictionary(otherTopology)),
+                                                    ],
+                                                    policy="merge",
+                                                )[0]
                                             )
 
                                         return cluster
@@ -4793,9 +4861,14 @@ class Topology:
 
                 if cluster is not None:
                     if transferDictionary:
-                        cluster.dictionary = _merge_backend_dictionaries(
-                            Topology.GetDictionary(self),
-                            Topology.GetDictionary(otherTopology)
+                        cluster.SetDictionary(
+                            _provenance_root_dictionary(
+                                [
+                                    ("self", _shape_from_topology(self), Topology.GetDictionary(self)),
+                                    ("other", _shape_from_topology(otherTopology), Topology.GetDictionary(otherTopology)),
+                                ],
+                                policy="merge",
+                            )[0]
                         )
 
                     return cluster
@@ -4836,9 +4909,14 @@ class Topology:
 
                     if cluster is not None:
                         if transferDictionary:
-                            cluster.dictionary = _merge_backend_dictionaries(
-                                Topology.GetDictionary(self),
-                                Topology.GetDictionary(otherTopology)
+                            cluster.SetDictionary(
+                                _provenance_root_dictionary(
+                                    [
+                                        ("self", _shape_from_topology(self), Topology.GetDictionary(self)),
+                                        ("other", _shape_from_topology(otherTopology), Topology.GetDictionary(otherTopology)),
+                                    ],
+                                    policy="merge",
+                                )[0]
                             )
 
                         return cluster
@@ -4929,10 +5007,13 @@ class Topology:
         # ------------------------------------------------------------------
 
         if transferDictionary:
-            dictionary = _merge_backend_dictionaries(
-                Topology.GetDictionary(self),
-                Topology.GetDictionary(otherTopology)
-            )
+            dictionary = _provenance_root_dictionary(
+                [
+                    ("self", _shape_from_topology(self), Topology.GetDictionary(self)),
+                    ("other", _shape_from_topology(otherTopology), Topology.GetDictionary(otherTopology)),
+                ],
+                policy="merge",
+            )[0]
 
             try:
                 section_result = Topology.SetDictionary(
@@ -5136,25 +5217,25 @@ class Topology:
         return self._partition_by(otherTopology, transferDictionary)
 
     def _split_by_tool(self, otherTopology: Any, transferDictionary: bool = False):
-        """
-        Split self by otherTopology keeping only self's fragments (Slice/Imprint semantics)
-        via BOPAlgo_Splitter(Arguments=[self], Tools=[other]). Verified exact vs core
-        subtopology counts; the manual CellsBuilder+centroid path over-included fragments.
+        """Split self by a tool while keeping self's fragments.
+
+        # BRepGraph Tranche 3: Topology._split_by_tool
+        The result root follows self; exact Modified/Generated lineage from the
+        Splitter transfers dictionaries to surviving and newly-created
+        subtopologies, including tool-derived interface Faces.
         """
         if BOPAlgo_Splitter is None:
             return None
-        # Use _collect_boolean_operand_shapes, not a bare _shape_from_topology
-        # lookup: aggregate wrappers (Cluster of cutting faces, CellComplex
-        # with no single unified .shape) have no top-level .shape at all, so
-        # a naive lookup would report them as null and abort. This matches
-        # CellComplex.Prism's internal Topology.Slice(cell, Cluster.ByTopologies(
-        # cutting faces)) call, which fed a Cluster tool with .shape=None.
         shapes_a = _collect_boolean_operand_shapes(self)
         shapes_b = _collect_boolean_operand_shapes(otherTopology)
         if not shapes_a or not shapes_b:
             return None
         try:
             splitter = BOPAlgo_Splitter()
+            try:
+                splitter.SetToFillHistory(True)
+            except Exception:
+                pass
             for shape in shapes_a:
                 splitter.AddArgument(shape)
             for shape in shapes_b:
@@ -5164,19 +5245,45 @@ class Topology:
             if hasattr(splitter, "HasErrors") and splitter.HasErrors():
                 return None
             result_shape = splitter.Shape()
+            history = splitter.History() if transferDictionary else None
         except Exception:
             return None
         if _is_null_shape(result_shape):
             return None
+
+        source_shape_a = shapes_a[0] if len(shapes_a) == 1 else _compound_of_shapes(shapes_a)
+        source_shape_b = shapes_b[0] if len(shapes_b) == 1 else _compound_of_shapes(shapes_b)
+        sources = [
+            {
+                "role": "self",
+                "shape": source_shape_a,
+                "dictionary": None,
+                "root_dictionary": Topology.GetDictionary(self),
+            },
+            {
+                "role": "tool",
+                "shape": source_shape_b,
+                "dictionary": None,
+                "root_dictionary": Topology.GetDictionary(otherTopology),
+            },
+        ]
+        if transferDictionary:
+            try:
+                _provenance_transfer_history(
+                    result_shape,
+                    history,
+                    sources,
+                    root_policy="self",
+                    operation="Slice",
+                )
+            except Exception:
+                pass
+
         result_shape = _postprocess_boolean_result(result_shape)
         result_shape = _promote_to_compsolid_if_multi_solid(result_shape, force=True)
-
-        result_dictionary = {}
         if transferDictionary:
-            result_dictionary = _merge_backend_dictionaries(
-                Topology.GetDictionary(self), Topology.GetDictionary(otherTopology)
-            )
-        return Topology.ByOcctShape(result_shape, dictionary=result_dictionary)
+            _provenance_set_root_dictionary(result_shape, sources, policy="self")
+        return Topology.ByOcctShape(result_shape)
 
     def Slice(self, otherTopology: Any, transferDictionary: bool = False):
         return self._split_by_tool(otherTopology, transferDictionary)
@@ -5223,12 +5330,11 @@ class Topology:
         return [shape]
 
     def Impose(self, otherTopology: Any, transferDictionary: bool = False):
-        """
-        Port of topologic_core Topology::Impose: CellsBuilder over both operands; one
-        AddToResult per self-operand shape keeping its exclusive material, then per tool
-        shape keeping ALL its fragments tagged with a distinct material index (so
-        MakeContainers remerges a tool's own fragments but not different tools). Verified
-        count-parity against real topologic_core across all topology types.
+        """Impose otherTopology while preserving exact dictionary provenance.
+
+        # BRepGraph Tranche 3: Topology.Impose
+        CellsBuilder history supplies source-to-fragment lineage; the result
+        root uses deterministic first-source-wins merging.
         """
         if BOPAlgo_CellsBuilder is None:
             return None
@@ -5238,6 +5344,10 @@ class Topology:
             return None
         try:
             builder = BOPAlgo_CellsBuilder()
+            try:
+                builder.SetToFillHistory(True)
+            except Exception:
+                pass
             args = TopTools_ListOfShape()
             for shape in shapes_a + shapes_b:
                 args.Append(shape)
@@ -5262,18 +5372,44 @@ class Topology:
 
             builder.MakeContainers()
             result_shape = builder.Shape()
+            history = builder.History() if transferDictionary else None
         except Exception:
             return None
         if _is_null_shape(result_shape):
             return None
-        result_shape = _postprocess_boolean_result(result_shape)
 
-        result_dictionary = {}
+        source_shape_a = shapes_a[0] if len(shapes_a) == 1 else _compound_of_shapes(shapes_a)
+        source_shape_b = shapes_b[0] if len(shapes_b) == 1 else _compound_of_shapes(shapes_b)
+        sources = [
+            {
+                "role": "self",
+                "shape": source_shape_a,
+                "dictionary": None,
+                "root_dictionary": Topology.GetDictionary(self),
+            },
+            {
+                "role": "other",
+                "shape": source_shape_b,
+                "dictionary": None,
+                "root_dictionary": Topology.GetDictionary(otherTopology),
+            },
+        ]
         if transferDictionary:
-            result_dictionary = _merge_backend_dictionaries(
-                Topology.GetDictionary(self), Topology.GetDictionary(otherTopology)
-            )
-        return Topology.ByOcctShape(result_shape, dictionary=result_dictionary)
+            try:
+                _provenance_transfer_history(
+                    result_shape,
+                    history,
+                    sources,
+                    root_policy="merge",
+                    operation="Impose",
+                )
+            except Exception:
+                pass
+
+        result_shape = _postprocess_boolean_result(result_shape)
+        if transferDictionary:
+            _provenance_set_root_dictionary(result_shape, sources, policy="merge")
+        return Topology.ByOcctShape(result_shape)
 
     def Imprint(self, otherTopology: Any, transferDictionary: bool = False):
         return self._split_by_tool(otherTopology, transferDictionary)
@@ -5283,8 +5419,9 @@ class Topology:
     # -------------------------------------------------------------------
 
     @staticmethod
-    def _apply_transform_to_members(topology: Any, apply_one) -> Any:
+    def _apply_transform_to_members(topology: Any, apply_one, transfer_dictionaries: bool = True) -> Any:
         """
+        # BRepGraph Tranche 3: Topology._apply_transform_to_members root persistence
         Applies a transformation recursively to the direct members of an
         aggregate topology and rebuilds the same aggregate type.
 
@@ -5425,12 +5562,11 @@ class Topology:
             # Preserve aggregate metadata.
             # --------------------------------------------------------------
 
-            try:
-                result.dictionary = Topology.GetDictionary(
-                    topology
-                )
-            except Exception:
-                pass
+            if transfer_dictionaries:
+                try:
+                    result.SetDictionary(Topology.GetDictionary(topology))
+                except Exception:
+                    pass
 
             try:
                 result.contents = list(
@@ -5548,12 +5684,11 @@ class Topology:
             if result is None:
                 return None
 
-            try:
-                result.dictionary = Topology.GetDictionary(
-                    topology
-                )
-            except Exception:
-                pass
+            if transfer_dictionaries:
+                try:
+                    result.SetDictionary(Topology.GetDictionary(topology))
+                except Exception:
+                    pass
 
             try:
                 result.contents = list(
@@ -5635,117 +5770,51 @@ class Topology:
         gtrsf,
         dictionary_passthrough: bool = True
     ):
+        """Apply a general affine transform with exact subtopology lineage.
+
+        # BRepGraph Tranche 3: Topology._apply_gtrsf
+        ``ModifiedShape`` maps root/subtopology dictionaries to their exact
+        transformed counterparts; no centroid/selector matching is used.
         """
-        Applies a gp_GTrsf general affine transformation to the topology.
-
-        Heterogeneous Clusters are transformed constituent-by-constituent so
-        that their direct topology hierarchy is preserved. Other topologies are
-        transformed natively as a single OCCT shape whenever possible.
-
-        Parameters
-        ----------
-        gtrsf : OCC.Core.gp.gp_GTrsf
-            The general affine transformation.
-        dictionary_passthrough : bool , optional
-            If set to True, the topology dictionary is preserved.
-            Default is True.
-
-        Returns
-        -------
-        Topology
-            The transformed topology, or None if the transformation fails.
-        """
-
-        # ------------------------------------------------------------------
-        # Heterogeneous Cluster
-        #
-        # Do not transform the complete mixed-dimensional Compound in one
-        # BRepBuilderAPI_GTransform operation. Doing so can alter intermediate
-        # containers such as the Shell inside a Cell.
-        #
-        # Transform the direct constituent topologies independently and rebuild
-        # the Cluster instead.
-        # ------------------------------------------------------------------
-
-        if _topology_type_name(
-            self
-        ) == "Cluster":
-
+        if _topology_type_name(self) == "Cluster":
             return Topology._apply_transform_to_members(
                 self,
-                lambda member: Topology._apply_gtrsf(
-                    member,
-                    gtrsf,
-                    dictionary_passthrough
-                )
+                lambda member: Topology._apply_gtrsf(member, gtrsf, dictionary_passthrough),
+                transfer_dictionaries=dictionary_passthrough,
             )
 
-        # ------------------------------------------------------------------
-        # Native OCCT affine transformation
-        # ------------------------------------------------------------------
-
-        shape = _shape_from_topology(
-            self
-        )
-
-        if (
-            not _is_null_shape(shape)
-            and BRepBuilderAPI_GTransform is not None
-        ):
-
+        shape = _shape_from_topology(self)
+        if not _is_null_shape(shape) and BRepBuilderAPI_GTransform is not None:
             try:
-                maker = BRepBuilderAPI_GTransform(
-                    shape,
-                    gtrsf,
-                    True
-                )
-
+                maker = BRepBuilderAPI_GTransform(shape, gtrsf, True)
                 if maker.IsDone():
-
                     new_shape = maker.Shape()
-
-                    if not _is_null_shape(
-                        new_shape
-                    ):
-
-                        result = Topology.ByOcctShape(
-                            new_shape
-                        )
-
+                    if not _is_null_shape(new_shape):
+                        if dictionary_passthrough:
+                            try:
+                                _provenance_transfer_modifier(
+                                    shape,
+                                    new_shape,
+                                    maker,
+                                    root_dictionary=Topology.GetDictionary(self),
+                                    operation="GTransform",
+                                )
+                            except Exception:
+                                pass
+                        result = Topology.ByOcctShape(new_shape)
                         if result is not None:
-
-                            if dictionary_passthrough:
-                                try:
-                                    result.dictionary = Topology.GetDictionary(
-                                        self
-                                    )
-                                except Exception:
-                                    pass
-
-                            result = Topology._rewrap_preserving_wrapper(
-                                result,
-                                self
-                            )
-
+                            result = Topology._rewrap_preserving_wrapper(result, self)
                             return result
-
             except Exception:
                 pass
 
-        # ------------------------------------------------------------------
-        # Aggregate fallback
-        # ------------------------------------------------------------------
-
         return Topology._apply_transform_to_members(
             self,
-            lambda member: Topology._apply_gtrsf(
-                member,
-                gtrsf,
-                dictionary_passthrough
-            )
+            lambda member: Topology._apply_gtrsf(member, gtrsf, dictionary_passthrough),
+            transfer_dictionaries=dictionary_passthrough,
         )
 
-    def Translate(self, x: float, y: float, z: float):
+    def Translate(self, x: float, y: float, z: float, transferDictionaries: bool = True):
         if self is None:
             return None
         try:
@@ -5753,40 +5822,63 @@ class Topology:
             trsf.SetTranslation(gp_Vec(float(x), float(y), float(z)))
         except Exception:
             return None
-        return Topology._apply_rigid(self, trsf)
+        return Topology._apply_rigid(self, trsf, bool(transferDictionaries))
 
-    def Rotate(self, origin: Any, x: float, y: float, z: float, angle: float):
+    def Rotate(
+        self,
+        origin: Any,
+        x: float,
+        y: float,
+        z: float,
+        angle: float,
+        transferDictionaries: bool = True,
+    ):
         if self is None:
             return None
         try:
             ox, oy, oz = origin.x, origin.y, origin.z
-            axis = gp_Ax1(gp_Pnt(float(ox), float(oy), float(oz)), gp_Dir(float(x), float(y), float(z)))
+            axis = gp_Ax1(
+                gp_Pnt(float(ox), float(oy), float(oz)),
+                gp_Dir(float(x), float(y), float(z)),
+            )
             trsf = gp_Trsf()
             trsf.SetRotation(axis, math.radians(float(angle)))
         except Exception:
             return None
-        return Topology._apply_rigid(self, trsf)
+        return Topology._apply_rigid(self, trsf, bool(transferDictionaries))
 
-    def Scale(self, origin: Any, x: float, y: float, z: float):
+    def Scale(
+        self,
+        origin: Any,
+        x: float,
+        y: float,
+        z: float,
+        transferDictionaries: bool = True,
+    ):
         if self is None:
             return None
         try:
             ox, oy, oz = origin.x, origin.y, origin.z
             gtrsf = gp_GTrsf()
-            mat = gp_Mat(float(x), 0.0, 0.0, 0.0, float(y), 0.0, 0.0, 0.0, float(z))
+            mat = gp_Mat(
+                float(x), 0.0, 0.0,
+                0.0, float(y), 0.0,
+                0.0, 0.0, float(z),
+            )
             gtrsf.SetVectorialPart(mat)
-            gtrsf.SetTranslationPart(gp_XYZ(
-                ox - float(x) * ox, oy - float(y) * oy, oz - float(z) * oz
-            ))
+            gtrsf.SetTranslationPart(
+                gp_XYZ(
+                    ox - float(x) * ox,
+                    oy - float(y) * oy,
+                    oz - float(z) * oz,
+                )
+            )
         except Exception:
             return None
-        return Topology._apply_gtrsf(self, gtrsf)
+        return Topology._apply_gtrsf(self, gtrsf, bool(transferDictionaries))
 
-    def Transform(self, *args):
-        """
-        Accepts either a single 4x4 (row-major) matrix, a flat 16-value list,
-        or 12 scalar args (tx, ty, tz, r11..r33) as used by EnergyModel.py.
-        """
+    def Transform(self, *args, transferDictionaries: bool = True):
+        """Apply a 4x4/12-scalar affine transform with optional exact metadata lineage."""
         if self is None:
             return None
         try:
@@ -5806,117 +5898,61 @@ class Topology:
                 return None
 
             gtrsf = gp_GTrsf()
-            mat = gp_Mat(float(a00), float(a01), float(a02),
-                         float(a10), float(a11), float(a12),
-                         float(a20), float(a21), float(a22))
+            mat = gp_Mat(
+                float(a00), float(a01), float(a02),
+                float(a10), float(a11), float(a12),
+                float(a20), float(a21), float(a22),
+            )
             gtrsf.SetVectorialPart(mat)
             gtrsf.SetTranslationPart(gp_XYZ(float(tx), float(ty), float(tz)))
         except Exception:
             return None
-        return Topology._apply_gtrsf(self, gtrsf)
+        return Topology._apply_gtrsf(self, gtrsf, bool(transferDictionaries))
 
     @staticmethod
-    def _apply_rigid(
-        topology: Any,
-        trsf
-    ) -> Any:
+    def _apply_rigid(topology: Any, trsf, transfer_dictionaries: bool = True) -> Any:
+        """Apply a rigid transform with exact subtopology dictionary lineage.
+
+        # BRepGraph Tranche 3: Topology._apply_rigid
+        BRepBuilderAPI_Transform.ModifiedShape supplies exact one-to-one
+        correspondence for root and native subtopologies.
         """
-        Applies a gp_Trsf rigid transformation and rebuilds the topology.
-
-        Heterogeneous Clusters are transformed constituent-by-constituent so
-        that their direct topology hierarchy is preserved. Other topologies are
-        transformed natively as a single OCCT shape whenever possible.
-
-        Parameters
-        ----------
-        topology : Topology
-            The input topology.
-        trsf : OCC.Core.gp.gp_Trsf
-            The rigid transformation.
-
-        Returns
-        -------
-        Topology
-            The transformed topology, or None if the transformation fails.
-        """
-
-        # ------------------------------------------------------------------
-        # Heterogeneous Cluster
-        # ------------------------------------------------------------------
-
-        if _topology_type_name(
-            topology
-        ) == "Cluster":
-
+        if _topology_type_name(topology) == "Cluster":
             return Topology._apply_transform_to_members(
                 topology,
-                lambda member: Topology._apply_rigid(
-                    member,
-                    trsf
-                )
+                lambda member: Topology._apply_rigid(member, trsf, transfer_dictionaries),
+                transfer_dictionaries=transfer_dictionaries,
             )
 
-        # ------------------------------------------------------------------
-        # Native OCCT rigid transformation
-        # ------------------------------------------------------------------
-
-        shape = _shape_from_topology(
-            topology
-        )
-
-        if (
-            not _is_null_shape(shape)
-            and BRepBuilderAPI_Transform is not None
-        ):
-
+        shape = _shape_from_topology(topology)
+        if not _is_null_shape(shape) and BRepBuilderAPI_Transform is not None:
             try:
-                maker = BRepBuilderAPI_Transform(
-                    shape,
-                    trsf,
-                    True
-                )
-
+                maker = BRepBuilderAPI_Transform(shape, trsf, True)
                 if maker.IsDone():
-
                     new_shape = maker.Shape()
-
-                    if not _is_null_shape(
-                        new_shape
-                    ):
-
-                        result = Topology.ByOcctShape(
-                            new_shape
-                        )
-
-                        if result is not None:
-
+                    if not _is_null_shape(new_shape):
+                        if transfer_dictionaries:
                             try:
-                                result.dictionary = Topology.GetDictionary(
-                                    topology
+                                _provenance_transfer_modifier(
+                                    shape,
+                                    new_shape,
+                                    maker,
+                                    root_dictionary=Topology.GetDictionary(topology),
+                                    operation="Transform",
                                 )
                             except Exception:
                                 pass
-
-                            result = Topology._rewrap_preserving_wrapper(
-                                result,
-                                topology
-                            )
-
+                        result = Topology.ByOcctShape(new_shape)
+                        if result is not None:
+                            result = Topology._rewrap_preserving_wrapper(result, topology)
                             return result
-
             except Exception:
                 pass
 
-        # ------------------------------------------------------------------
-        # Aggregate fallback
-        # ------------------------------------------------------------------
-
         return Topology._apply_transform_to_members(
             topology,
-            lambda member: Topology._apply_rigid(
-                member,
-                trsf
-            )
+            lambda member: Topology._apply_rigid(member, trsf, transfer_dictionaries),
+            transfer_dictionaries=transfer_dictionaries,
         )
 
     # -------------------------------------------------------------------
@@ -6228,10 +6264,11 @@ class Topology:
         # Preserve the parent dictionary independently.
         # ------------------------------------------------------------------
 
+        # BRepGraph Tranche 3: Topology.Copy root persistence
         try:
-            result.dictionary = copy.deepcopy(
-                Topology.GetDictionary(
-                    self
+            result.SetDictionary(
+                copy.deepcopy(
+                    Topology.GetDictionary(self)
                 )
             )
         except Exception:

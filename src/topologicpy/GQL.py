@@ -150,7 +150,7 @@ class GQL:
             return GQL._record_dictionary(dictionary) if isinstance(dictionary.get("dictionary", None), dict) else dict(dictionary)
         try:
             from topologicpy.Dictionary import Dictionary
-            return dict(Dictionary.PythonDictionary(dictionary) or {})
+            return dict(Dictionary.PythonDictionary(dictionary, silent=True) or {})
         except Exception:
             return {}
 

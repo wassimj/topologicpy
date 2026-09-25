@@ -171,7 +171,7 @@ jobs:
         run: pytest
 
   test-pythonocc:
-    name: Test PythonOCC 7.9.3 with Python ${{ matrix.python-version }} on ${{ startsWith(matrix.os, 'macos-') && 'macOS' || startsWith(matrix.os, 'windows-') && 'Windows' || 'Linux' }}
+    name: Test PythonOCC 8.0.1 with Python ${{ matrix.python-version }} on ${{ startsWith(matrix.os, 'macos-') && 'macOS' || startsWith(matrix.os, 'windows-') && 'Windows' || 'Linux' }}
     runs-on: ${{ matrix.os }}
     needs:
       - prepare-build-info
@@ -185,28 +185,37 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
     steps:
       - uses: actions/checkout@v6
-      - name: Create PythonOCC environment
+
+      - name: Create PythonOCC 8 environment
         uses: mamba-org/setup-micromamba@v3
         with:
-          environment-name: topologicpy-occ
+          environment-name: topologicpy-occ8
           create-args: >-
             python=${{ matrix.python-version }}
-            pythonocc-core=7.9.3
+            pythonocc-core=8.0.1
             pip
           cache-environment: true
           cache-downloads: true
+
       - name: Set version from git tag/readable name (${{ needs.prepare-build-info.outputs.anyversion }})
         run: echo "__version__ = '${{ needs.prepare-build-info.outputs.anyversion }}'" > src/topologicpy/version.py
+
       - name: Install TopologicPy and test dependencies
         run: |
-          micromamba run -n topologicpy-occ python -m pip install --upgrade pip
-          micromamba run -n topologicpy-occ python -m pip install -e '.[test]'
-      - name: Verify PythonOCC backend
+          micromamba run -n topologicpy-occ8 python -m pip install --upgrade pip
+          micromamba run -n topologicpy-occ8 python -m pip install -e '.[test]'
+
+      - name: Verify PythonOCC 8 backend and BRepGraph
         run: |
-          micromamba run -n topologicpy-occ python -c "from topologicpy.Core import Core; backend = Core.Backend(); print('Active backend:', backend.__class__.__name__); assert backend.__class__.__name__ == 'PythonOCCBackend'"
-          micromamba run -n topologicpy-occ python -c "import OCC; print('pythonocc/OCC import: OK')"
-      - name: Run full test suite with PythonOCC
-        run: micromamba run -n topologicpy-occ pytest
+          micromamba run -n topologicpy-occ8 python -c "import OCC; print('PythonOCC version:', OCC.VERSION); assert str(OCC.VERSION).startswith('8.'), f'Expected PythonOCC 8.x, got {OCC.VERSION}'"
+          micromamba run -n topologicpy-occ8 python -c "from OCC.Core.BRepGraph import brepgraph; print('BRepGraph import: OK')"
+          micromamba run -n topologicpy-occ8 python -c "from topologicpy.Core import Core; backend = Core.Backend(); print('Active backend:', backend.__class__.__name__); assert backend.__class__.__name__ == 'PythonOCCBackend'"
+
+      - name: Show resolved PythonOCC package
+        run: micromamba list -n topologicpy-occ8 pythonocc-core
+
+      - name: Run full test suite with PythonOCC 8
+        run: micromamba run -n topologicpy-occ8 pytest
 
   publish-pypi-release:
     runs-on: ubuntu-latest

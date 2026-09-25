@@ -376,6 +376,13 @@ class Topology():
 
         topologyC = None
 
+        # BRepGraph Tranche 3 Fix 2: native Boolean provenance dispatch
+        # PythonOCC owns exact dictionary lineage through OCCT history.
+        # TopologicCore retains the historical geometric-transfer fallback.
+        native_tran_dict = bool(
+            tranDict and not Topology._IsTopologicCoreBackend()
+        )
+
         # --------------------------------------------------------------
         # Union
         # --------------------------------------------------------------
@@ -385,7 +392,7 @@ class Topology():
                 topologyA,
                 "Union",
                 topologyB,
-                False
+                native_tran_dict
             )
 
             # Only TopologicCore is permitted to substitute a reconstructed
@@ -416,7 +423,7 @@ class Topology():
                     topologyA,
                     "Difference",
                     topologyB,
-                    False
+                    native_tran_dict
                 )
 
         # --------------------------------------------------------------
@@ -445,7 +452,7 @@ class Topology():
                     topologyA,
                     "Intersect",
                     topologyB,
-                    False
+                    native_tran_dict
                 )
 
         # --------------------------------------------------------------
@@ -467,7 +474,7 @@ class Topology():
                     topologyA,
                     "XOR",
                     topologyB,
-                    False
+                    native_tran_dict
                 )
 
         # --------------------------------------------------------------
@@ -483,7 +490,7 @@ class Topology():
                     topologyA,
                     "Merge",
                     topologyB,
-                    False
+                    native_tran_dict
                 )
 
         # --------------------------------------------------------------
@@ -499,7 +506,7 @@ class Topology():
                     topologyA,
                     "Slice",
                     topologyB,
-                    False
+                    native_tran_dict
                 )
 
         # --------------------------------------------------------------
@@ -515,7 +522,7 @@ class Topology():
                     topologyA,
                     "Impose",
                     topologyB,
-                    False
+                    native_tran_dict
                 )
 
         # --------------------------------------------------------------
@@ -531,16 +538,20 @@ class Topology():
                     topologyA,
                     "Imprint",
                     topologyB,
-                    False
+                    native_tran_dict
                 )
 
         # --------------------------------------------------------------
         # Dictionary transfer
         # --------------------------------------------------------------
 
-        if tranDict is True and Topology.IsInstance(
-            topologyC,
-            "Topology"
+        if (
+            tranDict is True
+            and Topology._IsTopologicCoreBackend()
+            and Topology.IsInstance(
+                topologyC,
+                "Topology"
+            )
         ):
             sourceVertices = []
             sourceEdges = []
@@ -20946,6 +20957,20 @@ class Topology():
         if abs(angle) < angTolerance:
             return topology
 
+        # BRepGraph Tranche 3: public Topology.Rotate
+        # PythonOCC receives the transfer flag and performs exact provenance.
+        if not Topology._IsTopologicCoreBackend():
+            try:
+                return_topology = Core.TopologyUtility.Rotate(
+                    topology, origin, x, y, z, angle, transferDictionaries
+                )
+            except Exception as error:
+                if not silent:
+                    print("Topology.Rotate - Error: PythonOCC rotate failed. Returning None.")
+                    print("Error:", error)
+                return None
+            return return_topology if Topology.IsInstance(return_topology, "Topology") else None
+
         # Exact backend rotation.
         try:
             return_topology = Core.TopologyUtility.Rotate(
@@ -21308,6 +21333,19 @@ class Topology():
         if abs(z) <= 0.00001:
             if not silent:
                 print("Topology.Scale - Warning: the z input parameter is close to 0. This can cause an malformed geometric result.")
+        # BRepGraph Tranche 3: public Topology.Scale
+        # PythonOCC receives the transfer flag and performs exact provenance.
+        if not Topology._IsTopologicCoreBackend():
+            try:
+                result = Core.TopologyUtility.Scale(
+                    topology, origin, x, y, z, transferDictionaries
+                )
+            except Exception:
+                if not silent:
+                    print("Topology.Scale - Error: PythonOCC scale failed. Returning None.")
+                return None
+            return result if Topology.IsInstance(result, "Topology") else None
+
         return_topology = None
         try:
             return_topology = Core.TopologyUtility.Scale(topology, origin, x, y, z)
@@ -26682,6 +26720,38 @@ class Topology():
         # reconstruction fallbacks.
         # ------------------------------------------------------------------
 
+        # BRepGraph Tranche 3: public Topology.Transform
+        # PythonOCC handles exact provenance and receives transferDictionaries
+        # explicitly so False remains genuinely False.
+        if not Topology._IsTopologicCoreBackend():
+            transformed = None
+            if Core.HasAttribute("TopologyUtility", "Transform"):
+                try:
+                    transformed = Core.TopologyUtility.Transform(
+                        topology,
+                        tx, ty, tz,
+                        a00, a01, a02,
+                        a10, a11, a12,
+                        a20, a21, a22,
+                        transferDictionaries=transferDictionaries,
+                    )
+                except Exception:
+                    transformed = None
+                if not Topology.IsInstance(transformed, "Topology"):
+                    try:
+                        transformed = Core.TopologyUtility.Transform(
+                            topology,
+                            m,
+                            transferDictionaries=transferDictionaries,
+                        )
+                    except Exception:
+                        transformed = None
+            if Topology.IsInstance(transformed, "Topology"):
+                return transformed
+            if not silent:
+                print("Topology.Transform - Error: PythonOCC affine transformation failed. Returning None.")
+            return None
+
         transformed = None
 
         if Core.HasAttribute("TopologyUtility", "Transform"):
@@ -27309,6 +27379,20 @@ class Topology():
                     "is not a valid topology. Returning None."
                 )
             return None
+
+        # BRepGraph Tranche 3: public Topology.Translate
+        # PythonOCC performs exact ModifiedShape provenance internally.
+        if not Topology._IsTopologicCoreBackend():
+            try:
+                result = Core.TopologyUtility.Translate(
+                    topology, x, y, z, transferDictionaries
+                )
+            except Exception as error:
+                if not silent:
+                    print("Topology.Translate - Error: PythonOCC translate failed. Returning None.")
+                    print("Error:", error)
+                return None
+            return result if Topology.IsInstance(result, "Topology") else None
 
         source_dictionary = None
 

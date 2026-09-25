@@ -72,7 +72,7 @@ class CSG():
             from topologicpy.Topology import Topology
             from topologicpy.Dictionary import Dictionary
             d = Topology.Dictionary(obj)
-            pd = Dictionary.PythonDictionary(d)
+            pd = Dictionary.PythonDictionary(d, silent=True)
             return dict(pd or {})
         except Exception:
             return {}

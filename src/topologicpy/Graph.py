@@ -19939,7 +19939,19 @@ class Graph:
         return True
 
     @staticmethod
-    def JSONLDData(graph, context=None, verticesKey="nodes", edgesKey="edges", labelKey="label", sourceKey="source", targetKey="target", categoryKey="category", xKey="x", yKey="y", zKey="z", mantissa=6):
+    def JSONLDData(graph,
+                   context: dict = None,
+                   verticesKey: str = "nodes",
+                   edgesKey: str = "edges",
+                   labelKey: str = "label",
+                   sourceKey: str = "source",
+                   targetKey: str = "target",
+                   categoryKey: str = "category",
+                   xKey: str = "x",
+                   yKey: str = "y",
+                   zKey: str = "z",
+                   mantissa: int = 6,
+                   silent: bool = False):
         """
         Exports the Graph to a JSON-LD representation.
 
@@ -19969,6 +19981,8 @@ class Graph:
             The desired key name to use for z-coordinates. Default is "z".
         mantissa : int , optional
             The number of decimal places to round the result to. Default is 6.
+        silent : bool , optional
+            If set to True, no error or warning messages are printed. Default is False.
         
         Returns
         -------
@@ -19996,7 +20010,7 @@ class Graph:
         
         # Helper: Serialize a Vertex
         def serialize_vertex(vertex):
-            props = Dictionary.PythonDictionary(Topology.Dictionary(vertex))
+            props = Dictionary.PythonDictionary(Topology.Dictionary(vertex), silent=silent)
             coords = Vertex.Coordinates(vertex, mantissa=mantissa)
             props.update({
                 "@type": "Vertex",
