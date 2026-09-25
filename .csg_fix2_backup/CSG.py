@@ -93,14 +93,8 @@ class CSG:
         "transform": "transform",
     }
 
-    # Every Boolean node in the expression TGraph is deliberately binary.
-    # Public helpers such as Union(*inputs) expand n-ary requests into explicit
-    # reduction trees so the graph represents the real evaluation stages.
-    _NARY = set()
-    _BINARY = {
-        "union", "intersection", "difference", "xor", "merge",
-        "impose", "imprint", "slice",
-    }
+    _NARY = {"union", "intersection", "xor", "merge"}
+    _BINARY = {"difference", "impose", "imprint", "slice"}
     _UNARY = {"transform"}
 
     # ------------------------------------------------------------------
@@ -237,126 +231,12 @@ class CSG:
         return node
 
     @staticmethod
-    def _reduce_operation(
-        graph,
-        operation: str,
-        inputs: Sequence[Any],
-        *,
-        balanced: bool,
-        name: Optional[str] = None,
-        matrix: Optional[Sequence[Sequence[float]]] = None,
-        data: Optional[dict] = None,
-        silent: bool = False,
-    ) -> Optional[int]:
-        """Expand an n-ary request into explicit binary TGraph operations.
-
-        Associative operations use a deterministic balanced reduction. A
-        change to one leaf therefore invalidates only O(log n) Boolean nodes
-        instead of forcing a complete left-fold recomputation. Operations for
-        which grouping may affect partition semantics use an ordered left
-        chain instead.
-
-        ``name``, ``matrix`` and user ``data`` belong only to the returned root
-        node. Intermediate nodes are ordinary operation vertices: TGraph remains
-        the complete expression model and there is no hidden evaluation graph.
-        """
-        indices = [CSG._node_index(item) for item in (inputs or [])]
-        if len(indices) < 2 or any(index is None for index in indices):
-            if not silent:
-                print(
-                    f"CSG.{operation.title()} - Error: at least two valid input "
-                    "nodes are required. Returning None."
-                )
-            return None
-
-        root_matrix = None
-        if matrix is not None:
-            root_matrix = CSG._matrix(matrix)
-            if root_matrix is None:
-                if not silent:
-                    print(
-                        "CSG.Operation - Error: matrix is not a valid 4x4 "
-                        "matrix. Returning None."
-                    )
-                return None
-
-        if len(indices) == 2:
-            return CSG.Operation(
-                graph,
-                operation,
-                indices,
-                name=name,
-                matrix=root_matrix,
-                data=data,
-                silent=silent,
-            )
-
-        created = []
-
-        def make_pair(left: int, right: int, is_final: bool) -> Optional[int]:
-            node = CSG.Operation(
-                graph,
-                operation,
-                [left, right],
-                name=name if is_final else None,
-                matrix=root_matrix if is_final else None,
-                data=data if is_final else None,
-                silent=silent,
-            )
-            if node is not None:
-                created.append(node)
-            return node
-
-        def rollback() -> None:
-            for node in reversed(created):
-                try:
-                    graph.RemoveVertex(node, silent=True)
-                except Exception:
-                    pass
-            CSG._invalidate_plan(graph)
-
-        if balanced:
-            current = list(indices)
-            while len(current) > 1:
-                next_level = []
-                i = 0
-                while i < len(current):
-                    if i + 1 >= len(current):
-                        # Deterministically promote an unmatched operand to the
-                        # next reduction level without fabricating an identity op.
-                        next_level.append(current[i])
-                        i += 1
-                        continue
-
-                    is_final = len(current) == 2
-                    node = make_pair(current[i], current[i + 1], is_final)
-                    if node is None:
-                        rollback()
-                        return None
-                    next_level.append(node)
-                    i += 2
-                current = next_level
-            return current[0]
-
-        # Merge uses a deterministic ordered left reduction. It remains
-        # convenient to call with many operands, but no associativity assumption
-        # is made about interface/partition-preserving results.
-        root = indices[0]
-        for i, right in enumerate(indices[1:], start=1):
-            is_final = i == len(indices) - 1
-            root = make_pair(root, right, is_final)
-            if root is None:
-                rollback()
-                return None
-        return root
-
-    @staticmethod
     def Union(graph, *inputs, **kwargs):
-        return CSG._reduce_operation(graph, "union", inputs, balanced=True, **kwargs)
+        return CSG.Operation(graph, "union", inputs, **kwargs)
 
     @staticmethod
     def Intersect(graph, *inputs, **kwargs):
-        return CSG._reduce_operation(graph, "intersection", inputs, balanced=True, **kwargs)
+        return CSG.Operation(graph, "intersection", inputs, **kwargs)
 
     @staticmethod
     def Difference(graph, a, b, **kwargs):
@@ -364,11 +244,11 @@ class CSG:
 
     @staticmethod
     def XOR(graph, *inputs, **kwargs):
-        return CSG._reduce_operation(graph, "xor", inputs, balanced=True, **kwargs)
+        return CSG.Operation(graph, "xor", inputs, **kwargs)
 
     @staticmethod
     def Merge(graph, *inputs, **kwargs):
-        return CSG._reduce_operation(graph, "merge", inputs, balanced=False, **kwargs)
+        return CSG.Operation(graph, "merge", inputs, **kwargs)
 
     @staticmethod
     def Impose(graph, a, b, **kwargs):
@@ -1282,18 +1162,24 @@ class CSG:
         if not callable(fn):
             return None
 
+        # Public TopologicPy Boolean contract.
         try:
             return fn(a, b, tranDict=True, silent=silent)
         except TypeError:
             pass
+
+        # Direct/backend compatibility fallbacks. Keep these after tranDict so
+        # a public call cannot silently bypass exact provenance/history capture.
         try:
             return fn(a, b, transferDictionary=True, silent=silent)
         except TypeError:
             pass
+
         try:
             return fn(a, b, transferDictionaries=True, silent=silent)
         except TypeError:
             pass
+
         try:
             return fn(a, b, silent=silent)
         except TypeError:

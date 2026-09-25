@@ -634,6 +634,17 @@ def transfer_by_history(
         return report
 
     sources = _normalize_sources(sources)
+
+    # CSG exact-lineage capture: history
+    # This hook is inactive for ordinary TopologicPy operations.  During a CSG
+    # evaluation it records the exact BRepTools/BRepGraph source->result
+    # relationships before the metadata-only early exit below.
+    try:
+        from ._csg_lineage import capture_history_if_active
+        capture_history_if_active(result_shape, history, sources, operation)
+    except Exception:
+        pass
+
     manager = AttributeManager.GetInstance()
 
     # Collect metadata-bearing source entities first.  This is intentionally
@@ -781,6 +792,15 @@ def transfer_by_modifier(
     report = ProvenanceReport(operation=operation)
     if _is_null_shape(source_shape) or _is_null_shape(result_shape) or modifier is None:
         return report
+
+    # CSG exact-lineage capture: modifier
+    # Transform/copy lineage is captured through ModifiedShape() without
+    # requiring source dictionaries to exist.
+    try:
+        from ._csg_lineage import capture_modifier_if_active
+        capture_modifier_if_active(source_shape, result_shape, modifier, operation)
+    except Exception:
+        pass
 
     manager = AttributeManager.GetInstance()
     entries = _source_shapes_with_dictionaries(
