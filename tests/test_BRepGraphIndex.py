@@ -1,5 +1,6 @@
 """Focused tests for the private OCCT 8 BRepGraph index layer."""
 
+import gc
 import pytest
 
 pytest.importorskip("OCC.Core.BRepGraph")
@@ -71,6 +72,15 @@ def test_raw_brepgraph_child_explorer_walks_box():
 
     assert emitted > 0
     assert len(face_nodes) == 6
+
+
+def test_brepgraph_index_root_survives_result_proxy_gc():
+    box = BRepPrimAPI_MakeBox(10.0, 20.0, 30.0).Shape()
+    index = BRepGraphIndex(box)
+    gc.collect()
+    assert index.valid
+    faces = index.subshapes(box, TopAbs_FACE)
+    assert faces is not None and len(faces) == 6
 
 
 def test_brepgraph_subtopology_and_supertopology_queries():

@@ -272,6 +272,9 @@ class BRepGraphIndex:
         self.graph = None
         self.root = None
         self.roots = []
+        # Retain ShapesView.Add() Result objects because TopologyRoot is a
+        # borrowed SWIG proxy on Linux/macOS pythonocc-core 8.0.1.
+        self._add_results = []
         self.shape_signature = _shape_signature(shape)
         self._incidence_ready = None
         self._children_by_parent = {}
@@ -297,6 +300,7 @@ class BRepGraphIndex:
             result = graph.Shapes().Add(shape)
             if hasattr(result, "IsOk") and not bool(result.IsOk()):
                 return
+            self._add_results.append(result)
             root = getattr(result, "TopologyRoot", None)
             if not _node_valid(root, graph):
                 return
@@ -317,6 +321,7 @@ class BRepGraphIndex:
         obj.graph = None
         obj.root = None
         obj.roots = []
+        obj._add_results = []
         obj.shape_signature = None
         obj._incidence_ready = None
         obj._children_by_parent = {}
@@ -335,6 +340,7 @@ class BRepGraphIndex:
                 result = graph.Shapes().Add(shape)
                 if hasattr(result, "IsOk") and not bool(result.IsOk()):
                     return obj, []
+                obj._add_results.append(result)
                 root = getattr(result, "TopologyRoot", None)
                 if not _node_valid(root, graph):
                     return obj, []

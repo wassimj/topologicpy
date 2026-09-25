@@ -280,12 +280,85 @@ class CellComplex(Topology):
 
     @staticmethod
     def ByCells(cells, tolerance=0.0001):
+        """Create a CellComplex from existing solid Cells.
+
+        Existing Solids are assembled with BOPAlgo_CellsBuilder first so split
+        parts and shared interface Faces are preserved. MakerVolume remains a
+        fallback for cases CellsBuilder cannot assemble.
+        """
         cells = [c for c in (cells or []) if isinstance(c, Cell)]
         shapes = [c.shape for c in cells if not _is_null_shape(getattr(c, "shape", None))]
         if len(shapes) < 1:
             return None
         if len(shapes) == 1:
             return CellComplex(shape=shapes[0], cells=cells)
+
+        try:
+            tolerance = abs(float(tolerance))
+        except Exception:
+            return None
+        if tolerance <= 0.0:
+            return None
+
+        if BOPAlgo_CellsBuilder is not None and TopTools_ListOfShape is not None:
+            try:
+                args = TopTools_ListOfShape()
+                for shape in shapes:
+                    args.Append(shape)
+
+                builder = BOPAlgo_CellsBuilder()
+                builder.SetArguments(args)
+                try:
+                    builder.SetRunParallel(False)
+                except Exception:
+                    pass
+                try:
+                    builder.SetFuzzyValue(tolerance)
+                except Exception:
+                    pass
+
+                builder.Perform()
+
+                has_errors = False
+                try:
+                    has_errors = bool(builder.HasErrors())
+                except Exception:
+                    try:
+                        has_errors = bool(builder.ErrorStatus())
+                    except Exception:
+                        pass
+
+                if not has_errors:
+                    builder.AddAllToResult()
+                    try:
+                        builder.MakeContainers()
+                    except Exception:
+                        pass
+
+                    result_shape = builder.Shape()
+                    if not _is_null_shape(result_shape):
+                        solids = _iter_subshapes(result_shape, TopAbs_SOLID)
+                        unique_solids = []
+                        for solid in solids:
+                            if not any(_shape_same(solid, other) for other in unique_solids):
+                                unique_solids.append(solid)
+
+                        if len(unique_solids) >= 2:
+                            compsolid = _as_compsolid(result_shape)
+                            if compsolid is not None:
+                                wrapped = Topology.ByOcctShape(compsolid)
+                                if isinstance(wrapped, CellComplex):
+                                    return wrapped
+                                wrapped_cells = []
+                                for solid in unique_solids:
+                                    item = Topology.ByOcctShape(solid)
+                                    if isinstance(item, Cell):
+                                        wrapped_cells.append(item)
+                                if len(wrapped_cells) == len(unique_solids):
+                                    return CellComplex(shape=compsolid, cells=wrapped_cells)
+            except Exception:
+                pass
+
         result = CellComplex._build_from_shapes(shapes, tolerance)
         if result is None:
             return CellComplex(shape=None, cells=cells)

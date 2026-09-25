@@ -391,37 +391,54 @@ def _iter_occ_subshapes_unique(shape: Any, shape_type: Any) -> list:
         return []
 
 def _downward_wrappers(topology: Any, shape_type: Any) -> list:
-    """Return exact native descendants, preferring the OCCT 8 BRepGraph index.
+    """Return exact native descendant occurrences of the requested type.
 
-    ``None`` from the private BRepGraph adapter means that the feature is not
-    available (pythonocc-core < 8, disabled by environment, or the graph could
-    not answer the query).  In that case the established TopExp path remains
-    authoritative.
+    Public topology extraction must preserve the occurrence-specific OCCT
+    orientation and location of each descendant relative to its host.
+
+    BRepGraph stores topology primarily as definition nodes plus incidence
+    references. ``Shapes().Shape(node)`` returns the definition shape and is
+    therefore not sufficient for public descendant extraction: occurrence
+    orientation (for example a REVERSED inner cavity Face of a hollow Cell)
+    can be lost.
+
+    TopExp_Explorer remains authoritative here because ``Current()`` returns
+    the actual TopoDS occurrence as embedded in the host topology, including
+    its accumulated Orientation() and Location().
+
+    BRepGraph remains in use for identity/incidence queries, adjacency,
+    shared-topology analysis, CellComplex incidence, CoEdge analysis and
+    provenance.
     """
     shape = _shape_from_topology(topology)
+
     if _is_null_shape(shape):
         return []
 
-    subshapes = None
-    try:
-        index = _cached_brepgraph_index(topology, shape)
-        if index is not None:
-            subshapes = index.subshapes(shape, shape_type)
-    except Exception:
-        subshapes = None
-
-    if subshapes is None:
-        subshapes = _iter_occ_subshapes_unique(shape, shape_type)
+    # IMPORTANT:
+    # Do not substitute BRepGraph definition shapes here. Public descendant
+    # extraction is occurrence-sensitive.
+    subshapes = _iter_occ_subshapes_unique(
+        shape,
+        shape_type,
+    )
 
     result = []
-    for subshape in subshapes or []:
+
+    for subshape in subshapes:
         try:
-            item = Topology.ByOcctShape(subshape)
+            item = Topology.ByOcctShape(
+                subshape
+            )
         except Exception:
             item = None
+
         if item is not None:
             result.append(item)
-    return _deduplicate_by_identity(result)
+
+    return _deduplicate_by_identity(
+        result
+    )
 
 
 def _brepgraph_adjacent_wrappers(topology: Any, hostTopology: Any, shape_type: Any):
