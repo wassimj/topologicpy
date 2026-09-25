@@ -152,14 +152,33 @@
 <span id="topologicpy-shapegrammar-module"></span><h1>topologicpy.ShapeGrammar module<a class="headerlink" href="#module-topologicpy.ShapeGrammar" title="Permalink to this heading"></a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="topologicpy.ShapeGrammar.ShapeGrammar">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">topologicpy.ShapeGrammar.</span></span><span class="sig-name descname"><span class="pre">ShapeGrammar</span></span><a class="headerlink" href="#topologicpy.ShapeGrammar.ShapeGrammar" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">topologicpy.ShapeGrammar.</span></span><span class="sig-name descname"><span class="pre">ShapeGrammar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Untitled'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.ShapeGrammar.ShapeGrammar" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>A lightweight topology shape-grammar container.</p>
-<p>A <code class="docutils literal notranslate"><span class="pre">ShapeGrammar</span></code> stores transformation rules. Each rule consists of an
-input topology pattern, an optional output topology, an operation, and an
-optional 4x4 matrix that prepares the rule output relative to the rule
-input. <code class="docutils literal notranslate"><span class="pre">ApplicableRules</span></code> can then compute matching transformations, and
-<code class="docutils literal notranslate"><span class="pre">ApplyRule</span></code> applies a selected rule to a target topology.</p>
+<p>A compiled, provenance-aware topology shape grammar.</p>
+<p><code class="docutils literal notranslate"><span class="pre">ShapeGrammar</span></code> stores rules that match a topology pattern and apply a
+replacement, Boolean, transform, or procedural division operation to a
+matching target topology.</p>
+<p>The public API is backend-neutral. On the PythonOCC backend, rule application
+participates in TopologicPy’s exact native provenance path: OCCT history is
+captured from the operation already being executed and BRepGraph is used,
+when available, as the exact final-result membership index. BRepGraph and
+OCCT objects never appear in this public API.</p>
+<p>Rules are compiled and indexed by topology type and structural counts.
+Matching therefore avoids calling <code class="docutils literal notranslate"><span class="pre">Topology.IsSimilar</span></code> for rules that can
+be rejected cheaply. Match results and rule applications are cached.</p>
+<p>Rule geometry is treated as immutable after <code class="docutils literal notranslate"><span class="pre">AddRule</span></code>. If a rule input or
+output topology is mutated externally, call <code class="docutils literal notranslate"><span class="pre">Invalidate</span></code> before matching
+or applying rules again.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Attributes</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><a class="reference internal" href="#topologicpy.ShapeGrammar.ShapeGrammar.operations" title="topologicpy.ShapeGrammar.ShapeGrammar.operations"><code class="xref py py-obj docutils literal notranslate"><span class="pre">operations</span></code></a></dt><dd><p>Return public operation descriptors.</p>
+</dd>
+<dt><a class="reference internal" href="#topologicpy.ShapeGrammar.ShapeGrammar.rules" title="topologicpy.ShapeGrammar.ShapeGrammar.rules"><code class="xref py py-obj docutils literal notranslate"><span class="pre">rules</span></code></a></dt><dd><p>Return public rule descriptors in insertion order.</p>
+</dd>
+</dl>
+</dd>
+</dl>
 <p class="rubric">Methods</p>
 <table class="autosummary longtable docutils align-default">
 <colgroup>
@@ -167,192 +186,354 @@ input. <code class="docutils literal notranslate"><span class="pre">ApplicableRu
 <col style="width: 90%" />
 </colgroup>
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.ShapeGrammar.ShapeGrammar.AddRule" title="topologicpy.ShapeGrammar.ShapeGrammar.AddRule"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AddRule</span></code></a>(input, output[, title, description, ...])</p></td>
-<td><p>Adds a rule to the topology grammar.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.ShapeGrammar.ShapeGrammar.AddRule" title="topologicpy.ShapeGrammar.ShapeGrammar.AddRule"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AddRule</span></code></a>(input[, output, title, description, ...])</p></td>
+<td><p>Add a rule and return its stable integer rule identifier.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.ShapeGrammar.ShapeGrammar.ApplicableRules" title="topologicpy.ShapeGrammar.ShapeGrammar.ApplicableRules"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ApplicableRules</span></code></a>(topology[, keys, silent])</p></td>
-<td><p>Returns rules applicable to the input topology.</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.ShapeGrammar.ShapeGrammar.ApplicableRules" title="topologicpy.ShapeGrammar.ShapeGrammar.ApplicableRules"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ApplicableRules</span></code></a>(topology[, keys, ...])</p></td>
+<td><p>Return deterministic match descriptors for all applicable rules.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.ShapeGrammar.ShapeGrammar.ApplyRule" title="topologicpy.ShapeGrammar.ShapeGrammar.ApplyRule"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ApplyRule</span></code></a>(topology[, rule, matrix, ...])</p></td>
-<td><p>Applies a rule to the input topology.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.ShapeGrammar.ShapeGrammar.Apply" title="topologicpy.ShapeGrammar.ShapeGrammar.Apply"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Apply</span></code></a>(topology, rule, **kwargs)</p></td>
+<td><p>Alias for <a class="reference internal" href="#topologicpy.ShapeGrammar.ShapeGrammar.ApplyRule" title="topologicpy.ShapeGrammar.ShapeGrammar.ApplyRule"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ApplyRule()</span></code></a>.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.ShapeGrammar.ShapeGrammar.ClusterByInputOutput" title="topologicpy.ShapeGrammar.ShapeGrammar.ClusterByInputOutput"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ClusterByInputOutput</span></code></a>(input, output[, silent])</p></td>
-<td><p>Returns a cluster containing the input topology, output topology, and a small arrow between them.</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.ShapeGrammar.ShapeGrammar.ApplyMatch" title="topologicpy.ShapeGrammar.ShapeGrammar.ApplyMatch"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ApplyMatch</span></code></a>(topology, match, **kwargs)</p></td>
+<td><p>Apply a descriptor returned by <a class="reference internal" href="#topologicpy.ShapeGrammar.ShapeGrammar.ApplicableRules" title="topologicpy.ShapeGrammar.ShapeGrammar.ApplicableRules"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ApplicableRules()</span></code></a>.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.ShapeGrammar.ShapeGrammar.ClusterByRule" title="topologicpy.ShapeGrammar.ShapeGrammar.ClusterByRule"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ClusterByRule</span></code></a>(rule[, silent])</p></td>
-<td><p>Returns a cluster visualising the input rule.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.ShapeGrammar.ShapeGrammar.ApplyRule" title="topologicpy.ShapeGrammar.ShapeGrammar.ApplyRule"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ApplyRule</span></code></a>(topology, rule[, matrix, keys, ...])</p></td>
+<td><p>Apply one rule to <code class="docutils literal notranslate"><span class="pre">topology</span></code> and return the resulting topology.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.ShapeGrammar.ShapeGrammar.FigureByInputOutput" title="topologicpy.ShapeGrammar.ShapeGrammar.FigureByInputOutput"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FigureByInputOutput</span></code></a>(input, output[, silent])</p></td>
-<td><p>Returns a Plotly figure of the input and output topologies as a rule.</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.ShapeGrammar.ShapeGrammar.ClearRuntime" title="topologicpy.ShapeGrammar.ShapeGrammar.ClearRuntime"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ClearRuntime</span></code></a>([clearHistory])</p></td>
+<td><p>Clear match/application caches; optionally clear application history.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.ShapeGrammar.ShapeGrammar.FigureByRule" title="topologicpy.ShapeGrammar.ShapeGrammar.FigureByRule"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FigureByRule</span></code></a>(rule[, silent])</p></td>
-<td><p>Returns a Plotly figure visualising the input rule.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.ShapeGrammar.ShapeGrammar.Compile" title="topologicpy.ShapeGrammar.ShapeGrammar.Compile"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Compile</span></code></a>([force])</p></td>
+<td><p>Compile and index the current rules and return a compact summary.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.ShapeGrammar.ShapeGrammar.OperationByTitle" title="topologicpy.ShapeGrammar.ShapeGrammar.OperationByTitle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OperationByTitle</span></code></a>(title)</p></td>
-<td><p>Returns the operation matching the input title string.</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.ShapeGrammar.ShapeGrammar.Data" title="topologicpy.ShapeGrammar.ShapeGrammar.Data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Data</span></code></a>([includeBREP])</p></td>
+<td><p>Return a persistence-safe dictionary.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.ShapeGrammar.ShapeGrammar.OperationTitles" title="topologicpy.ShapeGrammar.ShapeGrammar.OperationTitles"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OperationTitles</span></code></a>()</p></td>
-<td><p>Returns the list of available operation titles.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.ShapeGrammar.ShapeGrammar.DerivationGraph" title="topologicpy.ShapeGrammar.ShapeGrammar.DerivationGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DerivationGraph</span></code></a>()</p></td>
+<td><p>Return the rule-application history as a topology-state <code class="docutils literal notranslate"><span class="pre">TGraph</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.ShapeGrammar.ShapeGrammar.Descendants" title="topologicpy.ShapeGrammar.ShapeGrammar.Descendants"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Descendants</span></code></a>(topology[, application])</p></td>
+<td><p>Trace a source subtopology forward through captured lineage.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.ShapeGrammar.ShapeGrammar.History" title="topologicpy.ShapeGrammar.ShapeGrammar.History"><code class="xref py py-obj docutils literal notranslate"><span class="pre">History</span></code></a>([application, rule, relation, ...])</p></td>
+<td><p>Return backend-neutral exact lineage records from rule applications.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.ShapeGrammar.ShapeGrammar.Invalidate" title="topologicpy.ShapeGrammar.ShapeGrammar.Invalidate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Invalidate</span></code></a>()</p></td>
+<td><p>Invalidate compiled rule, match, and application caches.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.ShapeGrammar.ShapeGrammar.LineageGraph" title="topologicpy.ShapeGrammar.ShapeGrammar.LineageGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LineageGraph</span></code></a>([application])</p></td>
+<td><p>Return exact captured subtopology lineage as a derived <code class="docutils literal notranslate"><span class="pre">TGraph</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.ShapeGrammar.ShapeGrammar.Match" title="topologicpy.ShapeGrammar.ShapeGrammar.Match"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Match</span></code></a>(topology, **kwargs)</p></td>
+<td><p>Alias for <a class="reference internal" href="#topologicpy.ShapeGrammar.ShapeGrammar.ApplicableRules" title="topologicpy.ShapeGrammar.ShapeGrammar.ApplicableRules"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ApplicableRules()</span></code></a>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.ShapeGrammar.ShapeGrammar.Origins" title="topologicpy.ShapeGrammar.ShapeGrammar.Origins"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Origins</span></code></a>(topology[, application])</p></td>
+<td><p>Trace a result subtopology backwards to terminal rule-application sources.</p></td>
+</tr>
+</tbody>
+</table>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 71%" />
+<col style="width: 29%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><strong>Application</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><strong>ByData</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p><strong>ByJSONString</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><strong>ByPath</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p><strong>ClearRules</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><strong>ClusterByInputOutput</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p><strong>ClusterByRule</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><strong>DeletedBy</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Export</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><strong>FigureByInputOutput</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p><strong>FigureByRule</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><strong>GeneratedBy</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p><strong>JSONString</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><strong>ModifiedBy</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p><strong>OperationByTitle</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><strong>OperationTitles</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Operations</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><strong>RemoveRule</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Rule</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><strong>Rules</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Status</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><strong>UnchangedBy</strong></p></td>
+<td></td>
 </tr>
 </tbody>
 </table>
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.ShapeGrammar.ShapeGrammar.AddRule">
-<span class="sig-name descname"><span class="pre">AddRule</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Untitled</span> <span class="pre">Rule'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">operation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">matrix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.ShapeGrammar.ShapeGrammar.AddRule" title="Permalink to this definition"></a></dt>
-<dd><p>Adds a rule to the topology grammar.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>input</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology of the rule.</p>
-</dd>
-<dt><strong>output</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The output topology of the rule. This may be None for transform-like
-rules that only use the input topology.</p>
-</dd>
-<dt><strong>title</strong><span class="classifier">str, optional</span></dt><dd><p>The title of the rule. Default is <code class="docutils literal notranslate"><span class="pre">&quot;Untitled</span> <span class="pre">Rule&quot;</span></code>.</p>
-</dd>
-<dt><strong>description</strong><span class="classifier">str, optional</span></dt><dd><p>The description of the rule. Default is <code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code>.</p>
-</dd>
-<dt><strong>operation</strong><span class="classifier">dict or str, optional</span></dt><dd><p>The desired rule operation. If set to None, the replacement rule is
-applied. Default is None.</p>
-</dd>
-<dt><strong>matrix</strong><span class="classifier">list, optional</span></dt><dd><p>The 4x4 transformation matrix that transforms the output topology to
-the input topology. If set to None, no rule-preparation transform is
-applied. Default is None.</p>
-</dd>
-<dt><strong>silent</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is
-False.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>None</dt><dd><p>This method does not return a value.</p>
-</dd>
-</dl>
-</dd>
-</dl>
+<span class="sig-name descname"><span class="pre">AddRule</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Untitled</span> <span class="pre">Rule'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">operation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Replace'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">matrix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">uSides</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vSides</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wSides</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metadata</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#topologicpy.ShapeGrammar.ShapeGrammar.AddRule" title="Permalink to this definition"></a></dt>
+<dd><p>Add a rule and return its stable integer rule identifier.</p>
+<p><code class="docutils literal notranslate"><span class="pre">input</span></code> is the pattern topology. <code class="docutils literal notranslate"><span class="pre">output</span></code> is required by replacement
+and Boolean operations and is authored in the same rule-local coordinate
+frame as <code class="docutils literal notranslate"><span class="pre">input</span></code>. <code class="docutils literal notranslate"><span class="pre">Transform</span></code> and <code class="docutils literal notranslate"><span class="pre">Divide</span></code> do not use <code class="docutils literal notranslate"><span class="pre">output</span></code>.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.ShapeGrammar.ShapeGrammar.ApplicableRules">
-<span class="sig-name descname"><span class="pre">ApplicableRules</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keys</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.ShapeGrammar.ShapeGrammar.ApplicableRules" title="Permalink to this definition"></a></dt>
-<dd><p>Returns rules applicable to the input topology.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
-</dd>
-<dt><strong>keys</strong><span class="classifier">list, optional</span></dt><dd><p>The dictionary keys to semantically match. Default is None, meaning
-dictionaries are not considered.</p>
-</dd>
-<dt><strong>silent</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is
-False.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>tuple</dt><dd><p><code class="docutils literal notranslate"><span class="pre">(rules,</span> <span class="pre">matrices)</span></code> where <code class="docutils literal notranslate"><span class="pre">rules</span></code> is the list of applicable rules
-and <code class="docutils literal notranslate"><span class="pre">matrices</span></code> is the corresponding list of similarity transforms.
-Returns None if the input topology is invalid.</p>
-</dd>
-</dl>
-</dd>
-</dl>
+<span class="sig-name descname"><span class="pre">ApplicableRules</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keys</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">removeCoplanarFaces</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epsilon</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">list</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#topologicpy.ShapeGrammar.ShapeGrammar.ApplicableRules" title="Permalink to this definition"></a></dt>
+<dd><p>Return deterministic match descriptors for all applicable rules.</p>
+<p>Each descriptor contains <code class="docutils literal notranslate"><span class="pre">rule</span></code> (the rule id), <code class="docutils literal notranslate"><span class="pre">matrix</span></code> (the
+rule-input -&gt; target similarity transform), and basic rule metadata.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.ShapeGrammar.ShapeGrammar.Application">
+<span class="sig-name descname"><span class="pre">Application</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">application</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#topologicpy.ShapeGrammar.ShapeGrammar.Application" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.ShapeGrammar.ShapeGrammar.Apply">
+<span class="sig-name descname"><span class="pre">Apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rule</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.ShapeGrammar.ShapeGrammar.Apply" title="Permalink to this definition"></a></dt>
+<dd><p>Alias for <a class="reference internal" href="#topologicpy.ShapeGrammar.ShapeGrammar.ApplyRule" title="topologicpy.ShapeGrammar.ShapeGrammar.ApplyRule"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ApplyRule()</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.ShapeGrammar.ShapeGrammar.ApplyMatch">
+<span class="sig-name descname"><span class="pre">ApplyMatch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">match</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.ShapeGrammar.ShapeGrammar.ApplyMatch" title="Permalink to this definition"></a></dt>
+<dd><p>Apply a descriptor returned by <a class="reference internal" href="#topologicpy.ShapeGrammar.ShapeGrammar.ApplicableRules" title="topologicpy.ShapeGrammar.ShapeGrammar.ApplicableRules"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ApplicableRules()</span></code></a>.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.ShapeGrammar.ShapeGrammar.ApplyRule">
-<span class="sig-name descname"><span class="pre">ApplyRule</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rule</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">matrix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.ShapeGrammar.ShapeGrammar.ApplyRule" title="Permalink to this definition"></a></dt>
-<dd><p>Applies a rule to the input topology.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
-</dd>
-<dt><strong>rule</strong><span class="classifier">dict, optional</span></dt><dd><p>The desired rule to apply. If None, the method returns the topology
-transformed by <code class="docutils literal notranslate"><span class="pre">matrix</span></code> when supplied, otherwise the input topology.</p>
-</dd>
-<dt><strong>matrix</strong><span class="classifier">list, optional</span></dt><dd><p>The 4x4 transformation matrix that transforms the rule result to the
-target topology. If set to None, no final transformation is applied.</p>
-</dd>
-<dt><strong>mantissa</strong><span class="classifier">int, optional</span></dt><dd><p>Decimal precision. Default is 6.</p>
-</dd>
-<dt><strong>tolerance</strong><span class="classifier">float, optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
-</dd>
-<dt><strong>silent</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is
-False.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>topologic_core.Topology or None</dt><dd><p>The transformed topology, or None if validation fails.</p>
-</dd>
-</dl>
-</dd>
-</dl>
+<span class="sig-name descname"><span class="pre">ApplyRule</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rule</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">matrix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keys</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">removeCoplanarFaces</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epsilon</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lineage</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.ShapeGrammar.ShapeGrammar.ApplyRule" title="Permalink to this definition"></a></dt>
+<dd><p>Apply one rule to <code class="docutils literal notranslate"><span class="pre">topology</span></code> and return the resulting topology.</p>
+<p><code class="docutils literal notranslate"><span class="pre">rule</span></code> may be a rule id, a descriptor returned by <code class="docutils literal notranslate"><span class="pre">Rule</span></code>, or a match
+descriptor returned by <code class="docutils literal notranslate"><span class="pre">ApplicableRules</span></code>. If <code class="docutils literal notranslate"><span class="pre">matrix</span></code> is omitted,
+the method computes the rule-input -&gt; target match transform. Set
+<code class="docutils literal notranslate"><span class="pre">force=True</span></code> to apply with an identity match transform when the target
+does not match the rule input.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.ShapeGrammar.ShapeGrammar.ByData">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.ShapeGrammar.ShapeGrammar.ByData" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.ShapeGrammar.ShapeGrammar.ByJSONString">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByJSONString</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">string</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.ShapeGrammar.ShapeGrammar.ByJSONString" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.ShapeGrammar.ShapeGrammar.ByPath">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByPath</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.ShapeGrammar.ShapeGrammar.ByPath" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.ShapeGrammar.ShapeGrammar.ClearRules">
+<span class="sig-name descname"><span class="pre">ClearRules</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#topologicpy.ShapeGrammar.ShapeGrammar.ClearRules" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.ShapeGrammar.ShapeGrammar.ClearRuntime">
+<span class="sig-name descname"><span class="pre">ClearRuntime</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">clearHistory</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#topologicpy.ShapeGrammar.ShapeGrammar.ClearRuntime" title="Permalink to this definition"></a></dt>
+<dd><p>Clear match/application caches; optionally clear application history.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.ShapeGrammar.ShapeGrammar.ClusterByInputOutput">
 <span class="sig-name descname"><span class="pre">ClusterByInputOutput</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.ShapeGrammar.ShapeGrammar.ClusterByInputOutput" title="Permalink to this definition"></a></dt>
-<dd><p>Returns a cluster containing the input topology, output topology, and a
-small arrow between them.</p>
-</dd></dl>
+<dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.ShapeGrammar.ShapeGrammar.ClusterByRule">
 <span class="sig-name descname"><span class="pre">ClusterByRule</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rule</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.ShapeGrammar.ShapeGrammar.ClusterByRule" title="Permalink to this definition"></a></dt>
-<dd><p>Returns a cluster visualising the input rule.</p>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.ShapeGrammar.ShapeGrammar.Compile">
+<span class="sig-name descname"><span class="pre">Compile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">force</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#topologicpy.ShapeGrammar.ShapeGrammar.Compile" title="Permalink to this definition"></a></dt>
+<dd><p>Compile and index the current rules and return a compact summary.</p>
 </dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.ShapeGrammar.ShapeGrammar.Data">
+<span class="sig-name descname"><span class="pre">Data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">includeBREP</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#topologicpy.ShapeGrammar.ShapeGrammar.Data" title="Permalink to this definition"></a></dt>
+<dd><p>Return a persistence-safe dictionary. Runtime caches/history are omitted.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.ShapeGrammar.ShapeGrammar.DeletedBy">
+<span class="sig-name descname"><span class="pre">DeletedBy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">application</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">topologyType</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="headerlink" href="#topologicpy.ShapeGrammar.ShapeGrammar.DeletedBy" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.ShapeGrammar.ShapeGrammar.DerivationGraph">
+<span class="sig-name descname"><span class="pre">DerivationGraph</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.ShapeGrammar.ShapeGrammar.DerivationGraph" title="Permalink to this definition"></a></dt>
+<dd><p>Return the rule-application history as a topology-state <code class="docutils literal notranslate"><span class="pre">TGraph</span></code>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.ShapeGrammar.ShapeGrammar.Descendants">
+<span class="sig-name descname"><span class="pre">Descendants</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">application</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="headerlink" href="#topologicpy.ShapeGrammar.ShapeGrammar.Descendants" title="Permalink to this definition"></a></dt>
+<dd><p>Trace a source subtopology forward through captured lineage.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.ShapeGrammar.ShapeGrammar.Export">
+<span class="sig-name descname"><span class="pre">Export</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#topologicpy.ShapeGrammar.ShapeGrammar.Export" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.ShapeGrammar.ShapeGrammar.FigureByInputOutput">
 <span class="sig-name descname"><span class="pre">FigureByInputOutput</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.ShapeGrammar.ShapeGrammar.FigureByInputOutput" title="Permalink to this definition"></a></dt>
-<dd><p>Returns a Plotly figure of the input and output topologies as a rule.</p>
-</dd></dl>
+<dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.ShapeGrammar.ShapeGrammar.FigureByRule">
 <span class="sig-name descname"><span class="pre">FigureByRule</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rule</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.ShapeGrammar.ShapeGrammar.FigureByRule" title="Permalink to this definition"></a></dt>
-<dd><p>Returns a Plotly figure visualising the input rule.</p>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.ShapeGrammar.ShapeGrammar.GeneratedBy">
+<span class="sig-name descname"><span class="pre">GeneratedBy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">application</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">topologyType</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="headerlink" href="#topologicpy.ShapeGrammar.ShapeGrammar.GeneratedBy" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.ShapeGrammar.ShapeGrammar.History">
+<span class="sig-name descname"><span class="pre">History</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">application</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rule</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">relation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sourceRole</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resultType</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="headerlink" href="#topologicpy.ShapeGrammar.ShapeGrammar.History" title="Permalink to this definition"></a></dt>
+<dd><p>Return backend-neutral exact lineage records from rule applications.</p>
 </dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.ShapeGrammar.ShapeGrammar.Invalidate">
+<span class="sig-name descname"><span class="pre">Invalidate</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#topologicpy.ShapeGrammar.ShapeGrammar.Invalidate" title="Permalink to this definition"></a></dt>
+<dd><p>Invalidate compiled rule, match, and application caches.</p>
+<p>Call this after externally mutating topology dictionaries used by rules.
+Existing application history remains available.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.ShapeGrammar.ShapeGrammar.JSONString">
+<span class="sig-name descname"><span class="pre">JSONString</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">indent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#topologicpy.ShapeGrammar.ShapeGrammar.JSONString" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.ShapeGrammar.ShapeGrammar.LineageGraph">
+<span class="sig-name descname"><span class="pre">LineageGraph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">application</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.ShapeGrammar.ShapeGrammar.LineageGraph" title="Permalink to this definition"></a></dt>
+<dd><p>Return exact captured subtopology lineage as a derived <code class="docutils literal notranslate"><span class="pre">TGraph</span></code>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.ShapeGrammar.ShapeGrammar.Match">
+<span class="sig-name descname"><span class="pre">Match</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.ShapeGrammar.ShapeGrammar.Match" title="Permalink to this definition"></a></dt>
+<dd><p>Alias for <a class="reference internal" href="#topologicpy.ShapeGrammar.ShapeGrammar.ApplicableRules" title="topologicpy.ShapeGrammar.ShapeGrammar.ApplicableRules"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ApplicableRules()</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.ShapeGrammar.ShapeGrammar.ModifiedBy">
+<span class="sig-name descname"><span class="pre">ModifiedBy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">application</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">topologyType</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="headerlink" href="#topologicpy.ShapeGrammar.ShapeGrammar.ModifiedBy" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.ShapeGrammar.ShapeGrammar.OperationByTitle">
 <span class="sig-name descname"><span class="pre">OperationByTitle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">title</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.ShapeGrammar.ShapeGrammar.OperationByTitle" title="Permalink to this definition"></a></dt>
-<dd><p>Returns the operation matching the input title string.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>title</strong><span class="classifier">str</span></dt><dd><p>The input operation title. See <code class="docutils literal notranslate"><span class="pre">OperationTitles</span></code> for available
-operations. Matching is case-insensitive; exact matches are preferred
-over substring matches.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>dict or None</dt><dd><p>The requested operation dictionary, or None if no operation matches.</p>
-</dd>
-</dl>
-</dd>
-</dl>
-</dd></dl>
+<dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.ShapeGrammar.ShapeGrammar.OperationTitles">
-<span class="sig-name descname"><span class="pre">OperationTitles</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.ShapeGrammar.ShapeGrammar.OperationTitles" title="Permalink to this definition"></a></dt>
-<dd><p>Returns the list of available operation titles.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><dl class="simple">
-<dt>list</dt><dd><p>The requested list of operation titles.</p>
-</dd>
-</dl>
-</dd>
-</dl>
+<span class="sig-name descname"><span class="pre">OperationTitles</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="headerlink" href="#topologicpy.ShapeGrammar.ShapeGrammar.OperationTitles" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.ShapeGrammar.ShapeGrammar.Operations">
+<span class="sig-name descname"><span class="pre">Operations</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="headerlink" href="#topologicpy.ShapeGrammar.ShapeGrammar.Operations" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.ShapeGrammar.ShapeGrammar.Origins">
+<span class="sig-name descname"><span class="pre">Origins</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">application</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="headerlink" href="#topologicpy.ShapeGrammar.ShapeGrammar.Origins" title="Permalink to this definition"></a></dt>
+<dd><p>Trace a result subtopology backwards to terminal rule-application sources.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.ShapeGrammar.ShapeGrammar.RemoveRule">
+<span class="sig-name descname"><span class="pre">RemoveRule</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rule</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#topologicpy.ShapeGrammar.ShapeGrammar.RemoveRule" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.ShapeGrammar.ShapeGrammar.Rule">
+<span class="sig-name descname"><span class="pre">Rule</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rule</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#topologicpy.ShapeGrammar.ShapeGrammar.Rule" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.ShapeGrammar.ShapeGrammar.Rules">
+<span class="sig-name descname"><span class="pre">Rules</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="headerlink" href="#topologicpy.ShapeGrammar.ShapeGrammar.Rules" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="topologicpy.ShapeGrammar.ShapeGrammar.SCHEMA">
+<span class="sig-name descname"><span class="pre">SCHEMA</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'topologicpy.shapegrammar/2'</span></em><a class="headerlink" href="#topologicpy.ShapeGrammar.ShapeGrammar.SCHEMA" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.ShapeGrammar.ShapeGrammar.Status">
+<span class="sig-name descname"><span class="pre">Status</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#topologicpy.ShapeGrammar.ShapeGrammar.Status" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.ShapeGrammar.ShapeGrammar.UnchangedBy">
+<span class="sig-name descname"><span class="pre">UnchangedBy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">application</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">topologyType</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="headerlink" href="#topologicpy.ShapeGrammar.ShapeGrammar.UnchangedBy" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="topologicpy.ShapeGrammar.ShapeGrammar.operations">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">operations</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></em><a class="headerlink" href="#topologicpy.ShapeGrammar.ShapeGrammar.operations" title="Permalink to this definition"></a></dt>
+<dd><p>Return public operation descriptors.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="topologicpy.ShapeGrammar.ShapeGrammar.rules">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">rules</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></em><a class="headerlink" href="#topologicpy.ShapeGrammar.ShapeGrammar.rules" title="Permalink to this definition"></a></dt>
+<dd><p>Return public rule descriptors in insertion order.</p>
 </dd></dl>
 
 </dd></dl>
