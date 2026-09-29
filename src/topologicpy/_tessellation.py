@@ -70,12 +70,16 @@ def tessellate_topologic_core(
     Compatibility tessellation for the legacy TopologicCore backend.
 
     TopologicCore does not expose OCCT's complete tessellation controls through
-    its Python API. This path therefore uses the kernel's existing Face
-    triangulation and returns the same mesh-data schema as the PythonOCC path.
-    Quality/deflection parameters are validated for API parity but cannot all
-    be enforced by the legacy kernel.
+    its Python API. This path therefore calls the kernel's Face triangulation
+    primitive directly and returns the same indexed mesh-data schema as the
+    PythonOCC path.
+
+    This helper intentionally does *not* call ``Face.Triangulate`` or
+    ``Topology.Triangulate``. Keeping tessellation at the kernel/helper level
+    prevents recursion now that ``Face.Triangulate`` is a thin wrapper around
+    ``Topology.Triangulate``.
     """
-    from topologicpy.Face import Face
+    from topologicpy.Core import Core
     from topologicpy.Topology import Topology
     from topologicpy.Vertex import Vertex
 
@@ -226,9 +230,8 @@ def tessellate_topologic_core(
 
         return index
 
-    for source_index, source_face in enumerate(
-        source_faces
-    ):
+    def triangulate_face(source_face):
+        """Return TopologicCore triangular Faces without public-API recursion."""
         source_vertices = (
             Topology.Vertices(
                 source_face,
@@ -238,22 +241,40 @@ def tessellate_topologic_core(
         )
 
         if len(source_vertices) == 3:
-            triangles = [
-                source_face
-            ]
-        else:
+            return [source_face]
+
+        # Match the historical TopologicCore retry policy without flattening,
+        # unflattening, or entering Face/Topology public triangulation methods.
+        # The second argument is the kernel deflection used by the legacy API.
+        for deflection in (0.0, 0.1, 0.2, 0.3, 0.4):
+            triangles = []
             try:
-                triangles = (
-                    Face.Triangulate(
-                        source_face,
-                        mode=0,
-                        tolerance=weld_tolerance,
-                        silent=True,
-                    )
-                    or []
+                Core.FaceUtility.Triangulate(
+                    source_face,
+                    float(deflection),
+                    triangles,
                 )
             except Exception:
                 triangles = []
+
+            triangles = [
+                triangle
+                for triangle in triangles
+                if Topology.IsInstance(triangle, "Face")
+                and len(Topology.Vertices(triangle, silent=True) or []) == 3
+            ]
+
+            if triangles:
+                return triangles
+
+        return []
+
+    for source_index, source_face in enumerate(
+        source_faces
+    ):
+        triangles = triangulate_face(
+            source_face
+        )
 
         for triangle in triangles:
             triangle_vertices = (

@@ -6,7 +6,7 @@
 # Foundation, either version 3.0 of the License, or (at your option) any later
 # version.
 #
-# This program is distributed in the hope that it will be useful, but WITHOUT
+# This program is distributed in the hope that it will be useful, but WITHOUTv
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 # FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
 # details.
@@ -3066,75 +3066,123 @@ class TGraph:
     @staticmethod
     def _IsomorphismEdgeValues(graph: "TGraph", u: int, v: int, edgeWeightKey: str = None) -> List[Any]:
         """
-        Returns comparable edge values used by isomorphism checks.
+        Returns the active edge values used by isomorphism checks between u and v.
 
-        Parameters
-        ----------
-        graph : 'TGraph'
-            The input TGraph.
-        u : int
-            The input u value.
-        v : int
-            The input v value.
-        edgeWeightKey : str , optional
-            The dictionary key to use. Default is None.
-
-        Returns
-        -------
-        List[Any]
-            The resulting isomorphism edge values list.
+        Directed and undirected edges are kept distinct. For directed edges only
+        u -> v is returned; undirected edges are returned for either endpoint order.
+        The returned list is intentionally not sorted: IsIsomorphic compares it as
+        a true multiset so heterogeneous and unhashable attribute values are safe.
         """
         if not isinstance(graph, TGraph):
             return []
-        if graph._directed:
-            records = TGraph.EdgesBetween(graph, u, v, directed=True)
-        else:
-            records = TGraph.EdgesBetween(graph, u, v, directed=False)
+
+        TGraph._EnsureEdgeLookup(graph)
+
+        directed_ids = graph._edge_lookup.get(
+            graph._edge_key(u, v, True),
+            set(),
+        )
+        undirected_ids = graph._edge_lookup.get(
+            graph._edge_key(u, v, False),
+            set(),
+        )
+
         values = []
-        for e in records:
-            if not isinstance(e, dict):
+
+        for edge_index in sorted(directed_ids):
+            if not graph._validate_edge_index(edge_index):
                 continue
-            if edgeWeightKey is None:
-                values.append(1)
-            else:
-                values.append(e.get("dictionary", {}).get(edgeWeightKey, None))
-        return sorted(values, key=lambda x: str(x))
+            edge = graph._edges[edge_index]
+            dictionary = edge.get("dictionary", {})
+            if not isinstance(dictionary, dict):
+                dictionary = {}
+            value = 1 if edgeWeightKey is None else dictionary.get(edgeWeightKey, None)
+            values.append((True, value))
+
+        for edge_index in sorted(undirected_ids):
+            if not graph._validate_edge_index(edge_index):
+                continue
+            edge = graph._edges[edge_index]
+            dictionary = edge.get("dictionary", {})
+            if not isinstance(dictionary, dict):
+                dictionary = {}
+            value = 1 if edgeWeightKey is None else dictionary.get(edgeWeightKey, None)
+            values.append((False, value))
+
+        return values
 
     @staticmethod
     def _IsomorphismVertexSignature(graph: "TGraph", v: int, vertexIDKey: str = None) -> Tuple[Any, ...]:
         """
-        Returns a comparable vertex signature used by isomorphism checks.
+        Returns an isomorphism-invariant signature for a vertex.
 
-        Parameters
-        ----------
-        graph : 'TGraph'
-            The input TGraph.
-        v : int
-            The input v value.
-        vertexIDKey : str , optional
-            The dictionary key to use. Default is None.
-
-        Returns
-        -------
-        Tuple[Any, ...]
-            The resulting isomorphism vertex signature object or value.
+        The signature distinguishes directed in/out incidence, undirected degree,
+        directed and undirected self-loop multiplicity, and the optional vertex ID.
+        It therefore remains valid for TGraphs containing a mixture of directed and
+        undirected edge records.
         """
-        d = graph._vertices[v].get("dictionary", {}) if isinstance(graph, TGraph) else {}
-        label = d.get(vertexIDKey, None) if vertexIDKey is not None else None
-        if graph._directed:
-            sig = (
-                TGraph.Degree(graph, v, mode="in"),
-                TGraph.Degree(graph, v, mode="out"),
-                TGraph.HasEdge(graph, v, v, directed=True),
-                label,
-            )
-        else:
-            sig = (
-                TGraph.Degree(graph, v, mode="all"),
-                TGraph.HasEdge(graph, v, v, directed=False),
-                label,
-            )
-        return sig
+        if not isinstance(graph, TGraph):
+            return tuple()
+        if not isinstance(v, int) or isinstance(v, bool):
+            return tuple()
+        if v < 0 or v >= len(graph._vertices):
+            return tuple()
+
+        vertex = graph._vertices[v]
+        if not isinstance(vertex, dict) or not vertex.get("active", True):
+            return tuple()
+
+        dictionary = vertex.get("dictionary", {})
+        if not isinstance(dictionary, dict):
+            dictionary = {}
+        label = dictionary.get(vertexIDKey, None) if vertexIDKey is not None else None
+
+        directed_in = 0
+        directed_out = 0
+        undirected_degree = 0
+        directed_loops = 0
+        undirected_loops = 0
+
+        for edge_index in graph._incident_edges.get(v, set()):
+            if not isinstance(edge_index, int):
+                continue
+            if edge_index < 0 or edge_index >= len(graph._edges):
+                continue
+
+            edge = graph._edges[edge_index]
+            if not isinstance(edge, dict) or not edge.get("active", True):
+                continue
+
+            src = edge.get("src")
+            dst = edge.get("dst")
+            if src != v and dst != v:
+                continue
+
+            directed = bool(edge.get("directed", graph._directed))
+
+            if directed:
+                if src == v:
+                    directed_out += 1
+                if dst == v:
+                    directed_in += 1
+                if src == v and dst == v:
+                    directed_loops += 1
+            else:
+                if src == v and dst == v:
+                    # NetworkX-compatible undirected self-loop degree contribution.
+                    undirected_degree += 2
+                    undirected_loops += 1
+                else:
+                    undirected_degree += 1
+
+        return (
+            directed_in,
+            directed_out,
+            undirected_degree,
+            directed_loops,
+            undirected_loops,
+            label,
+        )
     
     @staticmethod
     def _MaximumFlowEngine(
@@ -7460,38 +7508,66 @@ class TGraph:
         """
         Returns the indices of the active edges in the input TGraph.
 
+        This implementation reads the native edge records directly and
+        deliberately avoids TGraph.Compile().
+
         Parameters
         ----------
-        graph : 'TGraph'
+        graph : TGraph
             The input TGraph.
 
         Returns
         -------
         List[int]
-            The resulting active edge indices list.
+            The active stable edge indices in stored order.
         """
-        c = TGraph.Compile(graph)
-        if not isinstance(c, dict):
+
+        if not isinstance(graph, TGraph):
             return []
-        return [e["edge_index"] for e in c["edges"]]
+
+        return [
+            edge["index"]
+            for edge in graph._edges
+            if (
+                isinstance(edge, dict)
+                and edge.get("active", True)
+                and isinstance(edge.get("index"), int)
+                and not isinstance(edge.get("index"), bool)
+            )
+        ]
 
     @staticmethod
     def ActiveVertexIndices(graph: "TGraph") -> List[int]:
         """
         Returns the indices of the active vertices in the input TGraph.
 
+        This implementation reads the native vertex records directly and
+        deliberately avoids TGraph.Compile().
+
         Parameters
         ----------
-        graph : 'TGraph'
+        graph : TGraph
             The input TGraph.
 
         Returns
         -------
         List[int]
-            The resulting active vertex indices list.
+            The active stable vertex indices in stored order.
         """
-        c = TGraph.Compile(graph)
-        return list(c["vertices"]) if isinstance(c, dict) else []
+
+        if not isinstance(graph, TGraph):
+            return []
+
+        return [
+            vertex["index"]
+            for vertex in graph._vertices
+            if (
+                isinstance(vertex, dict)
+                and vertex.get("active", True)
+                and isinstance(vertex.get("index"), int)
+                and not isinstance(vertex.get("index"), bool)
+            )
+        ]
 
     def AddEdge(self, src: Any, dst: Any = None, directed: Optional[bool] = None,
                 dictionary: Optional[Dict[str, Any]] = None, representation: Any = None,
@@ -7780,107 +7856,258 @@ class TGraph:
         return result
 
     @staticmethod
-    def AdjacencyList(graph: "TGraph", mode: str = "out") -> List[List[int]]:
+    def AdjacencyList(
+        graph: "TGraph",
+        mode: str = "out",
+    ) -> List[List[int]]:
         """
         Returns an adjacency list representation of the input TGraph.
 
+        This implementation operates directly on TGraph's native incidence
+        structures via AdjacentIndices and deliberately avoids TGraph.Compile().
+
         Parameters
         ----------
-        graph : 'TGraph'
+        graph : TGraph
             The input TGraph.
-        mode : str , optional
-            The traversal or adjacency mode. Valid values are typically "out", "in", or "all".
-            Default is 'out'.
+        mode : str, optional
+            The traversal or adjacency mode.
+
+            - "out": outgoing adjacency.
+            - "in": incoming adjacency.
+            - "all": adjacency in either direction.
+
+            Any value other than "in" or "all" is treated as "out",
+            matching the existing TGraph adjacency semantics.
+
+            Default is "out".
 
         Returns
         -------
         List[List[int]]
-            The resulting adjacency list list.
+            The adjacency list. Rows correspond to active stable vertex indices
+            in ascending order.
         """
-        c = TGraph.Compile(graph)
-        if not isinstance(c, dict):
+
+        if not isinstance(graph, TGraph):
             return []
-        adj = TGraph.CompiledAdjacency(graph, mode=mode)
-        vertices = c["vertices"]
-        return [[vertices[j] for j in row] for row in adj]
+
+        # Compile() previously returned active stable vertex indices sorted
+        # in ascending order. Preserve that behaviour exactly.
+        vertices = [
+            record.get("index")
+            for record in graph._vertices
+            if (
+                isinstance(record, dict)
+                and record.get("active", True)
+                and isinstance(record.get("index"), int)
+                and not isinstance(record.get("index"), bool)
+            )
+        ]
+
+        vertices.sort()
+
+        return [
+            TGraph.AdjacentIndices(
+                graph,
+                vertex_index,
+                mode=mode,
+            )
+            for vertex_index in vertices
+        ]
 
     @staticmethod
-    def AdjacencyMatrix(graph: "TGraph", vertexKey: str = None, reverse: bool = False,
-                        edgeKeyFwd: str = None, edgeKeyBwd: str = None, bidirKey: str = None,
-                        bidirectional: bool = None, useEdgeIndex: bool = False,
-                        useEdgeLength: bool = False, mantissa: int = 6, tolerance: float = 0.0001) -> List[List[Any]]:
+    def AdjacencyMatrix(
+        graph: "TGraph",
+        vertexKey: str = None,
+        reverse: bool = False,
+        edgeKeyFwd: str = None,
+        edgeKeyBwd: str = None,
+        bidirKey: str = None,
+        bidirectional: bool = None,
+        useEdgeIndex: bool = False,
+        useEdgeLength: bool = False,
+        mantissa: int = 6,
+        tolerance: float = 0.0001,
+    ) -> List[List[Any]]:
         """
         Returns an adjacency matrix representation of the input TGraph.
 
+        This implementation operates directly on TGraph's native vertex and edge
+        records and deliberately avoids TGraph.Compile().
+
         Parameters
         ----------
-        graph : 'TGraph'
+        graph : TGraph
             The input TGraph.
-        vertexKey : str , optional
-            The vertex dictionary key to use. Default is None.
-        reverse : bool , optional
-            If set to True, the output ordering is reversed. Default is False.
-        edgeKeyFwd : str , optional
-            The input edge key fwd value. Default is None.
-        edgeKeyBwd : str , optional
-            The input edge key bwd value. Default is None.
-        bidirKey : str , optional
-            The dictionary key to use. Default is None.
-        bidirectional : bool , optional
-            The input bidirectional value. Default is None.
-        useEdgeIndex : bool , optional
-            If set to True, the corresponding option is enabled. Default is False.
-        useEdgeLength : bool , optional
-            If set to True, the corresponding option is enabled. Default is False.
-        mantissa : int , optional
-            The number of decimal places to round numeric results to. Default is 6.
-        tolerance : float , optional
+        vertexKey : str, optional
+            The vertex dictionary key used to order vertices. Default is None.
+        reverse : bool, optional
+            If True, reverse the output ordering. Default is False.
+        edgeKeyFwd : str, optional
+            Edge dictionary key used for forward matrix values. Default is None.
+        edgeKeyBwd : str, optional
+            Edge dictionary key used for backward matrix values. Default is None.
+        bidirKey : str, optional
+            Edge dictionary key controlling bidirectionality. Default is None.
+        bidirectional : bool, optional
+            Explicit default bidirectionality. Default is None.
+        useEdgeIndex : bool, optional
+            If True, matrix values are edge index + 1. Default is False.
+        useEdgeLength : bool, optional
+            If True, matrix values are geometric edge lengths. Default is False.
+        mantissa : int, optional
+            Number of decimal places used for edge lengths. Default is 6.
+        tolerance : float, optional
             The desired tolerance. Default is 0.0001.
 
         Returns
         -------
         List[List[Any]]
-            The resulting adjacency matrix list.
+            The resulting adjacency matrix.
         """
 
-        c = TGraph.Compile(graph, weightKey=edgeKeyFwd or "weight")
-        if not isinstance(c, dict):
+        if not isinstance(graph, TGraph):
             return []
 
-        order = list(c["vertices"])
+        # Compile() previously returned active stable vertex indices in
+        # ascending order. Preserve that ordering exactly.
+        order = [
+            record.get("index")
+            for record in graph._vertices
+            if (
+                isinstance(record, dict)
+                and record.get("active", True)
+                and isinstance(record.get("index"), int)
+                and not isinstance(record.get("index"), bool)
+            )
+        ]
+        order.sort()
+
         if vertexKey is not None:
-            order.sort(key=lambda i: graph._vertices[i].get("dictionary", {}).get(vertexKey), reverse=reverse)
+
+            order.sort(
+                key=lambda i: graph._vertices[i]
+                .get("dictionary", {})
+                .get(vertexKey),
+                reverse=reverse,
+            )
+
         elif reverse:
+
             order.reverse()
 
-        pos_out = {stable: i for i, stable in enumerate(order)}
         n = len(order)
-        matrix = [[0 for _ in range(n)] for _ in range(n)]
-        default_bidir = (not graph._directed) if bidirectional is None else bool(bidirectional)
 
-        for e in graph._edges:
-            if not e.get("active", True):
+        if n == 0:
+            return []
+
+        position = {
+            stable_index: matrix_index
+            for matrix_index, stable_index in enumerate(order)
+        }
+
+        matrix = [
+            [0 for _ in range(n)]
+            for _ in range(n)
+        ]
+
+        default_bidir = (
+            not graph._directed
+            if bidirectional is None
+            else bool(bidirectional)
+        )
+
+        for edge in graph._edges:
+
+            if not isinstance(edge, dict):
                 continue
-            src_stable = e.get("src")
-            dst_stable = e.get("dst")
-            if src_stable not in pos_out or dst_stable not in pos_out:
+
+            if not edge.get("active", True):
                 continue
-            d = e.get("dictionary", {}) if isinstance(e.get("dictionary", {}), dict) else {}
+
+            src = edge.get("src")
+            dst = edge.get("dst")
+
+            src_pos = position.get(src)
+            dst_pos = position.get(dst)
+
+            if src_pos is None or dst_pos is None:
+                continue
+
+            dictionary = edge.get("dictionary", {})
+
+            if not isinstance(dictionary, dict):
+                dictionary = {}
+
+            # ----------------------------------------------------------
+            # Determine matrix value.
+            # ----------------------------------------------------------
             if useEdgeIndex:
-                value_fwd = e["index"] + 1
+
+                value_fwd = edge.get("index", 0) + 1
                 value_bwd = value_fwd
+
             elif useEdgeLength:
-                value_fwd = value_bwd = TGraph._EdgeLength(graph, e, mantissa=mantissa, tolerance=tolerance)
+
+                value_fwd = TGraph._EdgeLength(
+                    graph,
+                    edge,
+                    mantissa=mantissa,
+                    tolerance=tolerance,
+                )
+
+                value_bwd = value_fwd
+
             else:
-                value_fwd = d.get(edgeKeyFwd, 1) if edgeKeyFwd is not None else 1
-                value_bwd = d.get(edgeKeyBwd, 1) if edgeKeyBwd is not None else value_fwd
-            matrix[pos_out[src_stable]][pos_out[dst_stable]] = value_fwd
+
+                if edgeKeyFwd is not None:
+                    value_fwd = dictionary.get(
+                        edgeKeyFwd,
+                        1,
+                    )
+                else:
+                    value_fwd = 1
+
+                if edgeKeyBwd is not None:
+                    value_bwd = dictionary.get(
+                        edgeKeyBwd,
+                        1,
+                    )
+                else:
+                    value_bwd = value_fwd
+
+            matrix[src_pos][dst_pos] = value_fwd
+
+            # ----------------------------------------------------------
+            # Determine whether to populate the reverse direction.
+            #
+            # Preserve the previous method's exact semantics.
+            # ----------------------------------------------------------
             if bidirKey is not None:
-                bidir = bool(d.get(bidirKey, default_bidir))
+
+                bidir = bool(
+                    dictionary.get(
+                        bidirKey,
+                        default_bidir,
+                    )
+                )
+
             else:
-                bidir = default_bidir or not e.get("directed", False)
+
+                bidir = (
+                    default_bidir
+                    or not bool(
+                        edge.get(
+                            "directed",
+                            False,
+                        )
+                    )
+                )
+
             if bidir:
-                matrix[pos_out[dst_stable]][pos_out[src_stable]] = value_bwd
+                matrix[dst_pos][src_pos] = value_bwd
+
         return matrix
 
     @staticmethod
@@ -8080,31 +8307,130 @@ class TGraph:
         return [TGraph.Edge(graph, i) for i in sorted(ids) if graph._validate_edge_index(i)]
 
     @staticmethod
-    def AdjacentIndices(graph: "TGraph", index: int, mode: str = "out") -> List[int]:
+    def AdjacentIndices(
+        graph: "TGraph",
+        index: int,
+        mode: str = "out",
+    ) -> List[int]:
         """
         Returns the indices of vertices adjacent to the input vertex index.
 
+        This implementation traverses TGraph's native incidence tables directly
+        and deliberately avoids TGraph.Compile().
+
         Parameters
         ----------
-        graph : 'TGraph'
+        graph : TGraph
             The input TGraph.
         index : int
-            The input index.
-        mode : str , optional
-            The traversal or adjacency mode. Valid values are typically "out", "in", or "all".
-            Default is 'out'.
+            The input vertex index.
+        mode : str, optional
+            The traversal or adjacency mode.
+
+            - "out": outgoing adjacency.
+            - "in": incoming adjacency.
+            - "all": adjacency in either direction.
+
+            Any value other than "in" or "all" is treated as "out",
+            matching the previous compiled-adjacency behaviour.
+
+            Default is "out".
 
         Returns
         -------
         List[int]
-            The resulting adjacent indices list.
+            The sorted stable indices of adjacent active vertices.
         """
-        c = TGraph.Compile(graph)
-        if not isinstance(c, dict) or index not in c["position"]:
+
+        if not isinstance(graph, TGraph):
             return []
-        p = c["position"][index]
-        adj = TGraph.CompiledAdjacency(graph, mode=mode)
-        return [c["vertices"][q] for q in adj[p]]
+
+        if not graph._validate_vertex_index(index):
+            return []
+
+        mode_l = str(mode).lower()
+
+        if mode_l == "in":
+            incidence = graph._in_edges
+        elif mode_l == "all":
+            incidence = graph._incident_edges
+        else:
+            incidence = graph._out_edges
+
+        edges = graph._edges
+        graph_directed = graph._directed
+
+        neighbours = set()
+
+        for edge_index in incidence.get(index, ()):
+
+            if not graph._validate_edge_index(edge_index):
+                continue
+
+            edge = edges[edge_index]
+
+            if not isinstance(edge, dict):
+                continue
+
+            src = edge.get("src")
+            dst = edge.get("dst")
+
+            directed = bool(
+                edge.get(
+                    "directed",
+                    graph_directed,
+                )
+            )
+
+            # ----------------------------------------------------------
+            # ALL
+            # ----------------------------------------------------------
+            if mode_l == "all":
+
+                if src == index and graph._validate_vertex_index(dst):
+                    neighbours.add(dst)
+
+                if dst == index and graph._validate_vertex_index(src):
+                    neighbours.add(src)
+
+            # ----------------------------------------------------------
+            # IN
+            # ----------------------------------------------------------
+            elif mode_l == "in":
+
+                if directed:
+
+                    if dst == index and graph._validate_vertex_index(src):
+                        neighbours.add(src)
+
+                else:
+
+                    if src == index and graph._validate_vertex_index(dst):
+                        neighbours.add(dst)
+
+                    if dst == index and graph._validate_vertex_index(src):
+                        neighbours.add(src)
+
+            # ----------------------------------------------------------
+            # OUT
+            # ----------------------------------------------------------
+            else:
+
+                if directed:
+
+                    if src == index and graph._validate_vertex_index(dst):
+                        neighbours.add(dst)
+
+                else:
+
+                    if src == index and graph._validate_vertex_index(dst):
+                        neighbours.add(dst)
+
+                    if dst == index and graph._validate_vertex_index(src):
+                        neighbours.add(src)
+
+        # Compile() previously stored each adjacency row in sorted order.
+        return sorted(neighbours)
 
     @staticmethod
     def AdjacentVertices(graph: "TGraph", vertex: Union[int, Dict[str, Any]], mode: str = "out") -> List[Dict[str, Any]]:
@@ -10461,14 +10787,7 @@ class TGraph:
                 d["y"] = y
                 d["z"] = z
 
-                representation = None
-                try:
-                    from topologicpy.Vertex import Vertex
-                    representation = Vertex.ByCoordinates(x, y, z)
-                except Exception:
-                    representation = None
-
-                vertexIndex = g.AddVertex(dictionary=d, representation=representation)
+                vertexIndex = g.AddVertex(dictionary=d)
                 nodeIDToVertexIndex[nodeID] = vertexIndex
                 nodeIDToVertexIndex[str(nodeID)] = vertexIndex
 
@@ -20359,41 +20678,210 @@ class TGraph:
         """
         Returns the connected components of the input TGraph.
 
+        This implementation traverses TGraph's native edge-incidence tables directly
+        and deliberately avoids TGraph.Compile(). This makes repeated calls on graphs
+        that are being modified substantially faster because no compact adjacency,
+        NumPy arrays, or SciPy sparse matrices need to be rebuilt.
+
         Parameters
         ----------
-        graph : 'TGraph'
+        graph : TGraph
             The input TGraph.
-        mode : str , optional
-            The traversal or adjacency mode. Valid values are typically "out", "in", or "all".
-            Default is 'all'.
+        mode : str, optional
+            The traversal or adjacency mode.
+
+            - "all": edges are traversed in either direction.
+            - "in": directed edges are traversed toward their source; undirected
+            edges remain bidirectional.
+            - Any other value, including "out": directed edges are traversed from
+            source to destination; undirected edges remain bidirectional.
+
+            Default is "all".
 
         Returns
         -------
         List[List[int]]
-            The resulting connected components list.
+            The connected components, expressed as lists of stable TGraph vertex
+            indices.
+
+        Notes
+        -----
+        The ordering is deterministic and is kept compatible with the previous
+        compiled-adjacency implementation:
+
+        - components are started from active vertices in ascending index order;
+        - neighbouring vertices are visited in ascending index order.
         """
 
-        c, adj = TGraph._AdjacencyMatrixFastArraydjacencyCompact(graph, mode=mode)
-        if not isinstance(c, dict):
+        if not isinstance(graph, TGraph):
             return []
-        n = c["n"]
-        seen = [False] * n
-        vertices = c["vertices"]
+
+        # Match the previous mode semantics exactly:
+        # "in"  -> incoming adjacency
+        # "all" -> all adjacency
+        # anything else -> outgoing adjacency
+        mode_l = str(mode).lower()
+
+        if mode_l == "in":
+            incidence = graph._in_edges
+        elif mode_l == "all":
+            incidence = graph._incident_edges
+        else:
+            incidence = graph._out_edges
+
+        # Active stable vertex indices.
+        vertices = [
+            record.get("index")
+            for record in graph._vertices
+            if (
+                isinstance(record, dict)
+                and record.get("active", True)
+                and isinstance(record.get("index"), int)
+                and not isinstance(record.get("index"), bool)
+            )
+        ]
+        vertices.sort()
+
+        if not vertices:
+            return []
+
+        active_vertices = set(vertices)
+
+        # Local bindings reduce attribute/dictionary lookup overhead in the hot loop.
+        edges = graph._edges
+        graph_directed = graph._directed
+        edge_count = len(edges)
+
+        seen = set()
         components = []
-        for start in range(n):
-            if seen[start]:
+
+        for start in vertices:
+
+            if start in seen:
                 continue
-            q = deque([start])
-            seen[start] = True
-            comp = []
-            while q:
-                u = q.popleft()
-                comp.append(vertices[u])
-                for v in adj[u]:
-                    if not seen[v]:
-                        seen[v] = True
-                        q.append(v)
-            components.append(comp)
+
+            seen.add(start)
+            queue = deque([start])
+            component = []
+
+            while queue:
+
+                u = queue.popleft()
+                component.append(u)
+
+                # Multiple parallel edges may lead to the same neighbour, therefore
+                # collect neighbours into a set before traversal.
+                neighbours = set()
+
+                for edge_index in incidence.get(u, ()):
+
+                    if (
+                        not isinstance(edge_index, int)
+                        or isinstance(edge_index, bool)
+                        or edge_index < 0
+                        or edge_index >= edge_count
+                    ):
+                        continue
+
+                    edge = edges[edge_index]
+
+                    if not isinstance(edge, dict):
+                        continue
+
+                    if not edge.get("active", True):
+                        continue
+
+                    src = edge.get("src")
+                    dst = edge.get("dst")
+
+                    if src not in active_vertices or dst not in active_vertices:
+                        continue
+
+                    directed = bool(
+                        edge.get(
+                            "directed",
+                            graph_directed,
+                        )
+                    )
+
+                    # ----------------------------------------------------------
+                    # ALL
+                    #
+                    # Treat every edge as connecting its two endpoints regardless
+                    # of its own directed flag.
+                    # ----------------------------------------------------------
+                    if mode_l == "all":
+
+                        if src == u:
+                            neighbours.add(dst)
+
+                        if dst == u:
+                            neighbours.add(src)
+
+                    # ----------------------------------------------------------
+                    # IN
+                    #
+                    # Directed:
+                    #
+                    #     src -> dst
+                    #
+                    # From dst, src is an incoming neighbour.
+                    #
+                    # Undirected edges remain traversable both ways.
+                    # ----------------------------------------------------------
+                    elif mode_l == "in":
+
+                        if directed:
+
+                            if dst == u:
+                                neighbours.add(src)
+
+                        else:
+
+                            if src == u:
+                                neighbours.add(dst)
+
+                            if dst == u:
+                                neighbours.add(src)
+
+                    # ----------------------------------------------------------
+                    # OUT
+                    #
+                    # Directed:
+                    #
+                    #     src -> dst
+                    #
+                    # From src, dst is an outgoing neighbour.
+                    #
+                    # Undirected edges remain traversable both ways.
+                    # ----------------------------------------------------------
+                    else:
+
+                        if directed:
+
+                            if src == u:
+                                neighbours.add(dst)
+
+                        else:
+
+                            if src == u:
+                                neighbours.add(dst)
+
+                            if dst == u:
+                                neighbours.add(src)
+
+                # The old compiled adjacency arrays were sorted. Preserve that
+                # deterministic traversal order.
+                for v in sorted(neighbours):
+
+                    if v in seen:
+                        continue
+
+                    seen.add(v)
+                    queue.append(v)
+
+            components.append(component)
+
         return components
 
     @staticmethod
@@ -20508,106 +20996,284 @@ class TGraph:
         return values
 
     @staticmethod
-    def ContainsEdge(graph: "TGraph", edge: Any, tolerance: float = 0.0001, silent: bool = False) -> bool:
+    def ContainsEdge(
+        graph: "TGraph",
+        edge: Any,
+        tolerance: float = 0.0001,
+        silent: bool = False,
+    ) -> bool:
         """
         Returns True if the input TGraph contains the input edge.
 
         Parameters
         ----------
-        graph : 'TGraph'
+        graph : TGraph
             The input TGraph.
         edge : Any
-            The input edge, edge index, or edge record.
-        tolerance : float , optional
+            The input edge, edge index, edge record, or pair of vertex
+            indices/records.
+        tolerance : float, optional
             The desired tolerance. Default is 0.0001.
-        silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
+        silent : bool, optional
+            If set to True, error and warning messages are suppressed.
+            Default is False.
 
         Returns
         -------
         bool
             True if the requested condition is satisfied. Otherwise, False.
         """
+
         if not isinstance(graph, TGraph):
             return False
-        idx = TGraph.EdgeIndex(graph, edge)
-        if isinstance(idx, int) and graph._validate_edge_index(idx):
-            return True
-        if isinstance(edge, (list, tuple)) and len(edge) >= 2:
-            src = TGraph.VertexIndex(graph, edge[0])
-            dst = TGraph.VertexIndex(graph, edge[1])
-            if isinstance(src, int) and isinstance(dst, int):
-                return TGraph.HasEdge(graph, src, dst)
+
+        # --------------------------------------------------------------
+        # Fast path: stable integer edge index.
+        #
+        # An invalid integer is definitively not an edge; do not trigger
+        # Topologic imports.
+        # --------------------------------------------------------------
+        if isinstance(edge, int) and not isinstance(edge, bool):
+            return graph._validate_edge_index(edge)
+
+        # --------------------------------------------------------------
+        # Fast path: TGraph edge record.
+        # --------------------------------------------------------------
+        if isinstance(edge, dict):
+
+            idx = edge.get("index")
+
+            if isinstance(idx, int) and not isinstance(idx, bool):
+                return graph._validate_edge_index(idx)
+
+            return False
+
+        # --------------------------------------------------------------
+        # Fast path: source/destination pair.
+        # --------------------------------------------------------------
+        if isinstance(edge, (list, tuple)):
+
+            if len(edge) < 2:
+                return False
+
+            src = TGraph.VertexIndex(
+                graph,
+                edge[0],
+            )
+
+            dst = TGraph.VertexIndex(
+                graph,
+                edge[1],
+            )
+
+            if src is None or dst is None:
+                return False
+
+            return TGraph.HasEdge(
+                graph,
+                src,
+                dst,
+            )
+
+        # --------------------------------------------------------------
+        # Fast identity path for stored Topologic representations.
+        # --------------------------------------------------------------
+        for record in graph._edges:
+
+            if not isinstance(record, dict):
+                continue
+
+            if not record.get("active", True):
+                continue
+
+            if record.get("representation", None) is edge:
+                return True
+
+        # --------------------------------------------------------------
+        # Geometry pathway.
+        # --------------------------------------------------------------
         try:
             from topologicpy.Topology import Topology
-            if Topology.IsInstance(edge, "Edge"):
-                for rec in graph._edges:
-                    if not rec.get("active", True):
-                        continue
-                    rep = rec.get("representation", None)
-                    if rep is edge:
-                        return True
-                    if rep is not None:
-                        try:
-                            if Topology.IsSame(rep, edge):
-                                return True
-                        except Exception:
-                            pass
         except Exception:
-            pass
+            return False
+
+        try:
+            if not Topology.IsInstance(edge, "Edge"):
+                return False
+        except Exception:
+            return False
+
+        for record in graph._edges:
+
+            if not isinstance(record, dict):
+                continue
+
+            if not record.get("active", True):
+                continue
+
+            representation = record.get(
+                "representation",
+                None,
+            )
+
+            if representation is edge:
+                return True
+
+            if representation is not None:
+                try:
+                    if Topology.IsSame(
+                        representation,
+                        edge,
+                    ):
+                        return True
+                except Exception:
+                    pass
+
         return False
 
     @staticmethod
-    def ContainsVertex(graph: "TGraph", vertex: Any, tolerance: float = 0.0001, silent: bool = False) -> bool:
+    def ContainsVertex(
+        graph: "TGraph",
+        vertex: Any,
+        tolerance: float = 0.0001,
+        silent: bool = False,
+    ) -> bool:
         """
         Returns True if the input TGraph contains the input vertex.
 
         Parameters
         ----------
-        graph : 'TGraph'
+        graph : TGraph
             The input TGraph.
         vertex : Any
             The input vertex, vertex index, or vertex record.
-        tolerance : float , optional
+        tolerance : float, optional
             The desired tolerance. Default is 0.0001.
-        silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
+        silent : bool, optional
+            If set to True, error and warning messages are suppressed.
+            Default is False.
 
         Returns
         -------
         bool
             True if the requested condition is satisfied. Otherwise, False.
         """
+
         if not isinstance(graph, TGraph):
             return False
-        idx = TGraph.VertexIndex(graph, vertex)
-        if isinstance(idx, int) and graph._validate_vertex_index(idx):
-            return True
+
+        # --------------------------------------------------------------
+        # Fast path: stable integer vertex index.
+        #
+        # Do not fall through to the Topologic geometry pathway when an
+        # integer is simply out of range or inactive.
+        # --------------------------------------------------------------
+        if isinstance(vertex, int) and not isinstance(vertex, bool):
+            return graph._validate_vertex_index(vertex)
+
+        # --------------------------------------------------------------
+        # Fast path: TGraph vertex record.
+        #
+        # A dictionary without a valid index cannot be a Topologic Vertex,
+        # so there is no reason to import geometry modules.
+        # --------------------------------------------------------------
+        if isinstance(vertex, dict):
+
+            idx = vertex.get("index")
+
+            if isinstance(idx, int) and not isinstance(idx, bool):
+                return graph._validate_vertex_index(idx)
+
+            return False
+
+        # --------------------------------------------------------------
+        # Fast identity path for stored representations.
+        #
+        # This catches the common case without importing Topology/Vertex.
+        # --------------------------------------------------------------
+        for record in graph._vertices:
+
+            if not isinstance(record, dict):
+                continue
+
+            if not record.get("active", True):
+                continue
+
+            if record.get("representation", None) is vertex:
+                return True
+
+        # --------------------------------------------------------------
+        # Geometry pathway.
+        #
+        # Only reach this comparatively expensive code when the supplied
+        # object might genuinely be a Topologic Vertex.
+        # --------------------------------------------------------------
         try:
             from topologicpy.Topology import Topology
             from topologicpy.Vertex import Vertex
-            if Topology.IsInstance(vertex, "Vertex"):
-                for rec in graph._vertices:
-                    if not rec.get("active", True):
-                        continue
-                    rep = rec.get("representation", None)
-                    if rep is vertex:
-                        return True
-                    if rep is not None:
-                        try:
-                            if Topology.IsSame(rep, vertex):
-                                return True
-                        except Exception:
-                            pass
-                    coords = TGraph.Coordinates(graph, rec.get("index"), default=None)
-                    if coords is not None:
-                        try:
-                            if Vertex.Distance(vertex, Vertex.ByCoordinates(coords[0], coords[1], coords[2])) <= tolerance:
-                                return True
-                        except Exception:
-                            pass
         except Exception:
-            pass
+            return False
+
+        try:
+            if not Topology.IsInstance(vertex, "Vertex"):
+                return False
+        except Exception:
+            return False
+
+        for record in graph._vertices:
+
+            if not isinstance(record, dict):
+                continue
+
+            if not record.get("active", True):
+                continue
+
+            representation = record.get(
+                "representation",
+                None,
+            )
+
+            if representation is vertex:
+                return True
+
+            if representation is not None:
+                try:
+                    if Topology.IsSame(
+                        representation,
+                        vertex,
+                    ):
+                        return True
+                except Exception:
+                    pass
+
+            coordinates = TGraph.Coordinates(
+                graph,
+                record.get("index"),
+                default=None,
+            )
+
+            if coordinates is None:
+                continue
+
+            try:
+                comparison_vertex = Vertex.ByCoordinates(
+                    coordinates[0],
+                    coordinates[1],
+                    coordinates[2],
+                )
+
+                if (
+                    Vertex.Distance(
+                        vertex,
+                        comparison_vertex,
+                    )
+                    <= tolerance
+                ):
+                    return True
+
+            except Exception:
+                pass
+
         return False
 
     @staticmethod
@@ -25047,25 +25713,174 @@ class TGraph:
         """
         Returns True if the input TGraph is connected.
 
+        This implementation traverses TGraph's native incidence tables directly
+        and deliberately avoids TGraph.Compile(). It also avoids constructing the
+        complete connected-components list when only a Boolean result is required.
+
         Parameters
         ----------
-        graph : 'TGraph'
+        graph : TGraph
             The input TGraph.
-        mode : str , optional
-            The traversal or adjacency mode. Valid values are typically "out", "in", or "all".
-            Default is 'all'.
+        mode : str, optional
+            The traversal or adjacency mode.
+
+            - "all": edges are traversed in either direction.
+            - "in": directed edges are traversed toward their source; undirected
+            edges remain bidirectional.
+            - Any other value, including "out": directed edges are traversed from
+            source to destination; undirected edges remain bidirectional.
+
+            Default is "all".
 
         Returns
         -------
         bool
-            True if the requested condition is satisfied. Otherwise, False.
+            True if all active vertices are reachable from the first active vertex
+            under the requested traversal mode. Otherwise, False.
+
+        Notes
+        -----
+        As with the previous implementation, an empty graph and a graph containing
+        one active vertex are considered connected.
         """
-        c = TGraph.Compile(graph)
-        if not isinstance(c, dict):
+
+        if not isinstance(graph, TGraph):
             return False
-        if c["n"] <= 1:
+
+        mode_l = str(mode).lower()
+
+        # Active stable vertex indices.
+        vertices = [
+            record.get("index")
+            for record in graph._vertices
+            if (
+                isinstance(record, dict)
+                and record.get("active", True)
+                and isinstance(record.get("index"), int)
+                and not isinstance(record.get("index"), bool)
+            )
+        ]
+
+        vertex_count = len(vertices)
+
+        # Preserve the semantics of the previous implementation.
+        if vertex_count <= 1:
             return True
-        return len(TGraph.ConnectedComponents(graph, mode=mode)) == 1
+
+        active_vertices = set(vertices)
+
+        if mode_l == "in":
+            incidence = graph._in_edges
+        elif mode_l == "all":
+            incidence = graph._incident_edges
+        else:
+            incidence = graph._out_edges
+
+        edges = graph._edges
+        edge_count = len(edges)
+        graph_directed = graph._directed
+
+        start = vertices[0]
+
+        seen = {start}
+        queue = deque([start])
+
+        while queue:
+
+            u = queue.popleft()
+
+            for edge_index in incidence.get(u, ()):
+
+                if (
+                    not isinstance(edge_index, int)
+                    or isinstance(edge_index, bool)
+                    or edge_index < 0
+                    or edge_index >= edge_count
+                ):
+                    continue
+
+                edge = edges[edge_index]
+
+                if not isinstance(edge, dict):
+                    continue
+
+                if not edge.get("active", True):
+                    continue
+
+                src = edge.get("src")
+                dst = edge.get("dst")
+
+                if src not in active_vertices or dst not in active_vertices:
+                    continue
+
+                directed = bool(
+                    edge.get(
+                        "directed",
+                        graph_directed,
+                    )
+                )
+
+                neighbour = None
+
+                # ----------------------------------------------------------
+                # ALL
+                # ----------------------------------------------------------
+                if mode_l == "all":
+
+                    if src == u:
+                        neighbour = dst
+                    elif dst == u:
+                        neighbour = src
+
+                # ----------------------------------------------------------
+                # IN
+                # ----------------------------------------------------------
+                elif mode_l == "in":
+
+                    if directed:
+
+                        if dst == u:
+                            neighbour = src
+
+                    else:
+
+                        if src == u:
+                            neighbour = dst
+                        elif dst == u:
+                            neighbour = src
+
+                # ----------------------------------------------------------
+                # OUT
+                # ----------------------------------------------------------
+                else:
+
+                    if directed:
+
+                        if src == u:
+                            neighbour = dst
+
+                    else:
+
+                        if src == u:
+                            neighbour = dst
+                        elif dst == u:
+                            neighbour = src
+
+                if neighbour is None:
+                    continue
+
+                if neighbour in seen:
+                    continue
+
+                seen.add(neighbour)
+
+                # We already know the answer; do not traverse the remaining queue.
+                if len(seen) == vertex_count:
+                    return True
+
+                queue.append(neighbour)
+
+        return len(seen) == vertex_count
 
     @staticmethod
     def IsDirected(graph: "TGraph") -> bool:
@@ -25180,10 +25995,17 @@ class TGraph:
         """
         return isinstance(graph, TGraph)
 
+
     @staticmethod
-    def IsIsomorphic(graphA: "TGraph", graphB: "TGraph", vertexIDKey: str = None, edgeWeightKey: str = None, wlKey: str = None, iterations: int = 2, silent: bool = False) -> bool:
+    def IsIsomorphic(graphA: "TGraph", graphB: "TGraph", vertexIDKey: str = None,
+                     edgeWeightKey: str = None, wlKey: str = None,
+                     iterations: int = 2, silent: bool = False) -> bool:
         """
         Returns True if two input TGraphs are isomorphic under the requested constraints.
+
+        The check is exact. Weisfeiler-Lehman refinement is used only to reduce
+        candidate domains before exhaustive backtracking; it cannot by itself make
+        a non-exact match succeed.
 
         Parameters
         ----------
@@ -25192,81 +26014,418 @@ class TGraph:
         graphB : 'TGraph'
             The second input TGraph.
         vertexIDKey : str , optional
-            The dictionary key to use. Default is None.
+            Optional vertex dictionary key whose values must be preserved by the
+            isomorphism. Default is None.
         edgeWeightKey : str , optional
-            The dictionary key to use. Default is None.
+            Optional edge dictionary key whose values must be preserved by the
+            isomorphism. Default is None.
         wlKey : str , optional
-            The dictionary key to use. Default is None.
+            Optional vertex dictionary key used as the initial Weisfeiler-Lehman
+            label. When supplied, its values are preserved by the isomorphism.
+            Default is None.
         iterations : int , optional
-            The input iterations value. Default is 2.
+            Number of Weisfeiler-Lehman refinement iterations. Default is 2.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
+            Retained for API compatibility. Default is False.
 
         Returns
         -------
         bool
-            True if the requested condition is satisfied. Otherwise, False.
+            True if the graphs are isomorphic under the requested constraints;
+            otherwise False.
         """
         if not isinstance(graphA, TGraph) or not isinstance(graphB, TGraph):
             return False
+
+        # Preserve the existing public semantics: graph-level direction mode is
+        # considered part of graph identity. Individual edge direction is checked
+        # separately below, so mixed directed/undirected records are also supported.
         if graphA._directed != graphB._directed:
             return False
-        if TGraph.Order(graphA) != TGraph.Order(graphB) or TGraph.Size(graphA) != TGraph.Size(graphB):
+
+        if TGraph.Order(graphA) != TGraph.Order(graphB):
+            return False
+        if TGraph.Size(graphA) != TGraph.Size(graphB):
             return False
 
         vertices_a = TGraph.ActiveVertexIndices(graphA)
         vertices_b = TGraph.ActiveVertexIndices(graphB)
-        n = len(vertices_a)
-        if n == 0:
+
+        if len(vertices_a) != len(vertices_b):
+            return False
+        if not vertices_a:
             return True
 
-        sig_a = {v: TGraph._IsomorphismVertexSignature(graphA, v, vertexIDKey=vertexIDKey) for v in vertices_a}
-        sig_b = {v: TGraph._IsomorphismVertexSignature(graphB, v, vertexIDKey=vertexIDKey) for v in vertices_b}
-        if sorted(sig_a.values()) != sorted(sig_b.values()):
+        try:
+            iterations = max(0, int(iterations or 0))
+        except Exception:
+            iterations = 2
+
+        # --------------------------------------------------------------
+        # Equality helpers
+        # --------------------------------------------------------------
+
+        def _value_equal(a: Any, b: Any) -> bool:
+            """Safe equality for ordinary, heterogeneous, and array-like values."""
+            if a is b:
+                return True
+
+            try:
+                result = (a == b)
+            except Exception:
+                return False
+
+            if isinstance(result, bool):
+                return result
+
+            try:
+                return bool(result)
+            except Exception:
+                pass
+
+            # NumPy/Pandas-style elementwise equality without importing either.
+            try:
+                return bool(result.all())
+            except Exception:
+                return False
+
+        def _sequence_equal(a: Tuple[Any, ...], b: Tuple[Any, ...]) -> bool:
+            if len(a) != len(b):
+                return False
+            return all(_value_equal(x, y) for x, y in zip(a, b))
+
+        def _edge_multiset_equal(values_a: List[Any], values_b: List[Any]) -> bool:
+            """Insertion-order-independent equality for edge attribute multisets."""
+            if len(values_a) != len(values_b):
+                return False
+
+            used = [False] * len(values_b)
+
+            for item_a in values_a:
+                matched = False
+                direction_a, value_a = item_a
+
+                for i, item_b in enumerate(values_b):
+                    if used[i]:
+                        continue
+
+                    direction_b, value_b = item_b
+                    if direction_a != direction_b:
+                        continue
+
+                    if _value_equal(value_a, value_b):
+                        used[i] = True
+                        matched = True
+                        break
+
+                if not matched:
+                    return False
+
+            return True
+
+        def _histogram(values: Iterable[int]) -> Dict[int, int]:
+            result = {}
+            for value in values:
+                result[value] = result.get(value, 0) + 1
+            return result
+
+        # --------------------------------------------------------------
+        # Initial invariant signatures
+        # --------------------------------------------------------------
+
+        signatures_a = {
+            v: TGraph._IsomorphismVertexSignature(
+                graphA,
+                v,
+                vertexIDKey=vertexIDKey,
+            )
+            for v in vertices_a
+        }
+        signatures_b = {
+            v: TGraph._IsomorphismVertexSignature(
+                graphB,
+                v,
+                vertexIDKey=vertexIDKey,
+            )
+            for v in vertices_b
+        }
+
+        def _wl_value(graph: "TGraph", vertex_index: int) -> Any:
+            if wlKey is None:
+                return None
+            dictionary = graph._vertices[vertex_index].get("dictionary", {})
+            if not isinstance(dictionary, dict):
+                return None
+            return dictionary.get(wlKey, None)
+
+        # Assign initial colour classes jointly across both graphs. Doing this in
+        # one shared colour space is essential: independently numbered WL colours
+        # are not directly comparable between graphs.
+        initial_representatives = []
+        colors_a = {}
+        colors_b = {}
+
+        def _initial_color(graph: "TGraph", vertex_index: int,
+                           signature: Tuple[Any, ...]) -> int:
+            wl_value = _wl_value(graph, vertex_index)
+
+            for color, representative in enumerate(initial_representatives):
+                rep_signature, rep_wl_value = representative
+                if (
+                    _sequence_equal(signature, rep_signature)
+                    and _value_equal(wl_value, rep_wl_value)
+                ):
+                    return color
+
+            initial_representatives.append((signature, wl_value))
+            return len(initial_representatives) - 1
+
+        for v in vertices_a:
+            colors_a[v] = _initial_color(graphA, v, signatures_a[v])
+        for v in vertices_b:
+            colors_b[v] = _initial_color(graphB, v, signatures_b[v])
+
+        if _histogram(colors_a.values()) != _histogram(colors_b.values()):
             return False
 
-        # Candidate domains by invariant signature.
-        candidates = {v: [w for w in vertices_b if sig_b[w] == sig_a[v]] for v in vertices_a}
-        if any(len(candidates[v]) == 0 for v in vertices_a):
+        # --------------------------------------------------------------
+        # Shared edge-value classes for WL refinement
+        # --------------------------------------------------------------
+
+        vertex_set_a = set(vertices_a)
+        vertex_set_b = set(vertices_b)
+
+        def _relevant_edges(graph: "TGraph", vertex_set: Set[int]) -> List[Dict[str, Any]]:
+            result = []
+            for edge in graph._edges:
+                if not isinstance(edge, dict) or not edge.get("active", True):
+                    continue
+                if edge.get("src") not in vertex_set or edge.get("dst") not in vertex_set:
+                    continue
+                result.append(edge)
+            return result
+
+        edges_a = _relevant_edges(graphA, vertex_set_a)
+        edges_b = _relevant_edges(graphB, vertex_set_b)
+
+        weight_representatives = []
+
+        def _edge_weight_class(edge: Dict[str, Any]) -> int:
+            if edgeWeightKey is None:
+                return 0
+
+            dictionary = edge.get("dictionary", {})
+            if not isinstance(dictionary, dict):
+                dictionary = {}
+            value = dictionary.get(edgeWeightKey, None)
+
+            for color, representative in enumerate(weight_representatives):
+                if _value_equal(value, representative):
+                    return color
+
+            weight_representatives.append(value)
+            return len(weight_representatives) - 1
+
+        edge_weight_classes_a = {
+            edge.get("index"): _edge_weight_class(edge)
+            for edge in edges_a
+        }
+        edge_weight_classes_b = {
+            edge.get("index"): _edge_weight_class(edge)
+            for edge in edges_b
+        }
+
+        # --------------------------------------------------------------
+        # Weisfeiler-Lehman candidate refinement
+        # --------------------------------------------------------------
+
+        def _wl_descriptors(
+            graph: "TGraph",
+            vertices: List[int],
+            colors: Dict[int, int],
+            edges: List[Dict[str, Any]],
+            edge_weight_classes: Dict[int, int],
+        ) -> Dict[int, Tuple[Any, ...]]:
+            neighbours = {v: [] for v in vertices}
+
+            for edge in edges:
+                src = edge.get("src")
+                dst = edge.get("dst")
+                directed = bool(edge.get("directed", graph._directed))
+                weight_color = edge_weight_classes.get(edge.get("index"), 0)
+
+                if directed:
+                    # 1 = outgoing, 2 = incoming.
+                    neighbours[src].append((1, colors[dst], weight_color))
+                    neighbours[dst].append((2, colors[src], weight_color))
+                else:
+                    # 0 = undirected. A self-loop is appended twice, matching its
+                    # two incidence contributions.
+                    neighbours[src].append((0, colors[dst], weight_color))
+                    neighbours[dst].append((0, colors[src], weight_color))
+
+            return {
+                v: (
+                    colors[v],
+                    tuple(sorted(neighbours[v])),
+                )
+                for v in vertices
+            }
+
+        for _ in range(iterations):
+            descriptors_a = _wl_descriptors(
+                graphA,
+                vertices_a,
+                colors_a,
+                edges_a,
+                edge_weight_classes_a,
+            )
+            descriptors_b = _wl_descriptors(
+                graphB,
+                vertices_b,
+                colors_b,
+                edges_b,
+                edge_weight_classes_b,
+            )
+
+            color_map = {}
+
+            def _refined_color(descriptor: Tuple[Any, ...]) -> int:
+                if descriptor not in color_map:
+                    color_map[descriptor] = len(color_map)
+                return color_map[descriptor]
+
+            new_colors_a = {
+                v: _refined_color(descriptors_a[v])
+                for v in vertices_a
+            }
+            new_colors_b = {
+                v: _refined_color(descriptors_b[v])
+                for v in vertices_b
+            }
+
+            if _histogram(new_colors_a.values()) != _histogram(new_colors_b.values()):
+                return False
+
+            colors_a = new_colors_a
+            colors_b = new_colors_b
+
+        # Final candidate domains. Equal final WL colour implies equal initial
+        # signature and, when supplied, equal vertexIDKey/wlKey values.
+        candidates = {
+            u: [v for v in vertices_b if colors_b[v] == colors_a[u]]
+            for u in vertices_a
+        }
+
+        if any(len(candidates[u]) == 0 for u in vertices_a):
             return False
 
-        # Search most constrained vertices first.
-        order = sorted(vertices_a, key=lambda v: (len(candidates[v]), -TGraph.Degree(graphA, v, mode="all"), v))
+        # Search the most constrained vertices first.
+        order = sorted(
+            vertices_a,
+            key=lambda u: (
+                len(candidates[u]),
+                -TGraph.Degree(graphA, u, mode="all"),
+                u,
+            ),
+        )
+
         mapping: Dict[int, int] = {}
         used: Set[int] = set()
 
-        def compatible_pair(u1: int, v1: int, u2: int, v2: int) -> bool:
-            # Compare edge multisets in the relevant direction(s).
-            if TGraph._IsomorphismEdgeValues(graphA, u1, u2, edgeWeightKey=edgeWeightKey) != TGraph._IsomorphismEdgeValues(graphB, v1, v2, edgeWeightKey=edgeWeightKey):
+        # Self-loops must be checked explicitly: pairwise checks against already
+        # mapped *other* vertices cannot see their attributes.
+        loops_a = {
+            u: TGraph._IsomorphismEdgeValues(
+                graphA,
+                u,
+                u,
+                edgeWeightKey=edgeWeightKey,
+            )
+            for u in vertices_a
+        }
+        loops_b = {
+            v: TGraph._IsomorphismEdgeValues(
+                graphB,
+                v,
+                v,
+                edgeWeightKey=edgeWeightKey,
+            )
+            for v in vertices_b
+        }
+
+        def _compatible_pair(u1: int, v1: int, u2: int, v2: int) -> bool:
+            # Check both orientations unconditionally. For undirected edges these
+            # are identical; for directed or mixed graphs the reverse check is
+            # necessary and exact.
+            if not _edge_multiset_equal(
+                TGraph._IsomorphismEdgeValues(
+                    graphA,
+                    u1,
+                    u2,
+                    edgeWeightKey=edgeWeightKey,
+                ),
+                TGraph._IsomorphismEdgeValues(
+                    graphB,
+                    v1,
+                    v2,
+                    edgeWeightKey=edgeWeightKey,
+                ),
+            ):
                 return False
-            if graphA._directed:
-                if TGraph._IsomorphismEdgeValues(graphA, u2, u1, edgeWeightKey=edgeWeightKey) != TGraph._IsomorphismEdgeValues(graphB, v2, v1, edgeWeightKey=edgeWeightKey):
-                    return False
+
+            if not _edge_multiset_equal(
+                TGraph._IsomorphismEdgeValues(
+                    graphA,
+                    u2,
+                    u1,
+                    edgeWeightKey=edgeWeightKey,
+                ),
+                TGraph._IsomorphismEdgeValues(
+                    graphB,
+                    v2,
+                    v1,
+                    edgeWeightKey=edgeWeightKey,
+                ),
+            ):
+                return False
+
             return True
 
-        def backtrack(pos: int) -> bool:
-            if pos >= len(order):
+        def _backtrack(position: int) -> bool:
+            if position >= len(order):
                 return True
-            u = order[pos]
-            for v in sorted(candidates[u]):
+
+            u = order[position]
+
+            for v in candidates[u]:
                 if v in used:
                     continue
-                ok = True
-                for mapped_u, mapped_v in mapping.items():
-                    if not compatible_pair(u, v, mapped_u, mapped_v):
-                        ok = False
-                        break
-                if not ok:
+
+                if not _edge_multiset_equal(loops_a[u], loops_b[v]):
                     continue
+
+                compatible = True
+                for mapped_u, mapped_v in mapping.items():
+                    if not _compatible_pair(u, v, mapped_u, mapped_v):
+                        compatible = False
+                        break
+
+                if not compatible:
+                    continue
+
                 mapping[u] = v
                 used.add(v)
-                if backtrack(pos + 1):
+
+                if _backtrack(position + 1):
                     return True
+
                 used.remove(v)
                 del mapping[u]
+
             return False
 
-        return bool(backtrack(0))
+        return bool(_backtrack(0))
 
     @staticmethod
     def IsolatedVertices(graph: "TGraph") -> List[Dict[str, Any]]:

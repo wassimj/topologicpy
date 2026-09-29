@@ -776,8 +776,21 @@ class ShapeGrammar:
                     frontier.append(target)
         return self._unique_topologies(output)
 
-    def LineageGraph(self, application: Optional[int] = None):
+    def LineageGraph(self, application: Optional[int] = None, topologyType: Optional[str] = None, detailed: bool = False, includeDeleted: bool = False):
         """Return exact captured subtopology lineage as a derived ``TGraph``."""
+        if not detailed:
+            from topologicpy.Provenance import Provenance
+            provenance = Provenance.ByRecords(
+                self.History(application=application),
+                operation="ShapeGrammar",
+                metadata={"type": "ShapeGrammarLineage", "schema": self.SCHEMA},
+            )
+            return provenance.Graph(
+                topologyType=topologyType,
+                includeDeleted=includeDeleted,
+                detailed=False,
+            )
+
         from topologicpy.TGraph import TGraph
 
         graph = TGraph(

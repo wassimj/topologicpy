@@ -637,6 +637,16 @@ def _postprocess_boolean_result(shape: Any) -> Any:
     return shape
 
 
+
+def _lineage_capture_active() -> bool:
+    # True when exact lineage is requested by CSG or public Provenance.
+    try:
+        from ._csg_lineage import is_active
+        return bool(is_active())
+    except Exception:
+        return False
+
+
 def _unify_same_domain(shape: Any) -> Any:
     """
     ShapeUpgrade_UnifySameDomain for Merge/Union only.
@@ -1138,7 +1148,7 @@ def _make_occ_merge(topology: Any, other_topology: Any = None, transfer_dictiona
             return None
         builder.AddAllToResult()
         result_shape = builder.Shape()
-        history = builder.History() if transfer_dictionary else None
+        history = builder.History() if (transfer_dictionary or _lineage_capture_active()) else None
     except Exception:
         print("Topology.Merge - Error: BOPAlgo_CellsBuilder raised. Returning None.")
         return None
@@ -1163,7 +1173,7 @@ def _make_occ_merge(topology: Any, other_topology: Any = None, transfer_dictiona
             "root_dictionary": Topology.Dictionary(other_topology),
         },
     ]
-    if transfer_dictionary:
+    if transfer_dictionary or _lineage_capture_active():
         try:
             _provenance_transfer_history(
                 result_shape,
@@ -1324,6 +1334,11 @@ def _make_occ_union(
             shape_b
         )
 
+        try:
+            fuse.SetToFillHistory(True)
+        except Exception:
+            pass
+
         fuse.Build()
 
         if not fuse.IsDone():
@@ -1334,7 +1349,7 @@ def _make_occ_union(
             return None
 
         result_shape = fuse.Shape()
-        fuse_history = fuse.History() if transfer_dictionary else None
+        fuse_history = fuse.History() if (transfer_dictionary or _lineage_capture_active()) else None
 
     except Exception:
         print(
@@ -1365,7 +1380,7 @@ def _make_occ_union(
             "root_dictionary": Topology.Dictionary(other_topology),
         },
     ]
-    if transfer_dictionary:
+    if transfer_dictionary or _lineage_capture_active():
         try:
             _provenance_transfer_history(
                 result_shape,
@@ -4585,7 +4600,7 @@ class Topology:
             if not op.IsDone():
                 return None
             result_shape = op.Shape()
-            history = op.History() if transferDictionary else None
+            history = op.History() if (transferDictionary or _lineage_capture_active()) else None
         except Exception:
             return None
 
@@ -4628,7 +4643,7 @@ class Topology:
 
         # Transfer against the raw algorithm result while its history images are
         # guaranteed to refer to the exact native output entities.
-        if transferDictionary:
+        if transferDictionary or _lineage_capture_active():
             try:
                 _provenance_transfer_history(
                     result_shape,
@@ -5262,7 +5277,7 @@ class Topology:
             if hasattr(splitter, "HasErrors") and splitter.HasErrors():
                 return None
             result_shape = splitter.Shape()
-            history = splitter.History() if transferDictionary else None
+            history = splitter.History() if (transferDictionary or _lineage_capture_active()) else None
         except Exception:
             return None
         if _is_null_shape(result_shape):
@@ -5284,7 +5299,7 @@ class Topology:
                 "root_dictionary": Topology.GetDictionary(otherTopology),
             },
         ]
-        if transferDictionary:
+        if transferDictionary or _lineage_capture_active():
             try:
                 _provenance_transfer_history(
                     result_shape,
@@ -5389,7 +5404,7 @@ class Topology:
 
             builder.MakeContainers()
             result_shape = builder.Shape()
-            history = builder.History() if transferDictionary else None
+            history = builder.History() if (transferDictionary or _lineage_capture_active()) else None
         except Exception:
             return None
         if _is_null_shape(result_shape):
@@ -5411,7 +5426,7 @@ class Topology:
                 "root_dictionary": Topology.GetDictionary(otherTopology),
             },
         ]
-        if transferDictionary:
+        if transferDictionary or _lineage_capture_active():
             try:
                 _provenance_transfer_history(
                     result_shape,
@@ -10144,85 +10159,524 @@ class Topology:
 
     def SelfMerge(self, tolerance: float = 0.0001):
         """
-        Merges a Cluster's members into the simplest topology that represents
-        them: connected Edges become a Wire (or a Cluster of Wires if there
-        are disjoint chains), connected Faces become a Shell, connected Cells
-        become a CellComplex. Falls back to OCCT same-domain unification for
-        topologies that already carry a real shape, and returns self as-is
-        when nothing applies.
+        Normalize a topology aggregate to the cleanest logical topology type.
+
+        The normalization pipeline is intentionally structural-first:
+
+        1. Non-Cluster inputs are returned unchanged.
+        2. Nested Clusters are flattened to direct constituents.
+        3. Duplicate native constituents are removed by topology identity.
+        4. Lower-dimensional constituents already contained in higher-dimensional
+        direct constituents are removed.
+        5. Same-dimensional groups are promoted using the cheapest appropriate
+        constructor (Edges -> Wire, Faces -> Cell/Shell, Cells -> CellComplex).
+        6. The expensive cell reconstruction pipeline is used only when the cheaper
+        CellComplex construction cannot produce a connected native result.
+
+        A heterogeneous result that cannot be represented by one logical topology
+        remains a Cluster.
         """
-        from .edge import Edge as _Edge
-        from .face import Face as _Face
-        from .cell import Cell as _Cell
+        from .cluster import Cluster as _Cluster
         from .vertex import Vertex as _Vertex
+        from .edge import Edge as _Edge
+        from .wire import Wire as _Wire
+        from .face import Face as _Face
+        from .shell import Shell as _Shell
+        from .cell import Cell as _Cell
+        from .cell_complex import CellComplex as _CellComplex
 
-        members = getattr(self, "topologies", None)
-        if members:
-            members = [m for m in members if m is not None]
-            if members and all(isinstance(m, _Edge) for m in members):
-                merged = Topology._merge_edges_into_wires(members, tolerance)
-                if merged is not None:
-                    return merged
-            elif members and any(isinstance(m, _Edge) for m in members) and all(
-                isinstance(m, (_Edge, _Vertex)) for m in members
-            ):
-                # A mix of Edges and standalone Vertices -- typical of
-                # Topology.Intersect's per-sub-element decomposition, which
-                # independently detects both a genuine edge-vs-edge overlap
-                # AND a perpendicular-edge crossing at what is geometrically
-                # the same point (one of the overlap edge's own endpoints).
-                # Drop any standalone Vertex that coincides with an edge
-                # endpoint -- it adds no information and only inflates the
-                # vertex count -- keeping only genuinely free vertices.
-                from .helpers import same_vertex
-                from .cluster import Cluster as _Cluster
-                edges = [m for m in members if isinstance(m, _Edge)]
-                loose_vertices = [m for m in members if isinstance(m, _Vertex)]
-                endpoints = [ep for e in edges for ep in (e.start, e.end) if ep is not None]
-                free_vertices = [
-                    v for v in loose_vertices
-                    if not any(same_vertex(v, ep, tolerance) for ep in endpoints)
-                ]
-                merged_edges = Topology._merge_edges_into_wires(edges, tolerance)
-                if merged_edges is None:
-                    pieces = list(edges)
-                elif isinstance(merged_edges, _Cluster):
-                    pieces = list(getattr(merged_edges, "topologies", None) or [merged_edges])
-                else:
-                    pieces = [merged_edges]
-                pieces = [p for p in pieces if p is not None] + free_vertices
-                if len(pieces) == 1:
-                    return pieces[0]
-                if len(pieces) > 1:
-                    merged_cluster = _Cluster.ByTopologies(pieces)
-                    if merged_cluster is not None:
-                        return merged_cluster
-            elif members and all(isinstance(m, _Face) for m in members):
-                from .shell import Shell
-                shell = Shell.ByFaces(members, tolerance=tolerance, silent=True)
-                if shell is not None:
-                    return shell
-            elif members and all(isinstance(m, _Cell) for m in members):
-                merged = Topology._self_merge_cells(members, tolerance)
-                if merged is not None:
-                    return merged
+        try:
+            tol = abs(float(tolerance))
+        except Exception:
+            tol = 0.0001
+        if tol <= 0.0:
+            tol = 0.0001
 
-        shape = _shape_from_topology(self)
-        if _is_null_shape(shape):
+        # SelfMerge normalizes aggregates. A definite non-Cluster topology is
+        # already a single logical topology and must not incur OCCT unification.
+        if not isinstance(self, _Cluster):
             return self
-        if ShapeUpgrade_UnifySameDomain is not None:
+
+        rank_by_type = {
+            _Vertex: 0,
+            _Edge: 1,
+            _Wire: 2,
+            _Face: 3,
+            _Shell: 4,
+            _Cell: 5,
+            _CellComplex: 6,
+        }
+
+        native_type_by_rank = {
+            0: TopAbs_VERTEX,
+            1: TopAbs_EDGE,
+            2: TopAbs_WIRE,
+            3: TopAbs_FACE,
+            4: TopAbs_SHELL,
+            5: TopAbs_SOLID,
+        }
+
+        def _rank(item):
+            for cls, value in rank_by_type.items():
+                if isinstance(item, cls):
+                    return value
+            return -1
+
+        def _same_native(a, b):
+            if a is b:
+                return True
+            sa = _shape_from_topology(a)
+            sb = _shape_from_topology(b)
+            if _is_null_shape(sa) or _is_null_shape(sb):
+                return False
             try:
-                unifier = ShapeUpgrade_UnifySameDomain(shape, True, True, True)
-                unifier.Build()
-                new_shape = unifier.Shape()
-                if not _is_null_shape(new_shape):
-                    result = Topology.ByOcctShape(new_shape)
-                    if result is not None:
-                        result.dictionary = Topology.GetDictionary(self)
-                        return result
+                return bool(sa.IsSame(sb))
             except Exception:
-                pass
-        return self
+                return False
+
+        def _direct_members(cluster):
+            members = list(getattr(cluster, "topologies", None) or [])
+            if members:
+                return [m for m in members if isinstance(m, Topology)]
+
+            # A Cluster reconstructed from a native COMPOUND may not have its
+            # Python-side topologies list populated. Recover DIRECT children only.
+            shape = _shape_from_topology(cluster)
+            if _is_null_shape(shape):
+                return []
+
+            try:
+                if shape.ShapeType() != TopAbs_COMPOUND:
+                    return []
+                from OCC.Core.TopoDS import TopoDS_Iterator
+                result = []
+                iterator = TopoDS_Iterator(shape)
+                while iterator.More():
+                    child = Topology.ByOcctShape(iterator.Value())
+                    if child is not None:
+                        result.append(child)
+                    iterator.Next()
+                return result
+            except Exception:
+                return []
+
+        def _flatten_clusters(items):
+            flattened = []
+            stack = list(reversed(items or []))
+            visited_clusters = set()
+
+            while stack:
+                item = stack.pop()
+                if not isinstance(item, Topology):
+                    continue
+
+                if isinstance(item, _Cluster):
+                    marker = id(item)
+                    if marker in visited_clusters:
+                        continue
+                    visited_clusters.add(marker)
+                    children = _direct_members(item)
+                    if children:
+                        stack.extend(reversed(children))
+                        continue
+
+                flattened.append(item)
+
+            return flattened
+
+        def _unique(items):
+            # _deduplicate_by_identity is O(n) and uses native OCCT identity when
+            # available. Do a final IsSame guard only inside equal-hash collisions
+            # implicitly handled by that helper.
+            return _deduplicate_by_identity([i for i in items if isinstance(i, Topology)])
+
+        def _is_descendant_of(candidate, parent):
+            candidate_rank = _rank(candidate)
+            parent_rank = _rank(parent)
+            if candidate_rank < 0 or parent_rank <= candidate_rank:
+                return False
+
+            candidate_shape = _shape_from_topology(candidate)
+            parent_shape = _shape_from_topology(parent)
+
+            if not _is_null_shape(candidate_shape) and not _is_null_shape(parent_shape):
+                target_type = native_type_by_rank.get(candidate_rank)
+                if target_type is not None:
+                    try:
+                        for subshape in _iter_occ_subshapes_unique(parent_shape, target_type):
+                            try:
+                                if subshape.IsSame(candidate_shape):
+                                    return True
+                            except Exception:
+                                pass
+                    except Exception:
+                        pass
+
+            # Lightweight/shapeless fallback for backend objects that explicitly
+            # retain their constituent wrappers.
+            attrs_by_rank = {
+                0: ("vertices",),
+                1: ("edges",),
+                2: ("wires",),
+                3: ("faces",),
+                4: ("shells",),
+                5: ("cells",),
+            }
+            for attr in attrs_by_rank.get(candidate_rank, ()):
+                for child in list(getattr(parent, attr, None) or []):
+                    if child is candidate or _same_native(child, candidate):
+                        return True
+
+            return False
+
+        def _remove_redundant(items):
+            items = _unique(items)
+            if len(items) < 2:
+                return items
+
+            ranked = sorted(
+                enumerate(items),
+                key=lambda pair: _rank(pair[1]),
+                reverse=True,
+            )
+
+            keep = [True] * len(items)
+
+            for low_index, low in enumerate(items):
+                low_rank = _rank(low)
+                if low_rank < 0:
+                    continue
+
+                for original_index, high in ranked:
+                    if original_index == low_index:
+                        continue
+                    if _rank(high) <= low_rank:
+                        break
+                    if _is_descendant_of(low, high):
+                        keep[low_index] = False
+                        break
+
+            return [item for i, item in enumerate(items) if keep[i]]
+
+        def _cellcomplex_connected_result(candidate):
+            """Return a connected Cell/CellComplex result, otherwise None."""
+            if not isinstance(candidate, (_Cell, _CellComplex)):
+                return None
+
+            shape = _shape_from_topology(candidate)
+            if _is_null_shape(shape):
+                return None
+
+            try:
+                solids = _iter_occ_subshapes_unique(shape, TopAbs_SOLID)
+            except Exception:
+                solids = []
+
+            # A single resulting solid is logically a Cell.
+            if len(solids) == 1:
+                try:
+                    wrapped = Topology.ByOcctShape(solids[0])
+                    return wrapped if isinstance(wrapped, _Cell) else candidate
+                except Exception:
+                    return candidate if isinstance(candidate, _Cell) else None
+
+            if len(solids) < 2:
+                return candidate if isinstance(candidate, _Cell) else None
+
+            parent = list(range(len(solids)))
+
+            def _find(x):
+                while parent[x] != x:
+                    parent[x] = parent[parent[x]]
+                    x = parent[x]
+                return x
+
+            def _union(a, b):
+                ra = _find(a)
+                rb = _find(b)
+                if ra != rb:
+                    parent[ra] = rb
+
+            # Adjacent cells in a genuine CellComplex share native Faces after the
+            # CellsBuilder/volume reconstruction. Hash buckets avoid O(F^2) scans;
+            # IsSame confirms identity inside a bucket.
+            face_buckets = {}
+            for solid_index, solid in enumerate(solids):
+                try:
+                    faces = _iter_occ_subshapes_unique(solid, TopAbs_FACE)
+                except Exception:
+                    faces = []
+
+                for face in faces:
+                    try:
+                        key = hash(face)
+                    except Exception:
+                        key = id(face)
+
+                    bucket = face_buckets.setdefault(key, [])
+                    for other_index, other_face in bucket:
+                        try:
+                            same = bool(face.IsSame(other_face))
+                        except Exception:
+                            same = False
+                        if same:
+                            _union(solid_index, other_index)
+                    bucket.append((solid_index, face))
+
+            roots = {_find(i) for i in range(len(solids))}
+            if len(roots) == 1:
+                return candidate
+
+            # Do not label disconnected solids as one CellComplex merely because a
+            # COMPSOLID container can technically be constructed around them.
+            return None
+
+        def _normalize_cells(cells):
+            cells = _unique([c for c in cells if isinstance(c, _Cell)])
+            if not cells:
+                return None
+            if len(cells) == 1:
+                return cells[0]
+
+            # Cheap/native assembly first. CellComplex.ByCells begins with one
+            # CellsBuilder pass and is substantially cheaper than _self_merge_cells.
+            candidate = None
+            try:
+                candidate = _CellComplex.ByCells(cells, tolerance=tol)
+            except TypeError:
+                try:
+                    candidate = _CellComplex.ByCells(cells, tol)
+                except Exception:
+                    candidate = None
+            except Exception:
+                candidate = None
+
+            connected = _cellcomplex_connected_result(candidate)
+            if connected is not None:
+                return connected
+
+            # If the cheap builder produced a real native aggregate but its solids
+            # are disconnected, that is a definitive structural result: they are
+            # not one CellComplex. Do not launch the expensive subdivision pipeline.
+            candidate_shape = _shape_from_topology(candidate)
+            if isinstance(candidate, _CellComplex) and not _is_null_shape(candidate_shape):
+                return _Cluster.ByTopologies(cells)
+
+            # Expensive subdivision/reconstruction is a fallback only when the
+            # cheap path could not produce a usable native result at all.
+            try:
+                candidate = Topology._self_merge_cells(cells, tol)
+            except Exception:
+                candidate = None
+
+            connected = _cellcomplex_connected_result(candidate)
+            if connected is not None:
+                return connected
+
+            return _Cluster.ByTopologies(cells)
+
+        def _normalize_cellcomplexes(cell_complexes):
+            cell_complexes = _unique([c for c in cell_complexes if isinstance(c, _CellComplex)])
+            if not cell_complexes:
+                return None
+            if len(cell_complexes) == 1:
+                return cell_complexes[0]
+
+            cells = []
+            for cc in cell_complexes:
+                direct = list(getattr(cc, "cells", None) or [])
+                if direct:
+                    cells.extend([c for c in direct if isinstance(c, _Cell)])
+                    continue
+
+                shape = _shape_from_topology(cc)
+                if _is_null_shape(shape):
+                    continue
+                try:
+                    for solid in _iter_occ_subshapes_unique(shape, TopAbs_SOLID):
+                        wrapped = Topology.ByOcctShape(solid)
+                        if isinstance(wrapped, _Cell):
+                            cells.append(wrapped)
+                except Exception:
+                    pass
+
+            if cells:
+                normalized = _normalize_cells(cells)
+                if normalized is not None:
+                    return normalized
+
+            return _Cluster.ByTopologies(cell_complexes)
+
+        def _normalize_faces(faces):
+            faces = _unique([f for f in faces if isinstance(f, _Face)])
+            if not faces:
+                return None
+            if len(faces) == 1:
+                return faces[0]
+
+            # Highest valid promotion first: a closed face soup is a Cell.
+            try:
+                cell = _Cell.ByFaces(faces, tolerance=tol, silent=True)
+            except TypeError:
+                try:
+                    cell = _Cell.ByFaces(faces, tolerance=tol)
+                except Exception:
+                    cell = None
+            except Exception:
+                cell = None
+
+            if isinstance(cell, _Cell) and not _is_null_shape(_shape_from_topology(cell)):
+                return cell
+
+            try:
+                shell = _Shell.ByFaces(faces, tolerance=tol, silent=True)
+            except TypeError:
+                try:
+                    shell = _Shell.ByFaces(faces, tolerance=tol)
+                except Exception:
+                    shell = None
+            except Exception:
+                shell = None
+
+            if isinstance(shell, _Shell):
+                shell_shape = _shape_from_topology(shell)
+                if not _is_null_shape(shell_shape):
+                    try:
+                        if shell_shape.ShapeType() == TopAbs_SHELL:
+                            return shell
+                    except Exception:
+                        pass
+
+                    # Sewing can legitimately produce several disconnected Shells
+                    # inside a COMPOUND. Preserve them as a Cluster instead of
+                    # mislabelling the compound as one Shell.
+                    try:
+                        sewn_shells = _iter_occ_subshapes_unique(shell_shape, TopAbs_SHELL)
+                    except Exception:
+                        sewn_shells = []
+
+                    wrapped_shells = []
+                    for sewn_shell in sewn_shells:
+                        try:
+                            wrapped = Topology.ByOcctShape(sewn_shell)
+                        except Exception:
+                            wrapped = None
+                        if isinstance(wrapped, _Shell):
+                            wrapped_shells.append(wrapped)
+
+                    wrapped_shells = _unique(wrapped_shells)
+                    if len(wrapped_shells) == 1:
+                        return wrapped_shells[0]
+                    if len(wrapped_shells) > 1:
+                        return _Cluster.ByTopologies(wrapped_shells)
+
+                return shell
+
+            return _Cluster.ByTopologies(faces)
+
+        def _normalize_wires(wires):
+            wires = _unique([w for w in wires if isinstance(w, _Wire)])
+            if not wires:
+                return None
+            if len(wires) == 1:
+                return wires[0]
+
+            edges = []
+            for wire in wires:
+                direct = list(getattr(wire, "edges", None) or [])
+                if direct:
+                    edges.extend([e for e in direct if isinstance(e, _Edge)])
+                    continue
+                shape = _shape_from_topology(wire)
+                if _is_null_shape(shape):
+                    continue
+                try:
+                    for edge_shape in _iter_occ_subshapes_unique(shape, TopAbs_EDGE):
+                        wrapped = Topology.ByOcctShape(edge_shape)
+                        if isinstance(wrapped, _Edge):
+                            edges.append(wrapped)
+                except Exception:
+                    pass
+
+            if edges:
+                merged = Topology._merge_edges_into_wires(edges, tol)
+                if merged is not None:
+                    return merged
+
+            return _Cluster.ByTopologies(wires)
+
+        def _normalize_edges(edges):
+            edges = _unique([e for e in edges if isinstance(e, _Edge)])
+            if not edges:
+                return None
+            if len(edges) == 1:
+                return edges[0]
+            merged = Topology._merge_edges_into_wires(edges, tol)
+            return merged if merged is not None else _Cluster.ByTopologies(edges)
+
+        def _normalize_vertices(vertices):
+            vertices = _unique([v for v in vertices if isinstance(v, _Vertex)])
+            if not vertices:
+                return None
+            if len(vertices) == 1:
+                return vertices[0]
+            return _Cluster.ByTopologies(vertices)
+
+        members = _direct_members(self)
+        members = _flatten_clusters(members)
+        members = _remove_redundant(members)
+
+        if not members:
+            return self
+        if len(members) == 1:
+            return members[0]
+
+        groups = {rank: [] for rank in range(7)}
+        residual = []
+
+        for member in members:
+            rank = _rank(member)
+            if rank >= 0:
+                groups[rank].append(member)
+            else:
+                residual.append(member)
+
+        normalized = []
+
+        normalizers = {
+            6: _normalize_cellcomplexes,
+            5: _normalize_cells,
+            4: lambda values: values[0] if len(values) == 1 else _Cluster.ByTopologies(_unique(values)),
+            3: _normalize_faces,
+            2: _normalize_wires,
+            1: _normalize_edges,
+            0: _normalize_vertices,
+        }
+
+        for rank in range(6, -1, -1):
+            values = groups[rank]
+            if not values:
+                continue
+            try:
+                piece = normalizers[rank](values)
+            except Exception:
+                piece = None
+            if piece is not None:
+                normalized.append(piece)
+            else:
+                normalized.extend(values)
+
+        normalized.extend(residual)
+        normalized = _flatten_clusters(normalized)
+        normalized = _remove_redundant(normalized)
+
+        if not normalized:
+            return self
+        if len(normalized) == 1:
+            return normalized[0]
+
+        result = _Cluster.ByTopologies(normalized)
+        return result if result is not None else self
 
     @staticmethod
     def _self_merge_cells(members, tolerance=0.0001):
@@ -10312,59 +10766,149 @@ class Topology:
     @staticmethod
     def _merge_edges_into_wires(edges, tolerance=0.0001):
         """
-        Connects a list of Edge wrapper objects into one or more Wires using
-        BRepBuilderAPI_MakeWire, which auto-connects edges sharing endpoints
-        regardless of input order. Returns a single Wire, a Cluster of Wires
-        (if the edges form disjoint chains), or None on total failure.
-        """
-        from .edge import Edge as _Edge
-        from .wire import Wire
+        Merge connected Edge components into Wires in near-linear time.
 
-        edges = [e for e in edges if isinstance(e, _Edge) and not _is_null_shape(_shape_from_topology(e))]
-        if not edges:
-            return None
+        The previous implementation repeatedly attempted to add every remaining
+        Edge to a growing BRepBuilderAPI_MakeWire, leading to quadratic behaviour
+        on large or disjoint edge collections. This implementation first builds an
+        endpoint-incidence graph with a tolerance-aware spatial hash, then invokes
+        Wire.ByEdges once per connected component.
+        """
+        import math
+
+        from .edge import Edge as _Edge
+        from .wire import Wire as _Wire
+        from .cluster import Cluster as _Cluster
+        from .helpers import same_vertex
 
         try:
-            from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakeWire
+            tol = abs(float(tolerance))
         except Exception:
-            return None
+            tol = 0.0001
+        if tol <= 0.0:
+            tol = 0.0001
 
-        remaining = list(edges)
-        wires = []
-        while remaining:
-            maker = BRepBuilderAPI_MakeWire()
-            first = remaining.pop(0)
-            maker.Add(first.shape)
-            progress = True
-            while progress and remaining:
-                progress = False
-                for edge in list(remaining):
-                    try:
-                        maker.Add(edge.shape)
-                    except Exception:
+        edges = _deduplicate_by_identity([
+            edge
+            for edge in (edges or [])
+            if isinstance(edge, _Edge)
+            and not _is_null_shape(_shape_from_topology(edge))
+        ])
+
+        if not edges:
+            return None
+        if len(edges) == 1:
+            return edges[0]
+
+        canonical_vertices = []
+        grid = {}
+
+        def _vertex_id(vertex):
+            if vertex is None:
+                return None
+
+            try:
+                x = float(vertex.x)
+                y = float(vertex.y)
+                z = float(vertex.z)
+            except Exception:
+                return None
+
+            cell = (
+                math.floor(x / tol),
+                math.floor(y / tol),
+                math.floor(z / tol),
+            )
+
+            for dx in (-1, 0, 1):
+                for dy in (-1, 0, 1):
+                    for dz in (-1, 0, 1):
+                        for vertex_index in grid.get(
+                            (cell[0] + dx, cell[1] + dy, cell[2] + dz),
+                            (),
+                        ):
+                            existing = canonical_vertices[vertex_index]
+                            try:
+                                if same_vertex(vertex, existing, tol):
+                                    return vertex_index
+                            except Exception:
+                                pass
+
+            vertex_index = len(canonical_vertices)
+            canonical_vertices.append(vertex)
+            grid.setdefault(cell, []).append(vertex_index)
+            return vertex_index
+
+        edge_nodes = []
+        node_to_edges = {}
+
+        for edge_index, edge in enumerate(edges):
+            a = _vertex_id(getattr(edge, "start", None))
+            b = _vertex_id(getattr(edge, "end", None))
+            edge_nodes.append((a, b))
+
+            if a is not None:
+                node_to_edges.setdefault(a, []).append(edge_index)
+            if b is not None:
+                node_to_edges.setdefault(b, []).append(edge_index)
+
+        unseen = set(range(len(edges)))
+        components = []
+
+        while unseen:
+            seed = unseen.pop()
+            stack = [seed]
+            component = [seed]
+
+            while stack:
+                edge_index = stack.pop()
+                a, b = edge_nodes[edge_index]
+
+                for node in (a, b):
+                    if node is None:
                         continue
-                    if maker.IsDone():
-                        remaining.remove(edge)
-                        progress = True
-            if not maker.IsDone():
-                # Single dangling edge or a maker that never became a valid wire.
-                w = Wire.ByOcctShape(first.shape) if hasattr(Wire, "ByOcctShape") else None
-                if w is None:
-                    w = Wire(shape=first.shape, edges=[first])
-                wires.append(w)
+                    for neighbor_edge in node_to_edges.get(node, ()):
+                        if neighbor_edge in unseen:
+                            unseen.remove(neighbor_edge)
+                            stack.append(neighbor_edge)
+                            component.append(neighbor_edge)
+
+            components.append(component)
+
+        wires = []
+
+        for component in components:
+            component_edges = [edges[i] for i in component]
+
+            if len(component_edges) == 1:
+                # A single Edge is already the simplest correct topology.
+                wires.append(component_edges[0])
                 continue
-            occ_wire = maker.Wire()
-            w = Wire.ByOcctShape(occ_wire) if hasattr(Wire, "ByOcctShape") else None
-            if w is None:
-                w = Wire(shape=occ_wire, edges=edges)
-            wires.append(w)
+
+            try:
+                wire = _Wire.ByEdges(component_edges, tolerance=tol)
+            except TypeError:
+                try:
+                    wire = _Wire.ByEdges(component_edges, tol)
+                except Exception:
+                    wire = None
+            except Exception:
+                wire = None
+
+            if wire is None:
+                # Preserve all data rather than dropping a failed component.
+                fallback = _Cluster.ByTopologies(component_edges)
+                if fallback is not None:
+                    wires.append(fallback)
+            else:
+                wires.append(wire)
 
         if not wires:
             return None
         if len(wires) == 1:
             return wires[0]
-        from .cluster import Cluster
-        return Cluster.ByTopologies(wires)
+
+        return _Cluster.ByTopologies(wires)
 
 
 # -----------------------------------------------------------------------------

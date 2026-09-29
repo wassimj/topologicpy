@@ -18,22 +18,8 @@ from __future__ import annotations
 
 from topologicpy.Core import Core
 import math
-import os
-import warnings
 
-try:
-    import numpy as np
-except:
-    print("Face - Installing required numpy library.")
-    try:
-        os.system("pip install numpy")
-    except:
-        os.system("pip install numpy --user")
-    try:
-        import numpy as np
-        print("Face - numpy library installed correctly.")
-    except:
-        warnings.warn("Face - Error: Could not import numpy.")
+import numpy as np
 
 class Face():
     @staticmethod
@@ -6919,22 +6905,6 @@ class Face():
 
         """
         from topologicpy.Topology import Topology
-        import warnings
-
-        try:
-            import numpy as np
-        except:
-            print("Face.IsCoplanar - Information: Installing required numpy library.")
-            try:
-                os.system("pip install numpy")
-            except:
-                os.system("pip install numpy --user")
-            try:
-                import numpy as np
-                print("Face.IsCoplanar - Information: numpy library installed successfully.")
-            except:
-                warnings.warn("Face.IsCoplanar - Error:: Could not import numpy. Please install the numpy library manually. Returning None.")
-                return None
 
         if not Topology.IsInstance(faceA, "Face"):
             print("Face.IsCoplanar - Error: The input faceA parameter is not a valid topologic face. Returning None.")
@@ -9221,26 +9191,6 @@ class Face():
         """
         from topologicpy.Topology import Topology
         from topologicpy.Vertex import Vertex
-        import os
-        import warnings
-
-        try:
-            import numpy as np
-        except:
-            if not silent:
-                print("Face.Normal - Warning: Installing required numpy library.")
-            try:
-                os.system("pip install numpy")
-            except:
-                os.system("pip install numpy --user")
-            try:
-                import numpy as np
-                if not silent:
-                    print("Face.Normal - Warning: numpy library installed correctly.")
-            except:
-                if not silent:
-                    print("Face.Normal - Error: Could not import numpy. Please try to install numpy manually. Returning None.")
-                return None
 
         if not Topology.IsInstance(face, "Face"):
             if not silent:
@@ -11496,220 +11446,70 @@ class Face():
     @staticmethod
     def Triangulate(face, mode: int = 0, meshSize: float = None, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False) -> list:
         """
-        Triangulates the input face and returns a list of faces.
+        Triangulates the input Face and returns its triangular Faces.
+
+        This method is a thin compatibility wrapper around
+        :meth:`Topology.Triangulate`. Face-level triangulation no longer owns a
+        meshing implementation and never invokes gmsh. Numerical 2D/3D meshing
+        is provided separately by :meth:`Topology.Mesh`.
 
         Parameters
         ----------
         face : topologic_core.Face
-            The input face.
+            The input Face.
         mode : int , optional
-            The desired mode of meshing algorithm. Several options are available:
-            0: Classic
-            1: MeshAdapt
-            3: Initial Mesh Only
-            5: Delaunay
-            6: Frontal-Delaunay
-            7: BAMG
-            8: Fontal-Delaunay for Quads
-            9: Packing of Parallelograms
-            All options other than 0 (Classic) use the gmsh library. See https://gmsh.info/doc/texinfo/gmsh.html#Mesh-options
-            WARNING: The options that use gmsh can be very time consuming and can create very heavy geometry.
+            Deprecated compatibility parameter. It is ignored. Historical gmsh
+            algorithm selection has moved to ``Topology.Mesh``. Default is 0.
         meshSize : float , optional
-            The desired size of the mesh when using the "mesh" option. If set to None, it will be
-            calculated automatically and set to 10% of the overall size of the face. default is None.
+            Deprecated compatibility parameter. It is ignored. Use
+            ``Topology.Mesh`` for numerical mesh sizing. Default is None.
         mantissa : int , optional
-            The number of decimal places to round the result to. Default is 6.
+            Retained for API compatibility. It is not used by this wrapper.
+            Default is 6.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
+            If True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
         list
-            The list of triangles of the input face.
-
+            The triangular Faces, or None if triangulation fails.
         """
-        from topologicpy.Vector import Vector
-        from topologicpy.Wire import Wire
         from topologicpy.Topology import Topology
-
-        # This function was contributed by Yidan Xue.
-        def generate_gmsh(face, mode="mesh", meshSize = None, tolerance = 0.0001):
-            """
-            Creates a gmsh of triangular meshes from the input face.
-
-            Parameters
-            ----------
-            face : topologic_core.Face
-                The input face.
-            meshSize : float , optional
-                The desired mesh size.
-            tolerance : float , optional
-                The desired tolerance. Default is 0.0001.
-            
-            Returns
-            -------
-            topologic_core.Shell
-                The shell of triangular meshes.
-
-            """
-            import os
-            import warnings
-            try:
-                import numpy as np
-            except:
-                print("Face.Triangulate - Warning: Installing required numpy library.")
-                try:
-                    os.system("pip install numpy")
-                except:
-                    os.system("pip install numpy --user")
-                try:
-                    import numpy as np
-                    print("Face.Triangulate - Warning: numpy library installed correctly.")
-                except:
-                    warnings.warn("Face.Triangulate - Error: Could not import numpy. Please try to install numpy manually. Returning None.")
-                    return None
-            try:
-                import gmsh
-            except:
-                print("Face.Triangulate - Warning: Installing required gmsh library.")
-                try:
-                    os.system("pip install gmsh")
-                except:
-                    os.system("pip install gmsh --user")
-                try:
-                    import gmsh
-                    print("Face.Triangulate - Warning: gmsh library installed correctly.")
-                except:
-                    warnings.warn("Face.Triangulate - Error: Could not import gmsh. Please try to install gmsh manually. Returning None.")
-                    return None
-            
-            from topologicpy.Vertex import Vertex
-            from topologicpy.Wire import Wire
-            from topologicpy.Topology import Topology
-
-            if not Topology.IsInstance(face, "Face"):
-                if not silent:
-                    print("Face.Triangulate - Error: The input face parameter is not a valid face. Returning None.")
-                return None
-            if not meshSize:
-                bounding_face = Face.BoundingRectangle(face)
-                bounding_face_vertices = Topology.Vertices(bounding_face)
-                bounding_face_vertices_x = [Vertex.X(i, mantissa=mantissa) for i in bounding_face_vertices]
-                bounding_face_vertices_y = [Vertex.Y(i, mantissa=mantissa) for i in bounding_face_vertices]
-                width = max(bounding_face_vertices_x)-min(bounding_face_vertices_x)
-                length = max(bounding_face_vertices_y)-min(bounding_face_vertices_y)
-                meshSize = max([width,length])//10
-            
-            gmsh.initialize()
-            face_external_boundary = Face.ExternalBoundary(face)
-            external_vertices = Topology.Vertices(face_external_boundary)
-            external_vertex_number = len(external_vertices)
-            for i in range(external_vertex_number):
-                gmsh.model.geo.addPoint(Vertex.X(external_vertices[i], mantissa=mantissa), Vertex.Y(external_vertices[i], mantissa=mantissa), Vertex.Z(external_vertices[i], mantissa=mantissa), meshSize, i+1)
-            for i in range(external_vertex_number):
-                if i < external_vertex_number-1:
-                    gmsh.model.geo.addLine(i+1, i+2, i+1)
-                else:
-                    gmsh.model.geo.addLine(i+1, 1, i+1)
-            gmsh.model.geo.addCurveLoop([i+1 for i in range(external_vertex_number)], 1)
-            current_vertex_number = external_vertex_number
-            current_edge_number = external_vertex_number
-            current_wire_number = 1
-
-            face_internal_boundaries = Face.InternalBoundaries(face)
-            if face_internal_boundaries:
-                internal_face_number = len(face_internal_boundaries)
-                for i in range(internal_face_number):
-                    face_internal_boundary = face_internal_boundaries[i]
-                    internal_vertices = Topology.Vertices(face_internal_boundary)
-                    internal_vertex_number = len(internal_vertices)
-                    for j in range(internal_vertex_number):
-                        gmsh.model.geo.addPoint(Vertex.X(internal_vertices[j]), Vertex.Y(internal_vertices[j], mantissa=mantissa), Vertex.Z(internal_vertices[j], mantissa=mantissa), meshSize, current_vertex_number+j+1)
-                    for j in range(internal_vertex_number):
-                        if j < internal_vertex_number-1:
-                            gmsh.model.geo.addLine(current_vertex_number+j+1, current_vertex_number+j+2, current_edge_number+j+1)
-                        else:
-                            gmsh.model.geo.addLine(current_vertex_number+j+1, current_vertex_number+1, current_edge_number+j+1)
-                    gmsh.model.geo.addCurveLoop([current_edge_number+i+1 for i in range(internal_vertex_number)], current_wire_number+1)
-                    current_vertex_number = current_vertex_number+internal_vertex_number
-                    current_edge_number = current_edge_number+internal_vertex_number
-                    current_wire_number = current_wire_number+1
-
-            gmsh.model.geo.addPlaneSurface([i+1 for i in range(current_wire_number)])
-            gmsh.model.geo.synchronize()
-            if mode not in [1,3,5,6,7,8,9]:
-                mode = 6
-            gmsh.option.setNumber("Mesh.Algorithm", mode)
-            gmsh.model.mesh.generate(2)         # For a 2D mesh
-            nodeTags, nodeCoords, nodeParams = gmsh.model.mesh.getNodes(-1, -1)
-            elemTypes, elemTags, elemNodeTags = gmsh.model.mesh.getElements(-1, -1)
-            gmsh.finalize()
-            
-            vertex_number = len(nodeTags)
-            vertices = []
-            for i in range(vertex_number):
-                vertices.append(Vertex.ByCoordinates(nodeCoords[3*i],nodeCoords[3*i+1],nodeCoords[3*i+2]))
-
-            faces = []
-            for n in range(len(elemTypes)):
-                vn = elemTypes[n]+1
-                et = elemTags[n]
-                ent = elemNodeTags[n]
-                if vn==3:
-                    for i in range(len(et)):
-                        face_vertices = []
-                        for j in range(vn):
-                            face_vertices.append(vertices[np.where(nodeTags==ent[i*vn+j])[0][0]])
-                        faces.append(Face.ByVertices(face_vertices))
-            return faces
 
         if not Topology.IsInstance(face, "Face"):
             if not silent:
-                print("Face.Triangulate - Error: The input face parameter is not a valid face. Returning None.")
+                print(
+                    "Face.Triangulate - Error: The input face parameter is not "
+                    "a valid Face. Returning None."
+                )
             return None
-        vertices = Topology.Vertices(face)
-        if len(vertices) == 3: # Already a triangle
-            return [face]
-        origin = Topology.Centroid(face)
-        normal = Face.Normal(face, mantissa=mantissa)
-        flatFace = Topology.Flatten(face, origin=origin, direction=normal)
 
-        if mode == 0:
-            shell_faces = []
-            for i in range(0,5,1):
-                try:
-                    _ = Core.FaceUtility.Triangulate(flatFace, float(i)*0.1, shell_faces)
-                    break
-                except:
-                    continue
-        else:
-            shell_faces = generate_gmsh(flatFace, mode = mode, meshSize = meshSize, tolerance = tolerance)
-            
-        if len(shell_faces) < 1:
-            return []
-        finalFaces = []
-        for f in shell_faces:
-            f = Topology.Unflatten(f, origin=origin, direction=normal)
-            if Face.Angle(face, f, mantissa=mantissa) > 90:
-                wire = Face.ExternalBoundary(f)
-                wire = Wire.Invert(wire, silent=True)
-                f = Face.ByWire(wire, silent=True)
-                if Topology.IsInstance(f, "Face"):
-                    finalFaces.append(f)
-            else:
-                if Topology.IsInstance(f, "face"):
-                    finalFaces.append(f)
-        face_normal = Face.Normal(face)
-        return_faces = []
-        for ff in finalFaces:
-            normal = Face.Normal(ff)
-            if abs(Vector.Angle(normal, face_normal)) > 2:
-                return_faces.append(Face.Invert(ff))
-            else:
-                return_faces.append(ff)
-        return return_faces
+        result = Topology.Triangulate(
+            face,
+            transferDictionaries=False,
+            mode=mode,
+            meshSize=meshSize,
+            tolerance=tolerance,
+            silent=silent,
+        )
+
+        if not Topology.IsInstance(result, "Topology"):
+            return None
+
+        if Topology.IsInstance(result, "Face"):
+            return [result]
+
+        triangles = Topology.Faces(result, silent=True) or []
+        triangles = [
+            triangle
+            for triangle in triangles
+            if Topology.IsInstance(triangle, "Face")
+            and len(Topology.Vertices(triangle, silent=True) or []) == 3
+        ]
+
+        return triangles if triangles else None
 
     @staticmethod
     def TrimByWire(face, wire, reverse: bool = False, tolerance: float = 0.0001, silent: bool = False):

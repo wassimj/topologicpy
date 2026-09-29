@@ -17,7 +17,6 @@
 from __future__ import annotations
 
 from topologicpy.Core import Core
-import warnings
 import uuid
 import json
 import os
@@ -30,37 +29,10 @@ from typing import Any, Dict, Iterable, List, Tuple
 # This is for View3D as not to open new browser windows
 opened_urls = set()
 
-try:
-    import numpy as np
-    from numpy import arctan, pi, signbit
-    from numpy.linalg import norm
-except:
-    print("Topology - Installing required numpy library.")
-    try:
-        os.system("pip install numpy")
-    except:
-        os.system("pip install numpy --user")
-    try:
-        import numpy as np
-        from numpy import arctan, pi, signbit
-        from numpy.linalg import norm
-        print("Topology - numpy library installed successfully.")
-    except:
-        warnings.warn("Topology - Error: Could not import numpy.")
-
-try:
-    from scipy.spatial import ConvexHull
-except:
-    print("Topology - Installing required scipy library.")
-    try:
-        os.system("pip install scipy")
-    except:
-        os.system("pip install scipy --user")
-    try:
-        from scipy.spatial import ConvexHull
-        print("Topology - scipy library installed successfully.")
-    except:
-        warnings.warn("Topology - Error: Could not import scipy.")
+import numpy as np
+from numpy import arctan, pi, signbit
+from numpy.linalg import norm
+from scipy.spatial import ConvexHull
 
 QueueItem = namedtuple('QueueItem', ['ID', 'sinkKeys', 'sinkValues'])
 SinkItem = namedtuple('SinkItem', ['ID', 'sink_str'])
@@ -199,7 +171,8 @@ class Topology():
         ontology: bool = False,
         tolerance: float = 0.0001,
         silent: bool = False
-    ):
+    ,
+        returnProvenance: bool = False):
         """
         Do NOT use this method directly.
 
@@ -238,6 +211,51 @@ class Topology():
         from topologicpy.Face import Face
         from topologicpy.Shell import Shell
         from topologicpy.Cell import Cell
+
+        # Public single-operation provenance.
+        if returnProvenance:
+            from topologicpy.Provenance import Provenance
+
+            records = []
+            try:
+                from topologicpy.pythonocc_backend._csg_lineage import capture, materialise_record
+                with capture(operation_node=None, role_nodes={}, stage=0, sink=records):
+                    result = Topology._Boolean(
+                        topologyA=topologyA,
+                        topologyB=topologyB,
+                        operation=operation,
+                        tranDict=tranDict,
+                        ontology=ontology,
+                        tolerance=tolerance,
+                        silent=silent,
+                        returnProvenance=False,
+                    )
+                public_records = [materialise_record(r) for r in records if isinstance(r, dict)]
+                return result, Provenance.ByRecords(
+                    public_records,
+                    operation=operation,
+                    sources={"A": topologyA, "B": topologyB},
+                    result=result,
+                    supported=True,
+                )
+            except Exception:
+                result = Topology._Boolean(
+                    topologyA=topologyA,
+                    topologyB=topologyB,
+                    operation=operation,
+                    tranDict=tranDict,
+                    ontology=ontology,
+                    tolerance=tolerance,
+                    silent=silent,
+                    returnProvenance=False,
+                )
+                return result, Provenance.ByRecords(
+                    [],
+                    operation=operation,
+                    sources={"A": topologyA, "B": topologyB},
+                    result=result,
+                    supported=False,
+                )
 
         def special_case(
             topologyA,
@@ -4312,757 +4330,23 @@ class Topology():
         mode: int = 0,
         meshSize: float = None,
         tolerance: float = 0.0001,
-        silent: bool = False
+        silent: bool = False,
     ):
+        """Deprecated compatibility shim for :meth:`Topology.Triangulate`.
+
+        The historical implementation mixed Topologic triangulation with gmsh
+        numerical meshing. That behavior has been removed. This private method
+        now delegates to the single backend-native triangulation implementation.
         """
-        Triangulates the input topology.
-
-        Parameters
-        ----------
-        topology : topologic_core.Topology
-            The input topology.
-        transferDictionaries : bool , optional
-            If set to True, the dictionaries of the faces in the input topology
-            will be transferred to the created triangular faces. Default is False.
-        mode : int , optional
-            The desired mode of meshing algorithm. Several options are available:
-            0: Classic
-            1: MeshAdapt
-            3: Initial Mesh Only
-            5: Delaunay
-            6: Frontal-Delaunay
-            7: BAMG
-            8: Frontal-Delaunay for Quads
-            9: Packing of Parallelograms
-            All options other than 0 use the gmsh library.
-        meshSize : float , optional
-            The desired mesh size when using a meshing mode. If set to None,
-            it is calculated automatically. Default is None.
-        tolerance : float , optional
-            The desired tolerance. Default is 0.0001.
-        silent : bool , optional
-            If set to True, error and warning messages are suppressed.
-            Default is False.
-
-        Returns
-        -------
-        topologic_core.Topology
-            The triangulated topology.
-        """
-        from topologicpy.Face import Face
-        from topologicpy.Shell import Shell
-        from topologicpy.Cell import Cell
-        from topologicpy.CellComplex import CellComplex
-        from topologicpy.Cluster import Cluster
-
-        # def cluster_constituents(cluster):
-        #     # --------------------------------------------------------------
-        #     # Try all backend-native calling conventions. An empty list from
-        #     # one convention is not authoritative; another convention may be
-        #     # the one implemented by the active backend.
-        #     # --------------------------------------------------------------
-
-        #     try:
-        #         result = Core.InstanceCall(
-        #             cluster,
-        #             "Topologies"
-        #         )
-
-        #         if isinstance(result, list):
-        #             result = [
-        #                 item
-        #                 for item in result
-        #                 if Topology.IsInstance(
-        #                     item,
-        #                     "Topology"
-        #                 )
-        #             ]
-
-        #             if result:
-        #                 return result
-
-        #     except Exception:
-        #         pass
-
-        #     try:
-        #         result = []
-
-        #         Core.InstanceCall(
-        #             cluster,
-        #             "Topologies",
-        #             result
-        #         )
-
-        #         result = [
-        #             item
-        #             for item in result
-        #             if Topology.IsInstance(
-        #                 item,
-        #                 "Topology"
-        #             )
-        #         ]
-
-        #         if result:
-        #             return result
-
-        #     except Exception:
-        #         pass
-
-        #     try:
-        #         result = []
-
-        #         Core.InstanceCall(
-        #             cluster,
-        #             "Topologies",
-        #             None,
-        #             result
-        #         )
-
-        #         result = [
-        #             item
-        #             for item in result
-        #             if Topology.IsInstance(
-        #                 item,
-        #                 "Topology"
-        #             )
-        #         ]
-
-        #         if result:
-        #             return result
-
-        #     except Exception:
-        #         pass
-
-        #     try:
-        #         result = Cluster.Topologies(
-        #             cluster,
-        #             tolerance=tolerance,
-        #             silent=True
-        #         )
-
-        #         if isinstance(result, list):
-        #             result = [
-        #                 item
-        #                 for item in result
-        #                 if Topology.IsInstance(
-        #                     item,
-        #                     "Topology"
-        #                 )
-        #             ]
-
-        #             if result:
-        #                 return result
-
-        #     except Exception:
-        #         pass
-
-        #     return []
-
-        def cluster_constituents(cluster):
-            """
-            Returns the top-level constituent topologies of the input cluster.
-            """
-            try:
-                result = Cluster.Topologies(
-                    cluster,
-                    tolerance=tolerance,
-                    silent=True
-                )
-            except Exception:
-                return []
-
-            if not isinstance(
-                result,
-                list
-            ):
-                return []
-
-            return [
-                topology
-                for topology in result
-                if Topology.IsInstance(
-                    topology,
-                    "Topology"
-                )
-            ]
-
-        def valid_triangulated_cellcomplex(
-            candidate,
-            expected_cell_count=None
-        ):
-            if not Topology.IsInstance(
-                candidate,
-                "CellComplex"
-            ):
-                return False
-
-            cells = Topology.Cells(
-                candidate,
-                silent=True
-            ) or []
-
-            if (
-                expected_cell_count is not None
-                and len(cells) != expected_cell_count
-            ):
-                return False
-
-            faces = Topology.Faces(
-                candidate,
-                silent=True
-            ) or []
-
-            if not faces:
-                return False
-
-            for face in faces:
-                vertices = Topology.Vertices(
-                    face,
-                    silent=True
-                ) or []
-
-                if len(vertices) != 3:
-                    return False
-
-            return True
-
-        # ------------------------------------------------------------------
-        # Validate input.
-        # ------------------------------------------------------------------
-
-        if not Topology.IsInstance(
+        return Topology.Triangulate(
             topology,
-            "Topology"
-        ):
-            if not silent:
-                print(
-                    "Topology.Triangulate - Error: The input topology parameter "
-                    "is not a valid topology. Returning None."
-                )
-            return None
-
-        topology_type = Topology.Type(
-            topology
+            transferDictionaries=transferDictionaries,
+            mode=mode,
+            meshSize=meshSize,
+            tolerance=tolerance,
+            silent=silent,
         )
 
-        # ------------------------------------------------------------------
-        # Vertex / Edge / Wire.
-        # ------------------------------------------------------------------
-
-        if topology_type in [
-            Topology.TypeID("Vertex"),
-            Topology.TypeID("Edge"),
-            Topology.TypeID("Wire")
-        ]:
-
-            if not silent:
-                print(
-                    "Topology.Triangulate - Warning: The input topology parameter "
-                    "contains no faces. Returning the original topology."
-                )
-
-            return topology
-
-        # ------------------------------------------------------------------
-        # Cluster.
-        # ------------------------------------------------------------------
-
-        if topology_type == Topology.TypeID(
-            "Cluster"
-        ):
-
-            constituents = cluster_constituents(
-                topology
-            )
-
-            if not constituents:
-
-                if not silent:
-                    print(
-                        "Topology.Triangulate - Error: Could not retrieve any "
-                        "constituent topologies from the input Cluster. "
-                        "Returning None."
-                    )
-
-                return None
-
-            triangulated_constituents = []
-
-            for constituent in constituents:
-
-                triangulated = Topology.Triangulate(
-                    constituent,
-                    transferDictionaries=transferDictionaries,
-                    mode=mode,
-                    meshSize=meshSize,
-                    tolerance=tolerance,
-                    silent=True
-                )
-
-                if not Topology.IsInstance(
-                    triangulated,
-                    "Topology"
-                ):
-
-                    if not silent:
-                        print(
-                            "Topology.Triangulate - Error: Could not triangulate "
-                            "one of the constituent topologies of the input Cluster. "
-                            "Returning None."
-                        )
-
-                    return None
-
-                triangulated_constituents.append(
-                    triangulated
-                )
-
-            try:
-                return_topology = Cluster.ByTopologies(
-                    triangulated_constituents,
-                    silent=True
-                )
-
-            except TypeError:
-                return_topology = Cluster.ByTopologies(
-                    triangulated_constituents
-                )
-
-            except Exception:
-                return_topology = None
-
-            if not Topology.IsInstance(
-                return_topology,
-                "Cluster"
-            ):
-
-                if not silent:
-                    print(
-                        "Topology.Triangulate - Error: Could not rebuild the "
-                        "triangulated Cluster. Returning None."
-                    )
-
-                return None
-
-            return return_topology
-
-        # ------------------------------------------------------------------
-        # Remember CellComplex cell count before reconstruction.
-        # ------------------------------------------------------------------
-
-        expected_cell_count = None
-
-        if topology_type == Topology.TypeID(
-            "CellComplex"
-        ):
-
-            original_cells = Topology.Cells(
-                topology,
-                silent=True
-            ) or []
-
-            expected_cell_count = len(
-                original_cells
-            )
-
-        # ------------------------------------------------------------------
-        # Retrieve Faces.
-        # ------------------------------------------------------------------
-
-        topology_faces = Topology.Faces(
-            topology,
-            silent=True
-        )
-
-        if (
-            not isinstance(topology_faces, list)
-            or len(topology_faces) == 0
-        ):
-
-            if not silent:
-                print(
-                    "Topology.Triangulate - Error: Could not retrieve any Faces "
-                    "from the input Face, Shell, Cell, or CellComplex. "
-                    "Returning None."
-                )
-
-            return None
-
-        # ------------------------------------------------------------------
-        # Triangulate Faces.
-        # ------------------------------------------------------------------
-
-        face_triangles = []
-        selectors = []
-
-        for face in topology_faces:
-
-            vertices = Topology.Vertices(
-                face,
-                silent=True
-            ) or []
-
-            if len(vertices) > 3:
-
-                triangles = Face.Triangulate(
-                    face,
-                    mode=mode,
-                    meshSize=meshSize,
-                    tolerance=tolerance,
-                    silent=silent
-                )
-
-                if Topology.IsInstance(
-                    triangles,
-                    "Face"
-                ):
-                    triangles = [
-                        triangles
-                    ]
-
-                if not isinstance(
-                    triangles,
-                    list
-                ):
-
-                    if not silent:
-                        print(
-                            "Topology.Triangulate - Error: Could not triangulate "
-                            "one of the Faces of the input topology. Returning None."
-                        )
-
-                    return None
-
-                triangles = [
-                    triangle
-                    for triangle in triangles
-                    if Topology.IsInstance(
-                        triangle,
-                        "Face"
-                    )
-                ]
-
-                if not triangles:
-
-                    if not silent:
-                        print(
-                            "Topology.Triangulate - Error: Face triangulation "
-                            "returned no valid triangular Faces. Returning None."
-                        )
-
-                    return None
-
-            else:
-                triangles = [
-                    face
-                ]
-
-            for triangle in triangles:
-
-                if transferDictionaries:
-
-                    selector = Topology.Centroid(
-                        triangle
-                    )
-
-                    if Topology.IsInstance(
-                        selector,
-                        "Vertex"
-                    ):
-
-                        selector = Topology.SetDictionary(
-                            selector,
-                            Topology.Dictionary(
-                                face
-                            ),
-                            silent=True
-                        )
-
-                        selectors.append(
-                            selector
-                        )
-
-                face_triangles.append(
-                    triangle
-                )
-
-        if not face_triangles:
-
-            if not silent:
-                print(
-                    "Topology.Triangulate - Error: No valid triangular Faces "
-                    "were produced. Returning None."
-                )
-
-            return None
-
-        # ------------------------------------------------------------------
-        # Typed reconstruction.
-        # ------------------------------------------------------------------
-
-        return_topology = None
-
-        if topology_type in [
-            Topology.TypeID("Face"),
-            Topology.TypeID("Shell")
-        ]:
-
-            try:
-                return_topology = Shell.ByFaces(
-                    face_triangles,
-                    tolerance=tolerance,
-                    silent=True
-                )
-
-            except TypeError:
-                return_topology = Shell.ByFaces(
-                    face_triangles,
-                    tolerance=tolerance
-                )
-
-            except Exception:
-                return_topology = None
-
-        elif topology_type == Topology.TypeID(
-            "Cell"
-        ):
-
-            try:
-                return_topology = Cell.ByFaces(
-                    face_triangles,
-                    tolerance=tolerance,
-                    silent=True
-                )
-
-            except TypeError:
-                return_topology = Cell.ByFaces(
-                    face_triangles,
-                    tolerance=tolerance
-                )
-
-            except Exception:
-                return_topology = None
-
-        elif topology_type == Topology.TypeID(
-            "CellComplex"
-        ):
-
-            # --------------------------------------------------------------
-            # PythonOCC / future-backend path.
-            #
-            # This is the already-green path and is intentionally unchanged.
-            # --------------------------------------------------------------
-
-            if not Topology._IsTopologicCoreBackend():
-
-                try:
-                    return_topology = Core.CellComplex.ByFaces(
-                        face_triangles,
-                        tolerance,
-                        False
-                    )
-
-                except TypeError:
-
-                    try:
-                        return_topology = Core.CellComplex.ByFaces(
-                            face_triangles,
-                            tolerance
-                        )
-
-                    except TypeError:
-
-                        try:
-                            return_topology = Core.CellComplex.ByFaces(
-                                face_triangles
-                            )
-
-                        except Exception:
-                            return_topology = None
-
-                    except Exception:
-                        return_topology = None
-
-                except Exception:
-                    return_topology = None
-
-                if Topology.IsInstance(
-                    return_topology,
-                    "CellComplex"
-                ):
-
-                    resulting_cells = Topology.Cells(
-                        return_topology,
-                        silent=True
-                    ) or []
-
-                    if (
-                        expected_cell_count is not None
-                        and len(resulting_cells)
-                        != expected_cell_count
-                    ):
-
-                        if not silent:
-                            print(
-                                "Topology.Triangulate - Error: The active backend "
-                                "changed the CellComplex cell count from "
-                                f"{expected_cell_count} to "
-                                f"{len(resulting_cells)}. Returning None."
-                            )
-
-                        return None
-
-            # --------------------------------------------------------------
-            # TopologicCore compatibility path.
-            #
-            # Do not use public CellComplex.ByFaces here. Its coplanar-face
-            # preprocessing can dissolve the triangular subdivisions we have
-            # just created.
-            # --------------------------------------------------------------
-
-            else:
-
-                try:
-                    candidate = CellComplex._ByFaces(
-                        face_triangles,
-                        tolerance=tolerance,
-                        silent=True
-                    )
-
-                except Exception:
-                    candidate = None
-
-                if valid_triangulated_cellcomplex(
-                    candidate,
-                    expected_cell_count
-                ):
-                    return_topology = candidate
-
-                else:
-                    # ------------------------------------------------------
-                    # Secondary pure-Topologic reconstruction path.
-                    # ------------------------------------------------------
-
-                    try:
-                        candidate = CellComplex.ByFacesTopologic(
-                            face_triangles,
-                            tolerance=tolerance,
-                            silent=True
-                        )
-
-                    except Exception:
-                        candidate = None
-
-                    if valid_triangulated_cellcomplex(
-                        candidate,
-                        expected_cell_count
-                    ):
-                        return_topology = candidate
-
-                    else:
-                        return_topology = None
-
-        # ------------------------------------------------------------------
-        # Legacy TopologicCore reconstruction fallback.
-        # ------------------------------------------------------------------
-
-        if not Topology.IsInstance(
-            return_topology,
-            "Topology"
-        ):
-
-            if Topology._IsTopologicCoreBackend():
-
-                try:
-                    return_topology = Cluster.ByTopologies(
-                        face_triangles,
-                        silent=True
-                    )
-
-                except TypeError:
-                    return_topology = Cluster.ByTopologies(
-                        face_triangles
-                    )
-
-                except Exception:
-                    return_topology = None
-
-                if Topology.IsInstance(
-                    return_topology,
-                    "Topology"
-                ):
-
-                    return_topology = Topology.SelfMerge(
-                        return_topology,
-                        tolerance=tolerance,
-                        silent=silent
-                    )
-
-            else:
-
-                if not silent:
-                    print(
-                        "Topology.Triangulate - Error: The active backend could "
-                        "not reconstruct the triangulated topology. Returning None."
-                    )
-
-                return None
-
-        if not Topology.IsInstance(
-            return_topology,
-            "Topology"
-        ):
-
-            if not silent:
-                print(
-                    "Topology.Triangulate - Error: Could not reconstruct the "
-                    "triangulated topology. Returning None."
-                )
-
-            return None
-
-        # ------------------------------------------------------------------
-        # A TopologicCore CellComplex fallback must still satisfy the actual
-        # triangulation contract.
-        # ------------------------------------------------------------------
-
-        if (
-            topology_type
-            == Topology.TypeID("CellComplex")
-            and Topology._IsTopologicCoreBackend()
-            and not valid_triangulated_cellcomplex(
-                return_topology,
-                expected_cell_count
-            )
-        ):
-
-            if not silent:
-                print(
-                    "Topology.Triangulate - Error: TopologicCore could not "
-                    "reconstruct the CellComplex while preserving triangular "
-                    "faces and cell count. Returning None."
-                )
-
-            return None
-
-        # ------------------------------------------------------------------
-        # Transfer Face dictionaries.
-        # ------------------------------------------------------------------
-
-        if (
-            transferDictionaries
-            and selectors
-        ):
-
-            return_topology = Topology.TransferDictionariesBySelectors(
-                return_topology,
-                selectors,
-                tranFaces=True,
-                tolerance=tolerance
-            )
-
-        return return_topology
-    
     @staticmethod
     def _OBJString(topology,
                    color,
@@ -7571,18 +6855,13 @@ class Topology():
 
         try:
             import ezdxf
-        except:
-            print("Topology.ByDXFFile - Information: Installing required ezdxf library.")
-            try:
-                os.system("pip install ezdxf")
-            except:
-                os.system("pip install ezdxf --user")
-            try:
-                import ezdxf
-                print("Topology.ByDXFFile - Information: ezdxf library installed successfully.")
-            except:
-                warnings.warn("Topology.ByDXFFile - Error: Could not import ezdxf library. Please install it manually. Returning None.")
-                return None
+        except Exception:
+            if not silent:
+                print(
+                    "Topology.ByDXFFile - Error: The optional ezdxf package is "
+                    "not installed. Install ezdxf and try again. Returning None."
+                )
+            return None
 
         if not file:
             print("Topology.ByDXFFile - Error: the input file parameter is not a valid file. Returning None.")
@@ -7784,18 +7063,13 @@ class Topology():
         """
         try:
             import ezdxf
-        except:
-            print("Topology.ByDXFPath - Information: Installing required ezdxf library.")
-            try:
-                os.system("pip install ezdxf")
-            except:
-                os.system("pip install ezdxf --user")
-            try:
-                import ezdxf
-                print("Topology.ByDXFPath - Information: ezdxf library installed successfully.")
-            except:
-                warnings.warn("Topology.ByDXFPath - Error: Could not import ezdxf library. Please install it manually. Returning None.")
-                return None
+        except Exception:
+            if not silent:
+                print(
+                    "Topology.ByDXFPath - Error: The optional ezdxf package is "
+                    "not installed. Install ezdxf and try again. Returning None."
+                )
+            return None
         if not path:
             if not silent:
                 print("Topology.ByDXFPath - Error: the input path parameter is not a valid path. Returning None.")
@@ -9975,21 +9249,13 @@ class Topology():
         
         try:
             import pymupdf  # PyMuPDF
-        except:
+        except Exception:
             if not silent:
-                print("Topology.ByPDFFile - Warning: Installing required PyMuPDF library.")
-            try:
-                os.system("pip install PyMuPDF")
-            except:
-                os.system("pip install PyMuPDF --user")
-            try:
-                import pymupdf
-                if not silent:
-                    print("Topology.ByPDFFile - Information: PyMUDF library installed correctly.")
-            except:
-                if not silent:
-                    warnings.warn("Topology.ByPDFFile - Error: Could not import PyMuPDF. Please try to install PyMuPDF manually. Returning None.")
-                return None
+                print(
+                    "Topology.ByPDFFile - Error: The optional PyMuPDF package is "
+                    "not installed. Install PyMuPDF and try again. Returning None."
+                )
+            return None
         if not file:
             if not silent:
                 print("Topology.ByPDFFile - Error: Could not open the PDF file. Returning None.")
@@ -10165,21 +9431,13 @@ class Topology():
         import warnings
         try:
             import pymupdf  # PyMuPDF
-        except:
+        except Exception:
             if not silent:
-                print("Topology.ByPDFPath - Warning: Installing required PyMuPDF library.")
-            try:
-                os.system("pip install PyMuPDF")
-            except:
-                os.system("pip install PyMuPDF --user")
-            try:
-                import pymupdf
-                if not silent:
-                    print("Topology.ByPDFPath - Information: PyMUDF library installed correctly.")
-            except:
-                if not silent:
-                    warnings.warn("Topology.ByPDFPath - Error: Could not import PyMuPDF. Please try to install PyMuPDF manually. Returning None.")
-                return None
+                print(
+                    "Topology.ByPDFPath - Error: The optional PyMuPDF package is "
+                    "not installed. Install PyMuPDF and try again. Returning None."
+                )
+            return None
         if not isinstance(path, str):
             if not silent:
                 print("Topology.ByPDFPath - Error: the input path is not a valid path. Returning None.")
@@ -13503,7 +12761,7 @@ class Topology():
         return Core.InstanceCall(topology, "GetDictionary")
 
     @staticmethod
-    def Difference(topologyA, topologyB, tranDict: bool = False, tolerance: float = 0.0001, silent: bool = False):
+    def Difference(topologyA, topologyB, tranDict: bool = False, tolerance: float = 0.0001, silent: bool = False, returnProvenance: bool = False):
         """
         Subtracts topologyB from topologyA. See https://en.wikipedia.org/wiki/Boolean_operation.
 
@@ -13534,7 +12792,7 @@ class Topology():
             if not silent:
                 print("Topology.Difference - Error: The input topologyB parameter is not a valid topology. Returning None.")
             return None
-        return Topology._Boolean(topologyA=topologyA, topologyB=topologyB, operation="difference", tranDict=tranDict, tolerance=tolerance, silent=silent)
+        return Topology._Boolean(topologyA=topologyA, topologyB=topologyB, operation="difference", tranDict=tranDict, tolerance=tolerance, silent=silent, returnProvenance=returnProvenance)
     
     @staticmethod
     def Dimensionality(topology, silent: bool = False):
@@ -14115,18 +13373,13 @@ class Topology():
         
         try:
             import dotbimpy
-        except:
-            print("Topology - Installing required dotbimpy library.")
-            try:
-                os.system("pip install dotbimpy")
-            except:
-                os.system("pip install dotbimpy --user")
-            try:
-                import dotbimpy
-                print("Topology - dotbimpy library installed successfully.")
-            except:
-                warnings.warn("Topology - Error: Could not import dotbimpy. Please install the dotbimpy library manually. Returning None.")
-                return None
+        except Exception:
+            if not silent:
+                print(
+                    "Topology.ExportToBIM - Error: The optional dotbimpy package "
+                    "is not installed. Install dotbimpy and try again. Returning None."
+                )
+            return None
         # Make sure the file extension is .brep
         ext = path[len(path)-4:len(path)]
         if ext.lower() != ".bim":
@@ -14312,18 +13565,13 @@ class Topology():
 
         try:
             import ezdxf
-        except:
-            print("Topology.ExportToDXF - Information: Installing required ezdxf library.")
-            try:
-                os.system("pip install ezdxf")
-            except:
-                os.system("pip install ezdxf --user")
-            try:
-                import ezdxf
-                print("Topology.ExportToDXF - Information: ezdxf library installed successfully.")
-            except:
-                warnings.warn("Topology.ExportToDXF - Error: Could not import ezdxf library. Please install it manually. Returning None.")
-                return None
+        except Exception:
+            if not silent:
+                print(
+                    "Topology.ExportToDXF - Error: The optional ezdxf package is "
+                    "not installed. Install ezdxf and try again. Returning None."
+                )
+            return None
         
         from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
@@ -15877,7 +15125,7 @@ class Topology():
             return Topology.Type(topology)
     
     @staticmethod
-    def Impose(topologyA, topologyB, tranDict: bool = False, tolerance: float = 0.0001, silent: bool = False):
+    def Impose(topologyA, topologyB, tranDict: bool = False, tolerance: float = 0.0001, silent: bool = False, returnProvenance: bool = False):
         """
         Imposes topologyB on topologyA. See https://en.wikipedia.org/wiki/Boolean_operation.
 
@@ -15914,10 +15162,10 @@ class Topology():
             if not silent:
                 print("Topology.Impose - Warning: The topologyB input parameter is not a valid topology. Returning topologyA.")
             return topologyA
-        return Topology._Boolean(topologyA=topologyA, topologyB=topologyB, operation="impose", tranDict=tranDict, tolerance=tolerance, silent=silent)
+        return Topology._Boolean(topologyA=topologyA, topologyB=topologyB, operation="impose", tranDict=tranDict, tolerance=tolerance, silent=silent, returnProvenance=returnProvenance)
     
     @staticmethod
-    def Imprint(topologyA, topologyB, tranDict: bool = False, tolerance: float = 0.0001, silent: bool = False):
+    def Imprint(topologyA, topologyB, tranDict: bool = False, tolerance: float = 0.0001, silent: bool = False, returnProvenance: bool = False):
         """
         Imprints topologyB on topologyA. See https://en.wikipedia.org/wiki/Boolean_operation.
 
@@ -15954,7 +15202,7 @@ class Topology():
             if not silent:
                 print("Topology.Imprint - Warning: The topologyB input parameter is not a valid topology. Returning topologyA.")
             return topologyA
-        return Topology._Boolean(topologyA=topologyA, topologyB=topologyB, operation="imprint", tranDict=tranDict, tolerance=tolerance, silent=silent)
+        return Topology._Boolean(topologyA=topologyA, topologyB=topologyB, operation="imprint", tranDict=tranDict, tolerance=tolerance, silent=silent, returnProvenance=returnProvenance)
 
     @staticmethod
     def Inherit(targets, sources, keys: list = None, exclusive: bool = True, tolerance: float = 0.0001, silent: bool = False):
@@ -16154,7 +15402,8 @@ class Topology():
         tranDict: bool = False,
         tolerance: float = 0.0001,
         silent: bool = False
-    ):
+    ,
+        returnProvenance: bool = False):
         """
         Finds the intersection between the input operand topologies.
         See https://en.wikipedia.org/wiki/Boolean_operation.
@@ -16211,11 +15460,32 @@ class Topology():
         # --------------------------------------------------------------
 
         if not Topology._IsTopologicCoreBackend():
-            return Core.InstanceCall(
+            return Topology._Boolean(
+                topologyA=topologyA,
+                topologyB=topologyB,
+                operation="intersect",
+                tranDict=tranDict,
+                tolerance=tolerance,
+                silent=silent,
+                returnProvenance=returnProvenance,
+            )
+
+        if returnProvenance:
+            from topologicpy.Provenance import Provenance
+            result = Topology.Intersect(
                 topologyA,
-                "Intersect",
                 topologyB,
-                tranDict
+                tranDict=tranDict,
+                tolerance=tolerance,
+                silent=silent,
+                returnProvenance=False,
+            )
+            return result, Provenance.ByRecords(
+                [],
+                operation="intersect",
+                sources={"A": topologyA, "B": topologyB},
+                result=result,
+                supported=False,
             )
 
         # --------------------------------------------------------------
@@ -17533,7 +16803,7 @@ class Topology():
         return max_edges
 
     @staticmethod
-    def Merge(topologyA, topologyB, tranDict: bool = False, tolerance: float = 0.0001, silent: bool = False):
+    def Merge(topologyA, topologyB, tranDict: bool = False, tolerance: float = 0.0001, silent: bool = False, returnProvenance: bool = False):
         """
         Merges the input operand topologies. See https://en.wikipedia.org/wiki/Boolean_operation.
 
@@ -17556,7 +16826,7 @@ class Topology():
             the resultant topology.
 
         """
-        return Topology._Boolean(topologyA=topologyA, topologyB=topologyB, operation="merge", tranDict=tranDict, tolerance=tolerance, silent=silent)
+        return Topology._Boolean(topologyA=topologyA, topologyB=topologyB, operation="merge", tranDict=tranDict, tolerance=tolerance, silent=silent, returnProvenance=returnProvenance)
 
     @staticmethod
     def MergeAll(*topologies, tolerance: float = 0.0001, silent: bool = False):
@@ -21516,179 +20786,138 @@ class Topology():
 
     @staticmethod
     def SelfMerge(topology,
-                  transferDictionaries: bool = False,
-                  ontology: bool = False,
-                  tolerance: float = 0.0001,
-                  silent: bool = False):
+                transferDictionaries: bool = False,
+                ontology: bool = False,
+                tolerance: float = 0.0001,
+                silent: bool = False):
         """
-        Self merges the input topology to return the most logical topology type
-        given the input data.
+        Self-merges the input topology and returns the cleanest logical topology
+        represented by it.
 
-        This version uses a fast progressive singleton test before falling back to
-        the expensive core SelfMerge operation.
+        For non-Cluster inputs, the topology is returned unchanged. For Cluster
+        inputs, normalization is delegated to the active backend. The backend is
+        responsible for de-duplicating direct constituents, removing redundant
+        lower-dimensional constituents, and promoting the result to the highest
+        appropriate topology type.
 
         Parameters
         ----------
         topology : topologic_core.Topology
             The input topology.
-        transferDictionaries : bool , optional
-            If set to True, the dictionary of the input Cluster is transferred to
-            the returned singleton candidate when applicable. Default is False.
-        ontology : bool , optional
-            If True, the returned topology is annotated with TopologicPy ontology metadata. Default is False.
-        tolerance : float , optional
+        transferDictionaries : bool, optional
+            If True, the dictionary of the input Cluster is transferred to the
+            normalized result. Default is False.
+        ontology : bool, optional
+            If True, the returned topology is annotated with TopologicPy ontology
+            metadata. Default is False.
+        tolerance : float, optional
             The desired tolerance. Default is 0.0001.
-        silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
+        silent : bool, optional
+            If True, errors and warnings are suppressed. Default is False.
 
         Returns
         -------
-        topologic_core.Topology
-            The self-merged topology.
+        topologic_core.Topology or None
+            The normalized topology.
         """
-
         from topologicpy.Cluster import Cluster
 
         if not Topology.IsInstance(topology, "Topology"):
             if not silent:
-                print("Topology.SelfMerge - Error: The input topology is not a valid topology. Returning None")
+                print("Topology.SelfMerge - Error: The input topology is not a valid topology. Returning None.")
             return None
 
-        # Non-cluster topologies are already single logical topologies.
+        try:
+            tol = abs(float(tolerance))
+        except Exception:
+            tol = 0.0001
+        if tol <= 0.0:
+            tol = 0.0001
+
+        # A non-Cluster is already one logical topology. SelfMerge is a
+        # normalization operation, not a general geometry healer.
         if not Topology.IsInstance(topology, "Cluster"):
-            return Topology._OntologyAnnotate(topology, ontology=ontology, generatedBy="Topology.SelfMerge", annotateSubtopologies=True, silent=True)
+            return Topology._OntologyAnnotate(
+                topology,
+                ontology=ontology,
+                generatedBy="Topology.SelfMerge",
+                annotateSubtopologies=True,
+                silent=True,
+            )
 
-        def _len_items(func, t):
+        source_dictionary = None
+        if transferDictionaries:
             try:
-                items = func(t, silent=True)
-                if isinstance(items, list):
-                    return len(items), items
-                return 0, []
+                source_dictionary = Topology.Dictionary(topology, silent=True)
+            except TypeError:
+                try:
+                    source_dictionary = Topology.Dictionary(topology)
+                except Exception:
+                    source_dictionary = None
             except Exception:
-                return 0, []
+                source_dictionary = None
 
-        def _vertices(t):
-            return Topology._OntologyAnnotate(Topology.Vertices(t, silent=True), ontology=ontology, generatedBy="Topology.SelfMerge", annotateSubtopologies=True, silent=True)
+        # PythonOCC's backend accepts tolerance. TopologicCore historically exposes
+        # SelfMerge() without arguments, so retain the no-argument compatibility
+        # fallback.
+        try:
+            result = Core.InstanceCall(topology, "SelfMerge", tol)
+        except TypeError:
+            try:
+                result = Core.InstanceCall(topology, "SelfMerge")
+            except Exception:
+                result = None
+        except Exception:
+            try:
+                result = Core.InstanceCall(topology, "SelfMerge")
+            except Exception:
+                result = None
 
-        # ------------------------------------------------------------------
-        # 1. Fastest possible direct-child test.
-        # ------------------------------------------------------------------
-        # If Cluster.Topologies returns direct children and there is exactly one,
-        # we can unwrap immediately without scanning all subtopologies.
-        # try:
-        #     children = Cluster.Topologies(topology)
-        #     if isinstance(children, list) and len(children) == 1:
-        #         child = children[0]
-        #         if Topology.IsInstance(child, "Topology"):
-        #             if transferDictionaries:
-        #                 try:
-        #                     d = Topology.Dictionary(topology)
-        #                     if d:
-        #                         child = Topology.SetDictionary(child, d)
-        #                 except Exception:
-        #                     pass
-        #             return child
-        # except Exception:
-        #     pass
+        # A failed normalization must not destroy a valid input topology.
+        if not Topology.IsInstance(result, "Topology"):
+            result = topology
 
-        # ------------------------------------------------------------------
-        # 2. Progressive singleton test.
-        # ------------------------------------------------------------------
-        # Find the highest-dimensional candidate. Then compare the candidate and
-        # the cluster progressively. Stop as soon as a count differs.
-        #
-        # This is cheaper than computing a complete count signature for both.
-        # ------------------------------------------------------------------
-
-        levels = [
-            ("CellComplex", Topology.CellComplexes),
-            ("Cell",        Topology.Cells),
-            ("Shell",       Topology.Shells),
-            ("Face",        Topology.Faces),
-            ("Wire",        Topology.Wires),
-            ("Edge",        Topology.Edges),
-            ("Vertex",      _vertices),
-        ]
-
-        candidate = None
-        candidate_level_index = None
-
-        for i, (_, extractor) in enumerate(levels):
-            n, items = _len_items(extractor, topology)
-
-            if n == 0:
-                continue
-
-            if n > 1:
-                candidate = None
+        # Defensive final singleton collapse. This is one direct-constituent query,
+        # not the previous repeated full descendant scan.
+        for _ in range(8):
+            if not Topology.IsInstance(result, "Cluster"):
                 break
+            try:
+                children = Cluster.Topologies(result, tolerance=tol, silent=True)
+            except TypeError:
+                try:
+                    children = Cluster.Topologies(result, silent=True)
+                except Exception:
+                    children = None
+            except Exception:
+                children = None
 
-            candidate = items[0]
-            candidate_level_index = i
-            break
+            if not isinstance(children, list) or len(children) != 1:
+                break
+            child = children[0]
+            if not Topology.IsInstance(child, "Topology") or child is result:
+                break
+            result = child
 
-        if Topology.IsInstance(candidate, "Topology"):
-            is_singleton = True
+        if transferDictionaries and source_dictionary is not None:
+            try:
+                result = Topology.SetDictionary(result, source_dictionary, silent=True)
+            except TypeError:
+                try:
+                    result = Topology.SetDictionary(result, source_dictionary)
+                except Exception:
+                    pass
+            except Exception:
+                pass
 
-            # Compare only from the candidate's own level downward.
-            # For example, if the candidate is a Cell, do not compare CellComplexes.
-            for _, extractor in levels[candidate_level_index:]:
-                n_cluster, _ = _len_items(extractor, topology)
-                n_candidate, _ = _len_items(extractor, candidate)
+        return Topology._OntologyAnnotate(
+            result,
+            ontology=ontology,
+            generatedBy="Topology.SelfMerge",
+            annotateSubtopologies=True,
+            silent=True,
+        )
 
-                if n_cluster != n_candidate:
-                    is_singleton = False
-                    break
-
-            if is_singleton:
-                if transferDictionaries:
-                    try:
-                        d = Topology.Dictionary(topology)
-                        if d:
-                            candidate = Topology.SetDictionary(candidate, d)
-                    except Exception:
-                        pass
-                return candidate
-
-        # ------------------------------------------------------------------
-        # 3. Expensive fallback.
-        # ------------------------------------------------------------------
-
-        try:
-            # return_topology = topology.SelfMerge() # H to Core
-            return_topology = Core.InstanceCall(topology, 'SelfMerge')
-        except Exception:
-            return_topology = None
-
-        if not Topology.IsInstance(return_topology, "Topology"):
-            return None
-
-        # ------------------------------------------------------------------
-        # 4. Minimal post-simplification only.
-        # ------------------------------------------------------------------
-        # Avoid Topology.Merge(cells[0], Cluster.ByTopologies(cells[1:])) here.
-        # That previous behaviour can be very expensive and should not be part of
-        # the fast SelfMerge path.
-        # ------------------------------------------------------------------
-
-        try:
-            if Topology.IsInstance(return_topology, "CellComplex"):
-                cells = Topology.Cells(return_topology)
-                if isinstance(cells, list) and len(cells) == 1:
-                    return cells[0]
-            if Topology.IsInstance(return_topology, "Shell"):
-                faces = Topology.Faces(return_topology)
-                if isinstance(faces, list) and len(faces) == 1:
-                    return faces[0]
-            if Topology.IsInstance(return_topology, "Wire"):
-                edges = Topology.Edges(return_topology)
-                if isinstance(edges, list) and len(edges) == 1:
-                    return edges[0]
-        except Exception:
-            pass
-
-        return Topology._OntologyAnnotate(return_topology, ontology=ontology, generatedBy="Topology.SelfMerge", annotateSubtopologies=True, silent=True)
-    
     @staticmethod
     def SetDictionary(topology, dictionary, silent: biool = False):
         """
@@ -24217,7 +23446,7 @@ class Topology():
         return figure
         
     @staticmethod
-    def Slice(topologyA, topologyB, tranDict: bool = False, tolerance: float = 0.0001, silent: bool = False):
+    def Slice(topologyA, topologyB, tranDict: bool = False, tolerance: float = 0.0001, silent: bool = False, returnProvenance: bool = False):
         """
         Slices topologyA using topologyB. See https://en.wikipedia.org/wiki/Boolean_operation.
 
@@ -24255,7 +23484,7 @@ class Topology():
                 print("Topology.Slice - Warning: The topologyB input parameter is not a valid topology. Returning topologyA.")
             return topologyA
 
-        return Topology._Boolean(topologyA=topologyA, topologyB=topologyB, operation="slice", tranDict=tranDict, tolerance=tolerance, silent=silent)
+        return Topology._Boolean(topologyA=topologyA, topologyB=topologyB, operation="slice", tranDict=tranDict, tolerance=tolerance, silent=silent, returnProvenance=returnProvenance)
 
     @staticmethod
     def SmallestFaces(topology, removeCoplanarFaces: bool = False, epsilon: float = 0.001, tolerance: float = 0.0001, silent: bool = False):
@@ -25335,7 +24564,7 @@ class Topology():
         return superTopologies
     
     @staticmethod
-    def SymDif(topologyA, topologyB, tranDict: bool = False, tolerance: float = 0.0001, silent: bool = False):
+    def SymDif(topologyA, topologyB, tranDict: bool = False, tolerance: float = 0.0001, silent: bool = False, returnProvenance: bool = False):
         """
         Returns the symmetric difference (XOR) of the input operand topologies. See https://en.wikipedia.org/wiki/Boolean_operation.
 
@@ -25358,10 +24587,10 @@ class Topology():
             the resultant topology.
 
         """
-        return Topology._Boolean(topologyA=topologyA, topologyB=topologyB, operation="symdif", tranDict=tranDict, tolerance=tolerance, silent=silent)
+        return Topology._Boolean(topologyA=topologyA, topologyB=topologyB, operation="symdif", tranDict=tranDict, tolerance=tolerance, silent=silent, returnProvenance=returnProvenance)
 
     @staticmethod
-    def SymmetricDifference(topologyA, topologyB, tranDict: bool = False, tolerance: float = 0.0001, silent: bool = False):
+    def SymmetricDifference(topologyA, topologyB, tranDict: bool = False, tolerance: float = 0.0001, silent: bool = False, returnProvenance: bool = False):
         """
         Returns the symmetric difference (XOR) of the input operand topologies. See https://en.wikipedia.org/wiki/Boolean_operation.
 
@@ -25384,7 +24613,7 @@ class Topology():
             the resultant topology.
 
         """
-        return Topology._Boolean(topologyA=topologyA, topologyB=topologyB, operation="symdif", tranDict=tranDict, tolerance=tolerance, silent=silent)
+        return Topology._Boolean(topologyA=topologyA, topologyB=topologyB, operation="symdif", tranDict=tranDict, tolerance=tolerance, silent=silent, returnProvenance=returnProvenance)
 
     # @staticmethod
     # def Taper(
@@ -28368,185 +27597,391 @@ class Topology():
     #     return return_topology
 
     @staticmethod
-    def Triangulate(topology, transferDictionaries: bool = False, mode: int = 0, meshSize: float = None, tolerance: float = 0.0001, silent: bool = False):
+    def Triangulate(
+        topology,
+        transferDictionaries: bool = False,
+        mode: int = 0,
+        meshSize: float = None,
+        tolerance: float = 0.0001,
+        silent: bool = False,
+    ):
         """
-        Triangulates the input topology.
+        Triangulates the Faces of the input topology using only the active
+        topology backend and reconstructs the corresponding Topologic topology.
+
+        ``Topology.Triangulate`` is a topological conversion operation. It does
+        not perform numerical gmsh meshing. Use :meth:`Topology.Mesh` for gmsh
+        2D/3D numerical meshing and :meth:`Topology.Tessellate` for indexed
+        surface tessellation data.
 
         Parameters
         ----------
         topology : topologic_core.Topology
             The input topology.
         transferDictionaries : bool , optional
-            If set to True, the dictionaries of the faces in the input topology
-            will be transferred to the created triangular faces. Default is False.
+            If True, dictionaries on source Faces are transferred to the
+            triangular Faces. Default is False.
         mode : int , optional
-            The desired mode of meshing algorithm. Several options are available:
-            0: Classic
-            1: MeshAdapt
-            3: Initial Mesh Only
-            5: Delaunay
-            6: Frontal-Delaunay
-            7: BAMG
-            8: Frontal-Delaunay for Quads
-            9: Packing of Parallelograms
-            All options other than 0 use the gmsh library.
+            Deprecated compatibility parameter. It is ignored. Historical gmsh
+            algorithm selection has moved to ``Topology.Mesh``. Default is 0.
         meshSize : float , optional
-            The desired mesh size when using a meshing mode. If set to None,
-            it is calculated automatically. Default is None.
+            Deprecated compatibility parameter. It is ignored. Use
+            ``Topology.Mesh`` for numerical mesh sizing. Default is None.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed.
-            Default is False.
+            If True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
         topologic_core.Topology
             The triangulated topology.
         """
-        # Keep metadata-transfer and gmsh behavior completely unchanged.
-        if transferDictionaries or mode != 0:
-            return Topology._LegacyTriangulate_BackendV3(
-                topology,
-                transferDictionaries=transferDictionaries,
-                mode=mode,
-                meshSize=meshSize,
-                tolerance=tolerance,
-                silent=silent,
-            )
+        from topologicpy.Cell import Cell
+        from topologicpy.CellComplex import CellComplex
+        from topologicpy.Cluster import Cluster
+        from topologicpy.Face import Face
+        from topologicpy.Shell import Shell
+        from topologicpy.Vertex import Vertex
 
         if not Topology.IsInstance(topology, "Topology"):
-            return Topology._LegacyTriangulate_BackendV3(
-                topology,
-                transferDictionaries=transferDictionaries,
-                mode=mode,
-                meshSize=meshSize,
-                tolerance=tolerance,
-                silent=silent,
+            if not silent:
+                print(
+                    "Topology.Triangulate - Error: The input topology parameter "
+                    "is not a valid topology. Returning None."
+                )
+            return None
+
+        try:
+            tolerance = abs(float(tolerance))
+        except Exception:
+            tolerance = 0.0
+
+        if not math.isfinite(tolerance) or tolerance <= 0.0:
+            if not silent:
+                print(
+                    "Topology.Triangulate - Error: tolerance must be greater "
+                    "than zero. Returning None."
+                )
+            return None
+
+        if (mode not in (0, None) or meshSize is not None) and not silent:
+            print(
+                "Topology.Triangulate - Warning: mode and meshSize are deprecated "
+                "and ignored. Triangulation is backend-native; use Topology.Mesh "
+                "for gmsh algorithm and element-size controls."
             )
 
-        t = Topology.Type(topology)
+        topology_type = Topology.Type(topology)
 
-        # Preserve diagnostics/identity behavior and let the legacy Cluster
-        # branch recurse into this optimized method for its face-bearing parts.
-        if t in [
+        if topology_type in (
             Topology.TypeID("Vertex"),
             Topology.TypeID("Edge"),
             Topology.TypeID("Wire"),
-            Topology.TypeID("Cluster"),
-        ]:
-            return Topology._LegacyTriangulate_BackendV3(
-                topology,
-                transferDictionaries=transferDictionaries,
-                mode=mode,
-                meshSize=meshSize,
-                tolerance=tolerance,
-                silent=silent,
-            )
-
-        # Preserve failure visibility of the public face query.
-        try:
-            topology_faces = Topology.Faces(topology, silent=True)
-        except Exception:
+        ):
             if not silent:
-                print("Topology.Triangulate - Error: The input topology has no faces. Returning None.")
+                print(
+                    "Topology.Triangulate - Warning: The input topology contains "
+                    "no Faces. Returning the original topology."
+                )
+            return topology
+
+        if topology_type == Topology.TypeID("Cluster"):
+            try:
+                constituents = Cluster.Topologies(
+                    topology,
+                    tolerance=tolerance,
+                    silent=True,
+                )
+            except Exception:
+                constituents = []
+
+            constituents = [
+                item
+                for item in (constituents or [])
+                if Topology.IsInstance(item, "Topology")
+            ]
+
+            if not constituents:
+                if not silent:
+                    print(
+                        "Topology.Triangulate - Error: Could not retrieve any "
+                        "constituent topologies from the input Cluster. Returning None."
+                    )
+                return None
+
+            triangulated = []
+            for constituent in constituents:
+                item = Topology.Triangulate(
+                    constituent,
+                    transferDictionaries=transferDictionaries,
+                    mode=0,
+                    meshSize=None,
+                    tolerance=tolerance,
+                    silent=True,
+                )
+                if not Topology.IsInstance(item, "Topology"):
+                    if not silent:
+                        print(
+                            "Topology.Triangulate - Error: Could not triangulate "
+                            "a Cluster constituent. Returning None."
+                        )
+                    return None
+                triangulated.append(item)
+
+            try:
+                return Cluster.ByTopologies(triangulated, silent=True)
+            except TypeError:
+                return Cluster.ByTopologies(triangulated)
+            except Exception:
+                return None
+
+        expected_cell_count = None
+        if topology_type == Topology.TypeID("CellComplex"):
+            expected_cell_count = len(Topology.Cells(topology, silent=True) or [])
+
+        source_faces = Topology.Faces(topology, silent=True)
+        if not isinstance(source_faces, list) or not source_faces:
+            if not silent:
+                print(
+                    "Topology.Triangulate - Error: Could not retrieve any Faces "
+                    "from the input topology. Returning None."
+                )
             return None
 
-        if not isinstance(topology_faces, list) or len(topology_faces) < 1:
-            if not silent:
-                print("Topology.Triangulate - Error: The input topology has no faces. Returning None.")
-            return None
+        # Each tuple is (triangular Face, source Face). Keeping the source Face
+        # with every triangle makes dictionary transfer independent of the
+        # triangulation implementation used.
+        triangle_records = []
 
-        try:
-            from topologicpy.Cell import Cell
-            from topologicpy.CellComplex import CellComplex
-            from topologicpy.Cluster import Cluster
-            from topologicpy.Face import Face
-            from topologicpy.Shell import Shell
-            from topologicpy.Vertex import Vertex
+        # PythonOCC fast path: use backend-native triangulation data directly.
+        if not Topology._IsTopologicCoreBackend():
+            try:
+                data = Core.InstanceCall(
+                    topology,
+                    "TriangulateDataNative",
+                    tolerance,
+                )
 
-            data = Core.InstanceCall(
-                topology,
-                "TriangulateDataNative",
-                tolerance,
-            )
-
-            if not isinstance(data, list) or len(data) < 1:
-                raise ValueError
-
-            face_triangles = []
-
-            for record in data:
-                if not isinstance(record, dict):
+                if not isinstance(data, list) or not data:
                     raise ValueError
 
-                source_face = record.get("source_face", None)
-                keep_source = bool(record.get("keep_source", False))
+                for record in data:
+                    if not isinstance(record, dict):
+                        raise ValueError
 
-                if keep_source:
+                    source_face = record.get("source_face")
                     if not Topology.IsInstance(source_face, "Face"):
                         raise ValueError
-                    face_triangles.append(source_face)
-                    continue
 
-                triangles = record.get("triangles", [])
-                if not isinstance(triangles, list) or len(triangles) < 1:
-                    raise ValueError
+                    if bool(record.get("keep_source", False)):
+                        triangle_records.append((source_face, source_face))
+                        continue
 
-                for triangle in triangles:
-                    if not isinstance(triangle, (list, tuple)) or len(triangle) != 3:
+                    triangles = record.get("triangles", [])
+                    if not isinstance(triangles, list) or not triangles:
                         raise ValueError
-                    vertices = []
-                    for coords in triangle:
-                        if not isinstance(coords, (list, tuple)) or len(coords) != 3:
+
+                    for triangle in triangles:
+                        if not isinstance(triangle, (list, tuple)) or len(triangle) != 3:
                             raise ValueError
-                        vertices.append(
-                            Vertex.ByCoordinates(
-                                float(coords[0]),
-                                float(coords[1]),
-                                float(coords[2]),
+
+                        vertices = []
+                        for coords in triangle:
+                            if not isinstance(coords, (list, tuple)) or len(coords) != 3:
+                                raise ValueError
+                            vertices.append(
+                                Vertex.ByCoordinates(
+                                    float(coords[0]),
+                                    float(coords[1]),
+                                    float(coords[2]),
+                                )
                             )
+
+                        tri_face = Face.ByVertices(
+                            vertices,
+                            tolerance=tolerance,
+                            silent=True,
                         )
-                    tri_face = Face.ByVertices(
-                        vertices,
+                        if not Topology.IsInstance(tri_face, "Face"):
+                            raise ValueError
+
+                        triangle_records.append((tri_face, source_face))
+
+            except Exception:
+                triangle_records = []
+
+        # Backend-neutral fallback. Topology.Tessellate is native to each active
+        # topology backend and has no gmsh dependency.
+        if not triangle_records:
+            for source_face in source_faces:
+                source_vertices = Topology.Vertices(source_face, silent=True) or []
+
+                if len(source_vertices) == 3:
+                    triangles = [source_face]
+                else:
+                    mesh = Topology.Tessellate(
+                        source_face,
+                        quality="fine",
+                        weld=True,
+                        weldTolerance=tolerance,
+                        remesh=True,
+                        silent=True,
+                    )
+                    if not isinstance(mesh, dict):
+                        if not silent:
+                            print(
+                                "Topology.Triangulate - Error: Backend-native "
+                                "tessellation failed for a Face. Returning None."
+                            )
+                        return None
+
+                    triangles = Face.ByMesh(
+                        mesh,
+                        triangulateQuads=True,
+                        quadSplit="shortest",
                         tolerance=tolerance,
                         silent=True,
                     )
-                    if not Topology.IsInstance(tri_face, "Face"):
-                        raise ValueError
-                    face_triangles.append(tri_face)
 
-            if len(face_triangles) < 1:
-                raise ValueError
+                if not isinstance(triangles, list) or not triangles:
+                    if not silent:
+                        print(
+                            "Topology.Triangulate - Error: No triangular Faces "
+                            "were produced for a source Face. Returning None."
+                        )
+                    return None
 
-            result = None
-            if t in [Topology.TypeID("Face"), Topology.TypeID("Shell")]:
-                result = Shell.ByFaces(face_triangles, tolerance=tolerance)
-            elif t == Topology.TypeID("Cell"):
-                result = Cell.ByFaces(face_triangles, tolerance=tolerance)
-            elif t == Topology.TypeID("CellComplex"):
-                result = CellComplex.ByFaces(face_triangles, tolerance=tolerance)
+                for triangle in triangles:
+                    if (
+                        Topology.IsInstance(triangle, "Face")
+                        and len(Topology.Vertices(triangle, silent=True) or []) == 3
+                    ):
+                        triangle_records.append((triangle, source_face))
 
-            if result is None:
-                result = Topology.SelfMerge(
-                    Cluster.ByTopologies(face_triangles),
-                    tolerance=tolerance,
+        if not triangle_records:
+            if not silent:
+                print(
+                    "Topology.Triangulate - Error: No valid triangular Faces "
+                    "were produced. Returning None."
                 )
+            return None
+
+        face_triangles = [record[0] for record in triangle_records]
+        selectors = []
+
+        if transferDictionaries:
+            for triangle, source_face in triangle_records:
+                selector = Topology.Centroid(triangle, silent=True)
+                if not Topology.IsInstance(selector, "Vertex"):
+                    continue
+                selector = Topology.SetDictionary(
+                    selector,
+                    Topology.Dictionary(source_face),
+                    silent=True,
+                )
+                if Topology.IsInstance(selector, "Vertex"):
+                    selectors.append(selector)
+
+        result = None
+
+        if topology_type in (
+            Topology.TypeID("Face"),
+            Topology.TypeID("Shell"),
+        ):
+            try:
+                result = Shell.ByFaces(
+                    face_triangles,
+                    tolerance=tolerance,
+                    silent=True,
+                )
+            except TypeError:
+                result = Shell.ByFaces(face_triangles, tolerance=tolerance)
+            except Exception:
+                result = None
+
+        elif topology_type == Topology.TypeID("Cell"):
+            try:
+                result = Cell.ByFaces(
+                    face_triangles,
+                    tolerance=tolerance,
+                    silent=True,
+                )
+            except TypeError:
+                result = Cell.ByFaces(face_triangles, tolerance=tolerance)
+            except Exception:
+                result = None
+
+        elif topology_type == Topology.TypeID("CellComplex"):
+            if not Topology._IsTopologicCoreBackend():
+                attempts = (
+                    lambda: Core.CellComplex.ByFaces(face_triangles, tolerance, False),
+                    lambda: Core.CellComplex.ByFaces(face_triangles, tolerance),
+                    lambda: Core.CellComplex.ByFaces(face_triangles),
+                )
+                for attempt in attempts:
+                    try:
+                        candidate = attempt()
+                    except Exception:
+                        continue
+                    if Topology.IsInstance(candidate, "CellComplex"):
+                        result = candidate
+                        break
+            else:
+                try:
+                    result = CellComplex.ByFaces(
+                        face_triangles,
+                        tolerance=tolerance,
+                        silent=True,
+                    )
+                except TypeError:
+                    result = CellComplex.ByFaces(face_triangles, tolerance=tolerance)
+                except Exception:
+                    result = None
+
+            if Topology.IsInstance(result, "CellComplex") and expected_cell_count is not None:
+                resulting_count = len(Topology.Cells(result, silent=True) or [])
+                if resulting_count != expected_cell_count:
+                    if not silent:
+                        print(
+                            "Topology.Triangulate - Error: Triangulation changed the "
+                            f"CellComplex cell count from {expected_cell_count} to "
+                            f"{resulting_count}. Returning None."
+                        )
+                    return None
+
+        if not Topology.IsInstance(result, "Topology") and Topology._IsTopologicCoreBackend():
+            try:
+                result = Cluster.ByTopologies(face_triangles, silent=True)
+            except TypeError:
+                result = Cluster.ByTopologies(face_triangles)
+            except Exception:
+                result = None
 
             if Topology.IsInstance(result, "Topology"):
-                return result
+                result = Topology.SelfMerge(
+                    result,
+                    tolerance=tolerance,
+                    silent=True,
+                )
 
-        except Exception:
-            pass
+        if not Topology.IsInstance(result, "Topology"):
+            if not silent:
+                print(
+                    "Topology.Triangulate - Error: Could not reconstruct the "
+                    "triangulated topology. Returning None."
+                )
+            return None
 
-        return Topology._LegacyTriangulate_BackendV3(
-            topology,
-            transferDictionaries=transferDictionaries,
-            mode=mode,
-            meshSize=meshSize,
-            tolerance=tolerance,
-            silent=silent,
-        )
+        if transferDictionaries and selectors:
+            result = Topology.TransferDictionariesBySelectors(
+                result,
+                selectors,
+                tranFaces=True,
+                tolerance=tolerance,
+            )
+
+        return result
     
     # @staticmethod
     # def Twist(
@@ -29864,7 +29299,8 @@ class Topology():
         tranDict: bool = False,
         tolerance: float = 0.0001,
         silent: bool = False
-    ):
+    ,
+        returnProvenance: bool = False):
         """
         Unions the input operand topologies.
         See https://en.wikipedia.org/wiki/Boolean_operation.
@@ -29949,7 +29385,8 @@ class Topology():
                 operation="union",
                 tranDict=tranDict,
                 tolerance=tolerance,
-                silent=silent
+                silent=silent,
+                returnProvenance=returnProvenance
             )
 
         # --------------------------------------------------------------
@@ -29975,7 +29412,8 @@ class Topology():
                     topologyB,
                     operation="merge",
                     tranDict=tranDict,
-                    tolerance=tolerance
+                    tolerance=tolerance,
+                returnProvenance=returnProvenance
                 )
 
                 if Topology.IsInstance(
@@ -30188,7 +29626,8 @@ class Topology():
             operation="union",
             tranDict=tranDict,
             tolerance=tolerance,
-            silent=silent
+            silent=silent,
+                returnProvenance=returnProvenance
         )
 
     @staticmethod
@@ -30678,7 +30117,7 @@ class Topology():
         return Topology.Contains(b, a, tolerance = tolerance, silent = silent)
     
     @staticmethod
-    def XOR(topologyA, topologyB, tranDict: bool = False, tolerance: float = 0.0001, silent: bool = False):
+    def XOR(topologyA, topologyB, tranDict: bool = False, tolerance: float = 0.0001, silent: bool = False, returnProvenance: bool = False):
         """
         Returns the symmetric difference (XOR) of the input operand topologies. See https://en.wikipedia.org/wiki/Boolean_operation.
 
@@ -30701,4 +30140,4 @@ class Topology():
             the resultant topology.
 
         """
-        return Topology._Boolean(topologyA=topologyA, topologyB=topologyB, operation="symdif", tranDict=tranDict, tolerance=tolerance, silent=silent)
+        return Topology._Boolean(topologyA=topologyA, topologyB=topologyB, operation="symdif", tranDict=tranDict, tolerance=tolerance, silent=silent, returnProvenance=returnProvenance)

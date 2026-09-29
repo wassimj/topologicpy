@@ -885,11 +885,24 @@ class CSG:
         return CSG._unique_topologies(results)
 
     @staticmethod
-    def LineageGraph(graph, operation: Any = None):
+    def LineageGraph(graph, operation: Any = None, topologyType: Optional[str] = None, detailed: bool = False, includeDeleted: bool = False):
         """Return captured subtopology lineage as a TGraph.
 
         This is intentionally a *derived* TGraph.  BRepGraph stays private.
         """
+        if not detailed:
+            from topologicpy.Provenance import Provenance
+            provenance = Provenance.ByRecords(
+                CSG.History(graph, operation=operation),
+                operation="CSG",
+                metadata={"type": "CSGLineage", "schema": CSG.SCHEMA},
+            )
+            return provenance.Graph(
+                topologyType=topologyType,
+                includeDeleted=includeDeleted,
+                detailed=False,
+            )
+
         from topologicpy.TGraph import TGraph
 
         records = CSG.History(graph, operation=operation)

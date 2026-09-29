@@ -1,19 +1,26 @@
-"""Unit tests for topologicpy.TGraph.
+"""Unified unit tests for :mod:`topologicpy.TGraph`.
 
-These tests focus on the pure-Python TGraph data model and algorithms. They avoid
-TopologicCore, IFC geometry, igraph, NetworkX, Plotly rendering, and other optional
-runtime dependencies unless a test explicitly verifies graceful dependency handling.
+The suite combines the core TGraph, connectivity/cut, flow/disjoint-path, and
+WireByPath direction tests in one file. Most tests exercise the pure-Python
+TGraph data model and algorithms. Geometry imports are kept local to the
+WireByPath sentinel so the rest of the suite remains lightweight at collection
+time.
 """
 
 from __future__ import annotations
 
 import builtins
+from collections import deque
 import os
 
 import pytest
 
 from topologicpy.TGraph import TGraph
 
+
+# ============================================================================
+# Shared pytest configuration
+# ============================================================================
 
 @pytest.fixture(autouse=True)
 def _suppress_expected_topologicpy_output(capfd):
@@ -22,6 +29,9 @@ def _suppress_expected_topologicpy_output(capfd):
     yield
     capfd.readouterr()
 
+# ============================================================================
+# Shared graph builders and assertion helpers
+# ============================================================================
 
 def _path_graph():
     g = TGraph(directed=False, dictionary={"label": "path"})
@@ -31,7 +41,6 @@ def _path_graph():
     g.AddEdge(0, 1, dictionary={"weight": 2.0, "label": "ab"})
     g.AddEdge(1, 2, dictionary={"weight": 3.0, "label": "bc"})
     return g
-
 
 def _routing_graph():
     """
@@ -70,7 +79,6 @@ def _routing_graph():
 
     return g
 
-
 def _topological_vs_geometric_graph():
     """
     Returns a graph where hop-shortest and geometric-shortest paths differ.
@@ -100,6 +108,329 @@ def _topological_vs_geometric_graph():
 
     return g
 
+def _connectivity_grid_graph(rows=10, columns=10):
+    """Return an undirected orthogonal unit grid."""
+    graph = TGraph(
+        directed=False,
+        allowSelfLoops=False,
+        allowParallelEdges=False,
+    )
+
+    for y in range(rows):
+        for x in range(columns):
+            graph.AddVertex(
+                {
+                    "x": float(x),
+                    "y": float(y),
+                    "z": 0.0,
+                }
+            )
+
+    for y in range(rows):
+        for x in range(columns):
+            index = y * columns + x
+
+            if x < columns - 1:
+                graph.AddEdge(index, index + 1)
+
+            if y < rows - 1:
+                graph.AddEdge(index, index + columns)
+
+    return graph
+
+def _three_path_internal_bottleneck_graph():
+    """Return a graph with endpoint degree four but local vertex connectivity three."""
+    graph = TGraph(
+        directed=False,
+        allowSelfLoops=False,
+        allowParallelEdges=False,
+    )
+
+    for index in range(10):
+        graph.AddVertex(
+            {
+                "x": float(index),
+                "y": 0.0,
+                "z": 0.0,
+            }
+        )
+
+    # Source degree = 4.
+    graph.AddEdge(0, 1)
+    graph.AddEdge(0, 2)
+    graph.AddEdge(0, 3)
+    graph.AddEdge(0, 4)
+
+    # Three genuinely independent channels.
+    graph.AddEdge(1, 5)
+    graph.AddEdge(2, 6)
+    graph.AddEdge(3, 7)
+
+    # Fourth source branch merges into channel 1.
+    graph.AddEdge(4, 1)
+
+    # Target degree = 4.
+    graph.AddEdge(5, 9)
+    graph.AddEdge(6, 9)
+    graph.AddEdge(7, 9)
+    graph.AddEdge(8, 9)
+
+    # Fourth target branch also merges into channel 1.
+    graph.AddEdge(5, 8)
+
+    return graph
+
+def _connectivity_parallel_branch_graph():
+    """Return three internally vertex-disjoint source-target branches."""
+    graph = TGraph(
+        directed=False,
+        allowSelfLoops=False,
+        allowParallelEdges=False,
+    )
+
+    for index in range(5):
+        graph.AddVertex(
+            {
+                "x": float(index),
+                "y": 0.0,
+                "z": 0.0,
+            }
+        )
+
+    graph.AddEdge(0, 1)
+    graph.AddEdge(1, 4)
+
+    graph.AddEdge(0, 2)
+    graph.AddEdge(2, 4)
+
+    graph.AddEdge(0, 3)
+    graph.AddEdge(3, 4)
+
+    return graph
+
+def _is_reachable_without_vertices(graph, source, target, removed):
+    """Return True if target remains reachable after excluding removed vertices."""
+    removed = set(removed)
+
+    if source in removed or target in removed:
+        return False
+
+    adjacency = TGraph._UndirectedAdjacency(graph)
+
+    visited = {source}
+    queue = deque([source])
+
+    while queue:
+        u = queue.popleft()
+
+        if u == target:
+            return True
+
+        for v in adjacency.get(u, set()):
+            if v in removed or v in visited:
+                continue
+            visited.add(v)
+            queue.append(v)
+
+    return False
+
+def _is_reachable_without_edges(graph, source, target, removed_edges):
+    """Return True if target remains reachable after excluding removed edge indices."""
+    removed_edges = set(removed_edges)
+
+    adjacency = {
+        index: []
+        for index in TGraph._ActiveVertexIndices(graph)
+    }
+
+    for edge in TGraph._ActiveEdges(graph):
+        edge_index = edge.get("index")
+
+        if edge_index in removed_edges:
+            continue
+
+        u = edge.get("src")
+        v = edge.get("dst")
+
+        if u not in adjacency or v not in adjacency:
+            continue
+
+        adjacency[u].append(v)
+        adjacency[v].append(u)
+
+    visited = {source}
+    queue = deque([source])
+
+    while queue:
+        u = queue.popleft()
+
+        if u == target:
+            return True
+
+        for v in adjacency.get(u, []):
+            if v in visited:
+                continue
+            visited.add(v)
+            queue.append(v)
+
+    return False
+
+def _flow_grid_graph(rows=10, columns=10):
+    """Return an orthogonal unit grid with row-major stable vertex indices."""
+    graph = TGraph(
+        directed=False,
+        allowSelfLoops=False,
+        allowParallelEdges=False,
+    )
+
+    for y in range(rows):
+        for x in range(columns):
+            graph.AddVertex(
+                {
+                    "x": float(x),
+                    "y": float(y),
+                    "z": 0.0,
+                    "penalty": 0.0,
+                }
+            )
+
+    for y in range(rows):
+        for x in range(columns):
+            index = y * columns + x
+
+            if x < columns - 1:
+                graph.AddEdge(
+                    index,
+                    index + 1,
+                    directed=False,
+                    dictionary={
+                        "capacity": 1.0,
+                        "weight": 1.0,
+                    },
+                )
+
+            if y < rows - 1:
+                graph.AddEdge(
+                    index,
+                    index + columns,
+                    directed=False,
+                    dictionary={
+                        "capacity": 1.0,
+                        "weight": 1.0,
+                    },
+                )
+
+    return graph
+
+def _weighted_parallel_branch_graph():
+    """Return three internally vertex-disjoint two-edge branches.
+
+    Branch costs using edgeKey="weight":
+
+        0-1-4 : 2
+        0-2-4 : 4
+        0-3-4 : 6
+    """
+    graph = TGraph(
+        directed=False,
+        allowSelfLoops=False,
+        allowParallelEdges=False,
+    )
+
+    coordinates = [
+        (0.0, 0.0, 0.0),
+        (1.0, 1.0, 0.0),
+        (1.0, 0.0, 0.0),
+        (1.0, -1.0, 0.0),
+        (2.0, 0.0, 0.0),
+    ]
+
+    for x, y, z in coordinates:
+        graph.AddVertex(
+            {
+                "x": x,
+                "y": y,
+                "z": z,
+                "penalty": 0.0,
+            }
+        )
+
+    graph.AddEdge(0, 1, dictionary={"weight": 1.0, "capacity": 1.0})
+    graph.AddEdge(1, 4, dictionary={"weight": 1.0, "capacity": 1.0})
+
+    graph.AddEdge(0, 2, dictionary={"weight": 2.0, "capacity": 1.0})
+    graph.AddEdge(2, 4, dictionary={"weight": 2.0, "capacity": 1.0})
+
+    graph.AddEdge(0, 3, dictionary={"weight": 3.0, "capacity": 1.0})
+    graph.AddEdge(3, 4, dictionary={"weight": 3.0, "capacity": 1.0})
+
+    return graph
+
+def _edge_vs_vertex_disjoint_graph():
+    """Return two edge-disjoint routes that share one internal vertex."""
+    graph = TGraph(
+        directed=False,
+        allowSelfLoops=False,
+        allowParallelEdges=False,
+    )
+
+    for index in range(7):
+        graph.AddVertex(
+            {
+                "x": float(index),
+                "y": 0.0,
+                "z": 0.0,
+            }
+        )
+
+    for a, b in [
+        (0, 1),
+        (1, 3),
+        (3, 4),
+        (4, 6),
+        (0, 2),
+        (2, 3),
+        (3, 5),
+        (5, 6),
+    ]:
+        graph.AddEdge(a, b, dictionary={"capacity": 1.0})
+
+    return graph
+
+def _assert_internal_vertex_disjoint(paths):
+    """Assert that no pair of paths shares an internal vertex."""
+    for i in range(len(paths)):
+        for j in range(i + 1, len(paths)):
+            assert set(paths[i][1:-1]).isdisjoint(paths[j][1:-1])
+
+def _undirected_path_edges(path):
+    """Return canonical undirected edge pairs for one path."""
+    return {
+        (min(a, b), max(a, b))
+        for a, b in zip(path, path[1:])
+    }
+
+def _assert_edge_disjoint(paths):
+    """Assert that no pair of paths shares a physical undirected edge."""
+    edge_sets = [_undirected_path_edges(path) for path in paths]
+
+    for i in range(len(edge_sets)):
+        for j in range(i + 1, len(edge_sets)):
+            assert edge_sets[i].isdisjoint(edge_sets[j])
+
+def _wire_vertex_xyz(vertex):
+    """Return vertex coordinates without mantissa rounding."""
+    from topologicpy.Vertex import Vertex
+
+    return Vertex.Coordinates(vertex, mantissa=None)
+
+def _coordinates_close(a, b, tol=1.0e-7):
+    """Return True when two coordinate triples are equal within tolerance."""
+    return all(abs(float(a[i]) - float(b[i])) <= tol for i in range(3))
+
+# ============================================================================
+# Core graph model, mutation, adjacency, and accessors
+# ============================================================================
 
 def test_constructor_add_vertex_add_edge_and_basic_accessors():
     g = _path_graph()
@@ -122,7 +453,6 @@ def test_constructor_add_vertex_add_edge_and_basic_accessors():
     assert TGraph.ContainsVertex(g, 999) is False
     assert TGraph.ContainsEdge(g, 999) is False
 
-
 def test_directed_adjacency_modes_and_duplicate_edge_rules():
     g = TGraph(directed=True, allowSelfLoops=False, allowParallelEdges=False)
     for i in range(3):
@@ -142,7 +472,6 @@ def test_directed_adjacency_modes_and_duplicate_edge_rules():
         [0, 0, 0],
     ]
 
-
 def test_allow_parallel_edges_and_self_loops_when_enabled():
     g = TGraph(directed=True, allowSelfLoops=True, allowParallelEdges=True)
     g.AddVertex({"label": "A"})
@@ -156,7 +485,6 @@ def test_allow_parallel_edges_and_self_loops_when_enabled():
     assert TGraph.Size(g) == 3
     assert len(TGraph.EdgesBetween(g, 0, 1, directed=True)) == 2
     assert TGraph.EdgeBetween(g, 0, 0, directed=True)["index"] == 2
-
 
 def test_set_dictionaries_and_coordinates_are_reflected_in_distance_helpers():
     g = TGraph()
@@ -181,35 +509,24 @@ def test_set_dictionaries_and_coordinates_are_reflected_in_distance_helpers():
     assert TGraph.VertexDictionary(g, 0)["label"] == "origin"
     assert TGraph.EdgeDictionary(g, 0)["relationship"] == "connects"
 
+def test_remove_vertex_remove_edge_and_active_indices():
+    g = TGraph.ByEdgeIndexPairs(4, [(0, 1), (1, 2), (2, 3)], directed=False)
+    assert TGraph.ActiveVertexIndices(g) == [0, 1, 2, 3]
+    assert TGraph.ActiveEdgeIndices(g) == [0, 1, 2]
 
-def test_topological_distance_is_independent_of_geometric_shortest_path():
-    g = _topological_vs_geometric_graph()
+    g.RemoveVertex(1)
+    assert TGraph.ActiveVertexIndices(g) == [0, 2, 3]
+    assert TGraph.ActiveEdgeIndices(g) == [2]
+    assert TGraph.Order(g) == 3
+    assert TGraph.Size(g) == 1
 
-    geometric_path, geometric_cost = TGraph.ShortestPath(
-        g,
-        0,
-        2,
-        mode="all",
-        edgeKey="Length",
-        returnCost=True,
-    )
-    hop_path, hop_cost = TGraph.ShortestPath(
-        g,
-        0,
-        2,
-        mode="all",
-        edgeKey="hop",
-        returnCost=True,
-    )
+    g.RemoveEdge(2)
+    assert TGraph.ActiveEdgeIndices(g) == []
+    assert TGraph.Size(g) == 0
 
-    assert geometric_path == [0, 3, 4, 2]
-    assert geometric_cost == pytest.approx(10.0)
-    assert hop_path == [0, 1, 2]
-    assert hop_cost == pytest.approx(2.0)
-
-    assert TGraph.TopologicalDistance(g, 0, 2, mode="all") == 2
-    assert TGraph.Distance(g, 0, 2, distanceType="topological", mode="all") == 2
-
+# ============================================================================
+# Construction, serialization, copying, and CSV round-trips
+# ============================================================================
 
 def test_constructors_from_edge_pairs_adjacency_matrix_and_dictionary():
     g = TGraph.ByEdgeIndexPairs(3, [(0, 1), (1, 2)], directed=False)
@@ -227,7 +544,6 @@ def test_constructors_from_edge_pairs_adjacency_matrix_and_dictionary():
     assert TGraph.Order(gd) == 3
     assert TGraph.Size(gd) == 3
     assert TGraph.AdjacencyDictionary(gd) == {"A": ["B", "C"], "B": ["C"], "C": []}
-
 
 def test_json_round_trip_copy_and_python_data_are_independent():
     g = _path_graph()
@@ -249,7 +565,6 @@ def test_json_round_trip_copy_and_python_data_are_independent():
     TGraph.SetVertexDictionary(copied, 0, {"label": "changed"})
     assert TGraph.VertexDictionary(g, 0)["label"] == "A"
     assert TGraph.VertexDictionary(copied, 0)["label"] == "changed"
-
 
 def test_csv_export_and_import_round_trip(tmp_path):
     g = TGraph(directed=True, allowParallelEdges=True, dictionary={"label": "csv_graph"})
@@ -296,7 +611,6 @@ def test_csv_export_and_import_round_trip(tmp_path):
     assert TGraph.EdgeDictionary(imported, 1)["feat_e"] == pytest.approx(8.0)
     assert TGraph.EdgeDictionary(imported, 1)["feat"] == [pytest.approx(8.0)]
 
-
 def test_csv_string_round_trip_preserves_active_records():
     g = _path_graph()
     g.RemoveEdge(1)
@@ -316,22 +630,37 @@ def test_csv_string_round_trip_preserves_active_records():
     assert TGraph.ActiveVertexIndices(restored) == [0, 1]
     assert TGraph.ActiveEdgeIndices(restored) == [0]
 
+# ============================================================================
+# Traversal, distances, routing, and path algorithms
+# ============================================================================
 
-def test_remove_vertex_remove_edge_and_active_indices():
-    g = TGraph.ByEdgeIndexPairs(4, [(0, 1), (1, 2), (2, 3)], directed=False)
-    assert TGraph.ActiveVertexIndices(g) == [0, 1, 2, 3]
-    assert TGraph.ActiveEdgeIndices(g) == [0, 1, 2]
+def test_topological_distance_is_independent_of_geometric_shortest_path():
+    g = _topological_vs_geometric_graph()
 
-    g.RemoveVertex(1)
-    assert TGraph.ActiveVertexIndices(g) == [0, 2, 3]
-    assert TGraph.ActiveEdgeIndices(g) == [2]
-    assert TGraph.Order(g) == 3
-    assert TGraph.Size(g) == 1
+    geometric_path, geometric_cost = TGraph.ShortestPath(
+        g,
+        0,
+        2,
+        mode="all",
+        edgeKey="Length",
+        returnCost=True,
+    )
+    hop_path, hop_cost = TGraph.ShortestPath(
+        g,
+        0,
+        2,
+        mode="all",
+        edgeKey="hop",
+        returnCost=True,
+    )
 
-    g.RemoveEdge(2)
-    assert TGraph.ActiveEdgeIndices(g) == []
-    assert TGraph.Size(g) == 0
+    assert geometric_path == [0, 3, 4, 2]
+    assert geometric_cost == pytest.approx(10.0)
+    assert hop_path == [0, 1, 2]
+    assert hop_cost == pytest.approx(2.0)
 
+    assert TGraph.TopologicalDistance(g, 0, 2, mode="all") == 2
+    assert TGraph.Distance(g, 0, 2, distanceType="topological", mode="all") == 2
 
 def test_breadth_first_and_depth_first_traversals_are_explicit_and_deterministic():
     g = TGraph.ByEdgeIndexPairs(
@@ -342,7 +671,6 @@ def test_breadth_first_and_depth_first_traversals_are_explicit_and_deterministic
 
     assert TGraph.BreadthFirstSearch(g, 0, mode="all") == [0, 1, 2, 3]
     assert TGraph.DepthFirstSearch(g, 0, mode="all") == [0, 1, 3, 2]
-
 
 def test_shortest_path_defaults_to_geometric_length_and_supports_hop_and_weight_costs():
     g = _routing_graph()
@@ -379,7 +707,6 @@ def test_shortest_path_defaults_to_geometric_length_and_supports_hop_and_weight_
 
     assert weighted_path == [0, 3, 4, 2]
     assert weighted_cost == pytest.approx(3.0)
-
 
 def test_shortest_path_rich_returns_filters_vertex_costs_and_astar():
     g = _routing_graph()
@@ -435,7 +762,6 @@ def test_shortest_path_rich_returns_filters_vertex_costs_and_astar():
     assert astar_path == [0, 1, 2]
     assert astar_cost == pytest.approx(2.0)
 
-
 def test_shortest_path_respects_directed_out_in_and_all_modes():
     g = TGraph(directed=True)
     for i in range(3):
@@ -447,7 +773,6 @@ def test_shortest_path_respects_directed_out_in_and_all_modes():
     assert TGraph.ShortestPath(g, 2, 0, mode="out", edgeKey="hop") is None
     assert TGraph.ShortestPath(g, 2, 0, mode="in", edgeKey="hop") == [2, 1, 0]
     assert TGraph.ShortestPath(g, 2, 0, mode="all", edgeKey="hop") == [2, 1, 0]
-
 
 def test_shortest_path_tree_reports_costs_hops_paths_and_edges():
     g = _routing_graph()
@@ -470,7 +795,6 @@ def test_shortest_path_tree_reports_costs_hops_paths_and_edges():
     assert tree["paths"][2] == [0, 3, 4, 2]
     assert tree["edgePaths"][2] == [2, 3, 4]
     assert tree["reachable"] == [0, 1, 2, 3, 4]
-
 
 def test_shortest_paths_from_source_and_batch_shortest_paths_match_single_queries():
     g = _routing_graph()
@@ -502,7 +826,6 @@ def test_shortest_paths_from_source_and_batch_shortest_paths_match_single_querie
     assert batch[1] == ([0, 3, 4], pytest.approx(2.0))
     assert batch[2] == ([3, 4, 2], pytest.approx(2.0))
 
-
 def test_shortest_path_via_vertices_supports_explicit_and_dictionary_waypoints():
     g = _routing_graph()
 
@@ -532,7 +855,6 @@ def test_shortest_path_via_vertices_supports_explicit_and_dictionary_waypoints()
 
     assert via_dictionary == [0, 3, 4, 2]
     assert via_cost == pytest.approx(6.0)
-
 
 def test_path_all_paths_longest_path_tree_and_connectedness():
     g = TGraph.ByEdgeIndexPairs(
@@ -572,6 +894,815 @@ def test_path_all_paths_longest_path_tree_and_connectedness():
     assert TGraph.IsDirected(tree) is True
     assert TGraph.Dictionary(tree)["root"] == 0
 
+# ============================================================================
+# Connectivity, minimum cuts, articulation structure, and biconnected components
+# ============================================================================
+
+def test_vertex_connectivity_grid_is_four():
+    graph = _connectivity_grid_graph()
+
+    assert TGraph.VertexConnectivity(
+        graph,
+        11,
+        88,
+    ) == 4
+
+def test_edge_connectivity_grid_is_four():
+    graph = _connectivity_grid_graph()
+
+    assert TGraph.EdgeConnectivity(
+        graph,
+        11,
+        88,
+    ) == 4
+
+def test_minimum_vertex_cut_grid_has_size_four_and_disconnects_endpoints():
+    graph = _connectivity_grid_graph()
+
+    result = TGraph.MinimumCut(
+        graph,
+        11,
+        88,
+        cut="vertex",
+    )
+
+    assert isinstance(result, dict)
+    assert result["value"] == pytest.approx(4.0)
+    assert result["cutType"] == "vertex"
+    assert len(result["cut"]) == 4
+    assert result["cutCapacity"] == pytest.approx(4.0)
+    assert result["isPureCut"] is True
+    assert result["source"] == 11
+    assert result["target"] == 88
+
+    assert 11 not in result["cut"]
+    assert 88 not in result["cut"]
+
+    assert _is_reachable_without_vertices(
+        graph,
+        11,
+        88,
+        result["cut"],
+    ) is False
+
+def test_minimum_cut_default_result_is_compact():
+    graph = _connectivity_grid_graph()
+
+    result = TGraph.MinimumCut(
+        graph,
+        11,
+        88,
+        cut="vertex",
+    )
+
+    assert "sourceSideNodes" not in result
+    assert "targetSideNodes" not in result
+    assert "cutArcs" not in result
+
+def test_minimum_cut_include_details_exposes_residual_diagnostics():
+    graph = _connectivity_grid_graph()
+
+    result = TGraph.MinimumCut(
+        graph,
+        11,
+        88,
+        cut="vertex",
+        includeDetails=True,
+    )
+
+    assert "sourceSideNodes" in result
+    assert "targetSideNodes" in result
+    assert "cutArcs" in result
+
+    assert isinstance(result["sourceSideNodes"], list)
+    assert isinstance(result["targetSideNodes"], list)
+    assert isinstance(result["cutArcs"], list)
+    assert result["cutArcs"]
+
+def test_internal_vertex_bottleneck_limits_connectivity_to_three():
+    graph = _three_path_internal_bottleneck_graph()
+
+    assert TGraph.Degree(graph, 0, mode="all") == 4
+    assert TGraph.Degree(graph, 9, mode="all") == 4
+
+    assert TGraph.VertexConnectivity(
+        graph,
+        0,
+        9,
+    ) == 3
+
+    result = TGraph.MinimumCut(
+        graph,
+        0,
+        9,
+        cut="vertex",
+    )
+
+    assert result["value"] == pytest.approx(3.0)
+    assert len(result["cut"]) == 3
+
+    assert _is_reachable_without_vertices(
+        graph,
+        0,
+        9,
+        result["cut"],
+    ) is False
+
+def test_minimum_edge_cut_parallel_branches_has_size_three():
+    graph = _connectivity_parallel_branch_graph()
+
+    assert TGraph.EdgeConnectivity(
+        graph,
+        0,
+        4,
+    ) == 3
+
+    result = TGraph.MinimumCut(
+        graph,
+        0,
+        4,
+        cut="edge",
+    )
+
+    assert isinstance(result, dict)
+    assert result["value"] == pytest.approx(3.0)
+    assert result["cutType"] == "edge"
+    assert len(result["cut"]) == 3
+    assert result["cutCapacity"] == pytest.approx(3.0)
+    assert result["isPureCut"] is True
+
+    assert _is_reachable_without_edges(
+        graph,
+        0,
+        4,
+        result["cut"],
+    ) is False
+
+def test_biconnected_components_path_returns_one_block_per_bridge():
+    graph = TGraph(
+        directed=False,
+        allowSelfLoops=False,
+        allowParallelEdges=False,
+    )
+
+    for index in range(4):
+        graph.AddVertex({"x": float(index), "y": 0.0, "z": 0.0})
+
+    graph.AddEdge(0, 1)
+    graph.AddEdge(1, 2)
+    graph.AddEdge(2, 3)
+
+    assert TGraph.BiconnectedComponents(graph) == [
+        [0, 1],
+        [1, 2],
+        [2, 3],
+    ]
+
+def test_biconnected_components_cycle_returns_single_block():
+    graph = TGraph(
+        directed=False,
+        allowSelfLoops=False,
+        allowParallelEdges=False,
+    )
+
+    for index in range(4):
+        graph.AddVertex({"x": float(index), "y": 0.0, "z": 0.0})
+
+    graph.AddEdge(0, 1)
+    graph.AddEdge(1, 2)
+    graph.AddEdge(2, 3)
+    graph.AddEdge(3, 0)
+
+    assert TGraph.BiconnectedComponents(graph) == [
+        [0, 1, 2, 3],
+    ]
+
+def test_biconnected_components_two_cycles_share_articulation_vertex():
+    graph = TGraph(
+        directed=False,
+        allowSelfLoops=False,
+        allowParallelEdges=False,
+    )
+
+    for index in range(5):
+        graph.AddVertex({"x": float(index), "y": 0.0, "z": 0.0})
+
+    # First triangle.
+    graph.AddEdge(0, 1)
+    graph.AddEdge(1, 2)
+    graph.AddEdge(2, 0)
+
+    # Second triangle sharing articulation vertex 2.
+    graph.AddEdge(2, 3)
+    graph.AddEdge(3, 4)
+    graph.AddEdge(4, 2)
+
+    assert TGraph.BiconnectedComponents(graph) == [
+        [0, 1, 2],
+        [2, 3, 4],
+    ]
+
+    cut_vertices = TGraph.CutVertices(graph)
+
+    assert [
+        vertex["index"]
+        for vertex in cut_vertices
+    ] == [2]
+
+def test_biconnected_components_parallel_edges_form_single_two_vertex_block():
+    graph = TGraph(
+        directed=False,
+        allowSelfLoops=False,
+        allowParallelEdges=True,
+    )
+
+    graph.AddVertex({"x": 0.0, "y": 0.0, "z": 0.0})
+    graph.AddVertex({"x": 1.0, "y": 0.0, "z": 0.0})
+
+    graph.AddEdge(0, 1)
+    graph.AddEdge(0, 1)
+
+    assert TGraph.BiconnectedComponents(graph) == [
+        [0, 1],
+    ]
+
+    # Neither parallel edge is a bridge.
+    assert TGraph.Bridges(graph) == []
+
+def test_biconnected_components_includes_isolated_vertices():
+    graph = TGraph(
+        directed=False,
+        allowSelfLoops=False,
+        allowParallelEdges=False,
+    )
+
+    for index in range(3):
+        graph.AddVertex({"x": float(index), "y": 0.0, "z": 0.0})
+
+    graph.AddEdge(0, 1)
+
+    assert TGraph.BiconnectedComponents(graph) == [
+        [0, 1],
+        [2],
+    ]
+
+def test_biconnected_components_disconnected_cycles_remain_separate():
+    graph = TGraph(
+        directed=False,
+        allowSelfLoops=False,
+        allowParallelEdges=False,
+    )
+
+    for index in range(6):
+        graph.AddVertex({"x": float(index), "y": 0.0, "z": 0.0})
+
+    graph.AddEdge(0, 1)
+    graph.AddEdge(1, 2)
+    graph.AddEdge(2, 0)
+
+    graph.AddEdge(3, 4)
+    graph.AddEdge(4, 5)
+    graph.AddEdge(5, 3)
+
+    assert TGraph.BiconnectedComponents(graph) == [
+        [0, 1, 2],
+        [3, 4, 5],
+    ]
+
+# ============================================================================
+# Flow engines and mutually disjoint paths
+# ============================================================================
+
+def test_maximum_flow_engine_and_flow_paths_find_four_grid_routes():
+    graph = _flow_grid_graph()
+
+    source = 11
+    target = 88
+
+    network = TGraph._FlowNetwork(
+        graph,
+        capacityKey="capacity",
+        defaultCapacity=1.0,
+    )
+
+    result = TGraph._MaximumFlowEngine(
+        nodes=network["nodes"],
+        arcs=network["arcs"],
+        source=source,
+        sink=target,
+    )
+
+    paths, flows = TGraph._FlowPaths(
+        result,
+        returnFlows=True,
+    )
+
+    assert result["value"] == pytest.approx(4.0)
+    assert result["augmentations"] == 4
+    assert len(paths) == 4
+    assert flows == pytest.approx([1.0, 1.0, 1.0, 1.0])
+
+    for path in paths:
+        assert path[0] == source
+        assert path[-1] == target
+
+def test_minimum_cost_flow_engine_reroutes_previous_flow_to_reach_maximum_cardinality():
+    """Regression test for residual rerouting after the first cheap augmentation."""
+    nodes = ["s", "u1", "u2", "v1", "v2", "t"]
+
+    arcs = [
+        {"src": "s", "dst": "u1", "capacity": 1.0, "cost": 0.0},
+        {"src": "s", "dst": "u2", "capacity": 1.0, "cost": 0.0},
+        {"src": "u1", "dst": "v1", "capacity": 1.0, "cost": 0.0},
+        {"src": "u1", "dst": "v2", "capacity": 1.0, "cost": 1.0},
+        {"src": "u2", "dst": "v1", "capacity": 1.0, "cost": 0.0},
+        {"src": "v1", "dst": "t", "capacity": 1.0, "cost": 0.0},
+        {"src": "v2", "dst": "t", "capacity": 1.0, "cost": 0.0},
+    ]
+
+    result = TGraph._MinimumCostFlowEngine(
+        nodes=nodes,
+        arcs=arcs,
+        source="s",
+        sink="t",
+    )
+
+    paths = TGraph._FlowPaths(result)
+
+    assert result["value"] == pytest.approx(2.0)
+    assert result["cost"] == pytest.approx(1.0)
+    assert result["augmentations"] == 2
+    assert len(paths) == 2
+
+    assert {tuple(path) for path in paths} == {
+        ("s", "u1", "v2", "t"),
+        ("s", "u2", "v1", "t"),
+    }
+
+def test_vertex_disjoint_flow_network_uses_non_limiting_edge_capacity():
+    graph = _flow_grid_graph()
+
+    network = TGraph._VertexDisjointFlowNetwork(
+        graph,
+        11,
+        88,
+        vertexCapacity=1.0,
+        edgeCapacity=1.0,
+    )
+
+    assert network is not None
+    assert network["transit_capacity"] >= 100.0
+
+    vertex_arcs = [
+        arc
+        for arc in network["arcs"]
+        if arc.get("kind") == "vertex"
+    ]
+
+    traversal_arcs = [
+        arc
+        for arc in network["arcs"]
+        if arc.get("kind") == "edge"
+    ]
+
+    assert vertex_arcs
+    assert traversal_arcs
+    assert all(arc["capacity"] == pytest.approx(1.0) for arc in vertex_arcs)
+    assert all(
+        arc["capacity"] == pytest.approx(network["transit_capacity"])
+        for arc in traversal_arcs
+    )
+
+def test_vertex_disjoint_private_pipeline_finds_four_grid_paths():
+    graph = _flow_grid_graph()
+
+    source = 11
+    target = 88
+
+    network = TGraph._VertexDisjointFlowNetwork(
+        graph,
+        source,
+        target,
+    )
+
+    result = TGraph._MaximumFlowEngine(
+        nodes=network["nodes"],
+        arcs=network["arcs"],
+        source=network["source"],
+        sink=network["sink"],
+    )
+
+    split_paths = TGraph._FlowPaths(result)
+
+    paths = TGraph._CollapseFlowPaths(
+        split_paths,
+        network,
+    )
+
+    assert result["value"] == pytest.approx(4.0)
+    assert len(paths) == 4
+    assert sorted(len(path) - 1 for path in paths) == [14, 14, 18, 18]
+
+    _assert_internal_vertex_disjoint(paths)
+
+def test_collapse_flow_paths_ignores_auxiliary_edge_gadget_nodes():
+    network = {
+        "node_to_vertex": {
+            0: 0,
+            ("vertex_in", 1): 1,
+            ("vertex_out", 1): 1,
+            2: 2,
+        }
+    }
+
+    transformed = [
+        [
+            0,
+            ("edge_in", 99),
+            ("edge_out", 99),
+            ("vertex_in", 1),
+            ("vertex_out", 1),
+            2,
+        ]
+    ]
+
+    assert TGraph._CollapseFlowPaths(
+        transformed,
+        network,
+    ) == [[0, 1, 2]]
+
+def test_edge_disjoint_network_uses_one_shared_capacity_arc_per_undirected_edge():
+    graph = TGraph(
+        directed=False,
+        allowSelfLoops=False,
+        allowParallelEdges=False,
+    )
+
+    graph.AddVertex({"x": 0.0, "y": 0.0, "z": 0.0})
+    graph.AddVertex({"x": 1.0, "y": 0.0, "z": 0.0})
+    graph.AddEdge(0, 1, dictionary={"weight": 7.0})
+
+    network = TGraph._EdgeDisjointFlowNetwork(
+        graph,
+        0,
+        1,
+        edgeCosts={0: 7.0},
+    )
+
+    capacity_arcs = [
+        arc
+        for arc in network["arcs"]
+        if arc.get("kind") == "edge_capacity"
+    ]
+
+    assert len(capacity_arcs) == 1
+    assert capacity_arcs[0]["edge_index"] == 0
+    assert capacity_arcs[0]["capacity"] == pytest.approx(1.0)
+    assert capacity_arcs[0]["cost"] == pytest.approx(7.0)
+
+def test_disjoint_paths_vertex_grid_returns_four_paths():
+    graph = _flow_grid_graph()
+
+    paths = TGraph.DisjointPaths(
+        graph,
+        11,
+        88,
+        disjoint="vertex",
+        optimize=False,
+    )
+
+    assert len(paths) == 4
+
+    _assert_internal_vertex_disjoint(paths)
+
+def test_disjoint_paths_vertex_optimized_grid_is_minimum_cost_four_path_family():
+    graph = _flow_grid_graph()
+
+    paths = TGraph.DisjointPaths(
+        graph,
+        11,
+        88,
+        disjoint="vertex",
+        optimize=True,
+        edgeKey="Length",
+    )
+
+    lengths = sorted(
+        len(path) - 1
+        for path in paths
+    )
+
+    assert len(paths) == 4
+    assert lengths == [14, 14, 18, 18]
+    assert sum(lengths) == 64
+
+    _assert_internal_vertex_disjoint(paths)
+
+def test_disjoint_paths_max_paths_caps_cardinality():
+    graph = _flow_grid_graph()
+
+    paths = TGraph.DisjointPaths(
+        graph,
+        11,
+        88,
+        disjoint="vertex",
+        maxPaths=2,
+        optimize=True,
+        edgeKey="Length",
+    )
+
+    assert len(paths) == 2
+
+    _assert_internal_vertex_disjoint(paths)
+
+def test_edge_disjoint_can_exceed_vertex_disjoint_cardinality():
+    graph = _edge_vs_vertex_disjoint_graph()
+
+    vertex_paths = TGraph.DisjointPaths(
+        graph,
+        0,
+        6,
+        disjoint="vertex",
+        optimize=False,
+    )
+
+    edge_paths = TGraph.DisjointPaths(
+        graph,
+        0,
+        6,
+        disjoint="edge",
+        optimize=False,
+    )
+
+    assert len(vertex_paths) == 1
+    assert len(edge_paths) == 2
+
+    _assert_edge_disjoint(edge_paths)
+    assert all(3 in path for path in edge_paths)
+
+def test_vertex_disjoint_paths_detect_internal_bottleneck_despite_degree_four_endpoints():
+    graph = _three_path_internal_bottleneck_graph()
+
+    assert TGraph.Degree(graph, 0, mode="all") == 4
+    assert TGraph.Degree(graph, 9, mode="all") == 4
+
+    paths = TGraph.DisjointPaths(
+        graph,
+        0,
+        9,
+        disjoint="vertex",
+        optimize=False,
+    )
+
+    assert len(paths) == 3
+
+    _assert_internal_vertex_disjoint(paths)
+
+def test_disjoint_paths_edge_key_optimizes_complete_path_family():
+    graph = _weighted_parallel_branch_graph()
+
+    paths = TGraph.DisjointPaths(
+        graph,
+        0,
+        4,
+        disjoint="vertex",
+        maxPaths=2,
+        optimize=True,
+        edgeKey="weight",
+    )
+
+    assert len(paths) == 2
+    assert {path[1] for path in paths} == {1, 2}
+
+    _assert_internal_vertex_disjoint(paths)
+
+def test_disjoint_paths_vertex_key_can_change_optimized_family_without_reducing_cardinality():
+    graph = _weighted_parallel_branch_graph()
+
+    unpenalized = TGraph.DisjointPaths(
+        graph,
+        0,
+        4,
+        disjoint="vertex",
+        maxPaths=2,
+        optimize=True,
+        edgeKey="weight",
+        vertexKey="penalty",
+    )
+
+    assert {path[1] for path in unpenalized} == {1, 2}
+
+    graph._vertices[1]["dictionary"]["penalty"] = 100.0
+
+    penalized = TGraph.DisjointPaths(
+        graph,
+        0,
+        4,
+        disjoint="vertex",
+        maxPaths=2,
+        optimize=True,
+        edgeKey="weight",
+        vertexKey="penalty",
+    )
+
+    assert len(penalized) == 2
+    assert {path[1] for path in penalized} == {2, 3}
+
+    _assert_internal_vertex_disjoint(penalized)
+
+def test_flow_costs_match_shortest_path_edge_and_vertex_cost_conventions():
+    graph = TGraph(directed=False)
+
+    graph.AddVertex(
+        {"x": 0.0, "y": 0.0, "z": 0.0, "penalty": 100.0}
+    )
+    graph.AddVertex(
+        {"x": 3.0, "y": 4.0, "z": 0.0, "penalty": 9.0}
+    )
+    graph.AddVertex(
+        {"x": 6.0, "y": 4.0, "z": 0.0, "penalty": 100.0}
+    )
+
+    graph.AddEdge(
+        0,
+        1,
+        dictionary={"weight": 7.0},
+    )
+    graph.AddEdge(
+        1,
+        2,
+        dictionary={"weight": 8.0},
+    )
+
+    geometric = TGraph._FlowCosts(
+        graph,
+        0,
+        2,
+        edgeKey="Length",
+        vertexKey="penalty",
+    )
+
+    hops = TGraph._FlowCosts(
+        graph,
+        0,
+        2,
+        edgeKey="hop",
+        vertexKey="penalty",
+    )
+
+    weighted = TGraph._FlowCosts(
+        graph,
+        0,
+        2,
+        edgeKey="weight",
+        vertexKey="penalty",
+    )
+
+    assert geometric["edge_costs"][0] == pytest.approx(5.0)
+    assert geometric["edge_costs"][1] == pytest.approx(3.0)
+
+    assert hops["edge_costs"][0] == pytest.approx(1.0)
+    assert hops["edge_costs"][1] == pytest.approx(1.0)
+
+    assert weighted["edge_costs"][0] == pytest.approx(7.0)
+    assert weighted["edge_costs"][1] == pytest.approx(8.0)
+
+    assert weighted["vertex_costs"][0] == pytest.approx(0.0)
+    assert weighted["vertex_costs"][1] == pytest.approx(9.0)
+    assert weighted["vertex_costs"][2] == pytest.approx(0.0)
+
+def test_disjoint_paths_rejects_negative_optimization_costs():
+    graph = _weighted_parallel_branch_graph()
+
+    graph._edges[0]["dictionary"]["weight"] = -1.0
+
+    assert TGraph.DisjointPaths(
+        graph,
+        0,
+        4,
+        disjoint="vertex",
+        optimize=True,
+        edgeKey="weight",
+        silent=True,
+    ) == []
+
+def test_disjoint_paths_respects_directed_edges():
+    graph = TGraph(
+        directed=True,
+        allowSelfLoops=False,
+        allowParallelEdges=False,
+    )
+
+    for index in range(4):
+        graph.AddVertex(
+            {
+                "x": float(index),
+                "y": 0.0,
+                "z": 0.0,
+            }
+        )
+
+    graph.AddEdge(0, 1, directed=True)
+    graph.AddEdge(1, 3, directed=True)
+    graph.AddEdge(0, 2, directed=True)
+    graph.AddEdge(2, 3, directed=True)
+
+    forward = TGraph.DisjointPaths(
+        graph,
+        0,
+        3,
+        disjoint="vertex",
+    )
+
+    reverse = TGraph.DisjointPaths(
+        graph,
+        3,
+        0,
+        disjoint="vertex",
+    )
+
+    assert len(forward) == 2
+    assert reverse == []
+
+    _assert_internal_vertex_disjoint(forward)
+
+@pytest.mark.parametrize(
+    "alias",
+    [
+        "vertex",
+        "vertices",
+        "node",
+        "nodes",
+        "vertex-disjoint",
+        "vertex_disjoint",
+    ],
+)
+def test_disjoint_paths_vertex_aliases(alias):
+    graph = _weighted_parallel_branch_graph()
+
+    paths = TGraph.DisjointPaths(
+        graph,
+        0,
+        4,
+        disjoint=alias,
+        maxPaths=2,
+    )
+
+    assert len(paths) == 2
+    _assert_internal_vertex_disjoint(paths)
+
+@pytest.mark.parametrize(
+    "alias",
+    [
+        "edge",
+        "edges",
+        "edge-disjoint",
+        "edge_disjoint",
+    ],
+)
+def test_disjoint_paths_edge_aliases(alias):
+    graph = _edge_vs_vertex_disjoint_graph()
+
+    paths = TGraph.DisjointPaths(
+        graph,
+        0,
+        6,
+        disjoint=alias,
+    )
+
+    assert len(paths) == 2
+    _assert_edge_disjoint(paths)
+
+def test_disjoint_paths_invalid_mode_and_non_positive_max_paths_return_empty():
+    graph = _weighted_parallel_branch_graph()
+
+    assert TGraph.DisjointPaths(
+        graph,
+        0,
+        4,
+        disjoint="invalid",
+        silent=True,
+    ) == []
+
+    assert TGraph.DisjointPaths(
+        graph,
+        0,
+        4,
+        maxPaths=0,
+        silent=True,
+    ) == []
+
+    assert TGraph.DisjointPaths(
+        graph,
+        0,
+        4,
+        maxPaths=-1,
+        silent=True,
+    ) == []
+
+# ============================================================================
+# Graph analytics, transforms, subgraphs, and compiled acceleration
+# ============================================================================
 
 def test_degree_clustering_complete_complement_mst_and_line_graph():
     path = TGraph.ByEdgeIndexPairs(3, [(0, 1), (1, 2)], directed=False)
@@ -605,7 +1736,6 @@ def test_degree_clustering_complete_complement_mst_and_line_graph():
     assert TGraph.Order(line) == 2
     assert TGraph.Size(line) == 1
 
-
 def test_subgraph_induced_subgraph_and_neighborhood_alias():
     g = TGraph.ByEdgeIndexPairs(
         5,
@@ -629,7 +1759,6 @@ def test_subgraph_induced_subgraph_and_neighborhood_alias():
     neighborhood = TGraph.Neighborhood(g, vertices=[2], k=1)
     assert isinstance(neighborhood, TGraph)
     assert TGraph.Order(neighborhood) == 3
-
 
 def test_compile_cache_adjacency_helpers_compile_info_and_warmup():
     g = _path_graph()
@@ -659,6 +1788,9 @@ def test_compile_cache_adjacency_helpers_compile_info_and_warmup():
     assert report["compiled"] is True
     assert {"numpy", "scipy", "numba"}.issubset(report)
 
+# ============================================================================
+# Ontology, semantic metadata, and optional-dependency guards
+# ============================================================================
 
 def test_annotation_ontology_helpers_and_semantic_summary_without_rdflib():
     g = _path_graph()
@@ -697,7 +1829,6 @@ def test_annotation_ontology_helpers_and_semantic_summary_without_rdflib():
     assert summary["edges"] == 2
     assert "top:Graph" in summary["ontology_class_counts"]
 
-
 def test_cardinality_report_and_guid_are_stable_for_simple_semantic_graph():
     g = TGraph(directed=True, dictionary={"label": "kg"})
     a = g.AddVertex({"id": "A", "label": "A"})
@@ -722,7 +1853,6 @@ def test_cardinality_report_and_guid_are_stable_for_simple_semantic_graph():
     row_a = next(row for row in report if row["vertex"] == "A")
     assert row_a["top:connectsTo"] == 2
 
-
 def test_by_ifc_path_missing_dependency_does_not_attempt_runtime_install(monkeypatch):
     real_import = builtins.__import__
 
@@ -738,7 +1868,6 @@ def test_by_ifc_path_missing_dependency_does_not_attempt_runtime_install(monkeyp
     monkeypatch.setattr(os, "system", forbidden_system)
 
     assert TGraph.ByIFCPath("dummy.ifc", silent=True) is None
-
 
 def test_louvain_missing_dependency_does_not_attempt_runtime_install(monkeypatch):
     g = TGraph.ByEdgeIndexPairs(3, [(0, 1), (1, 2)], directed=False)
@@ -756,3 +1885,36 @@ def test_louvain_missing_dependency_does_not_attempt_runtime_install(monkeypatch
     monkeypatch.setattr(os, "system", forbidden_system)
 
     assert TGraph.CommunityPartition(g, algorithm="louvain", silent=True) in (None, [])
+
+# ============================================================================
+# Geometry bridge: ShortestPath -> WireByPath direction preservation
+# ============================================================================
+
+def test_shortest_path_wire_by_path_preserves_direction_in_both_traversals():
+    from topologicpy.Edge import Edge
+    from topologicpy.Topology import Topology
+    from topologicpy.Vertex import Vertex
+    from topologicpy.Wire import Wire
+    vertices = [Vertex.ByCoordinates(float(i), 0.0, 0.0) for i in range(4)]
+    # Deliberately store every representation opposite to the 0 -> 3 traversal.
+    edges = [
+        Edge.ByStartVertexEndVertex(vertices[1], vertices[0], silent=True),
+        Edge.ByStartVertexEndVertex(vertices[2], vertices[1], silent=True),
+        Edge.ByStartVertexEndVertex(vertices[3], vertices[2], silent=True),
+    ]
+    graph = TGraph.ByVerticesEdges(vertices=vertices, edges=edges, directed=False, silent=True)
+    assert isinstance(graph, TGraph)
+
+    path_forward = TGraph.ShortestPath(graph, 0, 3, mode="all", silent=True)
+    assert path_forward == [0, 1, 2, 3]
+    wire_forward = TGraph.WireByPath(graph, path_forward, silent=True)
+    assert Topology.IsInstance(wire_forward, "Wire")
+    assert _coordinates_close(_wire_vertex_xyz(Wire.StartVertex(wire_forward, silent=True)), _wire_vertex_xyz(vertices[0]))
+    assert _coordinates_close(_wire_vertex_xyz(Wire.EndVertex(wire_forward, silent=True)), _wire_vertex_xyz(vertices[3]))
+
+    path_reverse = TGraph.ShortestPath(graph, 3, 0, mode="all", silent=True)
+    assert path_reverse == [3, 2, 1, 0]
+    wire_reverse = TGraph.WireByPath(graph, path_reverse, silent=True)
+    assert Topology.IsInstance(wire_reverse, "Wire")
+    assert _coordinates_close(_wire_vertex_xyz(Wire.StartVertex(wire_reverse, silent=True)), _wire_vertex_xyz(vertices[3]))
+    assert _coordinates_close(_wire_vertex_xyz(Wire.EndVertex(wire_reverse, silent=True)), _wire_vertex_xyz(vertices[0]))
