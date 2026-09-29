@@ -2,6 +2,9 @@
 # Wassim Jabi <wassimj@gmail.com>
 #
 # Tests for public TopologicPy provenance.
+#
+# Exact Boolean provenance depends on PythonOCC/OCCT BRepTools_History.
+# TopologicCore does not expose the native history required by this API.
 
 import pytest
 
@@ -10,6 +13,9 @@ from topologicpy.Provenance import Provenance
 from topologicpy.TGraph import TGraph
 from topologicpy.Topology import Topology
 from topologicpy.Vertex import Vertex
+
+
+pytestmark = pytest.mark.pythonocc_only
 
 
 def _role_counts(graph):
@@ -116,16 +122,9 @@ def test_merge_face_graph_matches_authoritative_result():
     graph = provenance.Graph(topologyType="Face")
     counts = _role_counts(graph)
 
-    # Each prism has six source Faces.
     assert counts.get("source", 0) == 12
-
-    # The semantic provenance graph must expose exactly the Faces that exist
-    # in the topology actually returned to the caller.
     assert len(result_faces) == 18
     assert counts.get("result", 0) == len(result_faces)
-
-    # A direct Boolean semantic graph must not expose native implementation
-    # stages as public provenance nodes.
     assert counts.get("intermediate", 0) == 0
 
 
@@ -141,9 +140,6 @@ def test_merge_unchanged_faces_are_explicit_source_to_result_states():
     graph = provenance.Graph(topologyType="Face")
     relations = _edge_relations(graph)
 
-    # Six exterior Faces survive wholesale in this offset-prism case.
-    # They must still be represented as distinct source and result states,
-    # connected by explicit "unchanged" provenance relationships.
     assert relations.count("unchanged") >= 6
 
     counts = _role_counts(graph)
@@ -191,7 +187,7 @@ def test_merge_origins_resolve_for_every_result_face():
 
     for face in Topology.Faces(result):
         origins = provenance.Origins(face)
-        assert origins, "Every final Merge Face should have at least one origin."
+        assert origins
         assert all(record.get("source") is not None for record in origins)
 
 
@@ -210,12 +206,7 @@ def test_difference_face_graph_contains_only_contributing_sources():
     counts = _role_counts(graph)
     result_faces = Topology.Faces(result)
 
-    # Difference is asymmetric. All six Faces of p1 contribute, while only
-    # the three Faces of p2 that actually cut p1 contribute to the result.
     assert counts.get("source", 0) == 9
-
-    # Again, semantic terminal nodes must correspond exactly to the topology
-    # actually returned to the caller.
     assert counts.get("result", 0) == len(result_faces)
     assert counts.get("intermediate", 0) == 0
 

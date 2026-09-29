@@ -162,6 +162,707 @@ class MergingProcess(Process):
 
 class Topology():
 
+    # @staticmethod
+    # def _Boolean(
+    #     topologyA,
+    #     topologyB,
+    #     operation: str = "union",
+    #     tranDict: bool = False,
+    #     ontology: bool = False,
+    #     returnProvenance: bool = False,
+    #     tolerance: float = 0.0001,
+    #     silent: bool = False
+    #     ):
+    #     """
+    #     Do NOT use this method directly.
+
+    #     Executes the input Boolean operation on the input operand topologies
+    #     and returns the result.
+
+    #     Parameters
+    #     ----------
+    #     topologyA : topologic_core.Topology
+    #         The first input topology.
+    #     topologyB : topologic_core.Topology
+    #         The second input topology.
+    #     operation : str , optional
+    #         The Boolean operation. This can be one of "union", "difference",
+    #         "intersect", "symdif", "merge", "slice", "impose", or "imprint".
+    #         It is case insensitive. Default is "union".
+    #     tranDict : bool , optional
+    #         If set to True the dictionaries of the operands are transferred
+    #         to the result. Default is False.
+    #     ontology : bool , optional
+    #         If True, the returned topology is annotated with TopologicPy
+    #         ontology metadata. Default is False.
+    #     returnProvenance : bool , optional
+    #         If True, the provanance of subtopologies is retrieved from BRepGraph and returned as a Provenance object.
+    #     tolerance : float , optional
+    #         The desired tolerance. Default is 0.0001.
+    #     silent : bool , optional
+    #         If set to True, error and warning messages are suppressed.
+    #         Default is False.
+
+    #     Returns
+    #     -------
+    #     topologic_core.Topology
+    #         The resultant topology.
+    #     """
+    #     from topologicpy.Dictionary import Dictionary
+    #     from topologicpy.Wire import Wire
+    #     from topologicpy.Face import Face
+    #     from topologicpy.Shell import Shell
+    #     from topologicpy.Cell import Cell
+
+    #     # Public single-operation provenance.
+    #     if returnProvenance:
+    #         from topologicpy.Provenance import Provenance
+
+    #         records = []
+    #         try:
+    #             from topologicpy.pythonocc_backend._csg_lineage import capture, materialise_record
+    #             with capture(operation_node=None, role_nodes={}, stage=0, sink=records):
+    #                 result = Topology._Boolean(
+    #                     topologyA=topologyA,
+    #                     topologyB=topologyB,
+    #                     operation=operation,
+    #                     tranDict=tranDict,
+    #                     ontology=ontology,
+    #                     tolerance=tolerance,
+    #                     silent=silent,
+    #                     returnProvenance=False,
+    #                 )
+    #             public_records = [materialise_record(r) for r in records if isinstance(r, dict)]
+    #             return result, Provenance.ByRecords(
+    #                 public_records,
+    #                 operation=operation,
+    #                 sources={"A": topologyA, "B": topologyB},
+    #                 result=result,
+    #                 supported=True,
+    #             )
+    #         except Exception:
+    #             result = Topology._Boolean(
+    #                 topologyA=topologyA,
+    #                 topologyB=topologyB,
+    #                 operation=operation,
+    #                 tranDict=tranDict,
+    #                 ontology=ontology,
+    #                 tolerance=tolerance,
+    #                 silent=silent,
+    #                 returnProvenance=False,
+    #             )
+    #             return result, Provenance.ByRecords(
+    #                 [],
+    #                 operation=operation,
+    #                 sources={"A": topologyA, "B": topologyB},
+    #                 result=result,
+    #                 supported=False,
+    #             )
+
+    #     def special_case(
+    #         topologyA,
+    #         topologyB,
+    #         operation
+    #     ):
+    #         """
+    #         Legacy TopologicCore Boolean recovery.
+
+    #         This helper must only be invoked when TopologicCore is the active
+    #         backend.
+    #         """
+    #         if operation == "union":
+    #             merge_result = Topology.Merge(
+    #                 topologyA,
+    #                 topologyB
+    #             )
+
+    #             if merge_result is None:
+    #                 return None
+
+    #             eb = Topology.ExternalBoundary(
+    #                 merge_result
+    #             )
+
+    #             if (
+    #                 Topology.IsInstance(
+    #                     eb,
+    #                     "vertex"
+    #                 )
+    #                 or Topology.IsInstance(
+    #                     eb,
+    #                     "edge"
+    #                 )
+    #                 or Topology.IsInstance(
+    #                     eb,
+    #                     "face"
+    #                 )
+    #             ):
+    #                 return eb
+
+    #             if Topology.IsInstance(
+    #                 eb,
+    #                 "wire"
+    #             ):
+    #                 if Wire.IsClosed(
+    #                     eb
+    #                 ):
+    #                     return Face.ByWire(
+    #                         eb
+    #                     )
+
+    #                 return eb
+
+    #             if Topology.IsInstance(
+    #                 eb,
+    #                 "shell"
+    #             ):
+    #                 if Shell.IsClosed(
+    #                     eb
+    #                 ):
+    #                     return Cell.ByShell(
+    #                         eb
+    #                     )
+
+    #                 return eb
+
+    #         return None
+
+    #     if not Topology.IsInstance(
+    #         topologyA,
+    #         "Topology"
+    #     ):
+    #         if not silent:
+    #             print(
+    #                 f"Topology.{operation.capitalize()} - Error: "
+    #                 "the input topologyA parameter is not a valid topology. "
+    #                 "Returning None."
+    #             )
+    #         return None
+
+    #     if not Topology.IsInstance(
+    #         topologyB,
+    #         "Topology"
+    #     ):
+    #         if not silent:
+    #             print(
+    #                 f"Topology.{operation.capitalize()} - Error: "
+    #                 "the input topologyB parameter is not a valid topology. "
+    #                 "Returning None."
+    #             )
+    #         return None
+
+    #     if not isinstance(
+    #         operation,
+    #         str
+    #     ):
+    #         if not silent:
+    #             print(
+    #                 "Topology._Boolean - Error: The input operation parameter "
+    #                 "is not a valid string. Returning None."
+    #             )
+    #         return None
+
+    #     operation = operation.lower()
+
+    #     if operation not in [
+    #         "union",
+    #         "difference",
+    #         "intersect",
+    #         "symdif",
+    #         "merge",
+    #         "slice",
+    #         "impose",
+    #         "imprint"
+    #     ]:
+    #         if not silent:
+    #             print(
+    #                 f"Topology.{operation.capitalize()} - Error: "
+    #                 "the input operation parameter is not recognized. "
+    #                 "Returning None."
+    #             )
+    #         return None
+
+    #     if not isinstance(
+    #         tranDict,
+    #         bool
+    #     ):
+    #         if not silent:
+    #             print(
+    #                 f"Topology.{operation.capitalize()} - Error: "
+    #                 "the input tranDict parameter is not a valid boolean. "
+    #                 "Returning None."
+    #             )
+    #         return None
+
+    #     topologyC = None
+
+    #     # BRepGraph Tranche 3 Fix 2: native Boolean provenance dispatch
+    #     # PythonOCC owns exact dictionary lineage through OCCT history.
+    #     # TopologicCore retains the historical geometric-transfer fallback.
+    #     native_tran_dict = bool(
+    #         tranDict and not Topology._IsTopologicCoreBackend()
+    #     )
+
+    #     # --------------------------------------------------------------
+    #     # Union
+    #     # --------------------------------------------------------------
+
+    #     if operation == "union":
+    #         topologyC = Core.InstanceCall(
+    #             topologyA,
+    #             "Union",
+    #             topologyB,
+    #             native_tran_dict
+    #         )
+
+    #         # Only TopologicCore is permitted to substitute a reconstructed
+    #         # result when its native Union fails.
+    #         if (
+    #             topologyC is None
+    #             and Topology._IsTopologicCoreBackend()
+    #         ):
+    #             topologyC = special_case(
+    #                 topologyA,
+    #                 topologyB,
+    #                 "union"
+    #             )
+
+    #     # --------------------------------------------------------------
+    #     # Difference
+    #     # --------------------------------------------------------------
+
+    #     elif operation == "difference":
+    #         if (
+    #             topologyA == topologyB
+    #             or topologyB is None
+    #         ):
+    #             topologyC = None
+
+    #         else:
+    #             topologyC = Core.InstanceCall(
+    #                 topologyA,
+    #                 "Difference",
+    #                 topologyB,
+    #                 native_tran_dict
+    #             )
+
+    #     # --------------------------------------------------------------
+    #     # Intersection
+    #     # --------------------------------------------------------------
+
+    #     elif operation == "intersect":
+    #         if (
+    #             topologyA == topologyB
+    #             or topologyB is None
+    #         ):
+    #             topologyC = topologyA
+
+    #         elif Topology._IsTopologicCoreBackend():
+    #             # Legacy TopologicCore workaround.
+    #             topologyC = Topology.Intersect(
+    #                 topologyA,
+    #                 topologyB,
+    #                 tranDict=False,
+    #                 tolerance=tolerance,
+    #                 silent=silent
+    #             )
+
+    #         else:
+    #             topologyC = Core.InstanceCall(
+    #                 topologyA,
+    #                 "Intersect",
+    #                 topologyB,
+    #                 native_tran_dict
+    #             )
+
+    #     # --------------------------------------------------------------
+    #     # Symmetric difference
+    #     # --------------------------------------------------------------
+
+    #     elif operation == "symdif":
+    #         if topologyA == topologyB:
+    #             topologyC = None
+
+    #         elif topologyB is None:
+    #             topologyC = topologyA
+
+    #         elif topologyA is None:
+    #             topologyC = topologyB
+
+    #         else:
+    #             topologyC = Core.InstanceCall(
+    #                 topologyA,
+    #                 "XOR",
+    #                 topologyB,
+    #                 native_tran_dict
+    #             )
+
+    #     # --------------------------------------------------------------
+    #     # Merge
+    #     # --------------------------------------------------------------
+
+    #     elif operation == "merge":
+    #         if topologyA == topologyB:
+    #             topologyC = topologyA
+
+    #         else:
+    #             topologyC = Core.InstanceCall(
+    #                 topologyA,
+    #                 "Merge",
+    #                 topologyB,
+    #                 native_tran_dict
+    #             )
+
+    #     # --------------------------------------------------------------
+    #     # Slice
+    #     # --------------------------------------------------------------
+
+    #     elif operation == "slice":
+    #         if topologyA == topologyB:
+    #             topologyC = topologyA
+
+    #         else:
+    #             topologyC = Core.InstanceCall(
+    #                 topologyA,
+    #                 "Slice",
+    #                 topologyB,
+    #                 native_tran_dict
+    #             )
+
+    #     # --------------------------------------------------------------
+    #     # Impose
+    #     # --------------------------------------------------------------
+
+    #     elif operation == "impose":
+    #         if topologyA == topologyB:
+    #             topologyC = topologyA
+
+    #         else:
+    #             topologyC = Core.InstanceCall(
+    #                 topologyA,
+    #                 "Impose",
+    #                 topologyB,
+    #                 native_tran_dict
+    #             )
+
+    #     # --------------------------------------------------------------
+    #     # Imprint
+    #     # --------------------------------------------------------------
+
+    #     elif operation == "imprint":
+    #         if topologyA == topologyB:
+    #             topologyC = topologyA
+
+    #         else:
+    #             topologyC = Core.InstanceCall(
+    #                 topologyA,
+    #                 "Imprint",
+    #                 topologyB,
+    #                 native_tran_dict
+    #             )
+
+    #     # --------------------------------------------------------------
+    #     # Dictionary transfer
+    #     # --------------------------------------------------------------
+
+    #     if (
+    #         tranDict is True
+    #         and Topology._IsTopologicCoreBackend()
+    #         and Topology.IsInstance(
+    #             topologyC,
+    #             "Topology"
+    #         )
+    #     ):
+    #         sourceVertices = []
+    #         sourceEdges = []
+    #         sourceFaces = []
+    #         sourceCells = []
+
+    #         sinkVertices = []
+    #         sinkEdges = []
+    #         sinkFaces = []
+    #         sinkCells = []
+
+    #         hidimA = Topology.HighestType(
+    #             topologyA
+    #         )
+
+    #         hidimB = Topology.HighestType(
+    #             topologyB
+    #         )
+
+    #         hidimC = Topology.HighestType(
+    #             topologyC
+    #         )
+
+    #         # ----------------------------------------------------------
+    #         # Vertices
+    #         # ----------------------------------------------------------
+
+    #         if Topology.Type(
+    #             topologyA
+    #         ) == Topology.TypeID(
+    #             "Vertex"
+    #         ):
+    #             sourceVertices += [
+    #                 topologyA
+    #             ]
+
+    #         elif hidimA >= Topology.TypeID(
+    #             "Vertex"
+    #         ):
+    #             sourceVertices += Topology.Vertices(
+    #                 topologyA
+    #             )
+
+    #         if Topology.Type(
+    #             topologyB
+    #         ) == Topology.TypeID(
+    #             "Vertex"
+    #         ):
+    #             sourceVertices += [
+    #                 topologyB
+    #             ]
+
+    #         elif hidimB >= Topology.TypeID(
+    #             "Vertex"
+    #         ):
+    #             sourceVertices += Topology.Vertices(
+    #                 topologyB
+    #             )
+
+    #         if Topology.Type(
+    #             topologyC
+    #         ) == Topology.TypeID(
+    #             "Vertex"
+    #         ):
+    #             sinkVertices = [
+    #                 topologyC
+    #             ]
+
+    #         elif hidimC >= Topology.TypeID(
+    #             "Vertex"
+    #         ):
+    #             sinkVertices = Topology.Vertices(
+    #                 topologyC,
+    #                 silent=True
+    #             )
+
+    #         if (
+    #             len(sourceVertices) > 0
+    #             and len(sinkVertices) > 0
+    #         ):
+    #             Topology.TransferDictionaries(
+    #                 sourceVertices,
+    #                 sinkVertices,
+    #                 tolerance=tolerance
+    #             )
+
+    #         # ----------------------------------------------------------
+    #         # Edges
+    #         # ----------------------------------------------------------
+
+    #         if Topology.Type(
+    #             topologyA
+    #         ) == Topology.TypeID(
+    #             "Edge"
+    #         ):
+    #             sourceEdges += [
+    #                 topologyA
+    #             ]
+
+    #         elif hidimA >= Topology.TypeID(
+    #             "Edge"
+    #         ):
+    #             sourceEdges += Topology.Edges(
+    #                 topologyA
+    #             )
+
+    #         if Topology.Type(
+    #             topologyB
+    #         ) == Topology.TypeID(
+    #             "Edge"
+    #         ):
+    #             sourceEdges += [
+    #                 topologyB
+    #             ]
+
+    #         elif hidimB >= Topology.TypeID(
+    #             "Edge"
+    #         ):
+    #             sourceEdges += Topology.Edges(
+    #                 topologyB
+    #             )
+
+    #         if Topology.Type(
+    #             topologyC
+    #         ) == Topology.TypeID(
+    #             "Edge"
+    #         ):
+    #             sinkEdges = [
+    #                 topologyC
+    #             ]
+
+    #         elif hidimC >= Topology.TypeID(
+    #             "Edge"
+    #         ):
+    #             sinkEdges = Topology.Edges(
+    #                 topologyC
+    #             )
+
+    #         if (
+    #             len(sourceEdges) > 0
+    #             and len(sinkEdges) > 0
+    #         ):
+    #             Topology.TransferDictionaries(
+    #                 sourceEdges,
+    #                 sinkEdges,
+    #                 tolerance=tolerance
+    #             )
+
+    #         # ----------------------------------------------------------
+    #         # Faces
+    #         # ----------------------------------------------------------
+
+    #         if Topology.Type(
+    #             topologyA
+    #         ) == Topology.TypeID(
+    #             "Face"
+    #         ):
+    #             sourceFaces += [
+    #                 topologyA
+    #             ]
+
+    #         elif hidimA >= Topology.TypeID(
+    #             "Face"
+    #         ):
+    #             sourceFaces += Topology.Faces(
+    #                 topologyA
+    #             )
+
+    #         if Topology.Type(
+    #             topologyB
+    #         ) == Topology.TypeID(
+    #             "Face"
+    #         ):
+    #             sourceFaces += [
+    #                 topologyB
+    #             ]
+
+    #         elif hidimB >= Topology.TypeID(
+    #             "Face"
+    #         ):
+    #             sourceFaces += Topology.Faces(
+    #                 topologyB
+    #             )
+
+    #         if Topology.Type(
+    #             topologyC
+    #         ) == Topology.TypeID(
+    #             "Face"
+    #         ):
+    #             sinkFaces += [
+    #                 topologyC
+    #             ]
+
+    #         elif hidimC >= Topology.TypeID(
+    #             "Face"
+    #         ):
+    #             sinkFaces += Topology.Faces(
+    #                 topologyC
+    #             )
+
+    #         if (
+    #             len(sourceFaces) > 0
+    #             and len(sinkFaces) > 0
+    #         ):
+    #             Topology.TransferDictionaries(
+    #                 sourceFaces,
+    #                 sinkFaces,
+    #                 tolerance=tolerance
+    #             )
+
+    #         # ----------------------------------------------------------
+    #         # Cells
+    #         # ----------------------------------------------------------
+
+    #         if Topology.Type(
+    #             topologyA
+    #         ) == Topology.TypeID(
+    #             "Cell"
+    #         ):
+    #             sourceCells += [
+    #                 topologyA
+    #             ]
+
+    #         elif hidimA >= Topology.TypeID(
+    #             "Cell"
+    #         ):
+    #             sourceCells += Topology.Cells(
+    #                 topologyA
+    #             )
+
+    #         if Topology.Type(
+    #             topologyB
+    #         ) == Topology.TypeID(
+    #             "Cell"
+    #         ):
+    #             sourceCells += [
+    #                 topologyB
+    #             ]
+
+    #         elif hidimB >= Topology.TypeID(
+    #             "Cell"
+    #         ):
+    #             sourceCells += Topology.Cells(
+    #                 topologyB
+    #             )
+
+    #         if Topology.Type(
+    #             topologyC
+    #         ) == Topology.TypeID(
+    #             "Cell"
+    #         ):
+    #             sinkCells = [
+    #                 topologyC
+    #             ]
+
+    #         elif hidimC >= Topology.TypeID(
+    #             "Cell"
+    #         ):
+    #             sinkCells = Topology.Cells(
+    #                 topologyC
+    #             )
+
+    #         if (
+    #             len(sourceCells) > 0
+    #             and len(sinkCells) > 0
+    #         ):
+    #             Topology.TransferDictionaries(
+    #                 sourceCells,
+    #                 sinkCells,
+    #                 tolerance=tolerance
+    #             )
+
+    #     return Topology._OntologyAnnotate(
+    #         topologyC,
+    #         ontology=ontology,
+    #         generatedBy=f"Topology.{operation.capitalize()}",
+    #         annotateSubtopologies=True,
+    #         silent=True
+    #     )
+
+    # def _edge_endpoints(e, tolerance: float = 0.0001, silent: bool = False):
+    #     """Return the two endpoint vertices of an Edge e."""
+    #     from topologicpy.Edge import Edge
+    #     try:
+    #         v0 = Edge.StartVertex(e, silent=True)
+    #         v1 = Edge.EndVertex(e, silent=True)
+    #         return [v0, v1] if (v0 is not None and v1 is not None) else []
+    #     except Exception:
+    #         # Fallback: try boundary vertices if Start/End not available
+    #         eb = Topology._ext_boundary_or_none(e)
+    #         return Topology.Vertices(eb) or []
     @staticmethod
     def _Boolean(
         topologyA,
@@ -170,9 +871,9 @@ class Topology():
         tranDict: bool = False,
         ontology: bool = False,
         tolerance: float = 0.0001,
-        silent: bool = False
-    ,
-        returnProvenance: bool = False):
+        silent: bool = False,
+        returnProvenance: bool = False
+    ):
         """
         Do NOT use this method directly.
 
@@ -215,11 +916,40 @@ class Topology():
         # Public single-operation provenance.
         if returnProvenance:
             from topologicpy.Provenance import Provenance
-
+            # TopologicCore does not expose the exact native Boolean history
+            # required by the public provenance API. Execute the Boolean
+            # normally and return an explicitly unsupported empty provenance
+            # object rather than attempting PythonOCC lineage capture.
+            if Topology._IsTopologicCoreBackend():
+                result = Topology._Boolean(
+                    topologyA=topologyA,
+                    topologyB=topologyB,
+                    operation=operation,
+                    tranDict=tranDict,
+                    ontology=ontology,
+                    tolerance=tolerance,
+                    silent=silent,
+                    returnProvenance=False,
+                )
+                return result, Provenance.ByRecords(
+                    [],
+                    operation=operation,
+                    sources={"A": topologyA, "B": topologyB},
+                    result=result,
+                    supported=False,
+                )
             records = []
             try:
-                from topologicpy.pythonocc_backend._csg_lineage import capture, materialise_record
-                with capture(operation_node=None, role_nodes={}, stage=0, sink=records):
+                from topologicpy.pythonocc_backend._csg_lineage import (
+                    capture,
+                    materialise_record,
+                )
+                with capture(
+                    operation_node=None,
+                    role_nodes={},
+                    stage=0,
+                    sink=records,
+                ):
                     result = Topology._Boolean(
                         topologyA=topologyA,
                         topologyB=topologyB,
@@ -230,7 +960,11 @@ class Topology():
                         silent=silent,
                         returnProvenance=False,
                     )
-                public_records = [materialise_record(r) for r in records if isinstance(r, dict)]
+                public_records = [
+                    materialise_record(record)
+                    for record in records
+                    if isinstance(record, dict)
+                ]
                 return result, Provenance.ByRecords(
                     public_records,
                     operation=operation,
@@ -849,18 +1583,6 @@ class Topology():
             annotateSubtopologies=True,
             silent=True
         )
-
-    def _edge_endpoints(e, tolerance: float = 0.0001, silent: bool = False):
-        """Return the two endpoint vertices of an Edge e."""
-        from topologicpy.Edge import Edge
-        try:
-            v0 = Edge.StartVertex(e, silent=True)
-            v1 = Edge.EndVertex(e, silent=True)
-            return [v0, v1] if (v0 is not None and v1 is not None) else []
-        except Exception:
-            # Fallback: try boundary vertices if Start/End not available
-            eb = Topology._ext_boundary_or_none(e)
-            return Topology.Vertices(eb) or []
 
 # Spatial Relationships
 
