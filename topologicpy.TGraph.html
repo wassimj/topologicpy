@@ -1119,16 +1119,18 @@ Default is “ac_color”.</p>
 <dt class="sig sig-object py" id="topologicpy.TGraph.TGraph.ActiveEdgeIndices">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ActiveEdgeIndices</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#topologicpy.TGraph.TGraph" title="topologicpy.TGraph.TGraph"><span class="pre">TGraph</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#topologicpy.TGraph.TGraph.ActiveEdgeIndices" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the indices of the active edges in the input TGraph.</p>
+<p>This implementation reads the native edge records directly and
+deliberately avoids TGraph.Compile().</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>graph</strong><span class="classifier">‘TGraph’</span></dt><dd><p>The input TGraph.</p>
+<dt><strong>graph</strong><span class="classifier">TGraph</span></dt><dd><p>The input TGraph.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>List[int]</dt><dd><p>The resulting active edge indices list.</p>
+<dt>List[int]</dt><dd><p>The active stable edge indices in stored order.</p>
 </dd>
 </dl>
 </dd>
@@ -1139,16 +1141,18 @@ Default is “ac_color”.</p>
 <dt class="sig sig-object py" id="topologicpy.TGraph.TGraph.ActiveVertexIndices">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ActiveVertexIndices</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#topologicpy.TGraph.TGraph" title="topologicpy.TGraph.TGraph"><span class="pre">TGraph</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#topologicpy.TGraph.TGraph.ActiveVertexIndices" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the indices of the active vertices in the input TGraph.</p>
+<p>This implementation reads the native vertex records directly and
+deliberately avoids TGraph.Compile().</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>graph</strong><span class="classifier">‘TGraph’</span></dt><dd><p>The input TGraph.</p>
+<dt><strong>graph</strong><span class="classifier">TGraph</span></dt><dd><p>The input TGraph.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>List[int]</dt><dd><p>The resulting active vertex indices list.</p>
+<dt>List[int]</dt><dd><p>The active stable vertex indices in stored order.</p>
 </dd>
 </dl>
 </dd>
@@ -1333,19 +1337,29 @@ Default is False.</p>
 <dt class="sig sig-object py" id="topologicpy.TGraph.TGraph.AdjacencyList">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AdjacencyList</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#topologicpy.TGraph.TGraph" title="topologicpy.TGraph.TGraph"><span class="pre">TGraph</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'out'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#topologicpy.TGraph.TGraph.AdjacencyList" title="Permalink to this definition"></a></dt>
 <dd><p>Returns an adjacency list representation of the input TGraph.</p>
-<dl class="field-list simple">
+<p>This implementation operates directly on TGraph’s native incidence
+structures via AdjacentIndices and deliberately avoids TGraph.Compile().</p>
+<dl class="field-list">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>graph</strong><span class="classifier">‘TGraph’</span></dt><dd><p>The input TGraph.</p>
+<dd class="field-odd"><dl>
+<dt><strong>graph</strong><span class="classifier">TGraph</span></dt><dd><p>The input TGraph.</p>
 </dd>
-<dt><strong>mode</strong><span class="classifier">str , optional</span></dt><dd><p>The traversal or adjacency mode. Valid values are typically “out”, “in”, or “all”.
-Default is ‘out’.</p>
+<dt><strong>mode</strong><span class="classifier">str, optional</span></dt><dd><p>The traversal or adjacency mode.</p>
+<ul class="simple">
+<li><p>“out”: outgoing adjacency.</p></li>
+<li><p>“in”: incoming adjacency.</p></li>
+<li><p>“all”: adjacency in either direction.</p></li>
+</ul>
+<p>Any value other than “in” or “all” is treated as “out”,
+matching the existing TGraph adjacency semantics.</p>
+<p>Default is “out”.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>List[List[int]]</dt><dd><p>The resulting adjacency list list.</p>
+<dt>List[List[int]]</dt><dd><p>The adjacency list. Rows correspond to active stable vertex indices
+in ascending order.</p>
 </dd>
 </dl>
 </dd>
@@ -1356,36 +1370,38 @@ Default is ‘out’.</p>
 <dt class="sig sig-object py" id="topologicpy.TGraph.TGraph.AdjacencyMatrix">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AdjacencyMatrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#topologicpy.TGraph.TGraph" title="topologicpy.TGraph.TGraph"><span class="pre">TGraph</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reverse</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeKeyFwd</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeKeyBwd</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bidirKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bidirectional</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">useEdgeIndex</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">useEdgeLength</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#topologicpy.TGraph.TGraph.AdjacencyMatrix" title="Permalink to this definition"></a></dt>
 <dd><p>Returns an adjacency matrix representation of the input TGraph.</p>
+<p>This implementation operates directly on TGraph’s native vertex and edge
+records and deliberately avoids TGraph.Compile().</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>graph</strong><span class="classifier">‘TGraph’</span></dt><dd><p>The input TGraph.</p>
+<dt><strong>graph</strong><span class="classifier">TGraph</span></dt><dd><p>The input TGraph.</p>
 </dd>
-<dt><strong>vertexKey</strong><span class="classifier">str , optional</span></dt><dd><p>The vertex dictionary key to use. Default is None.</p>
+<dt><strong>vertexKey</strong><span class="classifier">str, optional</span></dt><dd><p>The vertex dictionary key used to order vertices. Default is None.</p>
 </dd>
-<dt><strong>reverse</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the output ordering is reversed. Default is False.</p>
+<dt><strong>reverse</strong><span class="classifier">bool, optional</span></dt><dd><p>If True, reverse the output ordering. Default is False.</p>
 </dd>
-<dt><strong>edgeKeyFwd</strong><span class="classifier">str , optional</span></dt><dd><p>The input edge key fwd value. Default is None.</p>
+<dt><strong>edgeKeyFwd</strong><span class="classifier">str, optional</span></dt><dd><p>Edge dictionary key used for forward matrix values. Default is None.</p>
 </dd>
-<dt><strong>edgeKeyBwd</strong><span class="classifier">str , optional</span></dt><dd><p>The input edge key bwd value. Default is None.</p>
+<dt><strong>edgeKeyBwd</strong><span class="classifier">str, optional</span></dt><dd><p>Edge dictionary key used for backward matrix values. Default is None.</p>
 </dd>
-<dt><strong>bidirKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use. Default is None.</p>
+<dt><strong>bidirKey</strong><span class="classifier">str, optional</span></dt><dd><p>Edge dictionary key controlling bidirectionality. Default is None.</p>
 </dd>
-<dt><strong>bidirectional</strong><span class="classifier">bool , optional</span></dt><dd><p>The input bidirectional value. Default is None.</p>
+<dt><strong>bidirectional</strong><span class="classifier">bool, optional</span></dt><dd><p>Explicit default bidirectionality. Default is None.</p>
 </dd>
-<dt><strong>useEdgeIndex</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the corresponding option is enabled. Default is False.</p>
+<dt><strong>useEdgeIndex</strong><span class="classifier">bool, optional</span></dt><dd><p>If True, matrix values are edge index + 1. Default is False.</p>
 </dd>
-<dt><strong>useEdgeLength</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the corresponding option is enabled. Default is False.</p>
+<dt><strong>useEdgeLength</strong><span class="classifier">bool, optional</span></dt><dd><p>If True, matrix values are geometric edge lengths. Default is False.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round numeric results to. Default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int, optional</span></dt><dd><p>Number of decimal places used for edge lengths. Default is 6.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float, optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>List[List[Any]]</dt><dd><p>The resulting adjacency matrix list.</p>
+<dt>List[List[Any]]</dt><dd><p>The resulting adjacency matrix.</p>
 </dd>
 </dl>
 </dd>
@@ -1486,21 +1502,30 @@ Default is ‘out’.</p>
 <dt class="sig sig-object py" id="topologicpy.TGraph.TGraph.AdjacentIndices">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AdjacentIndices</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#topologicpy.TGraph.TGraph" title="topologicpy.TGraph.TGraph"><span class="pre">TGraph</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'out'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#topologicpy.TGraph.TGraph.AdjacentIndices" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the indices of vertices adjacent to the input vertex index.</p>
-<dl class="field-list simple">
+<p>This implementation traverses TGraph’s native incidence tables directly
+and deliberately avoids TGraph.Compile().</p>
+<dl class="field-list">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>graph</strong><span class="classifier">‘TGraph’</span></dt><dd><p>The input TGraph.</p>
+<dd class="field-odd"><dl>
+<dt><strong>graph</strong><span class="classifier">TGraph</span></dt><dd><p>The input TGraph.</p>
 </dd>
-<dt><strong>index</strong><span class="classifier">int</span></dt><dd><p>The input index.</p>
+<dt><strong>index</strong><span class="classifier">int</span></dt><dd><p>The input vertex index.</p>
 </dd>
-<dt><strong>mode</strong><span class="classifier">str , optional</span></dt><dd><p>The traversal or adjacency mode. Valid values are typically “out”, “in”, or “all”.
-Default is ‘out’.</p>
+<dt><strong>mode</strong><span class="classifier">str, optional</span></dt><dd><p>The traversal or adjacency mode.</p>
+<ul class="simple">
+<li><p>“out”: outgoing adjacency.</p></li>
+<li><p>“in”: incoming adjacency.</p></li>
+<li><p>“all”: adjacency in either direction.</p></li>
+</ul>
+<p>Any value other than “in” or “all” is treated as “out”,
+matching the previous compiled-adjacency behaviour.</p>
+<p>Default is “out”.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>List[int]</dt><dd><p>The resulting adjacent indices list.</p>
+<dt>List[int]</dt><dd><p>The sorted stable indices of adjacent active vertices.</p>
 </dd>
 </dl>
 </dd>
@@ -3539,23 +3564,42 @@ True.</p>
 <dt class="sig sig-object py" id="topologicpy.TGraph.TGraph.ConnectedComponents">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ConnectedComponents</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#topologicpy.TGraph.TGraph" title="topologicpy.TGraph.TGraph"><span class="pre">TGraph</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'all'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#topologicpy.TGraph.TGraph.ConnectedComponents" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the connected components of the input TGraph.</p>
-<dl class="field-list simple">
+<p>This implementation traverses TGraph’s native edge-incidence tables directly
+and deliberately avoids TGraph.Compile(). This makes repeated calls on graphs
+that are being modified substantially faster because no compact adjacency,
+NumPy arrays, or SciPy sparse matrices need to be rebuilt.</p>
+<dl class="field-list">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>graph</strong><span class="classifier">‘TGraph’</span></dt><dd><p>The input TGraph.</p>
+<dd class="field-odd"><dl>
+<dt><strong>graph</strong><span class="classifier">TGraph</span></dt><dd><p>The input TGraph.</p>
 </dd>
-<dt><strong>mode</strong><span class="classifier">str , optional</span></dt><dd><p>The traversal or adjacency mode. Valid values are typically “out”, “in”, or “all”.
-Default is ‘all’.</p>
+<dt><strong>mode</strong><span class="classifier">str, optional</span></dt><dd><p>The traversal or adjacency mode.</p>
+<ul class="simple">
+<li><p>“all”: edges are traversed in either direction.</p></li>
+<li><p>“in”: directed edges are traversed toward their source; undirected</p></li>
+</ul>
+<p>edges remain bidirectional.
+- Any other value, including “out”: directed edges are traversed from
+source to destination; undirected edges remain bidirectional.</p>
+<p>Default is “all”.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>List[List[int]]</dt><dd><p>The resulting connected components list.</p>
+<dt>List[List[int]]</dt><dd><p>The connected components, expressed as lists of stable TGraph vertex
+indices.</p>
 </dd>
 </dl>
 </dd>
 </dl>
+<p class="rubric">Notes</p>
+<p>The ordering is deterministic and is kept compatible with the previous
+compiled-adjacency implementation:</p>
+<ul class="simple">
+<li><p>components are started from active vertices in ascending index order;</p></li>
+<li><p>neighbouring vertices are visited in ascending index order.</p></li>
+</ul>
 </dd></dl>
 
 <dl class="py method">
@@ -3601,13 +3645,15 @@ Default is “all”.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>graph</strong><span class="classifier">‘TGraph’</span></dt><dd><p>The input TGraph.</p>
+<dt><strong>graph</strong><span class="classifier">TGraph</span></dt><dd><p>The input TGraph.</p>
 </dd>
-<dt><strong>edge</strong><span class="classifier">Any</span></dt><dd><p>The input edge, edge index, or edge record.</p>
+<dt><strong>edge</strong><span class="classifier">Any</span></dt><dd><p>The input edge, edge index, edge record, or pair of vertex
+indices/records.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float, optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True, error and warning messages are suppressed.
+Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -3627,13 +3673,14 @@ Default is “all”.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>graph</strong><span class="classifier">‘TGraph’</span></dt><dd><p>The input TGraph.</p>
+<dt><strong>graph</strong><span class="classifier">TGraph</span></dt><dd><p>The input TGraph.</p>
 </dd>
 <dt><strong>vertex</strong><span class="classifier">Any</span></dt><dd><p>The input vertex, vertex index, or vertex record.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float, optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True, error and warning messages are suppressed.
+Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -5642,23 +5689,37 @@ If set to None, only the graph version is checked. Default is None.</p>
 <dt class="sig sig-object py" id="topologicpy.TGraph.TGraph.IsConnected">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">IsConnected</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#topologicpy.TGraph.TGraph" title="topologicpy.TGraph.TGraph"><span class="pre">TGraph</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'all'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#topologicpy.TGraph.TGraph.IsConnected" title="Permalink to this definition"></a></dt>
 <dd><p>Returns True if the input TGraph is connected.</p>
-<dl class="field-list simple">
+<p>This implementation traverses TGraph’s native incidence tables directly
+and deliberately avoids TGraph.Compile(). It also avoids constructing the
+complete connected-components list when only a Boolean result is required.</p>
+<dl class="field-list">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>graph</strong><span class="classifier">‘TGraph’</span></dt><dd><p>The input TGraph.</p>
+<dd class="field-odd"><dl>
+<dt><strong>graph</strong><span class="classifier">TGraph</span></dt><dd><p>The input TGraph.</p>
 </dd>
-<dt><strong>mode</strong><span class="classifier">str , optional</span></dt><dd><p>The traversal or adjacency mode. Valid values are typically “out”, “in”, or “all”.
-Default is ‘all’.</p>
+<dt><strong>mode</strong><span class="classifier">str, optional</span></dt><dd><p>The traversal or adjacency mode.</p>
+<ul class="simple">
+<li><p>“all”: edges are traversed in either direction.</p></li>
+<li><p>“in”: directed edges are traversed toward their source; undirected</p></li>
+</ul>
+<p>edges remain bidirectional.
+- Any other value, including “out”: directed edges are traversed from
+source to destination; undirected edges remain bidirectional.</p>
+<p>Default is “all”.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>bool</dt><dd><p>True if the requested condition is satisfied. Otherwise, False.</p>
+<dt>bool</dt><dd><p>True if all active vertices are reachable from the first active vertex
+under the requested traversal mode. Otherwise, False.</p>
 </dd>
 </dl>
 </dd>
 </dl>
+<p class="rubric">Notes</p>
+<p>As with the previous implementation, an empty graph and a graph containing
+one active vertex are considered connected.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -5747,6 +5808,9 @@ Default is ‘all’.</p>
 <dt class="sig sig-object py" id="topologicpy.TGraph.TGraph.IsIsomorphic">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">IsIsomorphic</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graphA</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#topologicpy.TGraph.TGraph" title="topologicpy.TGraph.TGraph"><span class="pre">TGraph</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">graphB</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#topologicpy.TGraph.TGraph" title="topologicpy.TGraph.TGraph"><span class="pre">TGraph</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexIDKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeWeightKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wlKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iterations</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#topologicpy.TGraph.TGraph.IsIsomorphic" title="Permalink to this definition"></a></dt>
 <dd><p>Returns True if two input TGraphs are isomorphic under the requested constraints.</p>
+<p>The check is exact. Weisfeiler-Lehman refinement is used only to reduce
+candidate domains before exhaustive backtracking; it cannot by itself make
+a non-exact match succeed.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
@@ -5754,21 +5818,26 @@ Default is ‘all’.</p>
 </dd>
 <dt><strong>graphB</strong><span class="classifier">‘TGraph’</span></dt><dd><p>The second input TGraph.</p>
 </dd>
-<dt><strong>vertexIDKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use. Default is None.</p>
+<dt><strong>vertexIDKey</strong><span class="classifier">str , optional</span></dt><dd><p>Optional vertex dictionary key whose values must be preserved by the
+isomorphism. Default is None.</p>
 </dd>
-<dt><strong>edgeWeightKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use. Default is None.</p>
+<dt><strong>edgeWeightKey</strong><span class="classifier">str , optional</span></dt><dd><p>Optional edge dictionary key whose values must be preserved by the
+isomorphism. Default is None.</p>
 </dd>
-<dt><strong>wlKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use. Default is None.</p>
+<dt><strong>wlKey</strong><span class="classifier">str , optional</span></dt><dd><p>Optional vertex dictionary key used as the initial Weisfeiler-Lehman
+label. When supplied, its values are preserved by the isomorphism.
+Default is None.</p>
 </dd>
-<dt><strong>iterations</strong><span class="classifier">int , optional</span></dt><dd><p>The input iterations value. Default is 2.</p>
+<dt><strong>iterations</strong><span class="classifier">int , optional</span></dt><dd><p>Number of Weisfeiler-Lehman refinement iterations. Default is 2.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>Retained for API compatibility. Default is False.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>bool</dt><dd><p>True if the requested condition is satisfied. Otherwise, False.</p>
+<dt>bool</dt><dd><p>True if the graphs are isomorphic under the requested constraints;
+otherwise False.</p>
 </dd>
 </dl>
 </dd>
