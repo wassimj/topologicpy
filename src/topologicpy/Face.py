@@ -6260,8 +6260,39 @@ class Face():
         # vertices as planar.
         # ------------------------------------------------------------------
 
+        sampling_face = face
+        distance_tolerance = tolerance
+
+        # TopologicCore's UV evaluator can fail or lose precision on small faces.
+        # Sample an exact, uniformly enlarged surface, not a reconstruction
+        # from coplanar boundary vertices. Scale the distance tolerance too so
+        # the planarity decision remains in the original model's units.
+        if Topology._IsTopologicCoreBackend():
+            try:
+                coordinates = [
+                    Vertex.Coordinates(vertex, mantissa=None)
+                    for vertex in Topology.Vertices(face, silent=True) or []
+                ]
+                extent = max(
+                    max(xyz[axis] for xyz in coordinates)
+                    - min(xyz[axis] for xyz in coordinates)
+                    for axis in range(3)
+                )
+                if math.isfinite(extent) and 0.0 < extent < 1.0:
+                    scale = 1.0 / extent
+                    scaled = Topology.Scale(
+                        face, origin=Topology.Centroid(face),
+                        x=scale, y=scale, z=scale,
+                        transferDictionaries=False, silent=True,
+                    )
+                    if Topology.IsInstance(scaled, "Face"):
+                        sampling_face = scaled
+                        distance_tolerance = tolerance * scale
+            except Exception:
+                pass
+
         center = Face.VertexByParameters(
-            face,
+            sampling_face,
             u=0.5,
             v=0.5,
             tolerance=tolerance,
@@ -6269,7 +6300,7 @@ class Face():
         )
 
         normal = Face.NormalAtParameters(
-            face,
+            sampling_face,
             u=0.5,
             v=0.5,
             outputType="xyz",
@@ -6327,7 +6358,7 @@ class Face():
         for u in parameters:
             for v in parameters:
                 vertex = Face.VertexByParameters(
-                    face,
+                    sampling_face,
                     u=u,
                     v=v,
                     tolerance=tolerance,
@@ -6350,7 +6381,7 @@ class Face():
 
                 valid_samples += 1
 
-                if distance > tolerance:
+                if distance > distance_tolerance:
                     return False
 
         if valid_samples < 3:

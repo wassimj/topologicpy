@@ -383,3 +383,32 @@ def test_roof_returns_cell_for_rectangular_face_or_none_without_raising():
         _assert_cell(roof)
         assert _volume(roof) > 0
     assert Cell.Roof(None) is None
+
+
+@pytest.mark.parametrize("coordinates", [(0, 0, 0), (10, 10, 10)])
+@pytest.mark.parametrize("reverse", [False, True])
+def test_small_planar_face_thickening_preserves_planarity(coordinates, reverse):
+    tolerance = 1.0e-4
+    face = Face.Rectangle(
+        origin=_v(*coordinates), width=2*tolerance, length=2*tolerance,
+        tolerance=tolerance, silent=True,
+    )
+    if reverse:
+        face = Face.Invert(face, tolerance=tolerance, silent=True)
+
+    assert Face.IsPlanar(face, tolerance=tolerance, silent=True) is True
+    cell = Cell.ByThickenedFace(
+        face, thickness=2*tolerance, tolerance=tolerance, silent=True,
+    )
+    _assert_cell(cell)
+    assert Cell.Volume(cell, mantissa=None) == pytest.approx(8*tolerance**3, rel=1.0e-3)
+
+
+@pytest.mark.parametrize("coordinates", [(0, 0, 0), (10, 10, 10)])
+def test_small_prism_used_by_containment_can_be_constructed(coordinates):
+    tolerance = 1.0e-4
+    cell = Cell.Prism(
+        origin=_v(*coordinates), width=2*tolerance, length=2*tolerance,
+        height=2*tolerance, tolerance=tolerance, silent=True,
+    )
+    _assert_cell(cell)
