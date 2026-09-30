@@ -376,11 +376,21 @@ class Provenance:
 
     @classmethod
     def _same(cls, a, b) -> bool:
-        """Return exact topology identity; never geometric equivalence."""
+        """Return exact TopologicPy identity; never geometric equivalence."""
         if a is b:
             return True
         if a is None or b is None:
             return False
+
+        # Preserve TopologicPy's exact identity contract. On PythonOCC this
+        # checks native TopoDS_Shape.IsSame first, then the wrapper UUID.
+        try:
+            from topologicpy.Topology import Topology
+            result = Topology.IsSame(a, b, silent=True)
+            if result is not None:
+                return bool(result)
+        except Exception:
+            pass
 
         shape_a = cls._native_shape(a)
         shape_b = cls._native_shape(b)
@@ -390,8 +400,6 @@ class Provenance:
                 return False
             return cls._native_same(shape_a, shape_b)
 
-        # Backend-neutral fallback for objects without native shapes is strict
-        # object/native identity only. Do not introduce coordinate comparison.
         try:
             method = getattr(a, "IsSame", None)
             if callable(method):
@@ -401,14 +409,28 @@ class Provenance:
 
         return False
 
-    @classmethod
-    def _identity_key(cls, topology):
+    @staticmethod
+    def _identity_key(topology):
         if topology is None:
             return ("none", None)
-        entity_id = cls._entity_id(topology)
-        if entity_id is not None:
-            return ("provenance", entity_id)
-        return ("object", topology.__class__.__name__, id(topology))
+
+        shape = getattr(topology, "shape", None)
+
+        try:
+            if shape is not None:
+                return (
+                    "shape",
+                    topology.__class__.__name__,
+                    hash(shape),
+                )
+        except Exception:
+            pass
+
+        return (
+            "object",
+            topology.__class__.__name__,
+            id(topology),
+        )
 
     @classmethod
     def _topology_entities(cls, root) -> list:
@@ -546,16 +568,25 @@ class Provenance:
         return self._entity_id(record.get(field))
 
     def _record_matches_topology(self, record: dict, field: str, topology) -> bool:
-        if record.get(field) is None or topology is None:
+        value = record.get(field)
+        if value is None or topology is None:
             return False
 
+        # Direct-operation identity is authoritative. A provisional provenance
+        # ID must never split two wrappers that TopologicPy considers identical.
+        if self._same(value, topology):
+            return True
+
+        # Reconciled IDs remain the exact cross-operation identity channel used
+        # by composed provenance when wrappers are no longer IsSame.
         record_id = self._record_entity_id(record, field)
-        topology_id = self._entity_id(topology)
+        topology_id = self._entity_id(topology, create=False)
 
-        if record_id is not None and topology_id is not None:
-            return record_id == topology_id
-
-        return self._same(record.get(field), topology)
+        return (
+            record_id is not None
+            and topology_id is not None
+            and record_id == topology_id
+        )
 
     def _records_share_endpoint(
         self,
@@ -566,16 +597,25 @@ class Provenance:
     ) -> bool:
         a = record_a.get(field_a)
         b = record_b.get(field_b)
+
         if a is None or b is None:
             return False
 
+        # Within one captured operation, exact topology identity wins over any
+        # provisional IDs assigned before semantic reduction.
+        if self._same(a, b):
+            return True
+
+        # Across composed boundaries, explicitly reconciled IDs are the stable
+        # identity channel.
         id_a = self._record_entity_id(record_a, field_a)
         id_b = self._record_entity_id(record_b, field_b)
 
-        if id_a is not None and id_b is not None:
-            return id_a == id_b
-
-        return self._same(a, b)
+        return (
+            id_a is not None
+            and id_b is not None
+            and id_a == id_b
+        )
 
     @staticmethod
     def _type_name(topology) -> Optional[str]:
@@ -627,12 +667,16 @@ class Provenance:
         )
         return {key: record.get(key) for key in keys if record.get(key) is not None}
 
-    def _find_matches(self, records: list, field: str, topology) -> list:
+    @staticmethod
+    def _find_matches(records: list, field: str, topology) -> list:
         return [
             record
             for record in records
             if record.get(field) is not None
-            and self._record_matches_topology(record, field, topology)
+            and Provenance._same(
+                record.get(field),
+                topology,
+            )
         ]
 
     @staticmethod
@@ -666,72 +710,76 @@ class Provenance:
         return output
 
     def _semantic_records_for_group(self, records: list) -> list:
-        usable = [r for r in records if r.get("source") is not None]
+        usable = [
+            record
+            for record in records
+            if record.get("source") is not None
+        ]
+
         if not usable:
             return []
 
-        for record in usable:
-            self._stamp_record(record)
+        consumed_results = []
 
-        consumed_result_ids = set()
         for candidate in usable:
-            if candidate.get("source") is None:
+            source = candidate.get("source")
+
+            if source is None:
                 continue
+
             for producer in usable:
-                if producer.get("result") is None:
-                    continue
-                if self._records_share_endpoint(producer, "result", candidate, "source"):
-                    target_id = self._record_entity_id(producer, "result")
-                    if target_id is not None:
-                        consumed_result_ids.add(target_id)
+                target = producer.get("result")
+
+                if (
+                    target is not None
+                    and self._same(target, source)
+                ):
+                    consumed_results.append(target)
                     break
 
         final_records = []
+
         for record in usable:
             target = record.get("result")
+
             if target is None:
                 continue
-            target_id = self._record_entity_id(record, "result")
-            if target_id is not None and target_id in consumed_result_ids:
+
+            if any(
+                self._same(target, consumed)
+                for consumed in consumed_results
+            ):
                 continue
+
             final_records.append(record)
 
         if not final_records:
-            final_records = [r for r in usable if r.get("result") is not None]
+            final_records = [
+                record
+                for record in usable
+                if record.get("result") is not None
+            ]
 
         semantic = []
 
-        def make_semantic(record, template, source, combined):
-            item = self._copy_public_metadata(record)
-            for key, value in self._copy_public_metadata(template).items():
-                if key not in item or item.get(key) is None:
-                    item[key] = value
+        def walk_back(
+            target,
+            relation,
+            trail,
+            template,
+        ):
+            incoming = self._find_matches(
+                usable,
+                "result",
+                target,
+            )
 
-            item.update({
-                "source": source,
-                "result": template.get("result"),
-                "sourceType": (
-                    record.get("sourceType")
-                    or self._type_name(source)
-                ),
-                "resultType": (
-                    template.get("resultType")
-                    or self._type_name(template.get("result"))
-                ),
-                "relation": combined,
-                "sourceProvenanceId": self._record_entity_id(record, "source"),
-                "resultProvenanceId": self._record_entity_id(template, "result"),
-            })
-            self._stamp_record(item)
-            return item
-
-        def walk_back(target, relation, trail, template):
-            incoming = self._find_matches(usable, "result", target)
             if not incoming:
                 return
 
             for record in incoming:
                 source = record.get("source")
+
                 if source is None:
                     continue
 
@@ -740,80 +788,242 @@ class Provenance:
                     record.get("relation"),
                 )
 
-                # An unchanged record may legitimately use the same exact native
-                # entity for source and result. Preserve the semantic state
-                # transition while keeping one stable entity ID.
+                # An unchanged public operand is a real state transition.
+                # An internal unchanged link is only a post-processing identity:
+                # its public predecessors are already in this incoming set.
+                # Emitting it would introduce an internal face as another source.
                 if (
-                    str(record.get("relation", "")).lower() == "unchanged"
+                    not self._is_internal_role(record.get("sourceRole"))
+                    and str(
+                        record.get(
+                            "relation",
+                            "",
+                        )
+                    ).lower()
+                    == "unchanged"
                     and record.get("result") is not None
-                    and self._records_share_endpoint(record, "source", record, "result")
-                ):
-                    semantic.append(
-                        make_semantic(record, template, source, combined)
+                    and self._same(
+                        source,
+                        record.get("result"),
                     )
+                ):
+                    item = self._copy_public_metadata(
+                        record
+                    )
+
+                    for key, value in (
+                        self._copy_public_metadata(
+                            template
+                        ).items()
+                    ):
+                        if (
+                            key not in item
+                            or item.get(key) is None
+                        ):
+                            item[key] = value
+
+                    item.update({
+                        "source":
+                            source,
+
+                        "result":
+                            template.get("result"),
+
+                        "sourceType":
+                            record.get("sourceType")
+                            or self._type_name(source),
+
+                        "resultType":
+                            template.get("resultType")
+                            or self._type_name(
+                                template.get("result")
+                            ),
+
+                        "relation":
+                            combined,
+                    })
+
+                    semantic.append(item)
                     continue
 
-                source_id = self._record_entity_id(record, "source")
-                source_key = (
-                    "provenance",
-                    source_id,
-                ) if source_id is not None else self._identity_key(source)
+                source_key = self._identity_key(
+                    source
+                )
 
                 if source_key in trail:
                     continue
 
                 role = record.get("sourceRole")
+
                 predecessors = self._find_matches(
                     usable,
                     "result",
                     source,
                 )
 
-                is_leaf = (
-                    not predecessors
-                    or not self._is_internal_role(role)
-                )
-
-                if is_leaf:
-                    semantic.append(
-                        make_semantic(record, template, source, combined)
-                    )
+                # Internal Boolean/post-processing states are never public provenance
+                # origins. If an internal state has an exact predecessor, continue
+                # tracing backwards. If it does not, discard that unresolved internal
+                # state rather than exposing it as a semantic source.
+                if self._is_internal_role(role):
+                    if predecessors:
+                        walk_back(
+                            source,
+                            combined,
+                            trail | {source_key},
+                            template,
+                        )
                     continue
 
-                walk_back(
-                    source,
-                    combined,
-                    trail | {source_key},
-                    template,
+                # Non-internal roles (for example "self" and "other") are the public
+                # operand states and therefore terminate the semantic back-trace.
+                item = self._copy_public_metadata(
+                    record
                 )
+
+                for key, value in (
+                    self._copy_public_metadata(
+                        template
+                    ).items()
+                ):
+                    if (
+                        key not in item
+                        or item.get(key) is None
+                    ):
+                        item[key] = value
+
+                item.update({
+                    "source":
+                        source,
+
+                    "result":
+                        template.get("result"),
+
+                    "sourceType":
+                        record.get("sourceType")
+                        or self._type_name(source),
+
+                    "resultType":
+                        template.get("resultType")
+                        or self._type_name(
+                            template.get("result")
+                        ),
+
+                    "relation":
+                        combined,
+                })
+
+                semantic.append(item)
 
         for terminal in final_records:
             target = terminal.get("result")
+
             if target is None:
                 continue
-
-            target_id = self._record_entity_id(terminal, "result")
-            target_key = (
-                "provenance",
-                target_id,
-            ) if target_id is not None else self._identity_key(target)
 
             walk_back(
                 target,
                 terminal.get("relation"),
-                {target_key},
+                {
+                    self._identity_key(
+                        target
+                    )
+                },
                 terminal,
             )
 
         for record in usable:
-            if str(record.get("relation", "")).lower() == "deleted":
-                item = copy.copy(record)
-                self._stamp_record(item)
-                semantic.append(item)
+            if (
+                str(
+                    record.get(
+                        "relation",
+                        "",
+                    )
+                ).lower()
+                == "deleted"
+            ):
+                semantic.append(
+                    copy.copy(record)
+                )
 
-        return self._dedupe_records(semantic)
+        return self._dedupe_records(
+            semantic
+        )
 
     def _dedupe_records(self, records: Iterable[dict]) -> list:
+        # Direct provenance retains the pre-Compose deduplication semantics.
+        if not self.metadata.get("composed"):
+            output = []
+            buckets = {}
+
+            def legacy_identity_key(topology):
+                if topology is None:
+                    return ("none", None)
+
+                shape = getattr(topology, "shape", None)
+
+                try:
+                    if shape is not None:
+                        return (
+                            "shape",
+                            topology.__class__.__name__,
+                            hash(shape),
+                        )
+                except Exception:
+                    pass
+
+                return (
+                    "object",
+                    topology.__class__.__name__,
+                    id(topology),
+                )
+
+            for record in records or []:
+                source = record.get("source")
+                target = record.get("result")
+
+                key = (
+                    legacy_identity_key(source),
+                    legacy_identity_key(target),
+                    self._group_key(record),
+                )
+
+                bucket = buckets.setdefault(key, [])
+                matched = None
+
+                for existing in bucket:
+                    if (
+                        self._same(
+                            existing.get("source"),
+                            source,
+                        )
+                        and self._same(
+                            existing.get("result"),
+                            target,
+                        )
+                    ):
+                        matched = existing
+                        break
+
+                if matched is None:
+                    item = copy.copy(record)
+                    self._stamp_record(item)
+                    bucket.append(item)
+                    output.append(item)
+                else:
+                    matched["relation"] = self._combine_relation(
+                        matched.get("relation"),
+                        record.get("relation"),
+                    )
+                    matched["usedBRepGraph"] = bool(
+                        matched.get("usedBRepGraph")
+                        or record.get("usedBRepGraph")
+                    )
+
+            return output
+
+        # Composed provenance remains ID-based because adjacent operations may
+        # contain different wrappers for the same reconciled entity.
         output = []
         buckets = {}
 
@@ -821,8 +1031,14 @@ class Provenance:
             item = copy.copy(record)
             self._stamp_record(item)
 
-            source_id = self._record_entity_id(item, "source")
-            target_id = self._record_entity_id(item, "result")
+            source_id = self._record_entity_id(
+                item,
+                "source",
+            )
+            target_id = self._record_entity_id(
+                item,
+                "result",
+            )
 
             key = (
                 source_id,
@@ -921,19 +1137,29 @@ class Provenance:
         topologyType: Optional[str] = None,
     ) -> list:
         """Keep only terminal records that belong to the returned result."""
-        if self.result is None or self.metadata.get("composed"):
+        if (
+            self.result is None
+            or self.metadata.get("composed")
+        ):
             return records
 
         finals = self._authoritative_final_entities(
-            topologyType=topologyType,
+            topologyType=topologyType
         )
+
         if not finals:
             return records
 
         output = []
 
         for record in records or []:
-            relation = str(record.get("relation", "")).lower()
+            relation = str(
+                record.get(
+                    "relation",
+                    "",
+                )
+            ).lower()
+
             target = record.get("result")
 
             if target is None:
@@ -942,7 +1168,10 @@ class Provenance:
                 continue
 
             if any(
-                self._record_matches_topology(record, "result", final)
+                self._same(
+                    target,
+                    final,
+                )
                 for final in finals
             ):
                 output.append(record)
@@ -954,38 +1183,52 @@ class Provenance:
         records: list,
         topologyType: Optional[str] = None,
     ) -> list:
-        if self.result is None or self.metadata.get("composed"):
+        if (
+            self.result is None
+            or self.metadata.get("composed")
+        ):
             return records
 
         finals = self._authoritative_final_entities(
-            topologyType=topologyType,
+            topologyType=topologyType
         )
+
         if not finals:
             return records
 
-        output = [copy.copy(record) for record in (records or [])]
-        for record in output:
-            self._stamp_record(record)
+        output = [
+            copy.copy(record)
+            for record in (records or [])
+        ]
 
         def has_target(final):
-            return any(
-                record.get("result") is not None
-                and self._record_matches_topology(record, "result", final)
-                for record in output
-            )
+            for record in output:
+                target = record.get("result")
+
+                if (
+                    target is not None
+                    and self._same(
+                        target,
+                        final,
+                    )
+                ):
+                    return True
+
+            return False
 
         for final in finals:
             if has_target(final):
                 continue
 
             candidates = []
+
             for record in self._history:
                 target = record.get("result")
+
                 if (
                     target is None
-                    or not self._record_matches_topology(
-                        record,
-                        "result",
+                    or not self._same(
+                        target,
                         final,
                     )
                 ):
@@ -995,10 +1238,15 @@ class Provenance:
                     record.get("resultType")
                     or self._type_name(target)
                 )
+
                 if (
                     topologyType is not None
-                    and str(record_type or "").lower()
-                    != str(topologyType).lower()
+                    and str(
+                        record_type or ""
+                    ).lower()
+                    != str(
+                        topologyType
+                    ).lower()
                 ):
                     continue
 
@@ -1006,9 +1254,17 @@ class Provenance:
 
             candidates.sort(
                 key=lambda record: (
-                    self._is_internal_role(record.get("sourceRole")),
+                    self._is_internal_role(
+                        record.get("sourceRole")
+                    ),
                     0
-                    if str(record.get("relation", "")).lower() == "unchanged"
+                    if str(
+                        record.get(
+                            "relation",
+                            "",
+                        )
+                    ).lower()
+                    == "unchanged"
                     else 1,
                 )
             )
@@ -1017,13 +1273,16 @@ class Provenance:
 
             for record in candidates:
                 source = record.get("source")
+
                 if source is None:
                     continue
 
-                if not self._is_internal_role(record.get("sourceRole")):
-                    restored = copy.copy(record)
-                    restored["result"] = final
-                    restored["resultProvenanceId"] = self._entity_id(final)
+                if not self._is_internal_role(
+                    record.get("sourceRole")
+                ):
+                    restored = copy.copy(
+                        record
+                    )
                     break
 
                 incoming = self._find_matches(
@@ -1033,40 +1292,71 @@ class Provenance:
                 )
 
                 for predecessor in incoming:
-                    predecessor_source = predecessor.get("source")
+                    predecessor_source = (
+                        predecessor.get("source")
+                    )
+
                     if predecessor_source is None:
                         continue
+
                     if self._is_internal_role(
-                        predecessor.get("sourceRole")
+                        predecessor.get(
+                            "sourceRole"
+                        )
                     ):
                         continue
 
-                    restored = self._copy_public_metadata(predecessor)
-                    for key, value in self._copy_public_metadata(record).items():
-                        if key not in restored or restored.get(key) is None:
+                    restored = (
+                        self._copy_public_metadata(
+                            predecessor
+                        )
+                    )
+
+                    for key, value in (
+                        self._copy_public_metadata(
+                            record
+                        ).items()
+                    ):
+                        if (
+                            key not in restored
+                            or restored.get(key) is None
+                        ):
                             restored[key] = value
 
                     restored.update({
-                        "source": predecessor_source,
-                        "result": final,
-                        "sourceType": (
-                            predecessor.get("sourceType")
-                            or self._type_name(predecessor_source)
-                        ),
-                        "resultType": (
-                            record.get("resultType")
-                            or self._type_name(final)
-                        ),
-                        "relation": self._combine_relation(
-                            predecessor.get("relation"),
-                            record.get("relation"),
-                        ),
-                        "sourceProvenanceId": self._record_entity_id(
-                            predecessor,
-                            "source",
-                        ),
-                        "resultProvenanceId": self._entity_id(final),
+                        "source":
+                            predecessor_source,
+
+                        "result":
+                            final,
+
+                        "sourceType":
+                            predecessor.get(
+                                "sourceType"
+                            )
+                            or self._type_name(
+                                predecessor_source
+                            ),
+
+                        "resultType":
+                            record.get(
+                                "resultType"
+                            )
+                            or self._type_name(
+                                final
+                            ),
+
+                        "relation":
+                            self._combine_relation(
+                                predecessor.get(
+                                    "relation"
+                                ),
+                                record.get(
+                                    "relation"
+                                ),
+                            ),
                     })
+
                     break
 
                 if restored is not None:
@@ -1075,49 +1365,72 @@ class Provenance:
             if restored is None:
                 for record in self._history:
                     source = record.get("source")
+
                     if (
                         source is None
-                        or not self._record_matches_topology(
-                            record,
-                            "source",
+                        or not self._same(
+                            source,
                             final,
                         )
                     ):
                         continue
-                    if self._is_internal_role(record.get("sourceRole")):
+
+                    if self._is_internal_role(
+                        record.get("sourceRole")
+                    ):
                         continue
 
                     source_type = (
                         record.get("sourceType")
-                        or self._type_name(source)
+                        or self._type_name(
+                            source
+                        )
                     )
+
                     if (
                         topologyType is not None
-                        and str(source_type or "").lower()
-                        != str(topologyType).lower()
+                        and str(
+                            source_type or ""
+                        ).lower()
+                        != str(
+                            topologyType
+                        ).lower()
                     ):
                         continue
 
-                    restored = self._copy_public_metadata(record)
+                    restored = (
+                        self._copy_public_metadata(
+                            record
+                        )
+                    )
+
                     restored.update({
-                        "source": source,
-                        "result": final,
-                        "sourceType": source_type,
-                        "resultType": self._type_name(final),
-                        "relation": "unchanged",
-                        "sourceProvenanceId": self._record_entity_id(
-                            record,
-                            "source",
-                        ),
-                        "resultProvenanceId": self._entity_id(final),
+                        "source":
+                            source,
+
+                        "result":
+                            final,
+
+                        "sourceType":
+                            source_type,
+
+                        "resultType":
+                            self._type_name(
+                                final
+                            ),
+
+                        "relation":
+                            "unchanged",
                     })
+
                     break
 
             if restored is not None:
-                self._stamp_record(restored)
                 output.append(restored)
 
-        return self._dedupe_records(output)
+        return self._dedupe_records(
+            output
+        )
 
     def Records(
         self,
@@ -1559,13 +1872,32 @@ class Provenance:
                 if item.get("state") != state:
                     continue
 
+                # A direct operation is one exact semantic identity domain.
+                # Ignore provisional provenance IDs when collapsing wrappers.
+                if direct_operation:
+                    if self._same(
+                        item["topology"],
+                        topology,
+                    ):
+                        return item
+                    continue
+
+                # A composed provenance spans independent operation instances.
+                # Here the reconciled provenance ID is authoritative.
                 existing_id = item.get("provenanceId")
-                if provenance_id is not None and existing_id is not None:
+
+                if (
+                    provenance_id is not None
+                    and existing_id is not None
+                ):
                     if provenance_id == existing_id:
                         return item
                     continue
 
-                if self._same(item["topology"], topology):
+                if self._same(
+                    item["topology"],
+                    topology,
+                ):
                     return item
 
             item = {
@@ -1577,6 +1909,7 @@ class Provenance:
                 "sourceRoles": set(),
                 "index": None,
             }
+
             entities.append(item)
             return item
 
@@ -1702,13 +2035,28 @@ class Provenance:
                 if item.get("state") != state:
                     continue
 
+                if direct_operation:
+                    if self._same(
+                        item["topology"],
+                        topology,
+                    ):
+                        return item["index"]
+                    continue
+
                 existing_id = item.get("provenanceId")
-                if provenance_id is not None and existing_id is not None:
+
+                if (
+                    provenance_id is not None
+                    and existing_id is not None
+                ):
                     if provenance_id == existing_id:
                         return item["index"]
                     continue
 
-                if self._same(item["topology"], topology):
+                if self._same(
+                    item["topology"],
+                    topology,
+                ):
                     return item["index"]
 
             return None

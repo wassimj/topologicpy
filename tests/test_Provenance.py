@@ -256,3 +256,49 @@ def test_direct_boolean_graph_result_nodes_are_authoritative_for_difference():
             Topology.IsSame(graph_face, result_face)
             for result_face in result_faces
         )
+
+
+def test_internal_unchanged_records_do_not_become_public_sources():
+    source = Vertex.ByCoordinates(0, 0, 0)
+    intermediate = Vertex.ByCoordinates(1, 0, 0)
+    result = Vertex.ByCoordinates(2, 0, 0)
+
+    def record(a, b, role, relation):
+        return {
+            "source": a, "result": b,
+            "sourceType": "Vertex", "resultType": "Vertex",
+            "sourceRole": role, "relation": relation,
+            "operation": "Test",
+        }
+
+    provenance = Provenance.ByRecords([
+        record(source, intermediate, "self", "modified"),
+        record(intermediate, intermediate, "source", "unchanged"),
+        record(intermediate, result, "source", "modified"),
+        record(result, result, "source", "unchanged"),
+    ], operation="Test", sources={"self": source}, result=result)
+
+    records = provenance.Records(topologyType="Vertex")
+    assert len(records) == 1
+    assert Topology.IsSame(records[0]["source"], source)
+    assert Topology.IsSame(records[0]["result"], result)
+    assert records[0]["relation"] == "modified"
+    assert len(provenance.History()) == 4
+    assert _role_counts(provenance.Graph(topologyType="Vertex")) == {
+        "source": 1, "result": 1,
+    }
+    assert len(provenance.Origins(result)) == 1
+    assert len(provenance.Descendants(source)) == 1
+
+
+def test_unresolved_internal_unchanged_record_is_not_a_public_origin():
+    result = Vertex.ByCoordinates(0, 0, 0)
+    provenance = Provenance.ByRecords([{
+        "source": result, "result": result,
+        "sourceType": "Vertex", "resultType": "Vertex",
+        "sourceRole": "source", "relation": "unchanged",
+    }], result=result)
+
+    assert len(provenance.History()) == 1
+    assert provenance.Records() == []
+    assert provenance.Origins(result) == []
