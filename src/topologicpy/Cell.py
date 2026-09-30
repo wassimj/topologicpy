@@ -1149,8 +1149,6 @@ class Cell():
                 return None
         return cell
 
-
-
     @staticmethod
     def ByThickenedFace(
         face,
@@ -1158,24 +1156,50 @@ class Cell():
         bothSides: bool = True,
         wSides: int = 1,
         reverse: bool = False,
+        polyhedron: bool = True,
         tolerance: float = 0.0001,
         silent: bool = False,
-        polyhedron: bool = True,
     ):
-        if not polyhedron:
-            result = Cell._NativeCell(
-                "ByThickenedFace", face,
-                thickness=thickness,
-                bothSides=bothSides,
-                reverse=reverse,
-                tolerance=tolerance,
-                silent=silent,
-            )
-            if result is None and not silent:
-                print("Cell.ByThickenedFace - Error: Native thickening failed. Returning None.")
-            return result
+        """
+        Creates a Cell by thickening the input Face.
 
+        Planar Faces bounded only by linear Edges use a fast polyhedral prism
+        path when possible. Curved-edge or non-planar Faces use the native
+        backend thickening operation so that their actual surface geometry and
+        local normals are preserved.
+
+        Parameters
+        ----------
+        face : topologicpy.Face
+            The input Face.
+        thickness : float, optional
+            The desired thickness. Default is 1.0.
+        bothSides : bool, optional
+            If True, thicken equally to both sides. Otherwise thicken to one
+            side. Default is True.
+        wSides : int, optional
+            Number of divisions through the thickness for the polygonal
+            fallback path. Default is 1.
+        reverse : bool, optional
+            If True, reverse the thickening direction. Default is False.
+        polyhedron : bool, optional
+            If False, use the native curve-preserving thickening path directly.
+            If True, planar polygonal Faces use the fast/fallback polyhedral
+            path. Curved or non-planar Faces are still handled natively because
+            a single global extrusion normal is not geometrically valid for
+            them. Default is True.
+        tolerance : float, optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool, optional
+            If True, suppress error messages. Default is False.
+        
+        Returns
+        -------
+        topologicpy.Cell
+            The resulting Cell, or None if construction fails.
+        """
         import math
+
         from topologicpy.Topology import Topology
         from topologicpy.Face import Face
         from topologicpy.Edge import Edge
@@ -1184,7 +1208,10 @@ class Cell():
 
         if not Topology.IsInstance(face, "Face"):
             if not silent:
-                print("Cell.ByThickenedFace - Error: Input is not a valid Face. Returning None.")
+                print(
+                    "Cell.ByThickenedFace - Error: "
+                    "Input is not a valid Face. Returning None."
+                )
             return None
 
         try:
@@ -1193,113 +1220,369 @@ class Cell():
             tolerance = abs(float(tolerance))
         except Exception:
             if not silent:
-                print("Cell.ByThickenedFace - Error: Invalid numerical input. Returning None.")
+                print(
+                    "Cell.ByThickenedFace - Error: "
+                    "Invalid numerical input. Returning None."
+                )
             return None
 
-        if thickness <= tolerance or wSides < 1 or thickness / float(wSides) <= tolerance:
+        if (
+            not math.isfinite(thickness)
+            or not math.isfinite(tolerance)
+            or thickness <= tolerance
+            or wSides < 1
+            or thickness / float(wSides) <= tolerance
+        ):
             if not silent:
-                print("Cell.ByThickenedFace - Error: Invalid thickness or wSides. Returning None.")
+                print(
+                    "Cell.ByThickenedFace - Error: "
+                    "Invalid thickness or wSides. Returning None."
+                )
             return None
 
-        normal = Face.Normal(face, mantissa=None, silent=True)
+        # Explicit curve-preserving/native mode.
+        if not polyhedron:
+            result = Cell._NativeCell(
+                "ByThickenedFace",
+                face,
+                thickness=thickness,
+                bothSides=bothSides,
+                reverse=reverse,
+                tolerance=tolerance,
+                silent=silent,
+            )
+            if result is None and not silent:
+                print(
+                    "Cell.ByThickenedFace - Error: "
+                    "Native thickening failed. Returning None."
+                )
+            return result
+
+        # ------------------------------------------------------------------
+        # Classify the input geometry before choosing a construction path.
+        # ------------------------------------------------------------------
+
+        try:
+            is_planar = (
+                Face.IsPlanar(
+                    face,
+                    tolerance=tolerance,
+                    silent=True,
+                )
+                is True
+            )
+        except Exception:
+            is_planar = False
+
+        try:
+            face_edges = Topology.Edges(
+                face,
+                silent=True,
+            ) or []
+        except Exception:
+            face_edges = []
+
+        try:
+            all_linear = (
+                len(face_edges) > 0
+                and all(
+                    Edge.IsLinear(
+                        edge,
+                        tolerance=tolerance,
+                        silent=True,
+                    )
+                    is True
+                    for edge in face_edges
+                )
+            )
+        except Exception:
+            all_linear = False
+
+        # ------------------------------------------------------------------
+        # Curved / non-planar Face
+        # ------------------------------------------------------------------
+        #
+        # The polygonal fallback below translates the entire Face using one
+        # global normal and builds side Faces from Edge endpoints. That is only
+        # geometrically valid for a planar polygon. Periodic BSpline Faces such
+        # as a Catenoid may also contain seam Edges whose start/end vertices are
+        # coincident, which makes endpoint-based side construction degenerate.
+        #
+        # Therefore any non-planar Face or Face with curved Edges must use the
+        # native thickening operator.
+        # ------------------------------------------------------------------
+
+        if not is_planar or not all_linear:
+            if wSides != 1 and not silent:
+                print(
+                    "Cell.ByThickenedFace - Warning: "
+                    "wSides is ignored for curved or non-planar Faces because "
+                    "they require native surface thickening."
+                )
+
+            result = Cell._NativeCell(
+                "ByThickenedFace",
+                face,
+                thickness=thickness,
+                bothSides=bothSides,
+                reverse=reverse,
+                tolerance=tolerance,
+                silent=True,
+            )
+
+            if Topology.IsInstance(result, "Cell"):
+                return result
+
+            if not silent:
+                print(
+                    "Cell.ByThickenedFace - Error: "
+                    "Curved or non-planar Faces require native surface "
+                    "thickening, but the native operation failed or is "
+                    "unavailable. Returning None."
+                )
+            return None
+
+        # ------------------------------------------------------------------
+        # Planar polygonal Face
+        # ------------------------------------------------------------------
+
+        normal = Face.Normal(
+            face,
+            mantissa=None,
+            silent=True,
+        )
+
         if not isinstance(normal, (list, tuple)) or len(normal) != 3:
             if not silent:
-                print("Cell.ByThickenedFace - Error: Could not compute face normal. Returning None.")
+                print(
+                    "Cell.ByThickenedFace - Error: "
+                    "Could not compute face normal. Returning None."
+                )
             return None
 
         nx, ny, nz = [float(value) for value in normal]
-        magnitude = math.sqrt(nx * nx + ny * ny + nz * nz)
+        magnitude = math.sqrt(
+            nx * nx
+            + ny * ny
+            + nz * nz
+        )
+
         if magnitude <= tolerance:
             return None
-        nx, ny, nz = nx / magnitude, ny / magnitude, nz / magnitude
+
+        nx /= magnitude
+        ny /= magnitude
+        nz /= magnitude
+
         if reverse:
             nx, ny, nz = -nx, -ny, -nz
 
+        # ------------------------------------------------------------------
+        # Fast path: planar polygon + one thickness division.
+        # ------------------------------------------------------------------
+
+        if wSides == 1:
+            base_face = face
+
+            if bothSides:
+                base_face = Topology.Translate(
+                    face,
+                    -0.5 * thickness * nx,
+                    -0.5 * thickness * ny,
+                    -0.5 * thickness * nz,
+                    silent=True,
+                )
+
+            if Topology.IsInstance(base_face, "Face"):
+                result = Cell._NativeCell(
+                    "ByPrism",
+                    base_face,
+                    vector=[
+                        thickness * nx,
+                        thickness * ny,
+                        thickness * nz,
+                    ],
+                    tolerance=tolerance,
+                    silent=True,
+                )
+
+                if Topology.IsInstance(result, "Cell"):
+                    return result
+
+        # ------------------------------------------------------------------
+        # Existing generic planar/polyhedral fallback.
+        # ------------------------------------------------------------------
+
         step = thickness / float(wSides)
+
         if bothSides:
-            offsets = [-0.5 * thickness + step * i for i in range(wSides + 1)]
+            offsets = [
+                -0.5 * thickness + step * i
+                for i in range(wSides + 1)
+            ]
         else:
-            offsets = [step * i for i in range(wSides + 1)]
+            offsets = [
+                step * i
+                for i in range(wSides + 1)
+            ]
 
         layers = []
+
         for offset in offsets:
-            layer = Topology.Translate(face, nx * offset, ny * offset, nz * offset)
+            layer = Topology.Translate(
+                face,
+                nx * offset,
+                ny * offset,
+                nz * offset,
+            )
+
             if not Topology.IsInstance(layer, "Face"):
                 return None
-            layers.append((offset, layer))
 
-        faces_all = [layers[0][1], layers[-1][1]]
-
-        def _vertex_key(vertex):
-            return (
-                round(float(Vertex.X(vertex, mantissa=None)), 10),
-                round(float(Vertex.Y(vertex, mantissa=None)), 10),
-                round(float(Vertex.Z(vertex, mantissa=None)), 10),
+            layers.append(
+                (offset, layer)
             )
+
+        faces_all = [
+            layers[0][1],
+            layers[-1][1],
+        ]
 
         for i in range(len(layers) - 1):
             offset_a, face_a = layers[i]
             offset_b, _ = layers[i + 1]
             delta = offset_b - offset_a
 
-            edges_a = Topology.Edges(face_a) or []
+            edges_a = Topology.Edges(
+                face_a,
+                silent=True,
+            ) or []
+
             if not edges_a:
                 return None
 
-            external = Face.ExternalBoundary(face_a)
-            external_edges = Topology.Edges(external) if external is not None else []
-            external_keys = set()
-            for edge in external_edges or []:
-                sv = Edge.StartVertex(edge)
-                ev = Edge.EndVertex(edge)
-                if Topology.IsInstance(sv, "Vertex") and Topology.IsInstance(ev, "Vertex"):
-                    external_keys.add(tuple(sorted((_vertex_key(sv), _vertex_key(ev)))))
-
             for edge_a in edges_a:
-                if not Topology.IsInstance(edge_a, "Edge"):
+                if not Topology.IsInstance(
+                    edge_a,
+                    "Edge",
+                ):
                     continue
 
-                edge_b = Topology.Translate(edge_a, nx * delta, ny * delta, nz * delta)
-                if not Topology.IsInstance(edge_b, "Edge"):
+                edge_b = Topology.Translate(
+                    edge_a,
+                    nx * delta,
+                    ny * delta,
+                    nz * delta,
+                    silent=True,
+                )
+
+                if not Topology.IsInstance(
+                    edge_b,
+                    "Edge",
+                ):
                     return None
 
                 a0 = Edge.StartVertex(edge_a)
                 a1 = Edge.EndVertex(edge_a)
                 b0 = Edge.StartVertex(edge_b)
                 b1 = Edge.EndVertex(edge_b)
-                if not all(Topology.IsInstance(v, "Vertex") for v in (a0, a1, b0, b1)):
-                    continue
 
-                edge_key = tuple(sorted((_vertex_key(a0), _vertex_key(a1))))
-                is_inner = edge_key not in external_keys
+                if not all(
+                    Topology.IsInstance(v, "Vertex")
+                    for v in (a0, a1, b0, b1)
+                ):
+                    return None
 
-                # Internal-boundary Edges are already oppositely oriented
-                # relative to external-boundary Edges. Do not reverse twice.
-                ordered = [a0, a1, b1, b0]
+                ordered = [
+                    a0,
+                    a1,
+                    b1,
+                    b0,
+                ]
 
                 side_edges = []
+
                 for j in range(4):
-                    e = Edge.ByStartVertexEndVertex(ordered[j], ordered[(j + 1) % 4])
-                    if not Topology.IsInstance(e, "Edge"):
+                    va = ordered[j]
+                    vb = ordered[(j + 1) % 4]
+
+                    # Defensive guard. This should not occur on the planar,
+                    # all-linear path, but do not ask Edge to construct a
+                    # zero-length Edge if malformed input reaches here.
+                    try:
+                        same = Topology.IsSame(va, vb)
+                    except Exception:
+                        same = False
+
+                    if same:
                         side_edges = []
                         break
-                    side_edges.append(e)
+
+                    edge = Edge.ByStartVertexEndVertex(
+                        va,
+                        vb,
+                        tolerance=tolerance,
+                        silent=True,
+                    )
+
+                    if not Topology.IsInstance(
+                        edge,
+                        "Edge",
+                    ):
+                        side_edges = []
+                        break
+
+                    side_edges.append(edge)
+
                 if len(side_edges) != 4:
                     return None
 
-                side_wire = Wire.ByEdges(side_edges, tolerance=tolerance, silent=True)
-                if not Topology.IsInstance(side_wire, "Wire"):
-                    return None
-                side_face = Face.ByWire(side_wire, tolerance=tolerance, silent=True)
-                if not Topology.IsInstance(side_face, "Face"):
-                    return None
-                faces_all.append(side_face)
+                side_wire = Wire.ByEdges(
+                    side_edges,
+                    tolerance=tolerance,
+                    silent=True,
+                )
 
-        result = Cell.ByFaces(faces_all, tolerance=tolerance, silent=True)
-        if not Topology.IsInstance(result, "Cell"):
+                if not Topology.IsInstance(
+                    side_wire,
+                    "Wire",
+                ):
+                    return None
+
+                side_face = Face.ByWire(
+                    side_wire,
+                    tolerance=tolerance,
+                    silent=True,
+                )
+
+                if not Topology.IsInstance(
+                    side_face,
+                    "Face",
+                ):
+                    return None
+
+                faces_all.append(
+                    side_face
+                )
+
+        result = Cell.ByFaces(
+            faces_all,
+            tolerance=tolerance,
+            silent=True,
+        )
+
+        if not Topology.IsInstance(
+            result,
+            "Cell",
+        ):
             if not silent:
-                print("Cell.ByThickenedFace - Error: Cell.ByFaces did not return a valid Cell. Returning None.")
+                print(
+                    "Cell.ByThickenedFace - Error: "
+                    "Cell.ByFaces did not return a valid Cell. "
+                    "Returning None."
+                )
             return None
+
         return result
 
     @staticmethod
