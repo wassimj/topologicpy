@@ -1200,13 +1200,16 @@ class Topology():
                 )
 
             else:
-                topologyC = Core.InstanceCall(
-                    topologyA,
-                    "Intersect",
-                    topologyB,
-                    native_tran_dict,
-                    tolerance
-                )
+                # TopologicCore's native signature has no tolerance argument.
+                # PythonOCC accepts tolerance for lower-dimensional contact recovery.
+                if Topology._IsTopologicCoreBackend():
+                    topologyC = Core.InstanceCall(
+                        topologyA, "Intersect", topologyB, native_tran_dict
+                    )
+                else:
+                    topologyC = Core.InstanceCall(
+                        topologyA, "Intersect", topologyB, native_tran_dict, tolerance
+                    )
 
         # --------------------------------------------------------------
         # Symmetric difference
