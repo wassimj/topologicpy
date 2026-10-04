@@ -302,3 +302,43 @@ def test_unresolved_internal_unchanged_record_is_not_a_public_origin():
     assert len(provenance.History()) == 1
     assert provenance.Records() == []
     assert provenance.Origins(result) == []
+
+
+# Same face-only expectations and exact endpoint checks as the reviewer notebook.
+import _boolean_cube_matrix as _cube_matrix
+
+
+@pytest.mark.parametrize("state,operation", _cube_matrix.CASES, ids=_cube_matrix.CASE_IDS)
+def test_boolean_cube_matrix_face_provenance(state, operation):
+    a, b = _cube_matrix.make_inputs(state)
+    inputs, source_extents = _cube_matrix.labelled_faces(a, b, state)
+    result, provenance = _cube_matrix.run_operation(a, b, operation, return_provenance=True)
+    outputs = {"R%02d" % i: face for i, face in enumerate(_cube_matrix.members(result, "Face"))}
+    result_extents = {label: _cube_matrix.face_extent(face) for label, face in outputs.items()}
+    eligible = _cube_matrix.EXPECTED_FACES[state][operation]
+    expected = {(source, target) for source in eligible for target in outputs
+                if _cube_matrix.plane_overlap(source_extents[source], result_extents[target])}
+    assert {source for source, target in expected} == eligible, "Returned faces violate reference coverage"
+    assert provenance.supported, "Unsupported capture is not a passing empty result"
+    assert bool(outputs) == bool(eligible)
+
+    observed = set()
+    for record in provenance.Records(topologyType="Face"):
+        if record.get("result") is None:
+            continue  # Deleted records remain diagnostic, as in the notebook.
+        observed.add((_cube_matrix.identity_label(record.get("source"), inputs),
+                      _cube_matrix.identity_label(record.get("result"), outputs)))
+    origins, descendants = set(), set()
+    for target, face in outputs.items():
+        for record in provenance.Origins(face):
+            if record.get("sourceType") == "Face":
+                origins.add((_cube_matrix.identity_label(record.get("source"), inputs), target))
+    for source, face in inputs.items():
+        for record in provenance.Descendants(face):
+            if record.get("result") is not None and record.get("resultType") == "Face":
+                descendants.add((source, _cube_matrix.identity_label(record.get("result"), outputs)))
+    assert observed == expected, "Missing: %r; unexpected: %r" % (expected - observed, observed - expected)
+    assert origins == expected, "Origins differ from independently expected face links"
+    assert descendants == expected, "Descendants differ from independently expected face links"
+    assert {source for source, target in observed} == eligible
+    assert set(outputs) == {target for source, target in expected}, "Unexplained result face"

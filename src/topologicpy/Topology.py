@@ -1204,7 +1204,8 @@ class Topology():
                     topologyA,
                     "Intersect",
                     topologyB,
-                    native_tran_dict
+                    native_tran_dict,
+                    tolerance
                 )
 
         # --------------------------------------------------------------
@@ -11251,10 +11252,87 @@ class Topology():
             return convex_hull
     
     @staticmethod
+    def _WithModifierProvenance(topology, operation, apply, parameters=None):
+        """Capture native modifier history independently of dictionary transfer.
+
+        The operation is executed exactly once. Unsupported backends and failed
+        operations return an explicit unsupported provenance, never geometric
+        correspondence guessed from coordinates or enumeration order.
+        """
+        from topologicpy.Provenance import Provenance
+
+        parameters = dict(parameters or {})
+        if "origin" in parameters:
+            from topologicpy.Vertex import Vertex
+            origin = parameters["origin"]
+            parameters["origin"] = (
+                Vertex.Coordinates(origin, mantissa=12)
+                if Topology.IsInstance(origin, "Vertex") else [0, 0, 0]
+            )
+        metadata = {"parameters": parameters}
+        records = []
+        capture_available = not Topology._IsTopologicCoreBackend()
+        if capture_available:
+            try:
+                from topologicpy.pythonocc_backend._csg_lineage import capture, materialise_record
+            except ImportError:
+                capture_available = False
+
+        if capture_available:
+            with capture(operation_node=None, role_nodes={}, stage=0, sink=records):
+                result = apply()
+            records = [materialise_record(record) for record in records]
+        else:
+            result = apply()
+
+        # A validated no-op (for example an angle below angTolerance) may return
+        # its input without constructing a native modifier. Exact identity is
+        # sufficient evidence for UNCHANGED at every available dimension.
+        if capture_available and result is topology and Topology.IsInstance(result, "Topology") and not records:
+            for entity in Provenance._topology_entities(topology):
+                kind = Topology.TypeAsString(entity)
+                records.append({"source": entity, "result": entity,
+                                "sourceType": kind, "resultType": kind,
+                                "sourceRole": "source", "relation": "unchanged"})
+        valid = Topology.IsInstance(result, "Topology")
+        # Aggregate transforms rebuild the container from exactly mapped members.
+        # The invocation establishes its root correspondence; mark this evidence
+        # separately from the native modifier's subshape mappings.
+        if records and valid and not any(
+            Provenance._same(record.get("source"), topology)
+            and Provenance._same(record.get("result"), result)
+            for record in records
+        ):
+            records.append({
+                "source": topology, "result": result,
+                "sourceType": Topology.TypeAsString(topology),
+                "resultType": Topology.TypeAsString(result),
+                "sourceRole": "source", "relation": "modified",
+                "captureMechanism": "operation-root",
+            })
+        for record in records:
+            # Give users the public operation name rather than Transform/GTransform.
+            record["operation"] = operation
+            # "source" is reserved for internal Boolean states. Modifier
+            # inputs are public operands and must terminate semantic tracing.
+            record["sourceRole"] = "self"
+        supported = capture_available and valid and bool(records)
+        if not supported:
+            metadata["reason"] = (
+                "operation_failed" if not valid else
+                "backend_history_unavailable" if not capture_available else "native_history_empty"
+            )
+        return result, Provenance.ByRecords(
+            records, operation=operation, sources={"self": topology},
+            result=result, supported=supported, metadata=metadata,
+        )
+
+    @staticmethod
     def Copy(
         topology,
         deep: bool = False,
-        silent: bool = False
+        silent: bool = False,
+        returnProvenance: bool = False
     ):
         """
         Returns a copy of the input topology.
@@ -11279,11 +11357,24 @@ class Topology():
             If set to True, error and warning messages are suppressed.
             Default is False.
 
+        returnProvenance : bool , optional
+            If True, return (result, Provenance) with exact native correspondence
+            for the root and supported subtopologies, independently of dictionary
+            transfer. Unsupported capture or a failed operation is explicitly
+            reported by provenance.supported=False. Default is False.
+
         Returns
         -------
-        topologic_core.Topology
+        topologic_core.Topology or tuple
             A copy of the input topology, or None if the operation fails.
         """
+
+        if returnProvenance:
+            return Topology._WithModifierProvenance(
+                topology, "Copy",
+                lambda: Topology.Copy(topology, deep=deep, silent=silent),
+                {"deep": deep},
+            )
         import copy as pycopy
 
         from topologicpy.Dictionary import Dictionary
@@ -20895,6 +20986,7 @@ class Topology():
         angle: float = 0,
         angTolerance: float = 0.001,
         transferDictionaries: bool = True,
+        returnProvenance: bool = False,
         tolerance: float = 0.0001,
         silent: bool = False
     ):
@@ -20923,6 +21015,11 @@ class Topology():
         transferDictionaries : bool , optional
             If True, dictionaries are transferred to corresponding
             subtopologies. Default is True.
+        returnProvenance : bool , optional
+            If True, return (result, Provenance) with exact native correspondence
+            for the root and supported subtopologies, independently of dictionary
+            transfer. Unsupported capture or a failed operation is explicitly
+            reported by provenance.supported=False. Default is False.
         tolerance : float , optional
             The desired geometric tolerance. Default is 0.0001.
         silent : bool , optional
@@ -20931,10 +21028,21 @@ class Topology():
 
         Returns
         -------
-        topologic_core.Topology
+        topologic_core.Topology or tuple
             The rotated topology.
 
         """
+
+        if returnProvenance:
+            return Topology._WithModifierProvenance(
+                topology, "Rotate",
+                lambda: Topology.Rotate(topology, origin=origin, axis=axis, angle=angle,
+                                        angTolerance=angTolerance,
+                                        transferDictionaries=transferDictionaries,
+                                        tolerance=tolerance, silent=silent),
+                {"origin": origin, "axis": list(axis) if isinstance(axis, (list, tuple)) else axis,
+                 "angle": angle, "angTolerance": angTolerance},
+            )
         import math
         from topologicpy.Vertex import Vertex
 
@@ -21023,7 +21131,9 @@ class Topology():
             return None
 
         # Identity.
-        if abs(angle) < angTolerance:
+        if abs(angle) < abs(angTolerance):
+            if not silent:
+                print("Topology.Rotate - Error: The input rotation angle is less than the angle tolerance. Returning the same topology.")
             return topology
 
         # BRepGraph Tranche 3: public Topology.Rotate
@@ -21035,8 +21145,8 @@ class Topology():
                 )
             except Exception as error:
                 if not silent:
-                    print("Topology.Rotate - Error: PythonOCC rotate failed. Returning None.")
                     print("Error:", error)
+                    print("Topology.Rotate - Error: PythonOCC rotate failed. Returning None.")
                 return None
             return return_topology if Topology.IsInstance(return_topology, "Topology") else None
 
@@ -21130,69 +21240,166 @@ class Topology():
         return return_topology
     
     @staticmethod
-    def RotateByEulerAngles(topology,
-                            origin = None,
-                            roll: float = 0,
-                            pitch: float = 0,
-                            yaw: float = 0,
-                            transferDictionaries: bool = True,
-                            angTolerance: float = 0.001,
-                            tolerance: float = 0.0001,
-                            silent: bool = False):
+    def RotateByEulerAngles(
+        topology,
+        origin=None,
+        roll: float = 0,
+        pitch: float = 0,
+        yaw: float = 0,
+        transferDictionaries: bool = True,
+        returnProvenance: bool = False,
+        angTolerance: float = 0.001,
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
         """
-        Rotates the input topology using Euler angles (roll, pitch, yaw). See https://en.wikipedia.org/wiki/Aircraft_principal_axes
+        Rotate a topology using sequential Euler rotations.
+
+        Applies roll about the fixed X-axis, pitch about the fixed Y-axis,
+        and yaw about the fixed Z-axis, in that order. Angles are in degrees.
+        All rotations use the same origin.
 
         Parameters
         ----------
         topology : topologic_core.Topology
             The input topology.
-        origin : topologic_core.Vertex , optional
-            The origin (center) of the rotation. If set to None, the world origin (0, 0, 0) is used. Default is None.
-        roll : float , optional
-            The rotation angle in degrees around the X-axis. Default is 0.
-        pitch = float , optional
-            The rotation angle in degrees around the Y-axis. Default is 0.
-        yaw = float , optional
-            The rotation angle in degrees around the Z-axis. Default is 0.
-        transferDictionaries : bool , optional
-            If set to True, the dictionaries are transfered from the original object to the rotated object. Default is True.
-        angTolerance : float , optional
-            The angle tolerance in degrees under which no rotation is carried out. Default is 0.001 degrees.
-        tolerance : float , optional
-            The desired tolerance. Default is 0.0001.
-        silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
+        origin : topologic_core.Vertex, optional
+            Rotation centre. If None or invalid, use the world origin.
+        roll : float, optional
+            Rotation about the X-axis in degrees. Default is 0.
+        pitch : float, optional
+            Rotation about the Y-axis in degrees. Default is 0.
+        yaw : float, optional
+            Rotation about the Z-axis in degrees. Default is 0.
+        transferDictionaries : bool, optional
+            Transfer dictionaries during each rotation. Default is True.
+        returnProvenance : bool, optional
+            If True, return (result, provenance). Compose the initial copy
+            and all three rotation histories so origins can be traced to
+            the input topology. Capture is independent of dictionary
+            transfer. Unsupported capture or failure is reported through
+            provenance.supported=False. Default is False.
+        angTolerance : float, optional
+            Rotations below this angle tolerance are ignored.
+            Default is 0.001 degrees.
+        tolerance : float, optional
+            Geometric tolerance. Default is 0.0001.
+        silent : bool, optional
+            Suppress error and warning messages. Default is False.
 
         Returns
         -------
-        topologic_core.Topology
-            The rotated topology.
-
+        topologic_core.Topology or tuple
+            The rotated topology, or (rotated topology, provenance).
+            On failure, return None, or (None, unsupported provenance).
         """
+        import math
         from topologicpy.Vertex import Vertex
-        from topologicpy.Dictionary import Dictionary
+
+        if returnProvenance:
+            from topologicpy.Provenance import Provenance
+
+        def fail(message):
+            if not silent:
+                print(
+                    "Topology.RotateByEulerAngles - Error: "
+                    + message + " Returning None."
+                )
+            if returnProvenance:
+                return None, Provenance.ByRecords(
+                    [],
+                    operation="RotateByEulerAngles",
+                    sources={"source": topology},
+                    result=None,
+                    supported=False,
+                    metadata={
+                        "reason": "operation_failed",
+                        "message": message,
+                    },
+                )
+            return None
 
         if not Topology.IsInstance(topology, "Topology"):
-            if not silent:
-                print("Topology.RotateByEulerAngles - Error: The input topology parameter is not a valid topologic topology. Returning None.")
-            return None
+            return fail("The input topology is not valid.")
+
+        # Validate all angles before performing any operation.
+        try:
+            roll, pitch, yaw = (
+                float(roll), float(pitch), float(yaw)
+            )
+            angTolerance = abs(float(angTolerance))
+            tolerance = float(tolerance)
+        except (TypeError, ValueError, OverflowError):
+            return fail("Angles and tolerances must be numeric.")
+
+        if not all(math.isfinite(value) for value in (
+            roll, pitch, yaw, angTolerance, tolerance
+        )):
+            return fail("Angles and tolerances must be finite.")
+
+        if tolerance <= 0:
+            return fail("The geometric tolerance must be positive.")
+
         if not Topology.IsInstance(origin, "Vertex"):
             origin = Vertex.ByCoordinates(0, 0, 0)
+
         if not Topology.IsInstance(origin, "Vertex"):
-            if not silent:
-                print("Topology.RotateByEulerAngles - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
-            return None
-        return_topology = Topology.Copy(topology)
-        return_topology = Topology.Rotate(return_topology, origin=origin, axis=[1,0,0], angle=roll, transferDictionaries=transferDictionaries, angTolerance=angTolerance, tolerance=tolerance, silent=silent)
-        return_topology = Topology.Rotate(return_topology, origin=origin, axis=[0,1,0], angle=pitch, transferDictionaries=transferDictionaries, angTolerance=angTolerance, tolerance=tolerance, silent=silent)
-        return_topology = Topology.Rotate(return_topology, origin=origin, axis=[0,0,1], angle=yaw, transferDictionaries=transferDictionaries, angTolerance=angTolerance, tolerance=tolerance, silent=silent)
-        return return_topology
+            return fail("Could not create a valid rotation origin.")
+
+        histories = []
+
+        def unpack(value):
+            if returnProvenance:
+                result, provenance = value
+                histories.append(provenance)
+                return result
+            return value
+
+        def finish(result):
+            if returnProvenance:
+                # Compose also propagates unsupported component histories.
+                return result, Provenance.Compose(*histories)
+            return result
+
+        # Preserve the existing method's initial copy, including for
+        # zero-angle calls. Its history connects the input to the copy.
+        # result = unpack(Topology.Copy(
+        #     topology,
+        #     silent=silent,
+        #     returnProvenance=returnProvenance,
+        # ))
+        # if not Topology.IsInstance(result, "Topology"):
+        #     return finish(None)
+
+        for axis, angle in (
+            ([1, 0, 0], roll),
+            ([0, 1, 0], pitch),
+            ([0, 0, 1], yaw),
+        ):
+            topology = unpack(Topology.Rotate(
+                topology,
+                origin=origin,
+                axis=axis,
+                angle=angle,
+                transferDictionaries=transferDictionaries,
+                returnProvenance=returnProvenance,
+                angTolerance=angTolerance,
+                tolerance=tolerance,
+                silent=silent,
+            ))
+            if not Topology.IsInstance(topology, "Topology"):
+                if not silent:
+                    print("Topology.RotateByEulerAngles - Error: Rotation operation failed. Returning None.")
+                return finish(None)
+
+        return finish(topology)
     
     @staticmethod
     def RotateByQuaternion(topology,
                            origin=None,
                            quaternion: list = [0,0,0,1],
-                           transferDictionaries: bool = False,
+                           transferDictionaries: bool = True,
+                           returnProvenance: bool = False,
                            angTolerance: float = 0.001,
                            tolerance: float = 0.0001,
                            silent: bool = False):
@@ -21209,6 +21416,12 @@ class Topology():
             The input Quaternion list. It should be in the form [x, y, z, w].
         transferDictionaries : bool , optional
             If set to True, the dictionaries are transfered from the original object to the rotated object. Default is True.
+        returnProvenance : bool, optional
+            If True, return (result, provenance). Compose the initial copy
+            and all three rotation histories so origins can be traced to
+            the input topology. Capture is independent of dictionary
+            transfer. Unsupported capture or failure is reported through
+            provenance.supported=False. Default is False.
         angTolerance : float , optional
             The angle tolerance in degrees under which no rotation is carried out. Default is 0.001 degrees.
         tolerance : float , optional
@@ -21274,7 +21487,7 @@ class Topology():
                 print("Topology.RotateByQuaternion - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
             return None
         roll, pitch, yaw = quaternion_to_euler(quaternion)
-        return_topology = Topology.RotateByEulerAngles(topology=topology, origin=origin, roll=roll, pitch=pitch, yaw=yaw,  transferDictionaries=transferDictionaries, angTolerance=angTolerance, tolerance=tolerance, silent=silent)
+        return_topology = Topology.RotateByEulerAngles(topology=topology, origin=origin, roll=roll, pitch=pitch, yaw=yaw,  transferDictionaries=transferDictionaries, returnProvenance=returnProvenance, angTolerance=angTolerance, tolerance=tolerance, silent=silent)
         return return_topology
 
     @staticmethod
@@ -21357,7 +21570,16 @@ class Topology():
             return False
     
     @staticmethod
-    def Scale(topology, origin=None, x=1, y=1, z=1, transferDictionaries: bool = True, silent: bool = False):
+    def Scale(topology,
+              origin=None,
+              x=1,
+              y=1,
+              z=1,
+              transferDictionaries: bool = True,
+              returnProvenance: bool = False,
+              tolerance: float = 0.0001,
+              silent: bool = False
+              ):
         """
         Scales the input topology
 
@@ -21373,13 +21595,31 @@ class Topology():
             The 'y' component of the scaling factor. Default is 1.
         z : float , optional
             The 'z' component of the scaling factor. Default is 1..
+        returnProvenance : bool , optional
+            If True, return (result, Provenance) with exact native correspondence
+            for the root and supported subtopologies, independently of dictionary
+            transfer. Unsupported capture or a failed operation is explicitly
+            reported by provenance.supported=False. Default is False.
+        tolerance : float , optional
+            The desired geometric tolerance. Default is 0.0001.
+        silent : bool , optional
+            If True, error and warning messages are suppressed.
+            Default is False.
 
         Returns
         -------
-        topologic_core.Topology
+        topologic_core.Topology or tuple
             The scaled topology.
 
         """
+
+        if returnProvenance:
+            return Topology._WithModifierProvenance(
+                topology, "Scale",
+                lambda: Topology.Scale(topology, origin=origin, x=x, y=y, z=z,
+                                       transferDictionaries=transferDictionaries, silent=silent),
+                {"origin": origin, "x": x, "y": y, "z": z},
+            )
         
         from topologicpy.Vertex import Vertex
 
@@ -21387,19 +21627,32 @@ class Topology():
             if not silent:
                 print("Topology.Scale - Error: The input topology parameter is not a valid Topology. Returning None.")
             return None
+        # Nonzero finite factors preserve dimension. Singular scales are rejected
+        # rather than returning a malformed solid or pretending topology survived.
+        import math
+        try:
+            x, y, z = float(x), float(y), float(z)
+        except (TypeError, ValueError):
+            if not silent:
+                print("Topology.Scale - Error: Scale factors must be finite nonzero numbers. Returning None.")
+            return None
+        if not all(math.isfinite(v) and v != 0 for v in (x, y, z)):
+            if not silent:
+                print("Topology.Scale - Error: Scale factors must be finite and nonzero. Returning None.")
+            return None
         if not Topology.IsInstance(origin, "Vertex"):
             origin = Vertex.ByCoordinates(0, 0, 0)
         if not Topology.IsInstance(origin, "Vertex"):
             if not silent:
                 print("Topology.Scale - Error: The input origin parameter is not a valid Vertex. Returning None.")
             return None
-        if abs(x) <= 0.00001:
+        if abs(x) <= abs(tolerance):
             if not silent:
                 print("Topology.Scale - Warning: the x input parameter is close to 0. This can cause an malformed geometric result.")
-        if abs(y) <= 0.00001:
+        if abs(y) <= abs(tolerance):
             if not silent:
                 print("Topology.Scale - Warning: the y input parameter is close to 0. This can cause an malformed geometric result.")
-        if abs(z) <= 0.00001:
+        if abs(z) <= abs(tolerance):
             if not silent:
                 print("Topology.Scale - Warning: the z input parameter is close to 0. This can cause an malformed geometric result.")
         # BRepGraph Tranche 3: public Topology.Scale
@@ -27374,6 +27627,7 @@ class Topology():
         y=0,
         z=0,
         transferDictionaries: bool = True,
+        returnProvenance: bool = False,
         silent: bool = False
     ):
         """
@@ -27392,14 +27646,27 @@ class Topology():
         transferDictionaries : bool , optional
             If set to True, dictionaries are transferred from the original topology
             and its subtopologies to the translated topology. Default is True.
+        returnProvenance : bool , optional
+            If True, return (result, Provenance) with exact native correspondence
+            for the root and supported subtopologies, independently of dictionary
+            transfer. Unsupported capture or a failed operation is explicitly
+            reported by provenance.supported=False. Default is False.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
-        topologic_core.Topology
+        topologic_core.Topology or tuple
             The translated topology.
         """
+
+        if returnProvenance:
+            return Topology._WithModifierProvenance(
+                topology, "Translate",
+                lambda: Topology.Translate(topology, x=x, y=y, z=z,
+                                           transferDictionaries=transferDictionaries, silent=silent),
+                {"x": x, "y": y, "z": z},
+            )
         if not Topology.IsInstance(topology, "Topology"):
             if not silent:
                 print(
