@@ -1135,17 +1135,20 @@ class Topology():
             tranDict and not Topology._IsTopologicCoreBackend()
         )
 
+        def native_boolean(method):
+            # PythonOCC methods and subclass overrides accept tolerance.
+            # TopologicCore's compiled methods retain their legacy signature.
+            args = [topologyB, native_tran_dict]
+            if not Topology._IsTopologicCoreBackend():
+                args.append(tolerance)
+            return Core.InstanceCall(topologyA, method, *args)
+
         # --------------------------------------------------------------
         # Union
         # --------------------------------------------------------------
 
         if operation == "union":
-            topologyC = Core.InstanceCall(
-                topologyA,
-                "Union",
-                topologyB,
-                native_tran_dict
-            )
+            topologyC = native_boolean("Union")
 
             # Only TopologicCore is permitted to substitute a reconstructed
             # result when its native Union fails.
@@ -1171,12 +1174,7 @@ class Topology():
                 topologyC = None
 
             else:
-                topologyC = Core.InstanceCall(
-                    topologyA,
-                    "Difference",
-                    topologyB,
-                    native_tran_dict
-                )
+                topologyC = native_boolean("Difference")
 
         # --------------------------------------------------------------
         # Intersection
@@ -1200,16 +1198,7 @@ class Topology():
                 )
 
             else:
-                # TopologicCore's native signature has no tolerance argument.
-                # PythonOCC accepts tolerance for lower-dimensional contact recovery.
-                if Topology._IsTopologicCoreBackend():
-                    topologyC = Core.InstanceCall(
-                        topologyA, "Intersect", topologyB, native_tran_dict
-                    )
-                else:
-                    topologyC = Core.InstanceCall(
-                        topologyA, "Intersect", topologyB, native_tran_dict, tolerance
-                    )
+                topologyC = native_boolean("Intersect")
 
         # --------------------------------------------------------------
         # Symmetric difference
@@ -1226,12 +1215,7 @@ class Topology():
                 topologyC = topologyB
 
             else:
-                topologyC = Core.InstanceCall(
-                    topologyA,
-                    "XOR",
-                    topologyB,
-                    native_tran_dict
-                )
+                topologyC = native_boolean("XOR")
 
         # --------------------------------------------------------------
         # Merge
@@ -1242,12 +1226,7 @@ class Topology():
                 topologyC = topologyA
 
             else:
-                topologyC = Core.InstanceCall(
-                    topologyA,
-                    "Merge",
-                    topologyB,
-                    native_tran_dict
-                )
+                topologyC = native_boolean("Merge")
 
         # --------------------------------------------------------------
         # Slice
@@ -1258,12 +1237,7 @@ class Topology():
                 topologyC = topologyA
 
             else:
-                topologyC = Core.InstanceCall(
-                    topologyA,
-                    "Slice",
-                    topologyB,
-                    native_tran_dict
-                )
+                topologyC = native_boolean("Slice")
 
         # --------------------------------------------------------------
         # Impose
@@ -1274,12 +1248,7 @@ class Topology():
                 topologyC = topologyA
 
             else:
-                topologyC = Core.InstanceCall(
-                    topologyA,
-                    "Impose",
-                    topologyB,
-                    native_tran_dict
-                )
+                topologyC = native_boolean("Impose")
 
         # --------------------------------------------------------------
         # Imprint
@@ -1290,12 +1259,7 @@ class Topology():
                 topologyC = topologyA
 
             else:
-                topologyC = Core.InstanceCall(
-                    topologyA,
-                    "Imprint",
-                    topologyB,
-                    native_tran_dict
-                )
+                topologyC = native_boolean("Imprint")
 
         # --------------------------------------------------------------
         # Dictionary transfer

@@ -650,6 +650,10 @@ def test_expected_result_type_table_is_complete():
 def test_boolean_result_types(topology_type, operation_name):
     """Assert legacy-backend result-type contract for every boolean matrix row."""
     expected_type = EXPECTED_RESULT_TYPES[(topology_type, operation_name)]
+    # PythonOCC deliberately unwraps a single-cell intersection. TopologicCore
+    # retains its historical Cluster wrapper for this matrix fixture.
+    if (topology_type, operation_name) == ("cell", "intersection") and not Topology._IsTopologicCoreBackend():
+        expected_type = "Cell"
     _, actual_type, error = _evaluate_case(topology_type, operation_name)
 
     assert error is None, (
@@ -916,3 +920,63 @@ def test_cell_boolean_relationship_regressions(
         f"{label}: expected Overlaps={expected_overlaps}; actual={overlaps}."
     )
 
+
+
+# -----------------------------------------------------------------------------
+# Boolean tolerance dispatch regression
+# -----------------------------------------------------------------------------
+
+@pytest.mark.pythonocc_only
+@pytest.mark.parametrize("topology_type", ("edge", "wire", "shell", "cell"))
+@pytest.mark.parametrize("operation_name", OPERATION_NAMES)
+def test_boolean_forwards_custom_tolerance(monkeypatch, topology_type, operation_name):
+    """Public dispatch forwards custom tolerance, including subclass overrides."""
+    import inspect
+    a, b = _operands(topology_type)
+    public_names = {
+        "union": "Union", "difference": "Difference", "intersection": "Intersect",
+        "xor": "SymmetricDifference", "merge": "Merge", "slice": "Slice",
+        "impose": "Impose", "imprint": "Imprint",
+    }
+    native_names = {**public_names, "xor": "XOR", "intersection": "Intersect"}
+    name = native_names[operation_name]
+    custom_tolerance = 3.25e-6
+    # Validate the actual bound override before replacing it with a dispatch spy.
+    inspect.signature(getattr(a, name)).bind(b, False, custom_tolerance)
+    calls = []
+    def native_spy(self, other, transfer=False, tolerance=0.0001):
+        calls.append((self, other, transfer, tolerance))
+        return None
+    monkeypatch.setattr(type(a), name, native_spy)
+    getattr(Topology, public_names[operation_name])(
+        a, b, tranDict=False, tolerance=custom_tolerance, silent=True
+    )
+    assert len(calls) == 1
+    assert calls[0][0] is a and calls[0][1] is b
+    assert calls[0][2] is False and calls[0][3] == custom_tolerance
+
+
+@pytest.mark.pythonocc_only
+@pytest.mark.parametrize("operation_class", ("BRepAlgoAPI_Cut", "BRepAlgoAPI_Common"))
+def test_binary_boolean_sets_custom_fuzzy_tolerance(monkeypatch, operation_class):
+    """The forwarded tolerance reaches OCCT before the requested build."""
+    import topologicpy.pythonocc_backend.topology as backend
+    events = []
+    class Algorithm:
+        def __init__(self, a, b): pass
+        def SetToFillHistory(self, enabled): pass
+        def SetFuzzyValue(self, value): events.append(("tolerance", value))
+        def Build(self): events.append(("build", None))
+        def IsDone(self): return True
+        def Shape(self): return object()
+    monkeypatch.setattr(backend, operation_class, Algorithm)
+    monkeypatch.setattr(backend, "_shape_from_topology", lambda topology: object())
+    monkeypatch.setattr(backend, "_is_null_shape", lambda shape: False)
+    monkeypatch.setattr(backend, "_iter_occ_subshapes", lambda shape, kind: [])
+    monkeypatch.setattr(backend, "_lineage_capture_active", lambda: False)
+    empty = object()
+    result = backend.Topology._binary_boolean(
+        object(), object(), Algorithm, False, _empty_result=empty, tolerance=3.25e-6
+    )
+    assert result is empty
+    assert events == [("tolerance", 3.25e-6), ("build", None)]

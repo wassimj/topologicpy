@@ -3571,7 +3571,7 @@ class Shell(Topology):
 
         return max(wires, key=wire_length)
 
-    def Slice(self, otherTopology, transferDictionary: bool = False):
+    def Slice(self, otherTopology, transferDictionary: bool = False, tolerance: float = 0.0001):
         """
         Slice this Shell's faces by a cutting tool, keeping self's material, and reassemble
         the surviving sub-faces into a single Shell (unlike the generic _partition_by which
@@ -3604,6 +3604,7 @@ class Shell(Topology):
                 builder.AddArgument(shape)
             for shape in shapes_b:
                 builder.AddArgument(shape)
+            builder.SetFuzzyValue(tolerance)
             builder.Perform()
             if hasattr(builder, "HasErrors") and builder.HasErrors():
                 return None

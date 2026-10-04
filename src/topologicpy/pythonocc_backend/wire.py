@@ -382,7 +382,7 @@ class Wire(Topology):
         except Exception:
             return None
 
-    def Union(self, otherTopology, transferDictionary: bool = False):
+    def Union(self, otherTopology, transferDictionary: bool = False, tolerance: float = 0.0001):
         """
         Returns the union of this wire and the input topology.
 
@@ -409,7 +409,8 @@ class Wire(Topology):
         result = Topology.Union(
             self,
             otherTopology,
-            transferDictionary
+            transferDictionary,
+            tolerance=tolerance
         )
 
         if result is None:

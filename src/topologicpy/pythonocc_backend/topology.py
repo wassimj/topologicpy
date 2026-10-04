@@ -1145,7 +1145,7 @@ class _SelectedSplitHistory:
         return bool(self.final_history.IsRemoved(source))
 
 
-def _make_occ_merge(topology: Any, other_topology: Any = None, transfer_dictionary: bool = False) -> Any:
+def _make_occ_merge(topology: Any, other_topology: Any = None, transfer_dictionary: bool = False, tolerance: float = 0.0001) -> Any:
     """
     PythonOCC Topology.Merge using BOPAlgo_CellsBuilder while preserving the
     operands' shared interfaces.
@@ -1190,6 +1190,7 @@ def _make_occ_merge(topology: Any, other_topology: Any = None, transfer_dictiona
             builder.AddArgument(shape)
         for shape in shapes_b:
             builder.AddArgument(shape)
+        builder.SetFuzzyValue(tolerance)
         builder.Perform()
         if hasattr(builder, "HasErrors") and builder.HasErrors():
             print("Topology.Merge - Error: BOPAlgo_CellsBuilder failed. Returning None.")
@@ -1261,7 +1262,8 @@ def _make_occ_merge(topology: Any, other_topology: Any = None, transfer_dictiona
 def _make_occ_union(
     topology: Any,
     other_topology: Any = None,
-    transfer_dictionary: bool = False
+    transfer_dictionary: bool = False,
+    tolerance: float = 0.0001
 ) -> Any:
     """
     Returns the union of the input topologies using the PythonOCC backend.
@@ -1387,6 +1389,7 @@ def _make_occ_union(
         except Exception:
             pass
 
+        fuse.SetFuzzyValue(tolerance)
         fuse.Build()
 
         if not fuse.IsDone():
@@ -4549,20 +4552,22 @@ class Topology:
 
         return False
 
-    def Merge(self, otherTopology: Any = None, transferDictionary: bool = False):
+    def Merge(self, otherTopology: Any = None, transferDictionary: bool = False, tolerance: float = 0.0001):
         return _make_occ_merge(
             self,
             otherTopology,
             transfer_dictionary=transferDictionary,
+            tolerance=tolerance,
         )
 
     # Union dissolves the operand interface (-> Cell), unlike Merge which
     # preserves it (-> CellComplex). See _make_occ_union / _make_occ_merge.
-    def Union(self, otherTopology: Any, transferDictionary: bool = False):
+    def Union(self, otherTopology: Any, transferDictionary: bool = False, tolerance: float = 0.0001):
         result = _make_occ_union(
             self,
             otherTopology,
             transfer_dictionary=transferDictionary,
+            tolerance=tolerance,
         )
 
         if result is None:
@@ -4621,7 +4626,8 @@ class Topology:
         otherTopology: Any,
         occt_op_class,
         transferDictionary: bool = False,
-        _empty_result=None
+        _empty_result=None,
+        tolerance: float = 0.0001
     ):
         """Execute Cut/Common with exact OCCT dictionary provenance.
 
@@ -4645,6 +4651,7 @@ class Topology:
                 op.SetToFillHistory(True)
             except Exception:
                 pass
+            op.SetFuzzyValue(tolerance)
             op.Build()
             if not op.IsDone():
                 return None
@@ -4714,8 +4721,8 @@ class Topology:
 
         return Topology.ByOcctShape(result_shape)
 
-    def Difference(self, otherTopology: Any, transferDictionary: bool = False):
-        return self._binary_boolean(otherTopology, BRepAlgoAPI_Cut, transferDictionary)
+    def Difference(self, otherTopology: Any, transferDictionary: bool = False, tolerance: float = 0.0001):
+        return self._binary_boolean(otherTopology, BRepAlgoAPI_Cut, transferDictionary, tolerance=tolerance)
 
     def Intersect(
         self,
@@ -4729,7 +4736,8 @@ class Topology:
 
         The primary operation uses BRepAlgoAPI_Common. For selected same-type
         intersections, the result is wrapped in a Cluster to match TopologicCore
-        result semantics.
+        result semantics. A single Cell is returned directly; disconnected face
+        contacts remain a Cluster.
 
         For Shell/Shell intersections, the raw OCCT Common result is first
         normalized to a Shell before being wrapped in a Cluster. This avoids
@@ -4774,7 +4782,8 @@ class Topology:
         result = self._binary_boolean(
             otherTopology,
             BRepAlgoAPI_Common,
-            transferDictionary
+            transferDictionary,
+            tolerance=tolerance
         )
 
         # A lower-dimensional solid Common must not pre-empt face contact.
@@ -5091,6 +5100,7 @@ class Topology:
                 False
             )
 
+            section.SetFuzzyValue(tolerance)
             section.Build()
 
             if not section.IsDone():
@@ -5150,13 +5160,13 @@ class Topology:
                 section_result.dictionary = dictionary
 
         return section_result
-    def XOR(self, otherTopology: Any, transferDictionary: bool = False):
+    def XOR(self, otherTopology: Any, transferDictionary: bool = False, tolerance: float = 0.0001):
         # Keep successful nonempty branches; never reinterpret failure as empty.
         empty = object()
         a_minus_b = self._binary_boolean(otherTopology, BRepAlgoAPI_Cut,
-                                        transferDictionary, _empty_result=empty)
+                                        transferDictionary, _empty_result=empty, tolerance=tolerance)
         b_minus_a = Topology._binary_boolean(otherTopology, self, BRepAlgoAPI_Cut,
-                                            transferDictionary, _empty_result=empty)
+                                            transferDictionary, _empty_result=empty, tolerance=tolerance)
         if a_minus_b is None or b_minus_a is None:
             return None
         pieces = [item for item in (a_minus_b, b_minus_a) if item is not empty]
@@ -5280,7 +5290,7 @@ class Topology:
         except Exception:
             return False
 
-    def _partition_by(self, otherTopology: Any, transferDictionary: bool = False, promote: bool = True):
+    def _partition_by(self, otherTopology: Any, transferDictionary: bool = False, promote: bool = True, tolerance: float = 0.0001):
         """
         BOPAlgo_CellsBuilder partition shared by Divide/Slice/Impose/Imprint. Use
         AddAllToResult() -- AddToResult(original) and Modified()/IsDeleted() both fail to
@@ -5300,6 +5310,7 @@ class Topology:
                 builder.AddArgument(shape)
             for shape in shapes_b:
                 builder.AddArgument(shape)
+            builder.SetFuzzyValue(tolerance)
             builder.Perform()
             if hasattr(builder, "HasErrors") and builder.HasErrors():
                 return None
@@ -5345,10 +5356,10 @@ class Topology:
             )
         return Topology.ByOcctShape(result_shape, dictionary=result_dictionary)
 
-    def Divide(self, otherTopology: Any, transferDictionary: bool = False):
-        return self._partition_by(otherTopology, transferDictionary)
+    def Divide(self, otherTopology: Any, transferDictionary: bool = False, tolerance: float = 0.0001):
+        return self._partition_by(otherTopology, transferDictionary, tolerance=tolerance)
 
-    def _split_by_tool(self, otherTopology: Any, transferDictionary: bool = False):
+    def _split_by_tool(self, otherTopology: Any, transferDictionary: bool = False, tolerance: float = 0.0001):
         """Split self by a tool while keeping self's fragments.
 
         # BRepGraph Tranche 3: Topology._split_by_tool
@@ -5372,7 +5383,7 @@ class Topology:
                 splitter.AddArgument(shape)
             for shape in shapes_b:
                 splitter.AddTool(shape)
-            splitter.SetFuzzyValue(1e-4)
+            splitter.SetFuzzyValue(tolerance)
             splitter.Perform()
             if hasattr(splitter, "HasErrors") and splitter.HasErrors():
                 return None
@@ -5417,8 +5428,8 @@ class Topology:
             _provenance_set_root_dictionary(result_shape, sources, policy="self")
         return Topology.ByOcctShape(result_shape)
 
-    def Slice(self, otherTopology: Any, transferDictionary: bool = False):
-        return self._split_by_tool(otherTopology, transferDictionary)
+    def Slice(self, otherTopology: Any, transferDictionary: bool = False, tolerance: float = 0.0001):
+        return self._split_by_tool(otherTopology, transferDictionary, tolerance=tolerance)
 
     @staticmethod
     def _collect_impose_operand_shapes(topology: Any) -> list:
@@ -5461,7 +5472,7 @@ class Topology:
             return []
         return [shape]
 
-    def Impose(self, otherTopology: Any, transferDictionary: bool = False):
+    def Impose(self, otherTopology: Any, transferDictionary: bool = False, tolerance: float = 0.0001):
         """Impose otherTopology while preserving exact dictionary provenance.
 
         # BRepGraph Tranche 3: Topology.Impose
@@ -5484,6 +5495,7 @@ class Topology:
             for shape in shapes_a + shapes_b:
                 args.Append(shape)
             builder.SetArguments(args)
+            builder.SetFuzzyValue(tolerance)
             builder.Perform()
             if builder.HasErrors():
                 return None
@@ -5557,8 +5569,8 @@ class Topology:
             _provenance_set_root_dictionary(result_shape, sources, policy="merge")
         return Topology.ByOcctShape(result_shape)
 
-    def Imprint(self, otherTopology: Any, transferDictionary: bool = False):
-        return self._split_by_tool(otherTopology, transferDictionary)
+    def Imprint(self, otherTopology: Any, transferDictionary: bool = False, tolerance: float = 0.0001):
+        return self._split_by_tool(otherTopology, transferDictionary, tolerance=tolerance)
 
     # -------------------------------------------------------------------
     # Transform / Translate / Rotate / Scale

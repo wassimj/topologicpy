@@ -615,7 +615,7 @@ class Edge(Topology):
         """Returns the exact geometric length of the edge."""
         return EdgeUtility.Length(self)
 
-    def Intersect(self, otherTopology, transferDictionary: bool = False):
+    def Intersect(self, otherTopology, transferDictionary: bool = False, tolerance: float = 0.0001):
         """
         Instance method so both calling conventions work. Edge-vs-edge uses an
         analytic closest-point test (BRepAlgoAPI_Common misses transversal
@@ -628,6 +628,7 @@ class Edge(Topology):
                 otherTopology,
                 _BRepAlgoAPI_Common,
                 transferDictionary,
+                tolerance=tolerance,
             )
 
         p1 = (self.start.x, self.start.y, self.start.z)
@@ -643,7 +644,7 @@ class Edge(Topology):
             otherTopology.end.z,
         )
 
-        hit = _segment_segment_intersection(p1, p2, p3, p4)
+        hit = _segment_segment_intersection(p1, p2, p3, p4, tolerance=tolerance)
         if hit is None:
             # Parallel/collinear/degenerate: fall back to the general boolean
             # path, which correctly handles a genuinely overlapping
@@ -653,6 +654,7 @@ class Edge(Topology):
                 otherTopology,
                 _BRepAlgoAPI_Common,
                 transferDictionary,
+                tolerance=tolerance,
             )
 
         result = Vertex.ByCoordinates(hit[0], hit[1], hit[2])
