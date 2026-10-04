@@ -4080,3 +4080,65 @@ def test_tpy_corrupt_checksum_is_rejected(tmp_path):
         )
         is None
     )
+
+
+# Four cube arrangements x eight Booleans: independent type/measure contracts.
+import _boolean_cube_matrix as _cube_matrix
+
+
+def _assert_cube_matrix_geometry(result, expected):
+    expected_type, dimension, measure = expected
+    if expected_type is None:
+        assert result is None, "Expected a certified empty geometry result"
+        return
+    assert result is not None
+    assert Topology.TypeAsString(result) == expected_type
+    if dimension == 3:
+        cells = _cube_matrix.members(result, "Cell")
+        assert cells, "Expected 3D material"
+        actual = sum(Cell.Volume(cell, mantissa=12, silent=True) for cell in cells)
+        assert actual == pytest.approx(measure, rel=1e-6, abs=1e-9)
+    elif dimension == 2:
+        faces = _cube_matrix.members(result, "Face")
+        assert faces and not _cube_matrix.members(result, "Cell")
+        actual = sum(Face.Area(face, mantissa=12, silent=True) for face in faces)
+        assert actual == pytest.approx(measure, rel=1e-6, abs=1e-9)
+    elif dimension == 1:
+        assert Topology.IsInstance(result, "Edge")
+        assert Edge.Length(result, mantissa=12) == pytest.approx(measure, rel=1e-6, abs=1e-9)
+    elif dimension == 0:
+        assert Topology.IsInstance(result, "Vertex")
+        assert Vertex.Coordinates(result, mantissa=12) == pytest.approx(measure, abs=1e-6)
+    else:
+        raise AssertionError("Unknown expected dimension")
+
+
+@pytest.mark.pythonocc_only
+@pytest.mark.parametrize("state,operation", _cube_matrix.CASES, ids=_cube_matrix.CASE_IDS)
+def test_boolean_cube_matrix_type_and_measure(state, operation):
+    a, b = _cube_matrix.make_inputs(state)
+    result = _cube_matrix.run_operation(a, b, operation)
+    _assert_cube_matrix_geometry(result, _cube_matrix.EXPECTED_GEOMETRY[state][operation])
+
+
+@pytest.mark.pythonocc_only
+@pytest.mark.parametrize("origin,expected", [
+    ((1, 1, 0), ("Edge", 1, 1)),
+    ((1, 1, 1), ("Vertex", 0, (1, 1, 1))),
+    ((0, 0, 0), ("Cell", 3, 1)),
+], ids=["edge-contact", "vertex-contact", "identical-cubes"])
+def test_intersect_cube_contact_dimensions_and_measure(origin, expected):
+    result = Topology.Intersect(_cube_matrix.cube(), _cube_matrix.cube(origin),
+                                tolerance=_cube_matrix.TOLERANCE, silent=True)
+    _assert_cube_matrix_geometry(result, expected)
+
+
+@pytest.mark.pythonocc_only
+def test_intersect_c_shape_returns_two_face_cluster_with_expected_area():
+    a = Cell.CShape(origin=Vertex.ByCoordinates(0, 0, 0), placement="bottom")
+    b = Cell.Prism(origin=Vertex.ByCoordinates(1, 0, 0), placement="bottom")
+    result = Topology.Intersect(a, b, tolerance=1e-6, silent=True)
+    _assert_cube_matrix_geometry(result, ("Cluster", 2, 0.5))
+    children = Cluster.Topologies(result)
+    assert len(children) == 2
+    assert all(Topology.IsInstance(child, "Face") for child in children)
