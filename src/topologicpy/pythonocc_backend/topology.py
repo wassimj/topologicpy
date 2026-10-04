@@ -40,6 +40,7 @@ from typing import Any, Iterable, Optional
 from .helpers import new_uuid as _new_uuid, distance3, vertex_key
 
 from .attribute_manager import AttributeManager
+from ._csg_lineage import capture_modifier_if_active as _capture_modifier_only
 from ._provenance import (
     transfer_by_history as _provenance_transfer_history,
     transfer_by_modifier as _provenance_transfer_modifier,
@@ -1096,6 +1097,53 @@ def _compound_of_shapes(shapes: Iterable[Any]) -> Any:
         if not _is_null_shape(shape):
             builder.Add(compound, shape)
     return compound
+
+class _SelectedSplitHistory:
+    """Combine immutable split images with final selection history by identity."""
+    def __init__(self, split_history, shapes):
+        from ._csg_lineage import _source_entities
+        from ._provenance import _toptools_to_list
+        self.entries = []
+        for shape in shapes:
+            for source in _source_entities(shape):
+                if source.ShapeType() not in (TopAbs_VERTEX, TopAbs_EDGE, TopAbs_FACE):
+                    continue
+                self.entries.append((source,
+                    list(_toptools_to_list(split_history.Modified(source))),
+                    list(_toptools_to_list(split_history.Generated(source)))))
+        self.final_history = None
+        self.index = None
+
+    def finish(self, final_history, result_shape):
+        from ._provenance import _ResultShapeIndex
+        self.final_history = final_history
+        self.index = _ResultShapeIndex(result_shape)
+        return self
+
+    def _images(self, source, name, column):
+        from ._provenance import _toptools_to_list
+        candidates = list(_toptools_to_list(getattr(self.final_history, name)(source)))
+        for old, modified, generated in self.entries:
+            if old.IsSame(source):
+                candidates.extend((modified, generated)[column])
+        answer = []
+        for candidate in candidates:
+            target = self.index.resolve(candidate)
+            if target is not None and not any(target.IsSame(old) for old in answer):
+                answer.append(target)
+        return answer
+
+    def Modified(self, source):
+        return self._images(source, "Modified", 0)
+
+    def Generated(self, source):
+        return self._images(source, "Generated", 1)
+
+    def IsRemoved(self, source):
+        if self.index.resolve(source) is not None or self.Modified(source) or self.Generated(source):
+            return False
+        return bool(self.final_history.IsRemoved(source))
+
 
 def _make_occ_merge(topology: Any, other_topology: Any = None, transfer_dictionary: bool = False) -> Any:
     """
@@ -4572,7 +4620,8 @@ class Topology:
         self,
         otherTopology: Any,
         occt_op_class,
-        transferDictionary: bool = False
+        transferDictionary: bool = False,
+        _empty_result=None
     ):
         """Execute Cut/Common with exact OCCT dictionary provenance.
 
@@ -4609,7 +4658,8 @@ class Topology:
 
         if occt_op_class in (BRepAlgoAPI_Cut, BRepAlgoAPI_Common):
             if not _iter_occ_subshapes(result_shape, TopAbs_VERTEX):
-                return None
+                # IsDone() was checked: this is certified empty, not failure.
+                return _empty_result
 
         if occt_op_class is BRepAlgoAPI_Cut:
             operand_dimension = min(
@@ -4670,7 +4720,8 @@ class Topology:
     def Intersect(
         self,
         otherTopology,
-        transferDictionary: bool = False
+        transferDictionary: bool = False,
+        tolerance: float = 0.0001
     ):
         """
         # BRepGraph Tranche 3: Topology.Intersect wrapper provenance
@@ -4703,6 +4754,10 @@ class Topology:
             The resulting topology, or None if no intersection exists.
         """
 
+        tolerance = float(tolerance)
+        if not math.isfinite(tolerance) or tolerance < 0:
+            raise ValueError("Intersect tolerance must be finite and nonnegative")
+
         if not isinstance(otherTopology, Topology):
             return None
 
@@ -4722,7 +4777,12 @@ class Topology:
             transferDictionary
         )
 
-        if result is not None:
+        # A lower-dimensional solid Common must not pre-empt face contact.
+        # This occurs with disconnected contact regions (for example C-shapes).
+        needs_face_contact = (result is not None and isinstance(self, Cell)
+                              and isinstance(otherTopology, Cell)
+                              and Topology._max_shape_dimension(_shape_from_topology(result)) < 2)
+        if result is not None and not needs_face_contact:
 
             # --------------------------------------------------------------
             # Face / Face
@@ -4878,33 +4938,18 @@ class Topology:
 
             # --------------------------------------------------------------
             # Cell / Cell
-            #
-            # Preserve the correctly normalized Cell but expose it as a
-            # Cluster to match TopologicCore Boolean semantics.
+            # A single solid intersection is a Cell, not a one-item Cluster.
+            # Preserve actual aggregate results when more than one cell exists.
             # --------------------------------------------------------------
-
-            if (
-                isinstance(self, Cell)
-                and isinstance(otherTopology, Cell)
-            ):
-                cluster = Cluster.ByTopologies(
-                    [result]
-                )
-
-                if cluster is not None:
+            if isinstance(self, Cell) and isinstance(otherTopology, Cell):
+                if isinstance(result, Cell):
+                    return result
+                cells = result.Cells() or []
+                if len(cells) == 1:
+                    single = cells[0]
                     if transferDictionary:
-                        cluster.SetDictionary(
-                            _provenance_root_dictionary(
-                                [
-                                    ("self", _shape_from_topology(self), Topology.GetDictionary(self)),
-                                    ("other", _shape_from_topology(otherTopology), Topology.GetDictionary(otherTopology)),
-                                ],
-                                policy="merge",
-                            )[0]
-                        )
-
-                    return cluster
-
+                        single.SetDictionary(Topology.GetDictionary(result))
+                    return single
                 return result
 
             # --------------------------------------------------------------
@@ -4972,6 +5017,55 @@ class Topology:
         #
         # BRepAlgoAPI_Section preserves those intersections.
         # ------------------------------------------------------------------
+
+        contact_faces = []
+        shape_a = _shape_from_topology(self)
+        shape_b = _shape_from_topology(otherTopology)
+        for face_a in _iter_occ_subshapes_unique(shape_a, TopAbs_FACE):
+            for face_b in _iter_occ_subshapes_unique(shape_b, TopAbs_FACE):
+                common = BRepAlgoAPI_Common(face_a, face_b)
+                common.SetToFillHistory(True)
+                common.SetFuzzyValue(tolerance)
+                common.Build()
+                if not common.IsDone():
+                    raise RuntimeError("Intersect face-contact Common failed")
+                common_shape = common.Shape()
+                if _is_null_shape(common_shape):
+                    continue
+                images = _iter_occ_subshapes_unique(common_shape, TopAbs_FACE)
+                if not images:
+                    continue
+                sources = [
+                    {"role": "self", "shape": face_a, "root_dictionary": Topology.GetDictionary(self)},
+                    {"role": "tool", "shape": face_b, "root_dictionary": Topology.GetDictionary(otherTopology)},
+                ]
+                if transferDictionary or _lineage_capture_active():
+                    _provenance_transfer_history(common_shape, common.History(), sources,
+                                                 root_policy="merge", operation="Intersect")
+                for face in images:
+                    if not any(face.IsSame(old) for old in contact_faces):
+                        contact_faces.append(face)
+        if contact_faces:
+            members = [Topology.ByOcctShape(face) for face in contact_faces]
+            if any(member is None for member in members):
+                raise RuntimeError("Intersect could not wrap a native contact face")
+            if len(members) == 1:
+                return members[0]
+            # Preserve disconnected native faces as separate Cluster members;
+            # do not stitch them into a Wire/Shell or select only one region.
+            contact_result = Cluster.ByTopologies(members)
+            if contact_result is None:
+                raise RuntimeError("Intersect could not build the contact-face Cluster")
+            if transferDictionary:
+                contact_result.SetDictionary(_provenance_root_dictionary([
+                    ("self", shape_a, Topology.GetDictionary(self)),
+                    ("tool", shape_b, Topology.GetDictionary(otherTopology)),
+                ], policy="merge")[0])
+            return contact_result
+
+        if result is not None:
+            # Preserve legitimate edge/vertex Common when no faces exist.
+            return result
 
         if BRepAlgoAPI_Section is None:
             return None
@@ -5057,15 +5151,21 @@ class Topology:
 
         return section_result
     def XOR(self, otherTopology: Any, transferDictionary: bool = False):
-        a_minus_b = self._binary_boolean(otherTopology, BRepAlgoAPI_Cut, False)
-        b_minus_a = Topology._binary_boolean(otherTopology, self, BRepAlgoAPI_Cut, False)
+        # Keep successful nonempty branches; never reinterpret failure as empty.
+        empty = object()
+        a_minus_b = self._binary_boolean(otherTopology, BRepAlgoAPI_Cut,
+                                        transferDictionary, _empty_result=empty)
+        b_minus_a = Topology._binary_boolean(otherTopology, self, BRepAlgoAPI_Cut,
+                                            transferDictionary, _empty_result=empty)
         if a_minus_b is None or b_minus_a is None:
             return None
-        # symdif = the two disjoint caps of material. Wrapping them as a
-        # Cluster (not via Merge, which would promote to a CellComplex) keeps
-        # the result type faithful to topologic_core's symdif->Cluster contract.
+        pieces = [item for item in (a_minus_b, b_minus_a) if item is not empty]
+        if not pieces:
+            return None
+        if len(pieces) == 1:
+            return pieces[0]
         from topologicpy.Cluster import Cluster
-        return Cluster.ByTopologies([a_minus_b, b_minus_a])
+        return Cluster.ByTopologies(pieces)
 
     @staticmethod
     def _max_shape_dimension(shape: Any) -> int:
@@ -5388,6 +5488,19 @@ class Topology:
             if builder.HasErrors():
                 return None
 
+            split_history = None
+            if transferDictionary or _lineage_capture_active():
+                # CellsBuilder exposes the split images only after result
+                # population. Freeze them before Impose's selection rewrites
+                # the live history. No extra Boolean geometry is computed.
+                builder.AddAllToResult()
+                if builder.HasErrors():
+                    raise RuntimeError("Impose could not populate split history")
+                split_history = _SelectedSplitHistory(builder.History(), shapes_a + shapes_b)
+                builder.RemoveAllFromResult()
+                if builder.HasErrors():
+                    raise RuntimeError("Impose could not reset temporary selection")
+
             for a in shapes_a:
                 to_take = TopTools_ListOfShape()
                 to_take.Append(a)
@@ -5404,7 +5517,8 @@ class Topology:
 
             builder.MakeContainers()
             result_shape = builder.Shape()
-            history = builder.History() if (transferDictionary or _lineage_capture_active()) else None
+            history = (split_history.finish(builder.History(), result_shape)
+                       if split_history is not None else None)
         except Exception:
             return None
         if _is_null_shape(result_shape):
@@ -5833,6 +5947,9 @@ class Topology:
                                 )
                             except Exception:
                                 pass
+                        else:
+                            # Capture is independent of dictionary writes.
+                            _capture_modifier_only(shape, new_shape, maker, "GTransform")
                         result = Topology.ByOcctShape(new_shape)
                         if result is not None:
                             result = Topology._rewrap_preserving_wrapper(result, self)
@@ -5974,6 +6091,9 @@ class Topology:
                                 )
                             except Exception:
                                 pass
+                        else:
+                            # Capture is independent of dictionary writes.
+                            _capture_modifier_only(shape, new_shape, maker, "Transform")
                         result = Topology.ByOcctShape(new_shape)
                         if result is not None:
                             result = Topology._rewrap_preserving_wrapper(result, topology)
@@ -6252,6 +6372,10 @@ class Topology:
             copied_shape
         ):
             return None
+
+        # Exact copy lineage, including subshapes without dictionaries.
+        _capture_modifier_only(shape, copied_shape, copier, "Copy")
+
 
         # ------------------------------------------------------------------
         # Wrap copied native topology.
@@ -6541,6 +6665,10 @@ class Topology:
             copied_shape
         ):
             return None
+
+        # Exact copy lineage, including subshapes without dictionaries.
+        _capture_modifier_only(shape, copied_shape, copier, "Copy")
+
 
         # ------------------------------------------------------------------
         # Transfer dictionaries for the root shape and every subshape.
