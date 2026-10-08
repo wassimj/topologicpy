@@ -342,3 +342,63 @@ def test_boolean_cube_matrix_face_provenance(state, operation):
     assert descendants == expected, "Descendants differ from independently expected face links"
     assert {source for source, target in observed} == eligible
     assert set(outputs) == {target for source, target in expected}, "Unexplained result face"
+
+
+@pytest.mark.parametrize("deep", [False, True])
+def test_compose_avoids_reseeding_and_preserves_reference_records(monkeypatch, deep):
+    source = Cell.Prism()
+    moved, p1 = Topology.Translate(source, x=1, returnProvenance=True)
+    final, p2 = Topology.Copy(moved, deep=deep, returnProvenance=True)
+    before1 = p1.History()
+    before2 = p2.History()
+    original = Provenance._topology_entities
+    traversals = []
+    def traced(cls, root):
+        traversals.append(root)
+        return original(root)
+    # Warm semantic reduction separately: the assertion concerns redundant
+    # constructor seeding, not traversal required by direct Records().
+    semantic1, semantic2 = p1.Records(), p2.Records()
+    original_records = Provenance.Records
+    def semantic(self, **kwargs):
+        if self is p1: return [dict(r) for r in semantic1]
+        if self is p2: return [dict(r) for r in semantic2]
+        return original_records(self, **kwargs)
+    monkeypatch.setattr(Provenance, "Records", semantic)
+    monkeypatch.setattr(Provenance, "_topology_entities", classmethod(traced))
+    result = Provenance.Compose(p1, p2)
+    assert len(traversals) == 1  # authoritative shared boundary only
+    monkeypatch.setattr(Provenance, "_topology_entities", classmethod(lambda cls, root: original(root)))
+    reference = Provenance.ByRecords(result.History(), operation="Compose", sources=result.sources,
+                                    result=final, supported=result.supported, metadata=result.metadata)
+    assert result.Records() == reference.Records()
+    for face in Topology.Faces(final):
+        assert result.Origins(face) == reference.Origins(face)
+    for face in Topology.Faces(source):
+        assert result.Descendants(face) == reference.Descendants(face)
+    assert p1.History() == before1
+    assert p2.History() == before2
+
+
+@pytest.mark.parametrize("same", [True, False])
+def test_provenance_native_identity_bypasses_public_validation(monkeypatch, same):
+    class NativeShape:
+        def IsNull(self): return False
+        def IsSame(self, other): return same
+    class Endpoint:
+        def __init__(self): self.shape = NativeShape()
+    def forbidden(*args, **kwargs):
+        raise AssertionError("Public type validation must not run for native endpoints")
+    monkeypatch.setattr(Topology, "IsSame", forbidden)
+    assert Provenance._same(Endpoint(), Endpoint()) is same
+
+
+def test_provenance_unavailable_native_identity_keeps_public_fallback(monkeypatch):
+    calls = []
+    def public(a, b, **kwargs):
+        calls.append((a, b))
+        return True
+    monkeypatch.setattr(Topology, "IsSame", public)
+    a, b = object(), object()
+    assert Provenance._same(a, b)
+    assert calls == [(a, b)]

@@ -229,14 +229,20 @@ class Provenance:
             "boundaryMatches": boundary_matches,
         }
 
-        return Provenance.ByRecords(
-            records,
-            operation="Compose",
-            sources=sources,
-            result=last.result,
-            supported=all(p.supported for p in items),
-            metadata=metadata,
-        )
+        # Inputs already seeded their roots during capture; boundary stitching
+        # above has reconciled every composed endpoint. Construct the container
+        # without reseeding all historical operands and the final result again.
+        # Keep ordinary ByRecords construction unchanged for uninitialised input.
+        composed = Provenance.__new__(Provenance)
+        composed._history = [copy.copy(record) for record in records]
+        composed.operation = "Compose"
+        composed.sources = dict(sources)
+        composed.result = last.result
+        composed.supported = all(p.supported for p in items)
+        composed.metadata = copy.deepcopy(metadata)
+        for record in composed._history:
+            composed._stamp_record(record)
+        return composed
 
     @staticmethod
     def _native_shape(topology):
@@ -381,6 +387,21 @@ class Provenance:
             return True
         if a is None or b is None:
             return False
+
+        # Captured native endpoints can be compared directly. Routing each
+        # pair through public IsSame revalidates up to ten wrapper types on
+        # both sides, dominating semantic reduction on even small histories.
+        # This is the same native identity predicate used by the backend;
+        # a False answer is authoritative, never geometric coincidence.
+        shape_a = cls._native_shape(a)
+        shape_b = cls._native_shape(b)
+        if shape_a is not None and shape_b is not None:
+            try:
+                if not shape_a.IsNull() and not shape_b.IsNull():
+                    return bool(shape_a.IsSame(shape_b))
+            except Exception:
+                # Null, legacy or unavailable native APIs retain public logic.
+                pass
 
         # Preserve TopologicPy's exact identity contract. On PythonOCC this
         # checks native TopoDS_Shape.IsSame first, then the wrapper UUID.

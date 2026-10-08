@@ -268,3 +268,61 @@ def test_topologies_by_file_and_path_wrapper_dispatch(tmp_path, monkeypatch, ifc
 
 
 
+
+
+@pytest.fixture
+def relationship_writer(monkeypatch):
+    """Load only the writer, with a mock API (no geometry kernel required)."""
+    import importlib.util
+    from pathlib import Path
+    api = types.ModuleType("ifcopenshell.api")
+    calls = []
+    def run(usecase, file, **settings):
+        calls.append((usecase, settings))
+        return types.SimpleNamespace(OwnerHistory=None)
+    api.run = run
+    package = types.ModuleType("ifcopenshell")
+    package.api = api
+    monkeypatch.setitem(sys.modules, "ifcopenshell", package)
+    monkeypatch.setitem(sys.modules, "ifcopenshell.api", api)
+    path = Path(__file__).resolve().parents[1] / "src/topologicpy/ifc/relationships.py"
+    spec = importlib.util.spec_from_file_location("_relationship_writer_test", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.IFCRelationshipWriter(types.SimpleNamespace(silent=False)), calls
+
+
+class _RelationshipEntity:
+    def __init__(self, *classes):
+        self.classes = classes
+    def is_a(self, cls):
+        return cls in self.classes
+
+
+@pytest.mark.parametrize("classes,usecase,parent_key", [
+    (("IfcSpace", "IfcSpatialStructureElement"), "aggregate.assign_object", "relating_object"),
+    (("IfcWall",), "spatial.assign_container", "relating_structure"),
+    (("IfcOpeningElement", "IfcFeatureElementSubtraction"), None, None),
+])
+def test_export_relationship_spatial_placement(relationship_writer, classes, usecase, parent_key):
+    writer, calls = relationship_writer
+    entity = _RelationshipEntity(*classes)
+    storey = object()
+    writer.contain_in_storey(object(), types.SimpleNamespace(owner_history=object()), entity, types.SimpleNamespace(storey=storey))
+    if usecase is None:
+        assert calls == []
+    else:
+        assert calls == [(usecase, {"products": [entity], parent_key: storey})]
+
+
+def test_export_relationship_opening_uses_supported_feature_api(relationship_writer):
+    writer, calls = relationship_writer
+    wall = _RelationshipEntity("IfcWall")
+    opening = _RelationshipEntity("IfcOpeningElement")
+    door = _RelationshipEntity("IfcDoor")
+    created = [({"id": "w"}, wall), ({"id": "o", "host_id": "w"}, opening), ({"id": "d", "opening_id": "o"}, door)]
+    writer.postprocess_relationships(object(), types.SimpleNamespace(owner_history=None), None, created)
+    assert calls == [
+        ("feature.add_feature", {"feature": opening, "element": wall}),
+        ("feature.add_filling", {"opening": opening, "element": door}),
+    ]

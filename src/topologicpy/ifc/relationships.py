@@ -35,12 +35,24 @@ class IFCRelationshipWriter:
         """
         Contain a product in a spatial structure (typically storey).
         """
-        rel = self._run_usecase(
-            "spatial.assign_container",
-            f,
-            products=[ifc_el],
-            relating_structure=spatial.storey,
-        )
+        # Spatial objects belong to the decomposition hierarchy. Subtractive
+        # features belong to their hosts, not independently to the storey.
+        if ifc_el.is_a("IfcFeatureElementSubtraction"):
+            return
+        if ifc_el.is_a("IfcSpatialStructureElement"):
+            rel = self._run_usecase(
+                "aggregate.assign_object",
+                f,
+                products=[ifc_el],
+                relating_object=spatial.storey,
+            )
+        else:
+            rel = self._run_usecase(
+                "spatial.assign_container",
+                f,
+                products=[ifc_el],
+                relating_structure=spatial.storey,
+            )
         self._assign_owner_history(rel, ctx)
 
     def postprocess_relationships(
@@ -96,9 +108,9 @@ class IFCRelationshipWriter:
                 continue
 
             rel = self._run_usecase(
-                "feature.add_opening",
+                "feature.add_feature",
                 f,
-                opening=ifc_el,
+                feature=ifc_el,
                 element=host_ifc,
             )
             self._assign_owner_history(rel, ctx)

@@ -4640,8 +4640,10 @@ class Topology:
         if occt_op_class is None:
             return None
 
-        shape_a = _shape_from_topology(self)
-        shape_b = _shape_from_topology(otherTopology)
+        # ByTopologies clusters retain their members with shape=None. Build
+        # native compounds (including nested clusters) before Cut/Common.
+        shape_a = _ensure_compound_shape(self)
+        shape_b = _ensure_compound_shape(otherTopology)
         if _is_null_shape(shape_a) or _is_null_shape(shape_b):
             return None
 
@@ -5028,8 +5030,8 @@ class Topology:
         # ------------------------------------------------------------------
 
         contact_faces = []
-        shape_a = _shape_from_topology(self)
-        shape_b = _shape_from_topology(otherTopology)
+        shape_a = _ensure_compound_shape(self)
+        shape_b = _ensure_compound_shape(otherTopology)
         for face_a in _iter_occ_subshapes_unique(shape_a, TopAbs_FACE):
             for face_b in _iter_occ_subshapes_unique(shape_b, TopAbs_FACE):
                 common = BRepAlgoAPI_Common(face_a, face_b)
@@ -5079,11 +5081,11 @@ class Topology:
         if BRepAlgoAPI_Section is None:
             return None
 
-        shape_a = _shape_from_topology(
+        shape_a = _ensure_compound_shape(
             self
         )
 
-        shape_b = _shape_from_topology(
+        shape_b = _ensure_compound_shape(
             otherTopology
         )
 
@@ -5145,8 +5147,8 @@ class Topology:
         if transferDictionary:
             dictionary = _provenance_root_dictionary(
                 [
-                    ("self", _shape_from_topology(self), Topology.GetDictionary(self)),
-                    ("other", _shape_from_topology(otherTopology), Topology.GetDictionary(otherTopology)),
+                    ("self", _ensure_compound_shape(self), Topology.GetDictionary(self)),
+                    ("other", _ensure_compound_shape(otherTopology), Topology.GetDictionary(otherTopology)),
                 ],
                 policy="merge",
             )[0]
