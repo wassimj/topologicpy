@@ -3183,7 +3183,7 @@ class TGraph:
             undirected_loops,
             label,
         )
-    
+
     @staticmethod
     def _MaximumFlowEngine(
         nodes: List[Any],
@@ -8758,6 +8758,7 @@ class TGraph:
         mantissa: int = 6,
         tolerance: float = 0.001,
         silent: bool = False,
+        radius: Optional[float] = None,
     ) -> Optional[List[float]]:
         """
         Computes the betweenness centrality of the input TGraph and stores the result
@@ -8787,7 +8788,8 @@ class TGraph:
         angular : bool , optional
             If set to True, the calculation uses angular weights between adjacent edge
             segments. This option is valid only when useEdges is set to True.
-            Default is False.
+            Default is False. Straight transitions are regularized to at least
+            1e-9 quarter-turn units to avoid zero-cost cycles.
         angularWeightKey : str , optional
             The dictionary key under which to store the computed angular weight on the
             line graph edges. Default is "angular_weight".
@@ -8810,6 +8812,13 @@ class TGraph:
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
 
+        radius : float , optional
+            Inclusive shortest-path cutoff. None means global analysis. Uses hop
+            count when weightKey is None, otherwise accumulated edge cost; angular
+            mode uses quarter-turn units. Must be finite and non-negative.
+            Existing normalization uses the full graph order even with a cutoff.
+            These centrality methods retain their undirected analysis convention.
+
         Returns
         -------
         list or None
@@ -8825,6 +8834,12 @@ class TGraph:
             if not silent:
                 print("TGraph.BetweennessCentrality - Error: The input graph is not a valid TGraph. Returning None.")
             return None
+
+        if radius is not None:
+            if isinstance(radius, bool) or not isinstance(radius, numbers.Real) or not math.isfinite(radius) or radius < 0:
+                if not silent:
+                    print("TGraph.BetweennessCentrality - Error: radius must be finite and non-negative. Returning None.")
+                return None
 
         if angular and not useEdges:
             if not silent:
@@ -9029,7 +9044,7 @@ class TGraph:
 
             if isinstance(weightKey, str):
                 wl = weightKey.lower()
-                if ("len" in wl) or ("dis" in wl):
+                if wl in ("length", "distance"):
                     return _edge_length(g, edgeRecord)
 
             d = edgeRecord.get("dictionary", {})
@@ -9101,8 +9116,7 @@ class TGraph:
                 if edgeIndex is None:
                     continue
 
-                inputGraph._edges[edgeIndex].setdefault("dictionary", {})["u_edge_id"] = i
-                idToEdge[i] = inputGraph._edges[edgeIndex]
+                idToEdge[edgeIndex] = inputGraph._edges[edgeIndex]
 
             for lineEdgeRecord in _active_edge_records(lineGraph):
                 src = lineEdgeRecord.get("src", None)
@@ -9120,8 +9134,8 @@ class TGraph:
                 dsrc = lineGraph._vertices[src].get("dictionary", {})
                 ddst = lineGraph._vertices[dst].get("dictionary", {})
 
-                idA = dsrc.get("u_edge_id", None)
-                idB = ddst.get("u_edge_id", None)
+                idA = dsrc.get("original_edge_index", None)
+                idB = ddst.get("original_edge_index", None)
 
                 edgeA = idToEdge.get(idA, None)
                 edgeB = idToEdge.get(idB, None)
@@ -9142,7 +9156,9 @@ class TGraph:
                 if angle is None:
                     continue
 
-                w = _round(float(angle) / 90.0)
+                # A straight continuation has zero deflection, a right turn one.
+                # Positive regularization avoids zero-cost cycles in Brandes.
+                w = max((180.0 - float(angle)) / 90.0, 1e-9)
                 edgeIndex = lineEdgeRecord.get("index", None)
 
                 if lineGraph._validate_edge_index(edgeIndex, active=False):
@@ -9158,13 +9174,8 @@ class TGraph:
             if not edgeRecords:
                 return []
 
-            for i, edgeRecord in enumerate(edgeRecords):
-                edgeIndex = edgeRecord.get("index", None)
-                if graph._validate_edge_index(edgeIndex, active=False):
-                    graph._edges[edgeIndex].setdefault("dictionary", {})["u_edge_id"] = i
-
             try:
-                lineGraph = TGraph.LineGraph(graph, transferEdgeDictionaries=True)
+                lineGraph = TGraph.LineGraph(graph, transferDictionaries=True)
             except TypeError:
                 try:
                     lineGraph = TGraph.LineGraph(graph)
@@ -9180,7 +9191,7 @@ class TGraph:
 
             _set_angular_weights_on_line_graph(graph, lineGraph)
 
-            _ = TGraph.BetweennessCentrality(
+            lineValues = TGraph.BetweennessCentrality(
                 lineGraph,
                 weightKey=angularWeightKey,
                 normalize=normalize,
@@ -9195,15 +9206,15 @@ class TGraph:
                 colorScaleMode=colorScaleMode,
                 mantissa=mantissa,
                 tolerance=tolerance,
-                silent=silent
+                silent=silent,
+                radius=radius,
             )
 
             idToValue = {}
 
-            for lineVertex in _active_vertex_indices(lineGraph):
+            for lineVertex, value in zip(_active_vertex_indices(lineGraph), lineValues or []):
                 d = lineGraph._vertices[lineVertex].get("dictionary", {})
-                eid = d.get("u_edge_id", None)
-                value = d.get(key, None)
+                eid = d.get("original_edge_index", None)
                 if eid is not None and value is not None:
                     idToValue[eid] = value
 
@@ -9211,12 +9222,11 @@ class TGraph:
 
             for i, edgeRecord in enumerate(edgeRecords):
                 edgeIndex = edgeRecord.get("index", None)
-                value = _round(idToValue.get(i, 0.0))
+                value = _round(idToValue.get(edgeIndex, 0.0))
                 out_vals.append(value)
 
                 if graph._validate_edge_index(edgeIndex, active=False):
                     d = graph._edges[edgeIndex].setdefault("dictionary", {})
-                    d.pop("u_edge_id", None)
                     if key is not None:
                         d[key] = value
 
@@ -9298,6 +9308,8 @@ class TGraph:
                     S.append(v)
                     dv = dist[v]
 
+                    if radius is not None and dv + 1 > radius:
+                        continue
                     for w, _weight, edgeLocalIndex in adj.get(v, []):
                         if dist[w] < 0:
                             Q.append(w)
@@ -9358,6 +9370,8 @@ class TGraph:
 
                     for w, weight, edgeLocalIndex in adj.get(v, []):
                         vw_dist = dv + float(weight)
+                        if radius is not None and vw_dist > radius:
+                            continue
 
                         if vw_dist < dist[w] - eq_eps:
                             dist[w] = vw_dist
@@ -13377,6 +13391,7 @@ class TGraph:
         mantissa: int = 6,
         tolerance: float = 0.0001,
         silent: bool = False,
+        preserveRepresentations: bool = False,
     ):
         """
         Creates a TGraph of spatial relationships among the input topologies and
@@ -13441,6 +13456,12 @@ class TGraph:
             Geometric tolerance. Default 0.0001.
         silent : bool , optional
             If True, suppresses warnings. Default False.
+
+        preserveRepresentations : bool , optional
+            If True, vertex representations retain the original input topologies.
+            Coordinate dictionaries still use centroid/internal points. Default
+            False preserves the existing point representations. References are
+            retained without copying; storeBREP is separate serialization support.
 
         Returns
         -------
@@ -13647,7 +13668,7 @@ class TGraph:
                 rv = None
             c = _coords_from_vertex(rv) if rv is not None else [0.0, 0.0, 0.0]
             d["x"], d["y"], d["z"] = c[0], c[1], c[2]
-            g.AddVertex(dictionary=d, representation=rv)
+            g.AddVertex(dictionary=d, representation=topo if preserveRepresentations else rv)
             rep_vertices.append(rv)
             coords.append(c)
 
@@ -13793,6 +13814,18 @@ class TGraph:
                     )
                 except Exception:
                     rel = None
+                # SpatialRelationship does not implement the generic intersects
+                # label on every backend/version. Verify it geometrically here.
+                if rel is None and "intersects" in exact_include:
+                    try:
+                        intersection = Topology.Intersect(
+                            topology_list[i], Topology.Copy(topology_list[j]),
+                            tolerance=tolerance, silent=True)
+                        if Topology.IsInstance(intersection, "Topology"):
+                            rel = "intersects"
+                    except Exception as exc:
+                        if not silent:
+                            print(f"TGraph.BySpatialRelationships - Warning: Intersection test failed for {i}, {j}: {exc}")
                 if rel is None:
                     continue
                 rel_key = str(rel).strip().lower()
@@ -18568,16 +18601,17 @@ class TGraph:
 
     @staticmethod
     def Choice(graph: "TGraph", normalize: bool = True, key: str = "choice", mantissa: int = 6,
-               silent: bool = False) -> List[float]:
+               silent: bool = False, radius: Optional[float] = None) -> List[float]:
         """
-        Selects vertices or edges from the input TGraph using weighted random choice.
+        Computes vertex choice using betweenness centrality.
 
         Parameters
         ----------
         graph : 'TGraph'
             The input TGraph.
         normalize : bool , optional
-            If set to True, returned values are normalized. Default is True.
+            If True, uses NetworkX betweenness normalization; otherwise returns raw
+            shortest-path counts. Default is True.
         key : str , optional
             The dictionary key to use. Default is 'choice'.
         mantissa : int , optional
@@ -18585,12 +18619,15 @@ class TGraph:
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
 
+        radius : float , optional
+            Inclusive hop cutoff; None means global analysis.
+
         Returns
         -------
         List[float]
             The resulting choice list.
         """
-        return TGraph.BetweennessCentrality(graph, mode="all", normalize=normalize, key=key, mantissa=mantissa)
+        return TGraph.BetweennessCentrality(graph, normalize=normalize, nxCompatible=normalize, key=key, mantissa=mantissa, silent=silent, radius=radius)
 
     @staticmethod
     def ChromaticNumber(graph: "TGraph", maxColors: int = None, silent: bool = False) -> Optional[int]:
@@ -18697,6 +18734,7 @@ class TGraph:
         mantissa: int = 6,
         tolerance: float = 0.0001,
         silent: bool = False,
+        radius: Optional[float] = None,
     ) -> Optional[List[float]]:
         """
         Computes the closeness centrality of the input TGraph and stores the result
@@ -18726,7 +18764,8 @@ class TGraph:
         angular : bool , optional
             If set to True, the calculation uses angular weights between adjacent edge
             segments. This option is valid only when useEdges is set to True.
-            Default is False.
+            Default is False. Straight transitions are regularized to at least
+            1e-9 quarter-turn units to avoid zero-cost cycles.
         angularWeightKey : str , optional
             The dictionary key under which to store the computed angular weight on the
             line graph edges. Default is "angular_weight".
@@ -18745,6 +18784,13 @@ class TGraph:
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
 
+        radius : float , optional
+            Inclusive shortest-path cutoff. None means global analysis. Uses hop
+            count when weightKey is None, otherwise accumulated edge cost; angular
+            mode uses quarter-turn units. Must be finite and non-negative.
+            Existing normalization uses the full graph order even with a cutoff.
+            These centrality methods retain their undirected analysis convention.
+
         Returns
         -------
         list or None
@@ -18760,6 +18806,12 @@ class TGraph:
             if not silent:
                 print("TGraph.ClosenessCentrality - Error: The input graph is not a valid TGraph. Returning None.")
             return None
+
+        if radius is not None:
+            if isinstance(radius, bool) or not isinstance(radius, numbers.Real) or not math.isfinite(radius) or radius < 0:
+                if not silent:
+                    print("TGraph.ClosenessCentrality - Error: radius must be finite and non-negative. Returning None.")
+                return None
 
         if angular and not useEdges:
             if not silent:
@@ -18902,7 +18954,7 @@ class TGraph:
 
             if isinstance(weightKey, str):
                 wl = weightKey.lower()
-                if ("len" in wl) or ("dis" in wl):
+                if wl in ("length", "distance"):
                     return _edge_length(g, edgeRecord)
 
             d = edgeRecord.get("dictionary", {})
@@ -18974,8 +19026,7 @@ class TGraph:
                 if edgeIndex is None:
                     continue
 
-                inputGraph._edges[edgeIndex].setdefault("dictionary", {})["u_edge_id"] = i
-                idToEdge[i] = inputGraph._edges[edgeIndex]
+                idToEdge[edgeIndex] = inputGraph._edges[edgeIndex]
 
             for lineEdgeRecord in _active_edge_records(lineGraph):
                 srcIndex = lineEdgeRecord.get("src", None)
@@ -18993,8 +19044,8 @@ class TGraph:
                 dsrc = lineGraph._vertices[srcIndex].get("dictionary", {})
                 ddst = lineGraph._vertices[dstIndex].get("dictionary", {})
 
-                idA = dsrc.get("u_edge_id", None)
-                idB = ddst.get("u_edge_id", None)
+                idA = dsrc.get("original_edge_index", None)
+                idB = ddst.get("original_edge_index", None)
 
                 edgeA = idToEdge.get(idA, None)
                 edgeB = idToEdge.get(idB, None)
@@ -19015,7 +19066,9 @@ class TGraph:
                 if angle is None:
                     continue
 
-                w = _round(float(angle) / 90.0)
+                # A straight continuation has zero deflection, a right turn one.
+                # Positive regularization avoids zero-cost cycles in Brandes.
+                w = max((180.0 - float(angle)) / 90.0, 1e-9)
                 edgeIndex = lineEdgeRecord.get("index", None)
 
                 if lineGraph._validate_edge_index(edgeIndex, active=False):
@@ -19031,13 +19084,8 @@ class TGraph:
             if not edgeRecords:
                 return []
 
-            for i, edgeRecord in enumerate(edgeRecords):
-                edgeIndex = edgeRecord.get("index", None)
-                if graph._validate_edge_index(edgeIndex, active=False):
-                    graph._edges[edgeIndex].setdefault("dictionary", {})["u_edge_id"] = i
-
             try:
-                lineGraph = TGraph.LineGraph(graph, transferEdgeDictionaries=True)
+                lineGraph = TGraph.LineGraph(graph, transferDictionaries=True)
             except TypeError:
                 try:
                     lineGraph = TGraph.LineGraph(graph)
@@ -19078,7 +19126,7 @@ class TGraph:
                             print("TGraph.ClosenessCentrality - Error: Could not create a quotient line graph. Returning None.")
                         return None
 
-            _ = TGraph.ClosenessCentrality(
+            lineValues = TGraph.ClosenessCentrality(
                 lineGraph,
                 weightKey=lineWeightKey,
                 normalize=normalize,
@@ -19093,6 +19141,7 @@ class TGraph:
                 mantissa=mantissa,
                 tolerance=tolerance,
                 silent=silent,
+                radius=radius,
             )
 
             out_vals = []
@@ -19100,32 +19149,29 @@ class TGraph:
             if edgeKey is None:
                 idToValue = {}
 
-                for lineVertexIndex in _active_vertex_indices(lineGraph):
+                for lineVertexIndex, value in zip(_active_vertex_indices(lineGraph), lineValues or []):
                     d = lineGraph._vertices[lineVertexIndex].get("dictionary", {})
-                    eid = d.get("u_edge_id", None)
-                    value = d.get(key, None)
+                    eid = d.get("original_edge_index", None)
 
                     if eid is not None and value is not None:
                         idToValue[eid] = value
 
                 for i, edgeRecord in enumerate(edgeRecords):
                     edgeIndex = edgeRecord.get("index", None)
-                    value = _round(idToValue.get(i, 0.0))
+                    value = _round(idToValue.get(edgeIndex, 0.0))
                     out_vals.append(value)
 
                     if graph._validate_edge_index(edgeIndex, active=False):
                         d = graph._edges[edgeIndex].setdefault("dictionary", {})
-                        d.pop("u_edge_id", None)
                         if key is not None:
                             d[key] = value
 
             else:
                 groupValue = {}
 
-                for lineVertexIndex in _active_vertex_indices(lineGraph):
+                for lineVertexIndex, value in zip(_active_vertex_indices(lineGraph), lineValues or []):
                     d = lineGraph._vertices[lineVertexIndex].get("dictionary", {})
                     gid = d.get(edgeKey, d.get("label", None))
-                    value = d.get(key, None)
 
                     if gid is not None and value is not None:
                         groupValue[gid] = value
@@ -19139,7 +19185,6 @@ class TGraph:
 
                     if graph._validate_edge_index(edgeIndex, active=False):
                         d = graph._edges[edgeIndex].setdefault("dictionary", {})
-                        d.pop("u_edge_id", None)
                         if key is not None:
                             d[key] = value
 
@@ -19216,6 +19261,8 @@ class TGraph:
                 u = q.popleft()
                 du = dist[u]
 
+                if radius is not None and du + 1 > radius:
+                    continue
                 for v in adj[u].keys():
                     if dist[v] == -1:
                         dist[v] = du + 1
@@ -19240,6 +19287,8 @@ class TGraph:
 
                 for v, w in adj[u].items():
                     nd = du + float(w)
+                    if radius is not None and nd > radius:
+                        continue
 
                     if nd < dist[v]:
                         dist[v] = nd
@@ -19415,7 +19464,7 @@ class TGraph:
         tolerance = tolerance,
         silent = silent
         )
-    
+
     @staticmethod
     def CommunityPartition(
         graph: "TGraph",
@@ -21995,7 +22044,7 @@ class TGraph:
         )
 
         return out_vals
-    
+
     @staticmethod
     def DegreeCentrality_old(graph: "TGraph", mode: str = "all", normalize: bool = True,
                          key: str = "degree_centrality", mantissa: int = 6) -> List[float]:
@@ -25328,9 +25377,9 @@ class TGraph:
 
     @staticmethod
     def Integration(graph: "TGraph", normalize: bool = True, key: str = "integration", mantissa: int = 6,
-                    silent: bool = False) -> List[float]:
+                    silent: bool = False, radius: Optional[float] = None) -> List[float]:
         """
-        Computes integration values for the vertices of the input TGraph.
+        Computes closeness-based integration; this is not Hillier-Hanson normalization.
 
         Parameters
         ----------
@@ -25345,12 +25394,15 @@ class TGraph:
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
 
+        radius : float , optional
+            Inclusive hop cutoff; None means global analysis.
+
         Returns
         -------
         List[float]
             The resulting integration list.
         """
-        return TGraph.ClosenessCentrality(graph, mode="all", normalize=normalize, key=key, mantissa=mantissa)
+        return TGraph.ClosenessCentrality(graph, normalize=normalize, key=key, mantissa=mantissa, silent=silent, radius=radius)
 
     @staticmethod
     def Intersect(graphA: "TGraph", graphB: "TGraph", silent: bool = False) -> Optional["TGraph"]:
@@ -28157,7 +28209,7 @@ class TGraph:
         """
         return TGraph.Neigborhood(graph, vertices=vertices, k=k, searchType=searchType,
                                   key=key, value=value, direction=direction, silent=silent)
-    
+
     @staticmethod
     def NetworkXGraph(graph: "TGraph", nodeIDKey: str = None, edgeIDKey: str = None,
                       includeInactive: bool = False, scalarAttributes: bool = False) -> Optional[Any]:
@@ -29815,7 +29867,7 @@ class TGraph:
         d["uri"] = uri.strip()
         d.pop("ontology_uri", None)
         return graph
-    
+
     @staticmethod
     def SetVertexCoordinates(
         graph: "TGraph",
@@ -29899,7 +29951,7 @@ class TGraph:
             pass
 
         return True
-    
+
     def SetVertexDictionary(
         self,
         index: Any,
@@ -37499,10 +37551,61 @@ class TGraph:
 
     _NUMBA_BFS_PARENT = None
     _NUMBA_BFS_TREE = None
-    AngularConnectivity = Connectivity
-    AngularChoice = Choice
-    AngularIntegration = Integration
-    AngularBetweenness = Choice
+
+    @staticmethod
+    def AngularConnectivity(graph: "TGraph", key: str = "connectivity",
+                            colorKey: str = None, mode: str = "all",
+                            normalize: bool = False, mantissa: int = 6,
+                            silent: bool = False, colorScale: str = "viridis") -> Optional[List[float]]:
+        """Returns segment connectivity and stores values on input graph edges.
+
+        Connectivity counts adjacent segments; it does not weight turning angles.
+        Mode and normalization follow Connectivity on the segment line graph.
+        """
+        if not isinstance(graph, TGraph):
+            if not silent:
+                print("TGraph.AngularConnectivity - Error: Invalid TGraph. Returning None.")
+            return None
+        line_graph = TGraph.LineGraph(graph)
+        values = TGraph.Connectivity(line_graph, key=key, colorKey=colorKey,
+                                    mode=mode, normalize=normalize, mantissa=mantissa,
+                                    silent=silent, colorScale=colorScale)
+        for vertex in (v for v in line_graph._vertices if v.get("active", True)):
+            d = vertex["dictionary"]
+            edge = graph._edges[d["original_edge_index"]]
+            for field in (key, colorKey):
+                if field is not None and field in d:
+                    edge.setdefault("dictionary", {})[field] = d[field]
+        return values
+
+    @staticmethod
+    def AngularChoice(graph: "TGraph", normalize: bool = True, key: str = "choice",
+                      mantissa: int = 6, silent: bool = False,
+                      radius: Optional[float] = None) -> Optional[List[float]]:
+        """Computes angular betweenness for segments represented by graph edges.
+
+        Values are stored on the input edges. Radius uses quarter-turn units.
+        Straight transitions use the centrality method's positive regularization.
+        """
+        return TGraph.BetweennessCentrality(
+            graph, normalize=normalize, nxCompatible=normalize, useEdges=True, angular=True,
+            key=key, mantissa=mantissa, silent=silent, radius=radius)
+
+    @staticmethod
+    def AngularIntegration(graph: "TGraph", normalize: bool = True, key: str = "integration",
+                           mantissa: int = 6, silent: bool = False,
+                           radius: Optional[float] = None) -> Optional[List[float]]:
+        """Computes angular closeness for segments represented by graph edges.
+
+        Values are stored on the input edges. Radius uses quarter-turn units.
+        This is not Hillier-Hanson or normalized angular integration (NAIN).
+        Straight transitions use the centrality method's positive regularization.
+        """
+        return TGraph.ClosenessCentrality(
+            graph, normalize=normalize, useEdges=True, angular=True,
+            key=key, mantissa=mantissa, silent=silent, radius=radius)
+
+    AngularBetweenness = AngularChoice
 
 
 # -----------------------------------------------------------------------------
