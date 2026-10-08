@@ -1,5 +1,6 @@
 name: build
 on:
+  workflow_dispatch:
   pull_request:
   push:
     branches:
@@ -11,9 +12,9 @@ concurrency:
 
 jobs:
   prepare-build-info:
-    if: true
     name: Prepare Build Information
-    runs-on: ubuntu-latest
+    # Keep metadata and release infrastructure independent of the moving label.
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout the repository
         uses: actions/checkout@v6
@@ -41,9 +42,13 @@ jobs:
       branchname: ${{ github.head_ref || github.ref_name }}
 
   build-docs:
-    runs-on: ubuntu-latest
-    name: Generate Documentation using Sphinx
+    runs-on: ${{ matrix.os }}
+    name: Generate Documentation using Sphinx${{ matrix.os == 'ubuntu-26.04' && ' on Ubuntu 26.04' || '' }}
     needs: [prepare-build-info]
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, ubuntu-26.04]
     env:
       TOPOLOGICPY_CORE_BACKEND: topologic_core
     steps:
@@ -65,18 +70,19 @@ jobs:
         run: echo "__version__ = '${{ needs.prepare-build-info.outputs.anyversion }}'" > src/topologicpy/version.py
       - name: Install pandoc
         run: |
-          sudo apt install pandoc
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends pandoc
           python -m pip install pandoc
       - name: Add sphinx requirements
         run: python -m pip install -r ./docs/requirements.txt
       - name: Build and install optional dependencies (required for use with autodoc of Sphinx)
-        run: pip install --verbose ephem torch dgl dglgo scikit-learn
+        run: python -m pip install --verbose ephem torch dgl dglgo scikit-learn
       - name: Install TopologicCore backend for documentation
         # TopologicCore is a CI-only backend here; it does not need to be a
         # mandatory runtime dependency of TopologicPy.
         run: python -m pip install "topologic-core==8.0.4"
       - name: Build and install the project
-        run: pip install --verbose .
+        run: python -m pip install --verbose .
       - name: Build docs
         run: cd docs && make html
       - name: Publish the canonical ontology with the documentation
@@ -91,14 +97,19 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v6
         with:
-          name: docs
+          # Deploy only the 24.04 artifact; keep the 26.04 build for inspection.
+          name: ${{ matrix.os == 'ubuntu-24.04' && 'docs' || 'docs-ubuntu-26.04' }}
           path: docs/build/html/
           if-no-files-found: error
 
   build:
-    runs-on: ubuntu-latest
-    name: Build Universal Wheel
+    runs-on: ${{ matrix.os }}
+    name: Build Universal Wheel${{ matrix.os == 'ubuntu-26.04' && ' on Ubuntu 26.04' || '' }}
     needs: [prepare-build-info]
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, ubuntu-26.04]
     steps:
       - uses: actions/checkout@v6
       - name: Set up Python
@@ -111,7 +122,7 @@ jobs:
         run: echo "__version__ = '${{ needs.prepare-build-info.outputs.anyversion }}'" > src/topologicpy/version.py
       - name: Install dependencies
         run: |
-          pip install setuptools wheel build
+          python -m pip install setuptools wheel build
       - name: Build distribution
         run: |
           python -m build
@@ -119,6 +130,8 @@ jobs:
         run: |
           ls -R dist/
       - name: Upload universal wheel artifact (py3, any platform)
+        # The 26.04 build validates packaging; publish the canonical 24.04 wheel.
+        if: matrix.os == 'ubuntu-24.04'
         uses: actions/upload-artifact@v6
         with:
           name: topologicpy-${{ needs.prepare-build-info.outputs.anyversion }}-py3-none-any.whl
@@ -127,7 +140,7 @@ jobs:
           retention-days: 60
 
   test-topologiccore:
-    name: Test TopologicCore 8.0.4 with Python ${{ matrix.python-version }} on ${{ startsWith(matrix.os, 'macos-') && 'macOS' || startsWith(matrix.os, 'windows-') && 'Windows' || 'Linux' }}
+    name: Test TopologicCore 8.0.4 with Python ${{ matrix.python-version }} on ${{ startsWith(matrix.os, 'macos-') && 'macOS' || startsWith(matrix.os, 'windows-') && 'Windows' || (matrix.os == 'ubuntu-26.04' && 'Ubuntu 26.04' || 'Linux') }}
     runs-on: ${{ matrix.os }}
     env:
       TOPOLOGICPY_CORE_BACKEND: topologic_core
@@ -138,7 +151,7 @@ jobs:
       fail-fast: false
       matrix:
         python-version: ["3.12"]
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-24.04, ubuntu-26.04, windows-latest, macos-latest]
     steps:
       - uses: actions/checkout@v6
       - name: Set up Python ${{ matrix.python-version }}
@@ -171,7 +184,7 @@ jobs:
         run: pytest
 
   test-pythonocc:
-    name: Test PythonOCC 8.0.1 with Python ${{ matrix.python-version }} on ${{ startsWith(matrix.os, 'macos-') && 'macOS' || startsWith(matrix.os, 'windows-') && 'Windows' || 'Linux' }}
+    name: Test PythonOCC 8.0.1 with Python ${{ matrix.python-version }} on ${{ startsWith(matrix.os, 'macos-') && 'macOS' || startsWith(matrix.os, 'windows-') && 'Windows' || (matrix.os == 'ubuntu-26.04' && 'Ubuntu 26.04' || 'Linux') }}
     runs-on: ${{ matrix.os }}
     needs:
       - prepare-build-info
@@ -182,7 +195,7 @@ jobs:
       fail-fast: false
       matrix:
         python-version: ["3.12"]
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-24.04, ubuntu-26.04, windows-latest, macos-latest]
     steps:
       - uses: actions/checkout@v6
 
@@ -195,6 +208,9 @@ jobs:
             pythonocc-core=8.0.1
             pip
           cache-environment: true
+          # Ubuntu 24.04 and 26.04 share runner.os == Linux. Do not share
+          # complete binary environments between different runner images.
+          cache-environment-key: ${{ matrix.os }}-python${{ matrix.python-version }}-pythonocc8.0.1
           cache-downloads: true
 
       - name: Set version from git tag/readable name (${{ needs.prepare-build-info.outputs.anyversion }})
@@ -218,8 +234,8 @@ jobs:
         run: micromamba run -n topologicpy-occ8 pytest
 
   publish-pypi-release:
-    runs-on: ubuntu-latest
-    if: ${{ startsWith(needs.prepare-build-info.outputs.tagname, 'v') && github.event_name != 'pull_request' && (needs.prepare-build-info.outputs.branchname == 'prerelease' || needs.prepare-build-info.outputs.branchname == 'main') }}
+    runs-on: ubuntu-24.04
+    if: ${{ startsWith(needs.prepare-build-info.outputs.tagname, 'v') && github.event_name == 'push' && (needs.prepare-build-info.outputs.branchname == 'prerelease' || needs.prepare-build-info.outputs.branchname == 'main') }}
     needs:
       - prepare-build-info
       - build
@@ -235,6 +251,7 @@ jobs:
       - name: Download all artifact files (.whl)
         uses: actions/download-artifact@v7
         with:
+          pattern: topologicpy-*-py3-none-any.whl
           path: all-artifacts
       - name: Display new structure of downloaded files
         # Skip '-linux_' builds if found, PyPI rejects them; use -manylinux*.
@@ -250,7 +267,7 @@ jobs:
           print-hash: true
 
   deploy-docs:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     name: Deploy Documentation on GH Pages
     needs:
       - prepare-build-info
@@ -277,9 +294,9 @@ jobs:
     needs:
       - prepare-build-info
       - publish-pypi-release
-    if: ${{ startsWith(needs.prepare-build-info.outputs.tagname, 'v') && github.event_name != 'pull_request' && needs.prepare-build-info.outputs.branchname == 'main' }}
+    if: ${{ startsWith(needs.prepare-build-info.outputs.tagname, 'v') && github.event_name == 'push' && needs.prepare-build-info.outputs.branchname == 'main' }}
     name: Draft GitHub Release Page
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       # IMPORTANT: mandatory for GitHub Releases
       contents: write
@@ -287,6 +304,7 @@ jobs:
       - name: Download all artifact files (.whl)
         uses: actions/download-artifact@v7
         with:
+          pattern: topologicpy-*-py3-none-any.whl
           path: all-artifacts
       - name: Display structure of downloaded files
         run: ls -R all-artifacts

@@ -843,11 +843,23 @@ def test_occt_shape_roundtrip_preserves_nurbs_surface():
     )
 
 @pytest.mark.pythonocc_only
-def test_occtshape_of_lightweight_cluster_returns_none_without_restructuring_cluster():
+def test_occtshape_of_lightweight_cluster_returns_compound_without_restructuring_cluster():
     face = Face.Rectangle(silent=True)
     cluster = Cluster.ByTopologies([face], silent=True)
     assert Topology.IsInstance(cluster, "Cluster")
-    assert Topology.OCCTShape(cluster, silent=True) is None
+    from OCC.Core.TopAbs import TopAbs_COMPOUND
+    from OCC.Core.TopoDS import TopoDS_Iterator
+
+    shape = Topology.OCCTShape(cluster, silent=True)
+    assert shape is not None and not shape.IsNull()
+    assert shape.ShapeType() == TopAbs_COMPOUND
+    iterator = TopoDS_Iterator(shape)
+    assert iterator.More()
+    assert iterator.Value().IsSame(Topology.OCCTShape(face, silent=True))
+    iterator.Next()
+    assert not iterator.More()
+    assert cluster.shape is None
+    assert cluster.Topologies() == [face]
     assert len(Topology.Faces(cluster) or []) == 1
 
 def test_native_query_validation_is_non_throwing():
@@ -1547,7 +1559,7 @@ def test_native_remove_face_preserves_cylindrical_surface_exactly():
     )
 
 @pytest.mark.pythonocc_only
-def test_shapeless_cluster_falls_back_without_losing_surviving_curve():
+def test_lightweight_cluster_removes_edge_without_losing_surviving_curve():
     arc_a = Edge.Arc(
         radius=1.0,
         fromAngle=0.0,
@@ -1567,12 +1579,17 @@ def test_shapeless_cluster_falls_back_without_losing_surviving_curve():
 
     cluster = Cluster.ByTopologies([arc_a, arc_b], silent=True)
     assert Topology.IsInstance(cluster, "Cluster")
-    assert Topology.OCCTShape(cluster, silent=True) is None
+    shape = Topology.OCCTShape(cluster, silent=True)
+    assert shape is not None and not shape.IsNull()
+    assert cluster.shape is None
+    assert cluster.Topologies() == [arc_a, arc_b]
 
     expected_length = Edge.Length(arc_b, mantissa=None, silent=True)
 
     result = Topology.RemoveEdges(cluster, arc_a, silent=True)
     assert result is not None
+    assert cluster.shape is None
+    assert cluster.Topologies() == [arc_a, arc_b]
 
     edges = Topology.Edges(result, silent=True) or []
     assert len(edges) == 1
