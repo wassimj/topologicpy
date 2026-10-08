@@ -1158,7 +1158,7 @@ def _make_occ_merge(topology: Any, other_topology: Any = None, transfer_dictiona
     if topology is None:
         return None
 
-    base_shape = _shape_from_topology(topology)
+    base_shape = _ensure_compound_shape(topology)
     if _is_null_shape(base_shape):
         return None
 
@@ -1300,7 +1300,7 @@ def _make_occ_union(
     if topology is None:
         return None
 
-    base_shape = _shape_from_topology(
+    base_shape = _ensure_compound_shape(
         topology
     )
 
@@ -1710,11 +1710,13 @@ def _make_occ_union(
 # entry point guaranteed to exist in every PythonOCC generation.
 
 
-def _ensure_compound_shape(topology: Any) -> Any:
+def _ensure_compound_shape(topology: Any, _active=None) -> Any:
     """
     Return a valid OCCT shape for a wrapper, building a compound for shapeless
     aggregates (a Cluster constructed via ByTopologies keeps shape=None).
-    Without this, BREP serialization of a Cluster returns None.
+    The compound is temporary: member wrappers and dictionaries are retained.
+    A missing member shape or a cyclic aggregate fails the whole operation;
+    returning a partial compound would silently discard input geometry.
     """
     shape = _shape_from_topology(topology)
     if not _is_null_shape(shape):
@@ -1722,14 +1724,18 @@ def _ensure_compound_shape(topology: Any) -> Any:
     members = getattr(topology, "topologies", None)
     if not members:
         return None
-    member_shapes = []
-    for m in members:
-        s_ = _ensure_compound_shape(m)
-        if s_ is not None and not _is_null_shape(s_):
-            member_shapes.append(s_)
-    if not member_shapes:
+    active = set() if _active is None else _active
+    key = id(topology)
+    if key in active:
         return None
+    active.add(key)
     try:
+        member_shapes = []
+        for member in members:
+            member_shape = _ensure_compound_shape(member, active)
+            if _is_null_shape(member_shape):
+                return None
+            member_shapes.append(member_shape)
         from OCC.Core.TopoDS import TopoDS_Compound
         from OCC.Core.BRep import BRep_Builder
         builder = BRep_Builder()
@@ -1740,6 +1746,8 @@ def _ensure_compound_shape(topology: Any) -> Any:
         return compound
     except Exception:
         return None
+    finally:
+        active.remove(key)
 
 
 def _shape_to_brep_text(shape: Any) -> Optional[str]:
@@ -2954,6 +2962,8 @@ class Topology:
         tuple
             ``(status, result)``.
         """
+        if _topology_type_name(self) == "Cluster":
+            return self._EditClusterMembers("RemoveCoplanarFacesNative", epsilon, polyhedron, tolerance)
         type_name = (
             _topology_type_name(self)
             or ""
@@ -5613,9 +5623,9 @@ class Topology:
         #
         # Always preserve the actual DIRECT constituent hierarchy.
         #
-        # Cluster.ByTopologies intentionally stores a native OCCT Compound, so
-        # topology.topologies may be empty. Retrieve the direct children through
-        # Cluster.Topologies() first.
+        # ByTopologies clusters retain direct member wrappers with shape=None.
+        # Imported native compounds may lack cached wrappers; recover their
+        # direct children below rather than flattening their hierarchy.
         # ------------------------------------------------------------------
 
         if type_name == "Cluster":
@@ -6126,7 +6136,7 @@ class Topology:
     # -------------------------------------------------------------------
 
     def GetOcctShape(self):
-        return _shape_from_topology(self)
+        return _ensure_compound_shape(self)
 
     def Analyze(self):
         type_name = _topology_type_name(self) or "Unknown"
@@ -6142,11 +6152,16 @@ class Topology:
         return f"{type_name}: " + ", ".join(f"{k}={v}" for k, v in counts.items())
 
     def Cleanup(self):
+        if _topology_type_name(self) == "Cluster":
+            return Topology._apply_transform_to_members(
+                self, lambda member: member.Cleanup(),
+            )
         shape = _shape_from_topology(self)
         if _is_null_shape(shape) or ShapeUpgrade_UnifySameDomain is None:
             return self
         try:
             unifier = ShapeUpgrade_UnifySameDomain(shape, True, True, True)
+            unifier.SetSafeInputMode(True)
             unifier.Build()
             new_shape = unifier.Shape()
             if _is_null_shape(new_shape):
@@ -6154,7 +6169,9 @@ class Topology:
             result = Topology.ByOcctShape(new_shape)
             if result is None:
                 return self
-            result.dictionary = Topology.GetDictionary(self)
+            result.SetDictionary(Topology.GetDictionary(self))
+            for name in ("contents", "contexts", "apertures"):
+                setattr(result, name, list(getattr(self, name, []) or []))
             return result
         except Exception:
             return self
@@ -8156,11 +8173,85 @@ class Topology:
 
         return None
 
+    def _FinalizeNativeRemoval(self, edited_shape, tolerance: float = 0.0001):
+        """Distinguish complete deletion from failure to wrap surviving geometry."""
+        if _is_null_shape(edited_shape):
+            # ReShape returns a null shape when the root is removed.
+            return True, None
+        result = self._FinalizeNativeEdit(edited_shape, tolerance=tolerance)
+        if result is not None:
+            return True, result
+        try:
+            # Query the kernel directly: a failed traversal must not be treated
+            # as an empty result by the defensive enumeration helpers.
+            if (edited_shape.ShapeType() == TopAbs_VERTEX
+                    or TopExp_Explorer(edited_shape, TopAbs_VERTEX).More()):
+                return False, None
+            return True, None
+        except Exception:
+            return False, None
+
+    def _EditClusterMembers(self, method, *args, **kwargs):
+        """Edit direct members without losing unrelated Cluster geometry.
+
+        Removal may return (True, None) for a completely deleted member.
+        A failed member aborts the edit. Nested clusters retain their hierarchy
+        and aggregate metadata.
+        """
+        from .cluster import Cluster
+
+        members = self.Topologies() or []
+        if not members:
+            # Imported native compounds may not cache direct member wrappers.
+            try:
+                from OCC.Core.TopoDS import TopoDS_Iterator
+                shape = _shape_from_topology(self)
+                if _is_null_shape(shape):
+                    return False, None
+                iterator = TopoDS_Iterator(shape)
+                while iterator.More():
+                    member = Topology.ByOcctShape(iterator.Value())
+                    if not isinstance(member, Topology):
+                        return False, None
+                    members.append(member)
+                    iterator.Next()
+            except Exception:
+                return False, None
+            if not members:
+                return False, None
+        edited = []
+        changed = False
+        for member in members:
+            try:
+                status, result = getattr(member, method)(*args, **kwargs)
+            except Exception:
+                return False, None
+            if status is not True:
+                return False, None
+            if result is not None:
+                if not isinstance(result, Topology):
+                    return False, None
+                edited.append(result)
+            changed = changed or result is not member
+        if not changed:
+            return True, self
+        if not edited:
+            return True, None
+        result = Cluster.ByTopologies(edited)
+        if result is None:
+            return False, None
+        result.SetDictionary(Topology.GetDictionary(self))
+        for name in ("contents", "contexts", "apertures"):
+            setattr(result, name, list(getattr(self, name, []) or []))
+        return True, result
+
     def RemoveFacesNative(self, faces, tolerance: float = 0.0001):
         """
         Removes the specified Faces using OCCT ShapeBuild_ReShape while
         preserving surviving analytic and BSpline/NURBS surfaces exactly.
         """
+        if _topology_type_name(self) == "Cluster":
+            return self._EditClusterMembers("RemoveFacesNative", faces, tolerance)
         shape = _shape_from_topology(self)
         if _is_null_shape(shape):
             return False, None
@@ -8182,8 +8273,7 @@ class Topology:
                 reshaper.Remove(face_shape)
 
             edited_shape = reshaper.Apply(shape)
-            result = self._FinalizeNativeEdit(edited_shape, tolerance=tolerance)
-            return True, result
+            return self._FinalizeNativeRemoval(edited_shape, tolerance=tolerance)
 
         except Exception:
             return False, None
@@ -8196,6 +8286,8 @@ class Topology:
         established cascading-removal semantics. Free Edges are removed
         directly. Surviving curve geometry remains exact.
         """
+        if _topology_type_name(self) == "Cluster":
+            return self._EditClusterMembers("RemoveEdgesNative", edges, tolerance)
         shape = _shape_from_topology(self)
         if _is_null_shape(shape):
             return False, None
@@ -8240,8 +8332,7 @@ class Topology:
                 reshaper.Remove(remove_shape)
 
             edited_shape = reshaper.Apply(shape)
-            result = self._FinalizeNativeEdit(edited_shape, tolerance=tolerance)
-            return True, result
+            return self._FinalizeNativeRemoval(edited_shape, tolerance=tolerance)
 
         except Exception:
             return False, None
@@ -8254,6 +8345,8 @@ class Topology:
         preserving the established TopologicPy semantics while retaining exact
         surviving curve and surface geometry.
         """
+        if _topology_type_name(self) == "Cluster":
+            return self._EditClusterMembers("RemoveVerticesNative", vertices, tolerance)
         shape = _shape_from_topology(self)
         if _is_null_shape(shape):
             return False, None
@@ -8318,8 +8411,7 @@ class Topology:
                 reshaper.Remove(remove_shape)
 
             edited_shape = reshaper.Apply(shape)
-            result = self._FinalizeNativeEdit(edited_shape, tolerance=tolerance)
-            return True, result
+            return self._FinalizeNativeRemoval(edited_shape, tolerance=tolerance)
 
         except Exception:
             return False, None
@@ -8357,6 +8449,8 @@ class Topology:
         tuple
             ``(status, result)``.
         """
+        if _topology_type_name(self) == "Cluster":
+            return self._EditClusterMembers("RemoveCollinearEdgesNative", angTolerance, polyhedron, tolerance)
         type_name = (
             _topology_type_name(self)
             or ""
@@ -8691,7 +8785,7 @@ class Topology:
 
     def BoundingBoxOBBNative(self, optimal: bool = True):
         """Returns native OCCT oriented-bounding-box data."""
-        shape = _shape_from_topology(self)
+        shape = _ensure_compound_shape(self)
         if _is_null_shape(shape):
             return None
 
@@ -8870,7 +8964,7 @@ class Topology:
         BSpline/NURBS geometry therefore remains exact until OCCT performs the
         tessellation.
         """
-        shape = _shape_from_topology(self)
+        shape = _ensure_compound_shape(self)
 
         if _is_null_shape(shape):
             return None
@@ -9808,7 +9902,7 @@ class Topology:
         Returns the precise native axis-aligned bounds:
         ``[xmin, ymin, zmin, xmax, ymax, zmax]``.
         """
-        shape = _shape_from_topology(self)
+        shape = _ensure_compound_shape(self)
         if _is_null_shape(shape):
             return None
 

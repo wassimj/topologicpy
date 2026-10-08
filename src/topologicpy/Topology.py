@@ -18131,6 +18131,10 @@ class Topology():
         """
         Returns the OCCT shape of the input topology.
 
+        Under PythonOCC, a Cluster without a stored native shape is represented
+        by a temporary compound of its members, including nested Clusters.
+        This does not change the Cluster's stored members or dictionaries.
+
         Parameters
         ----------
         topology : topologic_core.Topology
@@ -18163,13 +18167,13 @@ class Topology():
                 print("Error:", error)
             return None
 
-        # PythonOCC lightweight aggregate wrappers such as Cluster may
-        # intentionally have no single native shape.
+        # PythonOCC constructs a temporary native compound for lightweight
+        # Clusters. None now indicates that no complete shape could be built.
         if shape is None:
             if not silent:
                 print(
-                    "Topology.OCCTShape - Warning: The input topology does not "
-                    "have a single OCCT shape. Returning None."
+                    "Topology.OCCTShape - Warning: Could not retrieve a complete "
+                    "OCCT shape. Returning None."
                 )
             return None
 
