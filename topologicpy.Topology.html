@@ -4120,6 +4120,9 @@ calculated automatically and set to 10% of the overall size of the face.</p>
 <dt class="sig sig-object py" id="topologicpy.Topology.Topology.OCCTShape">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">OCCTShape</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.OCCTShape" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the OCCT shape of the input topology.</p>
+<p>Under PythonOCC, a Cluster without a stored native shape is represented
+by a temporary compound of its members, including nested Clusters.
+This does not change the Cluster’s stored members or dictionaries.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
