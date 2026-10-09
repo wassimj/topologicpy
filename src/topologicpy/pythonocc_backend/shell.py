@@ -101,10 +101,11 @@ class Shell(Topology):
         from .topology import _iter_occ_subshapes, TopAbs_FACE
         sewn_faces = [Topology.ByOcctShape(f) for f in _iter_occ_subshapes(occ_shell, TopAbs_FACE)]
         sewn_faces = [f for f in sewn_faces if isinstance(f, Face)]
-        if len(sewn_faces) == len(valid_faces):
+        sewn = len(sewn_faces) == len(valid_faces)
+        if sewn:
             valid_faces = sewn_faces
         shell = Shell(shape=occ_shell, faces=valid_faces)
-        Shell._patch_edge_face_membership(shell, valid_faces, tolerance=tolerance)
+        Shell._patch_edge_face_membership(shell, valid_faces, tolerance=tolerance, sewn=sewn)
         return shell
 
     @staticmethod
@@ -3261,8 +3262,28 @@ class Shell(Topology):
         return groups
 
     @staticmethod
-    def _patch_edge_face_membership(shell, faces, tolerance: float = 0.0001):
+    def _patch_edge_face_membership(shell, faces, tolerance: float = 0.0001, sewn: bool = False):
         """Attach curve-aware per-Shell owning-Face information to extracted Edges."""
+        if sewn:
+            # Sewing has already established shared native Edge identity. Do
+            # not rediscover it with pairwise sampled-curve comparisons: a
+            # sliced floor grid can contain thousands of Edge occurrences.
+            from OCC.Core.TopTools import TopTools_IndexedMapOfShape
+            edge_map = TopTools_IndexedMapOfShape()
+            groups = {}
+            for face in faces:
+                if not isinstance(face, Face):
+                    continue
+                for edge in face.Edges() or []:
+                    if not isinstance(edge, Edge):
+                        continue
+                    index = edge_map.Add(edge.shape)
+                    groups.setdefault(index, []).append((face, edge))
+            for pairs in groups.values():
+                owning_faces = unique_by_uuid([face for face, _ in pairs])
+                for _, edge in pairs:
+                    Shell._set_edge_face_membership(shell, edge, owning_faces)
+            return
         incidence=Shell._edge_face_incidence(faces,tolerance=tolerance)
         seen=[]
         for face in faces:
@@ -3275,28 +3296,32 @@ class Shell(Topology):
                     continue
                 seen.append(edge)
                 owning_faces=unique_by_uuid([f for f,_ in Shell._IncidencePairs(incidence,edge,tolerance=tolerance)])
-                by_host=getattr(edge,'_shell_faces_by_host',None)
-                if by_host is None:
-                    by_host={}; edge._shell_faces_by_host=by_host
-                by_host[shell._uuid]=owning_faces
-                if not getattr(edge,'_shell_faces_patched',False):
-                    edge._shell_faces_patched=True
-                    def _edge_faces(self,hostTopology=None,output=None):
-                        host_map=getattr(self,'_shell_faces_by_host',None) or {}
-                        if hostTopology is not None:
-                            host_key=getattr(hostTopology,'_uuid',None)
-                            if host_key is not None and host_key in host_map:
-                                result=list(host_map[host_key])
-                            else:
-                                result=Topology.SuperTopologies(self,hostTopology,'Face') or []
-                        elif host_map:
-                            result=list(next(reversed(list(host_map.values()))))
-                        else:
-                            result=[]
-                        if output is not None:
-                            output.extend(result); return 0
-                        return result
-                    edge.Faces=types.MethodType(_edge_faces,edge)
+                Shell._set_edge_face_membership(shell, edge, owning_faces)
+
+    @staticmethod
+    def _set_edge_face_membership(shell, edge, owning_faces):
+        by_host=getattr(edge,'_shell_faces_by_host',None)
+        if by_host is None:
+            by_host={}; edge._shell_faces_by_host=by_host
+        by_host[shell._uuid]=owning_faces
+        if not getattr(edge,'_shell_faces_patched',False):
+            edge._shell_faces_patched=True
+            def _edge_faces(self,hostTopology=None,output=None):
+                host_map=getattr(self,'_shell_faces_by_host',None) or {}
+                if hostTopology is not None:
+                    host_key=getattr(hostTopology,'_uuid',None)
+                    if host_key is not None and host_key in host_map:
+                        result=list(host_map[host_key])
+                    else:
+                        result=Topology.SuperTopologies(self,hostTopology,'Face') or []
+                elif host_map:
+                    result=list(next(reversed(list(host_map.values()))))
+                else:
+                    result=[]
+                if output is not None:
+                    output.extend(result); return 0
+                return result
+            edge.Faces=types.MethodType(_edge_faces,edge)
 
     def Faces(self, hostTopology=None, faces=None):
         if not _is_null_shape(getattr(self, "shape", None)):
@@ -3378,9 +3403,38 @@ class Shell(Topology):
             else None
         )
 
+        native_boundary_map = None
+        if isinstance(host, Shell) and not _is_null_shape(host.shape):
+            from OCC.Core.TopTools import TopTools_IndexedMapOfShape
+            native_boundary_map = TopTools_IndexedMapOfShape()
+            if native_boundary is None:
+                # OCCT 7 lacks BRepGraph. Count native Edge occurrences, not
+                # sampled curve matches, and include both uses of seam Edges.
+                from .topology import _iter_occ_subshapes
+                edge_map = TopTools_IndexedMapOfShape()
+                use_counts = {}
+                for shape in _iter_occ_subshapes(host.shape, TopAbs_EDGE):
+                    index = edge_map.Add(shape)
+                    use_counts[index] = use_counts.get(index, 0) + 1
+                for index, count in use_counts.items():
+                    if count == 1:
+                        native_boundary_map.Add(edge_map.FindKey(index))
+            else:
+                for edge in native_boundary:
+                    native_boundary_map.Add(edge.shape)
+
         boundary_edges = []
         other_edges = []
-        if native_boundary is not None:
+        if native_boundary_map is not None:
+            seen = TopTools_IndexedMapOfShape()
+            for edge in edges:
+                if native_boundary_map.Contains(edge.shape):
+                    if not seen.Contains(edge.shape):
+                        seen.Add(edge.shape)
+                        boundary_edges.append(edge)
+                else:
+                    other_edges.append(edge)
+        elif native_boundary is not None:
             for edge in edges:
                 if any(Shell._EdgesSame(edge, candidate, tolerance=tolerance) for candidate in native_boundary):
                     if not any(Shell._EdgesSame(edge, e, tolerance=tolerance) for e in boundary_edges):

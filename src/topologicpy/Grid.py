@@ -25,7 +25,7 @@ class Grid:
     """
     Creates grids on planar and non-planar Faces.
 
-    Grid.OnFace is intentionally the only public method.
+    Grid.OnFace creates the Edges; Grid.Vertices also finds their intersections.
     """
 
     # -------------------------------------------------------------------------
@@ -872,3 +872,152 @@ class Grid:
             return None
 
         return Cluster.ByTopologies(resultEdges, silent=True)
+
+    @staticmethod
+    def Vertices(grid, tolerance: float = 0.0001, silent: bool = False):
+        """
+        Return unique grid Edge endpoints and intersections in 3D.
+
+        Parameters
+        ----------
+        grid : topologic_core.Topology or list
+            A grid topology (such as the Cluster returned by Grid.OnFace),
+            or a list of Edges. Edges need not have been split at crossings.
+        tolerance : float, optional
+            Model-unit distance used for intersections and deduplication.
+            Default is 0.0001.
+        silent : bool, optional
+            Suppress error messages. Default is False.
+
+        Returns
+        -------
+        list
+            Vertices, with endpoints first, followed by new intersection
+            Vertices. Empty input returns an empty list; invalid input or a
+            failed native intersection operation returns None.
+
+        Notes
+        -----
+        PythonOCC splits all Edges in one native operation, supporting exact
+        curved Edges as well as straight Edges. TopologicCore uses analytical
+        3D segment intersections with bounding-box pruning. Spatial hashing
+        deduplicates the output without comparing every pair of Vertices.
+        Overlapping Edges contribute their endpoints; an overlap is not
+        sampled into an infinite set of intersection points. Input geometry
+        is not replaced by the split geometry.
+        """
+        from topologicpy.Edge import Edge
+        from topologicpy.Topology import Topology
+        from topologicpy.Vertex import Vertex
+
+        def error(message):
+            if not silent:
+                print("Grid.Vertices - Error: " + message + " Returning None.")
+            return None
+
+        tol = Grid._Tolerance(tolerance)
+        if not math.isfinite(tol):
+            return error("Tolerance must be finite.")
+        if isinstance(grid, (list, tuple)):
+            if not all(Topology.IsInstance(edge, "Edge") for edge in grid):
+                return error("The input list must contain only Edges.")
+            edges = list(grid)
+        elif Topology.IsInstance(grid, "Topology"):
+            edges = [grid] if Topology.IsInstance(grid, "Edge") else Topology.Edges(grid)
+        else:
+            return error("The input grid must be a topology or a list of Edges.")
+        if not edges:
+            return []
+
+        analytical = Topology._IsTopologicCoreBackend()
+        vertices, buckets, segments = [], {}, []
+        tol2 = tol * tol
+
+        def append(vertex, point=None):
+            point = Grid._Coordinates(vertex) if point is None else point
+            key = tuple(math.floor(x / tol) for x in point)
+            for dx in (-1, 0, 1):
+                for dy in (-1, 0, 1):
+                    for dz in (-1, 0, 1):
+                        for existing in buckets.get((key[0]+dx, key[1]+dy, key[2]+dz), ()):
+                            if sum((point[i]-existing[i])**2 for i in range(3)) <= tol2:
+                                return
+            buckets.setdefault(key, []).append(point)
+            vertices.append(vertex)
+
+        for edge in edges:
+            ends = Edge.Vertices(edge, silent=True)
+            if not ends:
+                return error("Could not extract an Edge's endpoints.")
+            for vertex in ends:
+                append(vertex)
+            if analytical:
+                a, b = Grid._Coordinates(ends[0]), Grid._Coordinates(ends[-1])
+                segments.append((a, b, [min(a[i], b[i]) for i in range(3)],
+                                 [max(a[i], b[i]) for i in range(3)]))
+
+        if not analytical:
+            try:
+                from OCC.Core.BOPAlgo import BOPAlgo_Splitter
+                from OCC.Core.TopAbs import TopAbs_VERTEX
+                from topologicpy.pythonocc_backend.topology import _iter_occ_subshapes_unique
+                from topologicpy.pythonocc_backend.vertex import Vertex as NativeVertex
+                from OCC.Core.TopTools import TopTools_IndexedMapOfShape
+                seen = TopTools_IndexedMapOfShape()
+                splitter = BOPAlgo_Splitter()
+                splitter.SetNonDestructive(True)
+                splitter.SetToFillHistory(False)
+                splitter.SetFuzzyValue(tol)
+                edge_count = 0
+                for edge in edges:
+                    if not seen.Contains(edge.shape):
+                        seen.Add(edge.shape)
+                        splitter.AddArgument(edge.shape)
+                        edge_count += 1
+                if edge_count < 2:
+                    return vertices
+                splitter.Perform()
+                if splitter.HasErrors():
+                    return error("Native Edge intersection failed.")
+                for shape in _iter_occ_subshapes_unique(splitter.Shape(), TopAbs_VERTEX):
+                    append(NativeVertex.ByOcctShape(shape))
+                return vertices
+            except Exception as exc:
+                return error("Native Edge intersection failed: " + str(exc) + ".")
+
+        # Sweep along the longest bounding-box axis; reject pairs whose 3D
+        # boxes cannot meet before computing their segment intersection.
+        axis = max(range(3), key=lambda i: max(s[3][i] for s in segments)-min(s[2][i] for s in segments))
+        segments.sort(key=lambda s: s[2][axis])
+        active = []
+
+        def cross(a, b):
+            return [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]]
+
+        for a, b, lower, upper in segments:
+            active = [s for s in active if s[3][axis] >= lower[axis]-tol]
+            r = Grid._Subtract(b, a)
+            rr = Grid._Dot(r, r)
+            for c, d, other_lower, other_upper in active:
+                if any(upper[i] < other_lower[i]-tol or other_upper[i] < lower[i]-tol for i in range(3)):
+                    continue
+                s = Grid._Subtract(d, c)
+                ss = Grid._Dot(s, s)
+                normal = cross(r, s)
+                denominator = Grid._Dot(normal, normal)
+                if rr == 0 or ss == 0 or denominator <= 1e-24*rr*ss:
+                    continue  # Parallel overlaps add no points beyond endpoints.
+                delta = Grid._Subtract(c, a)
+                t = Grid._Dot(cross(delta, s), normal) / denominator
+                u = Grid._Dot(cross(delta, r), normal) / denominator
+                if not (-tol/math.sqrt(rr) <= t <= 1+tol/math.sqrt(rr) and
+                        -tol/math.sqrt(ss) <= u <= 1+tol/math.sqrt(ss)):
+                    continue
+                t, u = max(0, min(1, t)), max(0, min(1, u))
+                p = Grid._Add(a, Grid._Scale(r, t))
+                q = Grid._Add(c, Grid._Scale(s, u))
+                if sum((p[i]-q[i])**2 for i in range(3)) <= tol2:
+                    point = [(p[i]+q[i])*0.5 for i in range(3)]
+                    append(Vertex.ByCoordinates(*point), point)
+            active.append((a, b, lower, upper))
+        return vertices

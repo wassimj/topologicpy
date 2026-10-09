@@ -23,6 +23,456 @@ import numpy as np
 
 class Face():
     @staticmethod
+    def AxialEdges(face, obstacles=None, reduce: bool = True,
+                   samplingDistance: float = None, maxCandidates: int = 10000,
+                   maxSamples: int = 1000, returnReport: bool = False,
+                   tolerance: float = 0.0001, silent: bool = False):
+        """Generates maximal straight visibility Edges in a planar polygonal Face.
+
+        This is an approximate sampled axial map, not a DepthmapX all-lines or
+        fewest-lines implementation. Candidates use boundary directions and rays
+        from sampled interior points toward polygon corners. reduce=True greedily
+        covers sampled witnesses by visibility from a distributed working set of
+        candidate edges (expanding it if needed), bridges their
+        intersection graph, then removes redundant edges while retaining sampled
+        coverage and connectivity within each free-space component.
+
+        obstacles is a list of coplanar polygonal Faces or closed Wires. Face holes
+        are always excluded. Curved boundaries and non-planar input are rejected.
+        samplingDistance defaults to one sixth of the largest bounding dimension.
+        Positive maxSamples/maxCandidates limits bound the working set. Sampling
+        is coarsened when needed, and candidate generation stops at its budget,
+        returning the available map with a warning instead of discarding it.
+        Returns a list of Edges in the original
+        plane. returnReport=True returns edges, candidateCount, sampleCount,
+        uncoveredSamples, componentCount, samplingDistance and approximate=True.
+        The report also includes truncated, limitsReached, coverageComplete,
+        connected, componentConnected and evaluatedCandidateCount. Coverage refers to retained samples;
+        coarsened or capped sampling does not establish full spatial coverage.
+        Boundary tangent contact is permitted; obstacle interiors are never crossed.
+        Output edges have edge_id/uuid, source_face_id and axial_index dictionaries.
+        """
+        from topologicpy.Topology import Topology
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Wire import Wire
+        from topologicpy.Dictionary import Dictionary
+        from shapely.geometry import Polygon, Point, LineString
+        from shapely.ops import unary_union
+        from shapely.strtree import STRtree
+        import shapely
+        from collections import deque
+        from itertools import zip_longest
+        try:
+            if not Topology.IsInstance(face, "Face") or not math.isfinite(tolerance) or tolerance <= 0:
+                raise ValueError("A valid Face and positive tolerance are required")
+            if Face.IsPlanar(face, tolerance=tolerance, silent=True) is not True:
+                raise ValueError("The input Face must be planar")
+            if any(isinstance(n, bool) or not isinstance(n, int) or n < 1 for n in (maxSamples, maxCandidates)):
+                raise ValueError("Sample and candidate limits must be positive integers")
+            origin = np.array(Vertex.Coordinates(Topology.Centroid(face), mantissa=12), dtype=float)
+            normal = np.array(Face.Normal(face, mantissa=12), dtype=float)
+            normal /= np.linalg.norm(normal)
+            reference = np.eye(3)[int(np.argmin(np.abs(normal)))]
+            axis_x = np.cross(reference, normal)
+            axis_x /= np.linalg.norm(axis_x)
+            axis_y = np.cross(normal, axis_x)
+
+            def xy(vertex):
+                delta = np.array(Vertex.Coordinates(vertex, mantissa=12), dtype=float)-origin
+                if abs(float(np.dot(delta, normal))) > tolerance:
+                    raise ValueError("All boundaries and obstacles must be coplanar")
+                return (float(np.dot(delta, axis_x)), float(np.dot(delta, axis_y)))
+
+            def ring(wire):
+                raw = []
+                for edge in Topology.Edges(wire):
+                    a, b = xy(Edge.StartVertex(edge)), xy(Edge.EndVertex(edge))
+                    if abs(Edge.Length(edge, mantissa=12)-math.dist(a, b)) > tolerance:
+                        raise ValueError("Curved boundaries are not supported")
+                    raw.append((a, b))
+                if len(raw) < 3:
+                    raise ValueError("Boundary must be a closed polygonal Wire")
+                chain = list(raw.pop(0))
+                while raw:
+                    for i, (a, b) in enumerate(raw):
+                        if math.dist(chain[-1], a) <= tolerance:
+                            chain.append(b)
+                            raw.pop(i)
+                            break
+                        if math.dist(chain[-1], b) <= tolerance:
+                            chain.append(a)
+                            raw.pop(i)
+                            break
+                    else:
+                        raise ValueError("Could not order the closed boundary")
+                if math.dist(chain[0], chain[-1]) > tolerance:
+                    raise ValueError("Boundary is not closed")
+                return chain
+
+            def polygon(topology):
+                if Topology.IsInstance(topology, "Face"):
+                    result = Polygon(ring(Face.ExternalBoundary(topology)),
+                                     [ring(w) for w in Face.InternalBoundaries(topology)])
+                elif Topology.IsInstance(topology, "Wire"):
+                    result = Polygon(ring(topology))
+                else:
+                    raise ValueError("Obstacles must be closed Wires or Faces")
+                if not result.is_valid or result.is_empty:
+                    raise ValueError("Invalid polygonal boundary")
+                return result
+
+            domain = polygon(face)
+            if obstacles is not None:
+                if not isinstance(obstacles, (list, tuple)):
+                    raise ValueError("obstacles must be a list")
+                if obstacles:
+                    domain = domain.difference(unary_union([polygon(o) for o in obstacles]))
+            if domain.is_empty:
+                report = {"edges": [], "candidateCount": 0, "sampleCount": 0,
+                          "uncoveredSamples": [], "componentCount": 0,
+                          "samplingDistance": samplingDistance, "approximate": True,
+                          "truncated": False, "limitsReached": [], "coverageComplete": True,
+                          "connected": True, "componentConnected": [], "samples": [],
+                          "evaluatedCandidateCount": 0, "requestedSamplingDistance": samplingDistance}
+                return report if returnReport else []
+            components = [domain] if domain.geom_type == "Polygon" else [p for p in domain.geoms if p.geom_type == "Polygon"]
+            bounds = domain.bounds
+            span = max(bounds[2]-bounds[0], bounds[3]-bounds[1])
+            spacing = span/6 if samplingDistance is None else float(samplingDistance)
+            if not math.isfinite(spacing) or spacing <= tolerance:
+                raise ValueError("samplingDistance must be finite and greater than tolerance")
+            candidate_geometries, candidate_components, witness_components = [], [], []
+            witnesses = []
+            seen = {}
+            limits_reached = set()
+            component_generators = []
+            requested_spacing = spacing
+            quotas = [maxSamples//len(components) + (i < maxSamples % len(components))
+                      for i in range(len(components))]
+
+            def parts(geometry):
+                if geometry.geom_type == "LineString":
+                    return [geometry]
+                if hasattr(geometry, "geoms"):
+                    return [part for g in geometry.geoms for part in parts(g)]
+                return []
+
+            def candidate_key(a, b, region):
+                """Deduplicate endpoints by distance, including across hash cells."""
+                cell_a = tuple(math.floor(value/tolerance) for value in a)
+                cell_b = tuple(math.floor(value/tolerance) for value in b)
+                for dx in (-1, 0, 1):
+                    for dy in (-1, 0, 1):
+                        near_a = (cell_a[0]+dx, cell_a[1]+dy)
+                        ends = seen.get((region, near_a))
+                        if ends is None:
+                            continue
+                        for ex in (-1, 0, 1):
+                            for ey in (-1, 0, 1):
+                                near_b = (cell_b[0]+ex, cell_b[1]+ey)
+                                for c, d in ends.get(near_b, ()):
+                                    if math.dist(a, c) <= tolerance and math.dist(b, d) <= tolerance:
+                                        return (cell_a, cell_b), True
+                return (cell_a, cell_b), False
+
+            for component_index, component in enumerate(components):
+                xmin, ymin, xmax, ymax = component.bounds
+                nx, ny = max(1, math.ceil((xmax-xmin)/spacing)), max(1, math.ceil((ymax-ymin)/spacing))
+                quota = quotas[component_index]
+                if quota == 0:
+                    limits_reached.add("maxSamples")
+                    component_generators.append([])
+                    continue
+                if nx*ny > quota:
+                    limits_reached.add("maxSamples")
+                    # Bound grid construction itself, including a very small
+                    # explicitly requested samplingDistance.
+                    scale = math.sqrt(nx*ny/quota)
+                    nx, ny = max(1, int(nx/scale)), max(1, int(ny/scale))
+                    while nx*ny > quota:
+                        if nx >= ny:
+                            nx = max(1, nx-1)
+                        else:
+                            ny = max(1, ny-1)
+                    spacing = max(spacing, (xmax-xmin)/nx, (ymax-ymin)/ny)
+                points = [component.representative_point()]
+                for i in range(nx):
+                    for j in range(ny):
+                        p = Point(xmin+(i+0.5)*(xmax-xmin)/nx, ymin+(j+0.5)*(ymax-ymin)/ny)
+                        if component.contains(p):
+                            points.append(p)
+                rings = [component.exterior] + list(component.interiors)
+                corners = [tuple(p) for r in rings for p in list(r.coords)[:-1]]
+                center = component.representative_point()
+                for x, y in corners:
+                    p = Point(x+(center.x-x)*1e-3, y+(center.y-y)*1e-3)
+                    if component.contains(p):
+                        points.append(p)
+                point_keys = set()
+                samples = []
+                for p in points:
+                    key = (round(p.x/tolerance), round(p.y/tolerance))
+                    if key not in point_keys:
+                        point_keys.add(key)
+                        samples.append(p)
+                if len(samples) > quota:
+                    limits_reached.add("maxSamples")
+                    # Always retain an interior representative, then distribute
+                    # the remaining budget throughout the sample ordering.
+                    samples = [samples[0]] + [samples[i] for i in
+                        np.linspace(1, len(samples)-1, quota-1, dtype=int)]
+                witnesses.extend(samples)
+                witness_components.extend([component_index]*len(samples))
+                directions = {0.0, math.pi/2}
+                for r in rings:
+                    for a, b in zip(r.coords, list(r.coords)[1:]):
+                        directions.add(math.atan2(b[1]-a[1], b[0]-a[0]) % math.pi)
+                def generate(component, component_index, seed, corners, directions):
+                    # Useful architectural directions come first for every seed,
+                    # before spending the budget on its corner-to-corner rays.
+                    primary = [0.0, math.pi/2] + sorted(directions-{0.0, math.pi/2})
+                    secondary = sorted({math.atan2(y-seed.y, x-seed.x) % math.pi
+                                        for x, y in corners}-directions)
+                    angles = primary + secondary
+                    for angle in angles:
+                        ux, uy = math.cos(angle), math.sin(angle)
+                        ray = LineString([(seed.x-2*span*ux, seed.y-2*span*uy), (seed.x+2*span*ux, seed.y+2*span*uy)])
+                        for clipped in parts(component.intersection(ray)):
+                            if clipped.length <= tolerance or clipped.distance(seed) > tolerance:
+                                continue
+                            if not component.contains(clipped.interpolate(0.5, normalized=True)):
+                                continue
+                            a, b = tuple(clipped.coords[0]), tuple(clipped.coords[-1])
+                            yield a, b, LineString([a, b]), component_index
+                component_generators.append([generate(component, component_index, seed, corners, directions)
+                                             for seed in samples])
+            # Round-robin both regions and seeds: a limit must not consume the
+            # whole budget in the first corner/room of a complex floor plan.
+            pending = deque(g for row in zip_longest(*component_generators)
+                            for g in row if g is not None)
+            while pending:
+                generator = pending.popleft()
+                try:
+                    a, b, geometry, region = next(generator)
+                except StopIteration:
+                    continue
+                pending.append(generator)
+                key, duplicate = candidate_key(a, b, region)
+                if duplicate:
+                    continue
+                if len(candidate_geometries) == maxCandidates:
+                    limits_reached.add("maxCandidates")
+                    break
+                # Store both orientations, so only nine possible start cells
+                # need probing before looking up the other endpoint.
+                seen.setdefault((region, key[0]), {}).setdefault(key[1], []).append((a, b))
+                seen.setdefault((region, key[1]), {}).setdefault(key[0], []).append((b, a))
+                candidate_geometries.append(geometry)
+                candidate_components.append(region)
+            coverage = []
+            uncovered = set()
+            component_connected = []
+            if reduce:
+                witness_coordinates = np.array([(p.x, p.y) for p in witnesses])
+                region_samples = [np.array([i for i, r in enumerate(witness_components) if r == region], dtype=int)
+                                  for region in range(len(components))]
+                boundary_starts, boundary_directions, boundary_trees = [], [], []
+                for component in components:
+                    shapely.prepare(component)
+                    segments = [LineString([a, b]) for ring in [component.exterior]+list(component.interiors)
+                                for a, b in zip(ring.coords, list(ring.coords)[1:])]
+                    coordinates = np.array([list(segment.coords) for segment in segments])
+                    boundary_starts.append(coordinates[:, 0])
+                    boundary_directions.append(coordinates[:, 1]-coordinates[:, 0])
+                    boundary_trees.append(STRtree(segments))
+
+                def visible_sightlines(region, sightlines, starts, ends):
+                    # Endpoints are inside this region. A segment that never
+                    # meets its boundary is visible; one crossing a boundary
+                    # Edge is blocked. Only corner/tangent contacts need the
+                    # more expensive whole-polygon containment predicate.
+                    pairs = boundary_trees[region].query(sightlines)
+                    visible = np.ones(len(sightlines), dtype=bool)
+                    if pairs.shape[1]:
+                        # Batch straight segment tests. Bounding-box queries
+                        # avoid testing every ray against every boundary Edge.
+                        r = (ends-starts)[pairs[0]]
+                        s = boundary_directions[region][pairs[1]]
+                        delta = boundary_starts[region][pairs[1]]-starts[pairs[0]]
+                        denominator = r[:, 0]*s[:, 1]-r[:, 1]*s[:, 0]
+                        eps = 1e-12
+                        parallel = np.abs(denominator) <= eps*np.linalg.norm(r, axis=1)*np.linalg.norm(s, axis=1)
+                        t = np.divide(delta[:, 0]*s[:, 1]-delta[:, 1]*s[:, 0], denominator,
+                                      out=np.zeros(len(denominator)), where=~parallel)
+                        u = np.divide(delta[:, 0]*r[:, 1]-delta[:, 1]*r[:, 0], denominator,
+                                      out=np.zeros(len(denominator)), where=~parallel)
+                        crossing = ~parallel & (t > eps) & (t < 1-eps) & (u > eps) & (u < 1-eps)
+                        blocked = np.unique(pairs[0][crossing])
+                        visible[blocked] = False
+                        uncertain = parallel | ((t >= -eps) & (t <= 1+eps) &
+                                                (u >= -eps) & (u <= 1+eps) & ~crossing)
+                        contacts = np.setdiff1d(np.unique(pairs[0][uncertain]), blocked)
+                        if len(contacts):
+                            visible[contacts] = shapely.covers(components[region], sightlines[contacts])
+                    return visible
+
+                coverage = {}
+
+                def evaluate(i):
+                    if i in coverage:
+                        return coverage[i]
+                    geometry, region = candidate_geometries[i], candidate_components[i]
+                    viewpoints = [geometry.interpolate(t, normalized=True) for t in (0.5, 0.25, 0.75, 1e-6, 1-1e-6)]
+                    visible = set()
+                    remaining = region_samples[region]
+                    for view in viewpoints:
+                        if not len(remaining):
+                            break
+                        ends = witness_coordinates[remaining]
+                        starts = np.broadcast_to([view.x, view.y], ends.shape)
+                        sightlines = shapely.linestrings(np.stack((starts, ends), axis=1))
+                        mask = visible_sightlines(region, sightlines, starts, ends)
+                        visible.update(int(i) for i in remaining[mask])
+                        remaining = remaining[~mask]
+                    coverage[i] = visible
+                    return visible
+
+                # Candidate generation already spreads the first rounds across
+                # regions and seeds. Evaluate this representative working set
+                # first, expanding it only if sampled coverage needs more rays.
+                # All candidates remain available as exact connecting Edges.
+                batch = max(128, 4*len(witnesses))
+                evaluated = min(batch, len(candidate_geometries))
+                for i in range(evaluated):
+                    evaluate(i)
+                selected = set()
+                uncovered = set(range(len(witnesses)))
+                while uncovered:
+                    options = [i for i in coverage if coverage[i] & uncovered]
+                    if not options:
+                        if evaluated == len(candidate_geometries):
+                            break
+                        stop = min(evaluated+batch, len(candidate_geometries))
+                        for i in range(evaluated, stop):
+                            evaluate(i)
+                        evaluated = stop
+                        continue
+                    best = max(options, key=lambda i: (len(coverage[i] & uncovered), candidate_geometries[i].length, -i))
+                    selected.add(best)
+                    uncovered -= coverage[best]
+                tree = STRtree(candidate_geometries)
+                adjacency = {}
+
+                def neighbors(i):
+                    if i not in adjacency:
+                        geometry = candidate_geometries[i]
+                        candidates = tree.query(geometry, predicate="dwithin", distance=tolerance)
+                        adjacency[i] = sorted(int(j) for j in candidates if j != i
+                                              and candidate_components[int(j)] == candidate_components[i])
+                    return adjacency[i]
+
+                def connected(chosen):
+                    if not chosen:
+                        return set()
+                    members = sorted(chosen)
+                    subset = STRtree([candidate_geometries[j] for j in members])
+                    visited, queue = {min(chosen)}, deque([min(chosen)])
+                    while queue:
+                        geometry = candidate_geometries[queue.popleft()]
+                        for index in subset.query(geometry, predicate="dwithin", distance=tolerance):
+                            j = members[int(index)]
+                            if j not in visited:
+                                visited.add(j)
+                                queue.append(j)
+                    return visited
+
+                for region in range(len(components)):
+                    chosen = {i for i in selected if candidate_components[i] == region}
+                    while connected(chosen) != chosen:
+                        reached = connected(chosen)
+                        # Try a single bridging candidate before traversing a
+                        # potentially dense graph of thousands of candidates.
+                        left = set().union(*(set(neighbors(i)) for i in reached))
+                        right = set().union(*(set(neighbors(i)) for i in chosen-reached))
+                        bridge = left & right
+                        if bridge:
+                            j = min(bridge)
+                            chosen.add(j)
+                            selected.add(j)
+                            continue
+                        queue, parent = deque(sorted(reached)), {i: None for i in reached}
+                        target = None
+                        while queue and target is None:
+                            i = queue.popleft()
+                            for j in neighbors(i):
+                                if j in parent:
+                                    continue
+                                parent[j] = i
+                                if j in chosen:
+                                    target = j
+                                    break
+                                queue.append(j)
+                        if target is None:
+                            break
+                        while target is not None:
+                            chosen.add(target)
+                            selected.add(target)
+                            target = parent[target]
+                    required = {i for i, r in enumerate(witness_components) if r == region}
+                    for i in chosen:
+                        evaluate(i)
+                    for i in sorted(chosen, key=lambda j: (candidate_geometries[j].length, j)):
+                        remaining = chosen-{i}
+                        if not remaining:
+                            continue
+                        covered = set().union(*(coverage[j] for j in remaining))
+                        if required <= covered and connected(remaining) == remaining:
+                            chosen.remove(i)
+                            selected.remove(i)
+                    component_connected.append(bool(chosen) and connected(chosen) == chosen)
+                indices = sorted(selected)
+            else:
+                indices = list(range(len(candidate_geometries)))
+            source_id = Topology.UUID(face)
+            result = []
+            for i in indices:
+                a, b = candidate_geometries[i].coords
+                p = origin+a[0]*axis_x+a[1]*axis_y
+                q = origin+b[0]*axis_x+b[1]*axis_y
+                edge = Edge.ByVertices(Vertex.ByCoordinates(*p), Vertex.ByCoordinates(*q), tolerance=tolerance, silent=True)
+                if edge is None:
+                    raise ValueError("Could not construct a candidate Edge")
+                identity = Topology.UUID(edge)
+                data = {"uuid": identity, "edge_id": identity, "source_face_id": source_id,
+                        "axial_index": len(result), "approximate": True}
+                result.append(Topology.SetDictionary(edge, Dictionary.ByKeysValues(list(data), list(data.values())), silent=True))
+            report = {"edges": result, "candidateCount": len(candidate_geometries), "sampleCount": len(witnesses),
+                      "samples": [(origin+p.x*axis_x+p.y*axis_y).tolist() for p in witnesses],
+                      "uncoveredSamples": [(origin+p.x*axis_x+p.y*axis_y).tolist() for p in
+                                           (witnesses[i] for i in sorted(uncovered))],
+                      "componentCount": len(components), "samplingDistance": spacing,
+                      "requestedSamplingDistance": requested_spacing, "approximate": True,
+                      "evaluatedCandidateCount": len(coverage) if reduce else 0,
+                      "truncated": bool(limits_reached), "limitsReached": sorted(limits_reached),
+                      "coverageComplete": (not uncovered and len(set(witness_components)) == len(components)) if reduce else None,
+                      "connected": all(component_connected) if reduce else None,
+                      "componentConnected": component_connected if reduce else None}
+            if not silent and (limits_reached or uncovered or (reduce and not all(component_connected))):
+                print("Face.AxialEdges - Warning: Returning an approximate partial map. "
+                      f"Limits reached: {sorted(limits_reached)}; uncovered samples: {len(uncovered)}. "
+                      f"Connected: {report['connected']}. "
+                      "Use returnReport=True to inspect completeness.")
+            return report if returnReport else result
+        except Exception as exc:
+            if not silent:
+                print(f"Face.AxialEdges - Error: {exc}. Returning None.")
+            return None
+
+    AxialLines = AxialEdges
+
+
+    @staticmethod
     def _EnsurePrimitivePositiveZ(face, tolerance: float = 0.0001, silent: bool = False):
         """
         Ensures that a planar primitive created in the XY plane has a +Z normal.

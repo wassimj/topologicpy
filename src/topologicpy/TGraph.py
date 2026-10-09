@@ -640,7 +640,7 @@ class TGraph:
         """
         if not isinstance(graph, TGraph):
             return None
-        return TGraph.FromPython(TGraph.ToPython(graph, includeRepresentations=False), ontology=False)
+        return TGraph.FromPython(TGraph.ToPython(graph, includeRepresentations=True), ontology=False)
 
 
     @staticmethod
@@ -7686,7 +7686,7 @@ class TGraph:
         return self.AddEdge(index[0], index[1], directed=directed, dictionary=dictionary, representation=representation, silent=silent)
 
     def AddVertex(self, dictionary: Optional[Dict[str, Any]] = None, representation: Any = None,
-                  tolerance: float = 0.0001, silent: bool = False) -> int:
+                  tolerance: float = 0.0001, silent: bool = False, originator: Any = None) -> int:
         """
         Adds a vertex to this TGraph and returns its index.
 
@@ -7700,6 +7700,12 @@ class TGraph:
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
+
+        originator : Any , optional
+            The originating topology, independent of representation. If omitted,
+            a topology input/representation is linked automatically when no
+            serialized originator_id exists. A persistent UUID is created on the
+            source if needed. Use SetVertexOriginator to explicitly clear a link.
 
         Returns
         -------
@@ -7731,11 +7737,364 @@ class TGraph:
         d.setdefault("active", True)
         record = {"index": index, "dictionary": d, "representation": rep, "active": True}
         self._vertices.append(record)
+        source = originator
+        if source is None and rep is not None and not d.get("originator_id"):
+            try:
+                from topologicpy.Topology import Topology
+                candidate = item if item is not None and not isinstance(item, dict) else rep
+                if Topology.IsInstance(candidate, "Topology"):
+                    source = candidate
+            except ImportError:
+                pass
+        if source is not None:
+            if TGraph.SetVertexOriginator(self, index, source, silent=silent) is None:
+                self._vertices.pop()
+                return None
+        elif d.get("originator_id"):
+            record["originator_id"] = d["originator_id"]
+            record["originator_type"] = d.get("originator_type")
         self._out_edges.setdefault(index, set())
         self._in_edges.setdefault(index, set())
         self._incident_edges.setdefault(index, set())
         self._invalidate_cache()
         return index
+
+    @staticmethod
+    def SetVertexOriginator(graph, vertex, originator, silent: bool = False):
+        """Links a node to its source topology independently of its representation.
+
+        Stores the exact live object, its persistent Topology.UUID and its type.
+        The UUID is also stored as originator_id in the node dictionary so it can
+        survive JSON export. A missing UUID is created on the source topology.
+        Passing None explicitly clears the link. Returns the input graph or None.
+        """
+        from topologicpy.Topology import Topology
+        index = TGraph._as_index(vertex)
+        if not isinstance(graph, TGraph) or not graph._validate_vertex_index(index):
+            return None
+        record = graph._vertices[index]
+        if originator is None:
+            for key in ("originator", "originator_id", "originator_type"):
+                record.pop(key, None)
+                record["dictionary"].pop(key, None)
+            graph._invalidate_cache()
+            return graph
+        if not Topology.IsInstance(originator, "Topology"):
+            if not silent:
+                print("TGraph.SetVertexOriginator - Error: originator must be a topology.")
+            return None
+        identity = Topology.UUID(originator, silent=silent)
+        if not identity or TGraph._TopologyDictionaryToPython(originator).get("uuid") != identity:
+            if not silent:
+                print("TGraph.SetVertexOriginator - Error: Could not persist the originator UUID.")
+            return None
+        kind = Topology.TypeAsString(originator)
+        record.update(originator=originator, originator_id=identity, originator_type=kind)
+        record["dictionary"].update(originator_id=identity, originator_type=kind)
+        graph._invalidate_cache()
+        return graph
+
+    @staticmethod
+    def VertexOriginator(graph, vertex, originators=None, silent: bool = False):
+        """Returns a node's source object, or resolves it by UUID against a list.
+
+        An explicit originators list is authoritative (useful after JSON import).
+        Duplicate UUIDs on distinct supplied objects are rejected; coordinates
+        and graph indices are never used to guess identity. Missing links return
+        None. Successful resolution restores the live reference on the record.
+        """
+        index = TGraph._as_index(vertex)
+        if not isinstance(graph, TGraph) or not graph._validate_vertex_index(index):
+            return None
+        record = graph._vertices[index]
+        identity = record.get("originator_id", record.get("dictionary", {}).get("originator_id"))
+        kind = record.get("originator_type", record.get("dictionary", {}).get("originator_type"))
+        if not identity:
+            return None
+        from topologicpy.Topology import Topology
+        if originators is None:
+            candidates = [record.get("originator")]
+        else:
+            from topologicpy.Helper import Helper
+            candidates = Helper.Flatten(list(originators))
+        matches = {}
+        for candidate in candidates:
+            if not Topology.IsInstance(candidate, "Topology"):
+                continue
+            data = TGraph._TopologyDictionaryToPython(candidate)
+            if data.get("uuid") == identity and (not kind or Topology.TypeAsString(candidate) == kind):
+                matches[id(candidate)] = candidate
+        if len(matches) != 1:
+            if not silent:
+                print(f"TGraph.VertexOriginator - Warning: UUID {identity} resolved to {len(matches)} objects.")
+            return None
+        result = next(iter(matches.values()))
+        record.update(originator=result, originator_id=identity, originator_type=Topology.TypeAsString(result))
+        return result
+
+    @staticmethod
+    def Originators(graph, originators=None, silent: bool = False):
+        """Returns source topologies in active-node order, with None for missing links."""
+        if not isinstance(graph, TGraph):
+            return None
+        return [TGraph.VertexOriginator(graph, i, originators=originators, silent=silent)
+                for i in TGraph.ActiveVertexIndices(graph)]
+
+    @staticmethod
+    def TransferDictionariesToOriginators(graph, keys=None, originators=None,
+                                         overwrite: bool = True, aggregation: str = "error",
+                                         returnReport: bool = False, silent: bool = False):
+        """Transfers active-node dictionary values to their originating topologies.
+
+        keys may be a string/list, or None for non-structural dictionary fields.
+        Existing topology fields are merged, not replaced. UUID and graph identity
+        metadata are always protected. Multiple nodes targeting one topology may
+        use error (default), first, last, sum, mean, min or max aggregation. With
+        error, identical repeated values are allowed but conflicting values fail.
+        Missing/ambiguous links and unsupported dictionary values fail preflight
+        before any topology is modified. Supply originators to resolve imported
+        UUIDs. Returns updated unique topologies, or a report when returnReport is
+        True. Failed preflight returns None (or report with errors).
+        """
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+        report = {"originators": [], "transferred": 0, "errors": []}
+        allowed = {"error", "first", "last", "sum", "mean", "min", "max"}
+        if not isinstance(graph, TGraph) or aggregation not in allowed:
+            report["errors"].append("Invalid graph or aggregation.")
+        selected = [keys] if isinstance(keys, str) else keys
+        if selected is not None and (not isinstance(selected, (list, tuple)) or not all(isinstance(k, str) for k in selected)):
+            report["errors"].append("keys must be a string or a list of strings.")
+        protected = {"uuid", "originator_id", "originator_type"}
+        structural = protected | {"index", "active", "x", "y", "z", "src", "dst", "directed"}
+
+        def supported_value(value):
+            # Dictionary._ConvertValue otherwise silently maps unknown Python
+            # objects to None. Reject them before any source is modified.
+            import numbers
+            if value is None or isinstance(value, (str, bool)):
+                return value
+            if isinstance(value, numbers.Integral):
+                return int(value)
+            if isinstance(value, numbers.Real):
+                if not math.isfinite(value):
+                    raise ValueError("non-finite dictionary number")
+                return float(value)
+            if isinstance(value, (list, tuple)):
+                return [supported_value(v) for v in value]
+            if isinstance(value, dict):
+                json.dumps(value, allow_nan=False)
+                return value
+            if Topology.IsInstance(value, "Topology"):
+                return value
+            raise ValueError(f"unsupported dictionary value type: {type(value).__name__}")
+
+        groups = {}
+        if not report["errors"]:
+            for index in TGraph.ActiveVertexIndices(graph):
+                target = TGraph.VertexOriginator(graph, index, originators=originators, silent=True)
+                if target is None:
+                    report["errors"].append(f"Node {index}: missing or ambiguous originator.")
+                    continue
+                group = groups.setdefault(id(target), {"target": target, "values": {}})
+                data = graph._vertices[index]["dictionary"]
+                fields = selected if selected is not None else [k for k in data if k not in structural]
+                for field in fields:
+                    if field not in protected and field in data:
+                        group["values"].setdefault(field, []).append(data[field])
+        pending = []
+        for group in groups.values():
+            target = group["target"]
+            merged = TGraph._TopologyDictionaryToPython(target)
+            for field, values in group["values"].items():
+                if not overwrite and field in merged:
+                    continue
+                try:
+                    if aggregation == "error":
+                        if any(value != values[0] for value in values[1:]):
+                            raise ValueError("conflicting values; choose an aggregation")
+                        value = values[0]
+                    elif aggregation in ("first", "last"):
+                        value = values[0] if aggregation == "first" else values[-1]
+                    else:
+                        import numbers
+                        if not all(isinstance(v, numbers.Real) and not isinstance(v, bool) and math.isfinite(v) for v in values):
+                            raise ValueError("numeric aggregation requires finite numbers")
+                        value = {"sum": sum, "mean": lambda v: sum(v)/len(v), "min": min, "max": max}[aggregation](values)
+                    merged[field] = supported_value(value)
+                except Exception as exc:
+                    report["errors"].append(f"Field {field}: {exc}")
+            try:
+                dictionary = Dictionary.ByKeysValues(list(merged), list(merged.values()))
+                if dictionary is None:
+                    raise ValueError("unsupported dictionary values")
+                pending.append((target, dictionary))
+            except Exception as exc:
+                report["errors"].append(str(exc))
+        if report["errors"]:
+            if not silent:
+                print("TGraph.TransferDictionariesToOriginators - Error: " + "; ".join(report["errors"]))
+            return report if returnReport else None
+        for target, dictionary in pending:
+            result = Topology.SetDictionary(target, dictionary, silent=silent)
+            if result is None:
+                report["errors"].append("The topology backend rejected a dictionary update.")
+                break
+            report["originators"].append(result)
+            report["transferred"] += 1
+        if returnReport:
+            return report
+        return None if report["errors"] else report["originators"]
+
+    @staticmethod
+    def _AxialEdgeData(edges, tolerance):
+        """Validates straight edges and returns endpoint arrays and source UUIDs."""
+        from topologicpy.Topology import Topology
+        from topologicpy.Edge import Edge
+        from topologicpy.Vertex import Vertex
+        import numpy as np
+        if not isinstance(edges, (list, tuple)) or not math.isfinite(tolerance) or tolerance <= 0:
+            raise ValueError("edges must be a list and tolerance must be positive")
+        result = []
+        for edge in edges:
+            if not Topology.IsInstance(edge, "Edge"):
+                raise ValueError("Every input must be an Edge")
+            a = np.array(Vertex.Coordinates(Edge.StartVertex(edge), mantissa=12), dtype=float)
+            b = np.array(Vertex.Coordinates(Edge.EndVertex(edge), mantissa=12), dtype=float)
+            length = float(np.linalg.norm(b-a))
+            if length <= tolerance or abs(Edge.Length(edge, mantissa=12)-length) > tolerance:
+                raise ValueError("Axial and segment graphs require non-degenerate straight edges")
+            result.append((edge, a, b, Topology.UUID(edge)))
+        return result
+
+    @staticmethod
+    def _AxialIntersections(data, tolerance, allowOverlap=False):
+        """Returns 3D contact parameters, optionally including overlap midpoints."""
+        import numpy as np
+        contacts = []
+        for i, (_, a, b, _) in enumerate(data):
+            u = b-a
+            for j in range(i+1, len(data)):
+                _, c, d, _ = data[j]
+                v = d-c
+                lengths = (float(np.linalg.norm(u)), float(np.linalg.norm(v)))
+                cross = np.cross(u, v)
+                if float(np.linalg.norm(cross)) <= 1e-12 * lengths[0]*lengths[1]:
+                    if float(np.linalg.norm(np.cross(c-a, u)))/lengths[0] > tolerance:
+                        continue
+                    t0, t1 = (float(np.dot(p-a, u)/np.dot(u, u)) for p in (c, d))
+                    low, high = max(0.0, min(t0, t1)), min(1.0, max(t0, t1))
+                    if (high-low)*lengths[0] > tolerance and not allowOverlap:
+                        raise ValueError("Overlapping collinear edges are ambiguous; merge them first")
+                    if (low-high)*lengths[0] <= tolerance:
+                        t = min(1.0, max(0.0, (low+high)/2))
+                        point = a+t*u
+                        s = min(1.0, max(0.0, float(np.dot(point-c, v)/np.dot(v, v))))
+                        if float(np.linalg.norm(point-(c+s*v))) <= tolerance:
+                            contacts.append((i, j, t, s))
+                    continue
+                t, s = np.linalg.lstsq(np.column_stack((u, -v)), c-a, rcond=None)[0]
+                if -tolerance/lengths[0] <= t <= 1+tolerance/lengths[0] and -tolerance/lengths[1] <= s <= 1+tolerance/lengths[1]:
+                    t, s = min(1.0, max(0.0, float(t))), min(1.0, max(0.0, float(s)))
+                    if float(np.linalg.norm(a+t*u-c-s*v)) <= tolerance:
+                        contacts.append((i, j, t, s))
+        return contacts
+
+    @staticmethod
+    def AxialGraph(edges, tolerance: float = 0.0001, silent: bool = False):
+        """Creates an undirected graph with one node per complete straight Edge.
+
+        Nodes retain the original Edge as originator and representation. edge_id
+        is its persistent UUID. Contacts are tested in 3D, including endpoints;
+        projected crossings at different elevations do not connect. Overlapping
+        collinear Edges are connected once per pair, including duplicates and
+        contained Edges. Each retains its own node and originator; input Edges
+        are not merged or modified. This constructor does not generate edges.
+        """
+        try:
+            data = TGraph._AxialEdgeData(edges, tolerance)
+            contacts = TGraph._AxialIntersections(data, tolerance, allowOverlap=True)
+            graph = TGraph(allowSelfLoops=False, dictionary={"graph_type": "axial"})
+            for edge, a, b, identity in data:
+                dictionary = TGraph._TopologyDictionaryToPython(edge)
+                dictionary.update(edge_id=identity, x=float((a[0]+b[0])/2), y=float((a[1]+b[1])/2), z=float((a[2]+b[2])/2))
+                graph.AddVertex(dictionary=dictionary, representation=edge, originator=edge)
+            for i, j, _, _ in contacts:
+                graph.AddEdge(i, j, dictionary={"relationship": "intersects"})
+            return graph
+        except Exception as exc:
+            if not silent:
+                print(f"TGraph.AxialGraph - Error: {exc}. Returning None.")
+            return None
+
+    @staticmethod
+    def SegmentGraph(edges, tolerance: float = 0.0001, silent: bool = False):
+        """Splits straight input Edges at 3D contacts and creates segment nodes.
+
+        Each node's originator/representation is the generated segment Edge.
+        edge_id is a stable segment UUID; parent_edge_id links to the input Edge
+        UUID, with its live reference stored as parent_originator. Connections
+        store angular_weight in quarter-turn units (straight floor 1e-9).
+        Angular wrappers recognize this graph and analyse its nodes directly.
+        """
+        from topologicpy.Edge import Edge
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
+        import numpy as np
+        import uuid
+        try:
+            data = TGraph._AxialEdgeData(edges, tolerance)
+            contacts = TGraph._AxialIntersections(data, tolerance)
+            cuts = [{0.0, 1.0} for _ in data]
+            for i, j, t, s in contacts:
+                cuts[i].add(t)
+                cuts[j].add(s)
+            graph = TGraph(allowSelfLoops=False, dictionary={"graph_type": "segment", "angular_weight_key": "angular_weight"})
+            segments = []
+            for i, (parent, a, b, identity) in enumerate(data):
+                length = float(np.linalg.norm(b-a))
+                parameters = []
+                for t in sorted(cuts[i]):
+                    if not parameters or (t-parameters[-1])*length > tolerance:
+                        parameters.append(t)
+                for low, high in zip(parameters, parameters[1:]):
+                    p, q = a+low*(b-a), a+high*(b-a)
+                    segment = Edge.ByVertices(Vertex.ByCoordinates(*p), Vertex.ByCoordinates(*q), tolerance=tolerance, silent=True)
+                    if segment is None:
+                        raise ValueError("Could not construct a segment")
+                    segment_id = str(uuid.uuid5(uuid.NAMESPACE_URL, f"{identity}:{low:.12g}:{high:.12g}"))
+                    dictionary = TGraph._TopologyDictionaryToPython(parent)
+                    for field in ("uuid", "originator_id", "originator_type"):
+                        dictionary.pop(field, None)
+                    dictionary.update(uuid=segment_id, edge_id=segment_id, parent_edge_id=identity)
+                    segment = Topology.SetDictionary(segment, TGraph._PythonToDictionary(dictionary), silent=True)
+                    dictionary.update(x=float((p[0]+q[0])/2), y=float((p[1]+q[1])/2), z=float((p[2]+q[2])/2))
+                    index = graph.AddVertex(dictionary=dictionary, representation=segment, originator=segment)
+                    graph._vertices[index]["parent_originator"] = parent
+                    segments.append((p, q))
+            for i, (a, b) in enumerate(segments):
+                for j in range(i+1, len(segments)):
+                    c, d = segments[j]
+                    vectors = None
+                    for p, other in ((a, b), (b, a)):
+                        for q, other_q in ((c, d), (d, c)):
+                            if float(np.linalg.norm(p-q)) <= tolerance:
+                                vectors = (other-p, other_q-q)
+                                break
+                        if vectors is not None:
+                            break
+                    if vectors is None:
+                        continue
+                    u, v = vectors
+                    cosine = float(np.dot(u, v)/(np.linalg.norm(u)*np.linalg.norm(v)))
+                    angle = 180-math.degrees(math.acos(max(-1.0, min(1.0, cosine))))
+                    graph.AddEdge(i, j, dictionary={"relationship": "segment_transition", "angular_weight": max(angle/90, 1e-9)})
+            return graph
+        except Exception as exc:
+            if not silent:
+                print(f"TGraph.SegmentGraph - Error: {exc}. Returning None.")
+            return None
+
 
     @staticmethod
     def AddVertexByData(graph: "TGraph", dictionary: Optional[Dict[str, Any]] = None,
@@ -11196,6 +11555,16 @@ class TGraph:
             d.setdefault("active", True)
             rep = vertex_reps[i] if i < len(vertex_reps) else None
             vertices_out.append({"index": i, "dictionary": d, "representation": rep, "active": True})
+            originator_list = representations.get("originators", [])
+            source = originator_list[i] if i < len(originator_list) else None
+            if source is None and rep is not None and not d.get("originator_id"):
+                from topologicpy.Topology import Topology
+                source = rep if Topology.IsInstance(rep, "Topology") else None
+            if source is not None:
+                if TGraph.SetVertexOriginator(g, i, source, silent=silent) is None:
+                    return None
+            elif d.get("originator_id"):
+                vertices_out[-1].update(originator_id=d["originator_id"], originator_type=d.get("originator_type"))
 
         seen = set()
         out_edges = g._out_edges
@@ -13668,7 +14037,7 @@ class TGraph:
                 rv = None
             c = _coords_from_vertex(rv) if rv is not None else [0.0, 0.0, 0.0]
             d["x"], d["y"], d["z"] = c[0], c[1], c[2]
-            g.AddVertex(dictionary=d, representation=topo if preserveRepresentations else rv)
+            g.AddVertex(dictionary=d, representation=topo if preserveRepresentations else rv, originator=topo)
             rep_vertices.append(rv)
             coords.append(c)
 
@@ -14758,7 +15127,7 @@ class TGraph:
         # Graph vertex creation
         # ------------------------------------------------------------------
 
-        def _add_vertex_record(representation, dictionary):
+        def _add_vertex_record(representation, dictionary, originator=None):
             d = (
                 dict(dictionary)
                 if isinstance(dictionary, dict)
@@ -14775,6 +15144,7 @@ class TGraph:
             index = graph.AddVertex(
                 dictionary=d,
                 representation=representation,
+                originator=originator,
             )
 
             graph._vertices[index]["dictionary"][
@@ -14939,6 +15309,7 @@ class TGraph:
             index = _add_vertex_record(
                 representative,
                 d,
+                originator=source if Topology.IsInstance(source, "Topology") else geometry_t,
             )
 
             # --------------------------------------------------------------
@@ -18133,9 +18504,17 @@ class TGraph:
                 else:
                     representation = item
 
+            originator = item.get("originator") if isinstance(item, dict) else None
+            if not isinstance(item, dict):
+                try:
+                    from topologicpy.Topology import Topology
+                    originator = item if Topology.IsInstance(item, "Topology") else None
+                except ImportError:
+                    pass
             idx = g.AddVertex(
                 dictionary=d,
                 representation=representation,
+                originator=originator,
             )
 
             if idx is None:
@@ -24877,9 +25256,15 @@ class TGraph:
                 g._vertices[idx]["active"] = False
                 g._vertices[idx]["dictionary"]["active"] = False
                 next_expected += 1
-            idx = g.AddVertex(dictionary=v.get("dictionary", {}), representation=v.get("representation"))
+            dictionary = dict(v.get("dictionary", {}))
+            for field in ("originator_id", "originator_type"):
+                if v.get(field) is not None:
+                    dictionary[field] = v[field]
+            idx = g.AddVertex(dictionary=dictionary, representation=v.get("representation"), originator=v.get("originator"))
             g._vertices[idx]["active"] = bool(v.get("active", True))
             g._vertices[idx]["dictionary"]["active"] = g._vertices[idx]["active"]
+            if v.get("parent_originator") is not None:
+                g._vertices[idx]["parent_originator"] = v["parent_originator"]
             next_expected += 1
         for e in data.get("edges", []):
             if not isinstance(e, dict):
@@ -27298,7 +27683,7 @@ class TGraph:
         for v in graphB._vertices:
             if v.get("active", True):
                 d = dict(v.get("dictionary", {})); d.pop("index", None)
-                g.AddVertex(dictionary=d, representation=v.get("representation", None))
+                g.AddVertex(dictionary=d, representation=v.get("representation", None), originator=v.get("originator"))
         for e in graphB._edges:
             if e.get("active", True):
                 d = dict(e.get("dictionary", {})); d.pop("index", None)
@@ -27819,7 +28204,7 @@ class TGraph:
         mst = TGraph(directed=False, allowSelfLoops=False, allowParallelEdges=False, dictionary=TGraph.Dictionary(graph))
         for stable in c["vertices"]:
             rec = graph._vertices[stable]
-            mst.AddVertex(dictionary=dict(rec.get("dictionary", {})), representation=rec.get("representation"))
+            mst.AddVertex(dictionary=dict(rec.get("dictionary", {})), representation=rec.get("representation"), originator=rec.get("originator"))
         parent = list(range(c["n"]))
         rank = [0] * c["n"]
         def find(x):
@@ -33621,7 +34006,9 @@ class TGraph:
                    allowParallelEdges=graph._allow_parallel_edges, dictionary=graph._dictionary)
         for old in old_indices:
             rec = graph._vertices[old]
-            g.AddVertex(dictionary=dict(rec.get("dictionary", {})), representation=rec.get("representation"))
+            index = g.AddVertex(dictionary=dict(rec.get("dictionary", {})), representation=rec.get("representation"), originator=rec.get("originator"))
+            if rec.get("parent_originator") is not None:
+                g._vertices[index]["parent_originator"] = rec["parent_originator"]
         if induced:
             allowed = set(old_indices)
             for e in graph._edges:
@@ -33989,7 +34376,7 @@ class TGraph:
 
             try:
                 new_index = len(g._vertices)
-                g.AddVertex(dictionary=d, representation=rep)
+                g.AddVertex(dictionary=d, representation=rep, originator=v.get("originator") if isinstance(v, dict) else None)
                 return new_index
             except Exception:
                 return None
@@ -34562,8 +34949,14 @@ class TGraph:
         for v in graph._vertices:
             record = {"index": v["index"], "active": v.get("active", True),
                       "dictionary": dict(v.get("dictionary", {}))}
+            if v.get("originator_id"):
+                record["originator_id"] = v["originator_id"]
+                record["originator_type"] = v.get("originator_type")
             if includeRepresentations:
                 record["representation"] = v.get("representation")
+                record["originator"] = v.get("originator")
+                if v.get("parent_originator") is not None:
+                    record["parent_originator"] = v["parent_originator"]
             vertices.append(record)
         edges = []
         for e in graph._edges:
@@ -34613,7 +35006,7 @@ class TGraph:
         active = TGraph.ActiveVertexIndices(graph)
         old_to_new = {}
         for old in active:
-            old_to_new[old] = g.AddVertex(dictionary=dict(graph._vertices[old].get("dictionary", {})))
+            old_to_new[old] = g.AddVertex(dictionary=dict(graph._vertices[old].get("dictionary", {})), representation=graph._vertices[old].get("representation"), originator=graph._vertices[old].get("originator"))
         for child, parent in parents.items():
             if parent is not None and parent in old_to_new and child in old_to_new:
                 g.AddEdge(old_to_new[parent], old_to_new[child], directed=True, dictionary={"relationship": "tree_edge"})
@@ -35078,7 +35471,7 @@ class TGraph:
                 dictionary.pop("index", None)
                 representation = vertex_b.get("representation", None)
                 new_index = len(g._vertices)
-                g.AddVertex(dictionary=dictionary, representation=representation)
+                g.AddVertex(dictionary=dictionary, representation=representation, originator=vertex_b.get("originator"))
                 b_to_g[i] = new_index
             except Exception:
                 if not silent:
@@ -37566,6 +37959,10 @@ class TGraph:
             if not silent:
                 print("TGraph.AngularConnectivity - Error: Invalid TGraph. Returning None.")
             return None
+        if graph._dictionary.get("graph_type") == "segment":
+            return TGraph.Connectivity(graph, key=key, colorKey=colorKey, mode=mode,
+                                       normalize=normalize, mantissa=mantissa,
+                                       silent=silent, colorScale=colorScale)
         line_graph = TGraph.LineGraph(graph)
         values = TGraph.Connectivity(line_graph, key=key, colorKey=colorKey,
                                     mode=mode, normalize=normalize, mantissa=mantissa,
@@ -37587,6 +37984,11 @@ class TGraph:
         Values are stored on the input edges. Radius uses quarter-turn units.
         Straight transitions use the centrality method's positive regularization.
         """
+        if isinstance(graph, TGraph) and graph._dictionary.get("graph_type") == "segment":
+            return TGraph.BetweennessCentrality(
+                graph, weightKey=graph._dictionary.get("angular_weight_key", "angular_weight"),
+                normalize=normalize, nxCompatible=normalize,
+                key=key, mantissa=mantissa, silent=silent, radius=radius)
         return TGraph.BetweennessCentrality(
             graph, normalize=normalize, nxCompatible=normalize, useEdges=True, angular=True,
             key=key, mantissa=mantissa, silent=silent, radius=radius)
@@ -37601,6 +38003,11 @@ class TGraph:
         This is not Hillier-Hanson or normalized angular integration (NAIN).
         Straight transitions use the centrality method's positive regularization.
         """
+        if isinstance(graph, TGraph) and graph._dictionary.get("graph_type") == "segment":
+            return TGraph.ClosenessCentrality(
+                graph, weightKey=graph._dictionary.get("angular_weight_key", "angular_weight"),
+                normalize=normalize,
+                key=key, mantissa=mantissa, silent=silent, radius=radius)
         return TGraph.ClosenessCentrality(
             graph, normalize=normalize, useEdges=True, angular=True,
             key=key, mantissa=mantissa, silent=silent, radius=radius)
