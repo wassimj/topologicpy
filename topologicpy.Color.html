@@ -188,10 +188,13 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Color.Color.CSSNamedColors" title="topologicpy.Color.Color.CSSNamedColors"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CSSNamedColors</span></code></a>()</p></td>
 <td><p>Returns a list of all CSS named colors.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Color.Color.PlotlyColor" title="topologicpy.Color.Color.PlotlyColor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PlotlyColor</span></code></a>(color[, alpha, useAlpha, silent])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Color.Color.ColorScale" title="topologicpy.Color.Color.ColorScale"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ColorScale</span></code></a>([colorScale, silent])</p></td>
+<td><p>Return a Plotly-compatible scale list from a name or custom list.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Color.Color.PlotlyColor" title="topologicpy.Color.Color.PlotlyColor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PlotlyColor</span></code></a>(color[, alpha, useAlpha, silent])</p></td>
 <td><p>Returns a Plotly color string based on an RGB or RGBA list.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Color.Color.RGBToHex" title="topologicpy.Color.Color.RGBToHex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RGBToHex</span></code></a>(rgb[, silent])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Color.Color.RGBToHex" title="topologicpy.Color.Color.RGBToHex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RGBToHex</span></code></a>(rgb[, silent])</p></td>
 <td><p>Converts RGB color values to a hexadecimal color string.</p></td>
 </tr>
 </tbody>
@@ -347,7 +350,8 @@ input cannot be interpreted unambiguously.</p>
 </dd>
 <dt><strong>alpha</strong><span class="classifier">float , optional</span></dt><dd><p>The alpha value. Default is None.</p>
 </dd>
-<dt><strong>colorScale</strong><span class="classifier">str , optional</span></dt><dd><p>The Plotly color scale name, or ‘default’. Default is ‘viridis’.</p>
+<dt><strong>colorScale</strong><span class="classifier">str , optional</span></dt><dd><p>A Plotly color scale name or list, ‘syntax’ (Depthmap Classic),
+‘syntax_r’ (reversed), or ‘default’. Default is ‘viridis’.</p>
 </dd>
 <dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
@@ -418,6 +422,16 @@ input cannot be interpreted unambiguously.</p>
 </dl>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Color.Color.ColorScale">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ColorScale</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">colorScale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'viridis'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Color.Color.ColorScale" title="Permalink to this definition"></a></dt>
+<dd><p>Return a Plotly-compatible scale list from a name or custom list.</p>
+<p><code class="docutils literal notranslate"><span class="pre">syntax</span></code> reproduces Depthmap Classic with blue=0 and red=1,
+including its unequal ranges and discrete HTML-safe RGB channels.
+<code class="docutils literal notranslate"><span class="pre">syntax_r</span></code> reverses it. Names are case-insensitive. Other inputs
+follow Plotly’s colorscale validation. Returned lists are independent.</p>
 </dd></dl>
 
 <dl class="py method">
