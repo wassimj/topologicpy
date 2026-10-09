@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Helper module &mdash; topologicpy 0.9.82 documentation</title>
+  <title>topologicpy.Helper module &mdash; topologicpy 0.9.83 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.9.82
+                0.9.83
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -210,22 +210,25 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.Repeat" title="topologicpy.Helper.Helper.Repeat"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Repeat</span></code></a>(listA)</p></td>
 <td><p>Repeats the input nested list so that each sublist has the same number of members.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.Sort" title="topologicpy.Helper.Helper.Sort"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Sort</span></code></a>(listA, *otherLists[, reverseFlags, silent])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.SampleIndices" title="topologicpy.Helper.Helper.SampleIndices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SampleIndices</span></code></a>(values, samples[, silent])</p></td>
+<td><p>Returns original indices at evenly spaced ranks of the sorted values.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.Sort" title="topologicpy.Helper.Helper.Sort"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Sort</span></code></a>(listA, *otherLists[, reverseFlags, silent])</p></td>
 <td><p>Sorts the first input list according to the values in the subsequent input lists in order.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.TopPercentIndices" title="topologicpy.Helper.Helper.TopPercentIndices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TopPercentIndices</span></code></a>(values, percent)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.TopPercentIndices" title="topologicpy.Helper.Helper.TopPercentIndices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TopPercentIndices</span></code></a>(values, percent)</p></td>
 <td><p>Returns the indices of the highest values corresponding to the specified percentage of the input list.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.TransferDictionariesByKey" title="topologicpy.Helper.Helper.TransferDictionariesByKey"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TransferDictionariesByKey</span></code></a>(topologies, ...[, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.TransferDictionariesByKey" title="topologicpy.Helper.Helper.TransferDictionariesByKey"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TransferDictionariesByKey</span></code></a>(topologies, ...[, ...])</p></td>
 <td><p>Transfers dictionaries from selectors to matching topologies using a shared dictionary key.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.Transpose" title="topologicpy.Helper.Helper.Transpose"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Transpose</span></code></a>(listA)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.Transpose" title="topologicpy.Helper.Helper.Transpose"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Transpose</span></code></a>(listA)</p></td>
 <td><p>Transposes the input list (swaps rows and columns).</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.Trim" title="topologicpy.Helper.Helper.Trim"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Trim</span></code></a>(listA)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.Trim" title="topologicpy.Helper.Helper.Trim"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Trim</span></code></a>(listA)</p></td>
 <td><p>Trims the input nested list so that each sublist has the same number of members.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.Version" title="topologicpy.Helper.Helper.Version"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Version</span></code></a>([check, silent])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.Version" title="topologicpy.Helper.Helper.Version"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Version</span></code></a>([check, silent])</p></td>
 <td><p>Returns the current version of the software.</p></td>
 </tr>
 </tbody>
@@ -608,6 +611,38 @@ For example Iterate([[1,2,3],[‘m’,’n’,’o’,’p’],[‘a’,’b’,
 </dl>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Helper.Helper.SampleIndices">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SampleIndices</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">values</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">samples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="headerlink" href="#topologicpy.Helper.Helper.SampleIndices" title="Permalink to this definition"></a></dt>
+<dd><p>Returns original indices at evenly spaced ranks of the sorted values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>values</strong><span class="classifier">list</span></dt><dd><p>A list of finite numerical values. The input list is not modified.</p>
+</dd>
+<dt><strong>samples</strong><span class="classifier">int</span></dt><dd><p>Number of unique indices to return, between zero and len(values).
+Two or more samples include the minimum and maximum sorted ranks.
+One sample selects the middle rank (the upper middle for even lists).</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>Suppress error messages. Default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>list</dt><dd><p>Original indices ordered by increasing value. Equal values retain
+their original order. Fractional ranks select the nearest integer,
+with half-rank ties rounded upwards. Zero samples returns [].
+Invalid inputs, including too many samples, return None.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>Distribution is by sorted rank, rather than numerical distance between
+values. Sorting takes O(n log n) time and O(n) additional memory.</p>
 </dd></dl>
 
 <dl class="py method">
