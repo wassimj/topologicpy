@@ -836,6 +836,65 @@ class Helper:
         return [listA[i] for i in order]
 
     @staticmethod
+    def SampleIndices(values: list, samples: int, silent: bool = False) -> list:
+        """
+        Returns original indices at evenly spaced ranks of the sorted values.
+
+        Parameters
+        ----------
+        values : list
+            A list of finite numerical values. The input list is not modified.
+        samples : int
+            Number of unique indices to return, between zero and len(values).
+            Two or more samples include the minimum and maximum sorted ranks.
+            One sample selects the middle rank (the upper middle for even lists).
+        silent : bool , optional
+            Suppress error messages. Default is False.
+
+        Returns
+        -------
+        list
+            Original indices ordered by increasing value. Equal values retain
+            their original order. Fractional ranks select the nearest integer,
+            with half-rank ties rounded upwards. Zero samples returns [].
+            Invalid inputs, including too many samples, return None.
+
+        Notes
+        -----
+        Distribution is by sorted rank, rather than numerical distance between
+        values. Sorting takes O(n log n) time and O(n) additional memory.
+        """
+        import math
+
+        def invalid(message):
+            if not silent:
+                print(f"Helper.SampleIndices - Error: {message} Returning None.")
+            return None
+
+        if not isinstance(values, list):
+            return invalid("The input values parameter is not a valid list.")
+        if not isinstance(samples, numbers.Integral) or isinstance(samples, bool):
+            return invalid("The input samples parameter must be an integer.")
+        if samples < 0 or samples > len(values):
+            return invalid("samples must be between zero and the number of values.")
+        try:
+            valid = all(isinstance(value, numbers.Real) and not isinstance(value, bool)
+                        and math.isfinite(value) for value in values)
+        except (TypeError, ValueError, OverflowError):
+            valid = False
+        if not valid:
+            return invalid("The input values must be finite numerical values.")
+        if samples == 0:
+            return []
+        order = sorted(range(len(values)), key=values.__getitem__)
+        if samples == 1:
+            return [order[len(order) // 2]]
+        # Integer arithmetic avoids floating-point rounding of large ranks.
+        denominator = 2 * (int(samples) - 1)
+        return [order[(2 * i * (len(order) - 1) + int(samples) - 1) // denominator]
+                for i in range(int(samples))]
+
+    @staticmethod
     def TopPercentIndices(values: list, percent: float) -> list:
         """
         Returns the indices of the highest values corresponding to the specified percentage of the input list.

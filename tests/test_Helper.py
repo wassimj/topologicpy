@@ -221,3 +221,35 @@ def test_version_uses_topologicpy_version_and_optional_check(monkeypatch):
     assert Helper.Version(check=True, silent=True) == "topologicpy:9.8.7"
 
 
+
+
+@pytest.mark.parametrize("samples, expected", [
+    (0, []), (1, [5]), (2, [0, 9]), (3, [0, 5, 9]),
+    (4, [0, 3, 6, 9]), (5, [0, 2, 5, 7, 9]),
+    (10, list(range(10))),
+])
+def test_sample_indices_evenly_spaced_sorted_ranks(samples, expected):
+    assert Helper.SampleIndices(list(range(10)), samples) == expected
+
+
+def test_sample_indices_return_original_positions_and_preserve_input():
+    values = [100, 1, 4, 0, 3, 2, 5]
+    original = values.copy()
+    indices = Helper.SampleIndices(values, 4)
+    assert indices == [3, 5, 2, 0]
+    assert [values[i] for i in indices] == [0, 2, 4, 100]
+    assert values == original
+    assert Helper.SampleIndices([7, 7, 7, 7, 7], 3) == [0, 2, 4]
+    assert Helper.SampleIndices([2, 1, 2, 1], 4) == [1, 3, 0, 2]
+    assert Helper.SampleIndices([], 0) == []
+    assert Helper.SampleIndices([42], 1) == [0]
+
+
+@pytest.mark.parametrize("values, samples", [
+    ((1, 2), 1), (None, 1), ([1, 2], True), ([1, 2], 1.0),
+    ([1, 2], -1), ([1, 2], 3), ([], 1),
+    ([1, "2"], 1), ([True], 1), ([float("nan")], 1),
+    ([float("inf")], 1), ([float("-inf")], 1),
+])
+def test_sample_indices_reject_invalid_inputs(values, samples):
+    assert Helper.SampleIndices(values, samples, silent=True) is None
