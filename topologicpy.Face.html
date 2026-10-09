@@ -148,9 +148,55 @@
     text-align: unset;
 }
 </style>
-<section id="module-topologicpy.Face">
-<span id="topologicpy-face-module"></span><h1>topologicpy.Face module<a class="headerlink" href="#module-topologicpy.Face" title="Permalink to this heading"></a></h1>
-<dl class="py class">
+<section id="topologicpy-face-module">
+<h1>topologicpy.Face module<a class="headerlink" href="#topologicpy-face-module" title="Permalink to this heading"></a></h1>
+<section id="axial-edges">
+<h2>Axial edges<a class="headerlink" href="#axial-edges" title="Permalink to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">Face.AxialEdges</span></code> generates maximal straight visibility edges within a planar
+polygonal face, respecting holes and optional coplanar polygonal face/wire
+obstacles. <code class="docutils literal notranslate"><span class="pre">Face.AxialLines</span></code> is an alias of the same function. Results retain
+the original face plane, including tilted and vertical planes. Curved boundaries
+and non-planar input are rejected.</p>
+<p>The first implementation is an approximate sampled map. It generates candidates
+from boundary directions and rays between interior samples and polygon corners.
+Reduction covers sampled witnesses by visibility from a distributed working set
+of candidate edges, expanding it if necessary for coverage. It uses the full
+candidate set to add connecting candidates, and removes redundant candidates while retaining sampled
+coverage and connectivity within each free-space component. Visibility coverage
+is not a proof of complete movement-axis coverage, nor a classical fewest-line
+map or a DepthmapX-compatible all-lines algorithm. Narrow features may require
+smaller <code class="docutils literal notranslate"><span class="pre">samplingDistance</span></code>. The default spacing is one sixth of the largest
+bounding dimension. The result is not guaranteed to be invariant under sampling
+changes or polygon decomposition details.</p>
+<p><code class="docutils literal notranslate"><span class="pre">reduce=False</span></code> returns the candidate edges. <code class="docutils literal notranslate"><span class="pre">returnReport=True</span></code> returns a
+dictionary containing <code class="docutils literal notranslate"><span class="pre">edges</span></code>, <code class="docutils literal notranslate"><span class="pre">candidateCount</span></code>, <code class="docutils literal notranslate"><span class="pre">sampleCount</span></code>,
+<code class="docutils literal notranslate"><span class="pre">uncoveredSamples</span></code>, <code class="docutils literal notranslate"><span class="pre">componentCount</span></code>, <code class="docutils literal notranslate"><span class="pre">samplingDistance</span></code> and
+<code class="docutils literal notranslate"><span class="pre">approximate=True</span></code>. Sample and candidate budgets return the available map
+instead of failing when a limit is exceeded. Sampling is coarsened and distributed
+when necessary; candidates are generated round-robin across regions and seeds,
+with architectural directions preceding corner rays.
+Near-duplicate candidates are removed by endpoint distance within <code class="docutils literal notranslate"><span class="pre">tolerance</span></code>,
+including reversed Edges and points on adjacent spatial-hash cells.
+<code class="docutils literal notranslate"><span class="pre">maxCandidates</span></code> caps the
+candidate set before reduction, so the returned map may contain fewer Edges.
+A warning identifies a partial result unless <code class="docutils literal notranslate"><span class="pre">silent=True</span></code>.</p>
+<p>The report includes <code class="docutils literal notranslate"><span class="pre">truncated</span></code>, <code class="docutils literal notranslate"><span class="pre">limitsReached</span></code>, <code class="docutils literal notranslate"><span class="pre">coverageComplete</span></code>,
+<code class="docutils literal notranslate"><span class="pre">connected</span></code> and <code class="docutils literal notranslate"><span class="pre">componentConnected</span></code>. Uncovered samples are returned as 3D
+coordinates in the original plane. Coverage completeness refers to retained
+samples, not all points in the Face. With <code class="docutils literal notranslate"><span class="pre">reduce=False</span></code>, coverage and
+connectivity are not evaluated and these fields are <code class="docutils literal notranslate"><span class="pre">None</span></code>.
+Retained witness coordinates are available as <code class="docutils literal notranslate"><span class="pre">samples</span></code> for inspecting coverage.
+The requested and actual spacing are reported separately as <code class="docutils literal notranslate"><span class="pre">requestedSamplingDistance</span></code>
+and <code class="docutils literal notranslate"><span class="pre">samplingDistance</span></code>. <code class="docutils literal notranslate"><span class="pre">evaluatedCandidateCount</span></code> records how many candidates
+needed visibility evaluation during reduction. Increasing a budget or reducing
+the requested spacing can improve an approximate map; budgets bound storage,
+not runtime.</p>
+<p>Each output edge has its own <code class="docutils literal notranslate"><span class="pre">uuid</span></code>/<code class="docutils literal notranslate"><span class="pre">edge_id</span></code>, the source face’s
+<code class="docutils literal notranslate"><span class="pre">source_face_id</span></code> and an <code class="docutils literal notranslate"><span class="pre">axial_index</span></code>. Regeneration creates new source edges
+and therefore new UUIDs. Use <code class="docutils literal notranslate"><span class="pre">TGraph.AxialGraph(edges=edges)</span></code> to analyse them,
+then transfer selected node dictionary values back with
+<code class="docutils literal notranslate"><span class="pre">TGraph.TransferDictionariesToOriginators</span></code> for colouring.</p>
+<span class="target" id="module-topologicpy.Face"></span><dl class="py class">
 <dt class="sig sig-object py" id="topologicpy.Face.Face">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">topologicpy.Face.</span></span><span class="sig-name descname"><span class="pre">Face</span></span><a class="headerlink" href="#topologicpy.Face.Face" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
@@ -172,6 +218,12 @@
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Area" title="topologicpy.Face.Face.Area"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Area</span></code></a>(face[, mantissa, silent])</p></td>
 <td><p>Returns the area of the input face.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.AxialEdges" title="topologicpy.Face.Face.AxialEdges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AxialEdges</span></code></a>(face[, obstacles, reduce, ...])</p></td>
+<td><p>Generates maximal straight visibility Edges in a planar polygonal Face.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.AxialLines" title="topologicpy.Face.Face.AxialLines"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AxialLines</span></code></a>(face[, obstacles, reduce, ...])</p></td>
+<td><p>Generates maximal straight visibility Edges in a planar polygonal Face.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.BoundingRectangle" title="topologicpy.Face.Face.BoundingRectangle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BoundingRectangle</span></code></a>(topology[, optimize, ...])</p></td>
 <td><p>Returns a face representing a bounding rectangle of the input topology.</p></td>
@@ -518,6 +570,60 @@ Default is False.</p>
 </dl>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Face.Face.AxialEdges">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AxialEdges</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">face</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obstacles</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reduce</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">samplingDistance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxCandidates</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxSamples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">returnReport</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Face.Face.AxialEdges" title="Permalink to this definition"></a></dt>
+<dd><p>Generates maximal straight visibility Edges in a planar polygonal Face.</p>
+<p>This is an approximate sampled axial map, not a DepthmapX all-lines or
+fewest-lines implementation. Candidates use boundary directions and rays
+from sampled interior points toward polygon corners. reduce=True greedily
+covers sampled witnesses by visibility from a distributed working set of
+candidate edges (expanding it if needed), bridges their
+intersection graph, then removes redundant edges while retaining sampled
+coverage and connectivity within each free-space component.</p>
+<p>obstacles is a list of coplanar polygonal Faces or closed Wires. Face holes
+are always excluded. Curved boundaries and non-planar input are rejected.
+samplingDistance defaults to one sixth of the largest bounding dimension.
+Positive maxSamples/maxCandidates limits bound the working set. Sampling
+is coarsened when needed, and candidate generation stops at its budget,
+returning the available map with a warning instead of discarding it.
+Returns a list of Edges in the original
+plane. returnReport=True returns edges, candidateCount, sampleCount,
+uncoveredSamples, componentCount, samplingDistance and approximate=True.
+The report also includes truncated, limitsReached, coverageComplete,
+connected, componentConnected and evaluatedCandidateCount. Coverage refers to retained samples;
+coarsened or capped sampling does not establish full spatial coverage.
+Boundary tangent contact is permitted; obstacle interiors are never crossed.
+Output edges have edge_id/uuid, source_face_id and axial_index dictionaries.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Face.Face.AxialLines">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AxialLines</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">face</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obstacles</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reduce</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">samplingDistance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxCandidates</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxSamples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">returnReport</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Face.Face.AxialLines" title="Permalink to this definition"></a></dt>
+<dd><p>Generates maximal straight visibility Edges in a planar polygonal Face.</p>
+<p>This is an approximate sampled axial map, not a DepthmapX all-lines or
+fewest-lines implementation. Candidates use boundary directions and rays
+from sampled interior points toward polygon corners. reduce=True greedily
+covers sampled witnesses by visibility from a distributed working set of
+candidate edges (expanding it if needed), bridges their
+intersection graph, then removes redundant edges while retaining sampled
+coverage and connectivity within each free-space component.</p>
+<p>obstacles is a list of coplanar polygonal Faces or closed Wires. Face holes
+are always excluded. Curved boundaries and non-planar input are rejected.
+samplingDistance defaults to one sixth of the largest bounding dimension.
+Positive maxSamples/maxCandidates limits bound the working set. Sampling
+is coarsened when needed, and candidate generation stops at its budget,
+returning the available map with a warning instead of discarding it.
+Returns a list of Edges in the original
+plane. returnReport=True returns edges, candidateCount, sampleCount,
+uncoveredSamples, componentCount, samplingDistance and approximate=True.
+The report also includes truncated, limitsReached, coverageComplete,
+connected, componentConnected and evaluatedCandidateCount. Coverage refers to retained samples;
+coarsened or capped sampling does not establish full spatial coverage.
+Boundary tangent contact is permitted; obstacle interiors are never crossed.
+Output edges have edge_id/uuid, source_face_id and axial_index dictionaries.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -2866,6 +2972,7 @@ Default is 6.</p>
 
 </dd></dl>
 
+</section>
 </section>
 
 

@@ -148,14 +148,20 @@
     text-align: unset;
 }
 </style>
-<section id="module-topologicpy.Grid">
-<span id="topologicpy-grid-module"></span><h1>topologicpy.Grid module<a class="headerlink" href="#module-topologicpy.Grid" title="Permalink to this heading"></a></h1>
-<dl class="py class">
+<section id="topologicpy-grid-module">
+<h1>topologicpy.Grid module<a class="headerlink" href="#topologicpy-grid-module" title="Permalink to this heading"></a></h1>
+<p><code class="docutils literal notranslate"><span class="pre">Grid.Vertices(grid)</span></code> returns unique endpoints and intersections of grid
+Edges, including crossings that have not been split into separate Edges.
+It accepts the topology returned by <code class="docutils literal notranslate"><span class="pre">Grid.OnFace</span></code> or a list of Edges.
+PythonOCC processes curved Edges in a single native batch; straight
+TopologicCore Edges use analytical 3D intersections with bounding-box pruning.
+Coincident points are deduplicated using the model-unit <code class="docutils literal notranslate"><span class="pre">tolerance</span></code>.</p>
+<span class="target" id="module-topologicpy.Grid"></span><dl class="py class">
 <dt class="sig sig-object py" id="topologicpy.Grid.Grid">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">topologicpy.Grid.</span></span><span class="sig-name descname"><span class="pre">Grid</span></span><a class="headerlink" href="#topologicpy.Grid.Grid" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Creates grids on planar and non-planar Faces.</p>
-<p>Grid.OnFace is intentionally the only public method.</p>
+<p>Grid.OnFace creates the Edges; Grid.Vertices also finds their intersections.</p>
 <p class="rubric">Methods</p>
 <table class="autosummary longtable docutils align-default">
 <colgroup>
@@ -165,6 +171,9 @@
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Grid.Grid.OnFace" title="topologicpy.Grid.Grid.OnFace"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OnFace</span></code></a>(face[, spacing, uSpacing, vSpacing, ...])</p></td>
 <td><p>Creates a grid on a planar, curved, or NURBS Face.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Grid.Grid.Vertices" title="topologicpy.Grid.Grid.Vertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Vertices</span></code></a>(grid[, tolerance, silent])</p></td>
+<td><p>Return unique grid Edge endpoints and intersections in 3D.</p></td>
 </tr>
 </tbody>
 </table>
@@ -248,6 +257,42 @@ Does not control exact backend curve geometry. Default is 128.</p>
 <p class="rubric">Notes</p>
 <p><code class="docutils literal notranslate"><span class="pre">grid_axis=&quot;u&quot;</span></code> denotes a constant-U line (which runs in the surface
 V direction), and vice versa.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Grid.Grid.Vertices">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Vertices</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">grid</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Grid.Grid.Vertices" title="Permalink to this definition"></a></dt>
+<dd><p>Return unique grid Edge endpoints and intersections in 3D.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>grid</strong><span class="classifier">topologic_core.Topology or list</span></dt><dd><p>A grid topology (such as the Cluster returned by Grid.OnFace),
+or a list of Edges. Edges need not have been split at crossings.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float, optional</span></dt><dd><p>Model-unit distance used for intersections and deduplication.
+Default is 0.0001.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool, optional</span></dt><dd><p>Suppress error messages. Default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>list</dt><dd><p>Vertices, with endpoints first, followed by new intersection
+Vertices. Empty input returns an empty list; invalid input or a
+failed native intersection operation returns None.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>PythonOCC splits all Edges in one native operation, supporting exact
+curved Edges as well as straight Edges. TopologicCore uses analytical
+3D segment intersections with bounding-box pruning. Spatial hashing
+deduplicates the output without comparing every pair of Vertices.
+Overlapping Edges contribute their endpoints; an overlap is not
+sampled into an infinite set of intersection points. Input geometry
+is not replaced by the split geometry.</p>
 </dd></dl>
 
 </dd></dl>
