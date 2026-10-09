@@ -1,5 +1,4 @@
 """Regression coverage for axial graph construction and centrality support."""
-import networkx as nx
 import pytest
 
 from topologicpy.TGraph import TGraph
@@ -21,21 +20,42 @@ def test_radius_centrality_matches_enumerated_shortest_paths(weight_key, radius)
     pairs = [(0, 1), (1, 2), (0, 3), (3, 2), (2, 4)]
     weights = [1, 2, 1, 2, 1]
     graph = make_graph(points, pairs, weights, weight_key or "cost")
-    reference = nx.Graph()
-    reference.add_nodes_from(range(6))
+    adjacency = [[] for _ in points]
     for i, (u, v) in enumerate(pairs):
-        reference.add_edge(u, v, cost=weights[i] if weight_key else 1)
+        cost = weights[i] if weight_key else 1
+        adjacency[u].append((v, cost))
+        adjacency[v].append((u, cost))
+
+    # Exhaustively enumerate simple paths: an independent oracle for this tiny
+    # positive-weight graph, including tied routes and an isolated vertex.
+    def shortest_paths(source, target):
+        candidates = []
+
+        def visit(path, cost):
+            if path[-1] == target:
+                candidates.append((cost, path))
+                return
+            for neighbor, weight in adjacency[path[-1]]:
+                if neighbor not in path:
+                    visit(path + [neighbor], cost + weight)
+
+        visit([source], 0)
+        if not candidates:
+            return None, []
+        distance = min(cost for cost, _ in candidates)
+        return distance, [path for cost, path in candidates if cost == distance]
+
+    distances = [{} for _ in points]
     expected_bc = [0.0] * 6
     expected_edges = [0.0] * len(pairs)
     pair_lookup = {frozenset(pair): i for i, pair in enumerate(pairs)}
     for u in range(6):
         for v in range(u + 1, 6):
-            if not nx.has_path(reference, u, v):
+            distance, paths = shortest_paths(u, v)
+            if distance is None or (radius is not None and distance > radius):
                 continue
-            distance = nx.shortest_path_length(reference, u, v, weight="cost")
-            if radius is not None and distance > radius:
-                continue
-            paths = list(nx.all_shortest_paths(reference, u, v, weight="cost"))
+            distances[u][v] = distance
+            distances[v][u] = distance
             for path in paths:
                 for interior in path[1:-1]:
                     expected_bc[interior] += 1 / len(paths)
@@ -43,9 +63,8 @@ def test_radius_centrality_matches_enumerated_shortest_paths(weight_key, radius)
                     expected_edges[pair_lookup[frozenset((a, b))]] += 1 / len(paths)
     expected_cc = []
     for u in range(6):
-        distances = nx.single_source_dijkstra_path_length(reference, u, cutoff=radius, weight="cost")
-        count = len(distances) - 1
-        total = sum(distances.values())
+        count = len(distances[u])
+        total = sum(distances[u].values())
         expected_cc.append(count / total if total else 0)
     assert TGraph.BetweennessCentrality(graph, weightKey=weight_key, radius=radius,
                                       nxCompatible=False, colorKey=None) == pytest.approx(expected_bc, abs=1e-6)
@@ -130,9 +149,11 @@ def test_empty_angular_graph(method):
     assert method(TGraph()) == []
 
 
-def test_global_normalization_matches_networkx():
+def test_global_normalization_on_disconnected_path():
     graph = make_graph([(i, 0, 0) for i in range(5)], [(0, 1), (1, 2), (2, 3)])
-    reference = nx.Graph([(0, 1), (1, 2), (2, 3)])
-    reference.add_node(4)
-    assert TGraph.BetweennessCentrality(graph, colorKey=None) == pytest.approx(list(nx.betweenness_centrality(reference).values()), abs=1e-6)
-    assert TGraph.ClosenessCentrality(graph, colorKey=None) == pytest.approx(list(nx.closeness_centrality(reference).values()), abs=1e-6)
+    # Two interior vertices each serve two unordered pairs; normalization is
+    # 2 / ((5 - 1) * (5 - 2)). Closeness includes the reachable fraction 3/4.
+    assert TGraph.BetweennessCentrality(graph, colorKey=None) == pytest.approx(
+        [0, 1/3, 1/3, 0, 0], abs=1e-6)
+    assert TGraph.ClosenessCentrality(graph, colorKey=None) == pytest.approx(
+        [3/8, 9/16, 9/16, 3/8, 0], abs=1e-6)
