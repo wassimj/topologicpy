@@ -572,7 +572,7 @@ class Plotly:
 
     @staticmethod
     def ColorScale(colorScale: str = "viridis"):
-        """Returns a Plotly colorscale or a TopologicPy colour-blind-friendly scale."""
+        """Returns a Plotly scale, including syntax (Depthmap Classic) and syntax_r."""
         protanopia_colors = ["#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7"]
         deuteranopia_colors = ["#377EB8", "#FF7F00", "#4DAF4A", "#F781BF", "#A65628", "#984EA3", "#999999"]
         tritanopia_colors = ["#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7"]
@@ -588,6 +588,9 @@ class Plotly:
             return list(colorScale)
         name = str(colorScale).strip()
         lower = name.lower()
+        if lower in ("syntax", "syntax_r"):
+            from topologicpy.Color import Color
+            return Color.ColorScale(lower)
         if "prota" in lower:
             return create_colorscale(protanopia_colors)
         if "deutera" in lower:
@@ -997,6 +1000,9 @@ class Plotly:
                 mn = float(minGroup) if minGroup is not None else (min(numeric_groups) if numeric_groups else 0.0)
                 mx = float(maxGroup) if maxGroup is not None else (max(numeric_groups) if numeric_groups else 1.0)
                 t = 0.0 if abs(mx - mn) <= 1e-12 else (numeric_value - mn) / (mx - mn)
+                if isinstance(colorScale, str) and colorScale.strip().lower() in ("syntax", "syntax_r"):
+                    from topologicpy.Color import Color
+                    return Color.PlotlyColor(Color.ByValueInRange(t, colorScale=colorScale))
                 return pc.sample_colorscale(Plotly.ColorScale(colorScale), [max(0.0, min(1.0, t))])[0]
             except Exception:
                 pass

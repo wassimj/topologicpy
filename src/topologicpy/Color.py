@@ -745,6 +745,66 @@ class Color:
         return rgb_list
 
     @staticmethod
+    def _syntax_rgb(ratio):
+        """Depthmap Classic at its default blue=0, red=1 display thresholds.
+
+        Independently expressed from the palette specification in:
+        https://github.com/SpaceGroupUCL/depthmapX/blob/master/salalib/pafcolor.cpp
+        The green threshold is 10% of the range; HTML-safe channels use
+        truncation after adding 0.0333, rather than rounding to 8-bit RGB.
+        """
+        t = max(0.0, min(1.0, float(ratio)))
+        byte = lambda channel: 17 * int((channel + 0.0333) * 15.0)
+        if t < 0.05:
+            return [0, byte(2.0 * t / 0.1), 255]
+        if t < 0.1:
+            return [0, 255, byte(2.0 * (0.1 - t) / 0.1)]
+        if t < 0.55:
+            return [byte(2.0 * (t - 0.1) / 0.9), 255, 0]
+        if t < 1.0:
+            return [255, byte(2.0 * (1.0 - t) / 0.9), 0]
+        return [255, 0, 0]
+
+    @staticmethod
+    def ColorScale(colorScale="viridis", silent: bool = False):
+        """Return a Plotly-compatible scale list from a name or custom list.
+
+        ``syntax`` reproduces Depthmap Classic with blue=0 and red=1,
+        including its unequal ranges and discrete HTML-safe RGB channels.
+        ``syntax_r`` reverses it. Names are case-insensitive. Other inputs
+        follow Plotly's colorscale validation. Returned lists are independent.
+        """
+        name = colorScale.strip().lower() if isinstance(colorScale, str) else None
+        if name in ("syntax", "syntax_r"):
+            # Adjacent floating-point stops preserve each discrete band while
+            # remaining strictly increasing for Plotly sampling utilities.
+            boundaries = {0.0, 0.05, 0.1, 0.55, 1.0}
+            for k in range(1, 16):
+                channel = k / 15.0 - 0.0333
+                boundaries.update((0.05 * channel, 0.1 - 0.05 * channel,
+                                   0.1 + 0.45 * channel, 1.0 - 0.45 * channel))
+            reverse = name == "syntax_r"
+            positions = sorted({1.0 - t for t in boundaries} if reverse else boundaries)
+            colors = [Color._syntax_rgb(1.0 - (a + b) / 2.0 if reverse else (a + b) / 2.0)
+                      for a, b in zip(positions, positions[1:])]
+            def rgb_string(rgb):
+                return f"rgb({rgb[0]}, {rgb[1]}, {rgb[2]})"
+            scale = [[0.0, rgb_string(colors[0])]]
+            for i, position in enumerate(positions[1:-1], 1):
+                if colors[i - 1] != colors[i]:
+                    scale.extend([[math.nextafter(position, -math.inf), rgb_string(colors[i - 1])],
+                                  [position, rgb_string(colors[i])]])
+            scale.append([1.0, rgb_string(colors[-1])])
+            return scale
+        try:
+            from _plotly_utils.basevalidators import ColorscaleValidator
+            return ColorscaleValidator("colorscale", "").validate_coerce(colorScale)
+        except Exception:
+            if not silent:
+                print("Color.ColorScale - Error: Could not process the input colorScale. Returning None.")
+            return None
+
+    @staticmethod
     def ByValueInRange(value: float = 0.5,
                        minValue: float = 0.0,
                        maxValue: float = 1.0,
@@ -765,7 +825,8 @@ class Color:
         alpha : float , optional
             The alpha value. Default is None.
         colorScale : str , optional
-            The Plotly color scale name, or 'default'. Default is 'viridis'.
+            A Plotly color scale name or list, 'syntax' (Depthmap Classic),
+            'syntax_r' (reversed), or 'default'. Default is 'viridis'.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
 
@@ -850,13 +911,14 @@ class Color:
                 colortype="rgb",
             )
 
-        if not colorScale or str(colorScale).lower() == "default":
+        scale_name = colorScale.strip().lower() if isinstance(colorScale, str) else None
+        if scale_name in ("syntax", "syntax_r"):
+            rgb_list = Color._syntax_rgb(1.0 - ratio if scale_name == "syntax_r" else ratio)
+        elif not colorScale or str(colorScale).lower() == "default":
             rgb_list = _default_color(ratio)
         else:
             try:
-                from _plotly_utils.basevalidators import ColorscaleValidator
-                cv = ColorscaleValidator("colorscale", "")
-                colorscale = cv.validate_coerce(colorScale)
+                colorscale = Color.ColorScale(colorScale, silent=True)
                 color_string = _continuous_color(colorscale, ratio)
                 color_string = color_string.replace("rgba", "").replace("rgb", "")
                 color_string = color_string.replace("(", "").replace(")", "")
