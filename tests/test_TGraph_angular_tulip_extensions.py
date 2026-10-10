@@ -6,9 +6,7 @@ from topologicpy.TGraph import TGraph
 
 def fixture_paths():
     root=Path(__file__).parent
-    if (root/'fixtures/depthmap').exists():
-        return root/'fixtures/depthmap/barnsbury_segment_connections.json',root/'fixtures/depthmap/barnsbury_tulip_reference.json'
-    return root.parent/'outputs/depthmap-comparison/barnsbury_segments.json',root/'barnsbury_tulip_reference.json'
+    return root/'fixtures/depthmap/barnsbury_segment_connections.json',root/'fixtures/depthmap/barnsbury_tulip_reference.json'
 
 def build(endpoints):
     g=TGraph(allowSelfLoops=False);points=[]
@@ -80,7 +78,6 @@ def test_isolated_straight_and_empty_integration():
 def test_tied_grid_depthmap_reference(run_index):
     root=Path(__file__).parent
     path=root/'fixtures/depthmap/grid_tulip_reference.json'
-    if not path.exists():path=root/'grid_tulip_reference.json'
     fixture=json.loads(path.read_text());run=fixture['runs'][run_index]
     g=build(fixture['endpoints'])
     kwargs={key:run[key] for key in ('radius','radiusType','weighting')}

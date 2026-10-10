@@ -19,12 +19,8 @@ def graph_from_endpoints(endpoints):
 
 def test_barnsbury_saved_choice():
     folder=Path(__file__).resolve().parent
-    # Local staging and installed repository layouts.
     geometry=folder/'fixtures/depthmap/barnsbury_segment_connections.json'
     reference=folder/'fixtures/depthmap/barnsbury_choice_reference.json'
-    if not geometry.exists():
-        geometry=folder.parent/'outputs/depthmap-comparison/barnsbury_segments.json'
-        reference=folder/'barnsbury_choice_reference.json'
     fixture=json.loads(geometry.read_text()); expected=json.loads(reference.read_text())
     g=graph_from_endpoints(fixture['endpoints'])
     choice=TGraph.AngularChoice(g,method='depthmap',algorithm='tulip',mantissa=None)

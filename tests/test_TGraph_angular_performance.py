@@ -48,9 +48,6 @@ def test_combined_matches_saved_depthmap_configuration(run_index):
     root=Path(__file__).parent
     geometry=root/'fixtures/depthmap/barnsbury_segment_connections.json'
     reference=root/'fixtures/depthmap/barnsbury_tulip_reference.json'
-    if not geometry.exists():
-        geometry=root.parent/'outputs/depthmap-comparison/barnsbury_segments.json'
-        reference=root/'barnsbury_tulip_reference.json'
     data=json.loads(geometry.read_text());run=json.loads(reference.read_text())['runs'][run_index]
     g=TGraph();points=[]
     for p,q in data['endpoints']:
