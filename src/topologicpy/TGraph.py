@@ -21286,8 +21286,14 @@ class TGraph:
 
         vertices = TGraph._ActiveVertexIndices(graph)
 
+        # Compile once for the whole vector. Calling Degree per vertex makes
+        # an attached analysis context validate the entire graph repeatedly.
+        compiled = TGraph.Compile(graph)
+        mode_l = str(mode).lower()
+        degree_key = "degree_in" if mode_l == "in" else "degree_out" if mode_l == "out" else "degree_all"
         values = [
-            float(TGraph.Degree(graph, index, mode=mode))
+            float(compiled[degree_key][compiled["position"][index]])
+            if isinstance(compiled, dict) and index in compiled["position"] else 0.0
             for index in vertices
         ]
 
@@ -36883,16 +36889,16 @@ class TGraph:
 
             candidate_bbox = _candidate_bbox(ax, ay, bx, by)
 
-            if not _segment_inside_host_face(ax, ay, bx, by, candidate_bbox):
-                return False
-
+            # Reject blocked rays before the full host-face containment pass.
+            # Both checks are pure rejection predicates; ordering preserves all
+            # tolerance and boundary rules while avoiding work on blocked rays.
             for blocker_id in blocker_ids:
                 if _segments_block_with_bbox(
                     ax, ay, bx, by, candidate_bbox, blockers[blocker_id]
                 ):
                     return False
 
-            return True
+            return _segment_inside_host_face(ax, ay, bx, by, candidate_bbox)
 
         def _source_visibility_sparse(source_index, target_indices, k, approximate):
             px = xs[source_index]
