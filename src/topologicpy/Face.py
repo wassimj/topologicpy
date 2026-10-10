@@ -4569,7 +4569,7 @@ class Face():
         )
 
     @staticmethod
-    def Compactness(face, mantissa: int = 6, silent: bool = False) -> float:
+    def Compactness(face, mantissa: int = 6, silent: bool = False, method: str = "topologicpy") -> float:
         """
         Returns the compactness measure of the input face. See https://en.wikipedia.org/wiki/Compactness_measure_of_a_shape
 
@@ -4581,6 +4581,11 @@ class Face():
             The number of decimal places to round the result to. Default is 6.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
+        method : str , optional
+            Case-insensitive calculation method. 'topologicpy' uses
+            sqrt(4*pi*area)/perimeter (the existing default). 'depthmap' uses
+            4*pi*area/perimeter**2, the square of the first measure.
+            Both use the external-boundary perimeter and net face area.
 
         Returns
         -------
@@ -4596,6 +4601,12 @@ class Face():
                 print("Face.Compactness - Error: The input face parameter is not a valid face. Returning None.")
             return None
 
+        if not isinstance(method, str) or method.strip().lower() not in ("topologicpy", "depthmap"):
+            if not silent:
+                print("Face.Compactness - Error: method must be 'topologicpy' or 'depthmap'. Returning None.")
+            return None
+        method = method.strip().lower()
+
         exb = Face.ExternalBoundary(face)
         edges = Topology.Edges(exb)
         perimeter = 0.0
@@ -4609,7 +4620,10 @@ class Face():
             return None
         if perimeter <= 0:
             return None
-        compactness = (math.pi*(2*math.sqrt(area/math.pi)))/perimeter
+        if method == "depthmap":
+            compactness = 4.0 * math.pi * area / (perimeter * perimeter)
+        else:
+            compactness = (math.pi*(2*math.sqrt(area/math.pi)))/perimeter
         return round(compactness, mantissa)
 
     @staticmethod
@@ -8225,6 +8239,10 @@ class Face():
             If True, dictionaries of encountered physical edges are transferred to matching isovist edges.
         metrics : bool , optional
             If True, isovist metrics are calculated and stored in the dictionary of the returned face.
+            occlusivity is occluded boundary length divided by perimeter;
+            occluded_length stores the absolute length in model units. Physical
+            wall coverage is matched within tolerance, including adjacent wall
+            segments. Edge dictionaries contain occlusive and occluded_length.
         triangles : bool , optional
             If True, radial triangles from the viewpoint to isovist edges are stored as contents.
         mantissa : int , optional
@@ -8254,7 +8272,7 @@ class Face():
 
         try:
             from shapely.geometry import Point, LineString, Polygon, MultiPolygon, GeometryCollection
-            from shapely.ops import unary_union
+            from shapely.ops import unary_union, snap
             from shapely.validation import make_valid
         except Exception:
             if not silent:
@@ -8597,54 +8615,64 @@ class Face():
                 return None
             return LineString([p1, p2])
 
-        def _edge_overlap_length(edge_a, edge_b):
-            line_a = _edge_to_linestring(edge_a)
-            line_b = _edge_to_linestring(edge_b)
+        def _physical_overlap_interval(line_a, line_b):
+            """Overlap along a, allowing ray/conversion offsets within tolerance.
 
-            if line_a is None or line_b is None:
-                return 0.0
-
-            if line_a.distance(line_b) > tolerance:
-                return 0.0
-
-            try:
-                inter = line_a.intersection(line_b)
-            except Exception:
-                return 0.0
-
-            if inter.is_empty:
-                return 0.0
-
-            try:
-                return float(inter.length)
-            except Exception:
-                return 0.0
+            Exact Shapely intersection reports zero length for nearly collinear
+            segments. Project b onto a after checking a's endpoints against b's
+            supporting line; point contact alone never establishes wall coverage.
+            """
+            ax, ay = line_a.coords[0]
+            bx, by = line_a.coords[-1]
+            cx, cy = line_b.coords[0]
+            dx, dy = line_b.coords[-1]
+            length = math.hypot(bx-ax, by-ay)
+            wall_length = math.hypot(dx-cx, dy-cy)
+            if length <= tolerance or wall_length <= tolerance:
+                return None
+            ux, uy = (bx-ax)/length, (by-ay)/length
+            wx, wy = (dx-cx)/wall_length, (dy-cy)/wall_length
+            if max(abs((ax-cx)*wy-(ay-cy)*wx),
+                   abs((bx-cx)*wy-(by-cy)*wx)) > tolerance:
+                return None
+            start = (cx-ax)*ux + (cy-ay)*uy
+            end = (dx-ax)*ux + (dy-ay)*uy
+            low, high = max(0.0, min(start, end)), min(length, max(start, end))
+            return (low, high) if high-low > tolerance else None
 
         def _tag_and_transfer_edge_dictionaries(isovist_face, physical_edges):
-            isovist_edges = Topology.Edges(isovist_face)
-
-            for i_edge in isovist_edges:
+            # Extract wall geometry once rather than inside every pair test.
+            walls = [(edge, _edge_to_linestring(edge)) for edge in physical_edges]
+            walls = [(edge, line) for edge, line in walls if line is not None]
+            for i_edge in Topology.Edges(isovist_face):
+                line = _edge_to_linestring(i_edge)
+                if line is None:
+                    continue
+                intervals = []
+                best_edge, best_overlap = None, 0.0
+                for p_edge, wall in walls:
+                    interval = _physical_overlap_interval(line, wall)
+                    if interval is not None:
+                        intervals.append(interval)
+                        overlap = interval[1]-interval[0]
+                        if overlap > best_overlap:
+                            best_edge, best_overlap = p_edge, overlap
+                covered = 0.0
+                high = 0.0
+                for low, end in sorted(intervals):
+                    covered += max(0.0, end-max(low, high))
+                    high = max(high, end)
+                occluded_length = max(0.0, line.length-covered)
+                # Each endpoint can shift by tolerance during ray construction.
+                if occluded_length <= 2.0 * tolerance:
+                    occluded_length = 0.0
                 d_i = Topology.Dictionary(i_edge)
-                d_i = Dictionary.SetValueAtKey(d_i, "occlusive", True)
-
-                best_edge = None
-                best_overlap = 0.0
-
-                for p_edge in physical_edges:
-                    overlap = _edge_overlap_length(i_edge, p_edge)
-                    if overlap > best_overlap:
-                        best_overlap = overlap
-                        best_edge = p_edge
-
-                if best_edge is not None and best_overlap > tolerance:
-                    d_i = Dictionary.SetValueAtKey(d_i, "occlusive", False)
-
-                    if transferDictionaries:
-                        d_j = Topology.Dictionary(best_edge)
-                        d_i = Dictionary.ByMergedDictionaries([d_i, d_j])
-
+                if transferDictionaries and best_edge is not None:
+                    d_i = Dictionary.ByMergedDictionaries([d_i, Topology.Dictionary(best_edge)])
+                # Classification wins over any identically named wall metadata.
+                d_i = Dictionary.SetValueAtKey(d_i, "occlusive", occluded_length > 0.0)
+                d_i = Dictionary.SetValueAtKey(d_i, "occluded_length", occluded_length)
                 Topology.SetDictionary(i_edge, d_i)
-
             return isovist_face
 
         def calculate_angle(viewpoint_coords, vertex_coords):
@@ -9023,6 +9051,14 @@ class Face():
         # Convert Shapely polygon back to TopologicPy face
         # -------------------------------------------------------------------------
 
+        # Perturbed critical rays can create sub-tolerance corner chamfers.
+        # Snap to real boundary vertices before simplifying near-collinear runs;
+        # preserve topology so holes and genuine visibility discontinuities remain.
+        cleaned = snap(visible_polygon, free_polygon, 2.0 * tolerance).simplify(
+            tolerance, preserve_topology=True)
+        if isinstance(cleaned, Polygon) and cleaned.is_valid and not cleaned.is_empty:
+            visible_polygon = cleaned
+
         return_face = _shapely_polygon_to_face(visible_polygon)
 
         if not Topology.IsInstance(return_face, "Face"):
@@ -9149,7 +9185,7 @@ class Face():
             for edge in isovist_edges:
                 d = Topology.Dictionary(edge)
                 if _safe_dictionary_value(d, "occlusive", False) == True:
-                    occ_length += Edge.Length(edge)
+                    occ_length += _safe_dictionary_value(d, "occluded_length", Edge.Length(edge))
 
             if perimeter > 0:
                 occlusivity = round(occ_length / perimeter, mantissa)
@@ -9181,6 +9217,7 @@ class Face():
                 "e_c",
                 "theta",
                 "occlusivity",
+                "occluded_length",
                 "drift",
                 "closed_perimeter",
                 "average_radial",
@@ -9208,6 +9245,7 @@ class Face():
                 e_c,
                 theta,
                 occlusivity,
+                round(occ_length, mantissa),
                 drift,
                 closed_perimeter,
                 average_radial,

@@ -189,7 +189,7 @@ def test_segment_graph_splits_crossing_and_retains_parent_identity():
     assert TGraph.Order(graph) == 4 and TGraph.Size(graph) == 6
     assert all(Topology.IsInstance(t, "Edge") for t in TGraph.Originators(graph))
     assert set(v["dictionary"]["parent_edge_id"] for v in graph._vertices) == set(Topology.UUID(e) for e in sources)
-    assert sorted(e["dictionary"]["angular_weight"] for e in graph._edges) == [1e-9, 1e-9, 1, 1, 1, 1]
+    assert sorted(e["dictionary"]["angular_weight"] for e in graph._edges) == [0, 0, 1, 1, 1, 1]
     assert len(TGraph.AngularChoice(graph)) == 4
     assert len(TGraph.AngularIntegration(graph)) == 4
     assert TGraph.AngularConnectivity(graph) == [3, 3, 3, 3]
@@ -209,9 +209,19 @@ def test_segment_graph_t_junction_and_projected_crossing():
     assert sorted(TGraph.Connectivity(graph)) == [0, 2, 2, 2]
 
 
-def test_segment_overlaps_still_require_explicit_merging():
+def test_segment_overlaps_split_deduplicate_and_preserve_all_parents():
     sources = [edge((0, 0, 0), (2, 0, 0)), edge((1, 0, 0), (3, 0, 0))]
-    assert TGraph.SegmentGraph(sources, silent=True) is None
+    graph = TGraph.SegmentGraph(sources)
+    assert TGraph.Order(graph) == 3
+    assert TGraph.Size(graph) == 2
+    shared = [v for v in graph._vertices if len(v["dictionary"]["parent_edge_ids"]) == 2]
+    assert len(shared) == 1
+    assert shared[0]["parent_originators"] == sources
+    subset = TGraph.Subgraph(graph, [shared[0]["index"]])
+    assert subset._vertices[0]["parent_originators"] == sources
+    assert set(shared[0]["dictionary"]["parent_edge_ids"]) == {Topology.UUID(e) for e in sources}
+    assert sorted(len(v["dictionary"]["parent_edge_ids"]) for v in graph._vertices) == [1,1,2]
+    assert sorted(data(t)["parent_edge_ids"] for t in TGraph.Originators(graph)) == sorted(v["dictionary"]["parent_edge_ids"] for v in graph._vertices)
 
 
 @pytest.mark.parametrize("a,b", [((1,0,0), (3,0,0)),
@@ -252,3 +262,28 @@ def test_projected_collinear_overlap_on_another_floor_does_not_connect():
 @pytest.mark.parametrize("method", [TGraph.AxialGraph, TGraph.SegmentGraph])
 def test_empty_axial_and_segment_graphs(method):
     assert TGraph.Order(method([], silent=True)) == 0
+
+
+@pytest.mark.parametrize("first, second, expected_count", [
+    (((0,0,0),(3,0,0)), ((3,0,0),(0,0,0)), 1),
+    (((0,0,0),(4,0,0)), ((1,0,0),(3,0,0)), 3),
+    (((0,0,0),(3,3,3)), ((1,1,1),(4,4,4)), 3),
+    (((0,0,0),(3,0,0)), ((1,0,2),(4,0,2)), 2),
+])
+def test_segment_overlap_variants(first, second, expected_count):
+    sources = [edge(*first), edge(*second)]
+    g = TGraph.SegmentGraph(sources)
+    assert g is not None
+    assert TGraph.Order(g) == expected_count
+    assert all(v["dictionary"]["parent_edge_ids"] for v in g._vertices)
+    copied = TGraph.Copy(g)
+    assert [v["parent_originators"] for v in copied._vertices] == [v["parent_originators"] for v in g._vertices]
+
+
+def test_segment_overlap_crossing_splits_all_parents_consistently():
+    sources = [edge((0,0,0),(3,0,0)), edge((1,0,0),(4,0,0)), edge((2,-1,0),(2,1,0))]
+    g = TGraph.SegmentGraph(sources)
+    assert TGraph.Order(g) == 6
+    shared = [v for v in g._vertices if len(v["dictionary"]["parent_edge_ids"]) == 2]
+    assert len(shared) == 2
+    assert TGraph.IsConnected(g)

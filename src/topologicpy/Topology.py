@@ -15781,7 +15781,7 @@ class Topology():
                                            x = -Vertex.X(origin, mantissa=mantissa),
                                            y = -Vertex.Y(origin, mantissa=mantissa),
                                            z = -Vertex.Z(origin, mantissa=mantissa),
-                                           transferDictionaries = False,
+                                           transferDictionaries = transferDictionaries,
                                            silent=True)
         tran_mat = Vector.TransformationMatrix(direction, up)
         flat_topology = Topology.Transform(flat_topology,

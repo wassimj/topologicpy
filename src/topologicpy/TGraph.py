@@ -48,6 +48,7 @@ class TGraph:
         "_dictionary",
         "_version",
         "_compiled",
+        "_analysis_context",
     )
 
     def __init__(
@@ -88,6 +89,7 @@ class TGraph:
         self._dictionary = dict(dictionary) if isinstance(dictionary, dict) else {}
         self._version = 0
         self._compiled = None
+        self._analysis_context = None
 
     def __repr__(self) -> str:
         """
@@ -104,6 +106,123 @@ class TGraph:
         """
         kind = "directed" if self._directed else "bidirectional"
         return f"TGraph(vertices={TGraph.Order(self)}, edges={TGraph.Size(self)}, {kind})"
+
+
+    @staticmethod
+    def AnalysisContext(graph, maxEntries=128, maxBytes=67108864,
+                        maxSourceTrees=16, enabled=True, replace=False):
+        """Attach/retrieve a bounded reusable Python analysis context.
+
+        Existing compatible methods reuse it transparently. No native traversal
+        compilation is required. Changing context limits requires replace=True.
+        Direct edits to relevant dictionaries are checked by content on each
+        outer call. External opaque callbacks/geometry use uncached fallbacks
+        or the context's explicit token-based geometry API.
+        """
+        if not isinstance(graph, TGraph):
+            return None
+        from topologicpy.TGraphAnalysis import TGraphAnalysis
+        if graph._analysis_context is None or replace:
+            graph._analysis_context = TGraphAnalysis(graph, maxEntries=maxEntries,
+                maxBytes=maxBytes, maxSourceTrees=maxSourceTrees, enabled=enabled)
+        return graph._analysis_context
+
+    @staticmethod
+    def _AnalysisMemo(graph, namespace, settings, calculate, geometry=False,
+                      attributes=(), graphAttributes=()):
+        context = getattr(graph, "_analysis_context", None)
+        if context is None:
+            return calculate()
+        return context.Memo(namespace, settings, calculate, geometry=geometry,
+                            attributes=attributes, graphAttributes=graphAttributes)
+
+    @staticmethod
+    def _AnalysisPublishDistances(graph, weightKey, radius, summaries):
+        context = getattr(graph, "_analysis_context", None)
+        if context is None or weightKey is not None:
+            return
+        radius = None if radius is None else math.floor(radius)
+        modes = ("out",) if graph._directed or any(e.get("directed", graph._directed)
+            for e in graph._edges if e.get("active", True)) else ("out", "in", "all")
+        for mode in modes:
+            context.Publish("ordinary_distances", (None, radius, mode), summaries)
+
+
+    @staticmethod
+    def _StructuralAnalysis(graph):
+        """One iterative low-link calculation for bridges, cuts and blocks."""
+        def calculate():
+            vertices = TGraph._ActiveVertexIndices(graph)
+            adj = {v: [] for v in vertices}
+            endpoints, pair_counts = {}, {}
+            for edge in TGraph._ActiveEdges(graph):
+                u, v, index = edge.get("src"), edge.get("dst"), edge.get("index")
+                if u == v or u not in adj or v not in adj:
+                    continue
+                adj[u].append((v, index)); adj[v].append((u, index))
+                endpoints[index] = (u, v)
+                pair = (min(u,v), max(u,v))
+                pair_counts[pair] = pair_counts.get(pair, 0)+1
+            discovery, low, parent, parent_edge, children = {}, {}, {}, {}, {}
+            cuts, bridges, blocks, edges = set(), [], [], []
+            def pop_block(stop=None):
+                members = set()
+                while edges:
+                    index = edges.pop(); members.update(endpoints[index])
+                    if index == stop:
+                        break
+                if members:
+                    blocks.append(tuple(sorted(members)))
+            for root in vertices:
+                if root in discovery:
+                    continue
+                discovery[root] = low[root] = len(discovery)
+                children[root] = 0
+                if not adj[root]:
+                    blocks.append((root,)); continue
+                stack = [[root, 0]]
+                while stack:
+                    u, position = stack[-1]
+                    if position == len(adj[u]):
+                        stack.pop()
+                        if u in parent:
+                            par, index = parent[u], parent_edge[u]
+                            low[par] = min(low[par], low[u])
+                            if low[u] > discovery[par] and pair_counts[(min(u,par),max(u,par))] == 1:
+                                bridges.append(index)
+                            if low[u] >= discovery[par]:
+                                if par in parent or children[par] > 1:
+                                    cuts.add(par)
+                                pop_block(index)
+                        continue
+                    v, index = adj[u][position]; stack[-1][1] += 1
+                    if index == parent_edge.get(u):
+                        continue
+                    if v not in discovery:
+                        parent[v], parent_edge[v] = u, index
+                        children[u] += 1; children[v] = 0
+                        discovery[v] = low[v] = len(discovery)
+                        edges.append(index); stack.append([v, 0])
+                    elif discovery[v] < discovery[u]:
+                        low[u] = min(low[u], discovery[v]); edges.append(index)
+                if edges:
+                    pop_block()
+            blocks = sorted(set(blocks), key=lambda b:(b[0] if b else -1,len(b),b))
+            return {"bridges": bridges, "cuts": sorted(cuts), "blocks": [list(b) for b in blocks]}
+        return TGraph._AnalysisMemo(graph, "low_link", (), calculate)
+
+    @staticmethod
+    def _ClusteringStats(graph):
+        def calculate():
+            adjacency = TGraph._SimpleUndirectedNeighborSets(graph, includeSelfLoops=False)
+            result = {}
+            for v, neighbors in adjacency.items():
+                neighbors = sorted(neighbors)
+                links = sum(b in adjacency.get(a, set())
+                    for i, a in enumerate(neighbors) for b in neighbors[i+1:])
+                result[v] = (len(neighbors), links)
+            return result
+        return TGraph._AnalysisMemo(graph, "clustering_stats", (), calculate)
 
     @staticmethod
     def _ActiveEdges(graph: "TGraph") -> List[Dict[str, Any]]:
@@ -7968,7 +8087,7 @@ class TGraph:
         return result
 
     @staticmethod
-    def _AxialIntersections(data, tolerance, allowOverlap=False):
+    def _AxialIntersections(data, tolerance, allowOverlap=False, overlapEndpoints=False):
         """Returns 3D contact parameters, optionally including overlap midpoints."""
         import numpy as np
         contacts = []
@@ -7987,11 +8106,13 @@ class TGraph:
                     if (high-low)*lengths[0] > tolerance and not allowOverlap:
                         raise ValueError("Overlapping collinear edges are ambiguous; merge them first")
                     if (low-high)*lengths[0] <= tolerance:
-                        t = min(1.0, max(0.0, (low+high)/2))
-                        point = a+t*u
-                        s = min(1.0, max(0.0, float(np.dot(point-c, v)/np.dot(v, v))))
-                        if float(np.linalg.norm(point-(c+s*v))) <= tolerance:
-                            contacts.append((i, j, t, s))
+                        parameters = (low, high) if overlapEndpoints and (high-low)*lengths[0] > tolerance else ((low+high)/2,)
+                        for parameter in parameters:
+                            t = min(1.0, max(0.0, parameter))
+                            point = a+t*u
+                            s = min(1.0, max(0.0, float(np.dot(point-c, v)/np.dot(v, v))))
+                            if float(np.linalg.norm(point-(c+s*v))) <= tolerance:
+                                contacts.append((i, j, t, s))
                     continue
                 t, s = np.linalg.lstsq(np.column_stack((u, -v)), c-a, rcond=None)[0]
                 if -tolerance/lengths[0] <= t <= 1+tolerance/lengths[0] and -tolerance/lengths[1] <= s <= 1+tolerance/lengths[1]:
@@ -8034,8 +8155,12 @@ class TGraph:
         Each node's originator/representation is the generated segment Edge.
         edge_id is a stable segment UUID; parent_edge_id links to the input Edge
         UUID, with its live reference stored as parent_originator. Connections
-        store angular_weight in quarter-turn units (straight floor 1e-9).
+        store angular_weight in quarter-turn units (straight cost 0).
         Angular wrappers recognize this graph and analyse its nodes directly.
+        Collinear overlaps are split at both ends and coincident segments are
+        deduplicated within tolerance. parent_edge_ids and parent_originators
+        preserve every source; singular parent fields retain the first source.
+        Source dictionaries are also retained under parent_dictionaries.
         """
         from topologicpy.Edge import Edge
         from topologicpy.Vertex import Vertex
@@ -8044,13 +8169,22 @@ class TGraph:
         import uuid
         try:
             data = TGraph._AxialEdgeData(edges, tolerance)
-            contacts = TGraph._AxialIntersections(data, tolerance)
+            contacts = TGraph._AxialIntersections(data, tolerance, allowOverlap=True, overlapEndpoints=True)
             cuts = [{0.0, 1.0} for _ in data]
             for i, j, t, s in contacts:
                 cuts[i].add(t)
                 cuts[j].add(s)
-            graph = TGraph(allowSelfLoops=False, dictionary={"graph_type": "segment", "angular_weight_key": "angular_weight"})
+            graph = TGraph(allowSelfLoops=False, dictionary={"graph_type": "segment", "angular_weight_key": "angular_weight", "tolerance": float(tolerance)})
             segments = []
+            from itertools import product
+            offsets = list(product((-1, 0, 1), repeat=3))
+            endpoint_buckets = {}
+            def bucket(point):
+                return tuple(math.floor(float(c)/tolerance) for c in point)
+            def candidates(point):
+                key = bucket(point)
+                for offset in offsets:
+                    yield from endpoint_buckets.get(tuple(k+d for k,d in zip(key, offset)), [])
             for i, (parent, a, b, identity) in enumerate(data):
                 length = float(np.linalg.norm(b-a))
                 parameters = []
@@ -8059,6 +8193,22 @@ class TGraph:
                         parameters.append(t)
                 for low, high in zip(parameters, parameters[1:]):
                     p, q = a+low*(b-a), a+high*(b-a)
+                    match = None
+                    for candidate in set(candidates(p)):
+                        a0, b0 = segments[candidate]
+                        if ((np.linalg.norm(p-a0) <= tolerance and np.linalg.norm(q-b0) <= tolerance)
+                            or (np.linalg.norm(p-b0) <= tolerance and np.linalg.norm(q-a0) <= tolerance)):
+                            match = candidate
+                            break
+                    if match is not None:
+                        vertex = graph._vertices[match]
+                        d0 = vertex["dictionary"]
+                        if identity not in d0["parent_edge_ids"]:
+                            d0["parent_edge_ids"].append(identity)
+                            d0["parent_dictionaries"][identity] = TGraph._TopologyDictionaryToPython(parent)
+                            vertex["parent_originators"].append(parent)
+                            Topology.SetDictionary(TGraph.VertexOriginator(graph, match), TGraph._PythonToDictionary(d0), silent=True)
+                        continue
                     segment = Edge.ByVertices(Vertex.ByCoordinates(*p), Vertex.ByCoordinates(*q), tolerance=tolerance, silent=True)
                     if segment is None:
                         raise ValueError("Could not construct a segment")
@@ -8066,12 +8216,17 @@ class TGraph:
                     dictionary = TGraph._TopologyDictionaryToPython(parent)
                     for field in ("uuid", "originator_id", "originator_type"):
                         dictionary.pop(field, None)
-                    dictionary.update(uuid=segment_id, edge_id=segment_id, parent_edge_id=identity)
+                    dictionary.update(uuid=segment_id, edge_id=segment_id, parent_edge_id=identity,
+                                      parent_edge_ids=[identity],
+                                      parent_dictionaries={identity: TGraph._TopologyDictionaryToPython(parent)})
                     segment = Topology.SetDictionary(segment, TGraph._PythonToDictionary(dictionary), silent=True)
                     dictionary.update(x=float((p[0]+q[0])/2), y=float((p[1]+q[1])/2), z=float((p[2]+q[2])/2))
                     index = graph.AddVertex(dictionary=dictionary, representation=segment, originator=segment)
                     graph._vertices[index]["parent_originator"] = parent
+                    graph._vertices[index]["parent_originators"] = [parent]
                     segments.append((p, q))
+                    for endpoint in (p, q):
+                        endpoint_buckets.setdefault(bucket(endpoint), []).append(index)
             for i, (a, b) in enumerate(segments):
                 for j in range(i+1, len(segments)):
                     c, d = segments[j]
@@ -8086,9 +8241,8 @@ class TGraph:
                     if vectors is None:
                         continue
                     u, v = vectors
-                    cosine = float(np.dot(u, v)/(np.linalg.norm(u)*np.linalg.norm(v)))
-                    angle = 180-math.degrees(math.acos(max(-1.0, min(1.0, cosine))))
-                    graph.AddEdge(i, j, dictionary={"relationship": "segment_transition", "angular_weight": max(angle/90, 1e-9)})
+                    angle = 180-math.degrees(math.atan2(float(np.linalg.norm(np.cross(u, v))), float(np.dot(u, v))))
+                    graph.AddEdge(i, j, dictionary={"relationship": "segment_transition", "angular_weight": max(angle/90, 0.0)})
             return graph
         except Exception as exc:
             if not silent:
@@ -9147,11 +9301,12 @@ class TGraph:
         angular : bool , optional
             If set to True, the calculation uses angular weights between adjacent edge
             segments. This option is valid only when useEdges is set to True.
-            Default is False. Straight transitions are regularized to at least
-            1e-9 quarter-turn units to avoid zero-cost cycles.
+            Default is False. Uses internal endpoint orientations, with one result
+            per original segment. Straight transitions cost zero quarter-turn
+            units. Choice resolves zero-cost route ties by minimum transitions.
         angularWeightKey : str , optional
-            The dictionary key under which to store the computed angular weight on the
-            line graph edges. Default is "angular_weight".
+            Retained for API compatibility. Angular mode computes costs on internal
+            endpoint states rather than constructing a public line graph.
         key : str , optional
             The desired dictionary key name under which to store the calculated value.
             Default is "betweenness_centrality".
@@ -9176,7 +9331,7 @@ class TGraph:
             count when weightKey is None, otherwise accumulated edge cost; angular
             mode uses quarter-turn units. Must be finite and non-negative.
             Existing normalization uses the full graph order even with a cutoff.
-            These centrality methods retain their undirected analysis convention.
+            Directed inputs respect edge direction. Undirected inputs remain symmetric.
 
         Returns
         -------
@@ -9209,6 +9364,12 @@ class TGraph:
             if not silent:
                 print("TGraph.BetweennessCentrality - Error: The angular option is not compatible with edge bundling through edgeKey. Returning None.")
             return None
+
+        if angular:
+            return TGraph._AngularCentrality(
+                graph, choice=True, normalize=normalize, nxCompatible=nxCompatible,
+                key=key, colorKey=colorKey, colorScale=colorScale, mantissa=mantissa,
+                tolerance=tolerance, silent=silent, radius=radius, colorScaleMode=colorScaleMode)
 
         # ---------------------------------------------------------------------
         # Helpers
@@ -9412,191 +9573,9 @@ class TGraph:
 
             return 1.0
 
-        def _vector_from_shared_vertex(g, edgeRecord, sharedVertexIndex):
-            src = edgeRecord.get("src", None)
-            dst = edgeRecord.get("dst", None)
-
-            c_shared = TGraph.Coordinates(g, sharedVertexIndex, default=None)
-
-            if c_shared is None:
-                return None
-
-            if src == sharedVertexIndex:
-                c_other = TGraph.Coordinates(g, dst, default=None)
-            elif dst == sharedVertexIndex:
-                c_other = TGraph.Coordinates(g, src, default=None)
-            else:
-                return None
-
-            if c_other is None:
-                return None
-
-            return [
-                float(c_other[0]) - float(c_shared[0]),
-                float(c_other[1]) - float(c_shared[1]),
-                float(c_other[2]) - float(c_shared[2]),
-            ]
-
-        def _angle_between_vectors(a, b):
-            if a is None or b is None:
-                return None
-
-            la = math.sqrt(a[0] * a[0] + a[1] * a[1] + a[2] * a[2])
-            lb = math.sqrt(b[0] * b[0] + b[1] * b[1] + b[2] * b[2])
-
-            if la <= 0.0 or lb <= 0.0:
-                return None
-
-            dot = (a[0] * b[0] + a[1] * b[1] + a[2] * b[2]) / (la * lb)
-            dot = max(-1.0, min(1.0, dot))
-
-            return math.degrees(math.acos(dot))
-
-        def _shared_vertex_index(edgeA, edgeB):
-            a_src = edgeA.get("src", None)
-            a_dst = edgeA.get("dst", None)
-            b_src = edgeB.get("src", None)
-            b_dst = edgeB.get("dst", None)
-
-            if a_src == b_src or a_src == b_dst:
-                return a_src
-
-            if a_dst == b_src or a_dst == b_dst:
-                return a_dst
-
-            return None
-
-        def _set_angular_weights_on_line_graph(inputGraph, lineGraph):
-            originalEdges = _active_edge_records(inputGraph)
-            idToEdge = {}
-
-            for i, edgeRecord in enumerate(originalEdges):
-                edgeIndex = edgeRecord.get("index", None)
-                if edgeIndex is None:
-                    continue
-
-                idToEdge[edgeIndex] = inputGraph._edges[edgeIndex]
-
-            for lineEdgeRecord in _active_edge_records(lineGraph):
-                src = lineEdgeRecord.get("src", None)
-                dst = lineEdgeRecord.get("dst", None)
-
-                if src is None or dst is None:
-                    continue
-
-                if not lineGraph._validate_vertex_index(src, active=False):
-                    continue
-
-                if not lineGraph._validate_vertex_index(dst, active=False):
-                    continue
-
-                dsrc = lineGraph._vertices[src].get("dictionary", {})
-                ddst = lineGraph._vertices[dst].get("dictionary", {})
-
-                idA = dsrc.get("original_edge_index", None)
-                idB = ddst.get("original_edge_index", None)
-
-                edgeA = idToEdge.get(idA, None)
-                edgeB = idToEdge.get(idB, None)
-
-                if edgeA is None or edgeB is None:
-                    continue
-
-                shared = _shared_vertex_index(edgeA, edgeB)
-
-                if shared is None:
-                    continue
-
-                vecA = _vector_from_shared_vertex(inputGraph, edgeA, shared)
-                vecB = _vector_from_shared_vertex(inputGraph, edgeB, shared)
-
-                angle = _angle_between_vectors(vecA, vecB)
-
-                if angle is None:
-                    continue
-
-                # A straight continuation has zero deflection, a right turn one.
-                # Positive regularization avoids zero-cost cycles in Brandes.
-                w = max((180.0 - float(angle)) / 90.0, 1e-9)
-                edgeIndex = lineEdgeRecord.get("index", None)
-
-                if lineGraph._validate_edge_index(edgeIndex, active=False):
-                    lineGraph._edges[edgeIndex].setdefault("dictionary", {})[angularWeightKey] = w
-
-        # ---------------------------------------------------------------------
-        # Angular edge mode
-        # ---------------------------------------------------------------------
-
-        if useEdges and angular:
-            edgeRecords = _active_edge_records(graph)
-
-            if not edgeRecords:
-                return []
-
-            try:
-                lineGraph = TGraph.LineGraph(graph, transferDictionaries=True)
-            except TypeError:
-                try:
-                    lineGraph = TGraph.LineGraph(graph)
-                except Exception:
-                    lineGraph = None
-            except Exception:
-                lineGraph = None
-
-            if not isinstance(lineGraph, TGraph):
-                if not silent:
-                    print("TGraph.BetweennessCentrality - Error: Could not create a line graph. Returning None.")
-                return None
-
-            _set_angular_weights_on_line_graph(graph, lineGraph)
-
-            lineValues = TGraph.BetweennessCentrality(
-                lineGraph,
-                weightKey=angularWeightKey,
-                normalize=normalize,
-                nxCompatible=nxCompatible,
-                useEdges=False,
-                edgeKey=None,
-                angular=False,
-                angularWeightKey=angularWeightKey,
-                key=key,
-                colorKey=colorKey,
-                colorScale=colorScale,
-                colorScaleMode=colorScaleMode,
-                mantissa=mantissa,
-                tolerance=tolerance,
-                silent=silent,
-                radius=radius,
-            )
-
-            idToValue = {}
-
-            for lineVertex, value in zip(_active_vertex_indices(lineGraph), lineValues or []):
-                d = lineGraph._vertices[lineVertex].get("dictionary", {})
-                eid = d.get("original_edge_index", None)
-                if eid is not None and value is not None:
-                    idToValue[eid] = value
-
-            out_vals = []
-
-            for i, edgeRecord in enumerate(edgeRecords):
-                edgeIndex = edgeRecord.get("index", None)
-                value = _round(idToValue.get(edgeIndex, 0.0))
-                out_vals.append(value)
-
-                if graph._validate_edge_index(edgeIndex, active=False):
-                    d = graph._edges[edgeIndex].setdefault("dictionary", {})
-                    if key is not None:
-                        d[key] = value
-
-            unit_range_for_color = True if nxCompatible or normalize else False
-            _apply_values_to_edges(graph, edgeRecords, out_vals, unit_range=unit_range_for_color)
-
-            return out_vals
-
         # ---------------------------------------------------------------------
         # Build graph adjacency once.
-        # Graph.py treats the input graph as undirected for this calculation.
+        # Respect the graph direction when building traversal adjacency.
         # ---------------------------------------------------------------------
 
         vertexIndices = _active_vertex_indices(graph)
@@ -9616,6 +9595,7 @@ class TGraph:
         vertexIndexToPosition = {vertexIndex: i for i, vertexIndex in enumerate(vertexIndices)}
         n_nodes = len(vertexIndices)
 
+        directed_analysis = graph._directed or any(e.get("directed", graph._directed) for e in edgeRecords)
         adj = defaultdict(list)
 
         for localEdgeIndex, edgeRecord in enumerate(edgeRecords):
@@ -9634,18 +9614,22 @@ class TGraph:
 
             try:
                 w = float(w)
-                if w <= 0.0:
-                    w = 1.0
+                if not math.isfinite(w) or w < 0.0:
+                    if not silent:
+                        print("TGraph.BetweennessCentrality - Error: Edge costs must be finite and non-negative. Returning None.")
+                    return None
             except Exception:
                 w = 1.0
 
-            # Undirected adjacency to match Graph.py behaviour.
             adj[u].append((v, w, localEdgeIndex))
-            adj[v].append((u, w, localEdgeIndex))
+            if not edgeRecord.get("directed", graph._directed):
+                adj[v].append((u, w, localEdgeIndex))
 
         # ---------------------------------------------------------------------
         # Brandes betweenness centrality.
         # ---------------------------------------------------------------------
+
+        distance_summaries = []
 
         def _brandes_unweighted():
             CBv = [0.0] * n_nodes
@@ -9678,6 +9662,8 @@ class TGraph:
                             sigma[w] += sigma[v]
                             P[w].append((v, edgeLocalIndex))
 
+                finite = [float(d) for d in dist if d >= 0 and math.isfinite(d)]
+                distance_summaries.append((sum(finite), len(finite), max(finite, default=0.0)))
                 delta = [0.0] * n_nodes
 
                 while S:
@@ -9695,80 +9681,70 @@ class TGraph:
                     if w != s:
                         CBv[w] += delta[w]
 
-            # Undirected graph: each shortest path is counted twice.
-            return [x / 2.0 for x in CBv], [x / 2.0 for x in CBe]
+            # Symmetric traversal counts unordered pairs twice.
+            divisor = 1.0 if directed_analysis else 2.0
+            return [x / divisor for x in CBv], [x / divisor for x in CBe]
 
         def _brandes_weighted():
+            # A zero-cost cycle admits infinitely many shortest walks. Where zero
+            # costs exist, break equal-cost ties by minimum hops, creating an
+            # acyclic predecessor relation without perturbing angular distances.
+            tie_by_hops = any(w == 0 for neighbors in adj.values() for _, w, _ in neighbors)
             CBv = [0.0] * n_nodes
             CBe = [0.0] * len(edgeRecords)
             eq_eps = 1e-12
-
-            for s in range(n_nodes):
-                S = []
-                P = [[] for _ in range(n_nodes)]
+            for source in range(n_nodes):
+                order = []
+                predecessors = [[] for _ in range(n_nodes)]
                 sigma = [0.0] * n_nodes
                 dist = [float("inf")] * n_nodes
+                hops = [float("inf")] * n_nodes
                 settled = [False] * n_nodes
-
-                sigma[s] = 1.0
-                dist[s] = 0.0
-
-                heap = [(0.0, s)]
-
+                sigma[source] = 1.0
+                dist[source], hops[source] = 0.0, 0
+                heap = [(0.0, 0, source)]
                 while heap:
-                    dv, v = heapq.heappop(heap)
-
-                    if settled[v]:
+                    cost, count, v = heapq.heappop(heap)
+                    if settled[v] or cost > dist[v] + eq_eps or (tie_by_hops and count != hops[v]):
                         continue
-
-                    if dv > dist[v] + eq_eps:
-                        continue
-
                     settled[v] = True
-                    S.append(v)
-
-                    for w, weight, edgeLocalIndex in adj.get(v, []):
-                        vw_dist = dv + float(weight)
-                        if radius is not None and vw_dist > radius:
+                    order.append(v)
+                    for w, weight, edge_index in adj.get(v, []):
+                        candidate = cost + weight
+                        candidate_hops = count + 1
+                        if radius is not None and candidate > radius:
                             continue
-
-                        if vw_dist < dist[w] - eq_eps:
-                            dist[w] = vw_dist
-                            heapq.heappush(heap, (vw_dist, w))
+                        equal_cost = abs(candidate - dist[w]) <= eq_eps
+                        better = candidate < dist[w] - eq_eps or (tie_by_hops and equal_cost and candidate_hops < hops[w])
+                        equal = equal_cost and (not tie_by_hops or candidate_hops == hops[w])
+                        if better:
+                            dist[w], hops[w] = candidate, candidate_hops
                             sigma[w] = sigma[v]
-                            P[w] = [(v, edgeLocalIndex)]
-
-                        elif abs(vw_dist - dist[w]) <= eq_eps:
+                            predecessors[w] = [(v, edge_index)]
+                            heapq.heappush(heap, (candidate, candidate_hops if tie_by_hops else 0, w))
+                        elif equal and not settled[w]:
                             sigma[w] += sigma[v]
-                            P[w].append((v, edgeLocalIndex))
-
-                            if not settled[w]:
-                                heapq.heappush(heap, (dist[w], w))
-
+                            predecessors[w].append((v, edge_index))
                 delta = [0.0] * n_nodes
-
-                while S:
-                    w = S.pop()
-
-                    for v, edgeLocalIndex in P[w]:
-                        if sigma[w] == 0.0:
-                            c = 0.0
-                        else:
-                            c = (sigma[v] / sigma[w]) * (1.0 + delta[w])
-
-                        CBe[edgeLocalIndex] += c
-                        delta[v] += c
-
-                    if w != s:
+                while order:
+                    w = order.pop()
+                    for v, edge_index in predecessors[w]:
+                        contribution = (sigma[v] / sigma[w]) * (1.0 + delta[w]) if sigma[w] else 0.0
+                        CBe[edge_index] += contribution
+                        delta[v] += contribution
+                    if w != source:
                         CBv[w] += delta[w]
+            divisor = 1.0 if directed_analysis else 2.0
+            return [x / divisor for x in CBv], [x / divisor for x in CBe]
 
-            # Undirected graph: each shortest path is counted twice.
-            return [x / 2.0 for x in CBv], [x / 2.0 for x in CBe]
-
-        if weightKey is None:
-            CBv, CBe = _brandes_unweighted()
-        else:
-            CBv, CBe = _brandes_weighted()
+        def _calculate_brandes():
+            pair = _brandes_unweighted() if weightKey is None else _brandes_weighted()
+            return (pair, distance_summaries)
+        (CBv, CBe), summaries = TGraph._AnalysisMemo(graph, "brandes",
+            (weightKey, radius), _calculate_brandes,
+            geometry=weightKey is not None and str(weightKey).lower() in ("length", "distance"),
+            attributes=(weightKey,))
+        TGraph._AnalysisPublishDistances(graph, weightKey, radius, summaries)
 
         # ---------------------------------------------------------------------
         # Normalization.
@@ -9780,7 +9756,7 @@ class TGraph:
             if n <= 2:
                 return [0.0 for _ in vals]
 
-            scale = 2.0 / float((n - 1) * (n - 2))
+            scale = (1.0 if directed_analysis else 2.0) / float((n - 1) * (n - 2))
             return [float(v) * scale for v in vals]
 
         def _nx_scale_edge(vals):
@@ -9789,7 +9765,7 @@ class TGraph:
             if n <= 1:
                 return [0.0 for _ in vals]
 
-            scale = 2.0 / float(n * (n - 1))
+            scale = (1.0 if directed_analysis else 2.0) / float(n * (n - 1))
             return [float(v) * scale for v in vals]
 
         # ---------------------------------------------------------------------
@@ -9956,6 +9932,9 @@ class TGraph:
         List[List[int]]
             The biconnected components as lists of stable vertex indices.
         """
+        if isinstance(graph, TGraph) and graph._analysis_context is not None and graph._analysis_context.enabled:
+            data = TGraph._StructuralAnalysis(graph)
+            return data["blocks"]
         if not isinstance(graph, TGraph):
             if not silent:
                 print(
@@ -10449,6 +10428,9 @@ class TGraph:
             The resulting bridges list.
         """
 
+        if isinstance(graph, TGraph) and graph._analysis_context is not None and graph._analysis_context.enabled:
+            data = TGraph._StructuralAnalysis(graph)
+            return [TGraph.Edge(graph, i) for i in data["bridges"]]
         if not isinstance(graph, TGraph):
             return []
         vertices = TGraph._ActiveVertexIndices(graph)
@@ -19094,6 +19076,8 @@ class TGraph:
         if not isinstance(graph, TGraph):
             return None
         graph._compiled = None
+        if graph._analysis_context is not None:
+            graph._analysis_context.Clear()
         return graph
 
 
@@ -19114,6 +19098,7 @@ class TGraph:
         tolerance: float = 0.0001,
         silent: bool = False,
         radius: Optional[float] = None,
+        mode: str = "out",
     ) -> Optional[List[float]]:
         """
         Computes the closeness centrality of the input TGraph and stores the result
@@ -19143,11 +19128,12 @@ class TGraph:
         angular : bool , optional
             If set to True, the calculation uses angular weights between adjacent edge
             segments. This option is valid only when useEdges is set to True.
-            Default is False. Straight transitions are regularized to at least
-            1e-9 quarter-turn units to avoid zero-cost cycles.
+            Default is False. Uses internal endpoint orientations, with one result
+            per original segment. Straight transitions cost zero quarter-turn
+            units. Choice resolves zero-cost route ties by minimum transitions.
         angularWeightKey : str , optional
-            The dictionary key under which to store the computed angular weight on the
-            line graph edges. Default is "angular_weight".
+            Retained for API compatibility. Angular mode computes costs on internal
+            endpoint states rather than constructing a public line graph.
         key : str , optional
             The desired dictionary key name under which to store the calculated value.
             Default is "closeness_centrality".
@@ -19168,7 +19154,13 @@ class TGraph:
             count when weightKey is None, otherwise accumulated edge cost; angular
             mode uses quarter-turn units. Must be finite and non-negative.
             Existing normalization uses the full graph order even with a cutoff.
-            These centrality methods retain their undirected analysis convention.
+            Directed inputs respect edge direction. Undirected inputs remain symmetric.
+
+        mode : str, optional
+            Directed traversal: "out" (default), "in", or "all". The
+            nxCompatible flag controls normalization, not traversal direction.
+            Zero total distance with reachable peers is undefined: returns -1,
+            excluded from normalization and coloured grey. Isolated nodes return 0.
 
         Returns
         -------
@@ -19186,6 +19178,12 @@ class TGraph:
                 print("TGraph.ClosenessCentrality - Error: The input graph is not a valid TGraph. Returning None.")
             return None
 
+        mode = str(mode).lower().strip()
+        if mode not in ("out", "in", "all"):
+            if not silent:
+                print("TGraph.ClosenessCentrality - Error: mode must be out, in, or all. Returning None.")
+            return None
+
         if radius is not None:
             if isinstance(radius, bool) or not isinstance(radius, numbers.Real) or not math.isfinite(radius) or radius < 0:
                 if not silent:
@@ -19201,6 +19199,12 @@ class TGraph:
             if not silent:
                 print("TGraph.ClosenessCentrality - Error: The angular option is not compatible with edge bundling through edgeKey. Returning None.")
             return None
+
+        if angular:
+            return TGraph._AngularCentrality(
+                graph, choice=False, normalize=normalize, nxCompatible=nxCompatible,
+                key=key, colorKey=colorKey, colorScale=colorScale, mantissa=mantissa,
+                tolerance=tolerance, silent=silent, radius=radius, mode=mode)
 
         # ---------------------------------------------------------------------
         # Helpers
@@ -19235,14 +19239,19 @@ class TGraph:
             if not vals:
                 return []
             xs = [float(v) for v in vals]
-            mn = min(xs)
-            mx = max(xs)
+            valid = [x for x in xs if x >= 0]
+            if not valid:
+                return xs
+            mn = min(valid)
+            mx = max(valid)
             eps = tolerance if tolerance and tolerance > 0 else 1e-12
             if abs(mx - mn) < eps:
-                return [0.0 for _ in xs]
-            return [(x - mn) / (mx - mn) for x in xs]
+                return [-1.0 if x < 0 else 0.0 for x in xs]
+            return [-1.0 if x < 0 else (x - mn) / (mx - mn) for x in xs]
 
         def _color(value, minValue, maxValue):
+            if value < 0:
+                return "#7f7f7f"
             try:
                 from topologicpy.Color import Color
                 return Color.AnyToHex(
@@ -19261,8 +19270,11 @@ class TGraph:
                 return 0.0, 1.0
             if unit_range:
                 return 0.0, 1.0
-            mn = min(float(v) for v in vals)
-            mx = max(float(v) for v in vals)
+            valid = [float(v) for v in vals if v >= 0]
+            if not valid:
+                return 0.0, 1.0
+            mn = min(valid)
+            mx = max(valid)
             eps = tolerance if tolerance and tolerance > 0 else 1e-12
             if abs(mx - mn) < eps:
                 mx = mn + eps
@@ -19342,117 +19354,6 @@ class TGraph:
 
             return 1.0
 
-        def _vector_from_shared_vertex(g, edgeRecord, sharedVertexIndex):
-            srcIndex = edgeRecord.get("src", None)
-            dstIndex = edgeRecord.get("dst", None)
-
-            c_shared = TGraph.Coordinates(g, sharedVertexIndex, default=None)
-
-            if c_shared is None:
-                return None
-
-            if srcIndex == sharedVertexIndex:
-                c_other = TGraph.Coordinates(g, dstIndex, default=None)
-            elif dstIndex == sharedVertexIndex:
-                c_other = TGraph.Coordinates(g, srcIndex, default=None)
-            else:
-                return None
-
-            if c_other is None:
-                return None
-
-            return [
-                float(c_other[0]) - float(c_shared[0]),
-                float(c_other[1]) - float(c_shared[1]),
-                float(c_other[2]) - float(c_shared[2]),
-            ]
-
-        def _angle_between_vectors(a, b):
-            if a is None or b is None:
-                return None
-
-            la = math.sqrt(a[0] * a[0] + a[1] * a[1] + a[2] * a[2])
-            lb = math.sqrt(b[0] * b[0] + b[1] * b[1] + b[2] * b[2])
-
-            if la <= 0.0 or lb <= 0.0:
-                return None
-
-            dot = (a[0] * b[0] + a[1] * b[1] + a[2] * b[2]) / (la * lb)
-            dot = max(-1.0, min(1.0, dot))
-
-            return math.degrees(math.acos(dot))
-
-        def _shared_vertex_index(edgeA, edgeB):
-            a_src = edgeA.get("src", None)
-            a_dst = edgeA.get("dst", None)
-            b_src = edgeB.get("src", None)
-            b_dst = edgeB.get("dst", None)
-
-            if a_src == b_src or a_src == b_dst:
-                return a_src
-
-            if a_dst == b_src or a_dst == b_dst:
-                return a_dst
-
-            return None
-
-        def _set_angular_weights_on_line_graph(inputGraph, lineGraph):
-            originalEdges = _active_edge_records(inputGraph)
-            idToEdge = {}
-
-            for i, edgeRecord in enumerate(originalEdges):
-                edgeIndex = edgeRecord.get("index", None)
-                if edgeIndex is None:
-                    continue
-
-                idToEdge[edgeIndex] = inputGraph._edges[edgeIndex]
-
-            for lineEdgeRecord in _active_edge_records(lineGraph):
-                srcIndex = lineEdgeRecord.get("src", None)
-                dstIndex = lineEdgeRecord.get("dst", None)
-
-                if srcIndex is None or dstIndex is None:
-                    continue
-
-                if not lineGraph._validate_vertex_index(srcIndex, active=False):
-                    continue
-
-                if not lineGraph._validate_vertex_index(dstIndex, active=False):
-                    continue
-
-                dsrc = lineGraph._vertices[srcIndex].get("dictionary", {})
-                ddst = lineGraph._vertices[dstIndex].get("dictionary", {})
-
-                idA = dsrc.get("original_edge_index", None)
-                idB = ddst.get("original_edge_index", None)
-
-                edgeA = idToEdge.get(idA, None)
-                edgeB = idToEdge.get(idB, None)
-
-                if edgeA is None or edgeB is None:
-                    continue
-
-                shared = _shared_vertex_index(edgeA, edgeB)
-
-                if shared is None:
-                    continue
-
-                vecA = _vector_from_shared_vertex(inputGraph, edgeA, shared)
-                vecB = _vector_from_shared_vertex(inputGraph, edgeB, shared)
-
-                angle = _angle_between_vectors(vecA, vecB)
-
-                if angle is None:
-                    continue
-
-                # A straight continuation has zero deflection, a right turn one.
-                # Positive regularization avoids zero-cost cycles in Brandes.
-                w = max((180.0 - float(angle)) / 90.0, 1e-9)
-                edgeIndex = lineEdgeRecord.get("index", None)
-
-                if lineGraph._validate_edge_index(edgeIndex, active=False):
-                    lineGraph._edges[edgeIndex].setdefault("dictionary", {})[angularWeightKey] = w
-
         # ---------------------------------------------------------------------
         # Edge mode.
         # ---------------------------------------------------------------------
@@ -19478,32 +19379,28 @@ class TGraph:
                     print("TGraph.ClosenessCentrality - Error: Could not create a line graph. Returning None.")
                 return None
 
-            if angular:
-                _set_angular_weights_on_line_graph(graph, lineGraph)
-                lineWeightKey = angularWeightKey
-            else:
-                lineWeightKey = weightKey
+            lineWeightKey = weightKey
 
-                if edgeKey is not None:
+            if edgeKey is not None:
+                try:
+                    lineGraph = TGraph.Quotient(
+                        lineGraph,
+                        key=edgeKey,
+                        groupLabelKey="label",
+                        transferDictionaries=True,
+                    )
+                except TypeError:
                     try:
-                        lineGraph = TGraph.Quotient(
-                            lineGraph,
-                            key=edgeKey,
-                            groupLabelKey="label",
-                            transferDictionaries=True,
-                        )
-                    except TypeError:
-                        try:
-                            lineGraph = TGraph.Quotient(lineGraph, key=edgeKey)
-                        except Exception:
-                            lineGraph = None
+                        lineGraph = TGraph.Quotient(lineGraph, key=edgeKey)
                     except Exception:
                         lineGraph = None
+                except Exception:
+                    lineGraph = None
 
-                    if not isinstance(lineGraph, TGraph):
-                        if not silent:
-                            print("TGraph.ClosenessCentrality - Error: Could not create a quotient line graph. Returning None.")
-                        return None
+                if not isinstance(lineGraph, TGraph):
+                    if not silent:
+                        print("TGraph.ClosenessCentrality - Error: Could not create a quotient line graph. Returning None.")
+                    return None
 
             lineValues = TGraph.ClosenessCentrality(
                 lineGraph,
@@ -19521,6 +19418,7 @@ class TGraph:
                 tolerance=tolerance,
                 silent=silent,
                 radius=radius,
+                mode=mode,
             )
 
             out_vals = []
@@ -19580,7 +19478,7 @@ class TGraph:
 
         # ---------------------------------------------------------------------
         # Vertex mode.
-        # Graph.py treats the input graph as undirected for this calculation.
+        # Respect the graph direction when building traversal adjacency.
         # ---------------------------------------------------------------------
 
         vertexIndices = _active_vertex_indices(graph)
@@ -19616,15 +19514,19 @@ class TGraph:
 
             try:
                 w = float(w)
-                if w <= 0.0:
-                    w = 1.0
+                if not math.isfinite(w) or w < 0.0:
+                    if not silent:
+                        print("TGraph.ClosenessCentrality - Error: Edge costs must be finite and non-negative. Returning None.")
+                    return None
             except Exception:
                 w = 1.0
 
-            prev_uv = adj[u].get(v, None)
-            if prev_uv is None or w < prev_uv:
-                adj[u][v] = w
-                adj[v][u] = w
+            pairs = [(u, v)] if mode != "in" else [(v, u)]
+            if not edgeRecord.get("directed", graph._directed) or mode == "all":
+                pairs = [(u, v), (v, u)]
+            for a, c in pairs:
+                if c not in adj[a] or w < adj[a][c]:
+                    adj[a][c] = w
 
         weighted = weightKey is not None
 
@@ -19683,13 +19585,16 @@ class TGraph:
 
             return total, reachable
 
-        values = [0.0] * n
-
+        def _summaries():
+            return [(*(_dijkstra_sum(i) if weighted else _bfs_sum(i)), None) for i in range(n)]
+        summaries = TGraph._AnalysisMemo(graph, "ordinary_distances",
+            (weightKey, None if radius is None else math.floor(radius) if not weighted else radius, mode),
+            _summaries,
+            geometry=weightKey is not None and str(weightKey).lower() in ("length", "distance"),
+            attributes=(weightKey,))
+        values = [0.0]*n
         for i in range(n):
-            if weighted:
-                total, reachable = _dijkstra_sum(i)
-            else:
-                total, reachable = _bfs_sum(i)
+            total, reachable, _ = summaries[i]
 
             s = max(reachable - 1, 0)
 
@@ -19699,7 +19604,7 @@ class TGraph:
                 else:
                     values[i] = float(s) / float(total)
             else:
-                values[i] = 0.0
+                values[i] = -1.0 if s > 0 else 0.0
 
         out_vals = _normalize_flat(values) if normalize else values
         out_vals = [_round(v) for v in out_vals]
@@ -20610,8 +20515,32 @@ class TGraph:
             "weights": weights,
         }
 
+
     @staticmethod
     def Compile(graph: "TGraph", weightKey: str = "weight", force: bool = False,
+                useNumpy: bool = True, useSciPy: bool = True, useNumba: bool = False):
+        """Prepare graph arrays, reusing bounded context entries when attached.
+
+        Without a context this preserves the existing compiled-cache behaviour.
+        force=True clears the analysis context as well as rebuilding preparation.
+        """
+        context = getattr(graph, "_analysis_context", None)
+        if context is None or not context.enabled:
+            return TGraph._CompileWithoutAnalysisContext(graph, weightKey=weightKey,
+                force=force, useNumpy=useNumpy, useSciPy=useSciPy, useNumba=useNumba)
+        if force:
+            context.Clear()
+        compiled = context.Memo("compiled", (weightKey, useNumpy, useSciPy, useNumba),
+            lambda: TGraph._CompileWithoutAnalysisContext(graph, weightKey=weightKey,
+                force=True, useNumpy=useNumpy, useSciPy=useSciPy, useNumba=useNumba),
+            attributes=(weightKey,))
+        if compiled is not None:
+            compiled["version"] = graph._version
+            graph._compiled = compiled
+        return compiled
+
+    @staticmethod
+    def _CompileWithoutAnalysisContext(graph: "TGraph", weightKey: str = "weight", force: bool = False,
                 useNumpy: bool = True, useSciPy: bool = True, useNumba: bool = False) -> Optional[Dict[str, Any]]:
         """
         Compiles the active graph records into compact arrays used by traversal and analysis methods.
@@ -21887,6 +21816,9 @@ class TGraph:
             The resulting cut vertices list.
         """
 
+        if isinstance(graph, TGraph) and graph._analysis_context is not None and graph._analysis_context.enabled:
+            data = TGraph._StructuralAnalysis(graph)
+            return [TGraph.Vertex(graph, i) for i in data["cuts"]]
         if not isinstance(graph, TGraph):
             return []
         adjacency = TGraph._UndirectedAdjacency(graph)
@@ -25265,6 +25197,8 @@ class TGraph:
             g._vertices[idx]["dictionary"]["active"] = g._vertices[idx]["active"]
             if v.get("parent_originator") is not None:
                 g._vertices[idx]["parent_originator"] = v["parent_originator"]
+            if "parent_originators" in v:
+                g._vertices[idx]["parent_originators"] = list(v["parent_originators"])
             next_expected += 1
         for e in data.get("edges", []):
             if not isinstance(e, dict):
@@ -25299,23 +25233,12 @@ class TGraph:
         """
         if not isinstance(graph, TGraph):
             return 0.0
-        adjacency = TGraph._SimpleUndirectedNeighborSets(graph, includeSelfLoops=False)
-        triangles_times_3 = 0
-        connected_triples = 0
-        for v, nbrs_set in adjacency.items():
-            nbrs = sorted(nbrs_set)
-            k = len(nbrs)
-            if k < 2:
-                continue
-            connected_triples += k * (k - 1)
-            for a in nbrs:
-                a_nbrs = adjacency.get(a, set())
-                for b in nbrs:
-                    if a != b and b in a_nbrs:
-                        triangles_times_3 += 1
+        stats = TGraph._ClusteringStats(graph)
+        triangles_times_3 = sum(2*links for k, links in stats.values())
+        connected_triples = sum(k*(k-1) for k, links in stats.values())
         if connected_triples == 0:
             return 0.0
-        return round(float(triangles_times_3) / float(connected_triples), mantissa)
+        return round(float(triangles_times_3)/float(connected_triples), mantissa)
 
     @staticmethod
     def GraphVizGraph(graph: "TGraph", directed: Optional[bool] = None, rankDir: str = "TB",
@@ -25762,32 +25685,117 @@ class TGraph:
 
     @staticmethod
     def Integration(graph: "TGraph", normalize: bool = True, key: str = "integration", mantissa: int = 6,
-                    silent: bool = False, radius: Optional[float] = None) -> List[float]:
-        """
-        Computes closeness-based integration; this is not Hillier-Hanson normalization.
+                    silent: bool = False, radius: Optional[float] = None,
+                    method: str = "closeness", colorKey: str = "cc_color",
+                    colorScale: str = "viridis") -> Optional[List[float]]:
+        """Compute closeness-based or Depthmap Hillier-Hanson integration.
 
         Parameters
         ----------
-        graph : 'TGraph'
-            The input TGraph.
+        graph : TGraph
+            The input graph. Depthmap mode uses its simple undirected active
+            adjacency, ignoring self-loops, parallel edges and edge weights.
         normalize : bool , optional
-            If set to True, returned values are normalized. Default is True.
+            Normalize closeness values. Applies only to method='closeness'.
+            Depthmap mode always returns intrinsic HH normalization, not a
+            further min-max rescaling. Default is True.
         key : str , optional
-            The dictionary key to use. Default is 'integration'.
+            Vertex dictionary result key. None disables storage.
         mantissa : int , optional
-            The number of decimal places to round numeric results to. Default is 6.
+            Decimal precision. None or a negative value disables rounding.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
-
+            Suppress diagnostics.
         radius : float , optional
-            Inclusive hop cutoff; None means global analysis.
+            Inclusive hop cutoff. None means the entire reachable component.
+        method : str , optional
+            'closeness' preserves the existing default. 'depthmap' or 'hh'
+            computes Integration [HH]: D(n)/RA, with n including the source,
+            MD=total_depth/(n-1), RA=2*(MD-1)/(n-2), and
+            D(n)=2*(n*(log2((n+2)/3)-1)+1)/((n-1)*(n-2)).
+            Names are case-insensitive. This is topological HH integration,
+            not angular segment integration or NAIN.
+        colorKey : str , optional
+            Vertex colour key; None disables colour storage. Default cc_color
+            preserves existing closeness behaviour. Undefined HH values are grey.
+        colorScale : str , optional
+            Colour scale, including 'syntax'. Valid HH values set the colour range.
 
         Returns
         -------
-        List[float]
-            The resulting integration list.
+        list or None
+            Results in active-vertex order. HH is -1 when n<=2 or MD<=1,
+            matching Depthmap's undefined-value convention. Invalid inputs
+            return None. Empty graphs return [].
+
+        Notes
+        -----
+        References: DepthmapX salalib/axialmodules/axialintegration.cpp and
+        genlib/pafmath.h. Traversal uses O(V+E) memory and O(V*(V+E)) time
+        globally; a local radius can reduce the visited neighbourhoods.
         """
-        return TGraph.ClosenessCentrality(graph, normalize=normalize, key=key, mantissa=mantissa, silent=silent, radius=radius)
+        import numbers
+
+        name = method.strip().lower() if isinstance(method, str) else None
+        if name == "closeness":
+            return TGraph.ClosenessCentrality(
+                graph, normalize=normalize, key=key, mantissa=mantissa,
+                silent=silent, radius=radius, colorKey=colorKey, colorScale=colorScale)
+        if name not in ("depthmap", "hh") or not isinstance(graph, TGraph):
+            if not silent:
+                print("TGraph.Integration - Error: Supply a valid TGraph and method 'closeness', 'depthmap', or 'hh'. Returning None.")
+            return None
+        if radius is not None and (isinstance(radius, bool) or not isinstance(radius, numbers.Real)
+                                   or not math.isfinite(radius) or radius < 0):
+            if not silent:
+                print("TGraph.Integration - Error: radius must be finite and non-negative. Returning None.")
+            return None
+        if graph._directed and not silent:
+            print("TGraph.Integration - Warning: Depthmap HH integration uses undirected adjacency.")
+        from collections import deque
+        adjacency = TGraph._SimpleUndirectedNeighborSets(graph, includeSelfLoops=False)
+        active = TGraph.ActiveVertexIndices(graph)
+        cutoff = None if radius is None else math.floor(radius)
+        values = []
+        # The D-value depends only on the reached node count; cache across roots.
+        dvalues = {}
+        def _summaries():
+            summaries = []
+            for source in active:
+                seen = {source}
+                queue = deque([(source, 0)])
+                total_depth = 0
+                while queue:
+                    vertex, depth = queue.popleft()
+                    if cutoff is not None and depth >= cutoff:
+                        continue
+                    for neighbor in adjacency[vertex]:
+                        if neighbor not in seen:
+                            seen.add(neighbor)
+                            total_depth += depth+1
+                            queue.append((neighbor, depth+1))
+                summaries.append((total_depth, len(seen), None))
+            return summaries
+        summaries = TGraph._AnalysisMemo(graph, "ordinary_distances", (None, cutoff, "all"), _summaries)
+        for total_depth, n, _ in summaries:
+            value = -1.0
+            if n > 2 and total_depth > n - 1:
+                if n not in dvalues:
+                    dvalues[n] = 2.0 * (n * (math.log2((n + 2.0) / 3.0) - 1.0) + 1.0) / ((n - 1.0) * (n - 2.0))
+                ra = 2.0 * (total_depth / (n - 1.0) - 1.0) / (n - 2.0)
+                value = dvalues[n] / ra
+            values.append(value if mantissa is None or mantissa < 0 else round(value, mantissa))
+        if colorKey is not None:
+            from topologicpy.Color import Color
+            valid = [v for v in values if v >= 0]
+            low, high = (min(valid), max(valid)) if valid else (0.0, 1.0)
+        for index, value in zip(active, values):
+            dictionary = graph._vertices[index].setdefault("dictionary", {})
+            if key is not None:
+                dictionary[key] = value
+            if colorKey is not None:
+                dictionary[colorKey] = "#7F7F7F" if value < 0 else Color.AnyToHex(
+                    Color.ByValueInRange(value, low, high, colorScale=colorScale, silent=silent))
+        return values
 
     @staticmethod
     def Intersect(graphA: "TGraph", graphB: "TGraph", silent: bool = False) -> Optional["TGraph"]:
@@ -26039,6 +26047,8 @@ class TGraph:
         if not isinstance(graph, TGraph):
             return None
         graph._invalidate_cache()
+        if graph._analysis_context is not None:
+            graph._analysis_context.Clear()
         return graph
 
     @staticmethod
@@ -27314,7 +27324,9 @@ class TGraph:
         graph : 'TGraph'
             The input TGraph.
         directed : Optional[bool] , optional
-            If set to True, graph edges are treated as directed. Default is None.
+            True treats every input edge as directed; False treats every edge
+            as undirected. None preserves the input edge directions, including
+            mixed graphs. Directed transitions require a legal exit and entry.
         transferDictionaries : bool , optional
             The input transfer dictionaries value. Default is True.
         vertexLabelKey : str , optional
@@ -27335,8 +27347,8 @@ class TGraph:
         if not isinstance(graph, TGraph):
             return None
 
-        output_directed = graph._directed if directed is None else bool(directed)
         active_edges = [e for e in graph._edges if e.get("active", True)]
+        output_directed = (graph._directed or any(e.get("directed", graph._directed) for e in active_edges)) if directed is None else bool(directed)
 
         lg = TGraph(
             directed=output_directed,
@@ -27361,26 +27373,37 @@ class TGraph:
             d.setdefault(vertexLabelKey, f"e{eidx}")
             edge_to_vertex[eidx] = lg.AddVertex(dictionary=d, representation=e.get("representation"))
 
-        if graph._directed:
-            # Directed line graph: (u, v) -> (v, w).
+        if output_directed:
+            # A directed transition must exit e1 where it can enter e2.
+            # Explicit directed=True treats every source edge as one-way;
+            # otherwise per-edge direction is preserved in mixed graphs.
             outgoing_by_src = {}
-            for e in active_edges:
-                outgoing_by_src.setdefault(e.get("src"), []).append(e)
-
+            for edge in active_edges:
+                outgoing_by_src.setdefault(edge.get("src"), []).append(edge)
+                if directed is None and not edge.get("directed", graph._directed):
+                    outgoing_by_src.setdefault(edge.get("dst"), []).append(edge)
+            seen = set()
             for e1 in active_edges:
                 e1idx = e1.get("index")
-                v = e1.get("dst")
-                for e2 in outgoing_by_src.get(v, []):
-                    e2idx = e2.get("index")
-                    if e1idx == e2idx and not lg._allow_self_loops:
-                        continue
-                    dictionary = {
-                        relationshipKey: "directed_edge_adjacency",
-                        sharedVertexKey: v,
-                        "from_original_edge_index": e1idx,
-                        "to_original_edge_index": e2idx,
-                    }
-                    lg.AddEdge(edge_to_vertex[e1idx], edge_to_vertex[e2idx], directed=output_directed, dictionary=dictionary)
+                exits = [e1.get("dst")]
+                if directed is None and not e1.get("directed", graph._directed):
+                    exits.append(e1.get("src"))
+                for shared in exits:
+                    for e2 in outgoing_by_src.get(shared, []):
+                        e2idx = e2.get("index")
+                        if e1idx == e2idx and (not lg._allow_self_loops or e1.get("src") != e1.get("dst")):
+                            continue
+                        pair = (e1idx, e2idx)
+                        if pair in seen:
+                            continue
+                        seen.add(pair)
+                        dictionary = {
+                            relationshipKey: "directed_edge_adjacency",
+                            sharedVertexKey: shared,
+                            "from_original_edge_index": e1idx,
+                            "to_original_edge_index": e2idx,
+                        }
+                        lg.AddEdge(edge_to_vertex[e1idx], edge_to_vertex[e2idx], directed=True, dictionary=dictionary)
         else:
             # Undirected line graph: connect any two edges sharing an endpoint.
             incident_by_vertex = {}
@@ -27449,20 +27472,11 @@ class TGraph:
                 idx = TGraph._as_index(v)
                 if graph._validate_vertex_index(idx):
                     selected.append(idx)
+        stats = TGraph._ClusteringStats(graph)
         values = []
         for v in selected:
-            nbrs = sorted(adjacency.get(v, set()))
-            k = len(nbrs)
-            if k < 2:
-                coeff = 0.0
-            else:
-                links = 0
-                for i, a in enumerate(nbrs):
-                    a_nbrs = adjacency.get(a, set())
-                    for b in nbrs[i + 1:]:
-                        if b in a_nbrs:
-                            links += 1
-                coeff = (2.0 * float(links)) / float(k * (k - 1))
+            k, links = stats.get(v, (0, 0))
+            coeff = 0.0 if k < 2 else 2.0 * float(links) / float(k * (k-1))
             coeff = round(float(coeff), mantissa)
             values.append(coeff)
             if key is not None:
@@ -32025,7 +32039,7 @@ class TGraph:
             source_index,
             mode=mode,
             useNumba=useNumba,
-            includePaths=True,
+            includePaths=returnTree,
             includeEdges=returnEdges,
             vertexKey=vertexKey,
             edgeKey=edgeKey,
@@ -32056,6 +32070,23 @@ class TGraph:
             "distance",
             {},
         )
+        if not returnTree:
+            parents = tree["parent"]
+            parent_edges = tree["parentEdge"]
+            for _, target_index in resolved_targets:
+                if target_index not in distances or distances[target_index] < 0:
+                    continue
+                current, path, edge_indices = target_index, [], []
+                while current is not None:
+                    path.append(current)
+                    if current == source_index:
+                        break
+                    edge_indices.append(parent_edges[current])
+                    current = parents[current]
+                if path and path[-1] == source_index:
+                    paths[target_index] = list(reversed(path))
+                    if returnEdges:
+                        edge_paths[target_index] = list(reversed(edge_indices))
 
         for key, target_index in resolved_targets:
 
@@ -34009,6 +34040,8 @@ class TGraph:
             index = g.AddVertex(dictionary=dict(rec.get("dictionary", {})), representation=rec.get("representation"), originator=rec.get("originator"))
             if rec.get("parent_originator") is not None:
                 g._vertices[index]["parent_originator"] = rec["parent_originator"]
+            if "parent_originators" in rec:
+                g._vertices[index]["parent_originators"] = list(rec["parent_originators"])
         if induced:
             allowed = set(old_indices)
             for e in graph._edges:
@@ -34957,6 +34990,8 @@ class TGraph:
                 record["originator"] = v.get("originator")
                 if v.get("parent_originator") is not None:
                     record["parent_originator"] = v["parent_originator"]
+                if "parent_originators" in v:
+                    record["parent_originators"] = list(v["parent_originators"])
             vertices.append(record)
         edges = []
         for e in graph._edges:
@@ -37946,19 +37981,555 @@ class TGraph:
     _NUMBA_BFS_TREE = None
 
     @staticmethod
+    def ByDepthmapSegmentData(segmentRows, connectionRows, silent: bool = False):
+        """Import DepthmapX segment and oriented-connection CSV row dictionaries.
+
+        Export shapegraph-map-csv and shapegraph-connections-csv from the same
+        segment map, then pass lists from csv.DictReader. Ref IDs, endpoint
+        orientation, saved Segment Length, turn weights and explicit links are
+        preserved. No geometric reconstruction or tolerance-based relinking is
+        performed. This returns an undirected analysis SegmentGraph with one
+        node per segment; geometry is stored in dictionaries, without native
+        originator Edges. Angular outputs are stored on its segment nodes.
+        """
+        import math
+        try:
+            rows = sorted(segmentRows, key=lambda r: int(r["Ref"]))
+            refs, lengths, endpoints = {}, {}, {}
+            graph = TGraph(allowSelfLoops=False, dictionary={"graph_type": "segment"})
+            for row in rows:
+                ref = int(row["Ref"])
+                if ref in refs:
+                    raise ValueError("Duplicate segment Ref")
+                p = [float(row["x1"]), float(row["y1"]), 0.0]
+                q = [float(row["x2"]), float(row["y2"]), 0.0]
+                length = float(row.get("Segment Length", math.dist(p, q)))
+                if (not all(math.isfinite(x) for x in p+q) or math.dist(p, q) == 0
+                        or not math.isfinite(length) or length <= 0):
+                    raise ValueError("Segments require finite nonzero geometry and positive length")
+                dictionary = dict(row)
+                dictionary.update(depthmap_ref=ref, segment_length=length,
+                                  segment_endpoints=[p, q])
+                dictionary.update({axis: (a+b)*0.5
+                    for axis,a,b in zip(("x", "y", "z"), p,q)})
+                refs[ref] = graph.AddVertex(dictionary=dictionary)
+                lengths[str(ref)] = length
+                endpoints[str(ref)] = [p, q]
+            transitions, seen = [], set()
+            for row in connectionRows:
+                source, target = int(row["refA"]), int(row["refB"])
+                end, arrival = int(row["for_back"]), int(row["dir"])
+                cost = float(row["ss_weight"])
+                if (source not in refs or target not in refs or source == target
+                        or end not in (0, 1) or arrival not in (-1, 1)
+                        or not math.isfinite(cost) or cost < 0 or cost > 2):
+                    raise ValueError("Invalid oriented segment connection")
+                key = (source, 1 if end == 0 else -1, target, arrival)
+                if key in seen:
+                    raise ValueError("Duplicate oriented segment connection")
+                seen.add(key)
+                transitions.append([*key, cost])
+            if any((target, -arrival, source, -direction) not in seen
+                   for source,direction,target,arrival,cost in transitions):
+                raise ValueError("Import currently requires reciprocal undirected connections")
+            pairs = set()
+            for source,direction,target,arrival,cost in transitions:
+                pair = tuple(sorted((refs[source], refs[target])))
+                if pair not in pairs:
+                    graph.AddEdge(*pair)
+                    pairs.add(pair)
+            graph._dictionary["depthmap_segment_data"] = {
+                "transitions": transitions, "lengths": lengths, "endpoints": endpoints}
+            return graph
+        except Exception as exc:
+            if not silent:
+                print(f"TGraph.ByDepthmapSegmentData - Error: {exc}. Returning None.")
+            return None
+
+    @staticmethod
+    def _AngularStateData(graph, tolerance=0.0001, mode="out"):
+        context = getattr(graph, "_analysis_context", None)
+        if context is None:
+            return TGraph._AngularStateDataWithoutContext(graph, tolerance, mode)
+        def prepare():
+            records, states, starts, adjacency, directed = TGraph._AngularStateDataWithoutContext(graph, tolerance, mode)
+            return ([r["index"] for r in records], states, starts, adjacency, directed)
+        data = context.Memo("angular_states", (tolerance, mode), prepare, geometry=True,
+            attributes=("depthmap_ref", graph._dictionary.get("angular_weight_key", "angular_weight")),
+            graphAttributes=("graph_type", "depthmap_segment_data", "angular_weight_key"))
+        records = graph._vertices if graph._dictionary.get("graph_type") == "segment" else graph._edges
+        return ([records[i] for i in data[0]], *data[1:])
+
+    @staticmethod
+    def _AngularStateDataWithoutContext(graph, tolerance=0.0001, mode="out"):
+        """Build endpoint-aware segment states without changing public graph nodes.
+
+        A state (segment, direction) exits at the endpoint opposite its entry.
+        Source and target segments are grouped during analysis, so two states
+        never become two origins, destinations, or dictionary results.
+        """
+        import math
+        from collections import defaultdict
+        segment_graph = graph._dictionary.get("graph_type") == "segment"
+        if segment_graph:
+            tolerance = graph._dictionary.get("tolerance", tolerance)
+        tolerance = max(float(tolerance or 0.0001), 1e-12)
+        records = [r for r in (graph._vertices if segment_graph else graph._edges)
+                   if r.get("active", True)]
+        positions = {r["index"]: i for i, r in enumerate(records)}
+        saved = graph._dictionary.get("depthmap_segment_data") if segment_graph else None
+        if saved is not None:
+            # Imported references remain stable through inactive-node filtering
+            # and Copy; graph relationships still control explicit removals.
+            refs = {int(r["dictionary"]["depthmap_ref"]): i for i,r in enumerate(records)}
+            states = [(i,d) for i in range(len(records)) for d in (1,-1)]
+            starts = [[2*i,2*i+1] for i in range(len(records))]
+            adjacency = [[] for _ in states]
+            allowed, directed_analysis = set(), False
+            for edge in graph._edges:
+                if not edge.get("active",True) or edge["src"] not in positions or edge["dst"] not in positions:
+                    continue
+                a,b = positions[edge["src"]],positions[edge["dst"]]
+                one_way = bool(edge.get("directed",graph._directed)) and mode != "all"
+                directed_analysis |= one_way
+                allowed.add((b,a) if one_way and mode == "in" else (a,b))
+                if not one_way:
+                    allowed.add((b,a))
+            for source,direction,target,arrival,cost in saved["transitions"]:
+                if source not in refs or target not in refs:
+                    continue
+                i,j = refs[source],refs[target]
+                if (i,j) in allowed:
+                    adjacency[2*i+(direction != 1)].append((2*j+(arrival != 1),cost))
+            return records,states,starts,adjacency,directed_analysis
+        points, junctions, directions = [], [], []
+        buckets = defaultdict(list)
+        next_junction = 0
+        def junction(point):
+            nonlocal next_junction
+            cell = tuple(math.floor(x/tolerance) for x in point)
+            for dx in (-1, 0, 1):
+                for dy in (-1, 0, 1):
+                    for dz in (-1, 0, 1):
+                        for other, index in buckets.get((cell[0]+dx, cell[1]+dy, cell[2]+dz), []):
+                            if math.dist(point, other) <= tolerance:
+                                return index
+            index = next_junction
+            next_junction += 1
+            buckets[cell].append((point, index))
+            return index
+        for record in records:
+            if segment_graph:
+                from topologicpy.Edge import Edge
+                from topologicpy.Vertex import Vertex
+                edge = record.get("originator")
+                if edge is None:
+                    edge = record.get("representation")
+                p = Vertex.Coordinates(Edge.StartVertex(edge))
+                q = Vertex.Coordinates(Edge.EndVertex(edge))
+                if p is None or q is None:
+                    raise ValueError("Segment nodes must retain their originator edges")
+                ends = (junction(p), junction(q))
+                one_way = False
+            else:
+                src, dst = record["src"], record["dst"]
+                if not graph._validate_vertex_index(src) or not graph._validate_vertex_index(dst):
+                    raise ValueError("Active segments require active endpoint vertices")
+                p, q = TGraph.Coordinates(graph, src, default=None), TGraph.Coordinates(graph, dst, default=None)
+                ends = (src, dst)
+                one_way = bool(record.get("directed", graph._directed)) and mode != "all"
+            if p is None or q is None or not all(math.isfinite(float(x)) for x in list(p)+list(q)) or math.dist(p, q) == 0:
+                raise ValueError("Angular analysis requires finite, non-zero segment geometry")
+            points.append((p, q))
+            junctions.append(ends)
+            directions.append((-1,) if one_way and mode == "in" else ((1,) if one_way else (1, -1)))
+        states, starts = [], []
+        entrants = defaultdict(list)
+        for i, dirs in enumerate(directions):
+            starts.append([])
+            for direction in dirs:
+                state = len(states)
+                states.append((i, direction))
+                starts[i].append(state)
+                entrants[junctions[i][0 if direction == 1 else 1]].append(state)
+        # In SegmentGraph the active relationships determine which segments
+        # remain connected. Respect removed relationships and per-edge direction.
+        allowed = {}
+        directed_analysis = False
+        if segment_graph:
+            weight_key = graph._dictionary.get("angular_weight_key", "angular_weight")
+            for edge in graph._edges:
+                if not edge.get("active", True) or edge["src"] not in positions or edge["dst"] not in positions:
+                    continue
+                a, b = positions[edge["src"]], positions[edge["dst"]]
+                one_way = bool(edge.get("directed", graph._directed)) and mode != "all"
+                directed_analysis |= one_way
+                pairs = [(b, a)] if one_way and mode == "in" else [(a, b)]
+                if not one_way:
+                    pairs.append((b, a))
+                weight = edge.get("dictionary", {}).get(weight_key)
+                if weight is not None:
+                    weight = float(weight)
+                    if not math.isfinite(weight) or weight < 0:
+                        raise ValueError("Angular weights must be finite and non-negative")
+                for pair in pairs:
+                    if pair not in allowed or (weight is not None and (allowed[pair] is None or weight < allowed[pair])):
+                        allowed[pair] = weight
+        else:
+            directed_analysis = any(len(d) == 1 for d in directions)
+        adjacency = [[] for _ in states]
+        for state, (i, direction) in enumerate(states):
+            exit_end = 1 if direction == 1 else 0
+            p, q = points[i]
+            incoming = [(q[k]-p[k])*direction for k in range(3)]
+            for target in entrants.get(junctions[i][exit_end], []):
+                j, next_direction = states[target]
+                if i == j or (segment_graph and (i, j) not in allowed):
+                    continue
+                a, b = points[j]
+                outgoing = [(b[k]-a[k])*next_direction for k in range(3)]
+                cross = (incoming[1]*outgoing[2]-incoming[2]*outgoing[1],
+                         incoming[2]*outgoing[0]-incoming[0]*outgoing[2],
+                         incoming[0]*outgoing[1]-incoming[1]*outgoing[0])
+                angle = math.atan2(math.sqrt(sum(x*x for x in cross)), sum(x*y for x, y in zip(incoming, outgoing)))
+                cost = angle/(math.pi/2)
+                # Floating subtraction of large coordinates can leave tiny
+                # residuals in a mathematically straight continuation.
+                if cost < 1e-12:
+                    cost = 0.0
+                if segment_graph and allowed[(i, j)] is not None:
+                    cost = allowed[(i, j)]
+                adjacency[state].append((target, cost))
+        return records, states, starts, adjacency, directed_analysis
+
+    @staticmethod
+    def _AngularBoundedPaths(states, starts, adjacency, lengths, source, radius, radiusType):
+        """Pareto search for angular paths constrained by midpoint distance or hops.
+
+        Labels retain angular/resource tradeoffs. Equal-angular paths prefer the
+        least radius distance, then least hops; identical labels split demand.
+        This is an exact-angle convention, not Depthmap's Tulip bin traversal.
+        """
+        import heapq
+        labels, groups = [], [[] for _ in states]
+        predecessors, sigma, order, heap = [], [], [], []
+        def insert(state, angle, resource, hops, parent=None):
+            for i in groups[state]:
+                a, r, h, active = labels[i][1:]
+                if not active:
+                    continue
+                if abs(a-angle) <= 1e-12 and abs(r-resource) <= 1e-12 and h == hops:
+                    if parent is not None:
+                        sigma[i] += sigma[parent]
+                        predecessors[i].append(parent)
+                    return
+                if a <= angle+1e-12 and r <= resource+1e-12 and (
+                        a < angle-1e-12 or r < resource-1e-12 or h <= hops):
+                    return
+            for i in groups[state]:
+                a, r, h, active = labels[i][1:]
+                if active and angle <= a+1e-12 and resource <= r+1e-12 and (
+                        angle < a-1e-12 or resource < r-1e-12 or hops < h):
+                    labels[i][4] = False
+            i = len(labels)
+            labels.append([state, angle, resource, hops, True])
+            groups[state].append(i)
+            predecessors.append([] if parent is None else [parent])
+            sigma.append(1.0 if parent is None else sigma[parent])
+            heapq.heappush(heap, (angle, resource, hops, i))
+        for state in starts[source]:
+            insert(state, 0.0, 0.0, 0)
+        while heap:
+            angle, resource, hops, i = heapq.heappop(heap)
+            if not labels[i][4]:
+                continue
+            order.append(i)
+            state = labels[i][0]
+            for target, weight in adjacency[state]:
+                # Never return to the origin segment; its other orientation is
+                # already a root. Positive radius costs prevent zero-turn loops.
+                if states[target][0] == source:
+                    continue
+                step = 1 if radiusType == "topological" else (
+                    lengths[states[state][0]]+lengths[states[target][0]])/2
+                candidate = resource+step
+                if candidate <= radius+1e-12:
+                    insert(target, angle+weight, candidate, hops+1, i)
+        target_groups = [[] for _ in starts]
+        for i, (state, angle, resource, hops, active) in enumerate(labels):
+            if active:
+                target_groups[states[state][0]].append(i)
+        return ([(states[label[0]][0], states[label[0]][1]) for label in labels],
+                target_groups, [label[1] for label in labels],
+                [label[3] for label in labels], sigma, predecessors, order,
+                [label[2] for label in labels])
+
+    @staticmethod
+    def _AngularCentrality(graph, choice=False, normalize=False, nxCompatible=True,
+                           key=None, colorKey=None, colorScale="viridis", mantissa=6,
+                           tolerance=0.0001, silent=False, radius=None, mode="out",
+                           colorScaleMode="linear", integrationMethod="closeness",
+                           radiusType="angular", weighting=None, choiceMethod="betweenness"):
+        """Angular centrality on oriented states, aggregated once per segment.
+
+        Targets use their least-cost arrival direction. Choice distributes one
+        unit per reachable segment target across tied routes; where zero costs
+        exist, ties use minimum hops. Internal state traversals are summed back
+        onto their segments. Angular radii bound turn cost; other radii bound midpoint travel or hops.
+        """
+        import math
+        import heapq
+        import numbers
+        if not isinstance(graph, TGraph):
+            return None
+        radiusType = str(radiusType).lower().strip()
+        weighting = "none" if weighting is None else str(weighting).lower().strip()
+        if radiusType not in ("angular", "metric", "topological") or weighting not in ("none", "length"):
+            if not silent:
+                print("TGraph angular analysis - Error: Invalid radiusType or weighting. Returning None.")
+            return None
+        if mode not in ("out", "in", "all") or (radius is not None and
+                (isinstance(radius, bool) or not isinstance(radius, numbers.Real) or not math.isfinite(radius) or radius < 0)):
+            if not silent:
+                print("TGraph angular analysis - Error: Invalid mode or radius. Returning None.")
+            return None
+        tolerance = max(float(tolerance or 0.0001), 1e-12)
+        try:
+            records, states, starts, adj, directed = TGraph._AngularStateData(graph, tolerance, mode)
+        except Exception as exc:
+            if not silent:
+                print(f"TGraph angular analysis - Error: {exc}. Returning None.")
+            return None
+        n, size = len(records), len(states)
+        if not n:
+            return []
+        # Geometry supplies length in coordinate units, never angular link weight.
+        lengths = [1.0]*n
+        if weighting == "length" or (radius is not None and radiusType == "metric"):
+            if graph._dictionary.get("depthmap_segment_data") is not None:
+                lengths = [graph._dictionary["depthmap_segment_data"]["lengths"]
+                           [str(r["dictionary"]["depthmap_ref"])] for r in records]
+            elif graph._dictionary.get("graph_type") == "segment":
+                from topologicpy.Edge import Edge
+                from topologicpy.Vertex import Vertex
+                lengths = [math.dist(Vertex.Coordinates(Edge.StartVertex(r.get("originator")
+                           if r.get("originator") is not None else r.get("representation"))),
+                           Vertex.Coordinates(Edge.EndVertex(r.get("originator")
+                           if r.get("originator") is not None else r.get("representation")))) for r in records]
+            else:
+                lengths = [math.dist(TGraph.Coordinates(graph, r["src"]),
+                                     TGraph.Coordinates(graph, r["dst"])) for r in records]
+        weights = lengths if weighting == "length" else [1.0]*n
+        context = getattr(graph, "_analysis_context", None)
+        calculate_choice = choice or (context is not None and context.enabled)
+        def _calculate_exact(states=states, starts=starts, size=size):
+            values, depths = [0.0]*n, [0.0]*n
+            counts, masses = [0]*n, [0.0]*n
+            base_states, base_starts = states, starts
+            base_size = size
+            bounded = radius is not None and radiusType != "angular"
+            tie_by_hops = any(cost == 0 for neighbors in adj for _, cost in neighbors)
+            for source in range(n):
+                states, starts, size = base_states, base_starts, base_size
+                if bounded:
+                    states, starts, dist, hops, sigma, predecessors, order, resources = TGraph._AngularBoundedPaths(
+                        base_states, base_starts, adj, lengths, source, radius, radiusType)
+                    size = len(states)
+                else:
+                    dist, hops = [math.inf]*size, [math.inf]*size
+                    sigma, predecessors = [0.0]*size, [[] for _ in states]
+                    settled, order, heap = [False]*size, [], []
+                    for state in starts[source]:
+                        dist[state], hops[state], sigma[state] = 0.0, 0, 1.0
+                        heapq.heappush(heap, (0.0, 0, state))
+                    while heap:
+                        cost, count, v = heapq.heappop(heap)
+                        if settled[v] or cost > dist[v]+1e-12 or (tie_by_hops and count != hops[v]):
+                            continue
+                        settled[v] = True
+                        order.append(v)
+                        for w, weight in adj[v]:
+                            candidate, next_hops = cost+weight, count+1
+                            if radius is not None and radiusType == "angular" and candidate > radius:
+                                continue
+                            equal_cost = abs(candidate-dist[w]) <= 1e-12
+                            better = candidate < dist[w]-1e-12 or (tie_by_hops and equal_cost and next_hops < hops[w])
+                            equal = equal_cost and (not tie_by_hops or next_hops == hops[w])
+                            if better:
+                                dist[w], hops[w], sigma[w] = candidate, next_hops, sigma[v]
+                                predecessors[w] = [v]
+                                heapq.heappush(heap, (candidate, next_hops if tie_by_hops else 0, w))
+                            elif equal and not settled[w]:
+                                sigma[w] += sigma[v]
+                                predecessors[w].append(v)
+                demand, total, reached = [0.0]*size, 0.0, 0
+                mass = weights[source]
+                for target in range(n):
+                    if target == source:
+                        continue
+                    if not starts[target]:
+                        continue
+                    best = min(dist[state] for state in starts[target])
+                    if not math.isfinite(best):
+                        continue
+                    reached += 1
+                    total += best*weights[target]
+                    mass += weights[target]
+                    if calculate_choice:
+                        terminal = [state for state in starts[target] if abs(dist[state]-best) <= 1e-12]
+                        if bounded:
+                            least_resource = min(resources[state] for state in terminal)
+                            terminal = [state for state in terminal if abs(resources[state]-least_resource) <= 1e-12]
+                        if tie_by_hops or bounded:
+                            least_hops = min(hops[state] for state in terminal)
+                            terminal = [state for state in terminal if hops[state] == least_hops]
+                        count = sum(sigma[state] for state in terminal)
+                        for state in terminal:
+                            demand[state] = weights[source]*weights[target]*sigma[state]/count
+                        if weighting == "length":
+                            # Depthmap length-weighted choice includes half demand at
+                            # each endpoint, in addition to full internal demand.
+                            pair_weight = weights[source]*weights[target]/2
+                            values[source] += pair_weight
+                            values[target] += pair_weight
+                depths[source] = total
+                counts[source], masses[source] = reached, mass
+                if calculate_choice:
+                    delta = [0.0]*size
+                    for w in reversed(order):
+                        for v in predecessors[w]:
+                            delta[v] += sigma[v]/sigma[w]*(demand[w]+delta[w])
+                        if states[w][0] != source:
+                            values[states[w][0]] += delta[w]
+                elif integrationMethod == "nain":
+                    values[source] = mass**1.2/(total+2) if reached else -1.0
+                elif integrationMethod == "depthmap":
+                    values[source] = mass**2 / total if total > 1e-9 else -1.0
+                elif total > 0:
+                    values[source] = (mass-weights[source])/total
+                    if nxCompatible:
+                        values[source] *= reached/(n-1)
+                else:
+                    values[source] = -1.0 if reached else 0.0
+            return values, depths, counts, masses
+        values, depths, counts, masses = TGraph._AnalysisMemo(graph, "angular_exact",
+            (radius, radiusType, weighting, mode, tolerance), _calculate_exact, geometry=True,
+            attributes=("depthmap_ref", graph._dictionary.get("angular_weight_key", "angular_weight")),
+            graphAttributes=("graph_type", "depthmap_segment_data", "angular_weight_key"))
+        if context is not None and context.enabled and not choice:
+            for source, (total, reached, mass) in enumerate(zip(depths, counts, masses)):
+                if integrationMethod == "nain":
+                    values[source] = mass**1.2/(total+2) if reached else -1.0
+                elif integrationMethod == "depthmap":
+                    values[source] = mass**2/total if total > 1e-9 else -1.0
+                elif total > 0:
+                    values[source] = (mass-weights[source])/total
+                    if nxCompatible:
+                        values[source] *= reached/(n-1)
+                else:
+                    values[source] = -1.0 if reached else 0.0
+        if choice:
+            if not directed and choiceMethod == "betweenness":
+                values = [value/2 for value in values]
+            if nxCompatible and choiceMethod == "betweenness":
+                scale = ((1 if directed else 2)/((n-1)*(n-2))) if n > 2 else 0
+                values = [value*scale for value in values]
+            if choiceMethod == "nach":
+                values = [math.log1p(value)/math.log(depth+3) for value, depth in zip(values, depths)]
+        if normalize and choiceMethod == "betweenness" and integrationMethod == "closeness" and (not choice or not nxCompatible):
+            valid = [v for v in values if v >= 0]
+            if valid:
+                lo, hi = min(valid), max(valid)
+                values = [-1.0 if v < 0 else ((v-lo)/(hi-lo) if hi-lo > tolerance else 0.0) for v in values]
+        if mantissa is not None and mantissa >= 0:
+            values = [round(v, mantissa) for v in values]
+        TGraph._AngularWriteValues(
+            records, values, key, colorKey, colorScale,
+            tolerance,
+            (normalize and integrationMethod == "closeness" and choiceMethod == "betweenness") or (choice and nxCompatible and choiceMethod == "betweenness"),
+            colorScaleMode
+        )
+        return values
+
+    @staticmethod
+    def _AngularWriteValues(records, values, key, colorKey, colorScale,
+                            tolerance=0.0001, unitRange=False, colorScaleMode="linear"):
+        """Store one result per original segment and map defined values to colours."""
+        import math
+        valid = [v for v in values if v >= 0]
+        lo, hi = (min(valid), max(valid)) if valid else (0, 1)
+        if unitRange:
+            lo, hi = 0.0, 1.0
+        if hi == lo:
+            hi = lo+max(tolerance, 1e-12)
+        color_mode = str(colorScaleMode).lower().strip()
+        if colorKey is not None:
+            from topologicpy.Color import Color
+            scale_name = colorScale.strip().lower() if isinstance(colorScale, str) else None
+            if scale_name not in ("syntax", "syntax_r", "default") and colorScale:
+                resolved_scale = Color.ColorScale(colorScale, silent=True)
+                if resolved_scale is not None:
+                    colorScale = resolved_scale
+        for record, value in zip(records, values):
+            dictionary = record.setdefault("dictionary", {})
+            if key is not None:
+                dictionary[key] = value
+            if colorKey is not None:
+                if value < 0:
+                    dictionary[colorKey] = "#7f7f7f"
+                else:
+                    display = max(lo, min(hi, value))
+                    if color_mode in ("log", "logarithmic", "log10", "log1p", "ln", "natural_log"):
+                        mapped = math.log1p(display-lo)/math.log1p(hi-lo)
+                    elif color_mode in ("sqrt", "square_root"):
+                        mapped = math.sqrt((display-lo)/(hi-lo))
+                    else:
+                        mapped = (display-lo)/(hi-lo)
+                    dictionary[colorKey] = Color.AnyToHex(
+                        Color.ByValueInRange(mapped, minValue=0, maxValue=1, colorScale=colorScale))
+
+    @staticmethod
     def AngularConnectivity(graph: "TGraph", key: str = "connectivity",
                             colorKey: str = None, mode: str = "all",
                             normalize: bool = False, mantissa: int = 6,
-                            silent: bool = False, colorScale: str = "viridis") -> Optional[List[float]]:
-        """Returns segment connectivity and stores values on input graph edges.
+                            silent: bool = False, colorScale: str = "viridis",
+                            method: str = "degree") -> Optional[List[float]]:
+        """Segment connectivity, stored on SegmentGraph nodes or other graph edges.
 
-        Connectivity counts adjacent segments; it does not weight turning angles.
-        Mode and normalization follow Connectivity on the segment line graph.
+        method="degree" preserves the default: count adjacent segments.
+        method="depthmap" sums permitted angular turn costs in quarter-turn units,
+        matching Depthmap's Angular Connectivity on undirected segment networks.
+        mode is out, in, or all (default). Normalization is min-max rescaling.
         """
         if not isinstance(graph, TGraph):
             if not silent:
                 print("TGraph.AngularConnectivity - Error: Invalid TGraph. Returning None.")
             return None
+        name = str(method).lower().strip()
+        if name not in ("degree", "depthmap"):
+            if not silent:
+                print("TGraph.AngularConnectivity - Error: method must be degree or depthmap. Returning None.")
+            return None
+        if name == "depthmap":
+            mode = str(mode).lower().strip()
+            if mode not in ("out", "in", "all"):
+                if not silent:
+                    print("TGraph.AngularConnectivity - Error: Invalid mode. Returning None.")
+                return None
+            try:
+                records, _, starts, adjacency, _ = TGraph._AngularStateData(graph, mode=mode)
+            except Exception as exc:
+                if not silent:
+                    print(f"TGraph.AngularConnectivity - Error: {exc}. Returning None.")
+                return None
+            values = [sum(cost for state in group for _, cost in adjacency[state]) for group in starts]
+            if normalize and values:
+                lo, hi = min(values), max(values)
+                values = [(v-lo)/(hi-lo) if hi > lo else 0.0 for v in values]
+            if mantissa is not None and mantissa >= 0:
+                values = [round(v, mantissa) for v in values]
+            TGraph._AngularWriteValues(records, values, key, colorKey, colorScale, unitRange=normalize)
+            return values
         if graph._dictionary.get("graph_type") == "segment":
             return TGraph.Connectivity(graph, key=key, colorKey=colorKey, mode=mode,
                                        normalize=normalize, mantissa=mantissa,
@@ -37976,41 +38547,368 @@ class TGraph:
         return values
 
     @staticmethod
-    def AngularChoice(graph: "TGraph", normalize: bool = True, key: str = "choice",
-                      mantissa: int = 6, silent: bool = False,
-                      radius: Optional[float] = None) -> Optional[List[float]]:
-        """Computes angular betweenness for segments represented by graph edges.
+    def _AngularTulipValues(transitions, lengths, bins=1024, radius=None,
+                           radiusType="angular", weighting=None, choice=True,
+                           returnStats=False):
+        """DepthmapX traversal with reusable generation-stamped state arrays.
 
-        Values are stored on the input edges. Radius uses quarter-turn units.
-        Straight transitions use the centrality method's positive regularization.
+        Circular heaps retain float32 metric ordering and newest-first ties.
+        Only reached segments are sorted; bounded searches do not reset or scan
+        the entire network for each origin. Every origin reuses the same arrays.
         """
-        if isinstance(graph, TGraph) and graph._dictionary.get("graph_type") == "segment":
-            return TGraph.BetweennessCentrality(
-                graph, weightKey=graph._dictionary.get("angular_weight_key", "angular_weight"),
-                normalize=normalize, nxCompatible=normalize,
-                key=key, mantissa=mantissa, silent=silent, radius=radius)
-        return TGraph.BetweennessCentrality(
-            graph, normalize=normalize, nxCompatible=normalize, useEdges=True, angular=True,
-            key=key, mantissa=mantissa, silent=silent, radius=radius)
+        import math
+        import heapq
+        import struct
+        pack, unpack = struct.Struct("f").pack, struct.Struct("f").unpack
+        def float32(value):
+            return unpack(pack(value))[0]
+        push, pop = heapq.heappush, heapq.heappop
+        n = len(lengths)
+        internal = bins//2+1
+        divisor = (internal-1)*0.5
+        lengths = list(map(float32, lengths))
+        weighted = weighting == "length"
+        weights = lengths if weighted else [1.0]*n
+        limit = (math.floor(radius*internal*0.5) if radiusType == "angular"
+                 else int(radius)) if radius is not None else None
+        adjacency = [[] for _ in range(2*n)]
+        for source, direction, target, arrival, cost in transitions:
+            step = math.floor(float32(float32(cost)*internal)*0.5)
+            adjacency[2*source+(direction != 1)].append((2*target+(arrival != 1), step))
+        for neighbors in adjacency:
+            # Reference order, then arrival +1 before -1, as in the original
+            # (target, arrival, step) tuples. Most maps have one arrival per ref.
+            neighbors.sort(key=lambda row: (row[0]//2, -(row[0]%2), row[1]))
+        size = 2*n
+        values = [0.0]*size
+        covered, leaf, choicecovered = [0]*size, [0]*size, [0]*size
+        depth, previous = [0]*size, [0]*size
+        seen_segment = [0]*n
+        depths, counts, masses = [0.0]*n, [0]*n, [0.0]*n
+        buckets = [[] for _ in range(internal)]
+        angular = radiusType == "angular"
+        metric_radius = radiusType == "metric"
+        for source in range(n):
+            generation = source+1
+            root = 2*source
+            reached = []
+            serial = 0
+            push(buckets[0], (float32(lengths[source]/2), 0, root, -1, 0))
+            pending, current, level = 1, 0, 0
+            while pending:
+                while not buckets[current]:
+                    current = (current+1)%internal
+                    level += 1
+                metric, _, state, parent, hops = pop(buckets[current])
+                pending -= 1
+                if covered[state] == generation:
+                    continue
+                segment = state//2
+                if seen_segment[segment] != generation:
+                    seen_segment[segment] = generation
+                    reached.append(segment)
+                if parent < 0:
+                    covered[root] = covered[root+1] = generation
+                    depth[root] = depth[root+1] = 0
+                    if choice:
+                        leaf[root] = leaf[root+1] = generation
+                    outgoing_states = (root, root+1)
+                else:
+                    covered[state] = generation
+                    depth[state] = level
+                    if choice:
+                        previous[state] = parent
+                        leaf[state] = generation
+                        leaf[parent] = 0
+                    outgoing_states = (state,)
+                for outgoing in outgoing_states:
+                    for target_state, step in adjacency[outgoing]:
+                        if covered[target_state] == generation:
+                            continue
+                        target = target_state//2
+                        if limit is not None:
+                            if angular:
+                                if level+step > limit:
+                                    continue
+                            elif metric_radius:
+                                if metric+lengths[target]*0.5 > limit:
+                                    continue
+                            elif hops >= limit:
+                                continue
+                        serial += 1
+                        push(buckets[(current+step)%internal],
+                             (float32(metric+lengths[target]), -serial,
+                              target_state, outgoing, hops+1))
+                        pending += 1
+            reached.sort()
+            total, mass = 0.0, 0.0
+            rootweight = weights[source]
+            for target in reached:
+                forward, backward = 2*target, 2*target+1
+                if covered[forward] == generation and covered[backward] == generation:
+                    state = forward if depth[forward] < depth[backward] else backward
+                else:
+                    state = forward if covered[forward] == generation else backward
+                mass += weights[target]
+                total += depth[state]*weights[target]
+                if not choice or target == source or leaf[state] != generation:
+                    continue
+                here, demand = state, 0.0
+                while here//2 != source:
+                    values[here] += demand
+                    if choicecovered[here] != generation:
+                        pair_weight = weights[here//2]*rootweight
+                        demand += pair_weight
+                        choicecovered[here] = generation
+                        if weighted:
+                            values[here] += pair_weight*0.5
+                    here = previous[here]
+                if weighted:
+                    values[here] += demand*0.5
+            depths[source] = total/divisor
+            counts[source], masses[source] = len(reached), mass
+        result = [values[2*i]+values[2*i+1] for i in range(n)]
+        if returnStats:
+            return {"choice": result, "totalDepth": depths,
+                    "nodeCount": counts, "totalWeight": masses}
+        return result, depths
 
     @staticmethod
-    def AngularIntegration(graph: "TGraph", normalize: bool = True, key: str = "integration",
-                           mantissa: int = 6, silent: bool = False,
-                           radius: Optional[float] = None) -> Optional[List[float]]:
-        """Computes angular closeness for segments represented by graph edges.
+    def _AngularTulipCentrality(graph, choice=False, method="depthmap", key=None,
+                               mantissa=6, silent=False, radius=None, mode="out",
+                               radiusType="angular", weighting=None, tulipBins=1024,
+                               writeValues=True, colorize=True):
+        """Validate and run the shared Tulip engine for Choice or Integration."""
+        import math
+        import numbers
+        radiusType = str(radiusType).lower().strip()
+        weighting = "none" if weighting is None else str(weighting).lower().strip()
+        mode = str(mode).lower().strip()
+        supported_methods = ("depthmap", "nach", "all") if choice else ("depthmap", "nain")
+        if (not isinstance(graph, TGraph) or method not in supported_methods
+                or weighting not in ("none", "length")
+                or mode not in ("out", "in", "all")
+                or radiusType not in ("angular", "metric", "topological")
+                or isinstance(tulipBins, bool) or not isinstance(tulipBins, int)
+                or tulipBins < 4 or tulipBins > 1024
+                or (radius is not None and (isinstance(radius, bool)
+                    or not isinstance(radius, numbers.Real) or not math.isfinite(radius)
+                    or radius < 0 or int(radius) != radius))):
+            if not silent:
+                print("TGraph angular analysis - Error: Invalid Tulip configuration; "
+                      "radii must be nonnegative whole numbers and bins 4 to 1024. Returning None.")
+            return None
+        try:
+            records, states, starts, adj, directed = TGraph._AngularStateData(graph, 0.0001, mode)
+            if directed or graph._directed:
+                raise ValueError("Tulip currently requires an undirected graph")
+            transitions = [(states[i][0], states[i][1], states[j][0], states[j][1], cost)
+                           for i, neighbors in enumerate(adj) for j, cost in neighbors]
+            if any(not math.isfinite(t[4]) or t[4] < 0 or t[4] > 2 for t in transitions):
+                raise ValueError("Tulip turn costs must be between zero and two")
+            if graph._dictionary.get("depthmap_segment_data") is not None:
+                lengths = [graph._dictionary["depthmap_segment_data"]["lengths"]
+                           [str(r["dictionary"]["depthmap_ref"])] for r in records]
+            elif graph._dictionary.get("graph_type") == "segment":
+                from topologicpy.Edge import Edge
+                from topologicpy.Vertex import Vertex
+                edges = [r.get("originator") if r.get("originator") is not None
+                         else r.get("representation") for r in records]
+                lengths = [math.dist(Vertex.Coordinates(Edge.StartVertex(e)),
+                                     Vertex.Coordinates(Edge.EndVertex(e))) for e in edges]
+            else:
+                lengths = [math.dist(TGraph.Coordinates(graph, r["src"]),
+                                     TGraph.Coordinates(graph, r["dst"])) for r in records]
+            context = getattr(graph, "_analysis_context", None)
+            stats = TGraph._AnalysisMemo(graph, "angular_tulip",
+                (tulipBins, radius, radiusType, weighting, mode),
+                lambda: TGraph._AngularTulipValues(transitions, lengths, bins=tulipBins,
+                    radius=radius, radiusType=radiusType, weighting=weighting,
+                    choice=True if context is not None and context.enabled else choice,
+                    returnStats=True), geometry=True,
+                attributes=("depthmap_ref", graph._dictionary.get("angular_weight_key", "angular_weight")),
+                graphAttributes=("graph_type", "depthmap_segment_data", "angular_weight_key"))
+            if method == "all":
+                result = dict(stats)
+                result["integration"] = [mass**2/depth if depth > 1e-9 else -1.0
+                    for mass,depth in zip(stats["totalWeight"],stats["totalDepth"])]
+                result["nain"] = [mass**1.2/(depth+2) if count > 1 else -1.0
+                    for mass,depth,count in zip(stats["totalWeight"],stats["totalDepth"],stats["nodeCount"])]
+                result["nach"] = [math.log1p(v)/math.log(d+3)
+                    for v,d in zip(stats["choice"],stats["totalDepth"])]
+                for measure in ("choice", "integration", "nain", "nach"):
+                    values = result[measure]
+                    if mantissa is not None and mantissa >= 0:
+                        values = [round(v,mantissa) for v in values]
+                        result[measure] = values
+                    if writeValues:
+                        color_key = ({"choice": "bc_color", "integration": "cc_color"}
+                                     .get(measure)) if colorize else None
+                        TGraph._AngularWriteValues(records, values, measure, color_key, "viridis")
+                return result
+            if choice:
+                values = stats["choice"]
+                if method == "nach":
+                    values = [math.log1p(v)/math.log(d+3)
+                              for v,d in zip(values,stats["totalDepth"])]
+            elif method == "nain":
+                values = [mass**1.2/(depth+2) if count > 1 else -1.0
+                          for mass,depth,count in zip(stats["totalWeight"],stats["totalDepth"],stats["nodeCount"])]
+            else:
+                values = [mass**2/depth if depth > 1e-9 else -1.0
+                          for mass,depth in zip(stats["totalWeight"],stats["totalDepth"])]
+            if mantissa is not None and mantissa >= 0:
+                values = [round(v,mantissa) for v in values]
+            TGraph._AngularWriteValues(records, values, key,
+                                       "bc_color" if choice else "cc_color", "viridis")
+            return values
+        except Exception as exc:
+            if not silent:
+                print(f"TGraph angular analysis - Error: {exc}. Returning None.")
+            return None
 
-        Values are stored on the input edges. Radius uses quarter-turn units.
-        This is not Hillier-Hanson or normalized angular integration (NAIN).
-        Straight transitions use the centrality method's positive regularization.
+    @staticmethod
+    def AngularTulipAnalysis(graph: "TGraph", radius: Optional[float] = None,
+                             radiusType: str = "angular", weighting: Optional[str] = None,
+                             tulipBins: int = 1024, mode: str = "out", mantissa: int = 6,
+                             writeValues: bool = True, colorize: bool = True,
+                             silent: bool = False) -> Optional[Dict[str, List[float]]]:
+        """Compute Choice, Integration, NAIN and NACH in one Tulip traversal.
+
+        Returns choice, integration, nain, nach, nodeCount, totalDepth and
+        totalWeight arrays in segment order. Depth/mass include the origin;
+        isolated origins have zero depth, and undefined Integration/NAIN -1.
+        writeValues stores the four measures using their corresponding keys;
+        colorize also stores bc_color and cc_color. Set writeValues=False for
+        numerical results without dictionary or colour updates. Finite radii,
+        weights, bin counts and graph support follow AngularChoice's Tulip mode.
+        Length-weighted NAIN/NACH remain formula extensions. No results are
+        cached on the graph: subsequent edits are reflected on every call.
         """
-        if isinstance(graph, TGraph) and graph._dictionary.get("graph_type") == "segment":
-            return TGraph.ClosenessCentrality(
-                graph, weightKey=graph._dictionary.get("angular_weight_key", "angular_weight"),
-                normalize=normalize,
-                key=key, mantissa=mantissa, silent=silent, radius=radius)
-        return TGraph.ClosenessCentrality(
-            graph, normalize=normalize, useEdges=True, angular=True,
-            key=key, mantissa=mantissa, silent=silent, radius=radius)
+        return TGraph._AngularTulipCentrality(
+            graph, choice=True, method="all", mantissa=mantissa, silent=silent,
+            radius=radius, mode=mode, radiusType=radiusType, weighting=weighting,
+            tulipBins=tulipBins, writeValues=writeValues, colorize=colorize)
+
+    @staticmethod
+    def AngularChoice(graph: "TGraph", normalize: bool = True, key: str = "choice",
+                      mantissa: int = 6, silent: bool = False,
+                      radius: Optional[float] = None, mode: str = "out",
+                      method: str = "betweenness", radiusType: str = "angular",
+                      weighting: Optional[str] = None, algorithm: str = "exact",
+                      tulipBins: int = 1024) -> Optional[List[float]]:
+        """Endpoint-aware angular choice, one result per original segment.
+
+        method="betweenness" preserves existing unordered-pair choice on
+        undirected graphs and normalize=True applies NetworkX scaling.
+        method="depthmap" uses ordered-pair raw choice; normalize is ignored.
+        method="nach" uses log(choice+1)/log(TD+3) with ordered-pair choice
+        and the same source/radius/weighting total angular depth TD.
+        algorithm="exact" (default) uses exact angles and splits tied paths.
+        algorithm="tulip" reproduces DepthmapX circular bins, metric tie order,
+        and traversal-tree leaf accumulation. tulipBins defaults to 1024.
+        Tulip supports undirected graphs with method="depthmap" or "nach",
+        all three radius types, and length weighting. Its first-covered-state
+        traversal matches DepthmapX; it does not use the exact algorithm's
+        Pareto path search. Tulip bins must be 4 to 1024 and finite radii whole
+        nonnegative numbers, matching DepthmapX's radius conversion.
+        Segment order and endpoint orientation affect Tulip tie selection;
+        preserve both when comparing imported DepthmapX networks.
+
+        radiusType is angular (quarter turns), metric (coordinate units,
+        midpoint-to-midpoint along the route), or topological (segment steps).
+        Radius is inclusive; None is global. Radius changes the allowed paths,
+        never the angular optimization objective. Bounded metric/topological
+        exact searches prefer least radius distance then hops on equal-angular
+        paths. Exact angular/global searches retain the minimum-hop zero-turn
+        rule. Tulip uses quantized turns and float32 metric queue ordering.
+
+        weighting=None uses unit demand; "length" uses origin length times
+        destination length and includes half demand at each endpoint, matching
+        Depthmap's weighted choice convention. Weighted NACH is an extension
+        of the formula, not an independently validated Depthmap result.
+        Results are stored on SegmentGraph nodes or other graph edges.
+        """
+        name = str(method).lower().strip()
+        if name not in ("betweenness", "depthmap", "nach"):
+            if not silent:
+                print("TGraph.AngularChoice - Error: Invalid method. Returning None.")
+            return None
+        algorithm = str(algorithm).lower().strip()
+        if algorithm not in ("exact", "tulip"):
+            if not silent:
+                print("TGraph.AngularChoice - Error: Invalid algorithm. Returning None.")
+            return None
+        if algorithm == "tulip":
+            return TGraph._AngularTulipCentrality(
+                graph, choice=True, method=name, key=key, mantissa=mantissa,
+                silent=silent, radius=radius, mode=mode, radiusType=radiusType,
+                weighting=weighting, tulipBins=tulipBins)
+        return TGraph._AngularCentrality(
+            graph, choice=True, normalize=normalize if name == "betweenness" else False,
+            nxCompatible=normalize if name == "betweenness" else False,
+            key=key, colorKey="bc_color", mantissa=mantissa, silent=silent,
+            radius=radius, mode=str(mode).lower().strip(), choiceMethod=name,
+            radiusType=radiusType, weighting=weighting)
+
+    @staticmethod
+    def AngularIntegration(graph: "TGraph", normalize: bool = True,
+                           key: str = "integration", mantissa: int = 6,
+                           silent: bool = False, radius: Optional[float] = None,
+                           mode: str = "out", method: str = "closeness",
+                           radiusType: str = "angular",
+                           weighting: Optional[str] = None, algorithm: str = "exact",
+                           tulipBins: int = 1024) -> Optional[List[float]]:
+        """Endpoint-aware angular integration, one result per original segment.
+
+        method="closeness" preserves default angular closeness and optional
+        min-max normalization. method="depthmap" uses N**2/TD and returns -1
+        if TD<=1e-9. method="nain" uses N**1.2/(TD+2), the shifted formula
+        from the 13th Space Syntax Symposium Depthmap workshop. normalize is
+        ignored for depthmap/nain. Isolated NAIN is undefined (-1); connected
+        all-straight networks have finite shifted NAIN despite TD=0.
+
+        N includes the origin. With weighting="length", N becomes reachable
+        total segment length and TD sums destination length times angular depth.
+        This matches weighted Depthmap integration; weighted NAIN is an explicit
+        formula extension and depends on coordinate units. Closeness uses
+        destination weight mass/TD and the existing reachable-count correction.
+
+        radiusType is angular (quarter turns), metric (coordinate units along
+        the route between segment midpoints), or topological (segment steps).
+        Radius is inclusive; None is global. The objective stays angular.
+        Bounded metric/topological ties prefer least radius distance then hops;
+        angular/global ties retain the existing minimum-hop zero-turn rule.
+        algorithm="exact" preserves these defaults. algorithm="tulip" uses
+        the same DepthmapX traversal as Tulip Choice, with method="depthmap"
+        or "nain" only. It supports all radius types and length weighting on
+        undirected graphs. Finite radii must be whole nonnegative numbers and
+        tulipBins must be 4 to 1024. normalize is ignored in Tulip mode.
+        Weighted NAIN remains a formula extension; raw weighted Integration
+        follows DepthmapX. Preserve segment order and endpoint orientation.
+        SegmentGraph results are stored on nodes; other graphs on edges.
+        """
+        name = str(method).lower().strip()
+        if name not in ("closeness", "depthmap", "nain"):
+            if not silent:
+                print("TGraph.AngularIntegration - Error: Invalid method. Returning None.")
+            return None
+        algorithm = str(algorithm).lower().strip()
+        if algorithm not in ("exact", "tulip"):
+            if not silent:
+                print("TGraph.AngularIntegration - Error: Invalid algorithm. Returning None.")
+            return None
+        if algorithm == "tulip":
+            return TGraph._AngularTulipCentrality(
+                graph, method=name, key=key, mantissa=mantissa, silent=silent,
+                radius=radius, mode=mode, radiusType=radiusType,
+                weighting=weighting, tulipBins=tulipBins)
+        return TGraph._AngularCentrality(
+            graph, normalize=normalize, key=key, colorKey="cc_color",
+            mantissa=mantissa, silent=silent, radius=radius,
+            mode=str(mode).lower().strip(), integrationMethod=name,
+            radiusType=radiusType, weighting=weighting)
+
 
     AngularBetweenness = AngularChoice
 
@@ -38432,3 +39330,8 @@ def _TGraph_SemanticSummary(graph, **kwargs):
     return summary
 
 
+
+
+# Reusable analysis is opt-in; unattached graphs take the original method paths.
+from topologicpy.TGraphAnalysis import install as _install_analysis_context
+_install_analysis_context(TGraph)

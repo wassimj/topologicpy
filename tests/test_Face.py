@@ -423,6 +423,20 @@ def test_compactness_invalid_input_returns_none():
     assert Face.Compactness(None) is None
 
 
+
+@pytest.mark.parametrize("width, length", [(4, 4), (2, 8)])
+def test_compactness_calculation_methods(width, length):
+    face = Face.Rectangle(width=width, length=length)
+    area = width * length
+    perimeter = 2 * (width + length)
+    assert Face.Compactness(face) == pytest.approx(math.sqrt(4 * math.pi * area) / perimeter, abs=1e-6)
+    assert Face.Compactness(face, method="depthmap") == pytest.approx(4 * math.pi * area / perimeter**2, abs=1e-6)
+    assert Face.Compactness(face, method=" DEPTHMAP ") == Face.Compactness(face, method="depthmap")
+    assert Face.Compactness(face, 3, True) == round(math.sqrt(4 * math.pi * area) / perimeter, 3)
+    assert Face.Compactness(face, method="unknown", silent=True) is None
+    assert Face.Compactness(face, method=None, silent=True) is None
+
+
 def test_isconvex_true_for_rectangle(rectangle_face):
     assert bool(Face.IsConvex(rectangle_face, silent=True)) is True
     assert Face.IsConvex(None, silent=True) is None
