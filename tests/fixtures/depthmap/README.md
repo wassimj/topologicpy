@@ -38,3 +38,16 @@ for zero-cost ties; it is not the discretized Tulip algorithm or NACH.
 AngularConnectivity(method="depthmap") sums these turn costs and is checked
 against all 178 saved Angular Connectivity values. Its default method="degree"
 preserves the previous unweighted neighbour-count behaviour.
+
+
+`barnsbury_extended_tulip_reference.json` contains 3,434 original segments,
+explicit oriented connections, and saved DepthmapX 0.9.1 T1024 outputs for
+length-weighted metric R100, unweighted metric R250, and unweighted topological
+R4. Executable, input graph, and exported CSV hashes are recorded in the file.
+Tests import this committed fixture directly and compare Choice, Integration,
+and Node Count without requiring local outputs, network access, or DepthmapX.
+
+`tulip_float32_regression.json` contains frozen pre-optimisation engine outputs
+for a synthetic diamond with integral, fractional, and large lengths around the
+float32 shortcut boundary. These preserve queue tie order and weighted arithmetic;
+they are regression outcomes, not independent DepthmapX reference outputs.

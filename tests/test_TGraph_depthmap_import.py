@@ -60,9 +60,6 @@ def test_import_original_barnsbury_connections():
     root=Path(__file__).parent
     geometry=root/'fixtures/depthmap/barnsbury_segment_connections.json'
     reference=root/'fixtures/depthmap/barnsbury_tulip_reference.json'
-    if not geometry.exists():
-        geometry=root.parent/'outputs/depthmap-comparison/barnsbury_segments.json'
-        reference=root/'barnsbury_tulip_reference.json'
     fixture=json.loads(geometry.read_text())
     segments=[dict(Ref=i,x1=p[0],y1=p[1],x2=q[0],y2=q[1],
                    **{'Segment Length':math.dist(p,q)}) for i,(p,q) in enumerate(fixture['endpoints'])]

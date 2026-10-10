@@ -1,0 +1,555 @@
+{
+  "provenance": "Pre-optimisation pure-Python engine regression outcomes; synthetic diamond, not independently exported DepthmapX references.",
+  "transitions": [
+    [
+      0,
+      1,
+      1,
+      1,
+      0
+    ],
+    [
+      0,
+      1,
+      2,
+      1,
+      0
+    ],
+    [
+      1,
+      1,
+      3,
+      1,
+      1
+    ],
+    [
+      2,
+      1,
+      3,
+      1,
+      1
+    ],
+    [
+      3,
+      -1,
+      1,
+      -1,
+      1
+    ],
+    [
+      3,
+      -1,
+      2,
+      -1,
+      1
+    ],
+    [
+      1,
+      -1,
+      0,
+      -1,
+      0
+    ],
+    [
+      2,
+      -1,
+      0,
+      -1,
+      0
+    ]
+  ],
+  "cases": [
+    {
+      "lengths": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "options": {
+        "bins": 1024,
+        "radius": null,
+        "radiusType": "angular",
+        "weighting": null,
+        "returnStats": true
+      },
+      "expected": {
+        "choice": [
+          0.0,
+          2.0,
+          0.0,
+          0.0
+        ],
+        "totalDepth": [
+          1.0,
+          1.0,
+          1.0,
+          3.0
+        ],
+        "nodeCount": [
+          4,
+          3,
+          3,
+          4
+        ],
+        "totalWeight": [
+          4.0,
+          3.0,
+          3.0,
+          4.0
+        ]
+      }
+    },
+    {
+      "lengths": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "options": {
+        "bins": 1024,
+        "radius": null,
+        "radiusType": "angular",
+        "weighting": "length",
+        "returnStats": true
+      },
+      "expected": {
+        "choice": [
+          3.0,
+          4.0,
+          2.0,
+          3.0
+        ],
+        "totalDepth": [
+          1.0,
+          1.0,
+          1.0,
+          3.0
+        ],
+        "nodeCount": [
+          4,
+          3,
+          3,
+          4
+        ],
+        "totalWeight": [
+          4.0,
+          3.0,
+          3.0,
+          4.0
+        ]
+      }
+    },
+    {
+      "lengths": [
+        2,
+        3,
+        4,
+        5
+      ],
+      "options": {
+        "bins": 1024,
+        "radius": null,
+        "radiusType": "angular",
+        "weighting": null,
+        "returnStats": true
+      },
+      "expected": {
+        "choice": [
+          0.0,
+          2.0,
+          0.0,
+          0.0
+        ],
+        "totalDepth": [
+          1.0,
+          1.0,
+          1.0,
+          3.0
+        ],
+        "nodeCount": [
+          4,
+          3,
+          3,
+          4
+        ],
+        "totalWeight": [
+          4.0,
+          3.0,
+          3.0,
+          4.0
+        ]
+      }
+    },
+    {
+      "lengths": [
+        2,
+        3,
+        4,
+        5
+      ],
+      "options": {
+        "bins": 1024,
+        "radius": null,
+        "radiusType": "angular",
+        "weighting": "length",
+        "returnStats": true
+      },
+      "expected": {
+        "choice": [
+          24.0,
+          41.0,
+          28.0,
+          45.0
+        ],
+        "totalDepth": [
+          5.0,
+          5.0,
+          5.0,
+          9.0
+        ],
+        "nodeCount": [
+          4,
+          3,
+          3,
+          4
+        ],
+        "totalWeight": [
+          14.0,
+          10.0,
+          11.0,
+          14.0
+        ]
+      }
+    },
+    {
+      "lengths": [
+        0.5,
+        1,
+        0.5,
+        1
+      ],
+      "options": {
+        "bins": 1024,
+        "radius": null,
+        "radiusType": "angular",
+        "weighting": null,
+        "returnStats": true
+      },
+      "expected": {
+        "choice": [
+          0.0,
+          0.0,
+          2.0,
+          0.0
+        ],
+        "totalDepth": [
+          1.0,
+          1.0,
+          1.0,
+          3.0
+        ],
+        "nodeCount": [
+          4,
+          3,
+          3,
+          4
+        ],
+        "totalWeight": [
+          4.0,
+          3.0,
+          3.0,
+          4.0
+        ]
+      }
+    },
+    {
+      "lengths": [
+        0.5,
+        1,
+        0.5,
+        1
+      ],
+      "options": {
+        "bins": 1024,
+        "radius": null,
+        "radiusType": "angular",
+        "weighting": "length",
+        "returnStats": true
+      },
+      "expected": {
+        "choice": [
+          1.25,
+          1.5,
+          1.75,
+          2.0
+        ],
+        "totalDepth": [
+          1.0,
+          1.0,
+          1.0,
+          2.0
+        ],
+        "nodeCount": [
+          4,
+          3,
+          3,
+          4
+        ],
+        "totalWeight": [
+          3.0,
+          2.5,
+          2.0,
+          3.0
+        ]
+      }
+    },
+    {
+      "lengths": [
+        1,
+        4194304,
+        4194305,
+        1
+      ],
+      "options": {
+        "bins": 1024,
+        "radius": null,
+        "radiusType": "angular",
+        "weighting": null,
+        "returnStats": true
+      },
+      "expected": {
+        "choice": [
+          0.0,
+          2.0,
+          0.0,
+          0.0
+        ],
+        "totalDepth": [
+          1.0,
+          1.0,
+          1.0,
+          3.0
+        ],
+        "nodeCount": [
+          4,
+          3,
+          3,
+          4
+        ],
+        "totalWeight": [
+          4.0,
+          3.0,
+          3.0,
+          4.0
+        ]
+      }
+    },
+    {
+      "lengths": [
+        1,
+        4194304,
+        4194305,
+        1
+      ],
+      "options": {
+        "bins": 1024,
+        "radius": null,
+        "radiusType": "angular",
+        "weighting": "length",
+        "returnStats": true
+      },
+      "expected": {
+        "choice": [
+          8388610.0,
+          8388610.0,
+          8388610.0,
+          8388610.0
+        ],
+        "totalDepth": [
+          1.0,
+          1.0,
+          1.0,
+          8388610.0
+        ],
+        "nodeCount": [
+          4,
+          3,
+          3,
+          4
+        ],
+        "totalWeight": [
+          8388611.0,
+          4194306.0,
+          4194307.0,
+          8388611.0
+        ]
+      }
+    },
+    {
+      "lengths": [
+        1,
+        8388608,
+        8388609,
+        1
+      ],
+      "options": {
+        "bins": 1024,
+        "radius": null,
+        "radiusType": "angular",
+        "weighting": null,
+        "returnStats": true
+      },
+      "expected": {
+        "choice": [
+          0.0,
+          2.0,
+          0.0,
+          0.0
+        ],
+        "totalDepth": [
+          1.0,
+          1.0,
+          1.0,
+          3.0
+        ],
+        "nodeCount": [
+          4,
+          3,
+          3,
+          4
+        ],
+        "totalWeight": [
+          4.0,
+          3.0,
+          3.0,
+          4.0
+        ]
+      }
+    },
+    {
+      "lengths": [
+        1,
+        8388608,
+        8388609,
+        1
+      ],
+      "options": {
+        "bins": 1024,
+        "radius": null,
+        "radiusType": "angular",
+        "weighting": "length",
+        "returnStats": true
+      },
+      "expected": {
+        "choice": [
+          16777218.0,
+          16777218.0,
+          16777218.0,
+          16777218.0
+        ],
+        "totalDepth": [
+          1.0,
+          1.0,
+          1.0,
+          16777218.0
+        ],
+        "nodeCount": [
+          4,
+          3,
+          3,
+          4
+        ],
+        "totalWeight": [
+          16777219.0,
+          8388610.0,
+          8388611.0,
+          16777219.0
+        ]
+      }
+    },
+    {
+      "lengths": [
+        1,
+        1.0000001,
+        1.0000002,
+        1
+      ],
+      "options": {
+        "bins": 1024,
+        "radius": null,
+        "radiusType": "angular",
+        "weighting": null,
+        "returnStats": true
+      },
+      "expected": {
+        "choice": [
+          0.0,
+          2.0,
+          0.0,
+          0.0
+        ],
+        "totalDepth": [
+          1.0,
+          1.0,
+          1.0,
+          3.0
+        ],
+        "nodeCount": [
+          4,
+          3,
+          3,
+          4
+        ],
+        "totalWeight": [
+          4.0,
+          3.0,
+          3.0,
+          4.0
+        ]
+      }
+    },
+    {
+      "lengths": [
+        1,
+        1.0000001,
+        1.0000002,
+        1
+      ],
+      "options": {
+        "bins": 1024,
+        "radius": null,
+        "radiusType": "angular",
+        "weighting": "length",
+        "returnStats": true
+      },
+      "expected": {
+        "choice": [
+          3.0000003576278687,
+          4.000000238418579,
+          2.000000476837158,
+          3.0000003576278687
+        ],
+        "totalDepth": [
+          1.0,
+          1.0,
+          1.0,
+          3.0000003576278687
+        ],
+        "nodeCount": [
+          4,
+          3,
+          3,
+          4
+        ],
+        "totalWeight": [
+          4.000000357627869,
+          3.0000001192092896,
+          3.000000238418579,
+          4.000000357627869
+        ]
+      }
+    }
+  ]
+}

@@ -8628,7 +8628,7 @@ class TGraph:
         graph: "TGraph",
         vertexKey: str = None,
         showZero: bool = False,
-        zeroChar: str = "·",
+        zeroChar: str = "Â·",
         zeroColor: str = "rgba(0,0,0,0)",
         valueColor: str = "rgba(0,0,0,0.05)",
         diagonalHighlight: bool = True,
@@ -8663,7 +8663,7 @@ class TGraph:
         showZero : bool , optional
             If set to True, show zero are shown. Default is False.
         zeroChar : str , optional
-            The input zero char value. Default is '·'.
+            The input zero char value. Default is 'Â·'.
         zeroColor : str , optional
             The color value to use. Default is 'rgba(0,0,0,0)'.
         valueColor : str , optional
@@ -26366,7 +26366,7 @@ class TGraph:
     @staticmethod
     def IsErdoesGallai(sequence: Any, silent: bool = False) -> bool:
         """
-        Returns True if the input degree sequence satisfies the Erdős-Gallai theorem.
+        Returns True if the input degree sequence satisfies the ErdÅ‘s-Gallai theorem.
 
         Parameters
         ----------
@@ -38555,6 +38555,8 @@ class TGraph:
         Circular heaps retain float32 metric ordering and newest-first ties.
         Only reached segments are sorted; bounded searches do not reset or scan
         the entire network for each origin. Every origin reuses the same arrays.
+        Unweighted Choice combines shared tree branches once in reverse order;
+        weighted Choice preserves the reference floating-point accumulation order.
         """
         import math
         import heapq
@@ -38567,6 +38569,10 @@ class TGraph:
         internal = bins//2+1
         divisor = (internal-1)*0.5
         lengths = list(map(float32, lengths))
+        # Half-integer metric sums below 2**23 are exactly representable in float32.
+        # A parent chain cannot exceed the number of oriented states (2*n).
+        exact_metrics = (all(v.is_integer() for v in lengths) and
+                         (2*n+0.5)*max(lengths, default=0) < 8388608)
         weighted = weighting == "length"
         weights = lengths if weighted else [1.0]*n
         limit = (math.floor(radius*internal*0.5) if radiusType == "angular"
@@ -38581,6 +38587,7 @@ class TGraph:
             neighbors.sort(key=lambda row: (row[0]//2, -(row[0]%2), row[1]))
         size = 2*n
         values = [0.0]*size
+        subtree_demand = [0]*size
         covered, leaf, choicecovered = [0]*size, [0]*size, [0]*size
         depth, previous = [0]*size, [0]*size
         seen_segment = [0]*n
@@ -38635,14 +38642,18 @@ class TGraph:
                                     continue
                             elif hops >= limit:
                                 continue
+                        next_metric = metric+lengths[target]
+                        if not exact_metrics:
+                            next_metric = unpack(pack(next_metric))[0]
                         serial += 1
-                        push(buckets[(current+step)%internal],
-                             (float32(metric+lengths[target]), -serial,
-                              target_state, outgoing, hops+1))
+                        bucket_index = (current+step)%internal
+                        push(buckets[bucket_index],
+                             (next_metric, -serial, target_state, outgoing, hops+1))
                         pending += 1
             reached.sort()
             total, mass = 0.0, 0.0
             rootweight = weights[source]
+            tree_order = []
             for target in reached:
                 forward, backward = 2*target, 2*target+1
                 if covered[forward] == generation and covered[backward] == generation:
@@ -38652,6 +38663,17 @@ class TGraph:
                 mass += weights[target]
                 total += depth[state]*weights[target]
                 if not choice or target == source or leaf[state] != generation:
+                    continue
+                if not weighted:
+                    # Add only the newly discovered branch, parent before child.
+                    branch = []
+                    here = state
+                    while here//2 != source and choicecovered[here] != generation:
+                        choicecovered[here] = generation
+                        subtree_demand[here] = 0
+                        branch.append(here)
+                        here = previous[here]
+                    tree_order.extend(reversed(branch))
                     continue
                 here, demand = state, 0.0
                 while here//2 != source:
@@ -38665,6 +38687,14 @@ class TGraph:
                     here = previous[here]
                 if weighted:
                     values[here] += demand*0.5
+            if choice and not weighted:
+                # Children contribute their demand before their parent is visited.
+                for here in reversed(tree_order):
+                    demand = subtree_demand[here]
+                    values[here] += demand
+                    parent = previous[here]
+                    if parent//2 != source:
+                        subtree_demand[parent] += demand+1
             depths[source] = total/divisor
             counts[source], masses[source] = len(reached), mass
         result = [values[2*i]+values[2*i+1] for i in range(n)]
@@ -38783,7 +38813,8 @@ class TGraph:
         numerical results without dictionary or colour updates. Finite radii,
         weights, bin counts and graph support follow AngularChoice's Tulip mode.
         Length-weighted NAIN/NACH remain formula extensions. No results are
-        cached on the graph: subsequent edits are reflected on every call.
+        cached unless an AnalysisContext is attached. Relevant graph edits
+        invalidate reused calculations through dependency checks.
         """
         return TGraph._AngularTulipCentrality(
             graph, choice=True, method="all", mantissa=mantissa, silent=silent,

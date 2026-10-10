@@ -30,11 +30,29 @@ def _freeze(value):
     raise TypeError('Opaque or callable input requires uncached execution or a dependency token')
 
 
+def _validate_observable(value):
+    """Check fingerprint inputs without allocating a second nested structure."""
+    if value is None or isinstance(value, (bool, int, float, str, bytes)):
+        return
+    if isinstance(value, dict):
+        for k, v in value.items():
+            _validate_observable(k)
+            _validate_observable(v)
+        return
+    if isinstance(value, (tuple, list, set, frozenset)):
+        for v in value:
+            _validate_observable(v)
+        return
+    raise TypeError('Opaque or callable input requires uncached execution or a dependency token')
+
+
 def _digest(value):
     return hashlib.sha256(repr(_freeze(value)).encode('utf-8')).digest()
 
 
 def _copy_result(value):
+    if value is None or type(value) in (bool, int, float, str, bytes):
+        return value
     from topologicpy.TGraph import TGraph
     if isinstance(value, TGraph):
         g = TGraph(directed=value._directed, allowSelfLoops=value._allow_self_loops,
@@ -211,8 +229,8 @@ class TGraphAnalysis:
                     raise TypeError('Unobservable external geometry')
         # Validate observable attribute/geometry types before using pickle only
         # as a fast local encoder. No pickle input is ever loaded/executed.
-        _freeze(properties)
-        _freeze(coordinates)
+        _validate_observable(properties)
+        _validate_observable(coordinates)
         result = hashlib.sha256(pickle.dumps((topology,properties,coordinates),protocol=5)).digest()
         if getattr(self._local, 'depth', 0):
             stamps[cache_key] = result
