@@ -282,7 +282,7 @@ then transfer selected node dictionary values back with
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Circle" title="topologicpy.Face.Face.Circle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Circle</span></code></a>([origin, radius, sides, fromAngle, ...])</p></td>
 <td><p>Creates a circular Face.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Compactness" title="topologicpy.Face.Face.Compactness"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Compactness</span></code></a>(face[, mantissa, silent])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Compactness" title="topologicpy.Face.Face.Compactness"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Compactness</span></code></a>(face[, mantissa, silent, method])</p></td>
 <td><p>Returns the compactness measure of the input face.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.CompassAngle" title="topologicpy.Face.Face.CompassAngle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CompassAngle</span></code></a>(face[, north, mantissa, tolerance])</p></td>
@@ -1260,7 +1260,7 @@ the number of exact circular-arc Edge subtopologies. Default is 16.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Face.Face.Compactness">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Compactness</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">face</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#topologicpy.Face.Face.Compactness" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Compactness</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">face</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'topologicpy'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#topologicpy.Face.Face.Compactness" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the compactness measure of the input face. See <a class="reference external" href="https://en.wikipedia.org/wiki/Compactness_measure_of_a_shape">https://en.wikipedia.org/wiki/Compactness_measure_of_a_shape</a></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1270,6 +1270,11 @@ the number of exact circular-arc Edge subtopologies. Default is 16.</p>
 <dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
 <dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+</dd>
+<dt><strong>method</strong><span class="classifier">str , optional</span></dt><dd><p>Case-insensitive calculation method. ‘topologicpy’ uses
+sqrt(4*pi*area)/perimeter (the existing default). ‘depthmap’ uses
+4*pi*area/perimeter**2, the square of the first measure.
+Both use the external-boundary perimeter and net face area.</p>
 </dd>
 </dl>
 </dd>
@@ -1960,7 +1965,11 @@ unflattened before return.</p>
 </dd>
 <dt><strong>transferDictionaries</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, dictionaries of encountered physical edges are transferred to matching isovist edges.</p>
 </dd>
-<dt><strong>metrics</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, isovist metrics are calculated and stored in the dictionary of the returned face.</p>
+<dt><strong>metrics</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, isovist metrics are calculated and stored in the dictionary of the returned face.
+occlusivity is occluded boundary length divided by perimeter;
+occluded_length stores the absolute length in model units. Physical
+wall coverage is matched within tolerance, including adjacent wall
+segments. Edge dictionaries contain occlusive and occluded_length.</p>
 </dd>
 <dt><strong>triangles</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, radial triangles from the viewpoint to isovist edges are stored as contents.</p>
 </dd>
