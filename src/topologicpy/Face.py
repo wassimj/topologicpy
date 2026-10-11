@@ -4569,7 +4569,7 @@ class Face():
         )
 
     @staticmethod
-    def Compactness(face, mantissa: int = 6, silent: bool = False, method: str = "topologicpy") -> float:
+    def Compactness(face, mantissa: int = 6, silent: bool = False, method: str = "depthmap") -> float:
         """
         Returns the compactness measure of the input face. See https://en.wikipedia.org/wiki/Compactness_measure_of_a_shape
 
@@ -4583,9 +4583,9 @@ class Face():
             If set to True, error and warning messages are suppressed. Default is False.
         method : str , optional
             Case-insensitive calculation method. 'topologicpy' uses
-            sqrt(4*pi*area)/perimeter (the existing default). 'depthmap' uses
+            sqrt(4*pi*area)/perimeter. 'depthmap' uses
             4*pi*area/perimeter**2, the square of the first measure.
-            Both use the external-boundary perimeter and net face area.
+            Both use the external-boundary perimeter and net face area. Default is "depthmap".
 
         Returns
         -------
@@ -8215,7 +8215,7 @@ class Face():
                 transferDictionaries: bool = False,
                 metrics: bool = False,
                 triangles: bool = False,
-                method: str = "topologicpy",
+                method: str = "depthmap",
                 mantissa: int = 6,
                 tolerance: float = 0.0001,
                 silent: bool = False):
@@ -8260,7 +8260,7 @@ class Face():
             Case-insensitive calculation method for face compactness. 'topologicpy' uses
             sqrt(4*pi*area)/perimeter. 'depthmap' uses
             4*pi*area/perimeter**2, the square of the first measure.
-            Both use the external-boundary perimeter and net face area. Default is "topologicpy"
+            Both use the external-boundary perimeter and net face area. Default is "depthmap".
         mantissa : int , optional
             Number of decimal places to round results to. Default is 6.
         tolerance : float , optional
