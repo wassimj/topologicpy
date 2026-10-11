@@ -7487,10 +7487,7 @@ class TGraph:
             for i, vertex in enumerate(vertices)
         }
 
-        matrix = [
-            [0.0 for _ in range(n)]
-            for _ in range(n)
-        ]
+        matrix = [{} for _ in range(n)]
 
         for vertex in vertices:
             neighbours = [
@@ -7507,7 +7504,7 @@ class TGraph:
                 weight = 1.0 / len(neighbours)
 
                 for neighbour in neighbours:
-                    matrix[position[vertex]][position[neighbour]] += weight
+                    matrix[position[vertex]][position[neighbour]] = weight
 
         def multiply(a, b):
             size = len(a)
@@ -7528,15 +7525,13 @@ class TGraph:
 
             return result
 
-        transition = [
-            [
-                float(i == j)
-                for j in range(n)
-            ]
-            for i in range(n)
-        ]
-
-        for _ in range(max(0, int(step))):
+        accelerated_rows = TGraph._ScipyOperation(graph, "accessibility", matrix, step)
+        if accelerated_rows is None:
+            matrix = [[row.get(i, 0.0) for i in range(n)] for row in matrix]
+            transition = [[float(i == j) for j in range(n)] for i in range(n)]
+        else:
+            transition = []
+        for _ in range(0 if accelerated_rows is not None else max(0, int(step))):
             transition = multiply(
                 transition,
                 matrix,
@@ -7544,7 +7539,7 @@ class TGraph:
 
         values = []
 
-        for row in transition:
+        for row in (accelerated_rows if accelerated_rows is not None else transition):
             probabilities = [
                 probability
                 for probability in row
@@ -19580,6 +19575,15 @@ class TGraph:
             return total, reachable
 
         def _summaries():
+            accelerated = TGraph._ScipyOperation(graph, "summaries", adj,
+                weighted=weighted, radius=radius, namespace=("cost", weightKey, mode),
+                weightKey=weightKey)
+            if accelerated is not None:
+                return accelerated
+            if not weighted:
+                accelerated = TGraph._ScipyUnweightedDistanceSummaries(adj, radius)
+                if accelerated is not None:
+                    return accelerated
             return [(*(_dijkstra_sum(i) if weighted else _bfs_sum(i)), None) for i in range(n)]
         summaries = TGraph._AnalysisMemo(graph, "ordinary_distances",
             (weightKey, None if radius is None else math.floor(radius) if not weighted else radius, mode),
@@ -22681,7 +22685,12 @@ class TGraph:
             return {}
         vertices, position, adjacency = TGraph._DepthAdjacency(graph, mode)
         result = {}
-        for source in indices:
+        summaries = TGraph._ScipyOperation(graph, "summaries", adjacency,
+            sources=[position[source] for source in indices], namespace=("hop", str(mode)))
+        if summaries is not None:
+            result = {source: total / (count - 1) if count > 1 else -1.0
+                      for source, (total, count, _) in zip(indices, summaries)}
+        for source in ([] if summaries is not None else indices):
             distances, _ = TGraph._BFSCompiledStateompact(adjacency, position[source])
             total = count = 0
             for depth in distances:
@@ -22758,6 +22767,10 @@ class TGraph:
         if n == 0:
             return None
         adj = TGraph.CompiledAdjacency(graph, mode=mode)
+        summaries = TGraph._ScipyOperation(graph, "summaries", adj,
+            namespace=("hop", str(mode)), maximum=True)
+        if summaries is not None:
+            return int(max(row[2] for row in summaries)) if all(row[1] == n for row in summaries) else None
         diameter = 0
         for s in range(n):
             dist, _ = TGraph._BFSCompiledStateompact(adj, s)
@@ -24175,7 +24188,13 @@ class TGraph:
         max_iterations = max(1, int(iterations))
         tol = float(tolerance)
 
-        for _ in range(max_iterations):
+        sparse_position = {v: i for i, v in enumerate(vertices)}
+        sparse_values = TGraph._ScipyOperation(graph, "eigenvector",
+            [[sparse_position[u] for u in adjacency[v]] for v in vertices],
+            max_iterations, tol, namespace=("eigenvector", mode))
+        if sparse_values is not None:
+            x = dict(zip(vertices, sparse_values))
+        for _ in range(0 if sparse_values is not None else max_iterations):
             x_last = x
             x_new = {v: x_last[v] for v in vertices}  # (A + I) shift.
             for v in vertices:
@@ -25766,6 +25785,58 @@ class TGraph:
                                      **kwargs)
 
     @staticmethod
+    def _ScipyOperation(graph, operation, *args, **kwargs):
+        """Optional sparse acceleration; None requests the existing fallback."""
+        try:
+            from topologicpy.TGraphScipy import calculate
+            return calculate(graph, operation, *args, **kwargs)
+        except Exception:
+            return None
+
+    @staticmethod
+    def _ScipyUnweightedDistanceSummaries(adjacency, radius=None):
+        """Summarise exact hop distances in bounded SciPy source batches.
+
+        Adjacency contains compact outgoing neighbours. Explicit directed arcs
+        preserve mixed-graph conventions; HH supplies symmetric adjacency.
+        Return None when acceleration is unavailable or fails, allowing the
+        existing Python traversal to run. No all-pairs matrix is retained.
+        """
+        n = len(adjacency)
+        if n < 64:
+            return None
+        try:
+            import numpy as np
+            from scipy.sparse import csr_matrix
+            from scipy.sparse.csgraph import dijkstra
+            indptr = [0]
+            indices = []
+            for neighbours in adjacency:
+                indices.extend(neighbours)
+                indptr.append(len(indices))
+            matrix = csr_matrix((np.ones(len(indices), dtype=np.uint8),
+                                 np.asarray(indices, dtype=np.int32),
+                                 np.asarray(indptr, dtype=np.int32)), shape=(n, n))
+            # Allow about 32 MiB for distances and temporary masks per batch.
+            # CSR storage is additional O(V+E); output summaries are O(V).
+            batch_size = max(1, min(256, (32 * 1024 * 1024) // (16 * n)))
+            limit = np.inf if radius is None else radius
+            summaries = []
+            for start in range(0, n, batch_size):
+                distances = dijkstra(matrix, directed=True, unweighted=True,
+                                     indices=np.arange(start, min(start + batch_size, n)),
+                                     limit=limit, return_predecessors=False)
+                finite = np.isfinite(distances)
+                counts = finite.sum(axis=1)
+                distances[~finite] = 0.0
+                totals = distances.sum(axis=1)
+                summaries.extend((float(total), int(count), None)
+                                 for total, count in zip(totals, counts))
+            return summaries
+        except Exception:
+            return None
+
+    @staticmethod
     def Integration(graph: "TGraph", normalize: bool = True, key: str = "integration", mantissa: int = 6,
                     silent: bool = False, radius: Optional[float] = None,
                     method: str = "closeness", colorKey: str = "cc_color",
@@ -25814,6 +25885,9 @@ class TGraph:
         References: DepthmapX salalib/axialmodules/axialintegration.cpp and
         genlib/pafmath.h. Traversal uses O(V+E) memory and O(V*(V+E)) time
         globally; a local radius can reduce the visited neighbourhoods.
+        Unweighted distances use SciPy sparse traversal in bounded source batches
+        when available, preserving the same cutoffs and reached-node counts.
+        Small graphs and unavailable acceleration use Python traversal.
         """
         import numbers
 
@@ -25841,6 +25915,11 @@ class TGraph:
         # The D-value depends only on the reached node count; cache across roots.
         dvalues = {}
         def _summaries():
+            position = {index: p for p, index in enumerate(active)}
+            compact = [[position[neighbor] for neighbor in adjacency[index]] for index in active]
+            accelerated = TGraph._ScipyUnweightedDistanceSummaries(compact, cutoff)
+            if accelerated is not None:
+                return accelerated
             summaries = []
             for source in active:
                 seen = {source}
@@ -28320,7 +28399,9 @@ class TGraph:
                 parent[rb] = ra
                 rank[ra] += 1
             return True
-        for ce in sorted(c["edges"], key=lambda e: (e["weight"], e["edge_index"])):
+        selected = TGraph._ScipyOperation(graph, "mst", c)
+        candidates = selected if selected is not None else sorted(c["edges"], key=lambda e: (e["weight"], e["edge_index"]))
+        for ce in candidates:
             if ce["src"] == ce["dst"]:
                 continue
             if union(ce["src"], ce["dst"]):
@@ -29025,6 +29106,15 @@ class TGraph:
             return []
         damping = max(0.0, min(1.0, float(damping)))
 
+        if useNumpy:
+            sparse_values = TGraph._ScipyOperation(graph, "pagerank", c,
+                damping, iterations, tolerance, namespace=("pagerank",))
+            if sparse_values is not None:
+                values = [round(float(v), mantissa) for v in sparse_values]
+                if key is not None:
+                    for index, value in zip(c["vertices"], values):
+                        graph._vertices[index].setdefault("dictionary", {})[key] = value
+                return values
         if useNumpy and c.get("numpy_available", False):
             try:
                 import numpy as _np
@@ -31858,6 +31948,7 @@ class TGraph:
         snapEndpoints: bool = True,
         tolerance: float = 0.0001,
         silent: bool = False,
+        useSciPy: bool = False,
     ):
         """
         Returns least-cost paths from one source vertex to the requested targets.
@@ -31922,6 +32013,12 @@ class TGraph:
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
             If True, error and warning messages are suppressed. Default is False.
+
+        useSciPy : bool, optional
+            Request sparse routing for ordinary hop or positive integer edge
+            costs. Default False avoids preparation overhead for isolated calls.
+            With useSciPy=True, an enabled AnalysisContext reuses sparse preparation.
+            Fractional/zero costs, filters, and callbacks retain Python routing.
 
         Returns
         -------
@@ -32121,6 +32218,7 @@ class TGraph:
             source_index,
             mode=mode,
             useNumba=useNumba,
+            useSciPy=useSciPy,
             includePaths=returnTree,
             includeEdges=returnEdges,
             vertexKey=vertexKey,
@@ -32222,6 +32320,7 @@ class TGraph:
         snapEndpoints: bool = True,
         tolerance: float = 0.0001,
         silent: bool = False,
+        useSciPy: bool = False,
     ):
         """
         Returns a least-cost shortest-path tree rooted at the input source vertex.
@@ -32275,6 +32374,12 @@ class TGraph:
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
             If True, error and warning messages are suppressed. Default is False.
+
+        useSciPy : bool, optional
+            Request sparse routing for ordinary hop or positive integer edge
+            costs. Default False avoids preparation overhead for isolated calls.
+            With useSciPy=True, an enabled AnalysisContext reuses sparse preparation.
+            Fractional/zero costs, filters, and callbacks retain Python routing.
 
         Returns
         -------
@@ -32658,7 +32763,23 @@ class TGraph:
         # ------------------------------------------------------------------
 
         if not used_numba:
+            # Positive integer costs permit exact sparse distances with the
+            # existing minimum-hop and stable-index parent selection rules.
+            simple_costs = (not vertexKey and not callable(vertexCostFunc)
+                and not callable(edgeCostFunc) and not callable(edgeFilter)
+                and not callable(vertexFilter))
+            if simple_costs and useSciPy:
+                sparse_tree = TGraph._ScipyOperation(graph, "routing", active_vertices,
+                    adjacency, edge_cost, source_index,
+                    namespace=(mode, directed, edgeKey), weightKey=edgeKey)
+                if sparse_tree is not None:
+                    distance.update(sparse_tree[0])
+                    hops.update(sparse_tree[1])
+                    parent.update(sparse_tree[2])
+                    parent_edge.update(sparse_tree[3])
+                    used_numba = True
 
+        if not used_numba:
             best = {
                 source_index: 0.0
             }

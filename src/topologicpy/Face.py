@@ -4048,6 +4048,76 @@ class Face():
         return result
 
     @staticmethod
+    def ByShapely(polygon, z: float = 0.0, tolerance: float = 0.0001, silent: bool = False):
+        """Create a planar Face from a valid Shapely Polygon, preserving holes.
+
+        Parameters
+        ----------
+        polygon : shapely.geometry.Polygon
+            A non-empty, valid Polygon with positive area. MultiPolygon and
+            other geometry types are rejected because this method returns one
+            Face. Convert MultiPolygon members separately. Invalid polygons
+            are not automatically repaired.
+        z : float, optional
+            Elevation of the output XY plane. Default is 0.0. Only the input
+            X and Y coordinates are used; any Shapely Z values are ignored.
+        tolerance : float, optional
+            Positive, finite construction tolerance. Default is 0.0001.
+            Features smaller than the backend tolerance may fail conversion.
+        silent : bool, optional
+            Suppress error messages. Default is False.
+
+        Returns
+        -------
+        topologic_core.Face or None
+            A Face with the exterior and every interior ring, or None if input
+            validation or construction fails. Coordinates are not rounded.
+            Ring closure coordinates are removed before building closed Wires.
+        """
+        import math
+        from shapely.geometry import Polygon
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Wire import Wire
+        from topologicpy.Topology import Topology
+
+        def fail(message):
+            if not silent:
+                print("Face.ByShapely - Error: " + message + " Returning None.")
+            return None
+
+        if not isinstance(polygon, Polygon):
+            return fail("The input must be a Shapely Polygon.")
+        if polygon.is_empty or not polygon.is_valid or polygon.area <= 0:
+            return fail("The polygon must be non-empty, valid, and have positive area.")
+        try:
+            if isinstance(z, bool) or isinstance(tolerance, bool):
+                return fail("Elevation and tolerance must be finite numbers.")
+            z, tolerance = float(z), float(tolerance)
+            if not math.isfinite(z) or not math.isfinite(tolerance) or tolerance <= 0:
+                return fail("Elevation must be finite and tolerance must be positive and finite.")
+            def wire(ring):
+                coordinates = list(ring.coords)[:-1]
+                if any(not math.isfinite(c[0]) or not math.isfinite(c[1]) for c in coordinates):
+                    return None
+                vertices = [Vertex.ByCoordinates(c[0], c[1], z) for c in coordinates]
+                if any(v is None for v in vertices):
+                    return None
+                return Wire.ByVertices(vertices, close=True, tolerance=tolerance, silent=True)
+            exterior = wire(polygon.exterior)
+            holes = [wire(ring) for ring in polygon.interiors]
+            if exterior is None or any(h is None for h in holes):
+                return fail("Could not construct all polygon rings.")
+            # Shapely validity already establishes ring containment and separation.
+            result = Core.Face.ByExternalInternalBoundaries(exterior, holes, tolerance)
+            if not Topology.IsInstance(result, "Face"):
+                return fail("Could not construct the Face.")
+            if len(Face.InternalBoundaries(result)) != len(holes):
+                return fail("The backend did not preserve every interior ring.")
+            return result
+        except Exception:
+            return fail("Polygon conversion failed at the requested tolerance.")
+
+    @staticmethod
     def ByVertices(vertices: list, tolerance: float = 0.0001, silent: bool = False):
         
         """

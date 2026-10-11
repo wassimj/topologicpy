@@ -429,10 +429,9 @@ def test_compactness_calculation_methods(width, length):
     face = Face.Rectangle(width=width, length=length)
     area = width * length
     perimeter = 2 * (width + length)
-    assert Face.Compactness(face) == pytest.approx(math.sqrt(4 * math.pi * area) / perimeter, abs=1e-6)
-    assert Face.Compactness(face, method="depthmap") == pytest.approx(4 * math.pi * area / perimeter**2, abs=1e-6)
+    assert Face.Compactness(face) == pytest.approx(4 * math.pi * area / perimeter**2, abs=1e-6)
+    assert Face.Compactness(face, method="topologicpy") == pytest.approx(math.sqrt(4 * math.pi * area) / perimeter, abs=1e-6)
     assert Face.Compactness(face, method=" DEPTHMAP ") == Face.Compactness(face, method="depthmap")
-    assert Face.Compactness(face, 3, True) == round(math.sqrt(4 * math.pi * area) / perimeter, 3)
     assert Face.Compactness(face, method="unknown", silent=True) is None
     assert Face.Compactness(face, method=None, silent=True) is None
 
