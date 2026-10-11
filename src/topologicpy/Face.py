@@ -8288,7 +8288,9 @@ class Face():
                 method: str = "depthmap",
                 mantissa: int = 6,
                 tolerance: float = 0.0001,
-                silent: bool = False):
+                silent: bool = False,
+                radius: float = None,
+                radiusSides: int = 64):
         """
         Returns the face representing the isovist projection from the input viewpoint.
 
@@ -8337,6 +8339,19 @@ class Face():
             Desired tolerance. Default is 0.0001.
         silent : bool , optional
             If True, error and warning messages are suppressed. Default is False.
+
+        radius : float, optional
+            Maximum sight distance in model units, measured in the face plane.
+            None preserves unlimited visibility. A finite value must exceed
+            tolerance. The working free space is clipped before ray casting,
+            so distant boundaries cannot increase the visibility-ray count.
+        radiusSides : int, optional
+            Number of sides in the inscribed regular polygon approximating the
+            circular radius limit. Default 64; must be an integer >= 8 when
+            radius is supplied. Maximum radial deficit is
+            radius*(1-cos(pi/radiusSides)). Radius edges are tagged range_limited
+            and excluded from occluded_length/occlusivity and closed_perimeter.
+            Metrics additionally store radius and range_limited_length.
 
         Returns
         -------
@@ -8390,6 +8405,24 @@ class Face():
             if not silent:
                 print("Face.Isovist - Error: The input fov parameter is outside the acceptable range of 1 to 360 degrees. Returning None.")
             return None
+
+        if radius is not None:
+            try:
+                if isinstance(radius, bool):
+                    raise ValueError()
+                radius = float(radius)
+                if not math.isfinite(radius) or radius <= tolerance:
+                    raise ValueError()
+                if (isinstance(radiusSides, bool) or int(radiusSides) != radiusSides
+                    or radiusSides < 8):
+                    raise ValueError()
+                radiusSides = int(radiusSides)
+            except (TypeError, ValueError, OverflowError):
+                if not silent:
+                    print("Face.Isovist - Error: radius must be finite and greater than tolerance; radiusSides must be an integer >= 8. Returning None.")
+                return None
+        range_polygon = None
+        range_walls = []
 
         if isinstance(obstacles, list):
             obstacles = [obs for obs in obstacles if Topology.IsInstance(obs, "Wire")]
@@ -8576,7 +8609,7 @@ class Face():
             ray = LineString([origin_xy, far])
 
             try:
-                intersection = poly.boundary.intersection(ray)
+                intersection = ray_boundary.intersection(ray)
             except Exception:
                 return None
 
@@ -8751,7 +8784,19 @@ class Face():
                 for low, end in sorted(intervals):
                     covered += max(0.0, end-max(low, high))
                     high = max(high, end)
-                occluded_length = max(0.0, line.length-covered)
+                range_intervals = []
+                for wall in range_walls:
+                    interval = _physical_overlap_interval(line_coords, wall)
+                    if interval is not None:
+                        range_intervals.append(interval)
+                total_covered, high = 0.0, 0.0
+                for low, end in sorted(intervals + range_intervals):
+                    total_covered += max(0.0, end-max(low, high))
+                    high = max(high, end)
+                range_length = max(0.0, total_covered-covered)
+                if range_length <= 2.0*tolerance:
+                    range_length = 0.0
+                occluded_length = max(0.0, line.length-total_covered)
                 # Each endpoint can shift by tolerance during ray construction.
                 if occluded_length <= 2.0 * tolerance:
                     occluded_length = 0.0
@@ -8761,6 +8806,9 @@ class Face():
                 # Classification wins over any identically named wall metadata.
                 d_i = Dictionary.SetValueAtKey(d_i, "occlusive", occluded_length > 0.0)
                 d_i = Dictionary.SetValueAtKey(d_i, "occluded_length", occluded_length)
+                if radius is not None:
+                    d_i = Dictionary.SetValueAtKey(d_i, "range_limited", range_length > 0.0)
+                    d_i = Dictionary.SetValueAtKey(d_i, "range_limited_length", range_length)
                 Topology.SetDictionary(i_edge, d_i)
             return isovist_face
 
@@ -8982,6 +9030,21 @@ class Face():
                 print("Face.Isovist - Error: The viewpoint is not inside the navigable face after obstacle subtraction. Returning None.")
             return None
 
+        if radius is not None:
+            angles = np.arange(radiusSides, dtype=float)*(2.0*math.pi/radiusSides)
+            xy = np.column_stack((np.cos(angles), np.sin(angles)))*radius + np.asarray(viewpoint_xy)
+            range_polygon = Polygon(xy)
+            range_walls = list(zip(range_polygon.exterior.coords[:-1], range_polygon.exterior.coords[1:]))
+            try:
+                local_space = free_polygon.intersection(range_polygon)
+                free_polygon = _select_component_containing_point(local_space, viewpoint_point)
+            except Exception:
+                free_polygon = None
+            if free_polygon is None or free_polygon.is_empty:
+                if not silent:
+                    print("Face.Isovist - Error: Radius clipping produced no navigable region. Returning None.")
+                return None
+
         # -------------------------------------------------------------------------
         # Determine ray length and angular range
         # -------------------------------------------------------------------------
@@ -9066,6 +9129,7 @@ class Face():
         # Cast rays
         # -------------------------------------------------------------------------
 
+        ray_boundary = free_polygon.boundary
         hit_records = []
 
         for angle in candidate_angles:
@@ -9282,7 +9346,9 @@ class Face():
                 occlusivity = 0.0
 
             drift = round(Vertex.Distance(flat_vertex, Topology.Centroid(return_face), mantissa=mantissa), mantissa)
-            closed_perimeter = round(perimeter - occ_length, mantissa)
+            range_length = sum(_safe_dictionary_value(Topology.Dictionary(edge), "range_limited_length", 0.0)
+                               for edge in isovist_edges) if radius is not None else 0.0
+            closed_perimeter = round(max(0.0, perimeter - occ_length - range_length), mantissa)
 
             average_radial, variance, skewness = compute_average_radial_variance_skewness(flat_vertex, isovist_edges, mantissa=mantissa)
 
@@ -9342,6 +9408,9 @@ class Face():
                 skewness
             ]
 
+            if radius is not None:
+                keys.extend(["radius", "range_limited_length"])
+                values.extend([radius, round(range_length, mantissa)])
             metric_dictionary = Dictionary.ByKeysValues(keys, values)
             return_face = Topology.SetDictionary(return_face, metric_dictionary)
 

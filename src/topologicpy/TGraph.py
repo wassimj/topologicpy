@@ -8823,6 +8823,285 @@ class TGraph:
         return contacts
 
     @staticmethod
+    def IsovistIntersectionGraph(isovists=None, origins=None, minOverlap: float = 0.0,
+                                tolerance: float = 0.0001, silent: bool = False,
+                                computeOverlap: bool = True, batchSize: int = 256,
+                                workers: Optional[int] = None, radius: Optional[float] = None,
+                                radiusSides: int = 64, face=None, obstacles=None):
+        """Construct an undirected graph of shared visible areas.
+
+        Parameters
+        ----------
+        isovists : iterable or Face
+            Coplanar, straight-sided Topologic Faces (holes supported), closed
+            Wires, or Shapely Polygon/MultiPolygon objects. Shapely inputs must
+            be strictly 2D and cannot be mixed with Topologic inputs. Each input
+            retains its own node, including duplicates and isolated isovists.
+            Alternatively supply a host Face here (or through face=) to generate
+            one isovist per origin using Face.Isovist.
+        origins : iterable, optional
+            One Topologic Vertex or finite xyz coordinate per isovist. If absent,
+            use an interior representative point; this is not the generating
+            viewpoint. Topologic isovists remain linked as node originators.
+        minOverlap : float, optional
+            Strict minimum intersection area, in squared model units. Default 0.
+            Boundary-only contact never creates a link.
+        tolerance : float, optional
+            Positive distance tolerance for coplanarity, not an area threshold.
+            Coordinates are not snapped, buffered, or rounded.
+        silent : bool, optional
+            Suppress error messages. Invalid input returns None.
+        computeOverlap : bool, optional
+            Default True stores overlap_area, overlap_jaccard,
+            overlap_fraction_src, overlap_fraction_dst on edges. False with
+            minOverlap=0 uses an interior-intersection predicate without creating
+            intersection geometry. Positive minOverlap still requires areas.
+        batchSize : int, optional
+            Maximum query isovists per batch (default 256); candidate memory is
+            O(batchSize*n), rather than a full n*n pair matrix.
+
+        workers : int, optional
+            None uses up to eight available CPU threads for large candidate
+            batches. Set 1 to disable threading, or choose a positive count.
+            Only compiled geometry operations run in workers; graph mutation
+            stays serial. Small batches avoid thread dispatch overhead.
+
+        radius : float, optional
+            Finite maximum visibility distance in model units, greater than
+            tolerance. Forwarded to Face.Isovist for generated isovists. Existing
+            isovists are clipped to the same inscribed radius polygon first.
+            Explicit origins are required whenever radius is supplied. A SciPy
+            cKDTree limits candidate centres to 2*radius (with a conservative
+            tolerance margin), then bounding boxes and exact geometry decide
+            connections. None preserves unlimited visibility and STRtree search.
+        radiusSides : int, optional
+            Inscribed circle approximation, forwarded to Face.Isovist; default
+            64, integer >=8. Used for clipping precomputed isovists too.
+        face : Face, optional
+            Host face for generating isovists from origins. Supply either face
+            or isovists, not both. Origins may be Vertices or xyz coordinates.
+        obstacles : iterable of Wire, optional
+            Additional obstacles forwarded to Face.Isovist in generation mode.
+            Not accepted with precomputed isovists, which already encode blockers.
+
+        Returns
+        -------
+        TGraph or None
+            Logical edges without costly Topologic Edge/boolean construction.
+            Node dictionaries include x/y/z and isovist_area. Edge order is
+            deterministic. Graph construction uses Shapely >=2, packed STRtree
+            bounding-box pruning and compiled vectorized GEOS operations.
+            Dense output necessarily costs O(n*n). Invalid polygons are rejected,
+            never silently repaired. Curved boundaries must be tessellated first.
+        """
+        try:
+            import numpy as np
+            import shapely
+            from shapely.geometry import Polygon, MultiPolygon
+            from concurrent.futures import ThreadPoolExecutor
+            import os
+            from topologicpy.Topology import Topology
+            from topologicpy.Vertex import Vertex
+            from topologicpy.Face import Face
+            from topologicpy.Wire import Wire
+
+            if not hasattr(shapely, "STRtree") or not hasattr(shapely, "intersection"):
+                raise ValueError("Shapely >=2 is required")
+            tol, threshold = float(tolerance), float(minOverlap)
+            if not np.isfinite(tol) or tol <= 0 or not np.isfinite(threshold) or threshold < 0:
+                raise ValueError("tolerance must be positive and minOverlap nonnegative")
+            if isinstance(batchSize, bool) or int(batchSize) != batchSize or batchSize <= 0:
+                raise ValueError("batchSize must be a positive integer")
+            if workers is not None and (isinstance(workers, bool) or int(workers) != workers or workers <= 0):
+                raise ValueError("workers must be a positive integer or None")
+            worker_count = min(8, os.cpu_count() or 1) if workers is None else int(workers)
+            origin_items = None if origins is None else list(origins)
+            host_face = face
+            if host_face is not None and isovists is not None:
+                raise ValueError("supply either face or isovists, not both")
+            if host_face is None and Topology.IsInstance(isovists, "Face"):
+                host_face = isovists
+            if radius is not None:
+                if isinstance(radius, bool):
+                    raise ValueError("radius must be finite and greater than tolerance")
+                radius = float(radius)
+                if not np.isfinite(radius) or radius <= tol:
+                    raise ValueError("radius must be finite and greater than tolerance")
+                if (isinstance(radiusSides, bool) or int(radiusSides) != radiusSides or radiusSides < 8):
+                    raise ValueError("radiusSides must be an integer >=8")
+                radiusSides = int(radiusSides)
+                if origin_items is None:
+                    raise ValueError("radius requires explicit generating origins")
+            if host_face is not None:
+                if not Topology.IsInstance(host_face, "Face") or origin_items is None:
+                    raise ValueError("a host Face and explicit origins are required")
+                items = []
+                blockers = [] if obstacles is None else list(obstacles)
+                for o in origin_items:
+                    if not Topology.IsInstance(o, "Vertex"):
+                        xyz = np.asarray(o, dtype=float)
+                        if xyz.shape != (3,) or not np.isfinite(xyz).all():
+                            raise ValueError("origins require finite xyz coordinates")
+                        o = Vertex.ByCoordinates(*xyz)
+                    item = Face.Isovist(host_face, o, obstacles=blockers, radius=radius,
+                                        radiusSides=radiusSides, tolerance=tol, metrics=False, silent=silent)
+                    if not Topology.IsInstance(item, "Face"):
+                        raise ValueError("could not generate an isovist at an origin")
+                    items.append(item)
+            else:
+                if obstacles is not None:
+                    raise ValueError("obstacles apply only when generating isovists from a face")
+                items = list(isovists)
+            n = len(items)
+            if origin_items is not None and len(origin_items) != n:
+                raise ValueError("origins must match the number of isovists")
+            graph = TGraph(allowSelfLoops=False, dictionary={
+                "graph_type": "isovist_intersection", "intersection_engine": "shapely_strtree",
+                "min_overlap": threshold, "tolerance": tol, "compute_overlap": bool(computeOverlap),
+                "radius": radius, "generated_isovists": host_face is not None})
+            if not n:
+                return graph
+            native = not isinstance(items[0], (Polygon, MultiPolygon))
+            anchor = np.zeros(3)
+            basis = np.array([[1., 0., 0.], [0., 1., 0.]])
+            normal = np.array([0., 0., 1.])
+            polygons = []
+            def coordinates(vertex):
+                c = Vertex.Coordinates(vertex) if Topology.IsInstance(vertex, "Vertex") else vertex
+                a = np.asarray(c, dtype=float)
+                if a.shape != (3,) or not np.isfinite(a).all():
+                    raise ValueError("origins and boundary vertices require finite xyz coordinates")
+                return a
+            for i, item in enumerate(items):
+                if not native:
+                    if not isinstance(item, (Polygon, MultiPolygon)) or shapely.has_z(item):
+                        raise ValueError("Shapely isovists must all be 2D polygons")
+                    polygon = item
+                else:
+                    if Topology.IsInstance(item, "Face"):
+                        wires = [Face.ExternalBoundary(item)] + (Face.InternalBoundaries(item) or [])
+                    elif Topology.IsInstance(item, "Wire") and Wire.IsClosed(item):
+                        wires = [item]
+                    else:
+                        raise ValueError("isovists must all be Faces or closed Wires")
+                    rings = [np.asarray([coordinates(v) for v in Wire.Vertices(w)], dtype=float) for w in wires]
+                    if any(len(r) < 3 for r in rings):
+                        raise ValueError("isovist boundary needs at least three vertices")
+                    if i == 0:
+                        anchor = rings[0][0]
+                        # SVD gives a stable shared orthonormal projection, including vertical planes.
+                        _, singular, axes = np.linalg.svd(rings[0]-anchor, full_matrices=False)
+                        if singular[1] <= tol:
+                            raise ValueError("degenerate isovist plane")
+                        basis, normal = axes[:2], axes[2]
+                    projected = []
+                    for ring in rings:
+                        delta = ring-anchor
+                        if np.max(np.abs(delta @ normal)) > tol:
+                            raise ValueError("all isovists must lie in one plane within tolerance")
+                        projected.append(delta @ basis.T)
+                    polygon = Polygon(projected[0], projected[1:])
+                polygons.append(polygon)
+            geometries = np.asarray(polygons, dtype=object)
+            if radius is not None and host_face is None:
+                # Never assume arbitrary precomputed polygons obey the requested radius.
+                centre_xyz = np.asarray([coordinates(o) for o in origin_items])
+                if np.max(np.abs((centre_xyz-anchor) @ normal)) > tol:
+                    raise ValueError("origins must lie in the isovist plane")
+                centre_xy = (centre_xyz-anchor) @ basis.T
+                angles = np.arange(radiusSides)*(2.0*np.pi/radiusSides)
+                disk_ring = radius*np.column_stack((np.cos(angles),np.sin(angles)))
+                disks = shapely.polygons(centre_xy[:,None,:]+disk_ring[None,:,:])
+                geometries = shapely.intersection(geometries, disks)
+            areas = shapely.area(geometries)
+            if (not shapely.is_valid(geometries).all() or not np.isfinite(areas).all()
+                or np.any(areas <= 0) or not np.isfinite(shapely.get_coordinates(geometries)).all()):
+                raise ValueError("isovists must be valid finite polygons with positive area")
+            points = shapely.get_coordinates(shapely.point_on_surface(geometries))
+            locations = points @ basis + anchor
+            if origin_items is not None:
+                locations = np.asarray([coordinates(o) for o in origin_items])
+                if native and np.max(np.abs((locations-anchor) @ normal)) > tol:
+                    raise ValueError("origins must lie in the isovist plane")
+            for i, item in enumerate(items):
+                d = TGraph._TopologyDictionaryToPython(origin_items[i]) if origin_items is not None and Topology.IsInstance(origin_items[i], "Vertex") else {}
+                if native:
+                    d.update(TGraph._TopologyDictionaryToPython(item))
+                d.update(x=float(locations[i, 0]), y=float(locations[i, 1]),
+                         z=float(locations[i, 2]), isovist_area=float(areas[i]))
+                representation = origin_items[i] if origin_items is not None and Topology.IsInstance(origin_items[i], "Vertex") else None
+                if graph.AddVertex(dictionary=d, representation=representation,
+                                   originator=item if native else None) is None:
+                    raise ValueError("could not create isovist node")
+            bounds = shapely.bounds(geometries)
+            if radius is None:
+                tree = shapely.STRtree(geometries)
+            else:
+                from scipy.spatial import cKDTree
+                # Index planar centres rather than allocating all pair distances.
+                centre_xy = (locations-anchor) @ basis.T
+                tree = cKDTree(centre_xy)
+                candidate_radius = 2.0*(radius+tol)
+            with ThreadPoolExecutor(max_workers=worker_count) as pool:
+                def evaluate(left, right, area):
+                    def operation(a, b):
+                        return (shapely.area(shapely.intersection(a, b)) if area
+                                else shapely.relate_pattern(a, b, "2********"))
+                    if worker_count == 1 or len(left) < 2048:
+                        return operation(left, right)
+                    step = (len(left)+worker_count-1)//worker_count
+                    jobs = [pool.submit(operation, left[k:k+step], right[k:k+step])
+                            for k in range(0, len(left), step)]
+                    return np.concatenate([job.result() for job in jobs])
+                for start in range(0, n, int(batchSize)):
+                    if radius is None:
+                        pairs = tree.query(geometries[start:start+int(batchSize)])
+                        src, dst = pairs[0]+start, pairs[1]
+                    else:
+                        neighbours = tree.query_ball_point(centre_xy[start:start+int(batchSize)], candidate_radius)
+                        lengths = np.fromiter((len(row) for row in neighbours), dtype=np.intp)
+                        src = np.repeat(np.arange(start, start+len(neighbours)), lengths)
+                        dst = np.concatenate(neighbours).astype(np.intp, copy=False)
+                    keep = src < dst
+                    src, dst = src[keep], dst[keep]
+                    # Strict bounding-box area upper bound also eliminates boundary contacts.
+                    widths = np.minimum(bounds[src, 2:], bounds[dst, 2:])-np.maximum(bounds[src, :2], bounds[dst, :2])
+                    keep = (widths > 0).all(axis=1) & (np.prod(widths, axis=1) > threshold)
+                    src, dst = src[keep], dst[keep]
+                    if not len(src):
+                        continue
+                    order = np.lexsort((dst, src))
+                    src, dst = src[order], dst[order]
+                    left, right = geometries[src], geometries[dst]
+                    overlap = None
+                    if computeOverlap or threshold > 0:
+                        overlap = evaluate(left, right, True)
+                        keep = overlap > threshold
+                        overlap = overlap[keep]
+                    else:
+                        # Interior-interior dimension 2 includes equality and containment.
+                        keep = evaluate(left, right, False)
+                    src, dst = src[keep], dst[keep]
+                    for k, (s, t) in enumerate(zip(src.tolist(), dst.tolist())):
+                        index = len(graph._edges)
+                        d = {"index": index, "src": s, "dst": t, "directed": False,
+                             "active": True, "relationship": "isovist_overlap"}
+                        if computeOverlap:
+                            a = float(overlap[k])
+                            d.update(overlap_area=a, overlap_jaccard=a/(areas[s]+areas[t]-a),
+                                     overlap_fraction_src=a/areas[s], overlap_fraction_dst=a/areas[t])
+                        # Bulk construction avoids endpoint resolution and cache invalidation per edge.
+                        graph._edges.append({"index": index, "src": s, "dst": t,
+                            "directed": False, "active": True, "dictionary": d, "representation": None})
+                        graph._register_edge_adjacency(index, s, t, False)
+            graph._invalidate_cache()
+            return graph
+        except Exception as exc:
+            if not silent:
+                print(f"TGraph.IsovistIntersectionGraph - Error: {exc}. Returning None.")
+            return None
+
+    @staticmethod
     def AxialGraph(edges, tolerance: float = 0.0001, silent: bool = False):
         """Creates an undirected graph with one node per complete straight Edge.
 
@@ -9329,7 +9608,7 @@ class TGraph:
         graph: "TGraph",
         vertexKey: str = None,
         showZero: bool = False,
-        zeroChar: str = "Â·",
+        zeroChar: str = "Ã‚Â·",
         zeroColor: str = "rgba(0,0,0,0)",
         valueColor: str = "rgba(0,0,0,0.05)",
         diagonalHighlight: bool = True,
@@ -9364,7 +9643,7 @@ class TGraph:
         showZero : bool , optional
             If set to True, show zero are shown. Default is False.
         zeroChar : str , optional
-            The input zero char value. Default is 'Â·'.
+            The input zero char value. Default is 'Ã‚Â·'.
         zeroColor : str , optional
             The color value to use. Default is 'rgba(0,0,0,0)'.
         valueColor : str , optional
@@ -27232,7 +27511,7 @@ class TGraph:
     @staticmethod
     def IsErdoesGallai(sequence: Any, silent: bool = False) -> bool:
         """
-        Returns True if the input degree sequence satisfies the ErdÅ‘s-Gallai theorem.
+        Returns True if the input degree sequence satisfies the ErdÃ…â€˜s-Gallai theorem.
 
         Parameters
         ----------
