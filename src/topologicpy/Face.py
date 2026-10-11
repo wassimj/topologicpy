@@ -8207,7 +8207,18 @@ class Face():
 
 
     @staticmethod
-    def Isovist(face, vertex, obstacles: list = [], direction: list = [0,1,0], fov: float = 360, transferDictionaries: bool = False, metrics: bool = False, triangles: bool = False, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
+    def Isovist(face,
+                vertex,
+                obstacles: list = [],
+                direction: list = [0,1,0],
+                fov: float = 360,
+                transferDictionaries: bool = False,
+                metrics: bool = False,
+                triangles: bool = False,
+                method: str = "topologicpy",
+                mantissa: int = 6,
+                tolerance: float = 0.0001,
+                silent: bool = False):
         """
         Returns the face representing the isovist projection from the input viewpoint.
 
@@ -8245,6 +8256,11 @@ class Face():
             segments. Edge dictionaries contain occlusive and occluded_length.
         triangles : bool , optional
             If True, radial triangles from the viewpoint to isovist edges are stored as contents.
+        method : str , optional
+            Case-insensitive calculation method for face compactness. 'topologicpy' uses
+            sqrt(4*pi*area)/perimeter. 'depthmap' uses
+            4*pi*area/perimeter**2, the square of the first measure.
+            Both use the external-boundary perimeter and net face area. Default is "topologicpy"
         mantissa : int , optional
             Number of decimal places to round results to. Default is 6.
         tolerance : float , optional
@@ -8622,10 +8638,10 @@ class Face():
             segments. Project b onto a after checking a's endpoints against b's
             supporting line; point contact alone never establishes wall coverage.
             """
-            ax, ay = line_a.coords[0]
-            bx, by = line_a.coords[-1]
-            cx, cy = line_b.coords[0]
-            dx, dy = line_b.coords[-1]
+            ax, ay = line_a[0]
+            bx, by = line_a[-1]
+            cx, cy = line_b[0]
+            dx, dy = line_b[-1]
             length = math.hypot(bx-ax, by-ay)
             wall_length = math.hypot(dx-cx, dy-cy)
             if length <= tolerance or wall_length <= tolerance:
@@ -8643,15 +8659,18 @@ class Face():
         def _tag_and_transfer_edge_dictionaries(isovist_face, physical_edges):
             # Extract wall geometry once rather than inside every pair test.
             walls = [(edge, _edge_to_linestring(edge)) for edge in physical_edges]
-            walls = [(edge, line) for edge, line in walls if line is not None]
+            # Cache endpoints once; overlap tests do not need Shapely objects.
+            walls = [(edge, (line.coords[0], line.coords[-1]))
+                     for edge, line in walls if line is not None]
             for i_edge in Topology.Edges(isovist_face):
                 line = _edge_to_linestring(i_edge)
                 if line is None:
                     continue
+                line_coords = (line.coords[0], line.coords[-1])
                 intervals = []
                 best_edge, best_overlap = None, 0.0
                 for p_edge, wall in walls:
-                    interval = _physical_overlap_interval(line, wall)
+                    interval = _physical_overlap_interval(line_coords, wall)
                     if interval is not None:
                         intervals.append(interval)
                         overlap = interval[1]-interval[0]
@@ -9115,7 +9134,7 @@ class Face():
                 perimeter = round(float(visible_polygon.length), mantissa)
 
             try:
-                compactness = round(Face.Compactness(return_face), mantissa)
+                compactness = round(Face.Compactness(return_face, method=method, mantissa=mantissa, silent=silent), mantissa)
             except Exception:
                 if perimeter > 0:
                     compactness = round((4.0 * math.pi * area) / (perimeter * perimeter), mantissa)

@@ -9634,54 +9634,48 @@ class TGraph:
         def _brandes_unweighted():
             CBv = [0.0] * n_nodes
             CBe = [0.0] * len(edgeRecords)
-
+            # Omit unused weights from the hot loop and use compact array access.
+            neighbours = [[(w, edge) for w, _, edge in adj.get(v, ())]
+                          for v in range(n_nodes)]
             for s in range(n_nodes):
-                S = []
-                P = [[] for _ in range(n_nodes)]
+                order = [s]
+                predecessors = [[] for _ in range(n_nodes)]
                 sigma = [0.0] * n_nodes
                 dist = [-1] * n_nodes
-
                 sigma[s] = 1.0
                 dist[s] = 0
-
-                Q = deque([s])
-
-                while Q:
-                    v = Q.popleft()
-                    S.append(v)
-                    dv = dist[v]
-
-                    if radius is not None and dv + 1 > radius:
+                total = 0.0
+                reached = 1
+                maximum = 0.0
+                # Appending to this list gives the same FIFO order as a deque.
+                for v in order:
+                    next_depth = dist[v] + 1
+                    if radius is not None and next_depth > radius:
                         continue
-                    for w, _weight, edgeLocalIndex in adj.get(v, []):
-                        if dist[w] < 0:
-                            Q.append(w)
-                            dist[w] = dv + 1
-
-                        if dist[w] == dv + 1:
-                            sigma[w] += sigma[v]
-                            P[w].append((v, edgeLocalIndex))
-
-                finite = [float(d) for d in dist if d >= 0 and math.isfinite(d)]
-                distance_summaries.append((sum(finite), len(finite), max(finite, default=0.0)))
+                    paths = sigma[v]
+                    for w, edge in neighbours[v]:
+                        depth = dist[w]
+                        if depth < 0:
+                            order.append(w)
+                            dist[w] = next_depth
+                            depth = next_depth
+                            total += next_depth
+                            reached += 1
+                            maximum = float(next_depth)
+                        if depth == next_depth:
+                            sigma[w] += paths
+                            predecessors[w].append((v, edge))
+                distance_summaries.append((total, reached, maximum))
                 delta = [0.0] * n_nodes
-
-                while S:
-                    w = S.pop()
-
-                    for v, edgeLocalIndex in P[w]:
-                        if sigma[w] == 0.0:
-                            c = 0.0
-                        else:
-                            c = (sigma[v] / sigma[w]) * (1.0 + delta[w])
-
-                        CBe[edgeLocalIndex] += c
-                        delta[v] += c
-
+                for w in reversed(order):
+                    paths = sigma[w]
+                    dependency = 1.0 + delta[w]
+                    for v, edge in predecessors[w]:
+                        contribution = (sigma[v] / paths) * dependency if paths else 0.0
+                        CBe[edge] += contribution
+                        delta[v] += contribution
                     if w != s:
                         CBv[w] += delta[w]
-
-            # Symmetric traversal counts unordered pairs twice.
             divisor = 1.0 if directed_analysis else 2.0
             return [x / divisor for x in CBv], [x / divisor for x in CBe]
 
@@ -22605,6 +22599,22 @@ class TGraph:
         src = active[0] if source is None else TGraph.VertexIndex(graph, source)
         if src is None:
             return {}
+        context = getattr(graph, "_analysis_context", None)
+        if context is not None and context.enabled:
+            vertices, position, adjacency = TGraph._DepthAdjacency(graph, mode)
+            depths = {src: 0}
+            queue = deque([position[src]])
+            while queue:
+                p = queue.popleft()
+                depth = depths[vertices[p]] + 1
+                for neighbour in adjacency[p]:
+                    index = vertices[neighbour]
+                    if index not in depths:
+                        depths[index] = depth
+                        queue.append(neighbour)
+            for idx, depth in depths.items():
+                graph._vertices[idx]["dictionary"][key] = depth
+            return depths
         from collections import deque as _deque
         depths = {src:0}
         q = _deque([src])
@@ -22617,6 +22627,72 @@ class TGraph:
         for idx, depth in depths.items():
             graph._vertices[idx]["dictionary"][key]=depth
         return depths
+
+    @staticmethod
+    def _DepthAdjacency(graph, mode="out"):
+        """Prepare only unweighted traversal data, with context dependency checks."""
+        mode = str(mode).lower()
+        mode = mode if mode in ("in", "all") else "out"
+        def prepare():
+            vertices = TGraph._ActiveVertexIndices(graph)
+            position = {index: p for p, index in enumerate(vertices)}
+            adjacency = [[position[index] for index in TGraph.AdjacentIndices(graph, vertex, mode)]
+                         for vertex in vertices]
+            return vertices, position, adjacency
+        context = getattr(graph, "_analysis_context", None)
+        if context is not None and context.enabled:
+            return context.Memo("depth_adjacency", (mode,), prepare)
+        return prepare()
+
+    @staticmethod
+    def MeanDepth(graph: "TGraph", sources=None, mode: str = "out", key=None,
+                  silent: bool = False) -> Dict[int, float]:
+        """Return mean unweighted hop depths, sharing adjacency across sources.
+
+        Parameters
+        ----------
+        graph : TGraph
+            The input graph.
+        sources : iterable, optional
+            Vertex indices or records. None analyses all active vertices.
+            Invalid sources are omitted.
+        mode : str, optional
+            "out", "in", or "all". Other values use outgoing traversal.
+        key : str, optional
+            Optional vertex attribute for the result. None writes no attributes.
+        silent : bool, optional
+            Reserved for consistency with other analysis methods.
+
+        Returns
+        -------
+        Dict[int, float]
+            Source indices mapped to mean depth over reachable vertices,
+            excluding the source. Isolated sources have value -1.0.
+            One BFS is required per source; preparation is shared within a
+            batch and reused through an attached AnalysisContext. Unreachable
+            vertices are excluded. Edge lengths and weights are not used.
+        """
+        if not isinstance(graph, TGraph):
+            return {}
+        indices = TGraph._ActiveVertexIndices(graph) if sources is None else [
+            index for item in sources
+            if (index := TGraph.VertexIndex(graph, item)) is not None]
+        if not indices:
+            return {}
+        vertices, position, adjacency = TGraph._DepthAdjacency(graph, mode)
+        result = {}
+        for source in indices:
+            distances, _ = TGraph._BFSCompiledStateompact(adjacency, position[source])
+            total = count = 0
+            for depth in distances:
+                if depth > 0:
+                    total += depth
+                    count += 1
+            result[source] = total / count if count else -1.0
+        if key is not None:
+            for index, value in result.items():
+                graph._vertices[index]["dictionary"][key] = value
+        return result
 
     @staticmethod
     def DetachVertex(graph: "TGraph", *vertices, silent: bool = False) -> Optional["TGraph"]:
@@ -36204,6 +36280,7 @@ class TGraph:
         silent: bool = False,
         storeEdgeRepresentations: bool = True,
         ontology: bool = True,
+        useNumba: bool = False,
     ) -> Optional["TGraph"]:
         """
         Returns a fast visibility graph derived from the input planar face.
@@ -36244,9 +36321,11 @@ class TGraph:
             exact blocker checks are faster than constructing angular sweep events.
             Default is 24.
         allowBoundaryPaths : bool , optional
-            If set to True, collinear travel along face/obstacle boundary segments
-            is allowed. This is useful for shortest-path visibility graphs where
-            paths may graze obstacle boundaries. Default is True.
+            If set to True, collinear overlap with an individual face/obstacle
+            boundary segment is allowed. Other incident boundary segments can
+            still block the sightline. This option does not permit passage
+            through a boundary corner in the interior of a sightline.
+            Default is True.
         trim : bool , optional
             If set to True, visibility edges whose interiors leave the host face
             are rejected. This is useful for concave faces or faces with holes,
@@ -36279,6 +36358,34 @@ class TGraph:
         -------
         Optional[TGraph]
             The resulting TGraph, or None if the operation fails.
+
+        useNumba : bool , optional
+            If True, use an optional single-core Numba kernel for full visibility
+            searches. NumPy and Numba must be installed. The first call may compile
+            the kernel; later calls reuse its cached code. Default is False. If the
+            accelerator cannot be loaded or compiled, use the Python implementation.
+            Positive maxNeighbors searches retain the Python implementation.
+
+        Notes
+        -----
+        Corner-contact convention: a sightline is blocked when a face or
+        obstacle boundary-segment endpoint lies in its interior, including a
+        purely tangential touch that does not enter the obstacle. Contacts
+        coinciding with a sightline's own endpoints are not rejected by this
+        corner rule, although other visibility checks still apply. Geometric
+        comparisons use the supplied tolerance.
+
+        This conservative rule applies even with trim=False and
+        allowBoundaryPaths=True: wall-blocking checks are independent of host-
+        face trimming. Allowing collinear boundary overlap does not disable
+        corner-contact blocking by incident segments.
+
+        Complete visibility-link comparisons against DepthmapX 0.9.1 agreed
+        for spacing-1 grids in square rooms containing either a square or a
+        diamond hole, using identical sample coordinates. Both rejected
+        tangential corner contacts and crossings into the hole through a
+        vertex. These controlled cases do not establish parity for all
+        geometries, grid alignments, tolerances or DepthmapX versions.
         """
 
         try:
@@ -36707,47 +36814,40 @@ class TGraph:
 
             return False
 
-        def _segment_inside_host_face(ax, ay, bx, by, candidate_bbox):
-            """
-            Returns True only when the complete segment remains in the host face.
+        # Bound the per-build point-query cache. Only segments spanning the query's
+        # y coordinate can affect boundary membership or horizontal ray parity.
+        _face_y_index = {}
 
-            The previous implementation made up to seven full passes over the host
-            boundary per candidate: boundary+ray tests for three sample points, then
-            a separate crossing pass. This version performs the same tests in one
-            boundary pass.
-            """
+        def _face_point_blockers(py):
+            if py not in _face_y_index:
+                if len(_face_y_index) >= 4096:
+                    _face_y_index.clear()
+                _face_y_index[py] = [b for b in face_blockers if b[6] - tol <= py <= b[8] + tol]
+            return _face_y_index[py]
+
+        def _segment_inside_host_face(ax, ay, bx, by, candidate_bbox):
             if not trim or not face_blockers:
                 return True
-
-            q1 = (ax + 0.25 * (bx - ax), ay + 0.25 * (by - ay))
-            mid = (ax + 0.50 * (bx - ax), ay + 0.50 * (by - ay))
-            q3 = (ax + 0.75 * (bx - ax), ay + 0.75 * (by - ay))
-            samples = (q1, mid, q3)
-            inside = [False, False, False]
-            on_boundary = [False, False, False]
-
-            for blocker in face_blockers:
-                if _face_boundary_blocks_trim(ax, ay, bx, by, candidate_bbox, blocker):
+            for b in face_blockers:
+                if _face_boundary_blocks_trim(ax, ay, bx, by, candidate_bbox, b):
                     return False
-
-                _, cx, cy, dx, dy, *_ = blocker
-
-                for sample_index, (px, py) in enumerate(samples):
-                    if on_boundary[sample_index]:
-                        continue
-
+            for fraction in (0.25, 0.5, 0.75):
+                px = ax + fraction * (bx - ax)
+                py = ay + fraction * (by - ay)
+                inside = False
+                boundary = False
+                for b in _face_point_blockers(py):
+                    cx, cy, dx, dy = b[1:5]
                     if _on_segment(cx, cy, dx, dy, px, py):
-                        on_boundary[sample_index] = True
-                        continue
-
-                    if (cy > py) == (dy > py):
-                        continue
-
-                    x_intersection = cx + (py - cy) * (dx - cx) / ((dy - cy) or 1e-300)
-                    if x_intersection > px + tol:
-                        inside[sample_index] = not inside[sample_index]
-
-            return all(on_boundary[i] or inside[i] for i in range(3))
+                        boundary = True
+                        break
+                    if (cy > py) != (dy > py):
+                        x = cx + (py - cy) * (dx - cx) / (dy - cy or 1e-300)
+                        if x > px + tol:
+                            inside = not inside
+                if not (boundary or inside):
+                    return False
+            return True
 
         # ---------------------------------------------------------------------
         # Angular interval helpers.
@@ -37041,6 +37141,42 @@ class TGraph:
 
             return visible
 
+        _numba_source = None
+        try:
+            _sparse_neighbors = maxNeighbors is not None and int(maxNeighbors) > 0
+        except Exception:
+            _sparse_neighbors = False
+        if useNumba and n > 1 and not _sparse_neighbors:
+            try:
+                import numpy as _np
+                from topologicpy.TGraphVisibility import visible_source as _numba_source
+                _numeric_blockers = _np.asarray([b[1:9] for b in blockers], dtype=_np.float64).reshape((-1, 8))
+                _numeric_faces = _np.asarray([b[1:9] for b in face_blockers], dtype=_np.float64).reshape((-1, 8))
+                _numeric_xs = _np.asarray(xs, dtype=_np.float64)
+                _numeric_ys = _np.asarray(ys, dtype=_np.float64)
+                # Compile or load the cached signature before changing dispatch. An
+                # unavailable optional dependency or compiler uses the Python path.
+                _numba_source(0, _np.empty(0, dtype=_np.int64), _numeric_xs,
+                              _numeric_ys, _numeric_blockers, _numeric_faces, tol,
+                              tol2, allowBoundaryPaths, trim, -1.0)
+            except Exception:
+                _numba_source = None
+
+        if _numba_source is not None:
+            def _source_visibility_full(source_index, target_indices):
+                targets = _np.asarray(list(target_indices), dtype=_np.int64)
+                mask = _numba_source(source_index, targets, _numeric_xs, _numeric_ys,
+                                     _numeric_blockers, _numeric_faces, tol, tol2,
+                                     allowBoundaryPaths, trim,
+                                     -1.0 if max_distance2 is None else max_distance2)
+                records = [(_dist2_xy(xs[source_index], ys[source_index], xs[j], ys[j]),
+                            int(j)) for j in targets[mask]]
+                # Keep the established edge order, including stable angle ties.
+                if len(_source_blocker_distance_records(xs[source_index], ys[source_index])) > direct_blocker_threshold:
+                    records.sort(key=lambda item: math.atan2(ys[item[1]]-ys[source_index],
+                                                             xs[item[1]]-xs[source_index]))
+                return records
+
         def _source_visibility(source_index, target_indices):
             if maxNeighbors is not None:
                 try:
@@ -37067,7 +37203,7 @@ class TGraph:
                 allowParallelEdges=False,
                 dictionary={
                     "generated_by": "TGraph.VisibilityGraph",
-                    "visibility_engine": "angular_event_sweep",
+                    "visibility_engine": "numba_full" if _numba_source is not None else "angular_event_sweep",
                     "vertex_count": n,
                     "blocker_segment_count": len(blockers),
                     "max_distance": maxDistance,
