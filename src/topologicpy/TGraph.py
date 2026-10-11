@@ -16,7 +16,15 @@
 
 from __future__ import annotations
 
-from collections import deque
+from collections import deque, OrderedDict
+from contextlib import contextmanager
+from functools import wraps
+import copy
+import hashlib
+import inspect
+import pickle
+import sys
+import threading
 from typing import Any, Dict, Iterable, List, Optional, Set, Tuple, Union
 import csv
 import io
@@ -34,6 +42,705 @@ class TGraph:
     - optional vertex representations can be any topology;
     - optional edge representations can be topologic edges, wires, curves, or control data.
     """
+
+    _ANALYSIS_CACHE_POLICIES = {}
+
+
+    @staticmethod
+    def _AnalysisFreeze(value):
+        """Deterministic content key; opaque objects require an explicit token."""
+        if value is None or isinstance(value, (bool, int, str, bytes)):
+            return (type(value).__name__, value)
+        if isinstance(value, float):
+            return ('float', value.hex())
+        if isinstance(value, (tuple, list)):
+            return (type(value).__name__, tuple((TGraph._AnalysisFreeze(v) for v in value)))
+        if isinstance(value, dict):
+            return ('dict', tuple(sorted(((TGraph._AnalysisFreeze(k), TGraph._AnalysisFreeze(v)) for k, v in value.items()), key=repr)))
+        if isinstance(value, (set, frozenset)):
+            return ('set', tuple(sorted((TGraph._AnalysisFreeze(v) for v in value), key=repr)))
+        raise TypeError('Opaque or callable input requires uncached execution or a dependency token')
+
+
+    @staticmethod
+    def _AnalysisValidateObservable(value):
+        """Check fingerprint inputs without allocating a second nested structure."""
+        if value is None or isinstance(value, (bool, int, float, str, bytes)):
+            return
+        if isinstance(value, dict):
+            for k, v in value.items():
+                TGraph._AnalysisValidateObservable(k)
+                TGraph._AnalysisValidateObservable(v)
+            return
+        if isinstance(value, (tuple, list, set, frozenset)):
+            for v in value:
+                TGraph._AnalysisValidateObservable(v)
+            return
+        raise TypeError('Opaque or callable input requires uncached execution or a dependency token')
+
+
+    @staticmethod
+    def _AnalysisDigest(value):
+        return hashlib.sha256(repr(TGraph._AnalysisFreeze(value)).encode('utf-8')).digest()
+
+
+    @staticmethod
+    def _AnalysisCopyResult(value):
+        if value is None or type(value) in (bool, int, float, str, bytes):
+            return value
+        if isinstance(value, TGraph):
+            g = TGraph(directed=value._directed, allowSelfLoops=value._allow_self_loops, allowParallelEdges=value._allow_parallel_edges)
+            for name in ('_vertices', '_edges'):
+                records = []
+                for record in getattr(value, name):
+                    records.append({k: v if k in ('representation', 'originator') else TGraph._AnalysisCopyResult(v) for k, v in record.items()})
+                setattr(g, name, records)
+            for name in ('_out_edges', '_in_edges', '_incident_edges', '_edge_lookup', '_dictionary'):
+                setattr(g, name, TGraph._AnalysisCopyResult(getattr(value, name)))
+            g._version = value._version
+            return g
+        if isinstance(value, dict):
+            record = 'index' in value and 'dictionary' in value
+            return {TGraph._AnalysisCopyResult(k): v if record and k in ('representation', 'originator') else TGraph._AnalysisCopyResult(v) for k, v in value.items()}
+        if isinstance(value, list):
+            return [TGraph._AnalysisCopyResult(v) for v in value]
+        if isinstance(value, tuple):
+            return tuple((TGraph._AnalysisCopyResult(v) for v in value))
+        if isinstance(value, set):
+            return {TGraph._AnalysisCopyResult(v) for v in value}
+        return copy.deepcopy(value)
+
+
+    @staticmethod
+    def _AnalysisSize(value, seen=None):
+        seen = set() if seen is None else seen
+        if id(value) in seen:
+            return 0
+        seen.add(id(value))
+        size = sys.getsizeof(value)
+        if isinstance(value, dict):
+            size += sum((TGraph._AnalysisSize(k, seen) + TGraph._AnalysisSize(v, seen) for k, v in value.items()))
+        elif isinstance(value, (list, tuple, set, frozenset)):
+            size += sum((TGraph._AnalysisSize(v, seen) for v in value))
+        elif hasattr(value, '_vertices') and hasattr(value, '_edges'):
+            size += sum((TGraph._AnalysisSize(getattr(value, name), seen) for name in ('_vertices', '_edges', '_out_edges', '_in_edges', '_incident_edges', '_edge_lookup', '_dictionary')))
+        else:
+            size = max(size, getattr(value, 'nbytes', 0))
+            if hasattr(value, '__dict__'):
+                size += TGraph._AnalysisSize(vars(value), seen)
+        return size
+
+
+    @staticmethod
+    def _AnalysisLiveRouteRecords(value, graph):
+        """Routing APIs return live vertex/edge records: preserve that contract."""
+        if isinstance(value, dict):
+            if 'index' in value and 'dictionary' in value:
+                records = graph._edges if 'src' in value and 'dst' in value else graph._vertices
+                return records[value['index']]
+            return {k: TGraph._AnalysisLiveRouteRecords(v, graph) for k, v in value.items()}
+        if isinstance(value, list):
+            return [TGraph._AnalysisLiveRouteRecords(v, graph) for v in value]
+        if isinstance(value, tuple):
+            return tuple((TGraph._AnalysisLiveRouteRecords(v, graph) for v in value))
+        return value
+
+
+    class _AnalysisContext:
+        """One graph's explicit, bounded reusable analysis context.
+
+        Create through TGraph.AnalysisContext(graph). Existing compatible TGraph
+        calls then reuse this context, or call context.Compute('ClosenessCentrality').
+        Relevant live dictionary edits are detected by content, not only _version.
+        External mutable geometry/callback calculations need caller-owned tokens.
+        """
+
+        def __init__(self, graph, maxEntries=128, maxBytes=64 * 1024 * 1024, maxSourceTrees=16, enabled=True):
+            if not isinstance(graph, TGraph):
+                raise TypeError('graph must be a TGraph')
+            if any((isinstance(v, bool) or not isinstance(v, int) or v < 0 for v in (maxEntries, maxBytes, maxSourceTrees))):
+                raise ValueError('Cache limits must be nonnegative integers')
+            self.graph = graph
+            self.maxEntries, self.maxBytes, self.maxSourceTrees = (maxEntries, maxBytes, maxSourceTrees)
+            self.enabled = bool(enabled)
+            self._entries = OrderedDict()
+            self._bytes = 0
+            self._lock = threading.RLock()
+            self._local = threading.local()
+            self._counts = {'hits': 0, 'misses': 0, 'evictions': 0, 'bypasses': 0}
+            self._namespaces = {}
+
+        @contextmanager
+        def _scope(self):
+            outer = not getattr(self._local, 'depth', 0)
+            if outer:
+                self._local.stamps = {}
+            self._local.depth = getattr(self._local, 'depth', 0) + 1
+            try:
+                yield
+            finally:
+                self._local.depth -= 1
+                if outer:
+                    self._local.stamps = {}
+
+        def Clear(self, resetStatistics=False):
+            with self._lock:
+                self._entries.clear()
+                self._bytes = 0
+                if resetStatistics:
+                    self._counts = dict.fromkeys(self._counts, 0)
+                    self._namespaces.clear()
+            return self
+
+        def Detach(self):
+            if self.graph._analysis_context is self:
+                self.graph._analysis_context = None
+            return self
+
+        def Info(self):
+            with self._lock:
+                return dict(self._counts, enabled=self.enabled, attached=self.graph._analysis_context is self, entries=len(self._entries), estimatedBytes=self._bytes, maxEntries=self.maxEntries, maxBytes=self.maxBytes, maxSourceTrees=self.maxSourceTrees, namespaces=copy.deepcopy(self._namespaces))
+
+        def _stamp(self, geometry=False, attributes=(), allAttributes=False, graphAttributes=()):
+            attrs = tuple(sorted(set((k for k in attributes if isinstance(k, str)))))
+            cache_key = (bool(geometry), attrs, bool(allAttributes), tuple(graphAttributes))
+            stamps = getattr(self._local, 'stamps', {})
+            if cache_key in stamps:
+                return stamps[cache_key]
+            g = self.graph
+            topology = (g._directed, g._allow_parallel_edges, g._allow_self_loops, [(v.get('index'), v.get('active', True)) for v in g._vertices], [(e.get('index'), e.get('src'), e.get('dst'), e.get('directed', g._directed), e.get('active', True)) for e in g._edges])
+
+            def values(record):
+                d = record.get('dictionary', {})
+                return d if allAttributes else {k: d[k] for k in attrs if k in d}
+            properties = ([values(v) for v in g._vertices] if attrs or allAttributes else [], [values(e) for e in g._edges] if attrs or allAttributes else [], g._dictionary if allAttributes else {k: g._dictionary[k] for k in graphAttributes if k in g._dictionary})
+            coordinates = []
+            if geometry:
+                from topologicpy.Vertex import Vertex
+                from topologicpy.Edge import Edge
+                from topologicpy.Topology import Topology
+                for v in g._vertices:
+                    if v.get('active', True):
+                        coordinates.append(TGraph.Coordinates(g, v['index']))
+                for record in list(g._vertices) + list(g._edges):
+                    obj = record.get('originator')
+                    if obj is None:
+                        obj = record.get('representation')
+                    if obj is None:
+                        coordinates.append(None)
+                        continue
+                    if isinstance(obj, (dict, list, tuple)):
+                        coordinates.append(obj)
+                        continue
+                    try:
+                        if Topology.IsInstance(obj, 'Edge'):
+                            coordinates.append((Vertex.Coordinates(Edge.StartVertex(obj)), Vertex.Coordinates(Edge.EndVertex(obj))))
+                        elif Topology.IsInstance(obj, 'Vertex'):
+                            coordinates.append(Vertex.Coordinates(obj))
+                        else:
+                            raise TypeError('Unobservable external geometry')
+                    except Exception:
+                        raise TypeError('Unobservable external geometry')
+            TGraph._AnalysisValidateObservable(properties)
+            TGraph._AnalysisValidateObservable(coordinates)
+            result = hashlib.sha256(pickle.dumps((topology, properties, coordinates), protocol=5)).digest()
+            if getattr(self._local, 'depth', 0):
+                stamps[cache_key] = result
+            return result
+
+        def _key(self, namespace, settings, **dependencies):
+            return (namespace, self._stamp(**dependencies), TGraph._AnalysisDigest(settings))
+
+        def _lookup(self, key):
+            namespace = key[0]
+            counts = self._namespaces.setdefault(namespace, {'hits': 0, 'misses': 0})
+            if key not in self._entries:
+                self._counts['misses'] += 1
+                counts['misses'] += 1
+                return (False, None)
+            self._counts['hits'] += 1
+            counts['hits'] += 1
+            item, size = self._entries.pop(key)
+            self._entries[key] = (item, size)
+            return (True, TGraph._AnalysisCopyResult(item))
+
+        def _store(self, key, value):
+            if value is None or not self.maxEntries or (not self.maxBytes):
+                return
+            try:
+                saved = TGraph._AnalysisCopyResult(value)
+                size = TGraph._AnalysisSize(saved) + TGraph._AnalysisSize(key)
+            except Exception:
+                self._counts['bypasses'] += 1
+                return
+            if size > self.maxBytes:
+                self._counts['bypasses'] += 1
+                return
+            if key in self._entries:
+                self._bytes -= self._entries.pop(key)[1]
+            self._entries[key] = (saved, size)
+            self._bytes += size
+            if key[0] in ('source_tree', 'ShortestPathTree'):
+                matching = [k for k in self._entries if k[0] in ('source_tree', 'ShortestPathTree')]
+                for victim in matching[:max(0, len(matching) - self.maxSourceTrees)]:
+                    self._bytes -= self._entries.pop(victim)[1]
+                    self._counts['evictions'] += 1
+            while len(self._entries) > self.maxEntries or self._bytes > self.maxBytes:
+                _, (_, removed_size) = self._entries.popitem(last=False)
+                self._bytes -= removed_size
+                self._counts['evictions'] += 1
+
+        def Memo(self, namespace, settings, calculate, **dependencies):
+            """Internal numerical preparation/result reuse; returned values are copies."""
+            if not self.enabled:
+                return calculate()
+            with self._lock, self._scope():
+                try:
+                    key = self._key(namespace, settings, **dependencies)
+                except (TypeError, ValueError, RecursionError):
+                    self._counts['bypasses'] += 1
+                    return calculate()
+                found, value = self._lookup(key)
+                if found:
+                    return value
+                value = calculate()
+                self._store(key, value)
+                return value
+
+        def Publish(self, namespace, settings, value, **dependencies):
+            """Make already-calculated raw data available to compatible measures."""
+            if self.enabled:
+                with self._lock, self._scope():
+                    try:
+                        self._store(self._key(namespace, settings, **dependencies), value)
+                    except (TypeError, ValueError, RecursionError):
+                        self._counts['bypasses'] += 1
+
+        def Compute(self, method, *args, **kwargs):
+            if not isinstance(method, str) or method not in TGraph._ANALYSIS_CACHE_POLICIES:
+                raise ValueError('Method is not a supported reusable TGraph analysis')
+            return getattr(TGraph, method)(self.graph, *args, **kwargs)
+
+        def ComputeGeometry(self, method, *args, dependencyToken=None, **kwargs):
+            """Reuse external geometry construction with an explicit revision token.
+
+            Increment/change the token whenever external geometry changes. Tokens
+            are mandatory because these inputs have no TGraph mutation lifecycle.
+            """
+            if method not in ('VisibilityGraph', 'NavigationGraph', 'AxialGraph', 'SegmentGraph', 'BySpatialRelationships'):
+                raise ValueError('Unsupported external geometry calculation')
+            if dependencyToken is None:
+                raise ValueError('External geometry reuse requires dependencyToken')
+
+            def external_key(value):
+                try:
+                    TGraph._AnalysisFreeze(value)
+                    return value
+                except TypeError:
+                    return ('external_identity', id(value))
+            settings = (dependencyToken, {k: external_key(v) for k, v in kwargs.items()})
+            settings = (settings, tuple((id(arg) for arg in args)))
+            return self.Memo('geometry:' + method, settings, lambda: getattr(TGraph, method)(*args, **kwargs))
+
+        def Centralities(self, weightKey=None, radius=None, mode='out', includeBetweenness=True, mantissa=6):
+            """Ordinary vertex measures with compatible distance-work reuse.
+
+            Betweenness follows the existing outgoing directed semantics; other
+            modes deliberately use their own closeness searches.
+            """
+            result = {}
+            if includeBetweenness:
+                result['betweenness'] = TGraph.BetweennessCentrality(self.graph, weightKey=weightKey, radius=radius, normalize=False, nxCompatible=False, key=None, colorKey=None, mantissa=mantissa)
+            result['closeness'] = TGraph.ClosenessCentrality(self.graph, weightKey=weightKey, radius=radius, mode=mode, normalize=False, key=None, colorKey=None, mantissa=mantissa)
+            result['degree'] = TGraph.DegreeCentrality(self.graph, weightKey=weightKey, key=None, colorKey=None, mantissa=mantissa)
+            return result
+
+        def _call(self, name, original, signature, args, kwargs, policy):
+            if not self.enabled:
+                return original(*args, **kwargs)
+            with self._lock, self._scope():
+                bound = signature.bind(*args, **kwargs)
+                bound.apply_defaults()
+                options = dict(bound.arguments)
+                options.pop(next(iter(signature.parameters)), None)
+                for field, value in list(options.items()):
+                    if isinstance(value, TGraph):
+                        other = value._analysis_context or TGraph._AnalysisContext(value)
+                        try:
+                            options[field] = ('other_graph', other._stamp(geometry=True, allAttributes=True))
+                        except (TypeError, ValueError, RecursionError):
+                            self._counts['bypasses'] += 1
+                            return original(*args, **kwargs)
+                if any((callable(v) for v in options.values())):
+                    self._counts['bypasses'] += 1
+                    return original(*args, **kwargs)
+                effective = dict(options)
+                for parameter in signature.parameters.values():
+                    if parameter.kind == inspect.Parameter.VAR_KEYWORD:
+                        effective.update(options.get(parameter.name, {}))
+                if options.get('copy') is False or (name in ('InferOntology', 'Reason') and (effective.get('applyToGraph') or effective.get('inplace'))):
+                    self._counts['bypasses'] += 1
+                    return original(*args, **kwargs)
+                if name in ('CommunityPartition', 'Community', 'Partition') and options.get('seed') is None:
+                    self._counts['bypasses'] += 1
+                    return original(*args, **kwargs)
+                geometry, all_attributes, input_params, outputs = policy
+                input_attrs = [options[p] for p in input_params if isinstance(options.get(p), str) and options[p]]
+                routes = ('ShortestPath', 'ShortestPathTree', 'ShortestPaths', 'ShortestPathsFromSource', 'ShortestPathViaVertices', 'Path', 'TopologicalDistance', 'Depth')
+                if name in routes:
+                    edge_key = str(options.get('edgeKey', '')).lower()
+                    if edge_key in ('hop', 'hops', 'unweighted', 'unit', 'length', 'distance', 'metric'):
+                        input_attrs = [key for key in input_attrs if key != options.get('edgeKey')]
+
+                    def indexed(value):
+                        return value is None or isinstance(value, int) or (isinstance(value, dict) and isinstance(value.get('index'), int))
+                    endpoints_ok = all((indexed(options[p]) for p in ('source', 'target', 'vertexA', 'vertexB', 'vertex') if p in options))
+                    endpoints_ok = endpoints_ok and all((indexed(v) for v in options.get('targets') or []))
+                    if name in ('ShortestPath', 'ShortestPathTree', 'ShortestPathsFromSource') and edge_key in ('hop', 'hops', 'unweighted', 'unit') and endpoints_ok and (not options.get('turnWeight')) and (not options.get('turnKey')):
+                        geometry = False
+                if name.startswith('Angular') or name.startswith('_Angular'):
+                    input_attrs += ['depthmap_ref', self.graph._dictionary.get('angular_weight_key', 'angular_weight')]
+                fields = [options[p] for p in outputs if isinstance(options.get(p), str)]
+                if name in ('AngularChoice', 'AngularIntegration'):
+                    fields += ['bc_color' if name == 'AngularChoice' else 'cc_color']
+                if name == 'Choice':
+                    fields += ['bc_color']
+                if name == 'AngularTulipAnalysis' and options.get('writeValues', True):
+                    fields += ['choice', 'integration', 'nain', 'nach']
+                    if options.get('colorize', True):
+                        fields += ['bc_color', 'cc_color']
+                graph_keys = ('graph_type', 'depthmap_segment_data', 'angular_weight_key') if 'Angular' in name else ()
+                try:
+                    key = self._key(name, options, geometry=geometry, attributes=input_attrs, allAttributes=all_attributes, graphAttributes=graph_keys)
+                except (TypeError, ValueError, RecursionError):
+                    self._counts['bypasses'] += 1
+                    return original(*args, **kwargs)
+                found, item = self._lookup(key)
+                if found:
+                    value, patch = item
+                    for element, index, field, v in patch:
+                        records = self.graph._vertices if element == 'v' else self.graph._edges
+                        records[index].setdefault('dictionary', {})[field] = v
+                    if name in ('ShortestPath', 'ShortestPaths', 'ShortestPathsFromSource', 'ShortestPathViaVertices', 'Path'):
+                        value = TGraph._AnalysisLiveRouteRecords(value, self.graph)
+                    return value
+                value = original(*args, **kwargs)
+                if value is None:
+                    return value
+                patch = []
+                vertex_outputs = name not in ('AngularChoice', 'AngularIntegration', 'AngularConnectivity', 'AngularTulipAnalysis')
+                if name in ('BetweennessCentrality', 'ClosenessCentrality', 'DegreeCentrality'):
+                    vertex_outputs = not options.get('useEdges', False)
+                elif name.startswith('Angular'):
+                    vertex_outputs = self.graph._dictionary.get('graph_type') == 'segment'
+                selected = None
+                if name == 'LocalClusteringCoefficient' and options.get('vertices') is not None:
+                    selected = {TGraph._as_index(v) for v in options['vertices']}
+                element, records = ('v', self.graph._vertices) if vertex_outputs else ('e', self.graph._edges)
+                for element, records in ((element, records),):
+                    for index, record in enumerate(records):
+                        if not record.get('active', True):
+                            continue
+                        if selected is not None and record.get('index') not in selected:
+                            continue
+                        dictionary = record.get('dictionary', {})
+                        for field in set(fields):
+                            if field in dictionary:
+                                patch.append((element, index, field, dictionary[field]))
+                self._store(key, (value, patch))
+                return value
+
+
+    @staticmethod
+    def _AnalysisPolicy(names, geometry=False, allAttributes=False, inputs=(), outputs=()):
+        for name in names.split():
+            TGraph._ANALYSIS_CACHE_POLICIES[name] = (geometry, allAttributes, inputs, outputs)
+
+
+    @staticmethod
+    def _InstallAnalysisContext(TGraph):
+        """Install transparent opt-in access without changing public signatures."""
+        for name, policy in TGraph._ANALYSIS_CACHE_POLICIES.items():
+            original = getattr(TGraph, name, None)
+            if original is None or getattr(original, '_analysis_wrapped', False):
+                continue
+            signature = inspect.signature(original)
+            if not signature.parameters or next(iter(signature.parameters)) not in ('graph', 'graphA', 'topology'):
+                continue
+
+            def make(name, original, signature, policy):
+
+                @wraps(original)
+                def wrapped(*args, **kwargs):
+                    graph = args[0] if args else kwargs.get(next(iter(signature.parameters)))
+                    context = getattr(graph, '_analysis_context', None)
+                    if context is None:
+                        return original(*args, **kwargs)
+                    return context._call(name, original, signature, args, kwargs, policy)
+                wrapped._analysis_wrapped = True
+                return wrapped
+            setattr(TGraph, name, staticmethod(make(name, original, signature, policy)))
+
+
+    @staticmethod
+    def _ScipyCalculate(graph, operation, *args, namespace=None, weightKey=None, **options):
+        import numpy as np
+        from scipy import sparse
+        from scipy.sparse.csgraph import dijkstra, minimum_spanning_tree
+
+        def matrix(rows, weighted=False):
+
+            def prepare():
+                indices = []
+                data = []
+                indptr = [0]
+                for row in rows:
+                    for index in row:
+                        indices.append(index)
+                        data.append(row[index] if weighted else 1.0)
+                    indptr.append(len(indices))
+                return sparse.csr_matrix((data, np.asarray(indices, dtype=np.int32), np.asarray(indptr, dtype=np.int32)), shape=(len(rows), len(rows)))
+            if namespace is None:
+                return prepare()
+            return TGraph._AnalysisMemo(graph, 'scipy_matrix', (namespace, weighted), prepare, geometry=weightKey is not None and str(weightKey).lower() in ('length', 'distance'), attributes=(weightKey,))
+        if operation == 'summaries':
+            rows = args[0]
+            n = len(rows)
+            if n < 64:
+                return None
+            csr = matrix(rows, options.get('weighted', False))
+            sources = options.get('sources', range(n))
+            sources = list(sources)
+            batch = max(1, min(256, 32 * 1024 * 1024 // (16 * n)))
+            results = []
+            for start in range(0, len(sources), batch):
+                dist = dijkstra(csr, directed=True, unweighted=not options.get('weighted', False), indices=np.asarray(sources[start:start + batch]), limit=options.get('radius') if options.get('radius') is not None else np.inf)
+                finite = np.isfinite(dist)
+                counts = finite.sum(axis=1)
+                dist[~finite] = 0
+                totals = dist.sum(axis=1)
+                maxima = dist.max(axis=1) if options.get('maximum') else [None] * len(totals)
+                results.extend(((float(total), int(count), None if maximum is None else float(maximum)) for total, count, maximum in zip(totals, counts, maxima)))
+            return results
+        if operation == 'eigenvector':
+            rows, iterations, tolerance = args
+            n = len(rows)
+            if n < 64:
+                return None
+            csr = matrix(rows).transpose().tocsr()
+            x = np.full(n, 1 / math.sqrt(n))
+            for _ in range(iterations):
+                new = x + csr @ x
+                norm = np.linalg.norm(new)
+                new = new / norm if norm > 0 else np.full(n, 1 / math.sqrt(n))
+                diff = np.linalg.norm(new - x)
+                x = new
+                if diff <= tolerance:
+                    break
+            return x.tolist()
+        if operation == 'pagerank':
+            compiled, damping, iterations, tolerance = args
+            n = compiled['n']
+            if n < 64:
+                return None
+
+            def prepare():
+                src = np.asarray(compiled['src_expanded'], dtype=np.int32)
+                dst = np.asarray(compiled['dst_expanded'], dtype=np.int32)
+                counts = np.asarray([len(row) for row in compiled['adj_out']], dtype=float)
+                csr = sparse.csr_matrix((1 / counts[src], (dst, src)), shape=(n, n))
+                return (csr, counts == 0)
+            csr, dangling = TGraph._AnalysisMemo(graph, 'scipy_pagerank', (), prepare)
+            x = np.full(n, 1 / n)
+            base = (1 - damping) / n
+            for _ in range(max(1, int(iterations))):
+                new = base + damping * (csr @ x) + damping * x[dangling].sum() / n
+                diff = np.abs(new - x).sum()
+                x = new
+                if diff <= tolerance:
+                    break
+            return x.tolist()
+        if operation == 'accessibility':
+            rows, step = args
+            n = len(rows)
+            if n < 64:
+                return None
+            csr = matrix(rows, True)
+            transition = sparse.eye(n, format='csr')
+            for _ in range(max(0, int(step))):
+                transition = transition @ csr
+            return [transition.data[transition.indptr[i]:transition.indptr[i + 1]].tolist() for i in range(n)]
+        if operation == 'mst':
+            c = args[0]
+            if c['n'] < 1000:
+                return None
+            edges = c['edges']
+            if not edges:
+                return []
+            src = np.asarray([e['src'] for e in edges])
+            dst = np.asarray([e['dst'] for e in edges])
+            weights = np.asarray([e['weight'] for e in edges])
+            ids = np.asarray([e['edge_index'] for e in edges])
+            if not np.isfinite(weights).all():
+                return None
+            order = np.lexsort((ids, weights))
+            u = np.minimum(src, dst)
+            v = np.maximum(src, dst)
+            ranks = np.arange(len(order))
+            valid = u[order] != v[order]
+            ranks = ranks[valid]
+            _, first = np.unique(u[order[ranks]] * c['n'] + v[order[ranks]], return_index=True)
+            ranks = ranks[first]
+            chosen = order[ranks]
+            csr = sparse.csr_matrix((ranks.astype(float) + 1, (u[chosen], v[chosen])), shape=(c['n'], c['n']))
+            tree = minimum_spanning_tree(csr).tocoo()
+            return [edges[order[rank]] for rank in sorted(tree.data.astype(np.int64) - 1)]
+        if operation == 'routing':
+            vertices, adjacency, costs, source = args
+            n = len(vertices)
+            if n < 64 or any((not float(cost).is_integer() or cost <= 0 for cost in costs.values())):
+                return None
+            if max(costs.values(), default=0) * max(1, n) >= 2 ** 52:
+                return None
+            position = {v: p for p, v in enumerate(vertices)}
+
+            def prepare():
+                rows = [{} for _ in vertices]
+                for v, edges in adjacency.items():
+                    for u, edge in edges:
+                        p, q = (position[v], position[u])
+                        cost = costs[edge]
+                        rows[p][q] = min(rows[p].get(q, math.inf), cost)
+                return matrix(rows, True)
+            csr = prepare() if namespace is None else TGraph._AnalysisMemo(graph, 'scipy_routing_matrix', namespace, prepare, geometry=weightKey is None or str(weightKey).lower() in ('length', 'distance', 'metric', ''), attributes=(weightKey,))
+            distances = dijkstra(csr, indices=position[source], directed=True)
+            ordered = sorted(((float(distances[position[v]]), v) for v in vertices if math.isfinite(distances[position[v]])))
+            parent = {}
+            parent_edge = {}
+            hops = {source: 0}
+            for distance, v in ordered:
+                if v not in hops:
+                    return None
+                next_hops = hops[v] + 1
+                for u, edge in adjacency.get(v, ()):
+                    if distance + costs[edge] == distances[position[u]] and next_hops < hops.get(u, math.inf):
+                        hops[u] = next_hops
+                        parent[u] = v
+                        parent_edge[u] = edge
+            return ({v: float(distances[position[v]]) if math.isfinite(distances[position[v]]) else -1.0 for v in vertices}, {v: hops.get(v, -1) for v in vertices}, parent, parent_edge)
+        return None
+
+
+    @staticmethod
+    def _NumbaVisibilityKernel():
+        """Create optional visibility kernels lazily inside TGraph."""
+        cached = getattr(TGraph, "_visibility_numba_kernel", None)
+        if cached is not None:
+            return cached
+        import numpy as np
+        from numba import njit
+        @njit(cache=True, fastmath=False)
+        def _dist2_xy(ax, ay, bx, by, tol, tol2, allowBoundaryPaths):
+            dx = ax - bx
+            dy = ay - by
+            return dx * dx + dy * dy
+
+        @njit(cache=True, fastmath=False)
+        def _same_xy(ax, ay, bx, by, tol, tol2, allowBoundaryPaths):
+            return _dist2_xy(ax, ay, bx, by, tol, tol2, allowBoundaryPaths) <= tol2
+
+        @njit(cache=True, fastmath=False)
+        def _orient(ax, ay, bx, by, cx, cy, tol, tol2, allowBoundaryPaths):
+            return (bx - ax) * (cy - ay) - (by - ay) * (cx - ax)
+
+        @njit(cache=True, fastmath=False)
+        def _on_segment(ax, ay, bx, by, px, py, tol, tol2, allowBoundaryPaths):
+            if abs(_orient(ax, ay, bx, by, px, py, tol, tol2, allowBoundaryPaths)) > tol:
+                return False
+            return min(ax, bx) - tol <= px <= max(ax, bx) + tol and min(ay, by) - tol <= py <= max(ay, by) + tol
+
+        @njit(cache=True, fastmath=False)
+        def _bbox_overlap(a_minx, a_miny, a_maxx, a_maxy, b_minx, b_miny, b_maxx, b_maxy, tol, tol2, allowBoundaryPaths):
+            return not (a_maxx < b_minx - tol or b_maxx < a_minx - tol or a_maxy < b_miny - tol or (b_maxy < a_miny - tol))
+
+        @njit(cache=True, fastmath=False)
+        def _collinear_overlap_length(ax, ay, bx, by, cx, cy, dx, dy, tol, tol2, allowBoundaryPaths):
+            if abs(bx - ax) >= abs(by - ay):
+                a0, a1 = sorted((ax, bx))
+                c0, c1 = sorted((cx, dx))
+            else:
+                a0, a1 = sorted((ay, by))
+                c0, c1 = sorted((cy, dy))
+            return min(a1, c1) - max(a0, c0)
+
+        @njit(cache=True, fastmath=False)
+        def _segments_block_with_bbox(ax, ay, bx, by, candidate_bbox, blocker, tol, tol2, allowBoundaryPaths):
+            cx, cy, dx, dy, minx, miny, maxx, maxy = blocker
+            a_minx, a_miny, a_maxx, a_maxy = candidate_bbox
+            if not _bbox_overlap(a_minx, a_miny, a_maxx, a_maxy, minx, miny, maxx, maxy, tol, tol2, allowBoundaryPaths):
+                return False
+            if allowBoundaryPaths:
+                if _same_xy(ax, ay, cx, cy, tol, tol2, allowBoundaryPaths) and _same_xy(bx, by, dx, dy, tol, tol2, allowBoundaryPaths) or (_same_xy(ax, ay, dx, dy, tol, tol2, allowBoundaryPaths) and _same_xy(bx, by, cx, cy, tol, tol2, allowBoundaryPaths)):
+                    return False
+            o1 = _orient(ax, ay, bx, by, cx, cy, tol, tol2, allowBoundaryPaths)
+            o2 = _orient(ax, ay, bx, by, dx, dy, tol, tol2, allowBoundaryPaths)
+            o3 = _orient(cx, cy, dx, dy, ax, ay, tol, tol2, allowBoundaryPaths)
+            o4 = _orient(cx, cy, dx, dy, bx, by, tol, tol2, allowBoundaryPaths)
+            if (o1 > tol and o2 < -tol or (o1 < -tol and o2 > tol)) and (o3 > tol and o4 < -tol or (o3 < -tol and o4 > tol)):
+                return True
+            if abs(o1) <= tol and abs(o2) <= tol and (abs(o3) <= tol) and (abs(o4) <= tol):
+                overlap = _collinear_overlap_length(ax, ay, bx, by, cx, cy, dx, dy, tol, tol2, allowBoundaryPaths)
+                if overlap <= tol:
+                    return False
+                return not allowBoundaryPaths
+            if abs(o3) <= tol and _on_segment(cx, cy, dx, dy, ax, ay, tol, tol2, allowBoundaryPaths):
+                return False
+            if abs(o4) <= tol and _on_segment(cx, cy, dx, dy, bx, by, tol, tol2, allowBoundaryPaths):
+                return False
+            if abs(o1) <= tol and _on_segment(ax, ay, bx, by, cx, cy, tol, tol2, allowBoundaryPaths):
+                if _same_xy(cx, cy, ax, ay, tol, tol2, allowBoundaryPaths) or _same_xy(cx, cy, bx, by, tol, tol2, allowBoundaryPaths):
+                    return False
+                return True
+            if abs(o2) <= tol and _on_segment(ax, ay, bx, by, dx, dy, tol, tol2, allowBoundaryPaths):
+                if _same_xy(dx, dy, ax, ay, tol, tol2, allowBoundaryPaths) or _same_xy(dx, dy, bx, by, tol, tol2, allowBoundaryPaths):
+                    return False
+                return True
+            return False
+
+
+        @njit(cache=True, fastmath=False)
+        def visible_source(i, targets, xs, ys, blockers, face_blockers, tol, tol2, allowBoundaryPaths, trim, limit):
+            result=np.zeros(len(targets),dtype=np.bool_)
+            ax=xs[i]; ay=ys[i]
+            for k in range(len(targets)):
+                j=targets[k]; bx=xs[j]; by=ys[j]
+                d2=_dist2_xy(ax,ay,bx,by,tol,tol2,allowBoundaryPaths)
+                if d2<=tol2 or (limit>=0 and d2>limit): continue
+                bbox=(min(ax,bx),min(ay,by),max(ax,bx),max(ay,by))
+                blocked=False
+                for b in blockers:
+                    if _segments_block_with_bbox(ax,ay,bx,by,bbox,b,tol,tol2,allowBoundaryPaths):
+                        blocked=True; break
+                if blocked: continue
+                inside=True
+                if trim:
+                    for fraction in (0.25,0.5,0.75):
+                        px=ax+fraction*(bx-ax); py=ay+fraction*(by-ay)
+                        parity=False; boundary=False
+                        for b in face_blockers:
+                            cx,cy,dx,dy=b[0],b[1],b[2],b[3]
+                            if _on_segment(cx,cy,dx,dy,px,py,tol,tol2,allowBoundaryPaths):
+                                boundary=True; break
+                            if (cy>py)!=(dy>py):
+                                intersection=cx+(py-cy)*(dx-cx)/((dy-cy) or 1e-300)
+                                if intersection>px+tol: parity=not parity
+                        if not (boundary or parity):
+                            inside=False; break
+                result[k]=inside
+            return result
+
+        TGraph._visibility_numba_kernel = visible_source
+        return visible_source
 
     __slots__ = (
         "_vertices",
@@ -121,9 +828,8 @@ class TGraph:
         """
         if not isinstance(graph, TGraph):
             return None
-        from topologicpy.TGraphAnalysis import TGraphAnalysis
         if graph._analysis_context is None or replace:
-            graph._analysis_context = TGraphAnalysis(graph, maxEntries=maxEntries,
+            graph._analysis_context = TGraph._AnalysisContext(graph, maxEntries=maxEntries,
                 maxBytes=maxBytes, maxSourceTrees=maxSourceTrees, enabled=enabled)
         return graph._analysis_context
 
@@ -25788,8 +26494,7 @@ class TGraph:
     def _ScipyOperation(graph, operation, *args, **kwargs):
         """Optional sparse acceleration; None requests the existing fallback."""
         try:
-            from topologicpy.TGraphScipy import calculate
-            return calculate(graph, operation, *args, **kwargs)
+            return TGraph._ScipyCalculate(graph, operation, *args, **kwargs)
         except Exception:
             return None
 
@@ -37270,7 +37975,7 @@ class TGraph:
         if useNumba and n > 1 and not _sparse_neighbors:
             try:
                 import numpy as _np
-                from topologicpy.TGraphVisibility import visible_source as _numba_source
+                _numba_source = TGraph._NumbaVisibilityKernel()
                 _numeric_blockers = _np.asarray([b[1:9] for b in blockers], dtype=_np.float64).reshape((-1, 8))
                 _numeric_faces = _np.asarray([b[1:9] for b in face_blockers], dtype=_np.float64).reshape((-1, 8))
                 _numeric_xs = _np.asarray(xs, dtype=_np.float64)
@@ -39627,5 +40332,25 @@ def _TGraph_SemanticSummary(graph, **kwargs):
 
 
 # Reusable analysis is opt-in; unattached graphs take the original method paths.
-from topologicpy.TGraphAnalysis import install as _install_analysis_context
-_install_analysis_context(TGraph)
+TGraph._AnalysisPolicy('BetweennessCentrality ClosenessCentrality DegreeCentrality', True, inputs=('weightKey', 'edgeKey', 'angularWeightKey'), outputs=('key', 'colorKey'))
+TGraph._AnalysisPolicy('Choice Integration', outputs=('key', 'colorKey'))
+TGraph._AnalysisPolicy('AngularChoice AngularIntegration AngularTulipAnalysis AngularConnectivity', True, outputs=('key', 'colorKey'))
+TGraph._AnalysisPolicy('Connectivity', outputs=('key', 'colorKey'))
+TGraph._AnalysisPolicy('Degree DegreeSequence DegreeMatrix MaximumDelta MinimumDelta Diameter BreadthFirstSearch DepthFirstSearch ConnectedComponents IsConnected IsTree IsBipartite IsComplete')
+TGraph._AnalysisPolicy('DepthMap MeanDepth', outputs=('key',))
+TGraph._AnalysisPolicy('LocalClusteringCoefficient AverageClusteringCoefficient GlobalClusteringCoefficient', outputs=('key',))
+TGraph._AnalysisPolicy('BiconnectedComponents Bridges CutVertices Leaves IsolatedVertices', allAttributes=True)
+TGraph._AnalysisPolicy('AdjacencyMatrix Laplacian', True, inputs=('vertexKey', 'edgeKeyFwd', 'edgeKeyBwd', 'bidirKey'))
+TGraph._AnalysisPolicy('PageRank EigenvectorCentrality EigenVectorCentrality FiedlerVector FiedlerVectorPartition AccessibilityCentrality', outputs=('key', 'colorKey'))
+TGraph._AnalysisPolicy('ShortestPath ShortestPathTree ShortestPaths ShortestPathsFromSource ShortestPathViaVertices Path TopologicalDistance Depth', True, inputs=('vertexKey', 'edgeKey', 'turnKey', 'viaKey'))
+TGraph._AnalysisPolicy('LineGraph Quotient MinimumSpanningTree Subgraph InducedSubgraph KHopsSubgraph Neigborhood Neighborhood Tree LongestPath Complement Complete', True, True)
+TGraph._AnalysisPolicy('WLFeatures WLKernel HopperKernel WeightedJaccardSimilarity Kernel Compare Match SubGraphMatches IsIsomorphic', True, True)
+TGraph._AnalysisPolicy('MaximumFlow MinimumCut DisjointPaths EdgeConnectivity VertexConnectivity', True, inputs=('capacityKey', 'vertexKey', 'edgeKey'))
+TGraph._AnalysisPolicy('CommunityPartition Community BetweennessPartition Partition Color ChromaticNumber', True, inputs=('weightKey', 'oldKey'), outputs=('key', 'colorKey'))
+TGraph._AnalysisPolicy('AABB MetricDistance Distance NearestVertex ContainsVertex AdjacentVerticesByVector AdjacentVerticesByCompassDirection PathLength MeshData', True, True)
+TGraph._AnalysisPolicy('KnowledgeGraph ToKnowledgeGraph RDFGraph SemanticGraph SemanticFingerprint SemanticSummary SemanticDiff OntologyTriples Triples InferOntology Reason ExplainInference ProofGraph ProofGraphData', True, True)
+TGraph._AnalysisPolicy('_SimpleUndirectedNeighborSets _UndirectedAdjacency _NativeEdgeBetweenness')
+TGraph._AnalysisPolicy('_P8GraphArrays _P81HopFeatures _P81GraphEdgeWeights', True, True)
+TGraph._AnalysisPolicy('_FlowNetwork', inputs=('capacityKey',))
+TGraph._AnalysisPolicy('_FlowCosts', True, inputs=('edgeKey', 'vertexKey'))
+TGraph._InstallAnalysisContext(TGraph)

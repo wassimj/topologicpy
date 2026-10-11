@@ -38,9 +38,10 @@ def test_optional_accelerator_failure_uses_python(monkeypatch):
     floor,points=scene()
     options=dict(vertices=points,includeBoundaryVertices=False,trim=True,storeEdgeRepresentations=False,ontology=False)
     expected=TGraph.VisibilityGraph(floor,**options)
+    monkeypatch.setattr(TGraph, "_visibility_numba_kernel", None, raising=False)
     original_import=builtins.__import__
     def unavailable(name,*args,**kwargs):
-        if name=='topologicpy.TGraphVisibility': raise ImportError('optional accelerator unavailable')
+        if name=='numba': raise ImportError('optional accelerator unavailable')
         return original_import(name,*args,**kwargs)
     monkeypatch.setattr(builtins,'__import__',unavailable)
     actual=TGraph.VisibilityGraph(floor,useNumba=True,**options)
