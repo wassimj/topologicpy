@@ -781,319 +781,322 @@ Preflight is atomic; a backend write failure can report partial updates.</p>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.MaximumFlow" title="topologicpy.TGraph.TGraph.MaximumFlow"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MaximumFlow</span></code></a>(graph, source, sink[, ...])</p></td>
 <td><p>Returns the maximum flow between two vertices of the input TGraph.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.Merge" title="topologicpy.TGraph.TGraph.Merge"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Merge</span></code></a>(graphA, graphB[, silent])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.MeanDepth" title="topologicpy.TGraph.TGraph.MeanDepth"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MeanDepth</span></code></a>(graph[, sources, mode, key, silent])</p></td>
+<td><p>Return mean unweighted hop depths, sharing adjacency across sources.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.Merge" title="topologicpy.TGraph.TGraph.Merge"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Merge</span></code></a>(graphA, graphB[, silent])</p></td>
 <td><p>Returns a merged graph from two input TGraphs.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.MergeVertices" title="topologicpy.TGraph.TGraph.MergeVertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MergeVertices</span></code></a>(graph, *vertices[, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.MergeVertices" title="topologicpy.TGraph.TGraph.MergeVertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MergeVertices</span></code></a>(graph, *vertices[, ...])</p></td>
 <td><p>Merges several vertices into one target vertex and reconnects incident edges.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.MeshData" title="topologicpy.TGraph.TGraph.MeshData"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MeshData</span></code></a>(graph[, active])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.MeshData" title="topologicpy.TGraph.TGraph.MeshData"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MeshData</span></code></a>(graph[, active])</p></td>
 <td><p>Returns mesh data representing the input TGraph.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.MetricDistance" title="topologicpy.TGraph.TGraph.MetricDistance"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MetricDistance</span></code></a>(graph, vertexA, vertexB[, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.MetricDistance" title="topologicpy.TGraph.TGraph.MetricDistance"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MetricDistance</span></code></a>(graph, vertexA, vertexB[, ...])</p></td>
 <td><p>Returns a metric distance between two input TGraphs.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.MinimumCut" title="topologicpy.TGraph.TGraph.MinimumCut"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MinimumCut</span></code></a>(graph, source, target[, cut, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.MinimumCut" title="topologicpy.TGraph.TGraph.MinimumCut"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MinimumCut</span></code></a>(graph, source, target[, cut, ...])</p></td>
 <td><p>Returns the minimum source-target vertex or edge cut.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.MinimumDelta" title="topologicpy.TGraph.TGraph.MinimumDelta"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MinimumDelta</span></code></a>(graph[, mode, silent])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.MinimumDelta" title="topologicpy.TGraph.TGraph.MinimumDelta"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MinimumDelta</span></code></a>(graph[, mode, silent])</p></td>
 <td><p>Returns the minimum vertex degree of the input TGraph.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.MinimumSpanningTree" title="topologicpy.TGraph.TGraph.MinimumSpanningTree"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MinimumSpanningTree</span></code></a>(graph[, edgeKey])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.MinimumSpanningTree" title="topologicpy.TGraph.TGraph.MinimumSpanningTree"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MinimumSpanningTree</span></code></a>(graph[, edgeKey])</p></td>
 <td><p>Returns a minimum spanning tree of the input TGraph.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.NavigationGraph" title="topologicpy.TGraph.TGraph.NavigationGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NavigationGraph</span></code></a>(face[, vertices, obstacles, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.NavigationGraph" title="topologicpy.TGraph.TGraph.NavigationGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NavigationGraph</span></code></a>(face[, vertices, obstacles, ...])</p></td>
 <td><p>Returns a navigation graph derived from the input topology.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.NearestVertex" title="topologicpy.TGraph.TGraph.NearestVertex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NearestVertex</span></code></a>(graph[, vertex, x, y, z, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.NearestVertex" title="topologicpy.TGraph.TGraph.NearestVertex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NearestVertex</span></code></a>(graph[, vertex, x, y, z, ...])</p></td>
 <td><p>Returns the nearest TGraph vertex record to the input coordinates, TGraph vertex index, TGraph vertex record, Topologic vertex, or coordinate list.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.NeedsSemanticSync" title="topologicpy.TGraph.TGraph.NeedsSemanticSync"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NeedsSemanticSync</span></code></a>(graph[, key])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.NeedsSemanticSync" title="topologicpy.TGraph.TGraph.NeedsSemanticSync"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NeedsSemanticSync</span></code></a>(graph[, key])</p></td>
 <td><p>Returns True if the stored semantic fingerprint differs from the current one.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.Neigborhood" title="topologicpy.TGraph.TGraph.Neigborhood"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Neigborhood</span></code></a>(graph[, vertices, k, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.Neigborhood" title="topologicpy.TGraph.TGraph.Neigborhood"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Neigborhood</span></code></a>(graph[, vertices, k, ...])</p></td>
 <td><p>Returns a k-hop neighbourhood subgraph.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.Neighborhood" title="topologicpy.TGraph.TGraph.Neighborhood"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Neighborhood</span></code></a>(graph[, vertices, k, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.Neighborhood" title="topologicpy.TGraph.TGraph.Neighborhood"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Neighborhood</span></code></a>(graph[, vertices, k, ...])</p></td>
 <td><p>Correctly spelled alias for TGraph.Neigborhood.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.NetworkXGraph" title="topologicpy.TGraph.TGraph.NetworkXGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NetworkXGraph</span></code></a>(graph[, nodeIDKey, edgeIDKey, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.NetworkXGraph" title="topologicpy.TGraph.TGraph.NetworkXGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NetworkXGraph</span></code></a>(graph[, nodeIDKey, edgeIDKey, ...])</p></td>
 <td><p>Returns a NetworkX graph representation of the input TGraph.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.NormalizeOntologyDictionaries" title="topologicpy.TGraph.TGraph.NormalizeOntologyDictionaries"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NormalizeOntologyDictionaries</span></code></a>(graph[, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.NormalizeOntologyDictionaries" title="topologicpy.TGraph.TGraph.NormalizeOntologyDictionaries"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NormalizeOntologyDictionaries</span></code></a>(graph[, ...])</p></td>
 <td><p>Normalizes ontology dictionaries exclusively through Ontology.py.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.OntologyAnnotateGraph" title="topologicpy.TGraph.TGraph.OntologyAnnotateGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OntologyAnnotateGraph</span></code></a>(*args, **kwargs)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.OntologyAnnotateGraph" title="topologicpy.TGraph.TGraph.OntologyAnnotateGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OntologyAnnotateGraph</span></code></a>(*args, **kwargs)</p></td>
 <td><p>Annotates graph, vertex, and edge dictionaries with ontology metadata.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.OntologyCategory" title="topologicpy.TGraph.TGraph.OntologyCategory"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OntologyCategory</span></code></a>(graph[, element, index, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.OntologyCategory" title="topologicpy.TGraph.TGraph.OntologyCategory"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OntologyCategory</span></code></a>(graph[, element, index, ...])</p></td>
 <td><p>Returns the ontology category of a graph, vertex, or edge.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.OntologyClass" title="topologicpy.TGraph.TGraph.OntologyClass"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OntologyClass</span></code></a>(graph[, element, index, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.OntologyClass" title="topologicpy.TGraph.TGraph.OntologyClass"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OntologyClass</span></code></a>(graph[, element, index, ...])</p></td>
 <td><p>Returns the canonical ontology class of a graph, vertex, or edge.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.OntologyClassByIFCClass" title="topologicpy.TGraph.TGraph.OntologyClassByIFCClass"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OntologyClassByIFCClass</span></code></a>(ifcClass[, defaultValue])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.OntologyClassByIFCClass" title="topologicpy.TGraph.TGraph.OntologyClassByIFCClass"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OntologyClassByIFCClass</span></code></a>(ifcClass[, defaultValue])</p></td>
 <td><p>Returns the canonical TopologicPy ontology class for an IFC class.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.OntologyLabel" title="topologicpy.TGraph.TGraph.OntologyLabel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OntologyLabel</span></code></a>(graph[, element, index, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.OntologyLabel" title="topologicpy.TGraph.TGraph.OntologyLabel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OntologyLabel</span></code></a>(graph[, element, index, ...])</p></td>
 <td><p>Returns the ontology label of a graph, vertex, or edge.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.OntologyTriples" title="topologicpy.TGraph.TGraph.OntologyTriples"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OntologyTriples</span></code></a>(graph[, includeVertices, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.OntologyTriples" title="topologicpy.TGraph.TGraph.OntologyTriples"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OntologyTriples</span></code></a>(graph[, includeVertices, ...])</p></td>
 <td><p>Returns canonical RDF triples for a TGraph.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.OntologyURI" title="topologicpy.TGraph.TGraph.OntologyURI"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OntologyURI</span></code></a>(graph[, element, index, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.OntologyURI" title="topologicpy.TGraph.TGraph.OntologyURI"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OntologyURI</span></code></a>(graph[, element, index, ...])</p></td>
 <td><p>Returns the ontology URI of a graph, vertex, or edge.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.Order" title="topologicpy.TGraph.TGraph.Order"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Order</span></code></a>(graph)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.Order" title="topologicpy.TGraph.TGraph.Order"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Order</span></code></a>(graph)</p></td>
 <td><p>Returns the number of active vertices in the input TGraph.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.Originators" title="topologicpy.TGraph.TGraph.Originators"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Originators</span></code></a>(graph[, originators, silent])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.Originators" title="topologicpy.TGraph.TGraph.Originators"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Originators</span></code></a>(graph[, originators, silent])</p></td>
 <td><p>Returns source topologies in active-node order, with None for missing links.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.OutgoingEdges" title="topologicpy.TGraph.TGraph.OutgoingEdges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OutgoingEdges</span></code></a>(graph, vertex)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.OutgoingEdges" title="topologicpy.TGraph.TGraph.OutgoingEdges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OutgoingEdges</span></code></a>(graph, vertex)</p></td>
 <td><p>Returns the outgoing edges of the input vertex.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.OutgoingVertices" title="topologicpy.TGraph.TGraph.OutgoingVertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OutgoingVertices</span></code></a>(graph, vertex)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.OutgoingVertices" title="topologicpy.TGraph.TGraph.OutgoingVertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OutgoingVertices</span></code></a>(graph, vertex)</p></td>
 <td><p>Returns the outgoing adjacent vertices of the input vertex.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.PageRank" title="topologicpy.TGraph.TGraph.PageRank"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PageRank</span></code></a>(graph[, damping, iterations, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.PageRank" title="topologicpy.TGraph.TGraph.PageRank"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PageRank</span></code></a>(graph[, damping, iterations, ...])</p></td>
 <td><p>Computes PageRank values for the vertices of the input TGraph.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.Partition" title="topologicpy.TGraph.TGraph.Partition"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Partition</span></code></a>(graph[, method, n, m, key, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.Partition" title="topologicpy.TGraph.TGraph.Partition"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Partition</span></code></a>(graph[, method, n, m, key, ...])</p></td>
 <td><p>Partitions the input graph and stores partition ids in dictionaries.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.Path" title="topologicpy.TGraph.TGraph.Path"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Path</span></code></a>(graph, vertexA, vertexB[, tolerance, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.Path" title="topologicpy.TGraph.TGraph.Path"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Path</span></code></a>(graph, vertexA, vertexB[, tolerance, ...])</p></td>
 <td><p>Returns a least-cost path between two vertices of the input TGraph.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.PathLength" title="topologicpy.TGraph.TGraph.PathLength"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PathLength</span></code></a>(graph, path[, mantissa, silent])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.PathLength" title="topologicpy.TGraph.TGraph.PathLength"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PathLength</span></code></a>(graph, path[, mantissa, silent])</p></td>
 <td><p>Computes the geometric length of a TGraph path by summing the Euclidean distances between consecutive vertex coordinates.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.ProofGraph" title="topologicpy.TGraph.TGraph.ProofGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ProofGraph</span></code></a>(graph[, triple, subject, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.ProofGraph" title="topologicpy.TGraph.TGraph.ProofGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ProofGraph</span></code></a>(graph[, triple, subject, ...])</p></td>
 <td><p>Returns proof-graph data for a semantic fact.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.ProofGraphData" title="topologicpy.TGraph.TGraph.ProofGraphData"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ProofGraphData</span></code></a>(graph[, triple, subject, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.ProofGraphData" title="topologicpy.TGraph.TGraph.ProofGraphData"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ProofGraphData</span></code></a>(graph[, triple, subject, ...])</p></td>
 <td><p>Returns Plotly-ready proof-graph data for a semantic fact.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.ProofGraphFigure" title="topologicpy.TGraph.TGraph.ProofGraphFigure"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ProofGraphFigure</span></code></a>(graph[, triple, subject, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.ProofGraphFigure" title="topologicpy.TGraph.TGraph.ProofGraphFigure"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ProofGraphFigure</span></code></a>(graph[, triple, subject, ...])</p></td>
 <td><p>Returns a Plotly figure visualising a proof graph.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.ProofGraphHTML" title="topologicpy.TGraph.TGraph.ProofGraphHTML"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ProofGraphHTML</span></code></a>(graph[, triple, subject, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.ProofGraphHTML" title="topologicpy.TGraph.TGraph.ProofGraphHTML"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ProofGraphHTML</span></code></a>(graph[, triple, subject, ...])</p></td>
 <td><p>Exports a proof-graph visualisation to an HTML file.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.PropagateValues" title="topologicpy.TGraph.TGraph.PropagateValues"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PropagateValues</span></code></a>(graph[, sourceVertexKey, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.PropagateValues" title="topologicpy.TGraph.TGraph.PropagateValues"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PropagateValues</span></code></a>(graph[, sourceVertexKey, ...])</p></td>
 <td><p>Propagates dictionary values from source vertices to target vertices along selected edges.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.PyvisGraph" title="topologicpy.TGraph.TGraph.PyvisGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PyvisGraph</span></code></a>(graph[, height, width, directed, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.PyvisGraph" title="topologicpy.TGraph.TGraph.PyvisGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PyvisGraph</span></code></a>(graph[, height, width, directed, ...])</p></td>
 <td><p>Returns a PyVis graph representation of the input TGraph.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.Quotient" title="topologicpy.TGraph.TGraph.Quotient"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Quotient</span></code></a>(topology[, topologyType, key, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.Quotient" title="topologicpy.TGraph.TGraph.Quotient"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Quotient</span></code></a>(topology[, topologyType, key, ...])</p></td>
 <td><p>Constructs the quotient graph induced by grouping TGraph vertices by a dictionary value.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.RDFGraph" title="topologicpy.TGraph.TGraph.RDFGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RDFGraph</span></code></a>(graph[, includeOntologyAxioms, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.RDFGraph" title="topologicpy.TGraph.TGraph.RDFGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RDFGraph</span></code></a>(graph[, includeOntologyAxioms, ...])</p></td>
 <td><p>Returns an RDFLib graph for the input TGraph when RDFLib is available.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.RDFString" title="topologicpy.TGraph.TGraph.RDFString"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RDFString</span></code></a>(*args, **kwargs)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.RDFString" title="topologicpy.TGraph.TGraph.RDFString"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RDFString</span></code></a>(*args, **kwargs)</p></td>
 <td><p>Returns an RDF/Turtle string representation of the input TGraph.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.Reason" title="topologicpy.TGraph.TGraph.Reason"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Reason</span></code></a>(graph, **kwargs)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.Reason" title="topologicpy.TGraph.TGraph.Reason"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Reason</span></code></a>(graph, **kwargs)</p></td>
 <td><p>Alias of TGraph.InferOntology.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.RemoveEdge" title="topologicpy.TGraph.TGraph.RemoveEdge"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveEdge</span></code></a>(edge[, silent])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.RemoveEdge" title="topologicpy.TGraph.TGraph.RemoveEdge"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveEdge</span></code></a>(edge[, silent])</p></td>
 <td><p>Removes an edge from this TGraph.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.RemoveIsolatedEdges" title="topologicpy.TGraph.TGraph.RemoveIsolatedEdges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveIsolatedEdges</span></code></a>(graph[, silent])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.RemoveIsolatedEdges" title="topologicpy.TGraph.TGraph.RemoveIsolatedEdges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveIsolatedEdges</span></code></a>(graph[, silent])</p></td>
 <td><p>Removes isolated or invalid edge records from the input TGraph.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.RemoveIsolatedVertices" title="topologicpy.TGraph.TGraph.RemoveIsolatedVertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveIsolatedVertices</span></code></a>(graph[, mode, silent])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.RemoveIsolatedVertices" title="topologicpy.TGraph.TGraph.RemoveIsolatedVertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveIsolatedVertices</span></code></a>(graph[, mode, silent])</p></td>
 <td><p>Removes isolated vertices from the input TGraph.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.RemoveVertex" title="topologicpy.TGraph.TGraph.RemoveVertex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveVertex</span></code></a>(vertex[, silent])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.RemoveVertex" title="topologicpy.TGraph.TGraph.RemoveVertex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveVertex</span></code></a>(vertex[, silent])</p></td>
 <td><p>Removes a vertex and its incident edges from this TGraph.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.Reshape" title="topologicpy.TGraph.TGraph.Reshape"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Reshape</span></code></a>(graph[, shape, k, seed, iterations, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.Reshape" title="topologicpy.TGraph.TGraph.Reshape"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Reshape</span></code></a>(graph[, shape, k, seed, iterations, ...])</p></td>
 <td><p>Repositions TGraph vertex coordinates using a simple layout algorithm.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.SegmentGraph" title="topologicpy.TGraph.TGraph.SegmentGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SegmentGraph</span></code></a>(edges[, tolerance, silent])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.SegmentGraph" title="topologicpy.TGraph.TGraph.SegmentGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SegmentGraph</span></code></a>(edges[, tolerance, silent])</p></td>
 <td><p>Splits straight input Edges at 3D contacts and creates segment nodes.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.SemanticDiff" title="topologicpy.TGraph.TGraph.SemanticDiff"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SemanticDiff</span></code></a>(graphA, graphB, **kwargs)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.SemanticDiff" title="topologicpy.TGraph.TGraph.SemanticDiff"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SemanticDiff</span></code></a>(graphA, graphB, **kwargs)</p></td>
 <td><p>Returns a semantic triple diff between two TGraphs or knowledge graphs.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.SemanticFingerprint" title="topologicpy.TGraph.TGraph.SemanticFingerprint"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SemanticFingerprint</span></code></a>(graph[, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.SemanticFingerprint" title="topologicpy.TGraph.TGraph.SemanticFingerprint"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SemanticFingerprint</span></code></a>(graph[, ...])</p></td>
 <td><p>Returns a deterministic hash of the TGraph semantic triples.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.SemanticGraph" title="topologicpy.TGraph.TGraph.SemanticGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SemanticGraph</span></code></a>(graph, **kwargs)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.SemanticGraph" title="topologicpy.TGraph.TGraph.SemanticGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SemanticGraph</span></code></a>(graph, **kwargs)</p></td>
 <td><p>Returns the semantic KnowledgeGraph converted back to a TGraph view.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.SemanticSummary" title="topologicpy.TGraph.TGraph.SemanticSummary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SemanticSummary</span></code></a>(graph, **kwargs)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.SemanticSummary" title="topologicpy.TGraph.TGraph.SemanticSummary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SemanticSummary</span></code></a>(graph, **kwargs)</p></td>
 <td><p>Returns a summary of semantic content in the TGraph.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.SetDictionary" title="topologicpy.TGraph.TGraph.SetDictionary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetDictionary</span></code></a>([dictionary])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.SetDictionary" title="topologicpy.TGraph.TGraph.SetDictionary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetDictionary</span></code></a>([dictionary])</p></td>
 <td><p>Sets the dictionary of this TGraph.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.SetEdgeDictionary" title="topologicpy.TGraph.TGraph.SetEdgeDictionary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetEdgeDictionary</span></code></a>(index[, dictionary])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.SetEdgeDictionary" title="topologicpy.TGraph.TGraph.SetEdgeDictionary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetEdgeDictionary</span></code></a>(index[, dictionary])</p></td>
 <td><p>Sets the dictionary of an edge in this TGraph.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.SetEdgeValue" title="topologicpy.TGraph.TGraph.SetEdgeValue"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetEdgeValue</span></code></a>(edge, key, value[, silent])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.SetEdgeValue" title="topologicpy.TGraph.TGraph.SetEdgeValue"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetEdgeValue</span></code></a>(edge, key, value[, silent])</p></td>
 <td><p>Sets a dictionary value on an edge.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.SetOntologyCategory" title="topologicpy.TGraph.TGraph.SetOntologyCategory"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetOntologyCategory</span></code></a>(graph, category[, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.SetOntologyCategory" title="topologicpy.TGraph.TGraph.SetOntologyCategory"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetOntologyCategory</span></code></a>(graph, category[, ...])</p></td>
 <td><p>Sets the ontology category of a graph, vertex, or edge.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.SetOntologyClass" title="topologicpy.TGraph.TGraph.SetOntologyClass"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetOntologyClass</span></code></a>(graph, ontologyClass[, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.SetOntologyClass" title="topologicpy.TGraph.TGraph.SetOntologyClass"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetOntologyClass</span></code></a>(graph, ontologyClass[, ...])</p></td>
 <td><p>Sets a declared canonical ontology class on a graph, vertex, or edge.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.SetOntologyLabel" title="topologicpy.TGraph.TGraph.SetOntologyLabel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetOntologyLabel</span></code></a>(graph, label[, element, index])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.SetOntologyLabel" title="topologicpy.TGraph.TGraph.SetOntologyLabel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetOntologyLabel</span></code></a>(graph, label[, element, index])</p></td>
 <td><p>Sets the ontology label of a graph, vertex, or edge.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.SetOntologyURI" title="topologicpy.TGraph.TGraph.SetOntologyURI"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetOntologyURI</span></code></a>(graph, uri[, element, index])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.SetOntologyURI" title="topologicpy.TGraph.TGraph.SetOntologyURI"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetOntologyURI</span></code></a>(graph, uri[, element, index])</p></td>
 <td><p>Sets the explicit RDF resource URI of a graph, vertex, or edge.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.SetVertexCoordinates" title="topologicpy.TGraph.TGraph.SetVertexCoordinates"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetVertexCoordinates</span></code></a>(graph, vertexIndex[, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.SetVertexCoordinates" title="topologicpy.TGraph.TGraph.SetVertexCoordinates"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetVertexCoordinates</span></code></a>(graph, vertexIndex[, ...])</p></td>
 <td><p>Sets the X, Y, Z coordinates of a TGraph vertex in-place.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.SetVertexDictionary" title="topologicpy.TGraph.TGraph.SetVertexDictionary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetVertexDictionary</span></code></a>(index[, dictionary])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.SetVertexDictionary" title="topologicpy.TGraph.TGraph.SetVertexDictionary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetVertexDictionary</span></code></a>(index[, dictionary])</p></td>
 <td><p>Sets the dictionary of a vertex in this TGraph.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.SetVertexOriginator" title="topologicpy.TGraph.TGraph.SetVertexOriginator"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetVertexOriginator</span></code></a>(graph, vertex, originator)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.SetVertexOriginator" title="topologicpy.TGraph.TGraph.SetVertexOriginator"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetVertexOriginator</span></code></a>(graph, vertex, originator)</p></td>
 <td><p>Links a node to its source topology independently of its representation.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.SetVertexValue" title="topologicpy.TGraph.TGraph.SetVertexValue"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetVertexValue</span></code></a>(vertex, key, value[, silent])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.SetVertexValue" title="topologicpy.TGraph.TGraph.SetVertexValue"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetVertexValue</span></code></a>(vertex, key, value[, silent])</p></td>
 <td><p>Sets a dictionary value on a vertex.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.ShortestPath" title="topologicpy.TGraph.TGraph.ShortestPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ShortestPath</span></code></a>(graph, source, target[, mode, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.ShortestPath" title="topologicpy.TGraph.TGraph.ShortestPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ShortestPath</span></code></a>(graph, source, target[, mode, ...])</p></td>
 <td><p>Returns a least-cost path between two vertices of the input TGraph.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.ShortestPathTree" title="topologicpy.TGraph.TGraph.ShortestPathTree"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ShortestPathTree</span></code></a>(graph, source[, mode, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.ShortestPathTree" title="topologicpy.TGraph.TGraph.ShortestPathTree"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ShortestPathTree</span></code></a>(graph, source[, mode, ...])</p></td>
 <td><p>Returns a least-cost shortest-path tree rooted at the input source vertex.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.ShortestPathViaVertices" title="topologicpy.TGraph.TGraph.ShortestPathViaVertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ShortestPathViaVertices</span></code></a>(graph, startVertex, ...)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.ShortestPathViaVertices" title="topologicpy.TGraph.TGraph.ShortestPathViaVertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ShortestPathViaVertices</span></code></a>(graph, startVertex, ...)</p></td>
 <td><p>Returns a least-cost path that passes through required vertices in order.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.ShortestPaths" title="topologicpy.TGraph.TGraph.ShortestPaths"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ShortestPaths</span></code></a>(graph, pairs[, mode, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.ShortestPaths" title="topologicpy.TGraph.TGraph.ShortestPaths"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ShortestPaths</span></code></a>(graph, pairs[, mode, ...])</p></td>
 <td><p>Returns least-cost paths for all requested source-target pairs.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.ShortestPathsFromSource" title="topologicpy.TGraph.TGraph.ShortestPathsFromSource"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ShortestPathsFromSource</span></code></a>(graph, source[, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.ShortestPathsFromSource" title="topologicpy.TGraph.TGraph.ShortestPathsFromSource"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ShortestPathsFromSource</span></code></a>(graph, source[, ...])</p></td>
 <td><p>Returns least-cost paths from one source vertex to the requested targets.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.Show" title="topologicpy.TGraph.TGraph.Show"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Show</span></code></a>(*graphs[, sagitta, absolute, sides, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.Show" title="topologicpy.TGraph.TGraph.Show"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Show</span></code></a>(*graphs[, sagitta, absolute, sides, ...])</p></td>
 <td><p>Displays a representation of the input TGraph.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.Size" title="topologicpy.TGraph.TGraph.Size"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Size</span></code></a>(graph)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.Size" title="topologicpy.TGraph.TGraph.Size"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Size</span></code></a>(graph)</p></td>
 <td><p>Returns the number of active edges in the input TGraph.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.SubGraphMatches" title="topologicpy.TGraph.TGraph.SubGraphMatches"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SubGraphMatches</span></code></a>(subGraph, superGraph[, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.SubGraphMatches" title="topologicpy.TGraph.TGraph.SubGraphMatches"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SubGraphMatches</span></code></a>(subGraph, superGraph[, ...])</p></td>
 <td><p>Returns subgraph matches of a pattern graph in a target graph.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.Subgraph" title="topologicpy.TGraph.TGraph.Subgraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Subgraph</span></code></a>(graph, vertices[, induced])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.Subgraph" title="topologicpy.TGraph.TGraph.Subgraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Subgraph</span></code></a>(graph, vertices[, induced])</p></td>
 <td><p>Returns a subgraph containing the requested vertices.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.SymmetricDifference" title="topologicpy.TGraph.TGraph.SymmetricDifference"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SymmetricDifference</span></code></a>(graphA, graphB[, silent])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.SymmetricDifference" title="topologicpy.TGraph.TGraph.SymmetricDifference"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SymmetricDifference</span></code></a>(graphA, graphB[, silent])</p></td>
 <td><p>Returns the symmetric difference of two input TGraphs.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.SyncSemantics" title="topologicpy.TGraph.TGraph.SyncSemantics"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SyncSemantics</span></code></a>(graph[, key, applyInferences, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.SyncSemantics" title="topologicpy.TGraph.TGraph.SyncSemantics"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SyncSemantics</span></code></a>(graph[, key, applyInferences, ...])</p></td>
 <td><p>Updates semantic metadata and optionally applies inferred facts.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.TTLString" title="topologicpy.TGraph.TGraph.TTLString"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TTLString</span></code></a>(graph[, includeVertices, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.TTLString" title="topologicpy.TGraph.TGraph.TTLString"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TTLString</span></code></a>(graph[, includeVertices, ...])</p></td>
 <td><p>Returns a Turtle TTL string representing the input TGraph.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.Tietze" title="topologicpy.TGraph.TGraph.Tietze"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Tietze</span></code></a>([radius, height])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.Tietze" title="topologicpy.TGraph.TGraph.Tietze"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Tietze</span></code></a>([radius, height])</p></td>
 <td><p>Creates Tietze's graph as a TGraph.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.ToKnowledgeGraph" title="topologicpy.TGraph.TGraph.ToKnowledgeGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ToKnowledgeGraph</span></code></a>(graph, **kwargs)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.ToKnowledgeGraph" title="topologicpy.TGraph.TGraph.ToKnowledgeGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ToKnowledgeGraph</span></code></a>(graph, **kwargs)</p></td>
 <td><p>Alias of TGraph.KnowledgeGraph.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.ToPython" title="topologicpy.TGraph.TGraph.ToPython"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ToPython</span></code></a>(graph[, includeRepresentations])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.ToPython" title="topologicpy.TGraph.TGraph.ToPython"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ToPython</span></code></a>(graph[, includeRepresentations])</p></td>
 <td><p>Returns a Python dictionary representation of the input TGraph.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.TopologicEdge" title="topologicpy.TGraph.TGraph.TopologicEdge"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TopologicEdge</span></code></a>(graph, edge[, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.TopologicEdge" title="topologicpy.TGraph.TGraph.TopologicEdge"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TopologicEdge</span></code></a>(graph, edge[, ...])</p></td>
 <td><p>Converts a TGraph edge to a Topologic edge.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.TopologicVertex" title="topologicpy.TGraph.TGraph.TopologicVertex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TopologicVertex</span></code></a>(graph, vertex[, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.TopologicVertex" title="topologicpy.TGraph.TGraph.TopologicVertex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TopologicVertex</span></code></a>(graph, vertex[, ...])</p></td>
 <td><p>Converts a TGraph vertex to a Topologic vertex.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.TopologicalDistance" title="topologicpy.TGraph.TGraph.TopologicalDistance"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TopologicalDistance</span></code></a>(graph, vertexA, vertexB)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.TopologicalDistance" title="topologicpy.TGraph.TGraph.TopologicalDistance"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TopologicalDistance</span></code></a>(graph, vertexA, vertexB)</p></td>
 <td><p>Returns the topological distance between two vertices of the input TGraph.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.Topology" title="topologicpy.TGraph.TGraph.Topology"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Topology</span></code></a>(graph[, includeVertices, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.Topology" title="topologicpy.TGraph.TGraph.Topology"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Topology</span></code></a>(graph[, includeVertices, ...])</p></td>
 <td><p>Returns a Topologic topology representation of the input TGraph.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.TransferDictionariesToOriginators" title="topologicpy.TGraph.TGraph.TransferDictionariesToOriginators"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TransferDictionariesToOriginators</span></code></a>(graph[, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.TransferDictionariesToOriginators" title="topologicpy.TGraph.TGraph.TransferDictionariesToOriginators"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TransferDictionariesToOriginators</span></code></a>(graph[, ...])</p></td>
 <td><p>Transfers active-node dictionary values to their originating topologies.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.Tree" title="topologicpy.TGraph.TGraph.Tree"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Tree</span></code></a>(graph[, vertex, mode, silent])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.Tree" title="topologicpy.TGraph.TGraph.Tree"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Tree</span></code></a>(graph[, vertex, mode, silent])</p></td>
 <td><p>Returns a tree derived from the input TGraph.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.Triples" title="topologicpy.TGraph.TGraph.Triples"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Triples</span></code></a>(graph, **kwargs)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.Triples" title="topologicpy.TGraph.TGraph.Triples"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Triples</span></code></a>(graph, **kwargs)</p></td>
 <td><p>Returns relationship triples representing the input TGraph.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.TurtleFromTriples" title="topologicpy.TGraph.TGraph.TurtleFromTriples"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TurtleFromTriples</span></code></a>(triples[, namespaces, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.TurtleFromTriples" title="topologicpy.TGraph.TGraph.TurtleFromTriples"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TurtleFromTriples</span></code></a>(triples[, namespaces, ...])</p></td>
 <td><p>Returns Turtle generated by the canonical ontology serializer.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.Union" title="topologicpy.TGraph.TGraph.Union"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Union</span></code></a>(graphA, graphB[, vertexKeys, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.Union" title="topologicpy.TGraph.TGraph.Union"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Union</span></code></a>(graphA, graphB[, vertexKeys, ...])</p></td>
 <td><p>Returns the union of two input TGraphs.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.ValidateOntology" title="topologicpy.TGraph.TGraph.ValidateOntology"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ValidateOntology</span></code></a>(graph[, requireClass, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.ValidateOntology" title="topologicpy.TGraph.TGraph.ValidateOntology"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ValidateOntology</span></code></a>(graph[, requireClass, ...])</p></td>
 <td><p>Validates ontology metadata against the canonical ontology.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.ValidateTTLString" title="topologicpy.TGraph.TGraph.ValidateTTLString"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ValidateTTLString</span></code></a>(ttlString[, silent])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.ValidateTTLString" title="topologicpy.TGraph.TGraph.ValidateTTLString"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ValidateTTLString</span></code></a>(ttlString[, silent])</p></td>
 <td><p>Validates a Turtle TTL string.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.Vertex" title="topologicpy.TGraph.TGraph.Vertex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Vertex</span></code></a>(graph, index[, copy, active, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.Vertex" title="topologicpy.TGraph.TGraph.Vertex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Vertex</span></code></a>(graph, index[, copy, active, ...])</p></td>
 <td><p>Returns the vertex record at the input vertex index.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.VertexByKeyValue" title="topologicpy.TGraph.TGraph.VertexByKeyValue"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VertexByKeyValue</span></code></a>(graph[, key, value, copy, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.VertexByKeyValue" title="topologicpy.TGraph.TGraph.VertexByKeyValue"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VertexByKeyValue</span></code></a>(graph[, key, value, copy, ...])</p></td>
 <td><p>Returns the first active vertex whose dictionary contains the requested key-value pair.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.VertexConnectivity" title="topologicpy.TGraph.TGraph.VertexConnectivity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VertexConnectivity</span></code></a>(graph, source, target[, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.VertexConnectivity" title="topologicpy.TGraph.TGraph.VertexConnectivity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VertexConnectivity</span></code></a>(graph, source, target[, ...])</p></td>
 <td><p>Returns the local vertex connectivity between source and target.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.VertexDegree" title="topologicpy.TGraph.TGraph.VertexDegree"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VertexDegree</span></code></a>(graph, vertex[, mode, silent])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.VertexDegree" title="topologicpy.TGraph.TGraph.VertexDegree"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VertexDegree</span></code></a>(graph, vertex[, mode, silent])</p></td>
 <td><p>Returns the degree of the input vertex.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.VertexDictionary" title="topologicpy.TGraph.TGraph.VertexDictionary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VertexDictionary</span></code></a>(index[, copy])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.VertexDictionary" title="topologicpy.TGraph.TGraph.VertexDictionary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VertexDictionary</span></code></a>(index[, copy])</p></td>
 <td><p>Returns the dictionary of a vertex.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.VertexDictionaryStatic" title="topologicpy.TGraph.TGraph.VertexDictionaryStatic"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VertexDictionaryStatic</span></code></a>(graph, index[, copy])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.VertexDictionaryStatic" title="topologicpy.TGraph.TGraph.VertexDictionaryStatic"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VertexDictionaryStatic</span></code></a>(graph, index[, copy])</p></td>
 <td><p>Returns the dictionary of a vertex in the input TGraph.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.VertexIndex" title="topologicpy.TGraph.TGraph.VertexIndex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VertexIndex</span></code></a>(graph, vertex)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.VertexIndex" title="topologicpy.TGraph.TGraph.VertexIndex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VertexIndex</span></code></a>(graph, vertex)</p></td>
 <td><p>Returns the index of the input vertex.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.VertexOriginator" title="topologicpy.TGraph.TGraph.VertexOriginator"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VertexOriginator</span></code></a>(graph, vertex[, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.VertexOriginator" title="topologicpy.TGraph.TGraph.VertexOriginator"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VertexOriginator</span></code></a>(graph, vertex[, ...])</p></td>
 <td><p>Returns a node's source object, or resolves it by UUID against a list.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.VertexValue" title="topologicpy.TGraph.TGraph.VertexValue"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VertexValue</span></code></a>(vertex, key[, default])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.VertexValue" title="topologicpy.TGraph.TGraph.VertexValue"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VertexValue</span></code></a>(vertex, key[, default])</p></td>
 <td><p>Returns a dictionary value from a vertex.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.Vertices" title="topologicpy.TGraph.TGraph.Vertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Vertices</span></code></a>(graph[, copy, asTopologic, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.Vertices" title="topologicpy.TGraph.TGraph.Vertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Vertices</span></code></a>(graph[, copy, asTopologic, ...])</p></td>
 <td><p>Returns the vertices of the input TGraph.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.VerticesCSVString" title="topologicpy.TGraph.TGraph.VerticesCSVString"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VerticesCSVString</span></code></a>(graph[, includeInactive])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.VerticesCSVString" title="topologicpy.TGraph.TGraph.VerticesCSVString"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VerticesCSVString</span></code></a>(graph[, includeInactive])</p></td>
 <td><p>Returns a lightweight CSV string of TGraph vertex records.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.VisibilityGraph" title="topologicpy.TGraph.TGraph.VisibilityGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VisibilityGraph</span></code></a>(face[, vertices, obstacles, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.VisibilityGraph" title="topologicpy.TGraph.TGraph.VisibilityGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VisibilityGraph</span></code></a>(face[, vertices, obstacles, ...])</p></td>
 <td><p>Returns a fast visibility graph derived from the input planar face.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.WLFeatures" title="topologicpy.TGraph.TGraph.WLFeatures"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WLFeatures</span></code></a>(graph[, key, iterations, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.WLFeatures" title="topologicpy.TGraph.TGraph.WLFeatures"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WLFeatures</span></code></a>(graph[, key, iterations, ...])</p></td>
 <td><p>Returns Weisfeiler-Lehman feature counts for the input TGraph.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.WLKernel" title="topologicpy.TGraph.TGraph.WLKernel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WLKernel</span></code></a>(graphA, graphB[, key, iterations, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.WLKernel" title="topologicpy.TGraph.TGraph.WLKernel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WLKernel</span></code></a>(graphA, graphB[, key, iterations, ...])</p></td>
 <td><p>Returns a Weisfeiler-Lehman kernel similarity score between two input TGraphs.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.WarmUpAcceleration" title="topologicpy.TGraph.TGraph.WarmUpAcceleration"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WarmUpAcceleration</span></code></a>(graph[, mode, useNumba])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.WarmUpAcceleration" title="topologicpy.TGraph.TGraph.WarmUpAcceleration"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WarmUpAcceleration</span></code></a>(graph[, mode, useNumba])</p></td>
 <td><p>Warms up optional acceleration paths used by TGraph algorithms.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.WeightedJaccardSimilarity" title="topologicpy.TGraph.TGraph.WeightedJaccardSimilarity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WeightedJaccardSimilarity</span></code></a>(graphA[, graphB, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.WeightedJaccardSimilarity" title="topologicpy.TGraph.TGraph.WeightedJaccardSimilarity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WeightedJaccardSimilarity</span></code></a>(graphA[, graphB, ...])</p></td>
 <td><p>Returns a weighted Jaccard similarity score between two input TGraphs.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.WikiString" title="topologicpy.TGraph.TGraph.WikiString"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WikiString</span></code></a>(graph[, vertexKey, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.WikiString" title="topologicpy.TGraph.TGraph.WikiString"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WikiString</span></code></a>(graph[, vertexKey, ...])</p></td>
 <td><p>Returns a Wiki-compatible string representation of the input TGraph.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.WireByPath" title="topologicpy.TGraph.TGraph.WireByPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WireByPath</span></code></a>(graph, path[, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.WireByPath" title="topologicpy.TGraph.TGraph.WireByPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WireByPath</span></code></a>(graph, path[, ...])</p></td>
 <td><p>Converts an ordered TGraph path into a Topologic Wire.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.XOR" title="topologicpy.TGraph.TGraph.XOR"><code class="xref py py-obj docutils literal notranslate"><span class="pre">XOR</span></code></a>(graphA, graphB[, silent])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.XOR" title="topologicpy.TGraph.TGraph.XOR"><code class="xref py py-obj docutils literal notranslate"><span class="pre">XOR</span></code></a>(graphA, graphB[, silent])</p></td>
 <td><p>Returns the symmetric difference of two input TGraphs.</p></td>
 </tr>
 </tbody>
@@ -6513,6 +6516,39 @@ Default is 1.0.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.TGraph.TGraph.MeanDepth">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MeanDepth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#topologicpy.TGraph.TGraph" title="topologicpy.TGraph.TGraph"><span class="pre">TGraph</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">sources</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'out'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#topologicpy.TGraph.TGraph.MeanDepth" title="Permalink to this definition"></a></dt>
+<dd><p>Return mean unweighted hop depths, sharing adjacency across sources.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>graph</strong><span class="classifier">TGraph</span></dt><dd><p>The input graph.</p>
+</dd>
+<dt><strong>sources</strong><span class="classifier">iterable, optional</span></dt><dd><p>Vertex indices or records. None analyses all active vertices.
+Invalid sources are omitted.</p>
+</dd>
+<dt><strong>mode</strong><span class="classifier">str, optional</span></dt><dd><p>“out”, “in”, or “all”. Other values use outgoing traversal.</p>
+</dd>
+<dt><strong>key</strong><span class="classifier">str, optional</span></dt><dd><p>Optional vertex attribute for the result. None writes no attributes.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool, optional</span></dt><dd><p>Reserved for consistency with other analysis methods.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>Dict[int, float]</dt><dd><p>Source indices mapped to mean depth over reachable vertices,
+excluding the source. Isolated sources have value -1.0.
+One BFS is required per source; preparation is shared within a
+batch and reused through an attached AnalysisContext. Unreachable
+vertices are excluded. Edge lengths and weights are not used.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.TGraph.TGraph.Merge">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Merge</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graphA</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#topologicpy.TGraph.TGraph" title="topologicpy.TGraph.TGraph"><span class="pre">TGraph</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">graphB</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#topologicpy.TGraph.TGraph" title="topologicpy.TGraph.TGraph"><span class="pre">TGraph</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#topologicpy.TGraph.TGraph" title="topologicpy.TGraph.TGraph"><span class="pre">TGraph</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#topologicpy.TGraph.TGraph.Merge" title="Permalink to this definition"></a></dt>
 <dd><p>Returns a merged graph from two input TGraphs.</p>
@@ -9085,7 +9121,7 @@ PyTorch/PyG-ready datasets, use ByCSVPath and ExportToCSV.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.TGraph.TGraph.VisibilityGraph">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">VisibilityGraph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">face</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertices</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obstacles</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bidirectional</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxDistance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxNeighbors</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeBoundaryVertices</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">leafSize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">allowBoundaryPaths</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">approximateMaxNeighbors</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neighborCandidateFactor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">8</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">storeEdgeRepresentations</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ontology</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#topologicpy.TGraph.TGraph" title="topologicpy.TGraph.TGraph"><span class="pre">TGraph</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#topologicpy.TGraph.TGraph.VisibilityGraph" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">VisibilityGraph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">face</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertices</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obstacles</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bidirectional</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxDistance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxNeighbors</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeBoundaryVertices</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">leafSize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">allowBoundaryPaths</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">approximateMaxNeighbors</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neighborCandidateFactor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">8</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">storeEdgeRepresentations</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ontology</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">useNumba</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#topologicpy.TGraph.TGraph" title="topologicpy.TGraph.TGraph"><span class="pre">TGraph</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#topologicpy.TGraph.TGraph.VisibilityGraph" title="Permalink to this definition"></a></dt>
 <dd><p>Returns a fast visibility graph derived from the input planar face.</p>
 <p>This implementation is designed for navigation visibility graphs and avoids
 Topologic boolean operations inside the main visibility loop. It uses an
@@ -9122,9 +9158,11 @@ number of source-relevant blockers is at or below this value, direct
 exact blocker checks are faster than constructing angular sweep events.
 Default is 24.</p>
 </dd>
-<dt><strong>allowBoundaryPaths</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, collinear travel along face/obstacle boundary segments
-is allowed. This is useful for shortest-path visibility graphs where
-paths may graze obstacle boundaries. Default is True.</p>
+<dt><strong>allowBoundaryPaths</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, collinear overlap with an individual face/obstacle
+boundary segment is allowed. Other incident boundary segments can
+still block the sightline. This option does not permit passage
+through a boundary corner in the interior of a sightline.
+Default is True.</p>
 </dd>
 <dt><strong>trim</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, visibility edges whose interiors leave the host face
 are rejected. This is useful for concave faces or faces with holes,
@@ -9159,9 +9197,32 @@ maximum construction speed is required. Default is True.</p>
 <dd class="field-even"><dl class="simple">
 <dt>Optional[TGraph]</dt><dd><p>The resulting TGraph, or None if the operation fails.</p>
 </dd>
+<dt><strong>useNumba</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, use an optional single-core Numba kernel for full visibility
+searches. NumPy and Numba must be installed. The first call may compile
+the kernel; later calls reuse its cached code. Default is False. If the
+accelerator cannot be loaded or compiled, use the Python implementation.
+Positive maxNeighbors searches retain the Python implementation.</p>
+</dd>
 </dl>
 </dd>
 </dl>
+<p class="rubric">Notes</p>
+<p>Corner-contact convention: a sightline is blocked when a face or
+obstacle boundary-segment endpoint lies in its interior, including a
+purely tangential touch that does not enter the obstacle. Contacts
+coinciding with a sightline’s own endpoints are not rejected by this
+corner rule, although other visibility checks still apply. Geometric
+comparisons use the supplied tolerance.</p>
+<p>This conservative rule applies even with trim=False and
+allowBoundaryPaths=True: wall-blocking checks are independent of host-
+face trimming. Allowing collinear boundary overlap does not disable
+corner-contact blocking by incident segments.</p>
+<p>Complete visibility-link comparisons against DepthmapX 0.9.1 agreed
+for spacing-1 grids in square rooms containing either a square or a
+diamond hole, using identical sample coordinates. Both rejected
+tangential corner contacts and crossings into the hole through a
+vertex. These controlled cases do not establish parity for all
+geometries, grid alignments, tolerances or DepthmapX versions.</p>
 </dd></dl>
 
 <dl class="py method">
