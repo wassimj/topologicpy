@@ -30,6 +30,7 @@ import os
 import re
 import time
 import uuid
+from numbers import Real
 from dataclasses import dataclass, field
 from typing import Any, Dict, Iterable, Iterator, List, Optional, Sequence, Tuple
 
@@ -431,8 +432,8 @@ class IFCFastTopology:
     """
     Experimental pure-Python IFC importer for TopologicPy topologies.
 
-    The goal is to benchmark a direct STEP-text parsing route against
-    IFC.TopologiesByFile, which currently uses IfcOpenShell triangulation.
+    Geometry parsing and mesh construction backend for the IFC public API.
+    Legacy topology entry points delegate to IFC rather than duplicating it.
 
     This class is intentionally conservative: unsupported advanced geometry is
     skipped or approximated rather than evaluated through a full CSG/BREP kernel.
@@ -594,7 +595,7 @@ class IFCFastTopology:
                          excludeTypes: list = [],
                          dictionaryMode: str = "basic",
                          clean: bool = False,
-                         scale: float = 1.0,
+                         scale: Optional[float] = None,
                          topologyType: str = None,
                          circleSides: int = 24,
                          ontology: bool = True,
@@ -620,7 +621,9 @@ class IFCFastTopology:
         clean : bool , optional
             If set to True, the imported topologies are cleaned. Default is False.
         scale : float , optional
-            The scale factor applied to imported coordinates. Default is 1.0.
+            Deprecated raw-coordinate multiplier. Default is None, which converts
+            IFC length units to metres. An explicit finite, positive value
+            overrides automatic unit conversion and keeps legacy behavior.
         topologyType : str , optional
             The desired output topology type. If set to None, the method returns the
             most appropriate topology type for each imported product. Default is None.
@@ -644,25 +647,19 @@ class IFCFastTopology:
             The list of imported TopologicPy topologies.
 
         """
-        if not path or not os.path.exists(path):
-            if not silent:
-                print("IFCFastTopology.TopologiesByPath - Error: The input path is invalid. Returning None.")
-            return None
-        entities = IFCFastTopology.Parse(path, silent=silent)
-        return IFCFastTopology.TopologiesByEntities(
-            entities,
+        return IFC.TopologiesByPath(
+            path,
             includeTypes=includeTypes,
             excludeTypes=excludeTypes,
             dictionaryMode=dictionaryMode,
             clean=clean,
+            scale=scale,
+            topologyType=topologyType,
+            circleSides=circleSides,
+            ontology=ontology,
             epsilon=epsilon,
             angTolerance=angTolerance,
             tolerance=tolerance,
-            circleSides=circleSides,
-            topologyType=topologyType,
-            scale=scale,
-            ontology=ontology,
-            source=path,
             silent=silent,
         )
 
@@ -672,7 +669,7 @@ class IFCFastTopology:
                          excludeTypes: list = [],
                          dictionaryMode: str = "basic",
                          clean: bool = False,
-                         scale: float = 1.0,
+                         scale: Optional[float] = None,
                          topologyType: str = None,
                          circleSides: int = 24,
                          ontology: bool = True,
@@ -701,7 +698,9 @@ class IFCFastTopology:
         clean : bool , optional
             If set to True, the imported topologies are cleaned. Default is False.
         scale : float , optional
-            The scale factor applied to imported coordinates. Default is 1.0.
+            Deprecated raw-coordinate multiplier. Default is None, which converts
+            IFC length units to metres. An explicit finite, positive value
+            overrides automatic unit conversion and keeps legacy behavior.
         topologyType : str , optional
             The desired output topology type. If set to None, the method returns the
             most appropriate topology type for each imported product. Default is None.
@@ -725,42 +724,19 @@ class IFCFastTopology:
             The list of imported TopologicPy topologies.
 
         """
-        if isinstance(file, str):
-            return IFCFastTopology.TopologiesByPath(
-                file,
-                includeTypes=includeTypes,
-                excludeTypes=excludeTypes,
-                dictionaryMode=dictionaryMode,
-                clean=clean,
-                epsilon=epsilon,
-                angTolerance=angTolerance,
-                tolerance=tolerance,
-                circleSides=circleSides,
-                topologyType=topologyType,
-                scale=scale,
-                ontology=ontology,
-                silent=silent,
-            )
-
-        text = IFCFastTopology._file_to_step_text(file)
-        if not text:
-            if not silent:
-                print("IFCFastTopology.TopologiesByFile - Error: Could not obtain STEP text from input file. Returning None.")
-            return None
-        entities = IFCFastTopology.ParseText(text, silent=silent)
-        return IFCFastTopology.TopologiesByEntities(
-            entities,
+        return IFC.TopologiesByFile(
+            file,
             includeTypes=includeTypes,
             excludeTypes=excludeTypes,
             dictionaryMode=dictionaryMode,
             clean=clean,
+            scale=scale,
+            topologyType=topologyType,
+            circleSides=circleSides,
+            ontology=ontology,
             epsilon=epsilon,
             angTolerance=angTolerance,
             tolerance=tolerance,
-            circleSides=circleSides,
-            topologyType=topologyType,
-            scale=scale,
-            ontology=ontology,
             silent=silent,
         )
 
@@ -770,12 +746,20 @@ class IFCFastTopology:
                        excludeTypes: list = [],
                        dictionaryMode: str = "basic",
                        circleSides: int = 24,
-                       scale: float = 1.0,
+                       scale: Optional[float] = None,
                        ontology: bool = True,
                        silent: bool = False) -> dict:
-        entities = IFCFastTopology.Parse(path, silent=silent)
-        products = IFCFastTopology.ProductsByEntities(entities, includeTypes, excludeTypes)
-        return IFCFastTopology.MeshDataByProducts(products, entities, dictionaryMode, circleSides, scale, ontology=ontology, source=path, silent=silent)
+        """Compatibility wrapper for IFC.MeshDataByPath."""
+        return IFC.MeshDataByPath(
+            path,
+            includeTypes=includeTypes,
+            excludeTypes=excludeTypes,
+            dictionaryMode=dictionaryMode,
+            circleSides=circleSides,
+            scale=scale,
+            ontology=ontology,
+            silent=silent,
+        )
 
     @staticmethod
     def TopologiesByEntities(entities: Dict[int, IFCFastEntity],
@@ -788,112 +772,40 @@ class IFCFastTopology:
                              tolerance: float = 0.0001,
                              circleSides: int = 24,
                              topologyType: str = None,
-                             scale: float = 1.0,
+                             scale: Optional[float] = None,
                              ontology: bool = True,
                              source: str = None,
                              silent: bool = False) -> list:
         
-        from topologicpy.Topology import Topology
-
-        products = IFCFastTopology.ProductsByEntities(entities, includeTypes, excludeTypes)
-        metadata_cache = IFCFastTopology._entity_metadata_cache(entities, dictionaryMode=dictionaryMode)
-        topologies = []
-        converted = 0
-        skipped = 0
-
-        for product in products:
-            mesh = IFCFastTopology.MeshDataByProduct(product, entities, circleSides=circleSides, scale=scale)
-            if not mesh or not mesh.get("vertices"):
-                skipped += 1
-                continue
-            try:
-                topology = Topology.ByGeometry(
-                    vertices=mesh.get("vertices") or [],
-                    edges=mesh.get("edges") or [],
-                    faces=mesh.get("faces") or [],
-                    topologyType=topologyType,
-                    tolerance=tolerance,
-                    silent=True,
-                )
-            except TypeError:
-                try:
-                    topology = Topology.ByGeometry(
-                        vertices=mesh.get("vertices") or [],
-                        edges=mesh.get("edges") or [],
-                        faces=mesh.get("faces") or [],
-                        tolerance=tolerance,
-                    )
-                except Exception as e:
-                    if not silent:
-                        print(f"IFCFastTopology.TopologiesByEntities - Warning: Could not create topology for #{product.id} {product.type}: {e}")
-                    skipped += 1
-                    continue
-            except Exception as e:
-                if not silent:
-                    print(f"IFCFastTopology.TopologiesByEntities - Warning: Could not create topology for #{product.id} {product.type}: {e}")
-                skipped += 1
-                continue
-
-            if topology is None or not Topology.IsInstance(topology, "Topology"):
-                skipped += 1
-                continue
-
-            if clean:
-                topology = IFCFastTopology._clean_topology(topology, epsilon, angTolerance, tolerance, silent)
-
-            d = IFCFastTopology._entity_dictionary(product, dictionaryMode=dictionaryMode, metadataCache=metadata_cache, ontology=ontology, source=source, generatedBy='IFCFastTopology.TopologiesByEntities')
-            if d is not None:
-                try:
-                    topology = Topology.SetDictionary(topology, d, silent=True)
-                except TypeError:
-                    try:
-                        topology = Topology.SetDictionary(topology, d)
-                    except Exception:
-                        pass
-                except Exception:
-                    pass
-
-            if ontology:
-                topology = IFCFastTopology._annotate_topology_with_ontology(
-                    topology,
-                    entity=product,
-                    source=source,
-                    generatedBy="IFCFastTopology.TopologiesByEntities",
-                    silent=True,
-                )
-
-            topologies.append(topology)
-            converted += 1
-        return topologies
+        """Compatibility wrapper; IFC.Topologies owns topology construction."""
+        return IFC.TopologiesByEntities(
+            entities,
+            includeTypes=includeTypes,
+            excludeTypes=excludeTypes,
+            dictionaryMode=dictionaryMode,
+            clean=clean,
+            scale=scale,
+            topologyType=topologyType,
+            circleSides=circleSides,
+            ontology=ontology,
+            epsilon=epsilon,
+            angTolerance=angTolerance,
+            tolerance=tolerance,
+            silent=silent,
+            source=source,
+        )
 
     @staticmethod
     def SummaryByPath(path: str, silent: bool = False) -> dict:
-        entities = IFCFastTopology.Parse(path, silent=silent)
-        products = IFCFastTopology.ProductsByEntities(entities)
-        type_counts = {}
-        product_counts = {}
-        rep_counts = {}
-        item_counts = {}
-        for e in entities.values():
-            type_counts[e.type] = type_counts.get(e.type, 0) + 1
-            if e.type == "IFCSHAPEREPRESENTATION":
-                rep_id = IFCFastTopology._as_string(e.args[1] if len(e.args) > 1 else None)
-                rep_type = IFCFastTopology._as_string(e.args[2] if len(e.args) > 2 else None)
-                rep_counts[(rep_id, rep_type)] = rep_counts.get((rep_id, rep_type), 0) + 1
-                for ref in IFCFastTopology._refs_in_value(e.args[3] if len(e.args) > 3 else None):
-                    item = IFCFastTopology._entity_from_ref(ref, entities)
-                    if item is not None:
-                        item_counts[item.type] = item_counts.get(item.type, 0) + 1
-        for p in products:
-            product_counts[p.type] = product_counts.get(p.type, 0) + 1
-        return {
-            "entity_count": len(entities),
-            "product_count": len(products),
-            "entity_type_counts": dict(sorted(type_counts.items())),
-            "product_type_counts": dict(sorted(product_counts.items())),
-            "shape_representation_counts": {str(k): v for k, v in sorted(rep_counts.items(), key=lambda kv: str(kv[0]))},
-            "representation_item_counts": dict(sorted(item_counts.items())),
-        }
+        """Returns the legacy summary fields through the canonical IFC API."""
+        summary = IFC.SummaryByPath(path, silent=silent)
+        if summary is None:
+            return None
+        return {key: summary[key] for key in (
+            "entity_count", "product_count", "entity_type_counts",
+            "product_type_counts", "shape_representation_counts",
+            "representation_item_counts",
+        )}
 
     # ------------------------------------------------------------------
     # STEP parsing
@@ -1008,10 +920,11 @@ class IFCFastTopology:
                            entities: Dict[int, IFCFastEntity],
                            dictionaryMode: str = "basic",
                            circleSides: int = 24,
-                           scale: float = 1.0,
+                           scale: Optional[float] = None,
                            ontology: bool = True,
                            source: str = None,
                            silent: bool = False) -> dict:
+        scale = IFCFastTopology._coordinate_scale(entities, scale)
         vertices, edges, faces, vertex_dictionaries, product_ranges = [], [], [], [], []
         metadata_cache = IFCFastTopology._entity_metadata_cache(entities, dictionaryMode=dictionaryMode)
         for product in products:
@@ -1044,11 +957,112 @@ class IFCFastTopology:
         return {"vertices": vertices, "edges": edges, "faces": faces, "vertex_dictionaries": vertex_dictionaries, "product_ranges": product_ranges}
 
     @staticmethod
+    def _validated_scale(scale):
+        """Rejects degenerate or non-finite coordinate multipliers."""
+        if isinstance(scale, bool) or not isinstance(scale, Real):
+            raise ValueError("scale must be a finite, positive number")
+        try:
+            scale = float(scale)
+        except (ValueError, TypeError, OverflowError) as error:
+            raise ValueError("scale must be a finite, positive number") from error
+        if not math.isfinite(scale) or scale <= 0:
+            raise ValueError("scale must be a finite, positive number")
+        return scale
+
+    @staticmethod
+    def _length_unit_scale(entities):
+        """Resolves project length units to metres without changing STEP data.
+
+        Unitless fragments retain the historical assumption of metres. Declared
+        but invalid, unsupported, or conflicting length units raise ValueError.
+        Only project-assigned units are considered, so property-specific units
+        cannot accidentally determine the geometry unit.
+        """
+        prefixes = {
+            None: 1.0, "EXA": 1e18, "PETA": 1e15, "TERA": 1e12,
+            "GIGA": 1e9, "MEGA": 1e6, "KILO": 1e3, "HECTO": 1e2,
+            "DECA": 1e1, "DECI": 1e-1, "CENTI": 1e-2, "MILLI": 1e-3,
+            "MICRO": 1e-6, "NANO": 1e-9, "PICO": 1e-12,
+            "FEMTO": 1e-15, "ATTO": 1e-18,
+        }
+
+        def entity_at(reference):
+            entity = IFCFastTopology._entity_from_ref(reference, entities)
+            if entity is None:
+                raise ValueError("IFC length unit contains an unresolved reference")
+            return entity
+
+        def argument(entity, index):
+            return entity.args[index] if len(entity.args) > index else None
+
+        def unit_factor(unit, visited):
+            if unit.id in visited:
+                raise ValueError("IFC length unit conversion contains a cycle")
+            visited = visited | {unit.id}
+            if argument(unit, 1) != "LENGTHUNIT":
+                raise ValueError("IFC length conversion must reference a length unit")
+            if unit.type == "IFCSIUNIT":
+                prefix = argument(unit, 2)
+                if argument(unit, 3) != "METRE" or prefix not in prefixes:
+                    raise ValueError("Unsupported IFC SI length unit")
+                return prefixes[prefix]
+            if unit.type in ("IFCCONVERSIONBASEDUNIT", "IFCCONVERSIONBASEDUNITWITHOFFSET"):
+                if unit.type.endswith("WITHOFFSET") and argument(unit, 4) != 0:
+                    raise ValueError("IFC length units with nonzero offsets are unsupported")
+                measure = entity_at(argument(unit, 3))
+                if measure.type != "IFCMEASUREWITHUNIT":
+                    raise ValueError("Invalid IFC length conversion factor")
+                value = argument(measure, 0)
+                if isinstance(value, tuple) and len(value) == 3 and value[0] == "CALL":
+                    values = value[2]
+                    if len(values) != 1:
+                        raise ValueError("Invalid IFC length conversion value")
+                    value = values[0]
+                factor = IFCFastTopology._validated_scale(value)
+                base = entity_at(argument(measure, 1))
+                return IFCFastTopology._validated_scale(factor * unit_factor(base, visited))
+            raise ValueError("Unsupported IFC length unit: " + unit.type)
+
+        projects = [e for e in entities.values() if e.type == "IFCPROJECT"]
+        assignments = []
+        for project in projects:
+            reference = argument(project, 8)
+            if reference is None:
+                continue
+            assignment = entity_at(reference)
+            if assignment.type != "IFCUNITASSIGNMENT":
+                raise ValueError("Invalid IFC project unit assignment")
+            assignments.append(assignment)
+        if not projects:
+            assignments = [e for e in entities.values() if e.type == "IFCUNITASSIGNMENT"]
+        if not assignments:
+            return 1.0
+
+        factors = []
+        for assignment in assignments:
+            units = [entity_at(ref) for ref in IFCFastTopology._refs_in_value(argument(assignment, 0))]
+            lengths = [unit for unit in units if argument(unit, 1) == "LENGTHUNIT"]
+            if len(lengths) != 1:
+                raise ValueError("IFC unit assignment must contain exactly one length unit")
+            factors.append(unit_factor(lengths[0], set()))
+        if any(not math.isclose(factor, factors[0], rel_tol=1e-12, abs_tol=0.0) for factor in factors[1:]):
+            raise ValueError("IFC projects declare conflicting length units")
+        return factors[0]
+
+    @staticmethod
+    def _coordinate_scale(entities, scale=None):
+        """None uses IFC units; explicit scale retains legacy raw multiplication."""
+        if scale is not None:
+            return IFCFastTopology._validated_scale(scale)
+        return IFCFastTopology._length_unit_scale(entities)
+
+    @staticmethod
     def MeshDataByProduct(product: IFCFastEntity,
                           entities: Dict[int, IFCFastEntity],
                           circleSides: int = 24,
-                          scale: float = 1.0,
+                          scale: Optional[float] = None,
                           placementCache: dict = None) -> Optional[dict]:
+        scale = IFCFastTopology._coordinate_scale(entities, scale)
         placement = IFCFastTopology._product_placement_matrix(
             product,
             entities,
@@ -3356,6 +3370,15 @@ class _STEPArgParser:
 
 
 class IFC:
+    """Public IFC model, semantic, and geometry operations.
+
+    Geometry import converts project length units to metres by default.
+    ``scale=None`` selects declared units; unitless fragments assume metres.
+    Explicit ``scale`` is a deprecated compatibility override that applies a
+    finite, positive multiplier to raw IFC coordinates, without also applying
+    unit conversion. Tolerances and geometric thresholds use output units.
+    Source entities and semantic quantities retain their IFC values and units.
+    """
 
     @staticmethod
     def Export(
@@ -3844,8 +3867,16 @@ class IFC:
         angTolerance: float = 0.1,
         tolerance: float = 0.0001,
         silent: bool = False,
+        scale: Optional[float] = None,
+        topologyType: str = None,
+        circleSides: int = 24,
     ) -> list[Any]:
-        """Compatibility entry point accepting an IFCModel or other IFC source."""
+        """Imports an IFCModel or other IFC source through IFC.Topologies.
+
+        Geometry defaults to metres. ``scale`` is a deprecated raw-coordinate
+        override; ``topologyType`` and ``circleSides`` are passed through.
+        Existing positional argument order is preserved.
+        """
         model = IFC.Model(file, silent=silent)
         if model is None:
             return None
@@ -3855,6 +3886,9 @@ class IFC:
             excludeTypes=excludeTypes,
             dictionaryMode=dictionaryMode,
             clean=clean,
+            scale=scale,
+            circleSides=circleSides,
+            topologyType=topologyType,
             ontology=ontology,
             epsilon=epsilon,
             angTolerance=angTolerance,
@@ -3875,8 +3909,15 @@ class IFC:
         angTolerance: float = 0.1,
         tolerance: float = 0.0001,
         silent: bool = False,
+        scale: Optional[float] = None,
+        topologyType: str = None,
     ) -> list[Any]:
-        """Parses an IFC path once and delegates to IFC.Topologies."""
+        """Parses an IFC path once and delegates to IFC.Topologies.
+
+        Geometry defaults to metres. ``scale`` is a deprecated raw-coordinate
+        override; ``topologyType`` and ``circleSides`` are passed through.
+        Existing positional argument order is preserved.
+        """
         model = IFC.ModelByPath(path, silent=silent)
         if model is None:
             return None
@@ -3887,6 +3928,8 @@ class IFC:
             dictionaryMode=dictionaryMode,
             circleSides=circleSides,
             clean=clean,
+            scale=scale,
+            topologyType=topologyType,
             ontology=ontology,
             epsilon=epsilon,
             angTolerance=angTolerance,
@@ -4148,16 +4191,37 @@ class IFC:
         return model.metadataCache[mode]
 
     @staticmethod
+    def _model_geometry_scale(model, scale=None):
+        """Caches declared units separately from mesh and topology caches."""
+        if scale is not None:
+            return IFCFastTopology._validated_scale(scale)
+        key = ("length_unit_scale",)
+        if key not in model.metadataCache:
+            model.metadataCache[key] = IFCFastTopology._length_unit_scale(model.entities)
+        return model.metadataCache[key]
+
+    @staticmethod
+    def _import_geometry_scale(model, scale, silent=False):
+        """Validates import units before geometry creation, following IFC errors."""
+        try:
+            return IFC._model_geometry_scale(model, scale)
+        except (ValueError, TypeError, OverflowError) as error:
+            if not silent:
+                print(f"IFC - Error: {error}. Returning None.")
+            return None
+
+    @staticmethod
     def _model_mesh_data(
         model,
         entity,
         circleSides: int = 24,
-        scale: float = 1.0,
+        scale: Optional[float] = None,
     ):
         """Returns cached mesh data for one IFC product entity."""
         if not isinstance(model, IFCModel) or entity is None:
             return None
-        key = (int(entity.id), int(circleSides or 24), float(scale))
+        scale = IFC._model_geometry_scale(model, scale)
+        key = (int(entity.id), int(circleSides or 24), scale)
         if key not in model.meshCache:
             model.meshCache[key] = IFCFastTopology.MeshDataByProduct(
                 entity,
@@ -4173,7 +4237,7 @@ class IFC:
         model,
         entity,
         circleSides: int = 24,
-        scale: float = 1.0,
+        scale: Optional[float] = None,
         topologyType: str = None,
         clean: bool = False,
         epsilon: float = 0.01,
@@ -4190,6 +4254,7 @@ class IFC:
         except Exception:
             return None
 
+        scale = IFC._model_geometry_scale(model, scale)
         key = (
             int(entity.id),
             int(circleSides or 24),
@@ -4536,7 +4601,7 @@ class IFC:
     def AnalyticalFaces(
         model,
         circleSides: int = 24,
-        scale: float = 1.0,
+        scale: Optional[float] = None,
         angTolerance: float = 5.0,
         tolerance: float = 0.0001,
         silent: bool = False,
@@ -4560,7 +4625,8 @@ class IFC:
             Number of sides used to approximate circular IFC geometry. Default
             is 24.
         scale : float , optional
-            Scale factor applied to imported IFC geometry. Default is 1.0.
+            Deprecated raw-coordinate multiplier. None converts IFC length units
+            to metres; an explicit finite, positive value overrides conversion.
         angTolerance : float , optional
             Maximum angular deviation, in degrees, when pairing the two major
             parallel faces. Default is 5.0.
@@ -4592,6 +4658,9 @@ class IFC:
         if not isinstance(model, IFCModel):
             if not silent:
                 print(f"{method_name} - Error: Invalid IFCModel. Returning None.")
+            return None
+        scale = IFC._import_geometry_scale(model, scale, silent=silent)
+        if scale is None:
             return None
 
         construction_types = {
@@ -4999,7 +5068,7 @@ class IFC:
         separatorTypes: list = None,
         margin: float = 0.5,
         circleSides: int = 24,
-        scale: float = 1.0,
+        scale: Optional[float] = None,
         tolerance: float = 0.0001,
         silent: bool = False,
     ):
@@ -5024,11 +5093,13 @@ class IFC:
             IFC types used as construction separators. Default is ["IfcWall",
             "IfcSlab", "IfcRoof", "IfcCurtainWall", "IfcVirtualElement"].
         margin : float , optional
-            Padding added to the enclosing cell in model units. Default is 0.5.
+            Padding added to the enclosing cell in output coordinate units
+            (metres with automatic conversion). Default is 0.5.
         circleSides : int , optional
             Number of sides used for circular IFC geometry. Default is 24.
         scale : float , optional
-            Scale factor applied to imported IFC geometry. Default is 1.0.
+            Deprecated raw-coordinate multiplier. None converts IFC length units
+            to metres; an explicit finite, positive value overrides conversion.
         tolerance : float , optional
             The desired geometric tolerance. Default is 0.0001.
         silent : bool , optional
@@ -5061,6 +5132,9 @@ class IFC:
         if not isinstance(model, IFCModel):
             if not silent:
                 print(f"{method_name} - Error: Invalid IFCModel. Returning None.")
+            return None
+        scale = IFC._import_geometry_scale(model, scale, silent=silent)
+        if scale is None:
             return None
 
         if not isinstance(margin, (int, float)) or margin < 0:
@@ -5437,18 +5511,26 @@ class IFC:
         tolerance: float = 0.0001,
         circleSides: int = 24,
         topologyType: str = None,
-        scale: float = 1.0,
+        scale: Optional[float] = None,
         source: str = None,
         ontology: bool = True,
         silent: bool = False,
     ):
-        """Imports product geometry from an already parsed IFCModel."""
+        """Imports product geometry in metres from an already parsed IFCModel.
+
+        Omit the deprecated ``scale`` argument to use project length units.
+        Explicit ``scale`` overrides conversion with a positive raw-coordinate
+        multiplier. Invalid declared units or scale values return None.
+        """
         from topologicpy.Topology import Topology
 
         model = IFC._model_from_input(model, silent=silent)
         if not isinstance(model, IFCModel):
             if not silent:
                 print("IFC.Topologies - Error: Could not resolve an IFCModel. Returning None.")
+            return None
+        scale = IFC._import_geometry_scale(model, scale, silent=silent)
+        if scale is None:
             return None
 
         products = IFCFastTopology.ProductsByEntities(
@@ -5514,7 +5596,7 @@ class IFC:
         tolerance: float = 0.0001,
         circleSides: int = 24,
         topologyType: str = None,
-        scale: float = 1.0,
+        scale: Optional[float] = None,
         source: str = None,
         ontology: bool = True,
         silent: bool = False,
@@ -6625,7 +6707,7 @@ class IFC:
         semanticConnections: bool = True,
         spatialConnections: bool = False,
         dictionaryMode: str = "Full",
-        scale: float = 1.0,
+        scale: Optional[float] = None,
         circleSides: int = 24,
         tolerance: float = 0.0001,
         silent: bool = False,
@@ -6676,7 +6758,9 @@ class IFC:
             The dictionary import mode. This can be "None", "Basic", or "Full".
             It is case-insensitive. Default is "Full".
         scale : float , optional
-            The scale factor applied to imported coordinates. Default is 1.0.
+            Deprecated raw-coordinate multiplier. Default is None, which converts
+            IFC length units to metres. An explicit finite, positive value
+            overrides automatic unit conversion and keeps legacy behavior.
         circleSides : int , optional
             The number of sides used to approximate circular geometry. Default is
             24.
@@ -6707,6 +6791,9 @@ class IFC:
         if not isinstance(model, IFCModel):
             if not silent:
                 print("IFC.AccessGraph - Error: Invalid IFCModel. Returning None.")
+            return None
+        scale = IFC._import_geometry_scale(model, scale, silent=silent)
+        if scale is None:
             return None
         entities = model.entities
         source = model.sourcePath
@@ -7440,7 +7527,7 @@ class IFC:
         semanticConnections: bool = True,
         spatialConnections: bool = False,
         dictionaryMode: str = "Full",
-        scale: float = 1.0,
+        scale: Optional[float] = None,
         circleSides: int = 24,
         tolerance: float = 0.0001,
         silent: bool = False,
@@ -7474,7 +7561,7 @@ class IFC:
         proximityLabels: list = None,
         useShortestDistance: bool = False,
         dictionaryMode: str = "Full",
-        scale: float = 1.0,
+        scale: Optional[float] = None,
         circleSides: int = 24,
         mantissa: int = 6,
         tolerance: float = 0.0001,
@@ -7542,8 +7629,8 @@ class IFC:
             The IFC dictionary mode: "None", "Basic", or "Full". Default is
             "Full".
         scale : float , optional
-            The scale factor applied to imported IFC coordinates. Default is
-            1.0.
+            Deprecated raw-coordinate multiplier. None converts IFC length units
+            to metres; an explicit finite, positive value overrides conversion.
         circleSides : int , optional
             The number of sides used to approximate circular geometry. Default
             is 24.
@@ -7580,6 +7667,9 @@ class IFC:
         if not isinstance(model, IFCModel):
             if not silent:
                 print(f"{method_name} - Error: Invalid IFCModel. Returning None.")
+            return None
+        scale = IFC._import_geometry_scale(model, scale, silent=silent)
+        if scale is None:
             return None
         entities = model.entities
         source = model.sourcePath
@@ -8446,7 +8536,7 @@ class IFC:
         proximityLabels: list = None,
         useShortestDistance: bool = False,
         dictionaryMode: str = "Full",
-        scale: float = 1.0,
+        scale: Optional[float] = None,
         circleSides: int = 24,
         mantissa: int = 6,
         tolerance: float = 0.0001,
@@ -9838,13 +9928,21 @@ class IFC:
         excludeTypes: list = [],
         dictionaryMode: str = "basic",
         circleSides: int = 24,
-        scale: float = 1.0,
+        scale: Optional[float] = None,
         ontology: bool = True,
         silent: bool = False,
     ) -> dict:
-        """Returns aggregated mesh data using IFCModel geometry caches."""
+        """Returns aggregated mesh data in metres using IFCModel geometry caches.
+
+        Omit the deprecated ``scale`` argument to use project length units.
+        Explicit ``scale`` overrides conversion with a positive raw-coordinate
+        multiplier. Invalid declared units or scale values return None.
+        """
         model = IFC._model_from_input(model, silent=silent)
         if not isinstance(model, IFCModel):
+            return None
+        scale = IFC._import_geometry_scale(model, scale, silent=silent)
+        if scale is None:
             return None
         products = IFCFastTopology.ProductsByEntities(
             model.entities,
@@ -9909,7 +10007,7 @@ class IFC:
         excludeTypes: list = [],
         dictionaryMode: str = "basic",
         circleSides: int = 24,
-        scale: float = 1.0,
+        scale: Optional[float] = None,
         ontology: bool = True,
         silent: bool = False,
     ) -> dict:

@@ -326,3 +326,196 @@ def test_export_relationship_opening_uses_supported_feature_api(relationship_wri
         ("feature.add_feature", {"feature": opening, "element": wall}),
         ("feature.add_filling", {"opening": opening, "element": door}),
     ]
+
+
+# Unit-aware geometry import regressions. Source entities remain in IFC units.
+def _unit_box_step(unit_records, length_ref=10, side=1000., offset=2000.):
+    return f"""ISO-10303-21;
+HEADER; FILE_SCHEMA(('IFC4')); ENDSEC;
+DATA;
+#1=IFCCARTESIANPOINT((0.,0.,0.));
+#2=IFCBOUNDINGBOX(#1,{side},{side},{side});
+#3=IFCSHAPEREPRESENTATION($,'Body','BoundingBox',(#2));
+#4=IFCPRODUCTDEFINITIONSHAPE($,$,(#3));
+#5=IFCWALL('gid-unit-wall',$,'Wall',$,$,#8,#4,$,$);
+#6=IFCCARTESIANPOINT(({offset},0.,0.));
+#7=IFCAXIS2PLACEMENT3D(#6,$,$);
+#8=IFCLOCALPLACEMENT($,#7);
+{unit_records}
+#20=IFCUNITASSIGNMENT((#{length_ref}));
+#21=IFCPROJECT('project',$,'Project',$,$,$,$,$,#20);
+ENDSEC;
+END-ISO-10303-21;
+"""
+
+
+@pytest.mark.parametrize("unit_records,length_ref,factor", [
+    ("#10=IFCSIUNIT(*,.LENGTHUNIT.,$,.METRE.);", 10, 1.),
+    ("#10=IFCSIUNIT(*,.LENGTHUNIT.,.MILLI.,.METRE.);", 10, .001),
+    ("#10=IFCSIUNIT(*,.LENGTHUNIT.,.CENTI.,.METRE.);", 10, .01),
+    ("#10=IFCSIUNIT(*,.LENGTHUNIT.,.MICRO.,.METRE.);", 10, 1e-6),
+    ("#10=IFCSIUNIT(*,.LENGTHUNIT.,$,.METRE.);"
+     "#11=IFCMEASUREWITHUNIT(IFCLENGTHMEASURE(0.3048),#10);"
+     "#12=IFCCONVERSIONBASEDUNIT($,.LENGTHUNIT.,'FOOT',#11);", 12, .3048),
+    ("#10=IFCSIUNIT(*,.LENGTHUNIT.,$,.METRE.);"
+     "#11=IFCMEASUREWITHUNIT(IFCLENGTHMEASURE(0.3048),#10);"
+     "#12=IFCCONVERSIONBASEDUNIT($,.LENGTHUNIT.,'FOOT',#11);"
+     "#13=IFCMEASUREWITHUNIT(IFCLENGTHMEASURE(12.),#12);"
+     "#14=IFCCONVERSIONBASEDUNIT($,.LENGTHUNIT.,'12 FEET',#13);", 14, 3.6576),
+])
+def test_declared_units_convert_dimensions_and_placements(ifc_module, unit_records, length_ref, factor):
+    import copy
+    entities = ifc_module.IFCFastTopology.ParseText(_unit_box_step(unit_records, length_ref), silent=True)
+    original = copy.deepcopy(entities)
+    mesh = ifc_module.IFCFastTopology.MeshDataByProduct(entities[5], entities)
+    assert min(v[0] for v in mesh['vertices']) == pytest.approx(2000 * factor)
+    assert max(v[0] for v in mesh['vertices']) == pytest.approx(3000 * factor)
+    assert max(v[1] for v in mesh['vertices']) == pytest.approx(1000 * factor)
+    assert entities == original
+
+
+def test_unitless_fragments_and_unassigned_units_keep_metre_assumption(ifc_module):
+    entities = ifc_module.IFCFastTopology.ParseText(BOUNDING_BOX_STEP, silent=True)
+    entities[10] = ifc_module.IFCFastEntity(10, 'IFCSIUNIT', ['*', 'LENGTHUNIT', 'MILLI', 'METRE'])
+    mesh = ifc_module.IFCFastTopology.MeshDataByProduct(entities[5], entities)
+    assert max(v[0] for v in mesh['vertices']) == 2.
+
+
+@pytest.mark.parametrize('scale', [0, -1, float('nan'), float('inf'), -float('inf'), 10**1000, True, False, '0.001', object()])
+def test_invalid_scale_rejected_before_geometry_or_cache(ifc_module, monkeypatch, scale):
+    fake = _install_fake_topology(monkeypatch)
+    entities = ifc_module.IFCFastTopology.ParseText(BOUNDING_BOX_STEP, silent=True)
+    model = ifc_module.IFC.ModelByEntities(entities, silent=True)
+    assert ifc_module.IFC.Topologies(model, scale=scale, silent=True) is None
+    assert ifc_module.IFC.MeshData(model, scale=scale, silent=True) is None
+    with pytest.raises(ValueError, match='finite, positive'):
+        ifc_module.IFCFastTopology.MeshDataByProduct(entities[5], entities, scale=scale)
+    assert not model.meshCache
+    assert not model.topologyCache
+    assert not fake.created
+
+
+def test_explicit_scale_overrides_unit_conversion_without_double_scaling(ifc_module):
+    entities = ifc_module.IFCFastTopology.ParseText(_unit_box_step("#10=IFCSIUNIT(*,.LENGTHUNIT.,.MILLI.,.METRE.);"), silent=True)
+    model = ifc_module.IFC.ModelByEntities(entities, silent=True)
+    automatic = ifc_module.IFC._model_mesh_data(model, entities[5])
+    legacy_conversion = ifc_module.IFC._model_mesh_data(model, entities[5], scale=.001)
+    raw = ifc_module.IFC._model_mesh_data(model, entities[5], scale=1.)
+    assert automatic is legacy_conversion
+    assert max(v[0] for v in automatic['vertices']) == 3.
+    assert max(v[0] for v in raw['vertices']) == 3000.
+    assert len(model.meshCache) == 2
+
+
+def test_units_cache_invalidated_after_model_edit(ifc_module, monkeypatch):
+    entities = ifc_module.IFCFastTopology.ParseText(_unit_box_step("#10=IFCSIUNIT(*,.LENGTHUNIT.,.MILLI.,.METRE.);"), silent=True)
+    model = ifc_module.IFC.ModelByEntities(entities, silent=True)
+    original = ifc_module.IFCFastTopology._length_unit_scale
+    calls = []
+    def resolve(entities):
+        calls.append(True)
+        return original(entities)
+    monkeypatch.setattr(ifc_module.IFCFastTopology, '_length_unit_scale', resolve)
+    for _ in range(3):
+        mesh = ifc_module.IFC._model_mesh_data(model, entities[5])
+        assert max(v[0] for v in mesh['vertices']) == 3.
+    assert len(calls) == 1
+    entities[10].args[2] = None
+    model.touch(geometry=True)
+    mesh = ifc_module.IFC._model_mesh_data(model, entities[5])
+    assert max(v[0] for v in mesh['vertices']) == 3000.
+    assert len(calls) == 2
+
+
+@pytest.mark.parametrize('owner,name', [
+    ('IFC', 'TopologiesByPath'), ('IFC', 'TopologiesByFile'),
+    ('IFCFastTopology', 'TopologiesByPath'), ('IFCFastTopology', 'TopologiesByFile'),
+])
+@pytest.mark.parametrize('scale,x_max', [(None, 3.), (.001, 3.), (1., 3000.)])
+def test_topology_wrappers_share_units_and_import_options(tmp_path, monkeypatch, ifc_module, owner, name, scale, x_max):
+    _install_fake_topology(monkeypatch)
+    path = tmp_path / 'units.ifc'
+    path.write_text(_unit_box_step("#10=IFCSIUNIT(*,.LENGTHUNIT.,.MILLI.,.METRE.);"), encoding='utf-8')
+    result = getattr(getattr(ifc_module, owner), name)(
+        str(path), dictionaryMode='none', ontology=False, scale=scale,
+        topologyType='Shell', circleSides=32, silent=True)
+    assert len(result) == 1
+    assert result[0]['topologyType'] == 'Shell'
+    assert max(v[0] for v in result[0]['vertices']) == x_max
+
+
+@pytest.mark.parametrize('owner', ['IFC', 'IFCFastTopology'])
+def test_mesh_wrappers_use_same_units(tmp_path, ifc_module, owner):
+    path = tmp_path / 'units.ifc'
+    path.write_text(_unit_box_step("#10=IFCSIUNIT(*,.LENGTHUNIT.,.MILLI.,.METRE.);"), encoding='utf-8')
+    result = getattr(ifc_module, owner).MeshDataByPath(str(path), dictionaryMode='none', ontology=False, silent=True)
+    assert max(v[0] for v in result['vertices']) == 3.
+
+
+@pytest.mark.parametrize('unit_records,length_ref', [
+    ("#10=IFCCONTEXTDEPENDENTUNIT($,.LENGTHUNIT.,'unknown');", 10),
+    ("#10=IFCSIUNIT(*,.LENGTHUNIT.,.UNKNOWN.,.METRE.);", 10),
+    ("#10=IFCCONVERSIONBASEDUNIT($,.LENGTHUNIT.,'cycle',#11);"
+     "#11=IFCMEASUREWITHUNIT(IFCLENGTHMEASURE(1.),#10);", 10),
+    ("#10=IFCSIUNIT(*,.LENGTHUNIT.,$,.METRE.);"
+     "#11=IFCMEASUREWITHUNIT(IFCLENGTHMEASURE(0.),#10);"
+     "#12=IFCCONVERSIONBASEDUNIT($,.LENGTHUNIT.,'zero',#11);", 12),
+    ("#10=IFCSIUNIT(*,.LENGTHUNIT.,$,.METRE.);"
+     "#11=IFCMEASUREWITHUNIT(IFCLENGTHMEASURE(1.),#99);"
+     "#12=IFCCONVERSIONBASEDUNIT($,.LENGTHUNIT.,'missing',#11);", 12),
+])
+def test_invalid_declared_units_fail_instead_of_guessing(ifc_module, unit_records, length_ref):
+    model = ifc_module.IFC.Model(_unit_box_step(unit_records, length_ref), silent=True)
+    assert ifc_module.IFC.MeshData(model, ontology=False, silent=True) is None
+    assert not model.meshCache
+
+
+def test_project_assignment_ignores_unassigned_property_units(ifc_module):
+    entities = ifc_module.IFCFastTopology.ParseText(_unit_box_step("#10=IFCSIUNIT(*,.LENGTHUNIT.,.MILLI.,.METRE.);"), silent=True)
+    entities[30] = ifc_module.IFCFastEntity(30, 'IFCSIUNIT', ['*', 'LENGTHUNIT', None, 'METRE'])
+    entities[31] = ifc_module.IFCFastEntity(31, 'IFCUNITASSIGNMENT', [[('REF', 30)]])
+    assert ifc_module.IFCFastTopology._length_unit_scale(entities) == .001
+    entities[32] = ifc_module.IFCFastEntity(32, 'IFCPROJECT', ['second', None, None, None, None, None, None, None, ('REF', 31)])
+    with pytest.raises(ValueError, match='conflicting'):
+        ifc_module.IFCFastTopology._length_unit_scale(entities)
+
+
+def test_unit_import_roundtrip_preserves_step_values(tmp_path, ifc_module):
+    import copy
+    source = tmp_path / 'source.ifc'
+    source.write_text(_unit_box_step("#10=IFCSIUNIT(*,.LENGTHUNIT.,.MILLI.,.METRE.);"), encoding='utf-8')
+    model = ifc_module.IFC.ModelByPath(str(source), silent=True)
+    before = copy.deepcopy(model.entities)
+    ifc_module.IFC.MeshData(model, dictionaryMode='none', ontology=False, silent=True)
+    output = tmp_path / 'roundtrip.ifc'
+    assert ifc_module.IFC.Export(model, str(output), silent=True) == str(output)
+    assert ifc_module.IFCFastTopology.Parse(str(output), silent=True) == before
+    assert model.revision == 0
+    assert model.dirty is False
+
+
+@pytest.mark.parametrize('name', ['ByIFCPath', 'ByIFCFile'])
+def test_topology_convenience_wrappers_allow_automatic_units(monkeypatch, ifc_module, name):
+    from topologicpy.Topology import Topology
+    calls = []
+    def capture(**kwargs):
+        calls.append(kwargs)
+        return ['result']
+    monkeypatch.setattr(ifc_module.IFC, 'TopologiesBy' + name[5:], capture)
+    assert getattr(Topology, name)('source.ifc', topologyType='Shell', circleSides=32) == ['result']
+    assert calls[0]['scale'] is None
+    assert calls[0]['topologyType'] == 'Shell'
+    assert calls[0]['circleSides'] == 32
+
+
+def test_real_kernel_imports_millimetres_as_metres(tmp_path, ifc_module):
+    from topologicpy.Topology import Topology
+    from topologicpy.Vertex import Vertex
+    path = tmp_path / 'units.ifc'
+    path.write_text(_unit_box_step("#10=IFCSIUNIT(*,.LENGTHUNIT.,.MILLI.,.METRE.);"), encoding='utf-8')
+    topologies = Topology.ByIFCPath(str(path), ontology=False, dictionaryMode='none', silent=True)
+    assert len(topologies) == 1
+    vertices = Topology.Vertices(topologies[0])
+    xs = [Vertex.X(v) for v in vertices]
+    assert min(xs) == pytest.approx(2.)
+    assert max(xs) == pytest.approx(3.)

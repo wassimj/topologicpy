@@ -8450,7 +8450,7 @@ class Topology():
                   excludeTypes: list = [],
                   dictionaryMode: str = "basic",
                   clean: bool = False,
-                  scale: float = 1.0,
+                  scale: float = None,
                   topologyType: str = None,
                   circleSides: int = 24,
                   ontology: bool = True,
@@ -8460,7 +8460,7 @@ class Topology():
                   silent: bool = False) -> list:
         """
         Import an IFC file into a list of TopologicPy topologies using the
-        Bonsai triangulation pipeline. See IFC.TopologiesByFile.
+        pure-Python IFC importer. See IFC.TopologiesByFile.
 
         Parameters
         ----------
@@ -8478,7 +8478,8 @@ class Topology():
         clean : bool , optional
             If set to True, the imported topologies are cleaned. Default is False.
         scale : float , optional
-            The scale factor applied to imported coordinates. Default is 1.0.
+            Deprecated raw-coordinate multiplier. Default is None, which converts
+            IFC length units to metres. Explicit values override conversion.
         topologyType : str , optional
             The desired output topology type. If set to None, the method returns the
             most appropriate topology type for each imported product. Default is None.
@@ -8522,7 +8523,7 @@ class Topology():
                   excludeTypes: list = [],
                   dictionaryMode: str = "basic",
                   clean: bool = False,
-                  scale: float = 1.0,
+                  scale: float = None,
                   topologyType: str = None,
                   circleSides: int = 24,
                   ontology: bool = True,
@@ -8548,7 +8549,8 @@ class Topology():
         clean : bool , optional
             If set to True, the imported topologies are cleaned. Default is False.
         scale : float , optional
-            The scale factor applied to imported coordinates. Default is 1.0.
+            Deprecated raw-coordinate multiplier. Default is None, which converts
+            IFC length units to metres. Explicit values override conversion.
         topologyType : str , optional
             The desired output topology type. If set to None, the method returns the
             most appropriate topology type for each imported product. Default is None.
