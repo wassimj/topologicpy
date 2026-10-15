@@ -585,15 +585,26 @@ class Navigation:
         return '_obstacle_meshes' in model._ifc and tuple((id(f) for f in model.obstacles)) == model._ifc.get('_obstacle_faces')
 
     @staticmethod
-    def IsovistFaces(model, eyeHeight=None, storey=None):
+    def IsovistFaces(model, eyeHeight=None, storey=None, boundaryTypeKey="isovistType"):
         """Return horizontal Faces at each storey/walking elevation + eyeHeight.
 
         IFC solid obstacles are resectioned at the requested eye height.
         Generic planar obstacles are treated as vertical footprints.
+        Returned internal Wires carry boundaryTypeKey (default "isovistType")
+        with value "hole" for genuine floor voids or "obstacle" when the
+        enclosed region intersects an eye-level obstacle. Merged void/obstacle
+        boundaries are opaque as a whole. These labels are consumed directly
+        by Face.Isovist; both types remain excluded from viewpoint grids.
+        Source geometry/dictionaries are not modified.
         """
         from topologicpy.IFC import IFC
+        from topologicpy.Face import Face
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
         from collections import defaultdict
         from shapely.ops import unary_union
+        if not isinstance(boundaryTypeKey, str) or not boundaryTypeKey.strip():
+            raise ValueError('boundaryTypeKey must be a nonempty string.')
         if eyeHeight is None:
             eyeHeight = model.metadata.get('eyeHeight', 1.6)
         if not math.isfinite(eyeHeight) or eyeHeight < 0:
@@ -617,8 +628,20 @@ class Navigation:
                     blocked.append(IFC._NavigationSection(mesh, z + eyeHeight).difference(voids))
             else:
                 blocked = [Navigation._Shape(o) for o in data['obstacles'] if o['storey'] == sid]
-            area = unary_union(parts).difference(unary_union(blocked))
-            result.extend((Navigation._Face(Navigation._Surface(p, [0, 0, z + eyeHeight], sid, 'isovist')) for p in Navigation._Polygons(area)))
+            obstruction = unary_union(blocked)
+            area = unary_union(parts).difference(obstruction)
+            for polygon in Navigation._Polygons(area):
+                face = Navigation._Face(Navigation._Surface(polygon, [0, 0, z + eyeHeight], sid, 'isovist'))
+                for wire in Face.InternalBoundaries(face):
+                    # Classify the entire enclosed region, not its centroid:
+                    # a merged obstacle may intersect only one end of a void.
+                    region = Navigation._Shape(Navigation._Record(
+                        Face.ByWire(wire, tolerance=1e-07, silent=True)))
+                    role = 'obstacle' if region.intersects(obstruction) else 'hole'
+                    metadata = Navigation._Metadata(wire)
+                    metadata[boundaryTypeKey] = role
+                    Topology.SetDictionary(wire, Dictionary.ByPythonDictionary(metadata))
+                result.append(face)
         return result
     _NavigationTolerance = 1e-05
 
