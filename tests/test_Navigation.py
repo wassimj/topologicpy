@@ -268,3 +268,31 @@ def test_coincident_lift_doors_preserve_tile_associations(graph_type):
         from topologicpy.TGraph import TGraph
         assert len(TGraph.Vertices(graph))==34
         assert TGraph.ShortestPath(graph,0,16,silent=True)
+
+
+@pytest.mark.parametrize('identifier',['42','1e3','null','true','"quoted"'])
+def test_navigation_identifiers_survive_native_dictionary_round_trip(identifier):
+    model=Navigation.ByFaces([rectangle()],storeyIDs=[identifier])
+    model.connectors=[Navigation.Stair(rectangle(x=4,w=1,h=1),storey=identifier,source=identifier,group=identifier)]
+    graph=Navigation.Graph(model,spacing=2,storey=identifier)
+    metadata=[Navigation._Metadata(v) for v in Graph.Vertices(graph)]
+    assert metadata
+    assert all(d['storey']==identifier and d['storeyIDs']==[identifier] for d in metadata)
+    stair=next(d for d in metadata if d['kind']=='tread')
+    assert stair['source']==identifier
+    assert stair['group']==identifier
+    assert Navigation.Tiles(model,graph,storey=identifier)
+
+
+@pytest.mark.parametrize('decoded',[False,True])
+def test_navigation_tiles_accept_json_and_decoded_metadata(decoded):
+    import json
+    from topologicpy.TGraph import TGraph
+    model=Navigation.ByFaces([rectangle()])
+    graph=Navigation.Graph(model,spacing=2,graphType='tgraph')
+    metadata=TGraph.Dictionary(graph)
+    if decoded:metadata['navigationTiles']=json.loads(metadata['navigationTiles'])
+    graph.SetDictionary(metadata)
+    tiles=Navigation.Tiles(model,graph)
+    assert len(tiles)==4
+    assert sum(Face.Area(f) for f in tiles)==pytest.approx(16)

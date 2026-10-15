@@ -48,8 +48,34 @@ class Navigation:
     def _Metadata(topology):
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
+        from topologicpy.Core import Core
         d = Topology.Dictionary(topology)
-        return Dictionary.PythonDictionary(d) if d else {}
+        if d is None:
+            return {}
+        metadata = Dictionary.PythonDictionary(d, silent=True) or {}
+
+        def identifier(value):
+            # The native Core dictionary reader decodes JSON-looking strings.
+            # Read identifier attributes directly to retain "42", "1e3", "null",
+            # and identifiers inside lists exactly as they were written.
+            if callable(getattr(value, 'StringValue', None)):
+                return Core.InstanceCall(value, 'StringValue')
+            if callable(getattr(value, 'IntValue', None)):
+                return str(Core.InstanceCall(value, 'IntValue'))
+            if callable(getattr(value, 'DoubleValue', None)):
+                return str(Core.InstanceCall(value, 'DoubleValue'))
+            if callable(getattr(value, 'ListValue', None)):
+                return [identifier(item) for item in Core.InstanceCall(value, 'ListValue')]
+            if isinstance(value, (list, tuple)):
+                return [identifier(item) for item in value]
+            return value
+
+        for key in ('storey', 'source', 'group', 'kind', 'tileID',
+                    'storeyIDs', 'sourceIDs', 'tileIDs', 'kinds'):
+            if key in metadata:
+                raw = d[key] if isinstance(d, dict) else Core.InstanceCall(d, 'ValueAtKey', key)
+                metadata[key] = identifier(raw)
+        return metadata
 
     @staticmethod
     def _Face(record):
@@ -478,6 +504,13 @@ class Navigation:
         graph = Graph.ByMeshData([n['point'] for n in entry['nodes']], [[e['src'], e['dst']] for e in entry['edges']], vertexDictionaries=vertex_data, edgeDictionaries=edge_data, ontology=False, tolerance=tolerance)
         if graph is None:
             raise ValueError('Could not construct navigation graph.')
+        # ByMeshData adds indices through dictionary updates, which can decode
+        # numeric-looking identifiers on Core. Restore the original typed
+        # metadata after graph construction, using the stable navigation ID.
+        for vertex in Graph.Vertices(graph):
+            ident = Navigation._Metadata(vertex)['navigationID']
+            Topology.SetDictionary(vertex, Dictionary.ByPythonDictionary({
+                'index': ident, **vertex_data[ident]}))
         return Graph.SetDictionary(graph, Dictionary.ByPythonDictionary(graph_metadata))
 
     @staticmethod
@@ -533,7 +566,12 @@ class Navigation:
         from topologicpy.TGraph import TGraph
         d = TGraph.Dictionary(graph) if isinstance(graph, TGraph) else Navigation._Metadata(graph)
         result = []
-        for record in json.loads(d.get('navigationTiles', '[]')):
+        records = d.get('navigationTiles', [])
+        # PythonOCC/TGraph retain the JSON string; Core's dictionary reader
+        # already decodes it. Both representations describe the same records.
+        if isinstance(records, (str, bytes, bytearray)):
+            records = json.loads(records)
+        for record in records:
             if storey is not None and str(record['storey']) != str(storey):
                 continue
             face = Navigation._Face(record)

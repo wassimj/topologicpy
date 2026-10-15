@@ -155,7 +155,13 @@ def test_building_connections_remain_with_body_clearance(demo,kind):
 def test_zero_clearance_is_backward_compatible(demo):
     a=Graph.MeshData(Navigation.Graph(demo,spacing=2))
     b=Graph.MeshData(Navigation.Graph(demo,spacing=2,clearance=0))
-    assert a['vertices']==b['vertices'] and a['edges']==b['edges']
+    # Core does not guarantee edge enumeration order between equivalent graphs.
+    # Compare the full geometry/connectivity, retaining duplicate multiplicity.
+    def canonical(data):
+        vertices=[tuple(p) for p in data['vertices']]
+        edges=[tuple(sorted((vertices[i],vertices[j]))) for i,j in data['edges']]
+        return sorted(vertices),sorted(edges)
+    assert canonical(a)==canonical(b)
 
 @pytest.mark.parametrize('kind',['stair','ramp','explicit_ramp'])
 def test_narrow_circulation_width_closes_without_shrinking_treads(kind):
