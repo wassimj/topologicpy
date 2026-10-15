@@ -8463,13 +8463,17 @@ class Face():
                 tolerance: float = 0.0001,
                 silent: bool = False,
                 radius: float = None,
-                radiusSides: int = 64):
+                radiusSides: int = 64,
+                holes: list = None,
+                boundaryTypeKey: str = "isovistType",
+                defaultBoundaryType: str = "obstacle"):
         """
         Returns the face representing the isovist projection from the input viewpoint.
 
         This implementation uses a fast 2D visibility algorithm:
-        1. The input face, holes, and obstacles are flattened to the XY plane.
-        2. The navigable/free-space polygon is constructed using Shapely.
+        1. The input face and exclusion wires are flattened to the XY plane.
+        2. Viewpoints in holes or obstacles are rejected. Only obstacles are
+           subtracted from the visibility domain; holes remain transparent.
         3. Critical-angle rays are cast from the viewpoint to all polygon vertices.
         4. The nearest boundary intersection along each ray is used to construct the visible polygon.
         5. The resulting Shapely polygon is converted back to a TopologicPy Face.
@@ -8486,7 +8490,9 @@ class Face():
         vertex : topologic_core.Vertex
             The vertex representing the viewpoint.
         obstacles : list , optional
-            A list of wires representing obstacles within the face. Default is [].
+            Additional closed Wires representing opaque obstacles. Their interiors
+            and boundaries reject viewpoints and block sightlines. Wire dictionary
+            labels are ignored for these additional inputs. Default is [].
         direction : list, optional
             The vector representing the direction of view in the XY plane. Default is [0,1,0].
         fov : float , optional
@@ -8525,6 +8531,26 @@ class Face():
             radius*(1-cos(pi/radiusSides)). Radius edges are tagged range_limited
             and excluded from occluded_length/occlusivity and closed_perimeter.
             Metrics additionally store radius and range_limited_length.
+
+        holes : list, optional
+            Additional closed Wires representing transparent, non-walkable holes.
+            Viewpoints in or on them are rejected, but their boundaries and
+            interiors do not clip the isovist polygon or block sightlines.
+            Default is None. Inputs and their dictionaries are not modified.
+        boundaryTypeKey : str, optional
+            Dictionary key on each internal boundary Wire of face. A value of
+            "hole" makes that boundary transparent; "obstacle" makes it opaque.
+            Values are case-insensitive. Missing/None values use
+            defaultBoundaryType; unrecognised values return None with an error
+            unless silent is True. Default key is "isovistType". Labels are read
+            before flattening, so non-horizontal faces are supported.
+        defaultBoundaryType : str, optional
+            Treatment of unlabelled internal boundaries: "hole" or "obstacle"
+            (case-insensitive). Default is "obstacle" for backward compatibility.
+            The resulting isovist measures visible area, including transparent
+            holes; it is not a walkable-area or navigation polygon. Transparent
+            hole edges are excluded from physical-edge dictionary transfer and
+            occlusivity/closed-perimeter classification.
 
         Returns
         -------
@@ -8597,6 +8623,15 @@ class Face():
         range_polygon = None
         range_walls = []
 
+        if (not isinstance(boundaryTypeKey, str) or not boundaryTypeKey.strip()
+            or not isinstance(defaultBoundaryType, str)
+            or defaultBoundaryType.strip().lower() not in ("hole", "obstacle")):
+            if not silent:
+                print('Face.Isovist - Error: boundaryTypeKey must be a nonempty string and defaultBoundaryType must be "hole" or "obstacle". Returning None.')
+            return None
+        defaultBoundaryType = defaultBoundaryType.strip().lower()
+        holes = [wire for wire in holes if Topology.IsInstance(wire, "Wire")] if isinstance(holes, list) else []
+
         if isinstance(obstacles, list):
             obstacles = [obs for obs in obstacles if Topology.IsInstance(obs, "Wire")]
         else:
@@ -8664,41 +8699,7 @@ class Face():
                     poly = max(list(poly.geoms), key=lambda p: p.area)
                 if not isinstance(poly, Polygon):
                     return None
-                if poly.area <= tolerance:
-                    return None
-                return poly
-            except Exception:
-                return None
-
-        def _face_to_polygon(face_obj):
-            eb = Face.ExternalBoundary(face_obj)
-            exterior = _wire_to_coords(eb)
-
-            if len(exterior) < 3:
-                return None
-
-            holes = []
-            try:
-                internal_boundaries = Face.InternalBoundaries(face_obj)
-            except Exception:
-                internal_boundaries = []
-
-            for ib in internal_boundaries:
-                hole = _wire_to_coords(ib)
-                if len(hole) >= 3:
-                    holes.append(hole)
-
-            try:
-                poly = Polygon(exterior, holes)
-                if not poly.is_valid:
-                    poly = make_valid(poly)
-                if poly.is_empty:
-                    return None
-                if isinstance(poly, MultiPolygon):
-                    poly = max(list(poly.geoms), key=lambda p: p.area)
-                if not isinstance(poly, Polygon):
-                    return None
-                if poly.area <= tolerance:
+                if poly.area <= tolerance * tolerance:
                     return None
                 return poly
             except Exception:
@@ -9157,7 +9158,19 @@ class Face():
 
         flat_face = Topology.Flatten(face, origin=origin, direction=normal)
         flat_vertex = Topology.Flatten(vertex, origin=origin, direction=normal)
-        flat_obstacles = [Topology.Flatten(obstacle, origin=origin, direction=normal) for obstacle in obstacles]
+        opaque_wires = list(obstacles)
+        transparent_wires = list(holes)
+        for wire in Face.InternalBoundaries(face):
+            label = Dictionary.ValueAtKey(Topology.Dictionary(wire), boundaryTypeKey,
+                                          defaultValue=defaultBoundaryType, silent=True)
+            label = defaultBoundaryType if label is None else label
+            if not isinstance(label, str) or label.strip().lower() not in ("hole", "obstacle"):
+                if not silent:
+                    print('Face.Isovist - Error: Internal boundary type must be "hole" or "obstacle". Returning None.')
+                return None
+            (transparent_wires if label.strip().lower() == "hole" else opaque_wires).append(wire)
+        flat_obstacles = [Topology.Flatten(wire, origin=origin, direction=normal) for wire in opaque_wires]
+        flat_holes = [Topology.Flatten(wire, origin=origin, direction=normal) for wire in transparent_wires]
 
         viewpoint_xy = _xy(flat_vertex)
         viewpoint_point = Point(viewpoint_xy)
@@ -9166,7 +9179,7 @@ class Face():
         # Build Shapely free-space polygon
         # -------------------------------------------------------------------------
 
-        boundary_polygon = _face_to_polygon(flat_face)
+        boundary_polygon = _wire_to_polygon(Face.ExternalBoundary(flat_face))
 
         if boundary_polygon is None:
             if not silent:
@@ -9178,6 +9191,19 @@ class Face():
             obs_poly = _wire_to_polygon(obs)
             if obs_poly is not None:
                 obstacle_polygons.append(obs_poly)
+
+        # Non-walkable holes constrain the source location, not the visual
+        # domain. Reject even boundary points before component/tolerance logic
+        # can accept a point just outside the free-space polygon.
+        exclusion_polygons = list(obstacle_polygons)
+        for wire in flat_holes:
+            poly = _wire_to_polygon(wire)
+            if poly is not None:
+                exclusion_polygons.append(poly)
+        if any(poly.covers(viewpoint_point) for poly in exclusion_polygons):
+            if not silent:
+                print("Face.Isovist - Error: The viewpoint lies in or on a hole or obstacle. Returning None.")
+            return None
 
         try:
             free_space = boundary_polygon
@@ -9410,12 +9436,6 @@ class Face():
             physical_edges = []
 
             physical_edges += Topology.Edges(Face.ExternalBoundary(flat_face))
-
-            try:
-                for ib in Face.InternalBoundaries(flat_face):
-                    physical_edges += Topology.Edges(ib)
-            except Exception:
-                pass
 
             for obs in flat_obstacles:
                 physical_edges += Topology.Edges(obs)
