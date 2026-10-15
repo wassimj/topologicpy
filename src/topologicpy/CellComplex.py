@@ -341,7 +341,15 @@ class CellComplex():
         offset = minOffset
         
         while attempts < maxAttempts:
-            expanded_faces = [Face.ByOffset(f, offset=-offset, silent=silent) for f in faces]
+            expanded_results = [Face.ByOffset(f, offset=-offset, silent=silent) for f in faces]
+            expanded_faces = []
+            for result in expanded_results:
+                if result is None:
+                    # Preserve failure of the complete construction rather than
+                    # constructing a partial enclosure from the other faces.
+                    expanded_faces = [None]
+                    break
+                expanded_faces.extend([result] if Topology.IsInstance(result, "Face") else (Topology.Faces(result, silent=True) or []))
             try:
                 cc = CellComplex.ByFaces(expanded_faces, silent=True)
                 if Topology.IsInstance(cc, "cellComplex"):

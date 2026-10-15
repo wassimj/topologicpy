@@ -443,7 +443,7 @@ class Grid:
             return []
 
     @staticmethod
-    def _Clip(edge, face, tolerance):
+    def _Clip(edge, face, tolerance, strict=False):
         """
         Clip an exact isocurve/line to the trimmed Face.
 
@@ -466,6 +466,9 @@ class Grid:
                 return edges
         except Exception:
             pass
+
+        if strict:
+            return []
 
         # Useful for rectangular UV patches where Common occasionally returns
         # no 1D result although the isocurve is wholly on the Face.
@@ -549,13 +552,19 @@ class Grid:
 
     @staticmethod
     def OnFaces(faces, spacing: float = 1.0, origin=None, direction=None,
-                includeBoundary: bool = False, tolerance: float = 0.0001):
+                includeBoundary: bool = False, tolerance: float = 0.0001, clearance: float = 0.0):
         """Project one shared XY grid onto planar horizontal/sloping Faces.
 
         Unlike independent OnFace calls, all faces share the same grid origin
         and direction. Spacing is measured in XY, not along a slope. Holes and
         face boundaries clip the lines. Returns a Cluster of grid Edges or None
         when no lines intersect. Use OnFace for intrinsic curved-surface grids.
+        clearance is a nonnegative XY distance in model units (default 0).
+        Continuous adjoining patches are inset together using Face.ByOffset;
+        internal slab seams are not treated as physical boundaries. The original
+        XY grid origin/direction/spacing remain fixed. All offset regions survive;
+        complete erosion returns None. Curved boundaries must be tessellated for
+        this projected multi-face method.
         """
         import math
         from shapely.affinity import affine_transform
@@ -566,12 +575,17 @@ class Grid:
         from topologicpy.Cluster import Cluster
         if not math.isfinite(spacing) or spacing <= 0:
             raise ValueError('spacing must be positive and finite.')
-        if tolerance <= 0:raise ValueError('tolerance must be positive.')
+        if not math.isfinite(tolerance) or tolerance <= 0:raise ValueError('tolerance must be positive and finite.')
+        if not math.isfinite(clearance) or clearance < 0:raise ValueError('clearance must be nonnegative and finite.')
         origin,direction=Navigation._Frame(origin,direction)
         ox,oy=origin;ux,uy=direction;edges=[]
-        for face in faces:
-            record=Navigation._Record(face,tolerance=tolerance)
-            poly=affine_transform(Navigation._Shape(record),[ux,uy,-uy,ux,-ux*ox-uy*oy,uy*ox-ux*oy])
+        records=[Navigation._Record(face,tolerance=tolerance) for face in faces]
+        allowed=Navigation._ClearanceDomains(records,clearance,tolerance,tolerance) if clearance else None
+        for index,record in enumerate(records):
+            original=Navigation._Shape(record)
+            usable=original if allowed is None else original.intersection(allowed[index])
+            if usable.is_empty:continue
+            poly=affine_transform(usable,[ux,uy,-uy,ux,-ux*ox-uy*oy,uy*ox-ux*oy])
             x0,y0,x1,y1=poly.bounds
             if (x1-x0+y1-y0)/spacing > 200000:
                 raise ValueError('Grid is too dense. Increase spacing.')
@@ -620,6 +634,7 @@ class Grid:
         mantissa: int = 6,
         tolerance: float = 0.0001,
         silent: bool = False,
+        clearance: float = 0.0,
     ):
         """
         Creates a grid on a planar, curved, or NURBS Face.
@@ -692,6 +707,15 @@ class Grid:
             Geometric tolerance. Default is 0.0001.
         silent : bool , optional
             Suppress errors/warnings. Default is False.
+        clearance : float , optional
+            Nonnegative distance from outer/hole boundaries in the Face plane,
+            measured in model units. Default is 0. Positive clearance supports
+            planar grid mode only and clips the original grid to every region
+            returned by Face.ByOffset. Origin, spacing, divisions, labels and
+            normalized positions are computed from the original Face. Boundary
+            grid lines that no longer intersect the inset region are omitted.
+            Complete erosion or a failed offset returns None without reverting
+            to the original Face. Exact curved planar boundaries are preserved.
 
         Returns
         -------
@@ -720,6 +744,9 @@ class Grid:
             samples = max(16, min(int(samples), 4096))
             mantissa = max(0, int(mantissa))
             spacing = abs(float(spacing))
+            clearance = float(clearance)
+            if not math.isfinite(clearance) or clearance < 0:
+                raise ValueError('clearance must be nonnegative and finite.')
             uSpacing = spacing if uSpacing is None else abs(float(uSpacing))
             vSpacing = spacing if vSpacing is None else abs(float(vSpacing))
         except Exception:
@@ -765,6 +792,30 @@ class Grid:
             if not silent:
                 print("Grid.OnFace - Error: mode='planar' requires a planar Face. Returning None.")
             return None
+
+        clippingFaces = [face]
+        if clearance > 0:
+            if actualMode != "planar":
+                if not silent:
+                    print("Grid.OnFace - Error: clearance requires planar grid mode. Returning None.")
+                return None
+            inset = Face.ByOffset(face, offset=clearance, offsetKey="__grid_clearance__",smooth=False,
+                                  stepOffsetKeyA="__grid_clearance_step_a__",stepOffsetKeyB="__grid_clearance_step_b__",
+                                  tolerance=tol,epsilon=tol,silent=silent)
+            if inset is None:
+                return None
+            clippingFaces = [inset] if Topology.IsInstance(inset,"Face") else (Topology.Faces(inset,silent=True) or [])
+            if not clippingFaces:return None
+            sourceBoundaries=[Face.ExternalBoundary(face),*(Face.InternalBoundaries(face) or [])]
+            for region in clippingFaces:
+                for edge in Topology.Edges(region):
+                    for parameter in (0,.25,.5,.75,1):
+                        point=Edge.VertexByParameter(edge,parameter)
+                        if (point is None or Vertex.IsInternal(point,face,tolerance=tol) is False
+                                or min(Vertex.Distance(point,boundary) for boundary in sourceBoundaries)<clearance-tol):
+                            if not silent:
+                                print("Grid.OnFace - Error: Offset geometry does not satisfy clearance. Returning None.")
+                            return None
 
         resultEdges = []
 
@@ -825,7 +876,7 @@ class Grid:
                         tolerance=tol,
                         silent=True,
                     )
-                    clipped = Grid._Clip(edge, face, tol)
+                    clipped = [piece for region in clippingFaces for piece in Grid._Clip(edge, region, tol, strict=clearance > 0)]
                     parameter = (position - pMin) / (pMax - pMin)
                     Grid._Append(
                         resultEdges,

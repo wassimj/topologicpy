@@ -489,11 +489,11 @@ class Wire(Topology):
         edges = []
         for a, b in zip(vertices[:-1], vertices[1:]):
             if not same_vertex(a, b, tolerance):
-                e = Edge.ByStartVertexEndVertex(a, b)
+                e = Edge.ByStartVertexEndVertexTolerance(a, b, tolerance)
                 if e is not None:
                     edges.append(e)
         if close and len(vertices) > 2 and not same_vertex(vertices[-1], vertices[0], tolerance):
-            e = Edge.ByStartVertexEndVertex(vertices[-1], vertices[0])
+            e = Edge.ByStartVertexEndVertexTolerance(vertices[-1], vertices[0], tolerance)
             if e is not None:
                 edges.append(e)
         if not edges:

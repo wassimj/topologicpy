@@ -680,6 +680,35 @@ class Face(Topology):
         if _is_null_shape(shape):
             return None
 
+        # Closed offset curves can have an exact 3D loop but an inconsistent
+        # seam/p-curve on the inferred plane. Heal a copy, never the source Wire,
+        # and accept it only when validation and area preservation agree.
+        try:
+            from OCC.Core.BRepCheck import BRepCheck_Analyzer
+            if not BRepCheck_Analyzer(shape).IsValid():
+                from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_Copy
+                from OCC.Core.ShapeFix import ShapeFix_Face
+                from OCC.Core.TopoDS import topods
+                from OCC.Core.BRepGProp import brepgprop
+                from OCC.Core.GProp import GProp_GProps
+                def area(candidate):
+                    properties=GProp_GProps()
+                    brepgprop.SurfaceProperties(candidate,properties)
+                    return abs(float(properties.Mass()))
+                original_area = area(shape)
+                copied = BRepBuilderAPI_Copy(shape, True, False).Shape()
+                fixer = ShapeFix_Face(topods.Face(copied))
+                fixer.SetPrecision(1.0e-7)
+                fixer.Perform()
+                repaired = fixer.Face()
+                repaired_area = area(repaired)
+                if (BRepCheck_Analyzer(repaired).IsValid()
+                        and original_area is not None and repaired_area is not None
+                        and abs(original_area-repaired_area) <= max(abs(original_area)*1.0e-8,1.0e-10)):
+                    shape = repaired
+        except Exception:
+            pass
+
         result = Face.ByOcctShape(shape)
         if not isinstance(result, Face):
             return None
@@ -771,6 +800,9 @@ class Face(Topology):
             for wire in internalBoundaries
         ):
             return None
+
+        if not internalBoundaries:
+            return Face.ByExternalBoundary(externalBoundary)
 
         # ------------------------------------------------------------------
         # Retrieve native external Wire

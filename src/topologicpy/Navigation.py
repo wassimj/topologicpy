@@ -219,7 +219,9 @@ class Navigation:
                 cabins.append([shaft.centroid.x, shaft.centroid.y, z])
                 served.append(door['storey'])
             if len(doors) >= 2:
-                connectors.append(Navigation.Lift(doors, cabins, served, source=lift['source']))
+                descriptor=Navigation.Lift(doors,cabins,served,source=lift['source'])
+                descriptor['footprint']=Navigation._Face(Navigation._Surface(shaft,[0,0,0],served[0]))
+                connectors.append(descriptor)
         result = NavigationModel([f for s in data['_walkable_faces'] for f in convert(s)], [f for s in data['obstacles'] for f in convert(s)], connectors, data['storeys'], {'unit': 'm', 'reader': 'TopologicPy.IFC', 'eyeHeight': eyeHeight, 'omittedSurfaces': omitted}, {k: data[k] for k in ('_obstacle_meshes', '_void_meshes')})
         result._ifc['_obstacle_faces'] = tuple((id(f) for f in result.obstacles))
         return result
@@ -250,12 +252,15 @@ class Navigation:
         return {'type': 'ramp', 'faces': Navigation._WalkingFaces(ramp) if ramp is not None else [], 'centreline': Navigation._Points(centreline) if centreline is not None else None, 'spacing': spacing, 'spacingRatio': spacingRatio, 'storey': storey, 'source': source, 'group': group}
 
     @staticmethod
-    def Lift(doors, cabinCentres, storeys=None, source=None):
+    def Lift(doors, cabinCentres, storeys=None, source=None, footprint=None):
         """Describe a lift with one door and cabin point per served level.
 
         Inputs are equal-length ordered lists of XYZ coordinates or Vertices.
         Cabin points are joined in elevation order; each door joins its cabin.
         Only door points attach to floor grids. Lifts have no colour tiles.
+        An optional planar Face footprint supplies shared cabin/shaft support
+        for clearance at door portals. IFC extraction supplies it automatically;
+        its XY projection is used at each served elevation.
         """
         doors = Navigation._Points(doors)
         cabins = Navigation._Points(cabinCentres)
@@ -265,7 +270,8 @@ class Navigation:
             raise ValueError('storeys must parallel doors.')
         if any((abs(a[2] - b[2]) > 1e-05 for a, b in zip(doors, cabins))):
             raise ValueError('Each door and cabin must share an elevation.')
-        return {'type': 'lift', 'doors': doors, 'cabins': cabins, 'group': source, 'storeys': list(storeys) if storeys is not None else None, 'source': source}
+        if footprint is not None:Navigation._Record(footprint)
+        return {'footprint':footprint,'type': 'lift', 'doors': doors, 'cabins': cabins, 'group': source, 'storeys': list(storeys) if storeys is not None else None, 'source': source}
 
     @staticmethod
     def _Points(points):
@@ -324,7 +330,7 @@ class Navigation:
             if c['type'] == 'lift':
                 n = len(c['doors'])
                 order = sorted(range(n), key=lambda i: c['cabins'][i][2])
-                data['explicit_connectors'].append({'kind': 'lift', 'points': c['doors'] + c['cabins'], 'edges': [(i, n + i) for i in range(n)] + [(n + a, n + b) for a, b in zip(order, order[1:])], 'attachments': list(range(n)), 'storeys': (c['storeys'] or [None] * n) * 2, 'source': c.get('source'), 'kinds': ['lift_door'] * n + ['lift'] * n, 'edgeKinds': ['lift_door'] * n + ['lift'] * (n - 1)})
+                data['explicit_connectors'].append({'kind': 'lift', 'points': c['doors'] + c['cabins'], 'edges': [(i, n + i) for i in range(n)] + [(n + a, n + b) for a, b in zip(order, order[1:])], 'attachments': list(range(n)), 'storeys': (c['storeys'] or [None] * n) * 2, 'source': c.get('source'), 'kinds': ['lift_door'] * n + ['lift'] * n, 'edgeKinds': ['lift_door'] * n + ['lift'] * (n - 1), 'attachment_support':Navigation._Record(c['footprint']) if c.get('footprint') is not None else None})
                 continue
             group = str(c.get('group') if c.get('group') is not None else f'connector:{index}')
             records = [Navigation._Record(f, c.get('storey'), c.get('source')) for f in c['faces']]
@@ -332,7 +338,7 @@ class Navigation:
                 data['connectors'].extend(({**r, 'type': 'stair', 'group': group, 'kind': 'landing' if r.get('kind') == 'landing' else c['kind']} for r in records))
             elif c.get('centreline') is not None:
                 points = Navigation._SampleLine(c['centreline'], c.get('spacing'), c['spacingRatio'])
-                data['explicit_connectors'].append({'kind': 'ramp', 'points': points, 'edges': [(i, i + 1) for i in range(len(points) - 1)], 'attachments': [0, len(points) - 1], 'storeys': [c.get('storey')] * len(points), 'group': group, 'source': c.get('source')})
+                data['explicit_connectors'].append({'kind': 'ramp', 'points': points, 'edges': [(i, i + 1) for i in range(len(points) - 1)], 'attachments': [0, len(points) - 1], 'storeys': [c.get('storey')] * len(points), 'group': group, 'source': c.get('source'), 'surfaces':records})
             elif records:
                 data['connectors'].append({'type': 'ramp', 'group': group, 'source': c.get('source'), 'storey': records[0]['storey'], 'surfaces': records, 'spacing': c['spacing'], 'spacingRatio': c['spacingRatio']})
         return data
@@ -360,7 +366,7 @@ class Navigation:
         return result
 
     @staticmethod
-    def Graph(model, spacing=1.0, maxStepHeight=0.17, maxHorizontalGap=0.0, storey=None, mode='navigation', origin=None, direction=None, tolerance=1e-05, graphType='graph', maxStairRiser=0.35):
+    def Graph(model, spacing=1.0, maxStepHeight=0.17, maxHorizontalGap=0.0, storey=None, mode='navigation', origin=None, direction=None, tolerance=1e-05, graphType='graph', maxStairRiser=0.35, clearance=0.0):
         """Return a standard Topologic graph with persistent tile associations.
 
         mode is 'navigation' (adjacent grid cells) or 'visibility'. Grid spacing
@@ -369,11 +375,26 @@ class Navigation:
         maxHorizontalGap must be zero. Storey restriction removes other levels
         before routing. Vertex dictionaries include navigationID/storey/kind/
         source/tileIDs; edges include Length/kind. Units match the model.
+
+        clearance is a nonnegative horizontal XY margin in model units, default
+        0. Obstacles are subtracted before joined walking patches are inset via
+        Face.ByOffset. Grid cells keep their origin/spacing; boundary sample
+        positions can move into the usable part of the original cell. Display
+        tiles retain original geometry when a cell has one surviving component.
+        Split cells retain separate tiles, and consumed cells have no node.
+        Narrow passages close without bridging. Clipped concave cells may add
+        uncoloured bend nodes to follow a valid route inside the cleared region.
+        Stair/ramp width and attachment corridors are checked across assembled
+        footprints, rather than offsetting every tread along travel. Explicit
+        geometry-free centrelines and cabin edges have no width to infer.
+        Curved/nonplanar grids require a separate clearance definition.
         """
         from topologicpy.IFC import IFC
         from topologicpy.Graph import Graph
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
+        if not math.isfinite(clearance) or clearance < 0:
+            raise ValueError('clearance must be nonnegative and finite.')
         if not math.isfinite(spacing) or spacing <= 0:
             raise ValueError('spacing must be positive and finite.')
         if not math.isfinite(maxStairRiser) or maxStairRiser <= 0:
@@ -420,7 +441,20 @@ class Navigation:
             for poly in Navigation._Polygons(unary_union([Navigation._Shape(f) for f in parts])):
                 merged.append({**Navigation._Surface(poly, plane, sid, source=sources[0] if sources else None), 'sourceIDs': sources})
         data['faces'] = merged
-        entry, _ = Navigation._Build(data, spacing=spacing, storey=str(storey) if storey is not None else None, mode=mode, maxStepHeight=maxStepHeight, tolerance=tolerance, origin=origin, direction=direction, maxStairRiser=maxStairRiser)
+        if clearance and Navigation._UseSolidObstacles(model):
+            levels=sorted(data['storeys'],key=lambda s:s['elevation'])
+            elevations=set()
+            for connector in data['connectors']:
+                if connector['type']=='stair':
+                    point=Navigation._Shape(connector).representative_point()
+                    elevations.add(round(Navigation._Height(connector,point.x,point.y),5))
+                else:
+                    elevations.update(round(p[2],5) for p,_ in Navigation._RampSamples(connector,connector.get('spacing'),connector.get('spacingRatio',.15)))
+            for z in sorted(elevations):
+                near=[level for level in levels if level['elevation']<=z+maxStepHeight]
+                sid=(near[-1] if near else levels[0])['id']
+                data['obstacles'].extend(Navigation._Surface(part,[0,0,z],sid,'obstacle') for part in Navigation._Polygons(solid_sections(z+.10)))
+        entry, _ = Navigation._Build(data, spacing=spacing, storey=str(storey) if storey is not None else None, mode=mode, maxStepHeight=maxStepHeight, tolerance=tolerance, origin=origin, direction=direction, maxStairRiser=maxStairRiser, clearance=clearance)
         entry = Navigation._UniquePoints(entry, tolerance)
         tile_records = []
         tile_ids = {}
@@ -432,7 +466,7 @@ class Navigation:
         for i, n in enumerate(entry['nodes']):
             vertex_data.append({'navigationID': i, 'storey': n['storey'], 'storeyIDs': n.get('storeyIDs', [n['storey']]), 'kind': n['kind'], 'kinds': n.get('kinds', [n['kind']]), 'source': str(n.get('source') or ''), 'group': str(n.get('group') or ''), 'sourceIDs': n.get('sourceIDs', []), 'tileIDs': tile_ids.get(i, [])})
         edge_data = [{'Length': e['length'], 'kind': e['kind']} for e in entry['edges']]
-        graph_metadata = {'navigationTiles': json.dumps(tile_records), 'navigationUnit': model.metadata.get('unit', 'model')}
+        graph_metadata = {'navigationTiles': json.dumps(tile_records), 'navigationUnit': model.metadata.get('unit', 'model'), 'clearance':clearance}
         if graphType == 'tgraph':
             from topologicpy.TGraph import TGraph
             graph = TGraph()
@@ -687,7 +721,7 @@ class Navigation:
         return result
 
     @staticmethod
-    def _Build(model, spacing=4, mode='navigation', storey=None, maxStepHeight=0.17, tolerance=1e-05, origin=(0, 0), direction=(1, 0), maxStairRiser=0.35):
+    def _Build(model, spacing=4, mode='navigation', storey=None, maxStepHeight=0.17, tolerance=1e-05, origin=(0, 0), direction=(1, 0), maxStairRiser=0.35, clearance=0.0):
         import math
         import numpy as np
         from shapely.geometry import Polygon, Point, LineString, box
@@ -704,6 +738,9 @@ class Navigation:
         planes = []
         floors = [s for s in m['faces'] if storey is None or s['storey'] == storey]
         floor_union = {sid: unary_union([Navigation._Shape(s) for s in floors if s['storey'] == sid]) for sid in {s['storey'] for s in floors}}
+        allowed = None
+        if clearance:
+            allowed = Navigation._ClearanceDomains(floors,clearance,EPS,MAX_RISE,Navigation._ClearanceConnectors(m),m.get('obstacles',[]))
         obstacle_by_level = {}
 
         def obstacle(sid, z):
@@ -732,7 +769,7 @@ class Navigation:
                 return
             seen.add(k)
             edges.append({'src': a, 'dst': b, 'length': d, 'kind': kind})
-        for s in floors:
+        for surface_index,s in enumerate(floors):
             poly = Navigation._Shape(s)
             from shapely.affinity import affine_transform
             ux, uy = direction
@@ -745,15 +782,24 @@ class Navigation:
                 for y in np.arange(math.floor(y0 / spacing) * spacing, y1, spacing):
                     for local_tile in Navigation._Polygons(local.intersection(box(x, y, x + spacing, y + spacing))):
                         tile = affine_transform(local_tile, [ux, -uy, uy, ux, ox, oy])
-                        pt = tile.centroid
-                        if not tile.covers(pt):
-                            pt = tile.representative_point()
-                        node([pt.x, pt.y, Navigation._Height(s, pt.x, pt.y)], s['storey'], display=[Navigation._Surface(tile, s['plane'], s['storey'])], poly=tile, plane=s['plane'], source=s.get('source'), sourceIDs=s.get('sourceIDs'))
+                        usable = [tile] if allowed is None else Navigation._Polygons(tile.intersection(allowed[surface_index]))
+                        for safe_tile in usable:
+                            pt = safe_tile.centroid
+                            if not safe_tile.covers(pt):
+                                pt = safe_tile.representative_point()
+                            # Keep the original cell for colouring in the usual
+                            # one-component case; split cells retain separate tiles.
+                            display_tile = tile if len(usable)==1 else safe_tile
+                            node([pt.x, pt.y, Navigation._Height(s, pt.x, pt.y)], s['storey'], display=[Navigation._Surface(display_tile, s['plane'], s['storey'])], poly=safe_tile, plane=s['plane'], source=s.get('source'), sourceIDs=s.get('sourceIDs'))
                         if len(nodes) > 10000:
                             raise ValueError('More than 10000 navigation points. Increase spacing.')
         floor_count = len(nodes)
         if not floor_count:
-            raise ValueError('No walkable floor geometry was found.')
+            raise ValueError('No walkable floor geometry remains after clearance.' if clearance else 'No walkable floor geometry was found.')
+        if clearance:
+            clear_floor_union = {sid:unary_union([footprints[i] for i in range(floor_count) if nodes[i]['storey']==sid]) for sid in floor_union}
+        else:
+            clear_floor_union = floor_union
         tree = STRtree(footprints)
         for i, p in enumerate(footprints[:floor_count]):
             for j in tree.query(p.buffer(EPS)):
@@ -769,8 +815,21 @@ class Navigation:
                 if abs((a[0] - b[0]) * at.x + (a[1] - b[1]) * at.y + a[2] - b[2]) > MAX_RISE + EPS:
                     continue
                 segment = LineString([nodes[i]['point'][:2], nodes[j]['point'][:2]])
-                if p.union(q).buffer(EPS * 0.1).covers(segment):
+                passage=p.union(q)
+                if passage.buffer(EPS * 0.1).covers(segment):
                     edge(i, j)
+                elif clearance:
+                    # Clipped cells can be concave at a narrow opening. Retain
+                    # a real passage using bend points rather than a straight
+                    # edge that cuts outside the clearance domain.
+                    path=Navigation._ClearanceLink(nodes[i]['point'][:2],nodes[j]['point'][:2],passage,EPS)
+                    if path:
+                        previous=i
+                        for x,y in path[1:-1]:
+                            plane=planes[i] if p.buffer(EPS*.1).covers(Point(x,y)) else planes[j]
+                            current=node([x,y,plane[0]*x+plane[1]*y+plane[2]],nodes[i]['storey'],poly=passage,plane=plane,source=nodes[i].get('source'),sourceIDs=nodes[i].get('sourceIDs'))
+                            edge(previous,current);previous=current
+                        edge(previous,j)
         if mode == 'visibility':
             for i in range(floor_count):
                 p = nodes[i]['point']
@@ -782,7 +841,7 @@ class Navigation:
                     line = LineString([p[:2], q[:2]])
                     if line.length < EPS:
                         continue
-                    if not floor_union[sid].buffer(EPS * 0.1).covers(line):
+                    if not clear_floor_union[sid].buffer(EPS * 0.1).covers(line):
                         continue
                     traversed = [int(k) for k in tree.query(line) if footprints[int(k)].intersection(line).length > EPS]
                     if not traversed:
@@ -862,12 +921,23 @@ class Navigation:
             sid = nodes[i]['storey']
             support = unary_union([floor_union.get(sid, Polygon()), footprints[i] if footprints[i] is not None else Polygon(), extra if extra is not None else Polygon()])
             candidates = sorted((j for j in range(floor_count) if nodes[j]['storey'] == sid and abs(nodes[j]['point'][2] - p[2]) <= MAX_RISE + EPS), key=lambda j: math.dist(nodes[j]['point'], p))
+            if clearance and (nodes[i]['kind']!='ramp' or footprints[i] is not None):
+                attached=Navigation._ClearanceAttachmentPath(m,nodes,i,candidates,footprints[i],extra,obstacle(sid,p[2]),clearance,EPS,MAX_RISE)
+                if attached:
+                    j,path=attached;previous=i
+                    for point in path[1:-1]:
+                        current=node(point,sid,group=nodes[i].get('group'))
+                        edge(previous,current,'attachment');previous=current
+                    edge(previous,j,'attachment')
+                return
             for j in candidates:
                 line = LineString([p[:2], nodes[j]['point'][:2]])
                 if not support.buffer(EPS).covers(line):
                     continue
                 blocked = obstacle(sid, p[2])
                 if not blocked.is_empty and line.intersection(blocked).length > EPS:
+                    continue
+                if clearance and not (nodes[i]['kind']=='ramp' and footprints[i] is None) and not support.difference(blocked).buffer(EPS*.1).covers(line.buffer(clearance,cap_style='flat',join_style='mitre')):
                     continue
                 edge(i, j, 'attachment')
                 return
@@ -896,12 +966,283 @@ class Navigation:
                 if storey is not None and sid != storey:
                     ids.append(None)
                     continue
-                i = node(p, sid, c.get('kinds', [c['kind']] * len(c['points']))[k], source=c.get('source'), group=c.get('group'))
+                i = node(p, sid, c.get('kinds', [c['kind']] * len(c['points']))[k], poly=unary_union([Navigation._Shape(s) for s in c['surfaces']]) if c.get('surfaces') else (Navigation._Shape(c['attachment_support']) if c.get('attachment_support') else None), source=c.get('source'), group=c.get('group'))
                 ids.append(i)
                 if k in c.get('attachments', []):
-                    attach(i)
+                    attach(i,Navigation._Shape(c['attachment_support']) if c.get('attachment_support') else None)
             for k, (a, b) in enumerate(c['edges']):
                 if ids[a] is not None and ids[b] is not None:
                     edge(ids[a], ids[b], c.get('edgeKinds', [c['kind']] * len(c['edges']))[k])
         entry = {'model': m, 'nodes': nodes, 'edges': edges, 'tiles': tiles, 'floor_count': floor_count}
+        if clearance:
+            entry=Navigation._ConnectorClearance(entry,clearance,tolerance,maxStepHeight)
         return (entry, False)
+
+    @staticmethod
+    def _InsetXY(polygon, clearance, tolerance):
+        """Offset an XY region via Face.ByOffset, retaining every component."""
+        from topologicpy.Face import Face
+        from topologicpy.Topology import Topology
+        from shapely.geometry import Polygon
+        from shapely.ops import unary_union
+        from shapely import make_valid,set_precision
+        pieces=[]
+        # IFC section seams can leave micron-scale cracks or duplicate
+        # intersections. Resolve them at the caller's geometric tolerance.
+        polygon=set_precision(make_valid(polygon).buffer(0),tolerance)
+        for part in Navigation._Polygons(polygon):
+            face=Navigation._Face(Navigation._Surface(part,[0,0,0],'0'))
+            result=Face.ByOffset(face,offset=clearance,offsetKey='__navigation_clearance__',
+                                 tolerance=tolerance,epsilon=tolerance,silent=True)
+            if result is None:continue
+            faces=[result] if Topology.IsInstance(result,'Face') else (Topology.Faces(result,silent=True) or [])
+            pieces.extend(Navigation._Shape(Navigation._Record(f,tolerance=tolerance)) for f in faces)
+        return unary_union(pieces) if pieces else Polygon()
+
+    @staticmethod
+    def _ConnectorSupports(connectors):
+        from shapely.ops import unary_union
+        groups={}
+        for c in connectors:
+            parts=c['surfaces'] if c['type']=='ramp' else [c]
+            for part in parts:groups.setdefault(c['group'],[]).append({**part,'kind':'ramp'} if c['type']=='ramp' else part)
+        return {group:{'records':parts,'polygon':unary_union([Navigation._Shape(p) for p in parts])}
+                for group,parts in groups.items()}
+
+    @staticmethod
+    def _ClearanceDomains(records, clearance, tolerance, maxStepHeight,
+                          connectors=None, obstacles=None):
+        """Inset physically joined floor patches together, in XY metres/units.
+
+        Joining before offsetting preserves internal slab seams and circulation
+        portals. Each floor is later clipped to its own original support plane.
+        """
+        from shapely.geometry import Polygon
+        from shapely.ops import unary_union
+        from shapely.strtree import STRtree
+        polygons=[Navigation._Shape(s) for s in records]
+        if not polygons:return []
+        parents=list(range(len(records)))
+        def root(i):
+            while parents[i]!=i:
+                parents[i]=parents[parents[i]];i=parents[i]
+            return i
+        def compatible(a,b,at):
+            return abs(Navigation._Height(a,at.x,at.y)-Navigation._Height(b,at.x,at.y))<=maxStepHeight+tolerance
+        tree=STRtree(polygons)
+        for i,poly in enumerate(polygons):
+            for j in tree.query(poly.buffer(tolerance*.1)):
+                j=int(j)
+                if j<=i or records[i]['storey']!=records[j]['storey']:continue
+                overlap=poly.intersection(polygons[j])
+                if overlap.is_empty:continue
+                if overlap.area<=tolerance*tolerance and overlap.length<=tolerance:continue
+                at=overlap.representative_point()
+                if compatible(records[i],records[j],at):parents[root(j)]=root(i)
+        sets={}
+        for i in range(len(records)):sets.setdefault(root(i),[]).append(i)
+        supports=Navigation._ConnectorSupports(connectors or [])
+        result=[Polygon() for _ in records]
+        for members in sets.values():
+            base=unary_union([polygons[i] for i in members]);parts=[base]
+            for group in supports.values():
+                touches=False
+                for i in members:
+                    for part in group['records']:
+                        overlap=polygons[i].intersection(Navigation._Shape(part))
+                        if overlap.is_empty:continue
+                        if overlap.area<=tolerance*tolerance and overlap.length<=tolerance:continue
+                        if compatible(records[i],part,overlap.representative_point()):
+                            touches=True;break
+                    if touches:break
+                if touches:parts.append(group['polygon'])
+            support=unary_union(parts)
+            # Connector projections cannot fill physical obstacle cuts back in.
+            blocked=[]
+            for obstacle in obstacles or []:
+                if not any(obstacle['storey']==records[i]['storey'] for i in members):continue
+                op=Navigation._Shape(obstacle);at=op.representative_point()
+                if any(compatible(records[i],obstacle,at) for i in members):blocked.append(op)
+            if blocked:support=support.difference(unary_union(blocked))
+            inset=Navigation._InsetXY(support,clearance,tolerance)
+            for i in members:result[i]=inset
+        return result
+
+    @staticmethod
+    def _ConnectorClearance(entry, clearance, tolerance, maxStepHeight):
+        """Check circulation width and attachment corridors without eroding risers."""
+        from shapely.geometry import Point,LineString,Polygon
+        from shapely.ops import unary_union
+        nodes=entry['nodes'];model=entry['model'];keep=set(range(len(nodes)))
+        groups=Navigation._ConnectorSupports(Navigation._ClearanceConnectors(model))
+        members={}
+        for i,node in enumerate(nodes):
+            if node['kind'] in ('tread','landing','ramp') and node.get('group') in groups:
+                members.setdefault(node['group'],[]).append(i)
+        obstacle_cache={}
+        def blocked(sid,z):
+            key=(sid,round(z,5))
+            if key not in obstacle_cache:
+                obstacle_cache[key]=unary_union([Navigation._Shape(o) for o in model.get('obstacles',[])
+                                    if o['storey']==sid and abs(o['plane'][2]-z)<=maxStepHeight+tolerance])
+            return obstacle_cache[key]
+        for group,ids in members.items():
+            footprint=groups[group]['polygon']
+            elevations=[nodes[i]['point'][2] for i in ids];lo,hi=min(elevations),max(elevations)
+            for i in ids:
+                n=nodes[i];p=n['point'];point=Point(p[:2])
+                support=footprint.difference(blocked(n['storey'],p[2]))
+                # Interior landing turns need room in every horizontal direction.
+                interior=n['kind']=='landing' and lo+tolerance<p[2]<hi-tolerance
+                others=[j for j in ids if j!=i and math.dist(nodes[j]['point'][:2],p[:2])>tolerance]
+                if not others:
+                    if not support.covers(point) or support.boundary.distance(point)<clearance-tolerance*.1:
+                        keep.discard(i)
+                    continue
+                elif interior:
+                    if not support.covers(point) or support.boundary.distance(point)<clearance-tolerance*.1:
+                        keep.discard(i)
+                    continue
+                else:
+                    j=min(others,key=lambda j:math.dist(p,nodes[j]['point']))
+                    q=nodes[j]['point'];dx,dy=q[0]-p[0],q[1]-p[1];length=math.hypot(dx,dy)
+                    side=(-dy/length*clearance,dx/length*clearance)
+                    required=LineString([(p[0]-side[0],p[1]-side[1]),(p[0]+side[0],p[1]+side[1])])
+                if not support.buffer(tolerance*.1).covers(required):keep.discard(i)
+        valid_edges=[]
+        for edge in entry['edges']:
+            a,b=edge['src'],edge['dst']
+            if a not in keep or b not in keep:continue
+            kind=edge['kind']
+            if kind not in ('stair','ramp','ramp_landing','attachment'):
+                valid_edges.append(edge);continue
+            na,nb=nodes[a],nodes[b];p,q=na['point'],nb['point']
+            line=LineString([p[:2],q[:2]])
+            if line.length<=tolerance:
+                valid_edges.append(edge);continue
+            group=na.get('group') if na.get('group') in groups else nb.get('group')
+            if group not in groups and kind!='attachment':
+                # A user-specified geometry-free centreline has no width to infer.
+                valid_edges.append(edge);continue
+            support=groups[group]['polygon'] if group in groups else Polygon()
+            if kind=='attachment' and group not in groups and ('ramp' in (na['kind'],nb['kind'])):
+                valid_edges.append(edge);continue
+            if kind=='attachment':
+                z=p[2] if na['kind']!='floor' else q[2]
+                sid=na['storey']
+                floors=[Navigation._Shape(f) for f in model['faces'] if f['storey']==sid and abs(Navigation._Height(f,(p[0]+q[0])/2,(p[1]+q[1])/2)-z)<=maxStepHeight+tolerance]
+                lift_support=[Navigation._Shape(c['attachment_support']) for c in model.get('explicit_connectors',[]) if c.get('attachment_support') and c.get('source') in (na.get('source'),nb.get('source'))]
+                support=unary_union([support,*floors,*lift_support])
+            obstruction=unary_union([blocked(na['storey'],p[2]),blocked(nb['storey'],q[2])])
+            support=support.difference(obstruction)
+            corridor=line.buffer(clearance,cap_style='flat',join_style='mitre')
+            if support.buffer(tolerance*.1).covers(corridor):valid_edges.append(edge)
+        remap={old:new for new,old in enumerate(sorted(keep))}
+        return {**entry,'nodes':[nodes[i] for i in sorted(keep)],
+                'edges':[{**e,'src':remap[e['src']],'dst':remap[e['dst']]} for e in valid_edges],
+                'tiles':[{**t,'node':remap[t['node']]} for t in entry['tiles'] if t['node'] in keep]}
+
+    @staticmethod
+    def _ClearanceLink(start, end, region, tolerance):
+        """Shortest polygonal link inside two adjacent clipped grid cells."""
+        from shapely.geometry import LineString
+        from heapq import heappush,heappop
+        from shapely.geometry import Point
+        support=region.buffer(tolerance*.1)
+        if math.dist(start,end)<=tolerance*.1:
+            return [list(start),list(end)] if support.covers(Point(start)) else None
+        if support.covers(LineString([start,end])):
+            return [list(start),list(end)]
+        candidates=[list(start),list(end)]
+        for polygon in Navigation._Polygons(region):
+            for ring in [polygon.exterior,*polygon.interiors]:
+                for point in list(ring.coords)[:-1]:
+                    if not any(math.dist(point,p)<=tolerance*.1 for p in candidates):candidates.append(list(point))
+        support=region.buffer(tolerance*.1)
+        adjacency=[[] for _ in candidates]
+        for i,a in enumerate(candidates):
+            for j in range(i+1,len(candidates)):
+                b=candidates[j]
+                if support.covers(LineString([a,b])):
+                    distance=math.dist(a,b);adjacency[i].append((j,distance));adjacency[j].append((i,distance))
+        queue=[(0,0)];distances={0:0};previous={}
+        while queue:
+            distance,i=heappop(queue)
+            if distance>distances[i]:continue
+            if i==1:
+                path=[1]
+                while path[-1]!=0:path.append(previous[path[-1]])
+                return [candidates[j] for j in reversed(path)]
+            for j,length in adjacency[i]:
+                value=distance+length
+                if value<distances.get(j,float('inf')):
+                    distances[j]=value;previous[j]=i;heappush(queue,(value,j))
+        return None
+
+    @staticmethod
+    def _ClearanceConnectors(model):
+        """Include supplied ramp surfaces when an explicit centreline is used."""
+        return model.get('connectors',[])+[
+            {'type':'ramp','surfaces':c['surfaces'],'group':c['group']}
+            for c in model.get('explicit_connectors',[]) if c.get('surfaces')]
+
+    @staticmethod
+    def _ClearanceAttachmentPath(model,nodes,index,candidates,footprint,extra,blocked,clearance,tolerance,maxStepHeight):
+        """Attach through the nearest reachable cleared floor sample, with bends."""
+        from shapely.geometry import Polygon,Point,LineString
+        from shapely.ops import unary_union
+        n=nodes[index];p=n['point'];sid=n['storey']
+        groups=Navigation._ConnectorSupports(Navigation._ClearanceConnectors(model))
+        group=groups.get(n.get('group'))
+        floors=[f for f in model['faces'] if f['storey']==sid and abs(Navigation._Height(f,p[0],p[1])-p[2])<=maxStepHeight+tolerance]
+        floor_support=unary_union([Navigation._Shape(f) for f in floors])
+        assembly=group['polygon'] if group else (footprint if footprint is not None else Polygon())
+        from shapely import set_precision,make_valid
+        support=unary_union([floor_support,assembly,extra if extra is not None else Polygon()]).difference(blocked)
+        support=set_precision(make_valid(support).buffer(0),tolerance)
+        body=support.buffer(-clearance,join_style='mitre',mitre_limit=1e12)
+        # A route may use adjacent tread patches, but not take a projection-only
+        # shortcut down a flight to reach another floor at the same XY position.
+        local_parts=[]
+        if group:
+            for part in group['records']:
+                poly=Navigation._HeightBand(part,p[2]-maxStepHeight-tolerance,p[2]+maxStepHeight+tolerance)
+                if not poly.is_empty:local_parts.append(poly)
+        elif footprint is not None:local_parts.append(footprint)
+        route_support=unary_union([floor_support,*local_parts,extra if extra is not None else Polygon()])
+        route_support=set_precision(make_valid(route_support).buffer(0),tolerance)
+        body=body.intersection(route_support)
+        start=Point(p[:2])
+        components=[part for part in Navigation._Polygons(body) if part.buffer(tolerance*.1).covers(start)]
+        if not components:return None
+        for j in candidates:
+            q=nodes[j]['point'];end=Point(q[:2])
+            component=next((part for part in components if part.buffer(tolerance*.1).covers(end)),None)
+            if component is None:continue
+            path=Navigation._ClearanceLink(p[:2],q[:2],component,tolerance)
+            if not path:continue
+            points=[]
+            for x,y in path:
+                here=Point(x,y)
+                heights=[Navigation._Height(f,x,y) for f in floors if Navigation._Shape(f).buffer(tolerance*.1).covers(here)]
+                if not heights and group:
+                    heights=[Navigation._Height(f,x,y) for f in group['records'] if Navigation._Shape(f).buffer(tolerance*.1).covers(here)]
+                z=min(heights,key=lambda z:abs(z-p[2])) if heights else p[2]
+                points.append([x,y,z])
+            points[0]=p;points[-1]=q
+            return j,points
+        return None
+
+    @staticmethod
+    def _HeightBand(record,low,high):
+        """Clip a projected planar connector to a physically local height band."""
+        from shapely.geometry import Polygon
+        import numpy as np
+        poly=Navigation._Shape(record);a,b,c=record['plane'];magnitude=math.hypot(a,b)
+        if magnitude<1e-12:return poly if low<=c<=high else Polygon()
+        n=np.asarray([a,b])/magnitude;u=np.asarray([-n[1],n[0]])
+        centre=np.asarray(poly.centroid.coords[0]);along=float(np.dot(centre,u))
+        x0,y0,x1,y1=poly.bounds;radius=max(1,math.hypot(x1-x0,y1-y0)*2)
+        q0=(low-c)/magnitude;q1=(high-c)/magnitude
+        strip=Polygon([n*q0+u*(along-radius),n*q1+u*(along-radius),n*q1+u*(along+radius),n*q0+u*(along+radius)])
+        return poly.intersection(strip)

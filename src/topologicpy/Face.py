@@ -1732,8 +1732,14 @@ class Face():
         numWorkers: int = None,
     ):
         """
-        Creates an offset Face by independently offsetting its external and internal
-        boundary Wires.
+        Creates an offset planar region, preserving all surviving components.
+
+        Returns a Face for one region, a Cluster of Faces for several regions,
+        or None if no positive-area region survives or the operation fails.
+        Multiple regions print a warning unless silent=True. Uniform polygonal
+        offsets handle neck collapse, merging holes, and holes reaching the
+        exterior. Valid curved boundary collisions use native face Booleans;
+        curves are never silently tessellated.
 
         The external boundary and all internal boundary Wires are first normalized
         to the same traversal direction. The external boundary is then passed to
@@ -1744,18 +1750,11 @@ class Face():
         boundary moves inward while holes move outward. Explicit per-Edge values
         stored under ``offsetKey`` always take precedence over these defaults.
 
-        After offsetting, the method validates that:
-
-        * every resulting boundary is a closed manifold Wire;
-        * no resulting boundary self-intersects;
-        * every hole remains completely inside the external boundary;
-        * no hole touches or crosses the external boundary;
-        * holes neither touch, overlap, nor contain one another;
-        * the reconstructed Face contains the expected number of holes;
-        * the resulting Face has positive area;
-        * the resulting native shape is valid when native validation is available.
-
-        If any of these conditions fail, None is returned.
+        Every returned Face is validated independently. Holes can merge,
+        disappear, or become exterior boundaries as the offset changes topology.
+        transferDictionaries applies the source Face dictionary to every region
+        and to the returned Cluster. The ordinary Wire path retains its existing
+        Edge/Vertex dictionary transfer behaviour.
 
         Parameters
         ----------
@@ -1790,7 +1789,9 @@ class Face():
             Default is True.
         transferDictionaries : bool , optional
             If True, dictionaries are transferred by Wire.ByOffset and the input
-            Face dictionary is assigned to the returned Face. Default is False.
+            Face dictionary is assigned to every returned region and the Cluster,
+            if present. New region boundaries do not necessarily have one-to-one
+            source Edge/Vertex correspondences. Default is False.
         epsilon : float , optional
             Cleanup tolerance passed to Wire.ByOffset. Default is 0.01.
         tolerance : float , optional
@@ -1802,9 +1803,9 @@ class Face():
 
         Returns
         -------
-        topologic_core.Face
-            The offset Face, or None if the offset cannot be constructed as a valid
-            manifold Face.
+        topologic_core.Face or topologic_core.Cluster or None
+            One offset Face, a Cluster containing all surviving Faces, or None.
+            Use Topology.Faces(result) to obtain regions from either return type.
 
         """
 
@@ -1820,7 +1821,35 @@ class Face():
         # Helpers
         # ------------------------------------------------------------------
 
+        region_fallback = None
+
+        def finish_regions(regions):
+            from topologicpy.Cluster import Cluster
+            if any(not native_is_valid(f) for f in regions):
+                if not silent:
+                    print('Face.ByOffset - Error: An offset region is geometrically invalid. Returning None.')
+                return None
+            regions = [f for f in regions if topology_area(f) > max(tolerance*tolerance, 1e-10)]
+            if not regions:
+                if not silent:
+                    print("Face.ByOffset - Warning: The offset leaves no positive-area regions. Returning None.")
+                return None
+            if transferDictionaries:
+                dictionary = Topology.Dictionary(face, silent=True)
+                if dictionary:
+                    regions = [Topology.SetDictionary(f, dictionary) for f in regions]
+            if len(regions) == 1:
+                return regions[0]
+            result = Cluster.ByTopologies(regions, silent=True)
+            if transferDictionaries and dictionary:
+                result = Topology.SetDictionary(result, dictionary)
+            if not silent:
+                print(f"Face.ByOffset - Warning: The offset produces {len(regions)} separate regions. Returning a Cluster of Faces.")
+            return result
+
         def error(message):
+            if region_fallback is not None:
+                return finish_regions(region_fallback)
             if not silent:
                 print(f"Face.ByOffset - Error: {message} Returning None.")
             return None
@@ -2677,6 +2706,20 @@ class Face():
                 aligned_wire
             )
 
+        # Resolve uniform polygonal offsets as regions as well as boundary
+        # wires. Erosion can split a narrow neck, merge holes, or consume the
+        # whole face; an independently offset wire cannot represent all of
+        # these events. Normal single-region cases retain the exact Wire path.
+        resolved = Face._OffsetPlanarRegions(
+            face, external_wire, aligned_internal_wires, face_normal,
+            offset, offsetKey, stepOffsetA, stepOffsetB,
+            stepOffsetKeyA, stepOffsetKeyB, reverse, tolerance,
+        )
+        if resolved is not NotImplemented:
+            region_fallback = resolved
+            if len(resolved) != 1:
+                return finish_regions(resolved)
+
         # ------------------------------------------------------------------
         # Offset external boundary
         # ------------------------------------------------------------------
@@ -2827,6 +2870,32 @@ class Face():
                 hole_region
             )
 
+        # Valid offset boundaries can intersect one another without making
+        # the remaining region invalid. Resolve these topology changes with
+        # native face Booleans, retaining exact curved offset boundaries.
+        if region_fallback is None and hole_regions:
+            remainder = outer_region
+            boolean_ok = True
+            for hole_region in hole_regions:
+                try:
+                    remainder = Topology.Difference(remainder, hole_region, tolerance=tolerance, silent=True)
+                except Exception:
+                    boolean_ok = False
+                    break
+                if remainder is None:
+                    # A covering hole legitimately consumes the outer region;
+                    # distinguish that from a failed Boolean operation.
+                    if hole_is_inside_outer(outer_region, hole_region):
+                        region_fallback = []
+                    boolean_ok = False
+                    break
+            if boolean_ok:
+                candidates = topology_faces(remainder)
+                if candidates and all(native_is_valid(f) for f in candidates):
+                    region_fallback = candidates
+            if region_fallback is not None and len(region_fallback) != 1:
+                return finish_regions(region_fallback)
+
         # ------------------------------------------------------------------
         # Validate every hole against the external boundary.
         # ------------------------------------------------------------------
@@ -2945,6 +3014,11 @@ class Face():
                 "The reconstructed offset Face has zero or negligible area."
             )
 
+        if region_fallback is not None:
+            expected_area = sum(topology_area(f) for f in region_fallback)
+            if abs(result_area - expected_area) > max(tolerance*tolerance*10, expected_area*1e-7, 1e-9):
+                return finish_regions(region_fallback)
+
         # ------------------------------------------------------------------
         # Transfer Face dictionary
         # ------------------------------------------------------------------
@@ -2964,6 +3038,91 @@ class Face():
             except Exception:
                 pass
 
+        return result
+
+    @staticmethod
+    def _OffsetPlanarRegions(face, external, internals, normal, offset,
+                             offsetKey, stepA, stepB, stepKeyA, stepKeyB,
+                             reverse, tolerance):
+        """Resolve uniform linear-boundary offsets in the face's own plane.
+
+        NotImplemented selects the existing exact variable/curved Wire path.
+        An empty list represents genuine complete erosion, not a failed offset.
+        """
+        from topologicpy.Wire import Wire
+        from topologicpy.Edge import Edge
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+        from shapely.geometry import Polygon
+        import numpy as np
+
+        if abs(stepA) > tolerance or abs(stepB) > tolerance:
+            return NotImplemented
+        rings = []
+        inferred_offset = None
+        for index, wire in enumerate([external] + list(internals)):
+            edges = Wire._OrderedEdges(wire, tolerance=tolerance, silent=True)
+            if not edges:
+                return NotImplemented
+            default = offset if index == 0 else -offset
+            distances = []
+            for edge in edges:
+                if not Edge.IsLinear(edge, tolerance=tolerance, silent=True):
+                    return NotImplemented
+                dictionary = Topology.Dictionary(edge, silent=True)
+                value = Dictionary.ValueAtKey(dictionary, offsetKey, None) if dictionary else None
+                try:
+                    value = default if value is None else float(value)
+                    if not math.isfinite(value):
+                        return NotImplemented
+                    distances.append(value)
+                except (TypeError, ValueError):
+                    return NotImplemented
+                for vertex in (Edge.StartVertex(edge), Edge.EndVertex(edge)):
+                    dictionary = Topology.Dictionary(vertex, silent=True)
+                    for key in (stepKeyA, stepKeyB):
+                        value = Dictionary.ValueAtKey(dictionary, key, None) if dictionary else None
+                        try:
+                            if value is not None and abs(float(value)) > tolerance:
+                                return NotImplemented
+                        except (TypeError, ValueError):
+                            return NotImplemented
+            if inferred_offset is None:
+                inferred_offset = distances[0]
+            expected = inferred_offset if index == 0 else -inferred_offset
+            if any(abs(value-expected) > tolerance for value in distances):
+                return NotImplemented
+            rings.append([np.asarray(Vertex.Coordinates(Edge.StartVertex(e), mantissa=None), dtype=float) for e in edges])
+        origin = rings[0][0]
+        n = np.asarray(normal, dtype=float)
+        u = next((p-origin for p in rings[0][1:] if np.linalg.norm(p-origin) > tolerance), None)
+        if u is None:
+            return NotImplemented
+        u = u - np.dot(u,n)*n
+        u /= np.linalg.norm(u)
+        v = np.cross(n,u)
+        def local(ring):
+            return [(float(np.dot(p-origin,u)), float(np.dot(p-origin,v))) for p in ring]
+        polygon = Polygon(local(rings[0]), [local(ring) for ring in rings[1:]])
+        if not polygon.is_valid:
+            return NotImplemented
+        effective = -inferred_offset if reverse else inferred_offset
+        geometry = polygon.buffer(-effective, join_style='mitre', mitre_limit=1e12)
+        parts = [geometry] if geometry.geom_type == 'Polygon' else list(getattr(geometry, 'geoms', []))
+        parts = sorted((p for p in parts if p.geom_type == 'Polygon' and p.area > max(tolerance*tolerance,1e-10)), key=lambda p:(-p.area,p.centroid.x,p.centroid.y))
+        result = []
+        def world_wire(ring):
+            points = [origin+float(x)*u+float(y)*v for x,y in list(ring.coords)[:-1]]
+            return Wire.ByVertices([Vertex.ByCoordinates(*p) for p in points], close=True, tolerance=tolerance, silent=True)
+        for part in parts:
+            candidate = Face.ByWires(world_wire(part.exterior), [world_wire(h) for h in part.interiors], tolerance=tolerance, silent=True)
+            if not Topology.IsInstance(candidate,'Face'):
+                return NotImplemented
+            candidate_normal = Face.Normal(candidate, mantissa=None, silent=True)
+            if candidate_normal and sum(a*b for a,b in zip(candidate_normal,normal)) < 0:
+                candidate = Face.Invert(candidate, tolerance=tolerance, silent=True)
+            result.append(candidate)
         return result
 
     @staticmethod  
@@ -3009,8 +3168,9 @@ class Face():
         
         Returns
         -------
-        topologic_core.Face
-            The created face.
+        topologic_core.Face or topologic_core.Cluster
+            The created region(s). Multiple regions use their combined area and
+            return a Cluster, following Face.ByOffset.
 
         """
         from topologicpy.Wire import Wire
@@ -3052,12 +3212,15 @@ class Face():
                     edge = Topology.SetDictionary(edge, d)
                 
                 # Offset the wire
-                new_face = Face.ByOffset(face, offsetKey=offsetKey, silent=silent, numWorkers=numWorkers)
+                new_face = Face.ByOffset(face, offsetKey=offsetKey, silent=True, numWorkers=numWorkers)
                 # Check for an illegal wire. In that case, return a very large loss value.
-                if not Topology.IsInstance(new_face, "Face"):
-                    return (float("inf"))
-                # Calculate the area of the new wire/face
-                new_area = Face.Area(new_face)
+                if new_face is None:
+                    return float("inf")
+                new_faces = [new_face] if Topology.IsInstance(new_face, "Face") else (Topology.Faces(new_face, silent=True) or [])
+                if not new_faces:
+                    return float("inf")
+                # Optimise the total area of all surviving offset regions.
+                new_area = sum(Face.Area(f) for f in new_faces)
                 
                 # The objective is the difference between the target hole area and the actual hole area
                 # We want this difference to be as close to 0 as possible
@@ -3091,7 +3254,17 @@ class Face():
                 print("Face.OffsetByArea - Error: The input face parameter is not a valid face. Returning None.")
             return None
         
-        edges = Topology.Edges(face)
+        # Match the boundary wrappers used by ByOffset so optimiser values
+        # update every source edge, including preserved standalone boundaries.
+        external = getattr(face, "external", None)
+        if not Topology.IsInstance(external, "Wire"):
+            external = Face.ExternalBoundary(face)
+        native_internals = Face.InternalBoundaries(face) or []
+        internals = getattr(face, "internals", None)
+        if not isinstance(internals, (list, tuple)) or len(internals) != len(native_internals):
+            internals = native_internals
+        edges = [edge for boundary in [external] + list(internals)
+                 for edge in (Wire.Edges(boundary, silent=True) or [])]
         # Compute the offset amounts
         offsets = compute_offset_amounts(face,
                                 area = area,
@@ -3110,7 +3283,7 @@ class Face():
                 
         # Offset the face
         return_face = Face.ByOffset(face, offsetKey=offsetKey, silent=silent, numWorkers=numWorkers)
-        if not Topology.IsInstance(face, "Face"):
+        if return_face is None:
             if not silent:
                 print("Face.OffsetByArea - Error: Could not create the offset face. Returning None.")
             return None
