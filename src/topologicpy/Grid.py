@@ -548,6 +548,56 @@ class Grid:
     # -------------------------------------------------------------------------
 
     @staticmethod
+    def OnFaces(faces, spacing: float = 1.0, origin=None, direction=None,
+                includeBoundary: bool = False, tolerance: float = 0.0001):
+        """Project one shared XY grid onto planar horizontal/sloping Faces.
+
+        Unlike independent OnFace calls, all faces share the same grid origin
+        and direction. Spacing is measured in XY, not along a slope. Holes and
+        face boundaries clip the lines. Returns a Cluster of grid Edges or None
+        when no lines intersect. Use OnFace for intrinsic curved-surface grids.
+        """
+        import math
+        from shapely.affinity import affine_transform
+        from shapely.geometry import LineString
+        from topologicpy.Navigation import Navigation
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Cluster import Cluster
+        if not math.isfinite(spacing) or spacing <= 0:
+            raise ValueError('spacing must be positive and finite.')
+        if tolerance <= 0:raise ValueError('tolerance must be positive.')
+        origin,direction=Navigation._Frame(origin,direction)
+        ox,oy=origin;ux,uy=direction;edges=[]
+        for face in faces:
+            record=Navigation._Record(face,tolerance=tolerance)
+            poly=affine_transform(Navigation._Shape(record),[ux,uy,-uy,ux,-ux*ox-uy*oy,uy*ox-ux*oy])
+            x0,y0,x1,y1=poly.bounds
+            if (x1-x0+y1-y0)/spacing > 200000:
+                raise ValueError('Grid is too dense. Increase spacing.')
+            lines=[]
+            for axis,lo,hi in [(0,x0,x1),(1,y0,y1)]:
+                for i in range(math.ceil((lo-tolerance)/spacing),math.floor((hi+tolerance)/spacing)+1):
+                    value=i*spacing
+                    if not includeBoundary and (abs(value-lo)<tolerance or abs(value-hi)<tolerance):continue
+                    lines.append(LineString([(value,y0),(value,y1)]) if axis==0 else LineString([(x0,value),(x1,value)]))
+            if includeBoundary:lines.append(poly.boundary)
+            for line in lines:
+                clipped=line.intersection(poly)
+                parts=[clipped] if clipped.geom_type in ('LineString','LinearRing') else list(getattr(clipped,'geoms',[]))
+                for part in parts:
+                    if part.geom_type not in ('LineString','LinearRing'):continue
+                    points=list(part.coords)
+                    for a,b in zip(points,points[1:]):
+                        def point(p):
+                            x=ox+ux*p[0]-uy*p[1];y=oy+uy*p[0]+ux*p[1]
+                            return Vertex.ByCoordinates(x,y,Navigation._Height(record,x,y))
+                        if math.dist(a,b)<=tolerance:continue
+                        edge=Edge.ByVertices([point(a),point(b)],tolerance=tolerance)
+                        if edge is not None:edges.append(edge)
+        return Cluster.ByTopologies(edges) if edges else None
+
+    @staticmethod
     def OnFace(
         face,
         spacing: float = 1.0,

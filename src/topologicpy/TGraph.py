@@ -15262,9 +15262,16 @@ class TGraph:
         mantissa: int = 6,
         tolerance: float = 0.0001,
         silent: bool = False,
+        host=None,
     ):
         """
         Creates a TGraph from a Topologic topology and selected relationship rules.
+
+        When host is a planar Face, retain only connections whose straight
+        representative-to-representative segments lie within that Face, including
+        its boundary and excluding holes. Vertices and their source identities
+        are preserved. This optional navigation constraint is applied in a
+        vectorized planar batch; omitted host preserves existing behavior.
 
         Parameters
         ----------
@@ -15437,6 +15444,15 @@ class TGraph:
         # Caches
         # ------------------------------------------------------------------
 
+        # Keep objects alive for all id-keyed caches. Kernel operations can return
+        # temporary wrappers whose Python ids would otherwise be recycled within
+        # this call, corrupting geometric identities and shared-edge coordinates.
+        object_references = {}
+        def _object_id(value):
+            value_id = id(value)
+            object_references[value_id] = value
+            return value_id
+
         type_cache = {}
 
         dictionary_cache = {}
@@ -15476,13 +15492,13 @@ class TGraph:
         # ------------------------------------------------------------------
 
         def _id(t):
-            return id(t)
+            return _object_id(t)
 
         def _type_name(t):
             if t is None:
                 return ""
 
-            tid = id(t)
+            tid = _object_id(t)
             value = type_cache.get(tid)
 
             if value is not None:
@@ -15506,7 +15522,7 @@ class TGraph:
             if t is None:
                 return None
 
-            tid = id(t)
+            tid = _object_id(t)
 
             if tid in dictionary_cache:
                 return dictionary_cache[tid]
@@ -15528,7 +15544,7 @@ class TGraph:
             if d is None:
                 return []
 
-            did = id(d)
+            did = _object_id(d)
 
             if did in dictionary_keys_cache:
                 return dictionary_keys_cache[did]
@@ -15545,7 +15561,7 @@ class TGraph:
             if d is None:
                 return {}
 
-            did = id(d)
+            did = _object_id(d)
 
             if did in dictionary_lower_keys_cache:
                 return dictionary_lower_keys_cache[did]
@@ -15604,7 +15620,7 @@ class TGraph:
             if t is None:
                 return {}
 
-            tid = id(t)
+            tid = _object_id(t)
 
             if tid in dictionary_python_cache:
                 return dict(dictionary_python_cache[tid])
@@ -15650,7 +15666,7 @@ class TGraph:
             if t is None:
                 return None, None, None
 
-            tid = id(t)
+            tid = _object_id(t)
 
             if tid in brep_cache:
                 return brep_cache[tid]
@@ -15720,7 +15736,7 @@ class TGraph:
             if v is None:
                 return None
 
-            vid = id(v)
+            vid = _object_id(v)
 
             if vid in coordinate_cache:
                 return coordinate_cache[vid]
@@ -15787,7 +15803,7 @@ class TGraph:
             if t is None:
                 return []
 
-            tid = id(t)
+            tid = _object_id(t)
 
             if tid in cache:
                 return cache[tid]
@@ -15886,7 +15902,7 @@ class TGraph:
             return _coordinates(v)
 
         def _edge_key(e):
-            cache_key = ("edge", id(e))
+            cache_key = ("edge", _object_id(e))
 
             if cache_key in boundary_key_cache:
                 return boundary_key_cache[cache_key]
@@ -15910,7 +15926,7 @@ class TGraph:
             return result
 
         def _face_key(f):
-            cache_key = ("face", id(f))
+            cache_key = ("face", _object_id(f))
 
             if cache_key in boundary_key_cache:
                 return boundary_key_cache[cache_key]
@@ -15940,7 +15956,7 @@ class TGraph:
             if t is None or not needs_apertures:
                 return []
 
-            tid = id(t)
+            tid = _object_id(t)
 
             if tid in apertures_cache:
                 return apertures_cache[tid]
@@ -15957,7 +15973,7 @@ class TGraph:
             if t is None or not toContents:
                 return []
 
-            tid = id(t)
+            tid = _object_id(t)
 
             if tid in contents_cache:
                 return contents_cache[tid]
@@ -16017,7 +16033,7 @@ class TGraph:
                 if aperture_topology is None:
                     return (
                         "aperture",
-                        id(t),
+                        _object_id(t),
                     )
 
                 underlying_identity = _geometric_identity(
@@ -16076,7 +16092,7 @@ class TGraph:
 
             return (
                 type_name,
-                id(t),
+                _object_id(t),
             )
 
         # ------------------------------------------------------------------
@@ -16141,7 +16157,7 @@ class TGraph:
             # --------------------------------------------------------------
 
             object_key = (
-                id(original_t),
+                _object_id(original_t),
                 category,
                 bool(apply_offset),
             )
@@ -16292,7 +16308,7 @@ class TGraph:
                 return None
 
             object_key = (
-                id(t),
+                _object_id(t),
                 category,
                 False,
             )
@@ -17228,6 +17244,45 @@ class TGraph:
                     "generated_by"
                 ] = "TGraph.ByTopology"
 
+        if host is not None:
+            from topologicpy.Face import Face
+            from topologicpy.Wire import Wire
+            from topologicpy.Grid import Grid
+            import numpy as np
+            import shapely
+            try:
+                if not Topology.IsInstance(host,'Face') or not Topology.IsPlanar(host,tolerance=tolerance,silent=True):
+                    raise ValueError('host must be a planar Face')
+                basis=Grid._Basis(Face.Normal(host),tolerance=tolerance)
+                if basis is None:raise ValueError('could not determine the host plane')
+                u,v=basis
+                normal=np.cross(u,v)
+                origin=np.asarray(Vertex.Coordinates(Topology.Centroid(host),mantissa=None),dtype=float)
+                def project(points):
+                    coordinates=np.asarray(points,dtype=float)-origin
+                    return np.column_stack((coordinates@np.asarray(u),coordinates@np.asarray(v)))
+                def ring(wire):
+                    return project([Vertex.Coordinates(p,mantissa=None) for p in Wire.Vertices(wire)])
+                domain=shapely.Polygon(ring(Face.ExternalBoundary(host)),[ring(w) for w in Face.InternalBoundaries(host)])
+                if domain.is_empty or not domain.is_valid:raise ValueError('host has an invalid planar boundary')
+                domain=domain.buffer(abs(tolerance))
+                records=TGraph.Vertices(graph)
+                coordinates=np.asarray([[p['dictionary'][key] for key in ('x','y','z')] for p in records],dtype=float)
+                positions={p['index']:i for i,p in enumerate(records)}
+                projected=project(coordinates)
+                on_plane=np.abs((coordinates-origin)@normal)<=abs(tolerance)
+                edges=TGraph.Edges(graph)
+                if edges:
+                    pairs=np.asarray([[positions[e['src']],positions[e['dst']]] for e in edges],dtype=int)
+                    segments=shapely.linestrings(projected[pairs])
+                    allowed=shapely.covers(domain,segments)&on_plane[pairs].all(axis=1)
+                    removed=0
+                    for edge,keep in zip(edges,allowed):
+                        if not keep:graph.RemoveEdge(edge,silent=True);removed+=1
+                    graph._dictionary['host_constraint']={'planar':True,'removed_edges':removed,'tolerance':tolerance}
+            except Exception as error:
+                if not silent:print(f'TGraph.ByTopology - Error: Could not constrain graph to host: {error}')
+                return None
         return graph
 
     # @staticmethod

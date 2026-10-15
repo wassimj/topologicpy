@@ -20,7 +20,7 @@ dependencies = [
     "numpy>=1.18.0",
     "scipy>=1.4.1",
     "pandas",
-    "shapely",
+    "shapely>=2.0",
     "plotly>=5.0",
     "lark",
     "webcolors",

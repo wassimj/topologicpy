@@ -389,6 +389,43 @@ class Rhino:
         return result
 
     @staticmethod
+    def ByMesh(mesh, tolerance: float = 0.0001, silent: bool = False):
+        """Import an existing Rhino Mesh without tessellating other geometry.
+
+        Indexed vertices are shared between triangles/quads. Planar quads are
+        retained; non-planar quads use the mesh's two triangular facets. Returns
+        a Face, Shell, or Cluster for disconnected/non-manifold meshes. Units
+        remain those of the source document, as with other Rhino imports.
+        """
+        rhino3dm = Rhino._Rhino3dm(silent=silent)
+        if rhino3dm is None or not isinstance(mesh, rhino3dm.Mesh):
+            return None
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Face import Face
+        from topologicpy.Shell import Shell
+        from topologicpy.Cluster import Cluster
+        from topologicpy.Topology import Topology
+        vertices=[Vertex.ByCoordinates(float(v.X),float(v.Y),float(v.Z)) for v in mesh.Vertices]
+        faces=[]
+        for record in mesh.Faces:
+            indices=list(record)
+            if indices[2]==indices[3]:indices=indices[:3]
+            if any(i<0 or i>=len(vertices) for i in indices):return None
+            face=Face.ByVertices([vertices[i] for i in indices],tolerance=tolerance,silent=True)
+            if face is not None:
+                faces.append(face)
+            elif len(indices)==4:
+                for ids in ([indices[0],indices[1],indices[2]],[indices[0],indices[2],indices[3]]):
+                    triangle=Face.ByVertices([vertices[i] for i in ids],tolerance=tolerance,silent=True)
+                    if triangle is None:return None
+                    faces.append(triangle)
+            else:return None
+        if not faces:return None
+        if len(faces)==1:return faces[0]
+        shell=Shell.ByFaces(faces,tolerance=tolerance,silent=True)
+        return shell if Topology.IsInstance(shell,'Shell') else Cluster.ByTopologies(faces,silent=True)
+
+    @staticmethod
     def _Geometry(geometry, tolerance: float = 0.0001, silent: bool = False):
         rhino3dm = Rhino._Rhino3dm(silent=True)
         if rhino3dm is None:
@@ -398,6 +435,8 @@ class Rhino:
         if isinstance(geometry, rhino3dm.Point):
             location = geometry.Location
             return Vertex.ByCoordinates(float(location.X), float(location.Y), float(location.Z))
+        if isinstance(geometry, rhino3dm.Mesh):
+            return Rhino.ByMesh(geometry,tolerance=tolerance,silent=silent)
         if isinstance(geometry, rhino3dm.Brep):
             return Rhino._Brep(geometry, tolerance=tolerance, silent=silent)
         if isinstance(geometry, rhino3dm.Surface):

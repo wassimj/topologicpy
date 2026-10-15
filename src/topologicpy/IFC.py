@@ -3381,6 +3381,21 @@ class IFC:
     """
 
     @staticmethod
+    def NavigationModel(model, eyeHeight: float = 1.6, maxSlope: float = 45.0,
+                        obstacleTypes=None, excludeTypes=None):
+        """Extract an editable NavigationModel from a parsed IFC model.
+
+        Coordinates are world metres. Roofs are excluded, containment determines
+        storeys before elevation fallback, and openings cut host obstacles.
+        maxSlope is the maximum slab walking slope in degrees. Stairs, ramps,
+        landings and lifts remain separate connector descriptors. This method
+        does not reparse the input model. See topologicpy.Navigation.
+        """
+        from topologicpy.Navigation import Navigation
+        return Navigation._ByIFC(model, eyeHeight=eyeHeight, maxSlope=maxSlope,
+                                 obstacleTypes=obstacleTypes, excludeTypes=excludeTypes)
+
+    @staticmethod
     def Export(
         model,
         path: str,
@@ -10079,3 +10094,570 @@ class IFC:
         if isinstance(value, tuple):
             return any(IFC._value_contains_ref(v, ref) for v in value)
         return False
+
+
+    # Navigation extraction and IFC mesh adapters.
+
+    _NavigationBoxTriangles = [[0, 2, 1], [0, 3, 2], [4, 5, 6], [4, 6, 7], [0, 1, 5], [0, 5, 4], [1, 2, 6], [1, 6, 5], [2, 3, 7], [2, 7, 6], [3, 0, 4], [3, 4, 7]]
+
+    @staticmethod
+    def _NavigationTopSurfaces(vertices, triangles):
+        """Merge coplanar upward triangles; preserve inner rings and sloping planes."""
+        from collections import defaultdict
+        import numpy as np
+        from shapely.geometry import Polygon
+        from shapely.ops import unary_union
+        from shapely import make_valid
+        from topologicpy.Navigation import Navigation
+        groups = defaultdict(list)
+        v = np.asarray(vertices, dtype=float)
+        for face in triangles:
+            p = v[list(face)]
+            n = np.cross(p[1] - p[0], p[2] - p[0])
+            if n[2] <= Navigation._NavigationTolerance:
+                continue
+            a, b = (-n[0] / n[2], -n[1] / n[2])
+            c = p[0, 2] - a * p[0, 0] - b * p[0, 1]
+            poly = Polygon(p[:, :2])
+            if poly.area > Navigation._NavigationTolerance * Navigation._NavigationTolerance:
+                groups[round(a, 6), round(b, 6), round(float(c), 5)].append(poly)
+        return [(p, plane) for plane, items in groups.items() for p in Navigation._Polygons(make_valid(unary_union(items)))]
+
+    @staticmethod
+    def _NavigationSection(mesh, z):
+        """Horizontal solid section, respecting nested void contours."""
+        import numpy as np
+        from shapely.geometry import Polygon, LineString, box, GeometryCollection
+        from shapely.ops import unary_union, polygonize
+        from topologicpy.Navigation import Navigation
+        if not mesh or z < mesh['bounds'][0][2] - Navigation._NavigationTolerance or z > mesh['bounds'][1][2] + Navigation._NavigationTolerance:
+            return GeometryCollection()
+        if mesh.get('bounding_box'):
+            from shapely.geometry import box
+            lo, hi = mesh['bounds']
+            return box(lo[0], lo[1], hi[0], hi[1])
+        v = np.asarray(mesh['vertices'])
+        lines = []
+        z += Navigation._NavigationTolerance * 0.13
+        for tri in mesh['triangles']:
+            p = v[tri]
+            hits = []
+            for i, j in [(0, 1), (1, 2), (2, 0)]:
+                if p[i, 2] <= z < p[j, 2] or p[j, 2] <= z < p[i, 2]:
+                    t = (z - p[i, 2]) / (p[j, 2] - p[i, 2])
+                    hits.append(tuple((p[i] + t * (p[j] - p[i]))[:2]))
+            if len(hits) == 2 and hits[0] != hits[1]:
+                lines.append(LineString(hits))
+        if not lines:
+            return GeometryCollection()
+        parts = list(polygonize(unary_union(lines)))
+        rings = [Polygon(p.exterior) for p in parts]
+        kept = [p for p in parts if sum((r.covers(p.representative_point()) for r in rings)) % 2 == 1]
+        return unary_union(kept)
+
+    @staticmethod
+    def _NavigationExtract(model, filename='IFC navigation', eyeHeight=1.6, maxSlope=45.0, obstacleTypes=None, excludeTypes=None):
+        import math
+        from shapely.geometry import box
+        from shapely.ops import unary_union
+        from shapely import make_valid
+        from topologicpy.Navigation import Navigation
+        parsed = IFC._NavigationRead(model)
+        meshes = parsed['meshes']
+        objects = parsed['objects']
+        storeys = parsed['storeys']
+        storeys.sort(key=lambda s: s['elevation'])
+        has_ifc_storeys = bool(storeys)
+
+        def assigned(obj, z):
+            ident = parsed['container'](obj.id())
+            if ident is not None:
+                if parsed['entities'][ident].type == 'IFCBUILDINGSTOREY':
+                    return str(ident)
+                storey = parsed['ancestor'](ident, {'IFCBUILDINGSTOREY'})
+                if storey is not None:
+                    return str(storey)
+            if has_ifc_storeys:
+                return min(storeys, key=lambda s: abs(s['elevation'] - z))['id']
+            key = f'z:{round(z, 2)}'
+            if not any((s['id'] == key for s in storeys)):
+                storeys.append({'id': key, 'name': f'Level {z:g} m', 'elevation': z})
+            return key
+
+        def assembly(obj):
+            return str(parsed['ancestor'](obj.id(), {'IFCSTAIR', 'IFCRAMP'}) or obj.id())
+
+        def opening_cut(ident, z):
+            from shapely.geometry import box
+            parts = []
+            for opening in parsed['voids'].get(ident, []):
+                m = meshes.get(opening)
+                if m and m['bounds'][0][2] - Navigation._NavigationTolerance <= z <= m['bounds'][1][2] + Navigation._NavigationTolerance:
+                    lo, hi = m['bounds']
+                    parts.append(box(lo[0], lo[1], hi[0], hi[1]))
+            return unary_union(parts)
+        surfaces = []
+        connectors = []
+        lifts = []
+        doors = []
+        obstacles = []
+        for ident, mesh in meshes.items():
+            obj = objects[ident]
+            typ = obj.is_a()
+            z = mesh['bounds'][0][2]
+            sid = assigned(obj, z)
+            if any((obj.is_a(t) for t in excludeTypes or [])):
+                continue
+            parent_roof = parsed['ancestor'](ident, {'IFCROOF'}) is not None
+            is_roof = obj.is_a('IfcRoof') or getattr(obj, 'PredefinedType', None) == 'ROOF' or parent_roof
+            tops = IFC._NavigationTopSurfaces(mesh['vertices'], mesh['triangles']) if obj.is_a('IfcSlab') or obj.is_a('IfcStairFlight') or obj.is_a('IfcStair') or obj.is_a('IfcRampFlight') or obj.is_a('IfcRamp') else []
+            if obj.is_a('IfcSlab') and (not is_roof):
+                kind = 'landing' if getattr(obj, 'PredefinedType', None) == 'LANDING' else 'floor'
+                for poly, plane in tops:
+                    data = Navigation._Surface(poly, plane, sid, kind, str(ident))
+                    if kind == 'floor':
+                        if math.degrees(math.atan(math.hypot(*plane[:2]))) <= maxSlope:
+                            surfaces.append(data)
+                    else:
+                        connectors.append({**data, 'group': assembly(obj), 'type': 'stair'})
+            elif obj.is_a('IfcStairFlight') or obj.is_a('IfcStair'):
+                if obj.is_a('IfcStair') and bool(parsed['children'].get(ident)):
+                    continue
+                for poly, plane in tops:
+                    if abs(plane[0]) + abs(plane[1]) < 0.01:
+                        connectors.append({**Navigation._Surface(poly, plane, sid, 'tread', str(ident)), 'group': assembly(obj), 'type': 'stair'})
+            elif obj.is_a('IfcRampFlight') or obj.is_a('IfcRamp'):
+                if obj.is_a('IfcRamp') and bool(parsed['children'].get(ident)):
+                    continue
+                if tops:
+                    connectors.append({'type': 'ramp', 'group': assembly(obj), 'source': str(ident), 'storey': sid, 'surfaces': [Navigation._Surface(p, pl, sid, 'ramp', str(ident)) for p, pl in tops]})
+            elif obj.is_a('IfcTransportElement') and (getattr(obj, 'PredefinedType', None) == 'ELEVATOR' or any((t in (str(obj.Name) + ' ' + str(getattr(obj, 'ObjectType', ''))).lower() for t in ['lift', 'elevator']))):
+                lifts.append({'source': str(ident), 'bounds': mesh['bounds'], 'storey': sid})
+            elif obj.is_a('IfcDoor'):
+                doors.append({'source': str(ident), 'bounds': mesh['bounds'], 'storey': sid})
+            elif not is_roof and (not any((obj.is_a(t) for t in ['IfcOpeningElement', 'IfcSpace', 'IfcAnnotation', 'IfcBuildingElementProxy']))):
+                if obstacleTypes is None or any((obj.is_a(t) for t in obstacleTypes)):
+                    obstacles.append({**mesh, 'source_id': ident})
+            elif obj.is_a('IfcBuildingElementProxy') and (obstacleTypes is None or any((obj.is_a(t) for t in obstacleTypes))):
+                obstacles.append({**mesh, 'source_id': ident})
+        cuts = {}
+
+        def cut(z):
+            key = round(z, 4)
+            if key not in cuts:
+                cuts[key] = unary_union([IFC._NavigationSection(m, z).difference(opening_cut(m['source_id'], z)) for m in obstacles])
+            return cuts[key]
+        levels = set()
+        for s in surfaces + [c for c in connectors if c.get('kind') == 'landing']:
+            p = Navigation._Shape(s).representative_point()
+            levels.add((s['storey'], round(Navigation._Height(s, p.x, p.y), 3)))
+        walking_cuts = []
+        for sid, z in levels:
+            for p in Navigation._Polygons(make_valid(cut(z + 0.1))):
+                walking_cuts.append(Navigation._Surface(p, [0, 0, z], sid, 'obstacle'))
+        raw_faces = []
+        for s in surfaces:
+            p = Navigation._Shape(s).representative_point()
+            z = Navigation._Height(s, p.x, p.y)
+            raw_faces.extend((Navigation._Surface(part, s['plane'], s['storey'], source=s['source']) for part in Navigation._Polygons(Navigation._Shape(s).difference(opening_cut(int(s['source']), z)))))
+        return {'_walkable_faces': raw_faces, '_obstacle_meshes': obstacles, '_void_meshes': {k: [meshes[i] for i in ids if i in meshes] for k, ids in parsed['voids'].items()}, 'storeys': sorted(storeys, key=lambda s: s['elevation']), 'connectors': connectors, 'lifts': lifts, 'doors': doors, 'obstacles': walking_cuts}
+
+    @staticmethod
+    def _NavigationBoxMesh(bounds):
+        lo, hi = bounds
+        x, y, z = lo
+        X, Y, Z = hi
+        return {'vertices': [[x, y, z], [X, y, z], [X, Y, z], [x, Y, z], [x, y, Z], [X, y, Z], [X, Y, Z], [x, Y, Z]], 'triangles': IFC._NavigationBoxTriangles, 'bounds': bounds, 'bounding_box': True}
+
+    @staticmethod
+    def _NavigationTriangulate(vertices, face):
+        import numpy as np
+        ids = list(face)
+        if len(ids) < 3:
+            return []
+        if len(ids) == 3:
+            return [ids]
+        pts = np.asarray([vertices[i] for i in ids])
+        normal = np.sum(np.cross(pts, np.roll(pts, -1, axis=0)), axis=0)
+        axis = int(np.argmax(np.abs(normal)))
+        p = np.delete(pts, axis, axis=1)
+        cross = lambda a, b, c: float((b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]))
+        area = sum((p[i, 0] * p[(i + 1) % len(p), 1] - p[(i + 1) % len(p), 0] * p[i, 1] for i in range(len(p))))
+        sign = 1 if area >= 0 else -1
+        remaining = list(range(len(ids)))
+        out = []
+        while len(remaining) > 3:
+            found = False
+            for k, b in enumerate(remaining):
+                a, c = (remaining[k - 1], remaining[(k + 1) % len(remaining)])
+                turn = sign * cross(p[a], p[b], p[c])
+                if abs(turn) < 1e-12:
+                    remaining.pop(k)
+                    found = True
+                    break
+                if turn < 0:
+                    continue
+                if any((all((sign * cross(p[u], p[v], p[j]) >= -1e-12 for u, v in [(a, b), (b, c), (c, a)])) for j in remaining if j not in [a, b, c])):
+                    continue
+                out.append([ids[a], ids[b], ids[c]])
+                remaining.pop(k)
+                found = True
+                break
+            if not found:
+                return []
+        if len(remaining) == 3:
+            out.append([ids[i] for i in remaining])
+        return out
+
+    @staticmethod
+    def _NavigationOrientPrisms(vertices, faces):
+        import numpy as np
+        faces = [list(f) for f in faces]
+        v = np.asarray(vertices)
+        i = 0
+        while i + 1 < len(faces):
+            bottom, top = faces[i:i + 2]
+            n = len(bottom)
+            if n < 3 or len(top) != n or i + n + 2 > len(faces):
+                i += 1
+                continue
+            delta = v[top[::-1]] - v[bottom]
+            if np.max(np.abs(delta - delta.mean(axis=0))) > 1e-07 or np.linalg.norm(delta.mean(axis=0)) < 1e-10:
+                i += 1
+                continue
+            allowed = set(bottom + top)
+            sides = faces[i + 2:i + n + 2]
+            if any((len(f) != 4 or not set(f) <= allowed for f in sides)):
+                i += 1
+                continue
+            pts = v[bottom]
+            normal = np.sum(np.cross(pts, np.roll(pts, -1, axis=0)), axis=0)
+            if np.dot(normal, delta.mean(axis=0)) > 0:
+                faces[i] = bottom[::-1]
+                faces[i + 1] = top[::-1]
+            else:
+                for k in range(i + 2, i + n + 2):
+                    faces[k] = faces[k][::-1]
+            i += n + 2
+        return faces
+
+    class _NavigationProduct:
+
+        def __init__(self, entity):
+            self.entity = entity
+            self.type = entity.type
+            self.Name = entity.args[2] if len(entity.args) > 2 else ''
+            self.ObjectType = entity.args[4] if len(entity.args) > 4 else ''
+
+        def id(self):
+            return self.entity.id
+
+        def is_a(self, name=None):
+            if name is None:
+                return 'Ifc' + self.type[3:].title().replace('Standardcase', 'StandardCase').replace('Stairflight', 'StairFlight').replace('Rampflight', 'RampFlight').replace('Openingelement', 'OpeningElement').replace('Furnishingelement', 'FurnishingElement').replace('Transportelement', 'TransportElement').replace('Buildingelementproxy', 'BuildingElementProxy').replace('Wallstandardcase', 'WallStandardCase').replace('Slabstandardcase', 'SlabStandardCase')
+            name = name.upper()
+            if name == 'IFCOPENINGELEMENT':
+                return self.type in {'IFCOPENINGELEMENT', 'IFCOPENINGSTANDARDCASE', 'IFCVOIDINGFEATURE', 'IFCFEATUREELEMENTSUBTRACTION'}
+            if name == 'IFCFURNISHINGELEMENT':
+                return self.type in {'IFCFURNISHINGELEMENT', 'IFCFURNITURE', 'IFCSYSTEMFURNITUREELEMENT'}
+            return self.type == name or (name in {'IFCWALL', 'IFCSLAB', 'IFCDOOR', 'IFCWINDOW'} and self.type.startswith(name))
+
+        @property
+        def PredefinedType(self):
+            return self.entity.args[8] if len(self.entity.args) > 8 and self.type in {'IFCSLAB', 'IFCSLABSTANDARDCASE', 'IFCSLABELEMENTEDCASE', 'IFCROOF', 'IFCTRANSPORTELEMENT'} else None
+
+    @staticmethod
+    def _NavigationRead(model):
+        import math
+        from collections import defaultdict
+        import numpy as np
+        if model is None:
+            raise ValueError('TopologicPy could not parse this IFC file.')
+        entities = IFC.Entities(model, silent=True)
+
+        def ref(value):
+            return entities.get(value[1]) if isinstance(value, tuple) and len(value) == 2 and (str(value[0]).upper() == 'REF') else None
+
+        def refs(values):
+            return [e for v in values or [] if (e := ref(v)) is not None]
+        parents = {}
+        contained = {}
+        children = defaultdict(list)
+        voids = defaultdict(list)
+        for e in entities.values():
+            if len(e.args) < 6:
+                continue
+            if e.type in {'IFCRELAGGREGATES', 'IFCRELNESTS'}:
+                parent = ref(e.args[4])
+                if parent:
+                    for child in refs(e.args[5]):
+                        parents[child.id] = parent.id
+                        children[parent.id].append(child.id)
+            elif e.type == 'IFCRELCONTAINEDINSPATIALSTRUCTURE':
+                target = ref(e.args[5])
+                if target:
+                    for child in refs(e.args[4]):
+                        contained[child.id] = target.id
+            elif e.type == 'IFCRELVOIDSELEMENT':
+                host, opening = (ref(e.args[4]), ref(e.args[5]))
+                if host and opening:
+                    voids[host.id].append(opening.id)
+
+        def ancestor(ident, types):
+            seen = set()
+            while ident not in seen:
+                seen.add(ident)
+                parent = parents.get(ident)
+                if parent is None:
+                    return None
+                if entities[parent].type in types:
+                    return parent
+                ident = parent
+
+        def container(ident):
+            seen = set()
+            while ident not in seen:
+                seen.add(ident)
+                if ident in contained:
+                    return contained[ident]
+                if ident not in parents:
+                    return None
+                ident = parents[ident]
+            return None
+        prefixes = {'EXA': 1e+18, 'PETA': 1000000000000000.0, 'TERA': 1000000000000.0, 'GIGA': 1000000000.0, 'MEGA': 1000000.0, 'KILO': 1000.0, 'HECTO': 100.0, 'DECA': 10, 'DECI': 0.1, 'CENTI': 0.01, 'MILLI': 0.001, 'MICRO': 1e-06, 'NANO': 1e-09, None: 1}
+
+        def numeric(v):
+            if isinstance(v, (int, float)):
+                return float(v)
+            if isinstance(v, tuple) and len(v) == 3:
+                return numeric(v[2][0])
+            return float(v)
+
+        def unit(e, seen=None):
+            seen = set() if seen is None else seen
+            if e is None or e.id in seen:
+                raise ValueError('Invalid IFC length unit')
+            seen.add(e.id)
+            if e.type == 'IFCSIUNIT':
+                return prefixes.get(e.args[2], 1)
+            if e.type in {'IFCCONVERSIONBASEDUNIT', 'IFCCONVERSIONBASEDUNITWITHOFFSET'}:
+                measure = ref(e.args[3])
+                return numeric(measure.args[0]) * unit(ref(measure.args[1]), seen)
+            raise ValueError('Unsupported IFC length unit')
+        scale = 1.0
+        angle_scale = 1.0
+        for assignment in entities.values():
+            if assignment.type == 'IFCUNITASSIGNMENT':
+                for u in refs(assignment.args[0]):
+                    if len(u.args) > 1 and u.args[1] == 'LENGTHUNIT':
+                        scale = unit(u)
+                    elif len(u.args) > 1 and u.args[1] == 'PLANEANGLEUNIT':
+                        angle_scale = unit(u)
+        placement_cache = {}
+
+        def direction(value, default):
+            e = ref(value)
+            v = np.array(e.args[0] if e else default, dtype=float)
+            v = np.pad(v, (0, 3 - len(v)))
+            length = np.linalg.norm(v)
+            return v / length if length else np.array(default, dtype=float)
+
+        def axis(value):
+            e = ref(value)
+            matrix = np.eye(4)
+            if e is None:
+                return matrix
+            point = ref(e.args[0])
+            p = list(point.args[0]) if point else [0, 0, 0]
+            matrix[:3, 3] = (p + [0, 0, 0])[:3]
+            if e.type == 'IFCAXIS2PLACEMENT2D':
+                x = direction(e.args[1] if len(e.args) > 1 else None, [1, 0, 0])
+                z = np.array([0, 0, 1])
+                y = np.cross(z, x)
+            else:
+                z = direction(e.args[1] if len(e.args) > 1 else None, [0, 0, 1])
+                x = direction(e.args[2] if len(e.args) > 2 else None, [1, 0, 0])
+                y = np.cross(z, x)
+                y /= max(np.linalg.norm(y), 1e-12)
+                x = np.cross(y, z)
+            matrix[:3, :3] = np.column_stack([x, y, z])
+            return matrix
+
+        def placement(value, seen=None):
+            e = ref(value)
+            if e is None:
+                return np.eye(4)
+            if e.id in placement_cache:
+                return placement_cache[e.id]
+            seen = set() if seen is None else seen
+            if e.id in seen:
+                return np.eye(4)
+            seen.add(e.id)
+            matrix = placement(e.args[0], seen) @ axis(e.args[1])
+            placement_cache[e.id] = matrix
+            return matrix
+        storeys = []
+        for e in entities.values():
+            if e.type == 'IFCBUILDINGSTOREY':
+                z = placement(e.args[5])[2, 3] * scale if ref(e.args[5]) else float(e.args[9] or 0) * scale
+                storeys.append({'id': str(e.id), 'name': e.args[2] or f'Storey {len(storeys) + 1}', 'elevation': float(z)})
+        represented_types = sorted({e.type for e in entities.values() if len(e.args) > 6 and (definition := ref(e.args[6])) is not None and (definition.type == 'IFCPRODUCTDEFINITIONSHAPE')})
+        data = IFC.MeshData(model, includeTypes=represented_types, excludeTypes=['IfcSpace', 'IfcAnnotation'], dictionaryMode='none', ontology=False, silent=True)
+        if not data:
+            raise ValueError('TopologicPy could not extract IFC geometry.')
+
+        def curve_points(e):
+            if e is None:
+                return []
+            if e.type == 'IFCPOLYLINE':
+                return [(list(p.args[0]) + [0, 0, 0])[:3] for p in refs(e.args[0])]
+            if e.type == 'IFCCOMPOSITECURVE':
+                result = []
+                for segment in refs(e.args[0]):
+                    points = curve_points(ref(segment.args[2]))
+                    if segment.args[1] is False:
+                        points = points[::-1]
+                    if result and points and (np.linalg.norm(np.array(result[-1]) - points[0]) < 1e-07):
+                        points = points[1:]
+                    result.extend(points)
+                return result
+            if e.type == 'IFCTRIMMEDCURVE':
+                basis = ref(e.args[0])
+                if basis is None or basis.type != 'IFCCIRCLE':
+                    return []
+                matrix = axis(basis.args[0])
+                radius = float(basis.args[1])
+
+                def parameter(values):
+                    for value in values:
+                        point = ref(value)
+                        if point is not None:
+                            p = np.linalg.inv(matrix) @ np.array([*(list(point.args[0]) + [0, 0, 0])[:3], 1])
+                            return math.atan2(p[1], p[0])
+                        try:
+                            return numeric(value) * angle_scale
+                        except (ValueError, TypeError):
+                            continue
+                    return 0.0
+                start, end = (parameter(e.args[1]), parameter(e.args[2]))
+                sense = e.args[3] is not False
+                if sense:
+                    while end < start:
+                        end += 2 * math.pi
+                else:
+                    while end > start:
+                        end -= 2 * math.pi
+                angles = np.linspace(start, end, max(2, int(math.ceil(abs(end - start) / (math.pi / 12))) + 1))
+                return [(matrix @ np.array([radius * math.cos(t), radius * math.sin(t), 0, 1]))[:3].tolist() for t in angles]
+            return []
+        imported = {p['id'] for p in data['product_ranges']}
+        for e in entities.values():
+            if len(e.args) < 7:
+                continue
+            definition = ref(e.args[6])
+            if definition is None or definition.type != 'IFCPRODUCTDEFINITIONSHAPE':
+                continue
+            bodies = [r for r in refs(definition.args[2]) if str(r.args[1]).upper() == 'BODY']
+            for representation in bodies:
+                for item in refs(representation.args[3]):
+                    direct = False
+                    verts = []
+                    faces = []
+                    matrix = placement(e.args[5])
+                    if item.type in {'IFCPOLYGONALFACESET', 'IFCTRIANGULATEDFACESET'} and e.id not in imported:
+                        coords = ref(item.args[0])
+                        verts = [(matrix @ np.array([*p, 1]))[:3].tolist() for p in coords.args[0]]
+                        if item.type == 'IFCPOLYGONALFACESET':
+                            faces = [[int(i) - 1 for i in f.args[0]] for f in refs(item.args[2])]
+                        else:
+                            faces = [[int(i) - 1 for i in f] for f in item.args[3]]
+                        direct = True
+                    elif item.type == 'IFCEXTRUDEDAREASOLID':
+                        profile = ref(item.args[0])
+                        curve = ref(profile.args[2]) if profile and profile.type == 'IFCARBITRARYCLOSEDPROFILEDEF' else None
+                        if curve is None or curve.type != 'IFCCOMPOSITECURVE':
+                            continue
+                        points = curve_points(curve)
+                        if len(points) > 1 and np.linalg.norm(np.array(points[0]) - points[-1]) < 1e-07:
+                            points = points[:-1]
+                        if len(points) < 3:
+                            continue
+                        n = len(points)
+                        vector = direction(item.args[2], [0, 0, 1]) * float(item.args[3])
+                        matrix = matrix @ axis(item.args[1])
+                        local = points + [(np.array(p) + vector).tolist() for p in points]
+                        verts = [(matrix @ np.array([*p, 1]))[:3].tolist() for p in local]
+                        faces = [list(range(n)), list(range(2 * n - 1, n - 1, -1))] + [[i, (i + 1) % n, (i + 1) % n + n, i + n] for i in range(n)]
+                    if not verts:
+                        continue
+                    verts = [[c * scale for c in p] for p in verts]
+                    start = len(data['vertices'])
+                    face_start = len(data['faces'])
+                    data['vertices'].extend(verts)
+                    data['faces'].extend([[i + start for i in f] for f in faces])
+                    data['product_ranges'].append({'id': e.id, 'start': start, 'end': len(data['vertices']), 'face_start': face_start, 'face_end': len(data['faces']), 'tessellated': direct})
+
+        def has_extrusion(entity):
+            stack = [ref(entity.args[6])]
+            seen = set()
+
+            def walk(value):
+                target = ref(value)
+                if target is not None:
+                    stack.append(target)
+                elif isinstance(value, (list, tuple)):
+                    for item in value:
+                        walk(item)
+            while stack:
+                item = stack.pop()
+                if item is None or item.id in seen:
+                    continue
+                seen.add(item.id)
+                if item.type == 'IFCEXTRUDEDAREASOLID':
+                    return True
+                walk(item.args)
+            return False
+        meshes = {}
+        objects = {}
+        original_vertices = original_triangles = 0
+        for product in data['product_ranges']:
+            ident = product['id']
+            obj = IFC._NavigationProduct(entities[ident])
+            start, end = (product['start'], product['end'])
+            verts = data['vertices'][start:end]
+            if not verts:
+                continue
+            faces = [[i - start for i in f] for f in data['faces'][product['face_start']:product['face_end']]]
+            bounds = [np.min(verts, axis=0).tolist(), np.max(verts, axis=0).tolist()]
+            if obj.is_a('IfcFurnishingElement') or obj.is_a('IfcOpeningElement'):
+                if ident in meshes:
+                    bounds = [np.minimum(meshes[ident]['bounds'][0], bounds[0]).tolist(), np.maximum(meshes[ident]['bounds'][1], bounds[1]).tolist()]
+                meshes[ident] = IFC._NavigationBoxMesh(bounds)
+                objects[ident] = obj
+                original_vertices += len(verts)
+                original_triangles += sum((max(0, len(f) - 2) for f in faces))
+                continue
+            if not product.get('tessellated') and has_extrusion(entities[ident]):
+                faces = IFC._NavigationOrientPrisms(verts, faces)
+            triangles = [t for face in faces for t in IFC._NavigationTriangulate(verts, face)]
+            if not triangles:
+                continue
+            v = np.asarray(verts)
+            volume = sum((float(np.dot(v[t[0]], np.cross(v[t[1]], v[t[2]]))) for t in triangles))
+            if volume < 0:
+                triangles = [t[::-1] for t in triangles]
+            if ident in meshes:
+                previous = meshes[ident]
+                offset = len(previous['vertices'])
+                previous['vertices'].extend(verts)
+                previous['triangles'].extend([[i + offset for i in t] for t in triangles])
+                previous['bounds'] = [np.minimum(previous['bounds'][0], bounds[0]).tolist(), np.maximum(previous['bounds'][1], bounds[1]).tolist()]
+            else:
+                meshes[ident] = {'vertices': list(verts), 'triangles': triangles, 'bounds': bounds}
+            objects[ident] = obj
+            original_vertices += len(verts)
+            original_triangles += sum((max(0, len(f) - 2) for f in faces))
+        for ident, mesh in list(meshes.items()):
+            if objects[ident].is_a('IfcFurnishingElement') or objects[ident].is_a('IfcOpeningElement'):
+                meshes[ident] = IFC._NavigationBoxMesh(mesh['bounds'])
+        return {'model': model, 'entities': entities, 'meshes': meshes, 'objects': objects, 'storeys': storeys, 'parents': parents, 'children': children, 'voids': voids, 'container': container, 'ancestor': ancestor, 'scale': scale, 'ref': ref, 'placement': placement, 'original_vertices': original_vertices, 'original_triangles': original_triangles}

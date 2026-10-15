@@ -33,6 +33,7 @@ Submodules
    topologicpy.Kuzu
    topologicpy.LLM
    topologicpy.Matrix
+   topologicpy.Navigation
    topologicpy.Neo4j
    topologicpy.Ontology
    topologicpy.Plotly

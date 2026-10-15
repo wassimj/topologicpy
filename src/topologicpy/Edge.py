@@ -5923,6 +5923,21 @@ class Edge():
         if u == 1.0:
             return Edge.EndVertex(edge, silent=True)
 
+        # Evaluate straight segments in world coordinates. Some kernel versions
+        # evaluate a located line's underlying curve without its translation.
+        # Equality of arc length and endpoint chord identifies a straight segment;
+        # curved edges continue through the backend's exact curve evaluator.
+        import math
+        from topologicpy.Vertex import Vertex
+        start = Edge.StartVertex(edge, silent=True)
+        end = Edge.EndVertex(edge, silent=True)
+        a = Vertex.Coordinates(start, mantissa=None)
+        b = Vertex.Coordinates(end, mantissa=None)
+        chord = math.sqrt(sum((x-y)**2 for x,y in zip(a,b)))
+        length = Edge.Length(edge, mantissa=12, silent=True)
+        if length is not None and chord > tolerance and abs(length-chord) <= max(1e-12, chord*1e-12):
+            return Vertex.ByCoordinates(*[x+u*(y-x) for x,y in zip(a,b)])
+
         vertex = None
         try:
             if Core.HasAttribute("EdgeUtility", "VertexAtParameter"):
