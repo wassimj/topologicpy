@@ -115,6 +115,41 @@ be restricted to a storey and passed to existing planar isovist methods.
 faces. It uses the same XY projection convention as navigation, whereas
 ``Grid.OnFace`` retains its existing surface-grid behavior.
 
+Clearance
+---------
+
+.. code-block:: python
+
+   graph = Navigation.Graph(model, spacing=1.0, clearance=0.3)
+
+Clearance is a horizontal XY margin in model units (metres for IFC models).
+The default zero preserves existing construction. Obstacles are subtracted
+first, then physically joined walking regions are offset using ``Face.ByOffset``.
+Internal slab boundaries and permitted small steps remain connected. A narrow
+passage can close or split a region; no links are fabricated across that split.
+If no floor region survives, graph construction raises ``ValueError``.
+
+The grid origin and cell spacing stay fixed. Boundary samples move into the
+surviving portion of their original cell. Original display tiles remain attached
+to those samples, so an inset does not automatically create an uncoloured band
+along every wall. Consumed cells disappear; cells split into several components
+retain separate tiles. Where a concave cell prevents a straight connection,
+extra bend nodes keep the route inside the valid cleared region. These junctions
+have no dedicated colour tiles and participate in graph analyses normally.
+
+Stair and ramp width is tested across the assembled passage, retaining internal
+tread and landing connections. Attachment corridors are checked for width and
+obstacles when choosing reachable floor samples. A connector that is too narrow
+remains disconnected. Supplied ramp surfaces are used even with an explicit
+centreline; geometry-free centrelines and lift cabin edges do not supply width
+information and retain their explicit connections. ``Navigation.Lift`` accepts an optional ``footprint`` Face to preserve door portals during clearance; the IFC adapter supplies the shaft footprint automatically. This is a geometric XY
+constraint, not an accessibility or headroom assessment. Isovist faces are
+unchanged; their grid can independently use ``Grid.OnFace`` clearance if desired.
+
+The margin is stored in the graph dictionary as ``clearance`` and applies to
+both native Graph and TGraph output. All implementation helpers remain within
+``Navigation.py``, ``Grid.py`` and the corresponding existing backend class files.
+
 API reference
 -------------
 

@@ -53,6 +53,37 @@ and therefore new UUIDs. Use ``TGraph.AxialGraph(edges=edges)`` to analyse them,
 then transfer selected node dictionary values back with
 ``TGraph.TransferDictionariesToOriginators`` for colouring.
 
+Offset regions
+--------------
+
+``Face.ByOffset`` returns a ``Face`` when one region survives and a ``Cluster``
+containing all Faces when the offset separates the region. A multi-region result
+prints a warning with the number of regions unless ``silent=True``. Complete
+erosion returns ``None``; it does not return an inverted remnant.
+
+Uniform polygonal offsets can close narrow necks, merge holes, remove shrinking
+holes, or let expanding holes meet the exterior. They are resolved in the Face's
+own plane, including vertical and tilted planes, with mitred joins. Single-region
+cases retain the existing Wire offset path when it agrees with the region result.
+Curved and variable offsets retain their exact Wire construction; collisions
+between otherwise valid curved boundaries are resolved with native face
+Booleans, without tessellation. Unsupported/self-intersecting curved or variable
+Wire offsets can still fail and return ``None``.
+
+With ``transferDictionaries=True``, the source Face dictionary is transferred to
+every returned Face and the Cluster. The existing Wire path retains its source
+Edge/Vertex dictionary transfer; newly resolved boundaries do not always have
+one-to-one source Edge/Vertex correspondences.
+
+.. code-block:: python
+
+   result = Face.ByOffset(face, offset=0.3)
+   regions = Topology.Faces(result) if result is not None else []
+
+``Face.ByOffsetArea`` optimises the combined area of all surviving regions and
+uses the same return convention. Optimisation trials suppress diagnostics; the
+final multi-region result emits the warning.
+
 .. automodule:: topologicpy.Face
    :members:
    :undoc-members:

@@ -252,6 +252,36 @@ be restricted to a storey and passed to existing planar isovist methods.</p>
 faces. It uses the same XY projection convention as navigation, whereas
 <code class="docutils literal notranslate"><span class="pre">Grid.OnFace</span></code> retains its existing surface-grid behavior.</p>
 </section>
+<section id="clearance">
+<h2>Clearance<a class="headerlink" href="#clearance" title="Permalink to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">graph</span> <span class="o">=</span> <span class="n">Navigation</span><span class="o">.</span><span class="n">Graph</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">spacing</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">clearance</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Clearance is a horizontal XY margin in model units (metres for IFC models).
+The default zero preserves existing construction. Obstacles are subtracted
+first, then physically joined walking regions are offset using <code class="docutils literal notranslate"><span class="pre">Face.ByOffset</span></code>.
+Internal slab boundaries and permitted small steps remain connected. A narrow
+passage can close or split a region; no links are fabricated across that split.
+If no floor region survives, graph construction raises <code class="docutils literal notranslate"><span class="pre">ValueError</span></code>.</p>
+<p>The grid origin and cell spacing stay fixed. Boundary samples move into the
+surviving portion of their original cell. Original display tiles remain attached
+to those samples, so an inset does not automatically create an uncoloured band
+along every wall. Consumed cells disappear; cells split into several components
+retain separate tiles. Where a concave cell prevents a straight connection,
+extra bend nodes keep the route inside the valid cleared region. These junctions
+have no dedicated colour tiles and participate in graph analyses normally.</p>
+<p>Stair and ramp width is tested across the assembled passage, retaining internal
+tread and landing connections. Attachment corridors are checked for width and
+obstacles when choosing reachable floor samples. A connector that is too narrow
+remains disconnected. Supplied ramp surfaces are used even with an explicit
+centreline; geometry-free centrelines and lift cabin edges do not supply width
+information and retain their explicit connections. <code class="docutils literal notranslate"><span class="pre">Navigation.Lift</span></code> accepts an optional <code class="docutils literal notranslate"><span class="pre">footprint</span></code> Face to preserve door portals during clearance; the IFC adapter supplies the shaft footprint automatically. This is a geometric XY
+constraint, not an accessibility or headroom assessment. Isovist faces are
+unchanged; their grid can independently use <code class="docutils literal notranslate"><span class="pre">Grid.OnFace</span></code> clearance if desired.</p>
+<p>The margin is stored in the graph dictionary as <code class="docutils literal notranslate"><span class="pre">clearance</span></code> and applies to
+both native Graph and TGraph output. All implementation helpers remain within
+<code class="docutils literal notranslate"><span class="pre">Navigation.py</span></code>, <code class="docutils literal notranslate"><span class="pre">Grid.py</span></code> and the corresponding existing backend class files.</p>
+</section>
 <section id="module-topologicpy.Navigation">
 <span id="api-reference"></span><h2>API reference<a class="headerlink" href="#module-topologicpy.Navigation" title="Permalink to this heading"></a></h2>
 <p>Geometry-first, multi-level navigation models and graph construction.</p>
@@ -282,7 +312,7 @@ nonzero XY projection. No spatial links are inferred across horizontal gaps.</p>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Navigation.Navigation.IsovistFaces" title="topologicpy.Navigation.Navigation.IsovistFaces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsovistFaces</span></code></a>(model[, eyeHeight, storey])</p></td>
 <td><p>Return horizontal Faces at each storey/walking elevation + eyeHeight.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Navigation.Navigation.Lift" title="topologicpy.Navigation.Navigation.Lift"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Lift</span></code></a>(doors, cabinCentres[, storeys, source])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Navigation.Navigation.Lift" title="topologicpy.Navigation.Navigation.Lift"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Lift</span></code></a>(doors, cabinCentres[, storeys, source, ...])</p></td>
 <td><p>Describe a lift with one door and cabin point per served level.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Navigation.Navigation.Ramp" title="topologicpy.Navigation.Navigation.Ramp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Ramp</span></code></a>([ramp, spacing, spacingRatio, ...])</p></td>
@@ -314,7 +344,7 @@ falling back to rounded face elevations. Units are unchanged.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Navigation.Navigation.Graph">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Graph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spacing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxStepHeight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.17</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxHorizontalGap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">storey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'navigation'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">graphType</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'graph'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxStairRiser</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.35</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Navigation.Navigation.Graph" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Graph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spacing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxStepHeight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.17</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxHorizontalGap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">storey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'navigation'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">graphType</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'graph'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxStairRiser</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.35</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clearance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Navigation.Navigation.Graph" title="Permalink to this definition"></a></dt>
 <dd><p>Return a standard Topologic graph with persistent tile associations.</p>
 <p>mode is ‘navigation’ (adjacent grid cells) or ‘visibility’. Grid spacing
 is measured in XY, projected onto each surface. origin and direction
@@ -322,6 +352,18 @@ define a shared XY frame. Horizontal gap bridging is unsupported;
 maxHorizontalGap must be zero. Storey restriction removes other levels
 before routing. Vertex dictionaries include navigationID/storey/kind/
 source/tileIDs; edges include Length/kind. Units match the model.</p>
+<p>clearance is a nonnegative horizontal XY margin in model units, default
+0. Obstacles are subtracted before joined walking patches are inset via
+Face.ByOffset. Grid cells keep their origin/spacing; boundary sample
+positions can move into the usable part of the original cell. Display
+tiles retain original geometry when a cell has one surviving component.
+Split cells retain separate tiles, and consumed cells have no node.
+Narrow passages close without bridging. Clipped concave cells may add
+uncoloured bend nodes to follow a valid route inside the cleared region.
+Stair/ramp width and attachment corridors are checked across assembled
+footprints, rather than offsetting every tread along travel. Explicit
+geometry-free centrelines and cabin edges have no width to infer.
+Curved/nonplanar grids require a separate clearance definition.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -334,11 +376,14 @@ Generic planar obstacles are treated as vertical footprints.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Navigation.Navigation.Lift">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Lift</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">doors</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cabinCentres</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">storeys</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Navigation.Navigation.Lift" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Lift</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">doors</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cabinCentres</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">storeys</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">footprint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Navigation.Navigation.Lift" title="Permalink to this definition"></a></dt>
 <dd><p>Describe a lift with one door and cabin point per served level.</p>
 <p>Inputs are equal-length ordered lists of XYZ coordinates or Vertices.
 Cabin points are joined in elevation order; each door joins its cabin.
-Only door points attach to floor grids. Lifts have no colour tiles.</p>
+Only door points attach to floor grids. Lifts have no colour tiles.
+An optional planar Face footprint supplies shared cabin/shaft support
+for clearance at door portals. IFC extraction supplies it automatically;
+its XY projection is used at each served elevation.</p>
 </dd></dl>
 
 <dl class="py method">

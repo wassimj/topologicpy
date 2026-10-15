@@ -197,6 +197,32 @@ not runtime.</p>
 and therefore new UUIDs. Use <code class="docutils literal notranslate"><span class="pre">TGraph.AxialGraph(edges=edges)</span></code> to analyse them,
 then transfer selected node dictionary values back with
 <code class="docutils literal notranslate"><span class="pre">TGraph.TransferDictionariesToOriginators</span></code> for colouring.</p>
+</section>
+<section id="offset-regions">
+<h2>Offset regions<a class="headerlink" href="#offset-regions" title="Permalink to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">Face.ByOffset</span></code> returns a <code class="docutils literal notranslate"><span class="pre">Face</span></code> when one region survives and a <code class="docutils literal notranslate"><span class="pre">Cluster</span></code>
+containing all Faces when the offset separates the region. A multi-region result
+prints a warning with the number of regions unless <code class="docutils literal notranslate"><span class="pre">silent=True</span></code>. Complete
+erosion returns <code class="docutils literal notranslate"><span class="pre">None</span></code>; it does not return an inverted remnant.</p>
+<p>Uniform polygonal offsets can close narrow necks, merge holes, remove shrinking
+holes, or let expanding holes meet the exterior. They are resolved in the Face’s
+own plane, including vertical and tilted planes, with mitred joins. Single-region
+cases retain the existing Wire offset path when it agrees with the region result.
+Curved and variable offsets retain their exact Wire construction; collisions
+between otherwise valid curved boundaries are resolved with native face
+Booleans, without tessellation. Unsupported/self-intersecting curved or variable
+Wire offsets can still fail and return <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p>
+<p>With <code class="docutils literal notranslate"><span class="pre">transferDictionaries=True</span></code>, the source Face dictionary is transferred to
+every returned Face and the Cluster. The existing Wire path retains its source
+Edge/Vertex dictionary transfer; newly resolved boundaries do not always have
+one-to-one source Edge/Vertex correspondences.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">result</span> <span class="o">=</span> <span class="n">Face</span><span class="o">.</span><span class="n">ByOffset</span><span class="p">(</span><span class="n">face</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+<span class="n">regions</span> <span class="o">=</span> <span class="n">Topology</span><span class="o">.</span><span class="n">Faces</span><span class="p">(</span><span class="n">result</span><span class="p">)</span> <span class="k">if</span> <span class="n">result</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">[]</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Face.ByOffsetArea</span></code> optimises the combined area of all surviving regions and
+uses the same return convention. Optimisation trials suppress diagnostics; the
+final multi-region result emits the warning.</p>
 <span class="target" id="module-topologicpy.Face"></span><dl class="py class">
 <dt class="sig sig-object py" id="topologicpy.Face.Face">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">topologicpy.Face.</span></span><span class="sig-name descname"><span class="pre">Face</span></span><a class="headerlink" href="#topologicpy.Face.Face" title="Permalink to this definition"></a></dt>
@@ -242,7 +268,7 @@ then transfer selected node dictionary values back with
 <td><p>Creates a Face from exact NURBS/B-spline surface parameters.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.ByOffset" title="topologicpy.Face.Face.ByOffset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByOffset</span></code></a>(face[, offset, offsetKey, ...])</p></td>
-<td><p>Creates an offset Face by independently offsetting its external and internal boundary Wires.</p></td>
+<td><p>Creates an offset planar region, preserving all surviving components.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.ByOffsetArea" title="topologicpy.Face.Face.ByOffsetArea"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByOffsetArea</span></code></a>(face, area[, offsetKey, ...])</p></td>
 <td><p>Creates an offset face from the input face based on the input area.</p></td>
@@ -810,8 +836,13 @@ Default is False.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Face.Face.ByOffset">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByOffset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">face</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offsetKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'offset'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stepOffsetA</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stepOffsetB</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stepOffsetKeyA</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'stepOffsetA'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stepOffsetKeyB</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'stepOffsetB'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reverse</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">smooth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transferDictionaries</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epsilon</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.01</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">numWorkers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Face.Face.ByOffset" title="Permalink to this definition"></a></dt>
-<dd><p>Creates an offset Face by independently offsetting its external and internal
-boundary Wires.</p>
+<dd><p>Creates an offset planar region, preserving all surviving components.</p>
+<p>Returns a Face for one region, a Cluster of Faces for several regions,
+or None if no positive-area region survives or the operation fails.
+Multiple regions print a warning unless silent=True. Uniform polygonal
+offsets handle neck collapse, merging holes, and holes reaching the
+exterior. Valid curved boundary collisions use native face Booleans;
+curves are never silently tessellated.</p>
 <p>The external boundary and all internal boundary Wires are first normalized
 to the same traversal direction. The external boundary is then passed to
 Wire.ByOffset using the input <code class="docutils literal notranslate"><span class="pre">offset</span></code> as its default offset distance.</p>
@@ -819,18 +850,11 @@ Wire.ByOffset using the input <code class="docutils literal notranslate"><span c
 default offset distance. Thus, for a positive default offset, the external
 boundary moves inward while holes move outward. Explicit per-Edge values
 stored under <code class="docutils literal notranslate"><span class="pre">offsetKey</span></code> always take precedence over these defaults.</p>
-<p>After offsetting, the method validates that:</p>
-<ul class="simple">
-<li><p>every resulting boundary is a closed manifold Wire;</p></li>
-<li><p>no resulting boundary self-intersects;</p></li>
-<li><p>every hole remains completely inside the external boundary;</p></li>
-<li><p>no hole touches or crosses the external boundary;</p></li>
-<li><p>holes neither touch, overlap, nor contain one another;</p></li>
-<li><p>the reconstructed Face contains the expected number of holes;</p></li>
-<li><p>the resulting Face has positive area;</p></li>
-<li><p>the resulting native shape is valid when native validation is available.</p></li>
-</ul>
-<p>If any of these conditions fail, None is returned.</p>
+<p>Every returned Face is validated independently. Holes can merge,
+disappear, or become exterior boundaries as the offset changes topology.
+transferDictionaries applies the source Face dictionary to every region
+and to the returned Cluster. The ordinary Wire path retains its existing
+Edge/Vertex dictionary transfer behaviour.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
@@ -864,7 +888,9 @@ cusp/fold singularity use the shape-preserving smooth offset strategy.
 Default is True.</p>
 </dd>
 <dt><strong>transferDictionaries</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, dictionaries are transferred by Wire.ByOffset and the input
-Face dictionary is assigned to the returned Face. Default is False.</p>
+Face dictionary is assigned to every returned region and the Cluster,
+if present. New region boundaries do not necessarily have one-to-one
+source Edge/Vertex correspondences. Default is False.</p>
 </dd>
 <dt><strong>epsilon</strong><span class="classifier">float , optional</span></dt><dd><p>Cleanup tolerance passed to Wire.ByOffset. Default is 0.01.</p>
 </dd>
@@ -878,8 +904,8 @@ Face dictionary is assigned to the returned Face. Default is False.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Face</dt><dd><p>The offset Face, or None if the offset cannot be constructed as a valid
-manifold Face.</p>
+<dt>topologic_core.Face or topologic_core.Cluster or None</dt><dd><p>One offset Face, a Cluster containing all surviving Faces, or None.
+Use Topology.Faces(result) to obtain regions from either return type.</p>
 </dd>
 </dl>
 </dd>
@@ -920,7 +946,8 @@ The default is None which causes the algorithm to use twice the number of cpu co
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Face</dt><dd><p>The created face.</p>
+<dt>topologic_core.Face or topologic_core.Cluster</dt><dd><p>The created region(s). Multiple regions use their combined area and
+return a Cluster, following Face.ByOffset.</p>
 </dd>
 </dl>
 </dd>
