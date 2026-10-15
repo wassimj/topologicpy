@@ -150,6 +150,27 @@ The margin is stored in the graph dictionary as ``clearance`` and applies to
 both native Graph and TGraph output. All implementation helpers remain within
 ``Navigation.py``, ``Grid.py`` and the corresponding existing backend class files.
 
+Isovist boundary roles
+----------------------
+
+``Navigation.IsovistFaces`` labels every returned internal Wire using
+``isovistType="hole"`` for a genuine floor void and
+``isovistType="obstacle"`` for a region intersecting an eye-level obstacle.
+IFC solids are sectioned at the requested eye height; generic planar
+obstacles retain their vertical-footprint interpretation. Merged void and
+obstacle boundaries are classified as opaque as a whole, even if the
+obstacle occupies only part of the enclosed region.
+
+``Face.Isovist`` reads these labels automatically: it rejects viewpoints in
+both types but sees across transparent holes. The source walking faces and
+the navigation graph remain unchanged, and the returned eye-level faces
+still exclude both types from grid sampling. Pass ``boundaryTypeKey`` to
+both methods when using a custom dictionary key::
+
+   eye_faces = Navigation.IsovistFaces(model, boundaryTypeKey="visibilityRole")
+   visible = Face.Isovist(eye_faces[0], viewpoint,
+                         boundaryTypeKey="visibilityRole")
+
 API reference
 -------------
 

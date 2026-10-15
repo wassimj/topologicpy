@@ -2002,15 +2002,20 @@ planarity cannot be determined.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Face.Face.Isovist">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Isovist</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">face</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertex</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obstacles</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[0,</span> <span class="pre">1,</span> <span class="pre">0]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fov</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">360</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transferDictionaries</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metrics</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">triangles</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'depthmap'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radiusSides</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">64</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Face.Face.Isovist" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Isovist</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">face</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertex</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obstacles</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[0,</span> <span class="pre">1,</span> <span class="pre">0]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fov</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">360</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transferDictionaries</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metrics</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">triangles</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'depthmap'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radiusSides</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">64</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">holes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundaryTypeKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'isovistType'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">defaultBoundaryType</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'obstacle'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Face.Face.Isovist" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the face representing the isovist projection from the input viewpoint.</p>
 <p>This implementation uses a fast 2D visibility algorithm:
-1. The input face, holes, and obstacles are flattened to the XY plane.
-2. The navigable/free-space polygon is constructed using Shapely.
-3. Critical-angle rays are cast from the viewpoint to all polygon vertices.
-4. The nearest boundary intersection along each ray is used to construct the visible polygon.
-5. The resulting Shapely polygon is converted back to a TopologicPy Face.
-6. Metrics and dictionary transfer are preserved.</p>
+1. The input face and exclusion wires are flattened to the XY plane.
+2. Viewpoints in holes or obstacles are rejected. Only obstacles are</p>
+<blockquote>
+<div><p>subtracted from the visibility domain; holes remain transparent.</p>
+</div></blockquote>
+<ol class="arabic simple" start="3">
+<li><p>Critical-angle rays are cast from the viewpoint to all polygon vertices.</p></li>
+<li><p>The nearest boundary intersection along each ray is used to construct the visible polygon.</p></li>
+<li><p>The resulting Shapely polygon is converted back to a TopologicPy Face.</p></li>
+<li><p>Metrics and dictionary transfer are preserved.</p></li>
+</ol>
 <p>This method assumes all visibility computation is carried out in 2D. The input
 topology may be non-horizontal because it is flattened before computation and
 unflattened before return.</p>
@@ -2021,7 +2026,9 @@ unflattened before return.</p>
 </dd>
 <dt><strong>vertex</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The vertex representing the viewpoint.</p>
 </dd>
-<dt><strong>obstacles</strong><span class="classifier">list , optional</span></dt><dd><p>A list of wires representing obstacles within the face. Default is [].</p>
+<dt><strong>obstacles</strong><span class="classifier">list , optional</span></dt><dd><p>Additional closed Wires representing opaque obstacles. Their interiors
+and boundaries reject viewpoints and block sightlines. Wire dictionary
+labels are ignored for these additional inputs. Default is [].</p>
 </dd>
 <dt><strong>direction</strong><span class="classifier">list, optional</span></dt><dd><p>The vector representing the direction of view in the XY plane. Default is [0,1,0].</p>
 </dd>
@@ -2059,6 +2066,25 @@ radius is supplied. Maximum radial deficit is
 radius*(1-cos(pi/radiusSides)). Radius edges are tagged range_limited
 and excluded from occluded_length/occlusivity and closed_perimeter.
 Metrics additionally store radius and range_limited_length.</p>
+</dd>
+<dt><strong>holes</strong><span class="classifier">list, optional</span></dt><dd><p>Additional closed Wires representing transparent, non-walkable holes.
+Viewpoints in or on them are rejected, but their boundaries and
+interiors do not clip the isovist polygon or block sightlines.
+Default is None. Inputs and their dictionaries are not modified.</p>
+</dd>
+<dt><strong>boundaryTypeKey</strong><span class="classifier">str, optional</span></dt><dd><p>Dictionary key on each internal boundary Wire of face. A value of
+“hole” makes that boundary transparent; “obstacle” makes it opaque.
+Values are case-insensitive. Missing/None values use
+defaultBoundaryType; unrecognised values return None with an error
+unless silent is True. Default key is “isovistType”. Labels are read
+before flattening, so non-horizontal faces are supported.</p>
+</dd>
+<dt><strong>defaultBoundaryType</strong><span class="classifier">str, optional</span></dt><dd><p>Treatment of unlabelled internal boundaries: “hole” or “obstacle”
+(case-insensitive). Default is “obstacle” for backward compatibility.
+The resulting isovist measures visible area, including transparent
+holes; it is not a walkable-area or navigation polygon. Transparent
+hole edges are excluded from physical-edge dictionary transfer and
+occlusivity/closed-perimeter classification.</p>
 </dd>
 </dl>
 </dd>
@@ -3062,6 +3088,39 @@ Default is 6.</p>
 
 </dd></dl>
 
+</section>
+<section id="transparent-holes-in-isovists">
+<h2>Transparent holes in isovists<a class="headerlink" href="#transparent-holes-in-isovists" title="Permalink to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">Face.Isovist</span></code> distinguishes non-walkable holes from opaque obstacles.
+Its existing <code class="docutils literal notranslate"><span class="pre">obstacles</span></code> list accepts additional closed Wires; the new
+<code class="docutils literal notranslate"><span class="pre">holes</span></code> list accepts additional transparent exclusion Wires. Both reject
+viewpoints in or on them, but only obstacles stop sightlines. Visible area
+includes transparent holes and must not be used as a navigation domain.</p>
+<p>Internal boundary Wires use the dictionary key <code class="docutils literal notranslate"><span class="pre">isovistType</span></code> by default,
+with case-insensitive values <code class="docutils literal notranslate"><span class="pre">hole</span></code> or <code class="docutils literal notranslate"><span class="pre">obstacle</span></code>. Set
+<code class="docutils literal notranslate"><span class="pre">boundaryTypeKey</span></code> to use another key. Missing labels follow
+<code class="docutils literal notranslate"><span class="pre">defaultBoundaryType=&quot;obstacle&quot;</span></code> (the previous behaviour); choose
+<code class="docutils literal notranslate"><span class="pre">defaultBoundaryType=&quot;hole&quot;</span></code> to see across all unlabelled internal voids.
+Explicit input lists determine their members’ roles regardless of labels.
+Opaque obstacles take precedence wherever the two types overlap.</p>
+<p>For example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">isovist</span> <span class="o">=</span> <span class="n">Face</span><span class="o">.</span><span class="n">Isovist</span><span class="p">(</span><span class="n">room</span><span class="p">,</span> <span class="n">viewpoint</span><span class="p">,</span>
+                      <span class="n">holes</span><span class="o">=</span><span class="p">[</span><span class="n">atrium</span><span class="p">],</span> <span class="n">obstacles</span><span class="o">=</span><span class="p">[</span><span class="n">column</span><span class="p">],</span>
+                      <span class="n">boundaryTypeKey</span><span class="o">=</span><span class="s2">"isovistType"</span><span class="p">,</span>
+                      <span class="n">defaultBoundaryType</span><span class="o">=</span><span class="s2">"hole"</span><span class="p">,</span> <span class="n">metrics</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The geometry is evaluated in the face plane, including tilted faces.
+Transparent hole edges do not contribute physical wall dictionaries or
+occlusion/closed-perimeter metrics. Existing positional arguments remain
+unchanged; the new parameters are appended to the signature.</p>
+<p>To classify an existing internal boundary individually:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">inner</span> <span class="o">=</span> <span class="n">Face</span><span class="o">.</span><span class="n">InternalBoundaries</span><span class="p">(</span><span class="n">room</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">Topology</span><span class="o">.</span><span class="n">SetDictionary</span><span class="p">(</span><span class="n">inner</span><span class="p">,</span>
+                      <span class="n">Dictionary</span><span class="o">.</span><span class="n">ByPythonDictionary</span><span class="p">({</span><span class="s2">"isovistType"</span><span class="p">:</span> <span class="s2">"hole"</span><span class="p">}))</span>
+<span class="n">isovist</span> <span class="o">=</span> <span class="n">Face</span><span class="o">.</span><span class="n">Isovist</span><span class="p">(</span><span class="n">room</span><span class="p">,</span> <span class="n">viewpoint</span><span class="p">)</span>
+</pre></div>
+</div>
 </section>
 </section>
 

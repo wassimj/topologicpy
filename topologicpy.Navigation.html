@@ -282,6 +282,26 @@ unchanged; their grid can independently use <code class="docutils literal notran
 both native Graph and TGraph output. All implementation helpers remain within
 <code class="docutils literal notranslate"><span class="pre">Navigation.py</span></code>, <code class="docutils literal notranslate"><span class="pre">Grid.py</span></code> and the corresponding existing backend class files.</p>
 </section>
+<section id="isovist-boundary-roles">
+<h2>Isovist boundary roles<a class="headerlink" href="#isovist-boundary-roles" title="Permalink to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">Navigation.IsovistFaces</span></code> labels every returned internal Wire using
+<code class="docutils literal notranslate"><span class="pre">isovistType=&quot;hole&quot;</span></code> for a genuine floor void and
+<code class="docutils literal notranslate"><span class="pre">isovistType=&quot;obstacle&quot;</span></code> for a region intersecting an eye-level obstacle.
+IFC solids are sectioned at the requested eye height; generic planar
+obstacles retain their vertical-footprint interpretation. Merged void and
+obstacle boundaries are classified as opaque as a whole, even if the
+obstacle occupies only part of the enclosed region.</p>
+<p><code class="docutils literal notranslate"><span class="pre">Face.Isovist</span></code> reads these labels automatically: it rejects viewpoints in
+both types but sees across transparent holes. The source walking faces and
+the navigation graph remain unchanged, and the returned eye-level faces
+still exclude both types from grid sampling. Pass <code class="docutils literal notranslate"><span class="pre">boundaryTypeKey</span></code> to
+both methods when using a custom dictionary key:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">eye_faces</span> <span class="o">=</span> <span class="n">Navigation</span><span class="o">.</span><span class="n">IsovistFaces</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">boundaryTypeKey</span><span class="o">=</span><span class="s2">"visibilityRole"</span><span class="p">)</span>
+<span class="n">visible</span> <span class="o">=</span> <span class="n">Face</span><span class="o">.</span><span class="n">Isovist</span><span class="p">(</span><span class="n">eye_faces</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">viewpoint</span><span class="p">,</span>
+                      <span class="n">boundaryTypeKey</span><span class="o">=</span><span class="s2">"visibilityRole"</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
 <section id="module-topologicpy.Navigation">
 <span id="api-reference"></span><h2>API reference<a class="headerlink" href="#module-topologicpy.Navigation" title="Permalink to this heading"></a></h2>
 <p>Geometry-first, multi-level navigation models and graph construction.</p>
@@ -309,7 +329,7 @@ nonzero XY projection. No spatial links are inferred across horizontal gaps.</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Navigation.Navigation.Graph" title="topologicpy.Navigation.Navigation.Graph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Graph</span></code></a>(model[, spacing, maxStepHeight, ...])</p></td>
 <td><p>Return a standard Topologic graph with persistent tile associations.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Navigation.Navigation.IsovistFaces" title="topologicpy.Navigation.Navigation.IsovistFaces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsovistFaces</span></code></a>(model[, eyeHeight, storey])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Navigation.Navigation.IsovistFaces" title="topologicpy.Navigation.Navigation.IsovistFaces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsovistFaces</span></code></a>(model[, eyeHeight, storey, ...])</p></td>
 <td><p>Return horizontal Faces at each storey/walking elevation + eyeHeight.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Navigation.Navigation.Lift" title="topologicpy.Navigation.Navigation.Lift"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Lift</span></code></a>(doors, cabinCentres[, storeys, source, ...])</p></td>
@@ -368,10 +388,16 @@ Curved/nonplanar grids require a separate clearance definition.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Navigation.Navigation.IsovistFaces">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">IsovistFaces</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eyeHeight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">storey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Navigation.Navigation.IsovistFaces" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">IsovistFaces</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eyeHeight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">storey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundaryTypeKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'isovistType'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Navigation.Navigation.IsovistFaces" title="Permalink to this definition"></a></dt>
 <dd><p>Return horizontal Faces at each storey/walking elevation + eyeHeight.</p>
 <p>IFC solid obstacles are resectioned at the requested eye height.
-Generic planar obstacles are treated as vertical footprints.</p>
+Generic planar obstacles are treated as vertical footprints.
+Returned internal Wires carry boundaryTypeKey (default “isovistType”)
+with value “hole” for genuine floor voids or “obstacle” when the
+enclosed region intersects an eye-level obstacle. Merged void/obstacle
+boundaries are opaque as a whole. These labels are consumed directly
+by Face.Isovist; both types remain excluded from viewpoint grids.
+Source geometry/dictionaries are not modified.</p>
 </dd></dl>
 
 <dl class="py method">

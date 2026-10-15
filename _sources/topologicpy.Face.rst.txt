@@ -88,3 +88,40 @@ final multi-region result emits the warning.
    :members:
    :undoc-members:
    :show-inheritance:
+
+
+Transparent holes in isovists
+----------------------------
+
+``Face.Isovist`` distinguishes non-walkable holes from opaque obstacles.
+Its existing ``obstacles`` list accepts additional closed Wires; the new
+``holes`` list accepts additional transparent exclusion Wires. Both reject
+viewpoints in or on them, but only obstacles stop sightlines. Visible area
+includes transparent holes and must not be used as a navigation domain.
+
+Internal boundary Wires use the dictionary key ``isovistType`` by default,
+with case-insensitive values ``hole`` or ``obstacle``. Set
+``boundaryTypeKey`` to use another key. Missing labels follow
+``defaultBoundaryType="obstacle"`` (the previous behaviour); choose
+``defaultBoundaryType="hole"`` to see across all unlabelled internal voids.
+Explicit input lists determine their members' roles regardless of labels.
+Opaque obstacles take precedence wherever the two types overlap.
+
+For example::
+
+    isovist = Face.Isovist(room, viewpoint,
+                          holes=[atrium], obstacles=[column],
+                          boundaryTypeKey="isovistType",
+                          defaultBoundaryType="hole", metrics=True)
+
+The geometry is evaluated in the face plane, including tilted faces.
+Transparent hole edges do not contribute physical wall dictionaries or
+occlusion/closed-perimeter metrics. Existing positional arguments remain
+unchanged; the new parameters are appended to the signature.
+
+To classify an existing internal boundary individually::
+
+    inner = Face.InternalBoundaries(room)[0]
+    Topology.SetDictionary(inner,
+                          Dictionary.ByPythonDictionary({"isovistType": "hole"}))
+    isovist = Face.Isovist(room, viewpoint)
