@@ -74,6 +74,7 @@
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Kuzu.html">topologicpy.Kuzu module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.LLM.html">topologicpy.LLM module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Matrix.html">topologicpy.Matrix module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Navigation.html">Navigation</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Neo4j.html">topologicpy.Neo4j module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Ontology.html">topologicpy.Ontology module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Plotly.html">topologicpy.Plotly module</a></li>
@@ -172,7 +173,10 @@ Coincident points are deduplicated using the model-unit <code class="docutils li
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Grid.Grid.OnFace" title="topologicpy.Grid.Grid.OnFace"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OnFace</span></code></a>(face[, spacing, uSpacing, vSpacing, ...])</p></td>
 <td><p>Creates a grid on a planar, curved, or NURBS Face.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Grid.Grid.Vertices" title="topologicpy.Grid.Grid.Vertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Vertices</span></code></a>(grid[, tolerance, silent])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Grid.Grid.OnFaces" title="topologicpy.Grid.Grid.OnFaces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OnFaces</span></code></a>(faces[, spacing, origin, direction, ...])</p></td>
+<td><p>Project one shared XY grid onto planar horizontal/sloping Faces.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Grid.Grid.Vertices" title="topologicpy.Grid.Grid.Vertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Vertices</span></code></a>(grid[, tolerance, silent])</p></td>
 <td><p>Return unique grid Edge endpoints and intersections in 3D.</p></td>
 </tr>
 </tbody>
@@ -257,6 +261,16 @@ Does not control exact backend curve geometry. Default is 128.</p>
 <p class="rubric">Notes</p>
 <p><code class="docutils literal notranslate"><span class="pre">grid_axis=&quot;u&quot;</span></code> denotes a constant-U line (which runs in the surface
 V direction), and vice versa.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Grid.Grid.OnFaces">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">OnFaces</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">faces</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spacing</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeBoundary</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Grid.Grid.OnFaces" title="Permalink to this definition"></a></dt>
+<dd><p>Project one shared XY grid onto planar horizontal/sloping Faces.</p>
+<p>Unlike independent OnFace calls, all faces share the same grid origin
+and direction. Spacing is measured in XY, not along a slope. Holes and
+face boundaries clip the lines. Returns a Cluster of grid Edges or None
+when no lines intersect. Use OnFace for intrinsic curved-surface grids.</p>
 </dd></dl>
 
 <dl class="py method">

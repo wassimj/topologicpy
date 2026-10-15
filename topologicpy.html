@@ -74,6 +74,7 @@
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Kuzu.html">topologicpy.Kuzu module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.LLM.html">topologicpy.LLM module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Matrix.html">topologicpy.Matrix module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Navigation.html">Navigation</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Neo4j.html">topologicpy.Neo4j module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Ontology.html">topologicpy.Ontology module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Plotly.html">topologicpy.Plotly module</a></li>
@@ -983,6 +984,7 @@
 <li class="toctree-l1"><a class="reference internal" href="topologicpy.Grid.html">topologicpy.Grid module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="topologicpy.Grid.html#topologicpy.Grid.Grid"><code class="docutils literal notranslate"><span class="pre">Grid</span></code></a><ul>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Grid.html#topologicpy.Grid.Grid.OnFace"><code class="docutils literal notranslate"><span class="pre">Grid.OnFace()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Grid.html#topologicpy.Grid.Grid.OnFaces"><code class="docutils literal notranslate"><span class="pre">Grid.OnFaces()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Grid.html#topologicpy.Grid.Grid.Vertices"><code class="docutils literal notranslate"><span class="pre">Grid.Vertices()</span></code></a></li>
 </ul>
 </li>
@@ -1057,6 +1059,7 @@
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.IFC.html#topologicpy.IFC.IFC.Model"><code class="docutils literal notranslate"><span class="pre">IFC.Model()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.IFC.html#topologicpy.IFC.IFC.ModelByEntities"><code class="docutils literal notranslate"><span class="pre">IFC.ModelByEntities()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.IFC.html#topologicpy.IFC.IFC.ModelByPath"><code class="docutils literal notranslate"><span class="pre">IFC.ModelByPath()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.IFC.html#topologicpy.IFC.IFC.NavigationModel"><code class="docutils literal notranslate"><span class="pre">IFC.NavigationModel()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.IFC.html#topologicpy.IFC.IFC.Object"><code class="docutils literal notranslate"><span class="pre">IFC.Object()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.IFC.html#topologicpy.IFC.IFC.Objects"><code class="docutils literal notranslate"><span class="pre">IFC.Objects()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.IFC.html#topologicpy.IFC.IFC.ObjectsByType"><code class="docutils literal notranslate"><span class="pre">IFC.ObjectsByType()</span></code></a></li>
@@ -1186,6 +1189,35 @@
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Matrix.html#topologicpy.Matrix.Matrix.Multiply"><code class="docutils literal notranslate"><span class="pre">Matrix.Multiply()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Matrix.html#topologicpy.Matrix.Matrix.Subtract"><code class="docutils literal notranslate"><span class="pre">Matrix.Subtract()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Matrix.html#topologicpy.Matrix.Matrix.Transpose"><code class="docutils literal notranslate"><span class="pre">Matrix.Transpose()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="topologicpy.Navigation.html">Navigation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="topologicpy.Navigation.html#quick-start">Quick start</a></li>
+<li class="toctree-l2"><a class="reference internal" href="topologicpy.Navigation.html#model-and-geometry">Model and geometry</a></li>
+<li class="toctree-l2"><a class="reference internal" href="topologicpy.Navigation.html#connectors">Connectors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="topologicpy.Navigation.html#graph-construction">Graph construction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="topologicpy.Navigation.html#module-topologicpy.Navigation">API reference</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Navigation.html#topologicpy.Navigation.Navigation"><code class="docutils literal notranslate"><span class="pre">Navigation</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Navigation.html#topologicpy.Navigation.Navigation.ByFaces"><code class="docutils literal notranslate"><span class="pre">Navigation.ByFaces()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Navigation.html#topologicpy.Navigation.Navigation.ByIFCPath"><code class="docutils literal notranslate"><span class="pre">Navigation.ByIFCPath()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Navigation.html#topologicpy.Navigation.Navigation.Graph"><code class="docutils literal notranslate"><span class="pre">Navigation.Graph()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Navigation.html#topologicpy.Navigation.Navigation.IsovistFaces"><code class="docutils literal notranslate"><span class="pre">Navigation.IsovistFaces()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Navigation.html#topologicpy.Navigation.Navigation.Lift"><code class="docutils literal notranslate"><span class="pre">Navigation.Lift()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Navigation.html#topologicpy.Navigation.Navigation.Ramp"><code class="docutils literal notranslate"><span class="pre">Navigation.Ramp()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Navigation.html#topologicpy.Navigation.Navigation.Stair"><code class="docutils literal notranslate"><span class="pre">Navigation.Stair()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Navigation.html#topologicpy.Navigation.Navigation.Tiles"><code class="docutils literal notranslate"><span class="pre">Navigation.Tiles()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Navigation.html#topologicpy.Navigation.NavigationModel"><code class="docutils literal notranslate"><span class="pre">NavigationModel</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Navigation.html#topologicpy.Navigation.NavigationModel.connectors"><code class="docutils literal notranslate"><span class="pre">NavigationModel.connectors</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Navigation.html#topologicpy.Navigation.NavigationModel.faces"><code class="docutils literal notranslate"><span class="pre">NavigationModel.faces</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Navigation.html#topologicpy.Navigation.NavigationModel.metadata"><code class="docutils literal notranslate"><span class="pre">NavigationModel.metadata</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Navigation.html#topologicpy.Navigation.NavigationModel.obstacles"><code class="docutils literal notranslate"><span class="pre">NavigationModel.obstacles</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Navigation.html#topologicpy.Navigation.NavigationModel.storeys"><code class="docutils literal notranslate"><span class="pre">NavigationModel.storeys</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>

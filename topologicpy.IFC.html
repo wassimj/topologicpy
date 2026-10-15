@@ -74,6 +74,7 @@
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Kuzu.html">topologicpy.Kuzu module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.LLM.html">topologicpy.LLM module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Matrix.html">topologicpy.Matrix module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Navigation.html">Navigation</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Neo4j.html">topologicpy.Neo4j module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Ontology.html">topologicpy.Ontology module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Plotly.html">topologicpy.Plotly module</a></li>
@@ -257,64 +258,67 @@ Source entities and semantic quantities retain their IFC values and units.</p>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.ModelByPath" title="topologicpy.IFC.IFC.ModelByPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ModelByPath</span></code></a>(path[, silent])</p></td>
 <td><p>Parses an IFC STEP file once and returns an in-memory IFCModel.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.Object" title="topologicpy.IFC.IFC.Object"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Object</span></code></a>(file[, globalId, ifcId, ifcKey, silent])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.NavigationModel" title="topologicpy.IFC.IFC.NavigationModel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NavigationModel</span></code></a>(model[, eyeHeight, ...])</p></td>
+<td><p>Extract an editable NavigationModel from a parsed IFC model.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.Object" title="topologicpy.IFC.IFC.Object"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Object</span></code></a>(file[, globalId, ifcId, ifcKey, silent])</p></td>
 <td><p>Returns a dynamic IFCEntity wrapper for one IFC entity.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.Objects" title="topologicpy.IFC.IFC.Objects"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Objects</span></code></a>(file[, includeTypes, excludeTypes, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.Objects" title="topologicpy.IFC.IFC.Objects"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Objects</span></code></a>(file[, includeTypes, excludeTypes, ...])</p></td>
 <td><p>Returns dynamic IFCEntity wrappers for IFC entities in a file.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.ObjectsByType" title="topologicpy.IFC.IFC.ObjectsByType"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ObjectsByType</span></code></a>(file, ifcType[, includeEmpty, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.ObjectsByType" title="topologicpy.IFC.IFC.ObjectsByType"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ObjectsByType</span></code></a>(file, ifcType[, includeEmpty, ...])</p></td>
 <td><p>Returns dynamic IFCEntity wrappers for entities of one IFC type.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.OntologyClassByIFCClass" title="topologicpy.IFC.IFC.OntologyClassByIFCClass"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OntologyClassByIFCClass</span></code></a>(ifcClass[, defaultValue])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.OntologyClassByIFCClass" title="topologicpy.IFC.IFC.OntologyClassByIFCClass"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OntologyClassByIFCClass</span></code></a>(ifcClass[, defaultValue])</p></td>
 <td><p>Returns the TopologicPy ontology class for an IFC class.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.Properties" title="topologicpy.IFC.IFC.Properties"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Properties</span></code></a>(file[, includeTypes, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.Properties" title="topologicpy.IFC.IFC.Properties"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Properties</span></code></a>(file[, includeTypes, ...])</p></td>
 <td><p>Extracts semantic properties, quantities, classifications, and materials from an IFC file.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.RDFTriples" title="topologicpy.IFC.IFC.RDFTriples"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RDFTriples</span></code></a>(file[, includeRels, excludeRels, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.RDFTriples" title="topologicpy.IFC.IFC.RDFTriples"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RDFTriples</span></code></a>(file[, includeRels, excludeRels, ...])</p></td>
 <td><p>Returns RDF-style triples from IFC relationships.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.RelationshipPredicateByIFCClass" title="topologicpy.IFC.IFC.RelationshipPredicateByIFCClass"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RelationshipPredicateByIFCClass</span></code></a>(ifcClass[, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.RelationshipPredicateByIFCClass" title="topologicpy.IFC.IFC.RelationshipPredicateByIFCClass"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RelationshipPredicateByIFCClass</span></code></a>(ifcClass[, ...])</p></td>
 <td><p>Returns semantic predicate metadata for an IFC relationship class.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.RelationshipTypes" title="topologicpy.IFC.IFC.RelationshipTypes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RelationshipTypes</span></code></a>(file[, includeCounts, silent])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.RelationshipTypes" title="topologicpy.IFC.IFC.RelationshipTypes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RelationshipTypes</span></code></a>(file[, includeCounts, silent])</p></td>
 <td><p>Returns the IFC relationship entity types found in the input IFC file, sorted alphabetically.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.RelationshipTypesByGlobalId" title="topologicpy.IFC.IFC.RelationshipTypesByGlobalId"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RelationshipTypesByGlobalId</span></code></a>(file, globalId)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.RelationshipTypesByGlobalId" title="topologicpy.IFC.IFC.RelationshipTypesByGlobalId"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RelationshipTypesByGlobalId</span></code></a>(file, globalId)</p></td>
 <td><p>Returns the IFC relationship entity types associated with the IFC element identified by the input GlobalId.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.SemanticRelationshipsByGraph" title="topologicpy.IFC.IFC.SemanticRelationshipsByGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SemanticRelationshipsByGraph</span></code></a>(model, graph[, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.SemanticRelationshipsByGraph" title="topologicpy.IFC.IFC.SemanticRelationshipsByGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SemanticRelationshipsByGraph</span></code></a>(model, graph[, ...])</p></td>
 <td><p>Creates missing in-memory IFC semantic relationship entities from an IFC adjacency TGraph.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.Summary" title="topologicpy.IFC.IFC.Summary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Summary</span></code></a>(model[, silent])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.Summary" title="topologicpy.IFC.IFC.Summary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Summary</span></code></a>(model[, silent])</p></td>
 <td><p>Returns a cached compact summary of an IFCModel.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.SummaryByPath" title="topologicpy.IFC.IFC.SummaryByPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SummaryByPath</span></code></a>(path[, silent])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.SummaryByPath" title="topologicpy.IFC.IFC.SummaryByPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SummaryByPath</span></code></a>(path[, silent])</p></td>
 <td><p>Parses an IFC path once and delegates to IFC.Summary.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.TGraphByPath" title="topologicpy.IFC.IFC.TGraphByPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TGraphByPath</span></code></a>(path[, importMode, clean, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.TGraphByPath" title="topologicpy.IFC.IFC.TGraphByPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TGraphByPath</span></code></a>(path[, importMode, clean, ...])</p></td>
 <td><p>Creates a TGraph from an IFC path.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.ThermalCellComplex" title="topologicpy.IFC.IFC.ThermalCellComplex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ThermalCellComplex</span></code></a>(model[, separatorTypes, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.ThermalCellComplex" title="topologicpy.IFC.IFC.ThermalCellComplex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ThermalCellComplex</span></code></a>(model[, separatorTypes, ...])</p></td>
 <td><p>Creates a proof-of-concept thermal CellComplex from an IFCModel.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.Topologies" title="topologicpy.IFC.IFC.Topologies"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Topologies</span></code></a>(model[, includeTypes, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.Topologies" title="topologicpy.IFC.IFC.Topologies"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Topologies</span></code></a>(model[, includeTypes, ...])</p></td>
 <td><p>Imports product geometry in metres from an already parsed IFCModel.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.TopologiesByEntities" title="topologicpy.IFC.IFC.TopologiesByEntities"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TopologiesByEntities</span></code></a>(entities[, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.TopologiesByEntities" title="topologicpy.IFC.IFC.TopologiesByEntities"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TopologiesByEntities</span></code></a>(entities[, ...])</p></td>
 <td><p>Compatibility wrapper for IFC.Topologies using an entity dictionary.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.TopologiesByFile" title="topologicpy.IFC.IFC.TopologiesByFile"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TopologiesByFile</span></code></a>(file[, includeTypes, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.TopologiesByFile" title="topologicpy.IFC.IFC.TopologiesByFile"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TopologiesByFile</span></code></a>(file[, includeTypes, ...])</p></td>
 <td><p>Imports an IFCModel or other IFC source through IFC.Topologies.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.TopologiesByPath" title="topologicpy.IFC.IFC.TopologiesByPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TopologiesByPath</span></code></a>(path[, includeTypes, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.TopologiesByPath" title="topologicpy.IFC.IFC.TopologiesByPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TopologiesByPath</span></code></a>(path[, includeTypes, ...])</p></td>
 <td><p>Parses an IFC path once and delegates to IFC.Topologies.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.Triples" title="topologicpy.IFC.IFC.Triples"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Triples</span></code></a>(file[, includeRels, excludeRels, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.Triples" title="topologicpy.IFC.IFC.Triples"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Triples</span></code></a>(file[, includeRels, excludeRels, ...])</p></td>
 <td><p>Returns IFC relationship triples from the input IFC file.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.ValidateBrickMappings" title="topologicpy.IFC.IFC.ValidateBrickMappings"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ValidateBrickMappings</span></code></a>([brickTTLPath, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.ValidateBrickMappings" title="topologicpy.IFC.IFC.ValidateBrickMappings"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ValidateBrickMappings</span></code></a>([brickTTLPath, ...])</p></td>
 <td><p>Validates the mapped Brick classes against a Brick TTL/RDF file when supplied.</p></td>
 </tr>
 </tbody>
@@ -814,6 +818,17 @@ Default is None.</p>
 </dl>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.IFC.IFC.NavigationModel">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">NavigationModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eyeHeight</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxSlope</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">45.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obstacleTypes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">excludeTypes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.IFC.IFC.NavigationModel" title="Permalink to this definition"></a></dt>
+<dd><p>Extract an editable NavigationModel from a parsed IFC model.</p>
+<p>Coordinates are world metres. Roofs are excluded, containment determines
+storeys before elevation fallback, and openings cut host obstacles.
+maxSlope is the maximum slab walking slope in degrees. Stairs, ramps,
+landings and lifts remain separate connector descriptors. This method
+does not reparse the input model. See topologicpy.Navigation.</p>
 </dd></dl>
 
 <dl class="py method">
