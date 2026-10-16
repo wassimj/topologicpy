@@ -1,2 +1,2 @@
 # Set topologicpy version number
-__version__ = '0.9.85'
+__version__ = '0.9.86'

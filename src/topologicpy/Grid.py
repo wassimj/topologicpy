@@ -551,6 +551,321 @@ class Grid:
     # -------------------------------------------------------------------------
 
     @staticmethod
+    def _PatternOnFace(face, gridType, output, spacing, uSpacing, vSpacing,
+                       origin, rotation, cellSize, orientation, angle,
+                       radialSpacing, angularSpacing, centre, projection,
+                       xDirection, includeBoundary, clearance, samples,
+                       approximate, tolerance, silent):
+        """Build patterned grids using native edges, clipping and face slicing."""
+        from topologicpy.Face import Face
+        from topologicpy.Edge import Edge
+        from topologicpy.Wire import Wire
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
+        from topologicpy.Cluster import Cluster
+
+        def fail(message):
+            if not silent:
+                print("Grid.OnFace - Error: " + message + " Returning None.")
+            return None
+
+        try:
+            def number(value, name, positive=False):
+                value = float(value)
+                if not math.isfinite(value) or (positive and value <= tolerance):
+                    raise ValueError(name + " must be finite" + (" and positive." if positive else "."))
+                return value
+
+            tolerance = number(tolerance, "tolerance")
+            if tolerance <= 0:
+                raise ValueError("tolerance must be positive.")
+            spacing = number(spacing, "spacing", True)
+            du = number(spacing if uSpacing is None else uSpacing, "uSpacing", True)
+            dv = number(spacing if vSpacing is None else vSpacing, "vSpacing", True)
+            clearance = number(clearance, "clearance")
+            if clearance < 0:
+                raise ValueError("clearance must be nonnegative.")
+            rotation = math.radians(number(rotation, "rotation"))
+            pattern = str(gridType or "rectangular").lower()
+            if pattern == "regular":
+                pattern = "rectangular"
+            if pattern not in ("rectangular", "hexagonal", "diagrid", "polar"):
+                raise ValueError("gridType must be rectangular, hexagonal, diagrid, or polar.")
+            output = str(output).lower()
+            if output not in ("vertices", "edges", "faces"):
+                raise ValueError("output must be vertices, edges, or faces.")
+            projection = str(projection).lower()
+            if projection not in ("local", "xy"):
+                raise ValueError("projection must be local or xy.")
+            if not Topology.IsInstance(face, "Face") or not Face.IsPlanar(face, silent=True):
+                raise ValueError("Patterned grids require a planar Face.")
+            frame = Grid._PlanarFrame(face, xDirection, samples, tolerance)
+            if frame is None:
+                raise ValueError("Cannot determine the face plane.")
+            base, u, v, _, _ = frame
+            normal = [u[1]*v[2]-u[2]*v[1], u[2]*v[0]-u[0]*v[2], u[0]*v[1]-u[1]*v[0]]
+            anchor = centre if pattern == "polar" and centre is not None else origin
+            if anchor is not None:
+                anchor = Grid._Coordinates(anchor) if Topology.IsInstance(anchor, "Vertex") else list(anchor)
+                if len(anchor) != 3 or not all(math.isfinite(float(x)) for x in anchor):
+                    raise ValueError("origin/centre must be a Vertex or three finite coordinates.")
+                anchor = [float(x) for x in anchor]
+                delta = Grid._Subtract(anchor, base)
+                if projection == "xy":
+                    if abs(normal[2]) <= tolerance:
+                        raise ValueError("XY projection requires a nonvertical Face.")
+                    base = [anchor[0], anchor[1], base[2]-(normal[0]*delta[0]+normal[1]*delta[1])/normal[2]]
+                else:
+                    base = Grid._Add(base, Grid._Subtract(delta, Grid._Scale(normal, Grid._Dot(delta, normal))))
+            if projection == "xy":
+                if abs(normal[2]) <= tolerance:
+                    raise ValueError("XY projection requires a nonvertical Face.")
+                d = [1., 0.] if xDirection is None else [float(xDirection[0]), float(xDirection[1])]
+                length = math.hypot(*d)
+                if length <= tolerance:
+                    raise ValueError("xDirection needs a nonzero XY component.")
+                a, b = d[0]/length, d[1]/length
+                u = [a, b, -(normal[0]*a+normal[1]*b)/normal[2]]
+                v = [-b, a, (normal[0]*b-normal[1]*a)/normal[2]]
+            co, si = math.cos(rotation), math.sin(rotation)
+            u, v = (Grid._Add(Grid._Scale(u, co), Grid._Scale(v, si)),
+                    Grid._Add(Grid._Scale(u, -si), Grid._Scale(v, co)))
+            # Invert the (possibly oblique) face frame without rounding coordinates.
+            aa, ab, bb = Grid._Dot(u,u), Grid._Dot(u,v), Grid._Dot(v,v)
+            determinant = aa*bb-ab*ab
+            def uv(point):
+                d = Grid._Subtract(point, base)
+                a, b = Grid._Dot(d,u), Grid._Dot(d,v)
+                return ((a*bb-b*ab)/determinant, (b*aa-a*ab)/determinant)
+            def xyz(point):
+                return Grid._Add(base, Grid._Add(Grid._Scale(u,point[0]), Grid._Scale(v,point[1])))
+            points = []
+            for edge in Topology.Edges(face, silent=True) or []:
+                count = 1 if Edge.IsLinear(edge, silent=True) else max(16, int(samples))
+                points.extend(uv(Grid._Coordinates(Edge.VertexByParameter(edge, i/count))) for i in range(count+1))
+            x0, x1 = min(p[0] for p in points), max(p[0] for p in points)
+            y0, y1 = min(p[1] for p in points), max(p[1] for p in points)
+            radius = max(math.hypot(x,y) for x,y in points)+tolerance*10
+            regions = [face]
+            if clearance:
+                inset = Face.ByOffset(face, offset=clearance, offsetKey="__grid_clearance__", smooth=False,
+                                      tolerance=tolerance, epsilon=tolerance, silent=silent)
+                regions = [inset] if Topology.IsInstance(inset,"Face") else (Topology.Faces(inset,silent=True) or [] if inset is not None else [])
+                if not regions:
+                    return [] if output != "edges" else None
+            raw = []
+            seen = set()
+            def segment(a,b):
+                key = tuple(sorted(tuple(round(c/tolerance) for c in p) for p in (a,b)))
+                if key in seen or math.dist(a,b) <= tolerance:
+                    return
+                seen.add(key)
+                edge = Edge.ByVertices([Vertex.ByCoordinates(*xyz(a)),Vertex.ByCoordinates(*xyz(b))], tolerance=tolerance, silent=True)
+                if edge is None:
+                    raise ValueError("Could not construct a grid Edge.")
+                raw.append(edge)
+                if len(raw) > 20000:
+                    raise ValueError("Grid is too dense. Increase spacing.")
+            def family(theta, separation):
+                d = (math.cos(theta), math.sin(theta)); n = (-d[1],d[0])
+                offsets = [x*n[0]+y*n[1] for x,y in ((x0,y0),(x1,y0),(x1,y1),(x0,y1))]
+                lo,hi=math.ceil(min(offsets)/separation),math.floor(max(offsets)/separation)
+                if hi-lo > 20000:
+                    raise ValueError("Grid is too dense. Increase spacing.")
+                for i in range(lo,hi+1):
+                    t=i*separation
+                    segment((n[0]*t-d[0]*radius*2,n[1]*t-d[1]*radius*2),
+                            (n[0]*t+d[0]*radius*2,n[1]*t+d[1]*radius*2))
+            if pattern == "rectangular":
+                family(math.pi/2,du); family(0,dv)
+            elif pattern == "diagrid":
+                alpha=number(angle,"angle")
+                if not 0 < alpha < 90:
+                    raise ValueError("angle must be between 0 and 90 degrees.")
+                family(math.radians(alpha),du); family(-math.radians(alpha),dv)
+            elif pattern == "hexagonal":
+                side=number(spacing if cellSize is None else cellSize,"cellSize",True)
+                orientation=str(orientation).lower()
+                if orientation not in ("flat-top","pointy-top"):
+                    raise ValueError("orientation must be flat-top or pointy-top.")
+                # Generate a padded axial lattice and retain only cells meeting the bounds.
+                bound=max(abs(x0),abs(x1),abs(y0),abs(y1))
+                count=math.ceil(bound/side)+2
+                if (2*count+1)**2 > 20000:
+                    raise ValueError("Grid is too dense. Increase cellSize.")
+                phase=0 if orientation=="flat-top" else math.pi/6
+                for q in range(-count,count+1):
+                    for r in range(-count,count+1):
+                        if orientation=="flat-top":
+                            cx,cy=1.5*side*q,math.sqrt(3)*side*(r+q/2)
+                        else:
+                            cx,cy=math.sqrt(3)*side*(q+r/2),1.5*side*r
+                        if cx+side<x0 or cx-side>x1 or cy+side<y0 or cy-side>y1:
+                            continue
+                        ring=[(cx+side*math.cos(phase+i*math.pi/3),cy+side*math.sin(phase+i*math.pi/3)) for i in range(6)]
+                        for i in range(6):
+                            segment(ring[i],ring[(i+1)%6])
+            else:
+                dr=number(spacing if radialSpacing is None else radialSpacing,"radialSpacing",True)
+                da=number(angularSpacing,"angularSpacing",True)
+                if da > 180:
+                    raise ValueError("angularSpacing must not exceed 180 degrees.")
+                steps=360/da
+                if abs(steps-round(steps)) > 1e-8:
+                    raise ValueError("angularSpacing must divide 360 exactly.")
+                if math.ceil(radius/dr)*int(round(steps)) > 20000:
+                    raise ValueError("Polar grid is too dense. Increase spacing.")
+                for i in range(int(round(steps))):
+                    t=math.radians(i*da)
+                    segment((0,0),(radius*math.cos(t),radius*math.sin(t)))
+                for i in range(1,math.floor(radius/dr)+1):
+                    circle=Edge.Circle(radius=i*dr,tolerance=tolerance,silent=True)
+                    if circle is None:
+                        if not approximate:
+                            raise ValueError("Exact circles unavailable; set approximate=True for sampled rings.")
+                        n=max(16,int(samples))
+                        for j in range(n):
+                            segment((i*dr*math.cos(j*2*math.pi/n),i*dr*math.sin(j*2*math.pi/n)),
+                                    (i*dr*math.cos((j+1)*2*math.pi/n),i*dr*math.sin((j+1)*2*math.pi/n)))
+                    else:
+                        matrix=[[u[j],v[j],normal[j],base[j]] for j in range(3)]+[[0,0,0,1]]
+                        circle=Topology.Transform(circle,matrix,tolerance=tolerance,silent=True)
+                        if circle is None:
+                            raise ValueError("Cannot transform polar circle onto the face plane.")
+                        raw.append(circle)
+            clipped=[]
+            for region in regions:
+                for edge in raw:
+                    clipped.extend(Grid._Clip(edge,region,tolerance,strict=True))
+                if includeBoundary:
+                    clipped.extend(Topology.Edges(region,silent=True) or [])
+            clipped = [Grid._SetDictionary(edge,{"grid_type":pattern,"grid_projection":projection})
+                       for edge in clipped]
+            grid=Cluster.ByTopologies(clipped) if clipped else None
+            if output == "edges":
+                return grid
+            if output == "vertices":
+                if grid is None:
+                    return []
+                if Topology._IsTopologicCoreBackend() and any(
+                        not Edge.IsLinear(edge, silent=True) for edge in clipped):
+                    # The core Grid.Vertices fast path is analytical for straight
+                    # segments. Split curves natively to retain ring/ray crossings.
+                    merged = Topology.SelfMerge(grid, tolerance=tolerance, silent=True)
+                    if merged is None:
+                        raise ValueError("Cannot split curved grid intersections.")
+                    vertices = Topology.Vertices(merged, silent=True) or []
+                    return vertices
+                return Grid.Vertices(grid,tolerance=tolerance,silent=silent)
+            faces=[]
+            for region in regions:
+                cut=Topology.Slice(region,grid,tolerance=tolerance,silent=True) if grid else region
+                if cut is None:
+                    raise ValueError("Could not construct grid Faces.")
+                parts=[cut] if Topology.IsInstance(cut,"Face") else Topology.Faces(cut,silent=True)
+                if not parts:
+                    raise ValueError("Grid slicing returned no Faces.")
+                faces.extend(parts)
+            return faces
+        except Exception as exc:
+            return fail(str(exc))
+
+    @staticmethod
+    def OnPlane(width: float = 10.0, length: float = 10.0, spacing: float = 1.0,
+                uSpacing=None, vSpacing=None, gridType: str = "rectangular",
+                output: str = "edges", origin=None, direction=None,
+                rotation: float = 0.0, cellSize=None, orientation: str = "flat-top",
+                angle: float = 45.0, radialSpacing=None, angularSpacing: float = 30.0,
+                centre=None, includeBoundary: bool = False, clearance: float = 0.0,
+                approximate: bool = False, samples: int = 128,
+                tolerance: float = 0.0001, silent: bool = False):
+        """
+        Creates a finite patterned grid on a plane, defaulting to the XY plane.
+
+        Parameters
+        ----------
+        width, length : float , optional
+            Positive dimensions of the rectangular clipping Face. Default is 10.
+        spacing : float , optional
+            Common spacing in model units. Default is 1.
+        uSpacing, vSpacing : float , optional
+            Rectangular axis spacing or diagrid perpendicular family spacing.
+            Defaults to spacing.
+        gridType : str , optional
+            "rectangular", "hexagonal", "diagrid", or "polar".
+            Default is "rectangular".
+        output : str , optional
+            "vertices", "edges", or "faces". Default is "edges".
+        origin : topologic_core.Vertex or list , optional
+            Centre of the clipping rectangle and grid origin, as a Vertex or
+            three coordinates. Default is the world origin.
+        direction : list , optional
+            Plane normal. Default is [0, 0, 1].
+        rotation : float , optional
+            Counterclockwise pattern rotation in degrees within the plane.
+            The clipping rectangle is not rotated. Default is 0.
+        cellSize : float , optional
+            Hexagon side length. Defaults to spacing.
+        orientation : str , optional
+            "flat-top" or "pointy-top" hexagons. Default is "flat-top".
+        angle : float , optional
+            Diagrid directions are plus/minus this angle from the local X axis.
+            Must be between 0 and 90 degrees. Default is 45.
+        radialSpacing : float , optional
+            Polar ring spacing. Defaults to spacing.
+        angularSpacing : float , optional
+            Polar ray spacing in degrees, dividing 360 exactly, at most 180.
+            Only complete circular patterns are supported. Default is 30.
+        centre : topologic_core.Vertex or list , optional
+            Polar centre. Defaults to origin.
+        includeBoundary : bool , optional
+            Include clipping boundary Edges. Default is False.
+        clearance : float , optional
+            Nonnegative distance from the clipping boundary. Default is 0.
+        approximate : bool , optional
+            Permit sampled polar rings if exact circles are unavailable.
+            Default is False.
+        samples : int , optional
+            Number of samples for boundary bounds or fallback rings.
+            Default is 128.
+        tolerance : float , optional
+            Geometric tolerance. Default is 0.0001.
+        silent : bool , optional
+            If True, suppress error and warning messages. Default is False.
+
+        Returns
+        -------
+        topologic_core.Cluster or list
+            Cluster of Edges, list of unique Vertices, or list of Faces.
+            Invalid input returns None. Empty grids return None for Edges
+            and an empty list for Vertices/Faces.
+        """
+        from topologicpy.Face import Face
+        from topologicpy.Vertex import Vertex
+        try:
+            width, length = float(width), float(length)
+            if not all(math.isfinite(x) and x > tolerance for x in (width,length)):
+                raise ValueError("width and length must be positive and finite.")
+            if origin is None:
+                origin=Vertex.ByCoordinates(0,0,0)
+            elif isinstance(origin,(list,tuple)):
+                origin=Vertex.ByCoordinates(*origin)
+            normal=[0,0,1] if direction is None else Grid._Normalize(direction,tolerance)
+            if normal is None:
+                raise ValueError("direction must be a nonzero vector.")
+            face=Face.Rectangle(origin=origin,width=width,length=length,direction=normal,silent=True)
+            if face is None:
+                raise ValueError("Could not construct clipping Face.")
+            return Grid._PatternOnFace(face,gridType,output,spacing,uSpacing,vSpacing,
+                origin,rotation,cellSize,orientation,angle,radialSpacing,
+                angularSpacing,centre,"local",None,includeBoundary,clearance,
+                samples,approximate,tolerance,silent)
+        except Exception as exc:
+            if not silent:
+                print("Grid.OnPlane - Error: " + str(exc) + " Returning None.")
+            return None
+
+    @staticmethod
     def OnFaces(faces, spacing: float = 1.0, origin=None, direction=None,
                 includeBoundary: bool = False, tolerance: float = 0.0001, clearance: float = 0.0):
         """Project one shared XY grid onto planar horizontal/sloping Faces.
@@ -635,6 +950,17 @@ class Grid:
         tolerance: float = 0.0001,
         silent: bool = False,
         clearance: float = 0.0,
+        gridType=None,
+        output: str = "edges",
+        origin=None,
+        rotation: float = 0.0,
+        cellSize=None,
+        orientation: str = "flat-top",
+        angle: float = 45.0,
+        radialSpacing=None,
+        angularSpacing: float = 30.0,
+        centre=None,
+        projection: str = "local",
     ):
         """
         Creates a grid on a planar, curved, or NURBS Face.
@@ -717,10 +1043,48 @@ class Grid:
             Complete erosion or a failed offset returns None without reverting
             to the original Face. Exact curved planar boundaries are preserved.
 
+        gridType : str , optional
+            "rectangular" (or "regular"), "hexagonal", "diagrid", or "polar".
+            None preserves the existing planar/surface grid behavior.
+            Explicit patterns require a planar Face. Default is None.
+        output : str , optional
+            "edges" returns a Cluster, "vertices" a list of unique Vertices,
+            and "faces" a list of partition Faces. Default is "edges".
+        origin : topologic_core.Vertex or list , optional
+            Pattern origin as a Vertex or three coordinates, projected onto the
+            face plane. Defaults to the face parameter centre. The original
+            origin is retained when applying clearance.
+        rotation : float , optional
+            Counterclockwise pattern rotation in degrees. Default is 0.
+        cellSize : float , optional
+            Hexagon side length. Defaults to spacing.
+        orientation : str , optional
+            Hexagon orientation: "flat-top" or "pointy-top".
+            Default is "flat-top".
+        angle : float , optional
+            Diagrid family directions, plus/minus this angle from local X.
+            Between 0 and 90 degrees. Family spacing is perpendicular to each
+            line family. Default is 45.
+        radialSpacing : float , optional
+            Spacing between complete polar rings. Defaults to spacing.
+        angularSpacing : float , optional
+            Polar ray spacing in degrees, dividing 360 exactly, at most 180.
+            Default is 30. Circles are exact when supported by the backend;
+            approximate=True permits sampled rings otherwise.
+        centre : topologic_core.Vertex or list , optional
+            Polar centre, projected onto the face plane. Overrides origin
+            for polar patterns. Default is None.
+        projection : str , optional
+            "local" measures pattern dimensions within the face plane.
+            "xy" projects a world XY pattern onto a nonvertical planar Face.
+            Default is "local".
+
         Returns
         -------
-        topologicpy.Cluster
-            Cluster of clipped grid Edges, or None.
+        topologic_core.Cluster or list
+            Cluster of Edges, list of unique Vertices, or list of Faces.
+            Invalid input returns None. Empty grids return None for Edges
+            and an empty list for Vertices/Faces.
 
         Notes
         -----
@@ -732,6 +1096,20 @@ class Grid:
         from topologicpy.Face import Face
         from topologicpy.Topology import Topology
         from topologicpy.Vertex import Vertex
+
+        patterned = (gridType is not None or str(output).lower() != "edges" or
+                     origin is not None or rotation != 0 or centre is not None or
+                     str(projection).lower() != "local")
+        if patterned:
+            if (str(mode).lower() not in ("auto", "planar") or any(value is not None for value in
+                    (uDivisions,vDivisions,uValues,vValues,uLabels,vLabels))):
+                if not silent:
+                    print("Grid.OnFace - Error: Patterned grids do not accept surface mode, divisions, values or labels. Returning None.")
+                return None
+            return Grid._PatternOnFace(face,gridType,output,spacing,uSpacing,vSpacing,
+                origin,rotation,cellSize,orientation,angle,radialSpacing,angularSpacing,
+                centre,projection,xDirection,includeBoundary,clearance,samples,
+                approximate,tolerance,silent)
 
         tol = Grid._Tolerance(tolerance)
 
