@@ -11,7 +11,7 @@ from topologicpy.Vertex import Vertex
 from topologicpy.Topology import Topology
 from topologicpy.Edge import Edge
 from topologicpy.Grid import Grid
-from topologicpy.Graph import Graph
+from topologicpy.TGraph import TGraph
 from topologicpy.Navigation import Navigation
 
 DUMBBELL=[(0,0),(4,0),(4,1.5),(6,1.5),(6,0),(10,0),(10,4),(6,4),(6,2.5),(4,2.5),(4,4),(0,4)]
@@ -22,10 +22,10 @@ def face(points,z=0,slope=0):
 def rect(x=0,y=0,w=4,h=4,z=0,slope=0):return face([(x,y),(x+w,y),(x+w,y+h),(x,y+h)],z,slope)
 
 def route(graph,a,b):
-    vertices=Graph.Vertices(graph)
+    vertices=TGraph.Vertices(graph, asTopologic=True)
     start=min(vertices,key=lambda v:math.dist(Vertex.Coordinates(v),a))
     end=min(vertices,key=lambda v:math.dist(Vertex.Coordinates(v),b))
-    return Graph.ShortestPath(graph,start,end,silent=True)
+    return TGraph.ShortestPath(graph,start,end,silent=True)
 
 def assert_grid_inside(grid,domain,tolerance=2e-5):
     assert grid is not None
@@ -81,7 +81,7 @@ def test_narrow_passage_closes_without_bridging(mode):
     graph=Navigation.Graph(model,spacing=1,mode=mode,clearance=.6)
     assert not route(graph,[1,2,0],[9,2,0])
     allowed=Polygon(DUMBBELL).buffer(-.6,join_style='mitre')
-    for edge in Graph.Edges(graph):
+    for edge in TGraph.Edges(graph, asTopologic=True):
         line=LineString([Vertex.Coordinates(Edge.StartVertex(edge))[:2],Vertex.Coordinates(Edge.EndVertex(edge))[:2]])
         assert allowed.buffer(2e-5).covers(line)
 
@@ -89,10 +89,10 @@ def test_narrow_passage_closes_without_bridging(mode):
 def test_navigation_keeps_original_tiles_with_shifted_boundary_points():
     model=Navigation.ByFaces([rect()])
     graph=Navigation.Graph(model,spacing=1,clearance=.75)
-    assert len(Graph.Vertices(graph))==16
+    assert len(TGraph.Vertices(graph, asTopologic=True))==16
     assert sum(Face.Area(f) for f in Navigation.Tiles(model,graph))==pytest.approx(16)
-    assert min(min(Vertex.Coordinates(v)[:2]) for v in Graph.Vertices(graph))>=.75
-    assert any(Vertex.Coordinates(v)[:2]==[1.5,1.5] for v in Graph.Vertices(graph))
+    assert min(min(Vertex.Coordinates(v)[:2]) for v in TGraph.Vertices(graph, asTopologic=True))>=.75
+    assert any(Vertex.Coordinates(v)[:2]==[1.5,1.5] for v in TGraph.Vertices(graph, asTopologic=True))
     assert Navigation._Metadata(graph)['clearance']==.75
 
 
@@ -102,7 +102,7 @@ def test_obstacle_holes_expand_before_edges_are_built():
     graph=Navigation.Graph(model,spacing=1,mode='visibility',clearance=.6)
     outer=Polygon([(0,0),(8,0),(8,8),(0,8)])
     domain=outer.difference(Polygon([(3,3),(5,3),(5,5),(3,5)])).buffer(-.6,join_style='mitre')
-    for edge in Graph.Edges(graph):
+    for edge in TGraph.Edges(graph, asTopologic=True):
         line=LineString([Vertex.Coordinates(Edge.StartVertex(edge))[:2],Vertex.Coordinates(Edge.EndVertex(edge))[:2]])
         assert domain.buffer(2e-5).covers(line)
 
@@ -153,8 +153,8 @@ def test_building_connections_remain_with_body_clearance(demo,kind):
 
 
 def test_zero_clearance_is_backward_compatible(demo):
-    a=Graph.MeshData(Navigation.Graph(demo,spacing=2))
-    b=Graph.MeshData(Navigation.Graph(demo,spacing=2,clearance=0))
+    a=TGraph.MeshData(Navigation.Graph(demo,spacing=2))
+    b=TGraph.MeshData(Navigation.Graph(demo,spacing=2,clearance=0))
     # Core does not guarantee edge enumeration order between equivalent graphs.
     # Compare the full geometry/connectivity, retaining duplicate multiplicity.
     def canonical(data):
@@ -178,7 +178,7 @@ def test_narrow_circulation_width_closes_without_shrinking_treads(kind):
     assert route(Navigation.Graph(model,spacing=1,clearance=.1),[-2,2,0],upper)
     graph=Navigation.Graph(model,spacing=1,clearance=.25)
     assert not route(graph,[-2,2,0],upper)
-    assert not any(Navigation._Metadata(v)['kind'] in ('tread','ramp') for v in Graph.Vertices(graph))
+    assert not any(Navigation._Metadata(v)['kind'] in ('tread','ramp') for v in TGraph.Vertices(graph, asTopologic=True))
 
 
 def test_tgraph_clearance_and_tiles_match_native_graph():
@@ -186,7 +186,7 @@ def test_tgraph_clearance_and_tiles_match_native_graph():
     model=Navigation.ByFaces([rect()])
     native=Navigation.Graph(model,clearance=.75)
     graph=Navigation.Graph(model,graphType='tgraph',clearance=.75)
-    assert len(TGraph.Vertices(graph))==len(Graph.Vertices(native))
+    assert len(TGraph.Vertices(graph, asTopologic=True))==len(TGraph.Vertices(native, asTopologic=True))
     assert sum(Face.Area(f) for f in Navigation.Tiles(model,graph))==pytest.approx(16)
     assert TGraph.Dictionary(graph)['clearance']==.75
 
@@ -205,17 +205,17 @@ def test_duplex_stairs_keep_a_clearance_route():
     if not path.exists():pytest.skip('Optional duplex IFC unavailable')
     model=Navigation.ByIFCPath(path)
     graph=Navigation.Graph(model,spacing=1.5,clearance=.2)
-    vertices=Graph.Vertices(graph)
+    vertices=TGraph.Vertices(graph, asTopologic=True)
     groups={Navigation._Metadata(v)['group'] for v in vertices if Navigation._Metadata(v)['kind']=='tread'}
     assert len(groups)==2
     for group in groups:
         treads=[v for v in vertices if Navigation._Metadata(v)['group']==group and Navigation._Metadata(v)['kind']=='tread']
         low=min(treads,key=lambda v:Vertex.Coordinates(v)[2]);high=max(treads,key=lambda v:Vertex.Coordinates(v)[2])
-        assert Graph.ShortestPath(graph,low,high,silent=True)
+        assert TGraph.ShortestPath(graph,low,high,silent=True)
         for z,endpoint in [(0,low),(3.1,high)]:
             candidates=[v for v in vertices if Navigation._Metadata(v)['kind']=='floor' and abs(Vertex.Coordinates(v)[2]-z)<.15]
             nearest=min(candidates,key=lambda v:math.dist(Vertex.Coordinates(v),Vertex.Coordinates(endpoint)))
-            assert Graph.ShortestPath(graph,endpoint,nearest,silent=True)
+            assert TGraph.ShortestPath(graph,endpoint,nearest,silent=True)
 
 
 @pytest.mark.pythonocc_only

@@ -424,8 +424,8 @@ def _ByAdjacencyMatrix(adjacencyMatrix, dictionaries=None, silent: bool = False)
     (pure-Python) topologicpy wrapper implementation so behaviour matches
     the reference backend exactly.
     """
-    from topologicpy.Graph import Graph as _WrapperGraph
-    return _WrapperGraph.ByAdjacencyMatrix(
+    from topologicpy.TGraph import TGraph as _WrapperTGraph
+    return _WrapperTGraph.ByAdjacencyMatrix(
         adjacencyMatrix=adjacencyMatrix,
         dictionaries=dictionaries,
         silent=silent,

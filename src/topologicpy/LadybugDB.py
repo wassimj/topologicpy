@@ -322,8 +322,8 @@ def _graph_mesh_data(graph: Any, mantissa: int = 6, tolerance: float = 0.0001) -
         }
 
     try:
-        from topologicpy.Graph import Graph
-        md = Graph.MeshData(graph, mantissa=mantissa)
+        from topologicpy.TGraph import TGraph
+        md = TGraph.MeshData(graph, mantissa=mantissa)
         if not isinstance(md, dict):
             return {"vertices": [], "edges": [], "vertexDictionaries": [], "edgeDictionaries": []}
         return {
@@ -387,35 +387,6 @@ def _annotate_graph_for_ontology(graph, ontology: bool = True, generatedBy: str 
             return graph
         except Exception:
             return graph
-
-    try:
-        from topologicpy.Graph import Graph
-        if hasattr(Graph, "_AnnotateOntology"):
-            return Graph._AnnotateOntology(graph, graphClass="top:Graph", generatedBy=generatedBy, silent=silent)
-    except Exception:
-        pass
-    try:
-        from topologicpy.Ontology import Ontology
-        graph = Ontology.Annotate(graph, ontologyClass="top:Graph", category="graph", generatedBy=generatedBy, silent=True)
-        try:
-            from topologicpy.Graph import Graph
-            vertices = Graph.Vertices(graph) or []
-            edges = Graph.Edges(graph) or []
-        except Exception:
-            vertices = []
-            edges = []
-        for v in vertices:
-            try:
-                Ontology.Annotate(v, ontologyClass="top:Node", category="node", silent=True)
-            except Exception:
-                pass
-        for e in edges:
-            try:
-                Ontology.Annotate(e, ontologyClass="top:Relationship", category="relationship", silent=True)
-            except Exception:
-                pass
-    except Exception:
-        pass
     return graph
 
 
@@ -673,7 +644,7 @@ class LadybugDB:
                     ontology: bool = True,
                     silent: bool = False) -> str:
         """
-        Upserts a TopologicPy Graph or TGraph into LadybugDB using the canonical GraphDB schema.
+        Upserts a TopologicPy TGraph into LadybugDB using the canonical GraphDB schema.
 
         The signature mirrors Neo4j.UpsertGraph. The database argument is accepted
         for GraphDB compatibility and ignored because LadybugDB database identity is the
@@ -911,9 +882,9 @@ class LadybugDB:
             return None
 
     @staticmethod
-    def GraphByID(manager, graphID: str, ontology: bool = True, asTGraph: bool = False, silent: bool = False):
+    def GraphByID(manager, graphID: str, ontology: bool = True, asTGraph: bool = True, silent: bool = False):
         """
-        Constructs a TopologicPy Graph or TGraph from LadybugDB using the canonical graph id.
+        Constructs a TopologicPy TGraph from LadybugDB using the canonical graph id.
 
         Parameters
         ----------
@@ -924,13 +895,13 @@ class LadybugDB:
         ontology : bool , optional
             If True, ontology metadata is preserved/annotated where possible. Default is True.
         asTGraph : bool , optional
-            If True, returns a topologicpy.TGraph. Otherwise, returns the legacy Graph. Default is False.
+            Retained for call compatibility. Results are always TGraph. Default is True.
         silent : bool , optional
             If True, suppresses warnings/errors. Default is False.
 
         Returns
         -------
-        topologic_core.Graph or topologicpy.TGraph
+        topologicpy.TGraph
             The reconstructed graph, or None.
         """
         try:
@@ -994,68 +965,16 @@ class LadybugDB:
             if not rows_v:
                 return None
 
-            if asTGraph:
-                try:
-                    from topologicpy.TGraph import TGraph
-                except Exception:
-                    if not silent:
-                        print("LadybugDB.GraphByID - Error: Could not import TGraph. Returning None.")
-                    return None
+            try:
+                from topologicpy.TGraph import TGraph
+            except Exception:
+                if not silent:
+                    print("LadybugDB.GraphByID - Error: Could not import TGraph. Returning None.")
+                return None
 
-                vertex_records = []
-                id_to_index = {}
-                for row in rows_v:
-                    props = dict(_json_loads(row.get("props"), {}))
-                    if "id" not in props:
-                        props["id"] = row.get("id")
-                    if "label" not in props:
-                        props["label"] = row.get("label") or ""
-                    for _k in ["ontology_class", "category", "uri", "source", "generated_by", "derived_from", "ifc_class", "ifc_guid"]:
-                        if _k not in props and row.get(_k) not in [None, ""]:
-                            props[_k] = row.get(_k)
-                    props["x"] = float(row.get("x") if row.get("x") is not None else 0.0)
-                    props["y"] = float(row.get("y") if row.get("y") is not None else 0.0)
-                    props["z"] = float(row.get("z") if row.get("z") is not None else 0.0)
-                    id_to_index[row.get("id")] = len(vertex_records)
-                    vertex_records.append(props)
-
-                edge_records = []
-                seen_pairs = set()
-                for row in rows_e:
-                    a_id = row.get("a_id")
-                    b_id = row.get("b_id")
-                    pair_key = tuple(sorted([str(a_id), str(b_id)]))
-                    if pair_key in seen_pairs:
-                        continue
-                    seen_pairs.add(pair_key)
-                    if a_id not in id_to_index or b_id not in id_to_index:
-                        continue
-                    props = dict(_json_loads(row.get("props"), {}))
-                    if "label" not in props:
-                        props["label"] = row.get("label") or "connect"
-                    for _k in ["ontology_class", "category", "uri", "source", "generated_by", "derived_from", "ifc_class", "ifc_guid"]:
-                        if _k not in props and row.get(_k) not in [None, ""]:
-                            props[_k] = row.get(_k)
-                    props["src"] = id_to_index[a_id]
-                    props["dst"] = id_to_index[b_id]
-                    edge_records.append(props)
-
-                return TGraph.ByVerticesEdges(vertices=vertex_records, edges=edge_records, dictionary=g_props, ontology=ontology, silent=silent)
-
-            from topologicpy.Graph import Graph
-            from topologicpy.Dictionary import Dictionary
-            from topologicpy.Vertex import Vertex
-            from topologicpy.Edge import Edge
-            from topologicpy.Topology import Topology
-
-            g_dict = Dictionary.ByPythonDictionary(g_props)
-            id_to_vertex = {}
-            vertices = []
+            vertex_records = []
+            id_to_index = {}
             for row in rows_v:
-                x = row.get("x") if row.get("x") is not None else 0.0
-                y = row.get("y") if row.get("y") is not None else 0.0
-                z = row.get("z") if row.get("z") is not None else 0.0
-                v = Vertex.ByCoordinates(float(x), float(y), float(z))
                 props = dict(_json_loads(row.get("props"), {}))
                 if "id" not in props:
                     props["id"] = row.get("id")
@@ -1064,12 +983,13 @@ class LadybugDB:
                 for _k in ["ontology_class", "category", "uri", "source", "generated_by", "derived_from", "ifc_class", "ifc_guid"]:
                     if _k not in props and row.get(_k) not in [None, ""]:
                         props[_k] = row.get(_k)
-                d = Dictionary.ByPythonDictionary(props)
-                v = Topology.SetDictionary(v, d)
-                id_to_vertex[row.get("id")] = v
-                vertices.append(v)
+                props["x"] = float(row.get("x") if row.get("x") is not None else 0.0)
+                props["y"] = float(row.get("y") if row.get("y") is not None else 0.0)
+                props["z"] = float(row.get("z") if row.get("z") is not None else 0.0)
+                id_to_index[row.get("id")] = len(vertex_records)
+                vertex_records.append(props)
 
-            edges_out = []
+            edge_records = []
             seen_pairs = set()
             for row in rows_e:
                 a_id = row.get("a_id")
@@ -1078,35 +998,29 @@ class LadybugDB:
                 if pair_key in seen_pairs:
                     continue
                 seen_pairs.add(pair_key)
-                va = id_to_vertex.get(a_id)
-                vb = id_to_vertex.get(b_id)
-                if va is None or vb is None:
+                if a_id not in id_to_index or b_id not in id_to_index:
                     continue
-                e = Edge.ByStartVertexEndVertex(va, vb)
                 props = dict(_json_loads(row.get("props"), {}))
                 if "label" not in props:
                     props["label"] = row.get("label") or "connect"
                 for _k in ["ontology_class", "category", "uri", "source", "generated_by", "derived_from", "ifc_class", "ifc_guid"]:
                     if _k not in props and row.get(_k) not in [None, ""]:
                         props[_k] = row.get(_k)
-                d = Dictionary.ByPythonDictionary(props)
-                e = Topology.SetDictionary(e, d)
-                edges_out.append(e)
+                props["src"] = id_to_index[a_id]
+                props["dst"] = id_to_index[b_id]
+                edge_records.append(props)
 
-            g = Graph.ByVerticesEdges(vertices, edges_out, ontology=ontology)
-            g = Topology.SetDictionary(g, g_dict)
-            if ontology:
-                g = _annotate_graph_for_ontology(g, ontology=True, generatedBy="LadybugDB.GraphByID", silent=True)
-            return g
+            return TGraph.ByVerticesEdges(vertices=vertex_records, edges=edge_records, dictionary=g_props, ontology=ontology, silent=silent)
+
         except Exception as e:
             if not silent:
                 print(f"LadybugDB.GraphByID - Error: {e}. Returning None.")
             return None
 
     @staticmethod
-    def GraphsByQuery(manager, query: str, parameters: dict = None, params: dict = None, ontology: bool = True, asTGraph: bool = False, silent: bool = False):
+    def GraphsByQuery(manager, query: str, parameters: dict = None, params: dict = None, ontology: bool = True, asTGraph: bool = True, silent: bool = False):
         """
-        Executes a LadybugDB query and returns a list containing a TopologicPy Graph or TGraph
+        Executes a LadybugDB query and returns a list containing a TopologicPy TGraph
         constructed from the returned rows. If rows return graph_id/gid only,
         full graphs are reconstructed using GraphByID.
         """
@@ -1178,87 +1092,29 @@ class LadybugDB:
             if not node_rows:
                 return []
 
-            if asTGraph:
-                try:
-                    from topologicpy.TGraph import TGraph
-                except Exception:
-                    if not silent:
-                        print("LadybugDB.GraphsByQuery - Error: Could not import TGraph. Returning None.")
-                    return None
-                vertex_records = []
-                id_to_index = {}
-                for nid, row in node_rows.items():
-                    props = dict(_json_loads(row.get("props"), {}))
-                    if "id" not in props:
-                        props["id"] = row.get("id")
-                    if "label" not in props and row.get("label") is not None:
-                        props["label"] = row.get("label")
-                    for key in ["x", "y", "z"]:
-                        try:
-                            props[key] = float(row.get(key, 0.0))
-                        except Exception:
-                            props[key] = 0.0
-                    id_to_index[nid] = len(vertex_records)
-                    vertex_records.append(props)
-
-                edge_records = []
-                seen = set()
-                for rel in rel_rows:
-                    if not isinstance(rel, dict):
-                        rel = _object_to_dict(rel)
-                    a_id = rel.get("a_id") or rel.get("a") or rel.get("src") or rel.get("source")
-                    b_id = rel.get("b_id") or rel.get("b") or rel.get("dst") or rel.get("target")
-                    if a_id is None or b_id is None:
-                        continue
-                    key = tuple(sorted([str(a_id), str(b_id)]))
-                    if key in seen:
-                        continue
-                    seen.add(key)
-                    if str(a_id) not in id_to_index or str(b_id) not in id_to_index:
-                        continue
-                    props = dict(_json_loads(rel.get("props"), {}))
-                    if "label" not in props and rel.get("label") is not None:
-                        props["label"] = rel.get("label")
-                    props["src"] = id_to_index[str(a_id)]
-                    props["dst"] = id_to_index[str(b_id)]
-                    edge_records.append(props)
-                return [TGraph.ByVerticesEdges(vertices=vertex_records, edges=edge_records, ontology=ontology, silent=silent)]
-
-            from topologicpy.Graph import Graph
-            from topologicpy.Vertex import Vertex
-            from topologicpy.Edge import Edge
-            from topologicpy.Topology import Topology
-            from topologicpy.Dictionary import Dictionary
-
-            id_to_vertex = {}
-            vertices = []
+            try:
+                from topologicpy.TGraph import TGraph
+            except Exception:
+                if not silent:
+                    print("LadybugDB.GraphsByQuery - Error: Could not import TGraph. Returning None.")
+                return None
+            vertex_records = []
+            id_to_index = {}
             for nid, row in node_rows.items():
                 props = dict(_json_loads(row.get("props"), {}))
                 if "id" not in props:
                     props["id"] = row.get("id")
                 if "label" not in props and row.get("label") is not None:
                     props["label"] = row.get("label")
-                x = row.get("x", 0.0)
-                y = row.get("y", 0.0)
-                z = row.get("z", 0.0)
-                try:
-                    x = float(x)
-                except Exception:
-                    x = 0.0
-                try:
-                    y = float(y)
-                except Exception:
-                    y = 0.0
-                try:
-                    z = float(z)
-                except Exception:
-                    z = 0.0
-                v = Vertex.ByCoordinates(x, y, z)
-                v = Topology.SetDictionary(v, Dictionary.ByPythonDictionary(props))
-                id_to_vertex[nid] = v
-                vertices.append(v)
+                for key in ["x", "y", "z"]:
+                    try:
+                        props[key] = float(row.get(key, 0.0))
+                    except Exception:
+                        props[key] = 0.0
+                id_to_index[nid] = len(vertex_records)
+                vertex_records.append(props)
 
-            edges_out = []
+            edge_records = []
             seen = set()
             for rel in rel_rows:
                 if not isinstance(rel, dict):
@@ -1271,21 +1127,16 @@ class LadybugDB:
                 if key in seen:
                     continue
                 seen.add(key)
-                va = id_to_vertex.get(str(a_id))
-                vb = id_to_vertex.get(str(b_id))
-                if va is None or vb is None:
+                if str(a_id) not in id_to_index or str(b_id) not in id_to_index:
                     continue
-                e = Edge.ByStartVertexEndVertex(va, vb)
                 props = dict(_json_loads(rel.get("props"), {}))
                 if "label" not in props and rel.get("label") is not None:
                     props["label"] = rel.get("label")
-                e = Topology.SetDictionary(e, Dictionary.ByPythonDictionary(props))
-                edges_out.append(e)
+                props["src"] = id_to_index[str(a_id)]
+                props["dst"] = id_to_index[str(b_id)]
+                edge_records.append(props)
+            return [TGraph.ByVerticesEdges(vertices=vertex_records, edges=edge_records, ontology=ontology, silent=silent)]
 
-            g = Graph.ByVerticesEdges(vertices, edges_out, ontology=ontology)
-            if ontology:
-                g = _annotate_graph_for_ontology(g, ontology=True, generatedBy="LadybugDB.GraphsByQuery", silent=True)
-            return [g]
         except Exception as e:
             if not silent:
                 print(f"LadybugDB.GraphsByQuery - Error: {e}. Returning None.")
@@ -1465,8 +1316,8 @@ class LadybugDB:
                 graphs = None
 
             if graphs is None:
-                from topologicpy.Graph import Graph
-                graphs = Graph.ByCSVPath(
+                from topologicpy.TGraph import TGraph
+                graphs = TGraph.ByCSVPath(
                     path=path,
                     graphIDHeader=graphIDHeader, graphLabelHeader=graphLabelHeader,
                     graphFeaturesHeader=graphFeaturesHeader, graphFeaturesKeys=graphFeaturesKeys,
@@ -1752,7 +1603,7 @@ class LadybugDB:
             return None
 
     @staticmethod
-    def GraphsByOntologyClass(manager, ontologyClass: str, ontology: bool = True, asTGraph: bool = False, silent: bool = False):
+    def GraphsByOntologyClass(manager, ontologyClass: str, ontology: bool = True, asTGraph: bool = True, silent: bool = False):
         """
         Returns TopologicPy Graphs or TGraphs whose stored graph ontology_class matches the input class.
         """

@@ -3526,7 +3526,7 @@ class Topology():
 
         Parameters
         ----------
-        topology : topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph
+        topology : topologic_core.Topology or topologicpy.TGraph
             The input topology or graph.
         transferDictionaries : bool , optional
             If set to True, vertex, edge, and face dictionaries will be included in the output. Otherwise, they are not. Default is False.
@@ -3639,71 +3639,6 @@ class Topology():
                 "face_dicts": face_dicts,
             }
 
-        # ------------------------------------------------------------------
-        # Legacy Graph path.
-        # ------------------------------------------------------------------
-        if Topology.IsInstance(topology, "Graph"):
-            from topologicpy.Graph import Graph
-
-            vertices = []
-            edges = []
-            faces = []
-            vertex_dicts = []
-            edge_dicts = []
-            face_dicts = []
-
-            graph_vertices = Graph.Vertices(topology)
-            graph_edges = Graph.Edges(topology)
-
-            for aVertex in graph_vertices:
-                py_dict = {}
-                if transferDictionaries == True:
-                    d = Topology.Dictionary(aVertex)
-                    if len(Dictionary.Keys(d)) > 0:
-                        py_dict = Dictionary.PythonDictionary(d)
-
-                try:
-                    vertices.index(Vertex.Coordinates(aVertex, mantissa=mantissa))
-                except:
-                    vertices.append(Vertex.Coordinates(aVertex, mantissa=mantissa))
-                    vertex_dicts.append(py_dict)
-
-            for anEdge in graph_edges:
-                e = []
-                sv = Edge.StartVertex(anEdge)
-                ev = Edge.EndVertex(anEdge)
-
-                try:
-                    svIndex = vertices.index(Vertex.Coordinates(sv, mantissa=mantissa))
-                except:
-                    vertices.append(Vertex.Coordinates(sv, mantissa=mantissa))
-                    svIndex = len(vertices) - 1
-
-                try:
-                    evIndex = vertices.index(Vertex.Coordinates(ev, mantissa=mantissa))
-                except:
-                    vertices.append(Vertex.Coordinates(ev, mantissa=mantissa))
-                    evIndex = len(vertices) - 1
-
-                e.append(svIndex)
-                e.append(evIndex)
-                edges.append(e)
-
-                py_dict = {}
-                if transferDictionaries == True:
-                    d = Topology.Dictionary(anEdge)
-                    if len(Dictionary.Keys(d)) > 0:
-                        py_dict = Dictionary.PythonDictionary(d)
-                    edge_dicts.append(py_dict)
-
-            return {
-                "vertices": vertices,
-                "edges": edges,
-                "faces": faces,
-                "vertex_dicts": vertex_dicts,
-                "edge_dicts": edge_dicts,
-                "face_dicts": face_dicts,
-            }
 
         # ------------------------------------------------------------------
         # Topology path.
@@ -4067,80 +4002,6 @@ class Topology():
                 "cell_dicts": cell_dicts
             }
 
-        # ------------------------------------------------------------------
-        # Legacy Graph path
-        # ------------------------------------------------------------------
-        if Topology.IsInstance(topology, "Graph"):
-            from topologicpy.Graph import Graph
-
-            vertex_dicts = []
-            edge_dicts = []
-            face_dicts = []
-            cell_dicts = []
-
-            m_verts = []
-            m_edges = []
-            m_faces = []
-            m_cells = []
-
-            graph_vertices = Graph.Vertices(topology)
-            graph_edges = Graph.Edges(topology)
-
-            coord_to_index = {}
-
-            def _coord_key(vertex):
-                return tuple(Vertex.Coordinates(vertex, mantissa=mantissa))
-
-            for v in graph_vertices:
-                coords = Vertex.Coordinates(v, mantissa=mantissa)
-                key = tuple(coords)
-
-                if key not in coord_to_index:
-                    coord_to_index[key] = len(m_verts)
-                    m_verts.append(coords)
-
-                    d = Topology.Dictionary(v)
-                    try:
-                        vertex_dicts.append(Dictionary.PythonDictionary(d))
-                    except Exception:
-                        vertex_dicts.append({})
-
-            for e in graph_edges:
-                sv = Edge.StartVertex(e)
-                ev = Edge.EndVertex(e)
-
-                sv_key = _coord_key(sv)
-                ev_key = _coord_key(ev)
-
-                if sv_key not in coord_to_index:
-                    coord_to_index[sv_key] = len(m_verts)
-                    m_verts.append(list(sv_key))
-                    vertex_dicts.append({})
-
-                if ev_key not in coord_to_index:
-                    coord_to_index[ev_key] = len(m_verts)
-                    m_verts.append(list(ev_key))
-                    vertex_dicts.append({})
-
-                m_edges.append([coord_to_index[sv_key], coord_to_index[ev_key]])
-
-                d = Topology.Dictionary(e)
-                try:
-                    edge_dicts.append(Dictionary.PythonDictionary(d))
-                except Exception:
-                    edge_dicts.append({})
-
-            return {
-                "mode": mode,
-                "vertices": m_verts,
-                "edges": m_edges,
-                "faces": m_faces,
-                "cells": m_cells,
-                "vertex_dicts": vertex_dicts,
-                "edge_dicts": edge_dicts,
-                "face_dicts": face_dicts,
-                "cell_dicts": cell_dicts
-            }
 
         # ------------------------------------------------------------------
         # Topologic topology path
@@ -4286,14 +4147,6 @@ class Topology():
         except Exception:
             pass
 
-        if Topology.IsInstance(topology, "Graph"):
-            return Topology._LegacyMeshData_BackendV2(
-                topology,
-                mode=mode,
-                transferDictionaries=transferDictionaries,
-                mantissa=mantissa,
-                silent=silent,
-            )
 
         if Topology.IsInstance(topology, "Topology"):
             try:
@@ -6137,7 +5990,7 @@ class Topology():
         ----------
         topology : topologic_core.Topology, topologic_core.Graph entity, TGraph vertex/edge index, or TGraph vertex/edge record
             The input topology or graph entity.
-        hostTopology : topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph
+        hostTopology : topologic_core.Topology or topologicpy.TGraph
             The host topology or graph in which to search.
         topologyType : str
             The type of topology for which to search. This can be one of "vertex", "edge", "wire", "face", "shell", "cell", "cellcomplex".
@@ -6150,7 +6003,7 @@ class Topology():
 
         """
 
-        from topologicpy.Graph import Graph
+        from topologicpy.TGraph import TGraph
 
         try:
             from topologicpy.TGraph import TGraph
@@ -6359,28 +6212,22 @@ class Topology():
 
         if Topology.IsInstance(topology, "Vertex"):
             if topologyType.lower() == "vertex":
-                if Topology.IsInstance(hostTopology, "graph"):
-                    adjacentTopologies = Graph.AdjacentVertices(hostTopology, topology)
-                else:
+                try:
+                    _ = Core.InstanceCall(topology, "AdjacentVertices", hostTopology, adjacentTopologies)
+                except:
                     try:
-                        _ = Core.InstanceCall(topology, "AdjacentVertices", hostTopology, adjacentTopologies)
+                        _ = Core.InstanceCall(topology, "Vertices", hostTopology, adjacentTopologies)
                     except:
-                        try:
-                            _ = Core.InstanceCall(topology, "Vertices", hostTopology, adjacentTopologies)
-                        except:
-                            error = True
+                        error = True
 
             elif topologyType.lower() == "edge":
-                if Topology.IsInstance(hostTopology, "graph"):
-                    adjacentTopologies = Graph.Edges(hostTopology, [topology])
-                else:
+                try:
+                    _ = Core.VertexUtility.AdjacentEdges(topology, hostTopology, adjacentTopologies)
+                except:
                     try:
-                        _ = Core.VertexUtility.AdjacentEdges(topology, hostTopology, adjacentTopologies)
+                        _ = Core.InstanceCall(topology, "Edges", hostTopology, adjacentTopologies)
                     except:
-                        try:
-                            _ = Core.InstanceCall(topology, "Edges", hostTopology, adjacentTopologies)
-                        except:
-                            error = True
+                        error = True
 
             elif topologyType.lower() == "wire":
                 try:
@@ -6435,13 +6282,10 @@ class Topology():
                     error = True
 
             elif topologyType.lower() == "edge":
-                if Topology.IsInstance(hostTopology, "graph"):
-                    adjacentTopologies = Graph.AdjacentEdges(hostTopology, topology)
-                else:
-                    try:
-                        _ = Core.InstanceCall(topology, "AdjacentEdges", hostTopology, adjacentTopologies)
-                    except:
-                        error = True
+                try:
+                    _ = Core.InstanceCall(topology, "AdjacentEdges", hostTopology, adjacentTopologies)
+                except:
+                    error = True
 
             elif topologyType.lower() == "wire":
                 try:
@@ -13828,7 +13672,7 @@ class Topology():
 
         Parameters
         ----------
-        topology : topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph
+        topology : topologic_core.Topology or topologicpy.TGraph
             The input topology or graph.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
@@ -13912,7 +13756,7 @@ class Topology():
 
         Parameters
         ----------
-        topology : topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph
+        topology : topologic_core.Topology or topologicpy.TGraph
             The input topology or graph.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
@@ -13924,7 +13768,7 @@ class Topology():
 
         """
 
-        from topologicpy.Graph import Graph
+        from topologicpy.TGraph import TGraph
         from topologicpy.Cluster import Cluster
 
         is_tgraph = False
@@ -13954,9 +13798,6 @@ class Topology():
         if Topology.IsInstance(topology, "Cell") or Topology.IsInstance(topology, "CellComplex"):
             return 3
 
-        if Topology.IsInstance(topology, "Graph"):
-            edges = Graph.Edges(topology)
-            return 1 if len(edges) > 0 else 0
 
         if Topology.IsInstance(topology, "Cluster"):
             if len(Cluster.CellComplexes(topology)) > 0 or len(Cluster.Cells(topology)) > 0:
@@ -14107,7 +13948,7 @@ class Topology():
 
         Parameters
         ----------
-        topology : topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph
+        topology : topologic_core.Topology or topologicpy.TGraph
             The input topology or graph.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
@@ -14119,7 +13960,7 @@ class Topology():
 
         """
 
-        from topologicpy.Graph import Graph
+        from topologicpy.TGraph import TGraph
 
         is_tgraph = False
         try:
@@ -14131,8 +13972,6 @@ class Topology():
         if is_tgraph:
             return TGraph.Edges(topology)
 
-        if Topology.IsInstance(topology, "Graph"):
-            return Graph.Edges(topology)
 
         if not Topology.IsInstance(topology, "Topology"):
             if not silent:
@@ -14208,7 +14047,7 @@ class Topology():
 
         Parameters
         ----------
-        topology : topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph
+        topology : topologic_core.Topology or topologicpy.TGraph
             The input topology or graph.
         origin : topologic_core.Vertex , optional
             The origin of the explosion. If set to None, the centroid of the input topology will be used. Default is None.
@@ -14236,7 +14075,7 @@ class Topology():
 
         from topologicpy.Vertex import Vertex
         from topologicpy.Cluster import Cluster
-        from topologicpy.Graph import Graph
+        from topologicpy.TGraph import TGraph
 
         is_tgraph = False
         try:
@@ -14284,8 +14123,6 @@ class Topology():
                 typeFilter = "cell"
             elif Topology.IsInstance(topology, "Cluster"):
                 typeFilter = processClusterTypeFilter(topology)
-            elif Topology.IsInstance(topology, "Graph"):
-                typeFilter = "edge"
             return typeFilter
 
         if is_tgraph:
@@ -14298,8 +14135,6 @@ class Topology():
                 tolerance=tolerance,
                 silent=silent,
             )
-        elif Topology.IsInstance(topology, "Graph"):
-            topology = Graph.Topology(topology)
 
         if not Topology.IsInstance(topology, "Topology"):
             if not silent:
@@ -16170,17 +16005,6 @@ class Topology():
         except Exception:
             pass
 
-        if Topology.IsInstance(topology, "Graph"):
-            return Topology._LegacyGeometry_BackendV3(
-                topology,
-                transferDictionaries=transferDictionaries,
-                triangulate=triangulate,
-                mode=mode,
-                meshSize=meshSize,
-                mantissa=mantissa,
-                tolerance=tolerance,
-                silent=silent,
-            )
 
         if Topology.IsInstance(topology, "Topology"):
             try:
@@ -16814,9 +16638,7 @@ class Topology():
 
         # Treat TGraph as a graph for transparent Graph/TGraph compatibility.
         if "graph" in t:
-            if is_tgraph:
-                return True
-            return isinstance(topology, Core.Namespace("Graph"))
+            return is_tgraph
 
         if "cellcomplex" in t:
             return isinstance(topology, Core.Namespace("CellComplex"))
@@ -17077,9 +16899,9 @@ class Topology():
 
         Parameters
         ----------
-        topologyA : topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph
+        topologyA : topologic_core.Topology or topologicpy.TGraph
             The first input topology or graph.
-        topologyB : topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph
+        topologyB : topologic_core.Topology or topologicpy.TGraph
             The second input topology or graph.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
@@ -24221,7 +24043,7 @@ class Topology():
 
         from topologicpy.Plotly import Plotly
         from topologicpy.Dictionary import Dictionary
-        from topologicpy.Graph import Graph
+        from topologicpy.TGraph import TGraph
 
         try:
             from topologicpy.TGraph import TGraph
@@ -24365,69 +24187,7 @@ class Topology():
             # ------------------------------------------------------------
             # Legacy Graph branch.
             # ------------------------------------------------------------
-            if Topology.IsInstance(topology, "Graph"):
-                try:
-                    graph_data = Plotly.DataByGraph(
-                        topology,
-                        sagitta=sagitta,
-                        absolute=absolute,
-                        sides=sides,
-                        angle=angle,
-                        directed=directed,
-                        arrowSize=arrowSize,
-                        arrowSizeKey=arrowSizeKey,
-
-                        vertexColor=vertexColor,
-                        vertexColorKey=vertexColorKey,
-                        vertexSize=vSize,
-                        vertexSizeKey=vertexSizeKey,
-                        vertexLabelKey=vertexLabelKey,
-                        vertexBorderColor=vertexBorderColor,
-                        vertexBorderWidth=vertexBorderWidth,
-                        vertexBorderColorKey=vertexBorderColorKey,
-                        vertexBorderWidthKey=vertexBorderWidthKey,
-                        vertexGroupKey=vertexGroupKey,
-                        vertexGroups=vertexGroups,
-                        vertexMinGroup=vertexMinGroup,
-                        vertexMaxGroup=vertexMaxGroup,
-                        showVertices=showVertices,
-                        showVertexLabel=showVertexLabel,
-                        vertexLabelFontSize=vertexLabelFontSize,
-                        showVertexLegend=showVertexLegend,
-                        vertexLegendLabel=str(i + 1) + ": " + str(name) + " (" + vertexLegendLabel + ")",
-                        vertexLegendRank=graph_counter + 1,
-                        vertexLegendGroup=graph_counter + 1,
-
-                        edgeColor=eColor,
-                        edgeColorKey=edgeColorKey,
-                        edgeWidth=eWidth,
-                        edgeWidthKey=edgeWidthKey,
-                        edgeDash=edgeDash,
-                        edgeDashKey=edgeDashKey,
-                        edgeLabelKey=edgeLabelKey,
-                        edgeGroupKey=edgeGroupKey,
-                        edgeGroups=edgeGroups,
-                        edgeMinGroup=edgeMinGroup,
-                        edgeMaxGroup=edgeMaxGroup,
-                        showEdges=showEdges,
-                        showEdgeLabel=showEdgeLabel,
-                        showEdgeLegend=showEdgeLegend,
-                        edgeLegendLabel=str(i + 1) + ": " + str(name) + " (" + edgeLegendLabel + ")",
-                        edgeLegendRank=graph_counter + 2,
-                        edgeLegendGroup=graph_counter + 2,
-
-                        colorScale=colorScale,
-                        mantissa=mantissa,
-                        silent=silent,
-                    )
-                    if isinstance(graph_data, list):
-                        data.extend(graph_data)
-                    graph_counter += offset
-                except Exception as e:
-                    if not silent:
-                        print("Topology.Show - Error: Could not create Plotly data from Graph.")
-                        print("Error:", e)
-                continue
+            pass
 
             # ------------------------------------------------------------
             # Topologic topology branch.
@@ -25334,7 +25094,7 @@ class Topology():
 
         Parameters
         ----------
-        topology : topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph
+        topology : topologic_core.Topology or topologicpy.TGraph
             The input topology. This cannot be vertex or edge.
         subTopologyType : str , optional except when topology is a Cluster
             The type of subTopology to include in the combinations.
@@ -25368,7 +25128,7 @@ class Topology():
         """
 
         from topologicpy.Cluster import Cluster
-        from topologicpy.Graph import Graph
+        from topologicpy.TGraph import TGraph
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
         from topologicpy.Helper import Helper
@@ -25545,20 +25305,15 @@ class Topology():
 
             subtopologies = [all_subtopologies[i] for i in result]
 
-            if Topology.IsInstance(topology, "Graph"):
-                edges = Graph.Edges(topology, vertices=subtopologies)
-                combination = Graph.ByVerticesEdges(subtopologies, edges)
+            combination = Topology.SelfMerge(Cluster.ByTopologies(subtopologies), tolerance=tolerance)
 
-            else:
-                combination = Topology.SelfMerge(Cluster.ByTopologies(subtopologies), tolerance=tolerance)
+            if removeCollinearEdges:
+                if Topology.IsInstance(combination, "face") or Topology.IsInstance(combination, "wire"):
+                    combination = Topology.RemoveCollinearEdges(combination, tolerance=tolerance)
 
-                if removeCollinearEdges:
-                    if Topology.IsInstance(combination, "face") or Topology.IsInstance(combination, "wire"):
-                        combination = Topology.RemoveCollinearEdges(combination, tolerance=tolerance)
-
-                if removeCoplanarFaces:
-                    if Topology.IsInstance(combination, "cellcomplex") or Topology.IsInstance(combination, "cell") or Topology.IsInstance(combination, "shell"):
-                        combination = Topology.RemoveCoplanarFaces(combination, tolerance=tolerance)
+            if removeCoplanarFaces:
+                if Topology.IsInstance(combination, "cellcomplex") or Topology.IsInstance(combination, "cell") or Topology.IsInstance(combination, "shell"):
+                    combination = Topology.RemoveCoplanarFaces(combination, tolerance=tolerance)
 
             return_combinations.append(combination)
 
@@ -25571,7 +25326,7 @@ class Topology():
 
         Parameters
         ----------
-        topology : topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph
+        topology : topologic_core.Topology or topologicpy.TGraph
             The input topology or graph.
         subTopologyType : str , optional
             The requested subtopology type. This can be one of "vertex", "edge", "wire", "face", "shell",
@@ -25587,7 +25342,7 @@ class Topology():
         """
 
         from topologicpy.Face import Face
-        from topologicpy.Graph import Graph
+        from topologicpy.TGraph import TGraph
         import inspect
 
         is_tgraph = False
@@ -25653,18 +25408,6 @@ class Topology():
             return None
 
         # Special case for Graphs.
-        if Topology.IsInstance(topology, "Graph"):
-            if subTopologyType == "vertex":
-                return Graph.Vertices(topology)
-            elif subTopologyType == "edge":
-                return Graph.Edges(topology)
-            else:
-                if not silent:
-                    print(
-                        f"Topology.SubTopologies - Error: the input subTopologyType parameter "
-                        f"{subTopologyType} is not a valid subTopology of Graphs. Returning None."
-                    )
-                return None
 
         topology_type = Topology.TypeAsString(topology)
         if not isinstance(topology_type, str):
@@ -30159,7 +29902,7 @@ class Topology():
 
         Parameters
         ----------
-        topology : topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph
+        topology : topologic_core.Topology or topologicpy.TGraph
             The input topology or graph.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
@@ -30178,8 +29921,6 @@ class Topology():
         except Exception:
             pass
 
-        if Topology.IsInstance(topology, "Graph"):
-            return "Graph"
 
         if Topology.IsInstance(topology, "Topology"):
             return Core.InstanceCall(topology, "GetTypeAsString")
@@ -30931,7 +30672,7 @@ class Topology():
 
         Parameters
         ----------
-        topology : topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph
+        topology : topologic_core.Topology or topologicpy.TGraph
             The input topology or graph.
         namespace : str , optional
             The namespace string to use when deterministic is True. Default is "topologicpy".
@@ -31042,19 +30783,6 @@ class Topology():
             final_str = json.dumps(final_data, sort_keys=True, default=str)
             return str(uuid.uuid5(namespace_uuid, final_str))
 
-        if Topology.IsInstance(topology, "Graph"):
-            from topologicpy.Graph import Graph
-
-            mesh_data = Graph.MeshData(topology)
-
-            final_str = (
-                str(mesh_data.get("vertices", [])) +
-                str(mesh_data.get("edges", [])) +
-                str(mesh_data.get("vertexDictionaries", [])) +
-                str(mesh_data.get("edgeDictionaries", []))
-            )
-
-            return str(uuid.uuid5(namespace_uuid, final_str))
 
         cellComplexes = Topology.CellComplexes(topology, silent=True) or []
         cells = Topology.Cells(topology, silent=True) or []
@@ -31091,7 +30819,7 @@ class Topology():
 
         Parameters
         ----------
-        topology : topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph
+        topology : topologic_core.Topology or topologicpy.TGraph
             The input topology or graph.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is True.
@@ -31103,7 +30831,7 @@ class Topology():
 
         """
 
-        from topologicpy.Graph import Graph
+        from topologicpy.TGraph import TGraph
         import inspect
 
         is_tgraph = False
@@ -31116,8 +30844,6 @@ class Topology():
         if is_tgraph:
             return TGraph.Vertices(topology)
 
-        if Topology.IsInstance(topology, "graph"):
-            return Graph.Vertices(topology)
 
         if not Topology.IsInstance(topology, "Topology"):
             if not silent:

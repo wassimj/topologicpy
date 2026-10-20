@@ -46,6 +46,8 @@ class Navigation:
 
     @staticmethod
     def _Metadata(topology):
+        if isinstance(topology, dict):
+            return dict(topology.get('dictionary', topology))
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
         from topologicpy.Core import Core
@@ -392,7 +394,7 @@ class Navigation:
         return result
 
     @staticmethod
-    def Graph(model, spacing=1.0, maxStepHeight=0.17, maxHorizontalGap=0.0, storey=None, mode='navigation', origin=None, direction=None, tolerance=1e-05, graphType='graph', maxStairRiser=0.35, clearance=0.0):
+    def Graph(model, spacing=1.0, maxStepHeight=0.17, maxHorizontalGap=0.0, storey=None, mode='navigation', origin=None, direction=None, tolerance=1e-05, graphType='tgraph', maxStairRiser=0.35, clearance=0.0):
         """Return a standard Topologic graph with persistent tile associations.
 
         mode is 'navigation' (adjacent grid cells) or 'visibility'. Grid spacing
@@ -416,7 +418,7 @@ class Navigation:
         Curved/nonplanar grids require a separate clearance definition.
         """
         from topologicpy.IFC import IFC
-        from topologicpy.Graph import Graph
+        from topologicpy.TGraph import TGraph
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
         if not math.isfinite(clearance) or clearance < 0:
@@ -493,25 +495,13 @@ class Navigation:
             vertex_data.append({'navigationID': i, 'storey': n['storey'], 'storeyIDs': n.get('storeyIDs', [n['storey']]), 'kind': n['kind'], 'kinds': n.get('kinds', [n['kind']]), 'source': str(n.get('source') or ''), 'group': str(n.get('group') or ''), 'sourceIDs': n.get('sourceIDs', []), 'tileIDs': tile_ids.get(i, [])})
         edge_data = [{'Length': e['length'], 'kind': e['kind']} for e in entry['edges']]
         graph_metadata = {'navigationTiles': json.dumps(tile_records), 'navigationUnit': model.metadata.get('unit', 'model'), 'clearance':clearance}
-        if graphType == 'tgraph':
-            from topologicpy.TGraph import TGraph
-            graph = TGraph()
-            for point, metadata in zip([n['point'] for n in entry['nodes']], vertex_data):
-                graph.AddVertex(dictionary={**metadata, **dict(zip(('x', 'y', 'z'), point))}, tolerance=tolerance, silent=True)
-            for e, metadata in zip(entry['edges'], edge_data):
-                graph.AddEdge(e['src'], e['dst'], directed=False, dictionary=metadata, silent=True)
-            return graph.SetDictionary(graph_metadata)
-        graph = Graph.ByMeshData([n['point'] for n in entry['nodes']], [[e['src'], e['dst']] for e in entry['edges']], vertexDictionaries=vertex_data, edgeDictionaries=edge_data, ontology=False, tolerance=tolerance)
-        if graph is None:
-            raise ValueError('Could not construct navigation graph.')
-        # ByMeshData adds indices through dictionary updates, which can decode
-        # numeric-looking identifiers on Core. Restore the original typed
-        # metadata after graph construction, using the stable navigation ID.
-        for vertex in Graph.Vertices(graph):
-            ident = Navigation._Metadata(vertex)['navigationID']
-            Topology.SetDictionary(vertex, Dictionary.ByPythonDictionary({
-                'index': ident, **vertex_data[ident]}))
-        return Graph.SetDictionary(graph, Dictionary.ByPythonDictionary(graph_metadata))
+        from topologicpy.TGraph import TGraph
+        return TGraph.ByMeshData(
+            [n['point'] for n in entry['nodes']],
+            [[e['src'], e['dst']] for e in entry['edges']],
+            vertexDictionaries=vertex_data, edgeDictionaries=edge_data,
+            ontology=False, tolerance=tolerance,
+        ).SetDictionary(graph_metadata)
 
     @staticmethod
     def _UniquePoints(entry, tolerance):

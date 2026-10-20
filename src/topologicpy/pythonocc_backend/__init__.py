@@ -10,7 +10,6 @@ from .context import Context
 from .dictionary import Dictionary
 from .edge import Edge, EdgeUtility
 from .face import Face, FaceUtility
-from .graph import Graph, GraphUtility
 from .grid import Grid
 from .shell import Shell, ShellUtility
 from .topology import Topology, TopologyUtility
@@ -19,8 +18,8 @@ from .wire import Wire, WireUtility
 
 __all__ = [
     "Aperture", "Cell", "CellComplex", "Cluster", "Context", "Dictionary",
-    "DoubleAttribute", "Edge", "EdgeUtility", "Face", "FaceUtility", "Graph",
-    "GraphUtility", "Grid", "IntAttribute", "ListAttribute", "PythonOCCBackend", "Shell",
+    "DoubleAttribute", "Edge", "EdgeUtility", "Face", "FaceUtility",
+    "Grid", "IntAttribute", "ListAttribute", "PythonOCCBackend", "Shell",
     "ShellUtility", "StringAttribute", "Topology", "TopologyUtility", "Vertex",
     "VertexUtility", "Wire", "WireUtility", "backend_name", "namespaces",
 ]

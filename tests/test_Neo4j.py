@@ -567,12 +567,12 @@ def test_graph_by_id_reconstructs_topologic_graph(monkeypatch):
         return []
 
     graph = Neo4j.GraphByID(FakeDriver(handler=handler), "g1", ontology=True, silent=True)
-    assert isinstance(graph, fakes.FakeGraph)
-    assert len(graph["vertices"]) == 2
-    assert len(graph["edges"]) == 1
-    assert graph["dictionary"]["generated_by"] == "Neo4j.GraphByID"
-    assert graph["vertices"][0]["dictionary"]["id"] == "a"
-    assert graph["edges"][0]["dictionary"]["label"] == "ADJ"
+    assert isinstance(graph, fakes.TGraph)
+    assert len(graph._vertices) == 2
+    assert len(graph._edges) == 1
+    assert graph._dictionary["generated_by"] == "Neo4j.GraphByID"
+    assert graph._vertices[0]["dictionary"]["id"] == "a"
+    assert graph._edges[0]["dictionary"]["label"] == "ADJ"
 
 
 def test_graphs_by_query_and_tograph_collect_nodes_relationships_paths(monkeypatch):
@@ -585,15 +585,15 @@ def test_graphs_by_query_and_tograph_collect_nodes_relationships_paths(monkeypat
 
     graphs = Neo4j.GraphsByQuery(driver, "MATCH p RETURN p", silent=True)
     assert len(graphs) == 1
-    assert isinstance(graphs[0], fakes.FakeGraph)
-    assert len(graphs[0]["vertices"]) == 2
-    assert len(graphs[0]["edges"]) == 1
-    assert graphs[0]["edges"][0]["dictionary"]["type"] == "Edge"
+    assert isinstance(graphs[0], fakes.TGraph)
+    assert len(graphs[0]._vertices) == 2
+    assert len(graphs[0]._edges) == 1
+    assert graphs[0]._edges[0]["dictionary"]["type"] == "Edge"
 
     graph = Neo4j.ToGraph(driver, cypher="MATCH p RETURN p", silent=True)
-    assert isinstance(graph, fakes.FakeGraph)
-    assert len(graph["vertices"]) == 2
-    assert len(graph["edges"]) == 1
+    assert isinstance(graph, fakes.TGraph)
+    assert len(graph._vertices) == 2
+    assert len(graph._edges) == 1
     assert Neo4j.ToGraph(FakeDriver(handler=lambda cypher, params: []), graphID="g123", silent=True) is None
 
 

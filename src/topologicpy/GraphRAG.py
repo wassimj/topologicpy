@@ -572,12 +572,12 @@ Allowed action values are only:
         # ------------------------------------------------------------------
         try:
             from topologicpy.Vertex import Vertex
-            from topologicpy.Graph import Graph
+            from topologicpy.TGraph import TGraph
             from topologicpy.Topology import Topology
             from topologicpy.Dictionary import Dictionary
 
-            vertices = Graph.Vertices(graph) or []
-            edges = Graph.Edges(graph) or []
+            vertices = TGraph.Vertices(graph) or []
+            edges = TGraph.Edges(graph) or []
             nodes = []
 
             for i, v in enumerate(vertices):
@@ -590,7 +590,7 @@ Allowed action values are only:
                 if label is None or str(label).strip() == "":
                     label = props.get(vertex_label_key) or str(vid)
                 x, y, z = GraphRAG._vertex_xyz(v)
-                degree = len(Graph.AdjacentVertices(graph, v) or [])
+                degree = len(TGraph.AdjacentVertices(graph, v) or [])
                 props = GraphRAG._ensure_ontology_props(
                     grag,
                     props,
@@ -977,8 +977,8 @@ Allowed action values are only:
             except Exception:
                 return []
         try:
-            from topologicpy.Graph import Graph
-            return Graph.Vertices(graph) or []
+            from topologicpy.TGraph import TGraph
+            return TGraph.Vertices(graph) or []
         except Exception:
             return []
 
@@ -994,8 +994,8 @@ Allowed action values are only:
             except Exception:
                 return []
         try:
-            from topologicpy.Graph import Graph
-            return Graph.Edges(graph) or []
+            from topologicpy.TGraph import TGraph
+            return TGraph.Edges(graph) or []
         except Exception:
             return []
 
@@ -1076,8 +1076,8 @@ Allowed action values are only:
             except Exception:
                 return 0
         try:
-            from topologicpy.Graph import Graph
-            return len(Graph.AdjacentVertices(graph, vertex) or [])
+            from topologicpy.TGraph import TGraph
+            return len(TGraph.AdjacentVertices(graph, vertex) or [])
         except Exception:
             return 0
 
@@ -1111,6 +1111,8 @@ Allowed action values are only:
 
     @staticmethod
     def _apply_add_node(grag, graph, action: Dict[str, Any], silent: bool = False) -> Dict[str, Any]:
+        if not GraphRAG._is_tgraph(graph):
+            return {"ok": False, "graph": graph, "message": "Expected a TGraph."}
         try:
             vertex_id_key = getattr(grag, "vertexIDKey", "id")
             vertex_label_key = getattr(grag, "vertexLabelKey", "label")
@@ -1138,19 +1140,9 @@ Allowed action values are only:
                 generated_by="GraphRAG._apply_add_node",
             )
 
-            if GraphRAG._is_tgraph(graph):
-                from topologicpy.TGraph import TGraph
-                idx = graph.AddVertex(dictionary=props)
-                vertex = TGraph.Vertex(graph, idx)
-            else:
-                from topologicpy.Vertex import Vertex
-                from topologicpy.Graph import Graph
-                from topologicpy.Topology import Topology
-                from topologicpy.Dictionary import Dictionary
-                vertex = Vertex.ByCoordinates(x, y, z)
-                d = Dictionary.ByKeysValues(list(props.keys()), list(props.values()))
-                vertex = Topology.SetDictionary(vertex, d)
-                graph = Graph.AddVertex(graph, vertex, tolerance=tolerance, silent=silent)
+            from topologicpy.TGraph import TGraph
+            idx = graph.AddVertex(dictionary=props)
+            vertex = TGraph.Vertex(graph, idx)
 
             attach_vertex = None
             attach_id = action.get("attach_to_id") or action.get("a_id")
@@ -1174,22 +1166,11 @@ Allowed action values are only:
                     generated_by="GraphRAG._apply_add_node",
                 )
 
-                if GraphRAG._is_tgraph(graph):
-                    from topologicpy.TGraph import TGraph
-                    a_idx = TGraph.VertexIndex(graph, attach_vertex)
-                    b_idx = TGraph.VertexIndex(graph, vertex)
-                    if a_idx is not None and b_idx is not None:
-                        graph.AddEdge(a_idx, b_idx, dictionary=edge_props)
-                else:
-                    from topologicpy.Edge import Edge
-                    from topologicpy.Graph import Graph
-                    from topologicpy.Topology import Topology
-                    from topologicpy.Dictionary import Dictionary
-                    edge = Edge.ByVertices([attach_vertex, vertex], tolerance=tolerance, silent=True)
-                    if edge is not None:
-                        ed = Dictionary.ByKeysValues(list(edge_props.keys()), list(edge_props.values()))
-                        edge = Topology.SetDictionary(edge, ed)
-                        graph = Graph.AddEdge(graph, edge, transferVertexDictionaries=False, transferEdgeDictionaries=False, tolerance=tolerance, silent=silent)
+                from topologicpy.TGraph import TGraph
+                a_idx = TGraph.VertexIndex(graph, attach_vertex)
+                b_idx = TGraph.VertexIndex(graph, vertex)
+                if a_idx is not None and b_idx is not None:
+                    graph.AddEdge(a_idx, b_idx, dictionary=edge_props)
 
             return {"ok": True, "graph": graph, "vertex": vertex, "message": f"Added node '{label}' with id '{vid}'."}
         except Exception as e:
@@ -1199,6 +1180,8 @@ Allowed action values are only:
 
     @staticmethod
     def _apply_connect(grag, graph, action: Dict[str, Any], silent: bool = False) -> Dict[str, Any]:
+        if not GraphRAG._is_tgraph(graph):
+            return {"ok": False, "graph": graph, "message": "Expected a TGraph."}
         try:
             edge_label_key = getattr(grag, "edgeLabelKey", "label")
             tolerance = getattr(grag, "tolerance", 0.0001)
@@ -1226,28 +1209,16 @@ Allowed action values are only:
                 generated_by="GraphRAG._apply_connect",
             )
 
-            if GraphRAG._is_tgraph(graph):
-                from topologicpy.TGraph import TGraph
-                a_idx = TGraph.VertexIndex(graph, a)
-                b_idx = TGraph.VertexIndex(graph, b)
-                if a_idx is None or b_idx is None:
-                    return {"ok": False, "graph": graph, "message": "Could not resolve both TGraph vertex indices."}
-                edge_index = graph.AddEdge(a_idx, b_idx, dictionary=edge_props)
-                if edge_index is None:
-                    return {"ok": False, "graph": graph, "message": "Could not create edge."}
-                return {"ok": True, "graph": graph, "edge": TGraph.Edge(graph, edge_index), "message": "Connected vertices."}
-
-            from topologicpy.Edge import Edge
-            from topologicpy.Graph import Graph
-            from topologicpy.Topology import Topology
-            from topologicpy.Dictionary import Dictionary
-            edge = Edge.ByVertices([a, b], tolerance=tolerance, silent=True)
-            if edge is None:
+            from topologicpy.TGraph import TGraph
+            a_idx = TGraph.VertexIndex(graph, a)
+            b_idx = TGraph.VertexIndex(graph, b)
+            if a_idx is None or b_idx is None:
+                return {"ok": False, "graph": graph, "message": "Could not resolve both TGraph vertex indices."}
+            edge_index = graph.AddEdge(a_idx, b_idx, dictionary=edge_props)
+            if edge_index is None:
                 return {"ok": False, "graph": graph, "message": "Could not create edge."}
-            ed = Dictionary.ByKeysValues(list(edge_props.keys()), list(edge_props.values()))
-            edge = Topology.SetDictionary(edge, ed)
-            graph = Graph.AddEdge(graph, edge, transferVertexDictionaries=False, transferEdgeDictionaries=False, tolerance=tolerance, silent=silent)
-            return {"ok": True, "graph": graph, "edge": edge, "message": "Connected vertices."}
+            return {"ok": True, "graph": graph, "edge": TGraph.Edge(graph, edge_index), "message": "Connected vertices."}
+
         except Exception as e:
             if not silent:
                 print(f"GraphRAG._apply_connect - Error: {e}.")

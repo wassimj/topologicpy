@@ -9,7 +9,6 @@ from .context import Context
 from .dictionary import Dictionary
 from .edge import Edge, EdgeUtility
 from .face import Face, FaceUtility
-from .graph import Graph, GraphUtility
 from .grid import Grid
 from .shell import Shell, ShellUtility
 from .topology import Topology, TopologyUtility
@@ -25,7 +24,7 @@ def namespaces():
     return [
         "Aperture", "Cell", "CellUtility", "CellComplex", "Cluster", "Context", "Dictionary",
         "DoubleAttribute", "Edge", "EdgeUtility", "Face", "FaceUtility",
-        "Graph", "GraphUtility", "Grid", "IntAttribute", "ListAttribute", "Shell",
+        "Grid", "IntAttribute", "ListAttribute", "Shell",
         "ShellUtility", "StringAttribute", "Topology", "TopologyUtility",
         "Vertex", "VertexUtility", "Wire", "WireUtility",
     ]
@@ -44,8 +43,6 @@ _NAMESPACE_MAP = {
     "EdgeUtility": EdgeUtility,
     "Face": Face,
     "FaceUtility": FaceUtility,
-    "Graph": Graph,
-    "GraphUtility": GraphUtility,
     "Grid": Grid,
     "IntAttribute": IntAttribute,
     "ListAttribute": ListAttribute,
@@ -74,8 +71,6 @@ class PythonOCCBackend:
     EdgeUtility = EdgeUtility
     Face = Face
     FaceUtility = FaceUtility
-    Graph = Graph
-    GraphUtility = GraphUtility
     Grid = Grid
     IntAttribute = IntAttribute
     ListAttribute = ListAttribute

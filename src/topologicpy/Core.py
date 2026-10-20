@@ -208,7 +208,6 @@ class TopologicCoreBackend:
         self.Cell = getattr(topologic, "Cell", None)
         self.CellComplex = getattr(topologic, "CellComplex", None)
         self.Cluster = getattr(topologic, "Cluster", None)
-        self.Graph = getattr(topologic, "Graph", None)
         self.Grid = getattr(topologic, "Grid", None)
 
         # Attribute/data namespaces.
@@ -227,11 +226,12 @@ class TopologicCoreBackend:
         self.CellUtility = getattr(topologic, "CellUtility", None)
         self.CellComplexUtility = getattr(topologic, "CellComplexUtility", None)
         self.ClusterUtility = getattr(topologic, "ClusterUtility", None)
-        self.GraphUtility = getattr(topologic, "GraphUtility", None)
 
         # Preserve all other public symbols exposed by topologic_core. This makes
         # the backend more exhaustive without having to predict every future name.
         for name in dir(topologic):
+            if name in ("Graph", "GraphUtility"):
+                continue
             if name.startswith("_"):
                 continue
             if not hasattr(self, name):
@@ -273,7 +273,6 @@ class Core:
     Cell = _NamespaceProxy("Cell")
     CellComplex = _NamespaceProxy("CellComplex")
     Cluster = _NamespaceProxy("Cluster")
-    Graph = _NamespaceProxy("Graph")
     Grid = _NamespaceProxy("Grid")
 
     # Attribute/data namespaces.

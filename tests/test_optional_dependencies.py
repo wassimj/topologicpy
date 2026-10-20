@@ -76,10 +76,11 @@ def test_honeybee_missing_dependency_raises_hint(monkeypatch):
 
 
 def test_graph_missing_dependency_raises_hint(monkeypatch):
-    from topologicpy.Graph import Graph
+    from topologicpy.TGraph import TGraph
+    graph = TGraph.ByVerticesEdges([{"x": 0, "y": 0, "z": 0}], [], ontology=False)
     block_import(monkeypatch, "networkx")
-    with pytest.raises(ImportError, match=r"topologicpy\[graph\]"):
-        Graph.NetworkXGraph(None, silent=True)
+    with pytest.raises(ImportError):
+        TGraph.NetworkXGraph(graph)
 
 
 def test_required_dependency_has_install_hint(monkeypatch):

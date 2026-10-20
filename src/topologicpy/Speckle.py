@@ -30,7 +30,6 @@ from topologicpy.Vertex import Vertex
 from topologicpy.Face import Face
 from topologicpy.Cell import Cell
 from topologicpy.CellComplex import CellComplex
-from topologicpy.Graph import Graph
 from topologicpy.Dictionary import Dictionary
 
 from collections import deque

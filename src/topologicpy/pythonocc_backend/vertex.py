@@ -210,15 +210,10 @@ class VertexUtility:
     @staticmethod
     def AdjacentEdges(vertex, topology, edges):
         from .edge import Edge
-        from .graph import Graph
         if not isinstance(vertex, Vertex):
             return 1
         result = []
-        if isinstance(topology, Graph):
-            for edge in topology.edges:
-                if same_vertex(edge.start, vertex) or same_vertex(edge.end, vertex):
-                    result.append(edge)
-        elif isinstance(topology, Topology):
+        if isinstance(topology, Topology):
             temp = []
             topology.Edges(None, temp)
             for edge in temp:

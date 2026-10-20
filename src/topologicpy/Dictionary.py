@@ -529,16 +529,7 @@ class Dictionary():
         # ------------------------------------------------------------------
         # Special case for legacy Graph.
         # ------------------------------------------------------------------
-        if Topology.IsInstance(topology, "Graph"):
-            from topologicpy.Graph import Graph
-
-            return Graph.AdjacencyDictionary(
-                topology,
-                vertexLabelKey=labelKey,
-                edgeKey=weightKey,
-                includeWeights=includeWeights,
-                mantissa=mantissa
-            )
+        pass
 
         if not Topology.IsInstance(topology, "Topology"):
             if not silent:

@@ -8,7 +8,7 @@ from topologicpy.Navigation import Navigation, NavigationModel
 from topologicpy.IFC import IFC
 from topologicpy.Face import Face
 from topologicpy.Vertex import Vertex
-from topologicpy.Graph import Graph
+from topologicpy.TGraph import TGraph
 from topologicpy.Grid import Grid
 from topologicpy.Topology import Topology
 
@@ -18,26 +18,26 @@ def rectangle(x=0,y=0,w=4,h=4,z=0,slope=0):
 
 
 def route(graph, start, end):
-    vertices=Graph.Vertices(graph)
+    vertices=TGraph.Vertices(graph, asTopologic=True)
     a=min(vertices,key=lambda v:math.dist(Vertex.Coordinates(v),start))
     b=min(vertices,key=lambda v:math.dist(Vertex.Coordinates(v),end))
-    result=Graph.ShortestPath(graph,a,b,returnVertices=True,silent=True)
-    return [vertices[i] for i in result[1]] if isinstance(result,tuple) else None
+    result=TGraph.ShortestPath(graph,a,b,returnVertices=True,silent=True)
+    return [vertices[i] for i in result[0]] if isinstance(result,tuple) else None
 
 
-def test_single_face_standard_graph_tiles_and_routing():
+def test_single_face_tgraph_tiles_and_routing():
     model=Navigation.ByFaces([rectangle()])
     assert isinstance(model,NavigationModel)
     graph=Navigation.Graph(model)
-    assert len(Graph.Vertices(graph))==16
-    assert len(Graph.Edges(graph))==24
+    assert len(TGraph.Vertices(graph, asTopologic=True))==16
+    assert len(TGraph.Edges(graph, asTopologic=True))==24
     assert route(graph,[.5,.5,0],[3.5,3.5,0])
     tiles=Navigation.Tiles(model,graph)
     assert len(tiles)==16
     assert sum(Face.Area(f) for f in tiles)==pytest.approx(16)
-    ids={Navigation._Metadata(v)['navigationID'] for v in Graph.Vertices(graph)}
+    ids={Navigation._Metadata(v)['navigationID'] for v in TGraph.Vertices(graph, asTopologic=True)}
     assert {Navigation._Metadata(f)['navigationID'] for f in tiles}==ids
-    assert all(Navigation._Metadata(v)['source']=='0' for v in Graph.Vertices(graph))
+    assert all(Navigation._Metadata(v)['source']=='0' for v in TGraph.Vertices(graph, asTopologic=True))
     model.faces=[]
     assert len(Navigation.Tiles(model,graph))==16
 
@@ -80,7 +80,7 @@ def test_explicit_ramp_centreline_and_lift():
     graph=Navigation.Graph(model)
     assert route(graph,[.5,.5,0],[.5,.5,3])
     assert len(Navigation.Tiles(model,graph))==32
-    assert not any(Navigation._Metadata(v)['tileIDs'] for v in Graph.Vertices(graph) if Navigation._Metadata(v)['kind']=='lift')
+    assert not any(Navigation._Metadata(v)['tileIDs'] for v in TGraph.Vertices(graph, asTopologic=True) if Navigation._Metadata(v)['kind']=='lift')
 
 
 @pytest.mark.parametrize('kwargs',[{'spacing':0},{'spacing':float('nan')},{'maxHorizontalGap':.01},{'maxStepHeight':-1},{'direction':[0,0]},{'mode':'unknown'}])
@@ -122,7 +122,7 @@ def test_ifc_connectors_independently_route(ifc_model,kind):
 def test_ifc_storey_isolation_and_isovist_heights(ifc_model):
     sid=ifc_model.storeys[1]['id']
     graph=Navigation.Graph(ifc_model,spacing=2,storey=sid)
-    assert all(Navigation._Metadata(v)['storey']==sid for v in Graph.Vertices(graph))
+    assert all(Navigation._Metadata(v)['storey']==sid for v in TGraph.Vertices(graph, asTopologic=True))
     faces=Navigation.IsovistFaces(ifc_model)
     assert {round(Navigation._Record(f)['plane'][2],3) for f in faces}=={1.6,2.8,3.4,4.6,4.75}
     assert max(p[2] for f in ifc_model.faces for p in Navigation._Record(f)['outer'])<3.2
@@ -140,16 +140,16 @@ def test_duplex_stairs(spacing):
         subset=copy.copy(model);subset.connectors=[c for c in model.connectors if c['group']==group]
         if len([c for c in subset.connectors if c.get('kind')=='tread'])<10:continue
         graph=Navigation.Graph(subset,spacing=spacing)
-        vertices=Graph.Vertices(graph)
+        vertices=TGraph.Vertices(graph, asTopologic=True)
         stair=[v for v in vertices if Navigation._Metadata(v)['kind']=='tread']
         if not stair:continue
         low=min(stair,key=lambda v:Vertex.Coordinates(v)[2]);high=max(stair,key=lambda v:Vertex.Coordinates(v)[2])
-        path=Graph.ShortestPath(graph,low,high,returnVertices=True,silent=True)
+        path=TGraph.ShortestPath(graph,low,high,returnVertices=True,silent=True)
         assert path
         for elevation,endpoint in [(0,low),(3.1,high)]:
             candidates=[v for v in vertices if Navigation._Metadata(v)['kind']=='floor' and abs(Vertex.Coordinates(v)[2]-elevation)<.15]
             nearest=min(candidates,key=lambda v:math.dist(Vertex.Coordinates(v),Vertex.Coordinates(endpoint)))
-            assert Graph.ShortestPath(graph,endpoint,nearest,silent=True)
+            assert TGraph.ShortestPath(graph,endpoint,nearest,silent=True)
         connected+=1
     assert connected==2
 
@@ -183,7 +183,7 @@ def test_malformed_and_custom_connector_sampling():
     assert all(d==pytest.approx(2) for d in distances[:-1])
     empty=Navigation.Ramp([rectangle()])
     model.connectors=[empty]
-    assert len(Graph.Vertices(Navigation.Graph(model)))==16
+    assert len(TGraph.Vertices(Navigation.Graph(model), asTopologic=True))==16
     with pytest.raises(ValueError):Navigation.Ramp(centreline=[[0,0,0],[1,0,0]],spacing=0)
 
 
@@ -207,7 +207,7 @@ def test_imported_connectors_and_obstacles_are_editable(ifc_model):
 def test_surveyed_coordinates():
     model=Navigation.ByFaces([rectangle(x=1000000,y=2000000,slope=.05)])
     graph=Navigation.Graph(model,spacing=2)
-    assert len(Graph.Vertices(graph))==4
+    assert len(TGraph.Vertices(graph, asTopologic=True))==4
     assert len(Navigation.Tiles(model,graph))==4
 
 
@@ -223,7 +223,7 @@ def test_wire_centreline_ordering():
 
 def test_all_ifc_tiles_reference_existing_vertices(ifc_model):
     graph=Navigation.Graph(ifc_model,spacing=1.5)
-    ids={Navigation._Metadata(v)['navigationID'] for v in Graph.Vertices(graph)}
+    ids={Navigation._Metadata(v)['navigationID'] for v in TGraph.Vertices(graph, asTopologic=True)}
     tiles=Navigation.Tiles(ifc_model,graph)
     assert {Navigation._Metadata(f)['navigationID'] for f in tiles}.issubset(ids)
     assert Navigation.IsovistFaces(ifc_model,eyeHeight=2)
@@ -246,9 +246,9 @@ def test_maximum_slab_slope_selection():
 def test_overlapping_coplanar_slabs_form_one_grid():
     model=Navigation.ByFaces([rectangle(),rectangle(x=2)],storeyIDs=['a','a'])
     graph=Navigation.Graph(model)
-    assert len(Graph.Vertices(graph))==24
+    assert len(TGraph.Vertices(graph, asTopologic=True))==24
     assert sum(Face.Area(f) for f in Navigation.Tiles(model,graph))==pytest.approx(24)
-    assert all(Navigation._Metadata(v)['sourceIDs']==['0','1'] for v in Graph.Vertices(graph))
+    assert all(Navigation._Metadata(v)['sourceIDs']==['0','1'] for v in TGraph.Vertices(graph, asTopologic=True))
 
 
 @pytest.mark.parametrize('graph_type',['graph','tgraph'])
@@ -259,14 +259,13 @@ def test_coincident_lift_doors_preserve_tile_associations(graph_type):
     tiles=Navigation.Tiles(model,graph)
     assert len(tiles)==32
     if graph_type=='graph':
-        vertices=Graph.Vertices(graph)
+        vertices=TGraph.Vertices(graph, asTopologic=True)
         assert len(vertices)==34
         ids={Navigation._Metadata(v)['navigationID'] for v in vertices}
         assert {Navigation._Metadata(t)['navigationID'] for t in tiles}.issubset(ids)
         assert route(graph,[.5,.5,0],[.5,.5,3])
     else:
-        from topologicpy.TGraph import TGraph
-        assert len(TGraph.Vertices(graph))==34
+        assert len(TGraph.Vertices(graph, asTopologic=True))==34
         assert TGraph.ShortestPath(graph,0,16,silent=True)
 
 
@@ -275,7 +274,7 @@ def test_navigation_identifiers_survive_native_dictionary_round_trip(identifier)
     model=Navigation.ByFaces([rectangle()],storeyIDs=[identifier])
     model.connectors=[Navigation.Stair(rectangle(x=4,w=1,h=1),storey=identifier,source=identifier,group=identifier)]
     graph=Navigation.Graph(model,spacing=2,storey=identifier)
-    metadata=[Navigation._Metadata(v) for v in Graph.Vertices(graph)]
+    metadata=[Navigation._Metadata(v) for v in TGraph.Vertices(graph, asTopologic=True)]
     assert metadata
     assert all(d['storey']==identifier and d['storeyIDs']==[identifier] for d in metadata)
     stair=next(d for d in metadata if d['kind']=='tread')

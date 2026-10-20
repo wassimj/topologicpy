@@ -41,6 +41,7 @@ TopologicPy can also be installed from PyPI:
 ```bash
 pip install topologicpy --upgrade
 ```
+Note:  pip install falls back to topologic_core when pythonOCC is absent. topologic_core is much slower, faulty in places, and is not recommended. It will be deprecated soon.
 
 ## Prerequisites
 
@@ -179,6 +180,22 @@ ttl = Ontology.TTLString(cell)
 print(ttl)
 ```
 
+
+
+### TGraph graph API
+
+Graph-producing library methods now return `TGraph`. Navigation, database
+retrieval, GQL, GraphRAG, plotting, and topology utilities no longer depend on
+`Graph.py` or either geometry backend's native Graph class.
+
+Use `TGraph.Vertices(graph)` and `TGraph.Edges(graph)` for records. Request
+`asTopologic=True` when geometry objects are needed. `TGraph.ShortestPath`
+returns vertex indices by default, and `TGraph.Dictionary` returns a Python
+dictionary.
+
+The older `graphType="graph"` and `asTGraph=False` selector spellings are retained
+for call compatibility, but they also produce `TGraph`. `Plotly.DataByGraph`
+delegates to `Plotly.DataByTGraph`.
 
 ## API Documentation
 API documentation can be found at [https://topologicpy.readthedocs.io](https://topologicpy.readthedocs.io)

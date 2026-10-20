@@ -4,7 +4,7 @@
 Minimal GQL-like executor for TopologicPy.
 
 This executor uses a dictionary-backed GQL working graph internally. The first
-query against a TopologicPy Graph or TGraph converts it into a working graph containing
+query against a TopologicPy TGraph converts it into a working graph containing
 Python lists of vertices and edges plus index maps. Subsequent GQL operations
 operate on that working graph and avoid rebuilding or traversing the TopologicPy
 Graph until Executor.TopologicGraph(...) is explicitly requested.
@@ -37,7 +37,7 @@ Read queries return list[dict]. Mutation queries return:
     }
 
 For mutation queries, "graph" is normally a GQL working graph. Convert it back
-to a TopologicPy Graph or TGraph only when needed using Executor.TopologicGraph(graph).
+to a TopologicPy TGraph only when needed using Executor.TopologicGraph(graph).
 """
 
 from typing import Any, Dict, List, Tuple
@@ -51,7 +51,7 @@ except Exception:
 
 
 class Executor:
-    """Minimal GQL-like executor for TopologicPy Graph or TGraph objects."""
+    """Minimal GQL-like executor for TopologicPy TGraph objects."""
 
     _GRAPH_CACHE = {}
 
@@ -74,7 +74,7 @@ class Executor:
 
     @staticmethod
     def _is_graph(graph) -> bool:
-        """Returns True if the input object is a legacy TopologicPy Graph or TGraph."""
+        """Returns True if the input object is a legacy TopologicPy TGraph."""
         try:
             from topologicpy.Topology import Topology
             return bool(Topology.IsInstance(graph, "graph")) and not Executor._is_tgraph(graph)
@@ -98,7 +98,7 @@ class Executor:
 
         If graph is already a GQL working graph, it is returned unchanged. If it
         is a TopologicPy TGraph, its active vertex and edge records are read as
-        dictionaries. If it is a legacy TopologicPy Graph or TGraph, its vertices and edges
+        dictionaries. If it is a legacy TopologicPy TGraph, its vertices and edges
         are read once and cached. Subsequent GQL operations use the working graph
         and avoid repeatedly traversing the source graph.
         """
@@ -132,12 +132,12 @@ class Executor:
                 return None
         elif graph_kind == "graph":
             try:
-                from topologicpy.Graph import Graph
-                vertices = Graph.Vertices(graph) or []
-                edges = Graph.Edges(graph) or []
+                from topologicpy.TGraph import TGraph
+                vertices = TGraph.Vertices(graph) or []
+                edges = TGraph.Edges(graph) or []
             except Exception as e:
                 if not silent:
-                    print("GQL.Executor._ensure_working_graph - Error: Could not read TopologicPy Graph or TGraph. Returning None.")
+                    print("GQL.Executor._ensure_working_graph - Error: Could not read TopologicPy TGraph. Returning None.")
                     print("Error:", e)
                 return None
         else:
@@ -189,25 +189,25 @@ class Executor:
         return working_graph
 
     @staticmethod
-    def TopologicGraph(graph, ontology: bool = True, asTGraph: bool = False, silent: bool = False):
+    def TopologicGraph(graph, ontology: bool = True, asTGraph: bool = True, silent: bool = False):
         """
-        Returns a TopologicPy Graph or TGraph or TGraph from a graph or GQL working graph.
+        Returns a TopologicPy TGraph from a graph or GQL working graph.
 
         Parameters
         ----------
-        graph : topologic_core.Graph, topologicpy.TGraph, or dict
+        graph : topologicpy.TGraph, or dict
             A TopologicPy graph, TGraph, or a GQL working graph returned by GQL.Query / GQL.Mutate.
         ontology : bool , optional
             If True, ontology metadata is preserved or added where supported. Default is True.
         asTGraph : bool , optional
-            If True, the result is materialised as a TGraph. If False, the result follows
-            the original source graph type where possible and falls back to Graph. Default is False.
+            Retained for call compatibility. The result is always a TGraph.
+            Default is True.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
-        topologic_core.Graph, topologicpy.TGraph, or None
+        topologicpy.TGraph, or None
             The corresponding TopologicPy graph object.
         """
 
@@ -215,20 +215,20 @@ class Executor:
             return None
 
         if not Executor._is_working_graph(graph):
-            if asTGraph and not Executor._is_tgraph(graph):
+            if not Executor._is_tgraph(graph):
                 return Executor._convert_graph_object(graph, asTGraph=True, ontology=ontology, silent=silent)
             return graph
 
         if graph.get("dirty") is False and graph.get("topologic_graph") is not None:
             cached = graph.get("topologic_graph")
-            if asTGraph and not Executor._is_tgraph(cached):
+            if not Executor._is_tgraph(cached):
                 return Executor._convert_graph_object(cached, asTGraph=True, ontology=ontology, silent=silent)
             return cached
 
         vertices = graph.get("vertices", []) or []
         edges = graph.get("edges", []) or []
 
-        target_tgraph = bool(asTGraph or graph.get("graph_kind") == "tgraph")
+        target_tgraph = True
         updated = Executor._graph_by_vertices_edges(vertices, edges, ontology=ontology, asTGraph=target_tgraph, silent=silent)
         if updated is not None:
             graph["topologic_graph"] = updated
@@ -244,7 +244,7 @@ class Executor:
 
         Parameters
         ----------
-        graph : topologic_core.Graph, topologicpy.TGraph, or dict
+        graph : topologicpy.TGraph, or dict
             A TopologicPy graph, TGraph, or GQL working graph.
         ontology : bool , optional
             If True, ontology metadata is preserved or added where supported. Default is True.
@@ -259,21 +259,9 @@ class Executor:
         return Executor.TopologicGraph(graph, ontology=ontology, asTGraph=True, silent=silent)
 
     @staticmethod
-    def _convert_graph_object(graph, asTGraph: bool = False, ontology: bool = True, silent: bool = False):
-        """Converts an already-materialised graph object to Graph or TGraph when possible."""
-        if graph is None:
-            return None
-        if asTGraph:
-            if Executor._is_tgraph(graph):
-                return graph
-            try:
-                from topologicpy.Graph import Graph
-                vertices = Graph.Vertices(graph) or []
-                edges = Graph.Edges(graph) or []
-                return Executor._graph_by_vertices_edges(vertices, edges, ontology=ontology, asTGraph=True, silent=silent)
-            except Exception:
-                return None
-        return graph
+    def _convert_graph_object(graph, asTGraph: bool = True, ontology: bool = True, silent: bool = False):
+        """Accept TGraph objects; native graph conversion has been retired."""
+        return graph if Executor._is_tgraph(graph) else None
 
     @staticmethod
     def _graph_edges(graph):
@@ -1297,88 +1285,87 @@ class Executor:
         return Topology.SetDictionary(topology, d)
 
     @staticmethod
-    def _graph_by_vertices_edges(vertices, edges, ontology: bool = True, asTGraph: bool = False, silent: bool = False):
-        if asTGraph:
-            try:
-                from topologicpy.TGraph import TGraph
-                v_records = []
-                index_map = {}
-                for i, vertex in enumerate(vertices or []):
-                    if isinstance(vertex, dict):
-                        d = dict(vertex.get("dictionary", vertex))
-                        idx = Executor._normalise_index(vertex.get("index", d.get("index", i)))
-                    else:
-                        d = Executor._dictionary_to_python(vertex)
-                        idx = Executor._normalise_index(d.get("index", i))
-                        d.setdefault("representation", vertex)
-                    if not isinstance(idx, int):
-                        idx = i
-                    d.setdefault("index", idx)
-                    d.setdefault("id", d.get("id", idx))
-                    index_map[idx] = len(v_records)
-                    index_map[str(idx)] = len(v_records)
-                    for alias in ("id", "ID", "uuid", "guid", "name", "label", "node_id"):
-                        if alias in d:
-                            index_map.setdefault(d[alias], len(v_records))
-                            index_map.setdefault(str(d[alias]), len(v_records))
-                    v_records.append(d)
+    def _graph_by_vertices_edges(vertices, edges, ontology: bool = True, asTGraph: bool = True, silent: bool = False):
+        try:
+            from topologicpy.TGraph import TGraph
+            v_records = []
+            index_map = {}
+            for i, vertex in enumerate(vertices or []):
+                if isinstance(vertex, dict):
+                    d = dict(vertex.get("dictionary", vertex))
+                    idx = Executor._normalise_index(vertex.get("index", d.get("index", i)))
+                else:
+                    d = Executor._dictionary_to_python(vertex)
+                    idx = Executor._normalise_index(d.get("index", i))
+                    d.setdefault("representation", vertex)
+                if not isinstance(idx, int):
+                    idx = i
+                d.setdefault("index", idx)
+                d.setdefault("id", d.get("id", idx))
+                index_map[idx] = len(v_records)
+                index_map[str(idx)] = len(v_records)
+                for alias in ("id", "ID", "uuid", "guid", "name", "label", "node_id"):
+                    if alias in d:
+                        index_map.setdefault(d[alias], len(v_records))
+                        index_map.setdefault(str(d[alias]), len(v_records))
+                v_records.append(d)
 
-                e_records = []
-                for edge in edges or []:
-                    if isinstance(edge, dict):
-                        d = dict(edge.get("dictionary", edge))
-                        src = edge.get("src", d.get("src", d.get("source", d.get("src_id", d.get("source_id", None)))))
-                        dst = edge.get("dst", d.get("dst", d.get("target", d.get("dst_id", d.get("target_id", None)))))
-                    else:
-                        d = Executor._dictionary_to_python(edge)
-                        src = d.get("src", None)
-                        dst = d.get("dst", None)
-                    src = Executor._normalise_index(src)
-                    dst = Executor._normalise_index(dst)
-                    if src in index_map:
-                        src = index_map[src]
-                    elif str(src) in index_map:
-                        src = index_map[str(src)]
-                    if dst in index_map:
-                        dst = index_map[dst]
-                    elif str(dst) in index_map:
-                        dst = index_map[str(dst)]
-                    if not isinstance(src, int) or not isinstance(dst, int):
-                        continue
-                    d["src"] = src
-                    d["dst"] = dst
-                    e_records.append(d)
+            e_records = []
+            for edge in edges or []:
+                if isinstance(edge, dict):
+                    d = dict(edge.get("dictionary", edge))
+                    src = edge.get("src", d.get("src", d.get("source", d.get("src_id", d.get("source_id", None)))))
+                    dst = edge.get("dst", d.get("dst", d.get("target", d.get("dst_id", d.get("target_id", None)))))
+                else:
+                    d = Executor._dictionary_to_python(edge)
+                    src = d.get("src", None)
+                    dst = d.get("dst", None)
+                src = Executor._normalise_index(src)
+                dst = Executor._normalise_index(dst)
+                if src in index_map:
+                    src = index_map[src]
+                elif str(src) in index_map:
+                    src = index_map[str(src)]
+                if dst in index_map:
+                    dst = index_map[dst]
+                elif str(dst) in index_map:
+                    dst = index_map[str(dst)]
+                if not isinstance(src, int) or not isinstance(dst, int):
+                    continue
+                d["src"] = src
+                d["dst"] = dst
+                e_records.append(d)
 
-                return TGraph.ByVerticesEdges(
-                    vertices=v_records,
-                    edges=e_records,
-                    directed=False,
-                    allowSelfLoops=True,
-                    allowParallelEdges=True,
-                    ontology=ontology,
-                    silent=silent,
-                )
-            except Exception as e:
-                if not silent:
-                    print("GQL.Executor._graph_by_vertices_edges - Warning: Could not rebuild TGraph.")
-                    print("Error:", e)
-                return None
+            return TGraph.ByVerticesEdges(
+                vertices=v_records,
+                edges=e_records,
+                directed=False,
+                allowSelfLoops=True,
+                allowParallelEdges=True,
+                ontology=ontology,
+                silent=silent,
+            )
+        except Exception as e:
+            if not silent:
+                print("GQL.Executor._graph_by_vertices_edges - Warning: Could not rebuild TGraph.")
+                print("Error:", e)
+            return None
 
-        from topologicpy.Graph import Graph
+        from topologicpy.TGraph import TGraph
 
         try:
-            result = Graph.ByVerticesEdges(vertices, edges, ontology=ontology, silent=silent)
+            result = TGraph.ByVerticesEdges(vertices, edges, ontology=ontology, silent=silent)
             return result
         except TypeError:
             try:
-                result = Graph.ByVerticesEdges(vertices, edges, silent=silent)
+                result = TGraph.ByVerticesEdges(vertices, edges, silent=silent)
             except TypeError:
-                result = Graph.ByVerticesEdges(vertices, edges)
+                result = TGraph.ByVerticesEdges(vertices, edges)
             if ontology and result is not None:
                 try:
-                    from topologicpy.Graph import Graph as _Graph
-                    if hasattr(_Graph, "AnnotateOntology"):
-                        result = _Graph.AnnotateOntology(result, silent=True)
+                    from topologicpy.TGraph import TGraph as _TGraph
+                    if hasattr(_TGraph, "AnnotateOntology"):
+                        result = _TGraph.AnnotateOntology(result, silent=True)
                 except Exception:
                     pass
             return result

@@ -29840,8 +29840,11 @@ class TGraph:
             return None
         try:
             import networkx as nx
-        except Exception:
-            return None
+        except ImportError as exc:
+            raise ImportError(
+                'TGraph.NetworkXGraph requires networkx. Install it with: '
+                'python -m pip install "topologicpy[graph]"'
+            ) from exc
 
         if graph._allow_parallel_edges:
             nx_graph = nx.MultiDiGraph() if graph._directed else nx.MultiGraph()

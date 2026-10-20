@@ -648,99 +648,56 @@ class Plotly:
                     colorScale: str = "viridis",
                     mantissa: int = 6,
                     silent: bool = False):
-        """Creates Plotly data from a Graph, preserving curved Graph Edges."""
-        from topologicpy.Edge import Edge
-        from topologicpy.Graph import Graph
-        from topologicpy.Topology import Topology
-        from topologicpy.Vertex import Vertex
-        from topologicpy.Wire import Wire
-
-        if not Topology.IsInstance(graph, "Graph"):
-            if not silent:
-                print("Plotly.DataByGraph - Error: The input graph is not a valid Graph. Returning None.")
-            return None
-
-        data = []
-        tolerance = 0.0001
-        curve_samples = max(16, int(sides) * 4) if isinstance(sides, (int, float)) else 32
-        if showEdges:
-            render_vertices = []
-            render_edges = []
-            edge_dicts = []
-            graph_edges = Graph.Edges(graph) or []
-
-            for edge in graph_edges:
-                try:
-                    dictionary = Topology.Dictionary(edge, silent=True)
-                except Exception:
-                    dictionary = Topology.Dictionary(edge)
-
-                points = []
-                if sagitta and float(sagitta) != 0.0:
-                    try:
-                        arc = Wire.ArcByEdge(edge, sagitta=sagitta, absolute=absolute, sides=max(4, int(sides)), close=False, silent=True)
-                    except Exception:
-                        arc = None
-                    if Topology.IsInstance(arc, "Wire"):
-                        if angle:
-                            try:
-                                arc = Topology.Rotate(arc, origin=Topology.Centroid(edge), axis=Edge.Direction(edge), angle=angle, silent=True)
-                            except Exception:
-                                pass
-                        arc_edges = Topology.Edges(arc, silent=True) or []
-                        for arc_edge in arc_edges:
-                            segment = Plotly._edge_render_points(arc_edge, samples=curve_samples, mantissa=mantissa, tolerance=tolerance)
-                            if points and segment and points[-1] == segment[0]:
-                                segment = segment[1:]
-                            points.extend(segment)
-                if not points:
-                    points = Plotly._edge_render_points(edge, samples=curve_samples, mantissa=mantissa, tolerance=tolerance)
-                if len(points) < 2:
-                    continue
-                base = len(render_vertices)
-                render_vertices.extend(points)
-                render_edges.append(list(range(base, base + len(points))))
-                edge_dicts.append(dictionary)
-
-            data.extend(Plotly.edgeData(
-                render_vertices, render_edges, dictionaries=edge_dicts,
-                color=edgeColor, colorKey=edgeColorKey, width=edgeWidth, widthKey=edgeWidthKey,
-                dash=edgeDash, dashKey=edgeDashKey, directed=directed,
-                arrowSize=arrowSize, arrowSizeKey=arrowSizeKey,
-                labelKey=edgeLabelKey, showEdgeLabel=showEdgeLabel,
-                groupKey=edgeGroupKey, minGroup=edgeMinGroup, maxGroup=edgeMaxGroup,
-                groups=edgeGroups, legendLabel=edgeLegendLabel,
-                legendGroup=edgeLegendGroup, legendRank=edgeLegendRank,
-                showLegend=showEdgeLegend, colorScale=colorScale,
-            ))
-
-        if showVertices:
-            graph_vertices = Graph.Vertices(graph) or []
-            coordinates = []
-            dictionaries = []
-            for vertex in graph_vertices:
-                point = Plotly._vertex_coordinates(vertex, mantissa=mantissa)
-                if point is None:
-                    continue
-                coordinates.append(point)
-                try:
-                    dictionaries.append(Topology.Dictionary(vertex, silent=True))
-                except Exception:
-                    dictionaries.append(Topology.Dictionary(vertex))
-            data.extend(Plotly.vertexData(
-                coordinates, dictionaries=dictionaries,
-                color=vertexColor, colorKey=vertexColorKey,
-                size=vertexSize, sizeKey=vertexSizeKey,
-                borderColor=vertexBorderColor, borderWidth=vertexBorderWidth,
-                borderColorKey=vertexBorderColorKey, borderWidthKey=vertexBorderWidthKey,
-                labelKey=vertexLabelKey, showVertexLabel=showVertexLabel,
-                vertexLabelFontSize=vertexLabelFontSize,
-                groupKey=vertexGroupKey, minGroup=vertexMinGroup, maxGroup=vertexMaxGroup,
-                groups=vertexGroups, legendLabel=vertexLegendLabel,
-                legendGroup=vertexLegendGroup, legendRank=vertexLegendRank,
-                showLegend=showVertexLegend, colorScale=colorScale,
-            ))
-        return data
+        """Render a TGraph; retained as a public plotting method name."""
+        return Plotly.DataByTGraph(graph,
+            sagitta=sagitta,
+            absolute=absolute,
+            sides=sides,
+            angle=angle,
+            directed=directed,
+            arrowSize=arrowSize,
+            arrowSizeKey=arrowSizeKey,
+            vertexColor=vertexColor,
+            vertexColorKey=vertexColorKey,
+            vertexSize=vertexSize,
+            vertexSizeKey=vertexSizeKey,
+            vertexLabelKey=vertexLabelKey,
+            vertexBorderColor=vertexBorderColor,
+            vertexBorderWidth=vertexBorderWidth,
+            vertexBorderColorKey=vertexBorderColorKey,
+            vertexBorderWidthKey=vertexBorderWidthKey,
+            vertexGroupKey=vertexGroupKey,
+            vertexGroups=vertexGroups,
+            vertexMinGroup=vertexMinGroup,
+            vertexMaxGroup=vertexMaxGroup,
+            showVertices=showVertices,
+            showVertexLabel=showVertexLabel,
+            vertexLabelFontSize=vertexLabelFontSize,
+            showVertexLegend=showVertexLegend,
+            vertexLegendLabel=vertexLegendLabel,
+            vertexLegendRank=vertexLegendRank,
+            vertexLegendGroup=vertexLegendGroup,
+            edgeColor=edgeColor,
+            edgeColorKey=edgeColorKey,
+            edgeWidth=edgeWidth,
+            edgeWidthKey=edgeWidthKey,
+            edgeDash=edgeDash,
+            edgeDashKey=edgeDashKey,
+            edgeLabelKey=edgeLabelKey,
+            edgeGroupKey=edgeGroupKey,
+            edgeGroups=edgeGroups,
+            edgeMinGroup=edgeMinGroup,
+            edgeMaxGroup=edgeMaxGroup,
+            showEdges=showEdges,
+            showEdgeLabel=showEdgeLabel,
+            showEdgeLegend=showEdgeLegend,
+            edgeLegendLabel=edgeLegendLabel,
+            edgeLegendRank=edgeLegendRank,
+            edgeLegendGroup=edgeLegendGroup,
+            colorScale=colorScale,
+            mantissa=mantissa,
+            silent=silent,
+        )
 
     @staticmethod
     def DataByTGraph(
@@ -1110,6 +1067,24 @@ class Plotly:
             a, b = coords_by_index.get(src), coords_by_index.get(dst)
             if a is None or b is None:
                 return []
+            representation = record.get("representation")
+            if (representation is not None
+                    and not isinstance(representation, (dict, list, tuple, str))
+                    and abs(_number(d.get("sagitta", sagitta), 0.0)) <= tolerance):
+                try:
+                    points = Plotly._edge_render_points(
+                        representation, samples=max(16, int(sides) * 4),
+                        mantissa=mantissa, tolerance=tolerance,
+                    )
+                except Exception:
+                    # Non-geometric records remain renderable without a kernel.
+                    points = []
+                if len(points) >= 2:
+                    # Arrow direction follows incidence, independent of the
+                    # stored edge's traversal direction.
+                    if _distance(points[-1], a) < _distance(points[0], a):
+                        points.reverse()
+                    return points
             return _self_loop_points(a, d) if src == dst else _arc_points(a, b, d)
 
         def _direction(points, reverse=False):
