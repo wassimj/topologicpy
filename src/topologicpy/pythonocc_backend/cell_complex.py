@@ -70,7 +70,9 @@ def _as_compsolid(shape):
     specifically a COMPSOLID, so rebuild one explicitly from the Solid
     sub-shapes whenever the builder didn't already produce one.
     """
-    if shape is None:
+    if not CellComplex._has_solid(shape):
+        return None
+    if not CellComplex._cells_share_faces(shape):
         return None
     try:
         from OCC.Core.TopAbs import TopAbs_COMPSOLID
@@ -223,6 +225,46 @@ class CellComplex(Topology):
     cells: list = field(default_factory=list)
 
     @staticmethod
+    def _has_solid(shape):
+        """Check for one solid without collecting or wrapping all cells."""
+        if _is_null_shape(shape) or TopExp_Explorer is None:
+            return False
+        return bool(TopExp_Explorer(shape, TopAbs_SOLID).More())
+
+    @staticmethod
+    def _cells_share_faces(shape):
+        """Require each solid in a multi-cell result to share a native face.
+
+        Indexed OCCT shape identity ignores orientation, so opposite uses of
+        an interface face match. Repeated face uses within one solid do not
+        count as adjacency. No Cell/Face wrappers or pairwise scans are needed.
+        Single-cell complexes retain their existing supported semantics.
+        """
+        from OCC.Core.TopTools import TopTools_IndexedMapOfShape
+
+        solids = TopTools_IndexedMapOfShape()
+        faces = TopTools_IndexedMapOfShape()
+        owners = {}
+        adjacent = set()
+        explorer = TopExp_Explorer(shape, TopAbs_SOLID)
+        while explorer.More():
+            solid = explorer.Current()
+            explorer.Next()
+            if solids.Contains(solid):
+                continue
+            solid_id = solids.Add(solid)
+            face_explorer = TopExp_Explorer(solid, TopAbs_FACE)
+            while face_explorer.More():
+                face_id = faces.Add(face_explorer.Current())
+                face_explorer.Next()
+                owner = owners.setdefault(face_id, solid_id)
+                if owner != solid_id:
+                    adjacent.add(owner)
+                    adjacent.add(solid_id)
+        count = solids.Extent()
+        return count == 1 or (count > 1 and len(adjacent) == count)
+
+    @staticmethod
     def _build_from_shapes(shapes, tolerance=0.0001):
         """
         True non-manifold CellComplex construction: BOPAlgo_MakerVolume partitions the
@@ -252,14 +294,15 @@ class CellComplex(Topology):
         except Exception:
             return None
 
-        if _is_null_shape(result_shape):
+        if not CellComplex._has_solid(result_shape):
             return None
 
         solid_count = len(_iter_subshapes(result_shape, TopAbs_SOLID))
         if solid_count >= 2:
             compsolid = _as_compsolid(result_shape)
-            if compsolid is not None:
-                result_shape = compsolid
+            if compsolid is None:
+                return None
+            result_shape = compsolid
         else:
             # A single-solid loft/partition can carry an open, zero-volume
             # shell (e.g. CellComplex.Torus' made-by-Spin solid). topologic_core
@@ -284,13 +327,17 @@ class CellComplex(Topology):
 
         Existing Solids are assembled with BOPAlgo_CellsBuilder first so split
         parts and shared interface Faces are preserved. MakerVolume remains a
-        fallback for cases CellsBuilder cannot assemble.
+        fallback for cases CellsBuilder cannot assemble. In multi-cell results,
+        every cell must share at least one face with another cell.
         """
         cells = [c for c in (cells or []) if isinstance(c, Cell)]
         shapes = [c.shape for c in cells if not _is_null_shape(getattr(c, "shape", None))]
         if len(shapes) < 1:
             return None
         if len(shapes) == 1:
+            if (not CellComplex._has_solid(shapes[0])
+                    or not CellComplex._cells_share_faces(shapes[0])):
+                return None
             return CellComplex(shape=shapes[0], cells=cells)
 
         try:
@@ -359,10 +406,7 @@ class CellComplex(Topology):
             except Exception:
                 pass
 
-        result = CellComplex._build_from_shapes(shapes, tolerance)
-        if result is None:
-            return CellComplex(shape=None, cells=cells)
-        return result
+        return CellComplex._build_from_shapes(shapes, tolerance)
 
     @staticmethod
     def ByFaces(faces, tolerance=0.0001, copyAttributes=False):

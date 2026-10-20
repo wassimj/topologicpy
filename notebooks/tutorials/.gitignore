@@ -1,0 +1,4 @@
+results/
+.ipynb_checkpoints/
+__pycache__/
+verification-local.json

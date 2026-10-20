@@ -14,7 +14,7 @@
 # - IfcBoundingBox
 # - IfcPolyline / IfcIndexedPolyCurve
 # - IfcMappedItem / IfcRepresentationMap
-# - Approximate IfcBooleanResult / IfcBooleanClippingResult by first operand
+# - Native solid Boolean operations and product opening subtraction
 # - IfcLocalPlacement and Axis2Placement transforms
 
 from __future__ import annotations
@@ -435,8 +435,9 @@ class IFCFastTopology:
     Geometry parsing and mesh construction backend for the IFC public API.
     Legacy topology entry points delegate to IFC rather than duplicating it.
 
-    This class is intentionally conservative: unsupported advanced geometry is
-    skipped or approximated rather than evaluated through a full CSG/BREP kernel.
+    Simple geometry uses direct mesh construction. Faces with holes and solid
+    Booleans use the configured native kernel. Unsupported Boolean operands and
+    advanced surfaces raise ValueError rather than returning misleading geometry.
     """
 
     _REC_HEAD_RE = re.compile(rb"^\s*#\s*(\d+)\s*=\s*([A-Z][A-Z0-9_]*)\s*\(", re.I)
@@ -927,8 +928,9 @@ class IFCFastTopology:
         scale = IFCFastTopology._coordinate_scale(entities, scale)
         vertices, edges, faces, vertex_dictionaries, product_ranges = [], [], [], [], []
         metadata_cache = IFCFastTopology._entity_metadata_cache(entities, dictionaryMode=dictionaryMode)
+        placement_cache = {}
         for product in products:
-            mesh = IFCFastTopology.MeshDataByProduct(product, entities, circleSides=circleSides, scale=scale)
+            mesh = IFCFastTopology.MeshDataByProduct(product, entities, circleSides=circleSides, scale=scale, placementCache=placement_cache)
             if not mesh or not mesh.get("vertices"):
                 continue
             d = IFCFastTopology._entity_dictionary(product, dictionaryMode, metadataCache=metadata_cache, ontology=ontology, source=source, generatedBy='IFCFastTopology.MeshDataByProducts')
@@ -1117,7 +1119,69 @@ class IFCFastTopology:
                     meshes.append(m)
         if not meshes:
             return None
-        return IFCFastTopology._merge_meshes(meshes, dedupe=True)
+        mesh = IFCFastTopology._merge_meshes(meshes, dedupe=True)
+        index_key = ("voids", id(entities), len(entities))
+        opening_index = placementCache.get(index_key) if isinstance(placementCache, dict) else None
+        if opening_index is None:
+            opening_index = {}
+            for relation in entities.values():
+                if relation.type == "IFCRELVOIDSELEMENT" and len(relation.args) >= 6:
+                    host = IFCFastTopology._entity_from_ref(relation.args[4], entities)
+                    if host is not None:
+                        opening_index.setdefault(host.id, []).append(relation.args[5])
+            if isinstance(placementCache, dict):
+                placementCache[index_key] = opening_index
+        active_key = ("active_openings", id(entities))
+        cache = placementCache if isinstance(placementCache, dict) else {}
+        active = cache.setdefault(active_key, set())
+        if product.id in active:
+            raise ValueError("Cyclic IFC opening relationships")
+        for opening_ref in opening_index.get(product.id, []):
+            opening = IFCFastTopology._entity_from_ref(opening_ref, entities)
+            if opening is None:
+                raise ValueError("Missing IFC opening element")
+            active.add(product.id)
+            try:
+                cutter = IFCFastTopology.MeshDataByProduct(opening, entities, circleSides, scale, cache)
+                mesh = IFCFastTopology._boolean_mesh(mesh, cutter, "DIFFERENCE")
+            finally:
+                active.remove(product.id)
+        return mesh
+
+    @staticmethod
+    def _boolean_mesh(a: dict, b: dict, operation: str) -> dict:
+        from topologicpy.Topology import Topology
+        if a is None or b is None:
+            raise ValueError("Unsupported IFC Boolean operand geometry")
+        empty = {"vertices": [], "edges": [], "faces": []}
+        if not a.get("vertices"):
+            return b if operation == "UNION" else empty
+        if not b.get("vertices"):
+            return empty if operation == "INTERSECTION" else a
+        solids = [Topology.ByGeometry(vertices=m["vertices"], faces=m["faces"], topologyType="cell", silent=True) for m in (a,b)]
+        if any(solid is None for solid in solids):
+            raise ValueError("Could not construct IFC Boolean operand solid")
+        methods = {"DIFFERENCE": Topology.Difference, "UNION": Topology.Union, "INTERSECTION": Topology.Intersect}
+        if operation not in methods:
+            raise ValueError("Unsupported IFC Boolean operator: " + operation)
+        certified_empty = object()
+        if not Topology._IsTopologicCoreBackend() and operation in ("DIFFERENCE", "INTERSECTION"):
+            # The backend's ordinary wrappers use None for both failure and
+            # emptiness. Request its explicit empty sentinel to keep these distinct.
+            from OCC.Core.BRepAlgoAPI import BRepAlgoAPI_Cut, BRepAlgoAPI_Common
+            result = solids[0]._binary_boolean(solids[1],
+                BRepAlgoAPI_Cut if operation == "DIFFERENCE" else BRepAlgoAPI_Common,
+                _empty_result=certified_empty)
+        else:
+            result = methods[operation](*solids, silent=True)
+        if result is certified_empty:
+            return empty
+        if result is None:
+            raise ValueError("Native IFC Boolean operation failed: " + operation)
+        mesh = Topology.Geometry(result, triangulate=True, silent=True)
+        if mesh is None:
+            raise ValueError("Could not extract IFC Boolean result")
+        return mesh
 
     @staticmethod
     def _mesh_from_item(item: IFCFastEntity,
@@ -1156,11 +1220,68 @@ class IFCFastTopology:
         if t == "IFCMAPPEDITEM":
             return IFCFastTopology._mapped_item_mesh(item, entities, matrix, circleSides, scale)
         if t in ("IFCBOOLEANRESULT", "IFCBOOLEANCLIPPINGRESULT"):
-            # Approximation: keep first operand. This is fast but does not apply openings/cuts.
             first = IFCFastTopology._entity_from_ref(item.args[1] if len(item.args) > 1 else None, entities)
-            if first is not None:
-                return IFCFastTopology._mesh_from_item(first, entities, matrix, circleSides, scale)
+            second = IFCFastTopology._entity_from_ref(item.args[2] if len(item.args) > 2 else None, entities)
+            if first is None or second is None:
+                raise ValueError("Missing IFC Boolean operand")
+            a = IFCFastTopology._mesh_from_item(first, entities, matrix, circleSides, scale)
+            if second.type in ("IFCHALFSPACESOLID", "IFCBOXEDHALFSPACE", "IFCPOLYGONALBOUNDEDHALFSPACE"):
+                if str(item.args[0]).strip(".").upper() == "UNION":
+                    raise ValueError("Cannot produce a finite mesh for an unbounded half-space union")
+                b = IFCFastTopology._half_space_mesh(second, entities, matrix, scale, a)
+            else:
+                b = IFCFastTopology._mesh_from_item(second, entities, matrix, circleSides, scale)
+            return IFCFastTopology._boolean_mesh(a, b, str(item.args[0]).strip(".").upper())
         return None
+
+    @staticmethod
+    def _half_space_mesh(item, entities, matrix, scale, operand):
+        """Bound a clipping half-space outside the finite operand's full extent."""
+        if operand is None:
+            raise ValueError("Unsupported IFC clipping operand")
+        if not operand.get("vertices"):
+            return {"vertices": [], "edges": [], "faces": []}
+        surface = IFCFastTopology._entity_from_ref(item.args[0], entities)
+        if surface is None or surface.type != "IFCPLANE":
+            raise ValueError("Only planar IFC clipping half-spaces are supported")
+        frame = IFCFastTopology._matmul(matrix, IFCFastTopology._axis2placement_matrix(
+            IFCFastTopology._entity_from_ref(surface.args[0], entities), entities))
+        origin = IFCFastTopology._transform_point([0,0,0], frame, scale)
+        axes = [IFCFastTopology._normalize([frame[i][j] for i in range(3)]) for j in range(3)]
+        local = [[IFCFastTopology._dot([p[i]-origin[i] for i in range(3)], axis) for axis in axes] for p in operand["vertices"]]
+        margin = max(1.0, max(max(p[i] for p in local)-min(p[i] for p in local) for i in range(3)))
+        low = [min(p[i] for p in local)-margin for i in range(3)]
+        high = [max(p[i] for p in local)+margin for i in range(3)]
+        if item.args[1] is True:
+            high[2] = 0.0
+            low[2] = min(low[2], -margin)
+        else:
+            low[2] = 0.0
+            high[2] = max(high[2], margin)
+        points = [[x,y,z] for z in (low[2],high[2]) for x,y in ((low[0],low[1]),(high[0],low[1]),(high[0],high[1]),(low[0],high[1]))]
+        mesh = {"vertices": [[origin[i]+sum(p[j]*axes[j][i] for j in range(3)) for i in range(3)] for p in points],
+                "edges": [], "faces": [[0,1,2,3],[4,7,6,5],[0,4,5,1],[1,5,6,2],[2,6,7,3],[3,7,4,0]]}
+        if item.type == "IFCBOXEDHALFSPACE":
+            enclosure = IFCFastTopology._entity_from_ref(item.args[2], entities)
+            box = IFCFastTopology._mesh_from_item(enclosure, entities, matrix, scale=scale) if enclosure else None
+            return IFCFastTopology._boolean_mesh(mesh, box, "INTERSECTION")
+        if item.type == "IFCPOLYGONALBOUNDEDHALFSPACE":
+            boundary_frame = IFCFastTopology._matmul(matrix, IFCFastTopology._axis2placement_matrix(
+                IFCFastTopology._entity_from_ref(item.args[2], entities), entities))
+            inverse = IFCFastTopology._inverse_rigid_matrix(boundary_frame)
+            # Work in IFC coordinates for the boundary extrusion, then scale once.
+            heights = [IFCFastTopology._transform_point([v/scale for v in p], inverse)[2] for p in operand["vertices"]]
+            z0, z1 = min(heights)-margin/scale, max(heights)+margin/scale
+            boundary = IFCFastTopology._curve_points_local(IFCFastTopology._entity_from_ref(item.args[3], entities), entities)
+            if not boundary:
+                raise ValueError("Unsupported IFC half-space boundary")
+            if IFCFastTopology._points_close(boundary[0], boundary[-1]):
+                boundary = boundary[:-1]
+            vertices = [IFCFastTopology._transform_point([p[0],p[1],z], boundary_frame, scale) for z in (z0,z1) for p in boundary]
+            n = len(boundary)
+            faces = [list(range(n)),list(range(n,2*n))] + [[i,(i+1)%n,(i+1)%n+n,i+n] for i in range(n)]
+            return IFCFastTopology._boolean_mesh(mesh, {"vertices":vertices,"edges":[],"faces":faces}, "INTERSECTION")
+        return mesh
 
     @staticmethod
     def _surface_model_mesh(item: IFCFastEntity, entities: Dict[int, IFCFastEntity], matrix: list, scale: float) -> Optional[dict]:
@@ -1172,7 +1293,7 @@ class IFCFastTopology:
                     m = IFCFastTopology._shell_mesh(shell, entities, matrix, scale)
                     if m is not None:
                         meshes.append(m)
-                elif shell.type == "IFCFACE":
+                elif shell.type in ("IFCFACE", "IFCADVANCEDFACE"):
                     m = IFCFastTopology._face_mesh(shell, entities, matrix, scale)
                     if m is not None:
                         meshes.append(m)
@@ -1182,53 +1303,61 @@ class IFCFastTopology:
     def _shell_mesh(shell: IFCFastEntity, entities: Dict[int, IFCFastEntity], matrix: list, scale: float) -> Optional[dict]:
         if shell is None or not shell.args:
             return None
-        vertices: list = []
-        faces: list = []
-        key_to_index: dict = {}
-        face_refs = IFCFastTopology._refs_in_value(shell.args[0])
-        for face_ref in face_refs:
-            face = IFCFastTopology._entity_from_ref(face_ref, entities)
-            if face is None or face.type != "IFCFACE":
-                continue
-            loops = IFCFastTopology._face_loops(face, entities)
-            if not loops:
-                continue
-            # Topology.ByGeometry only accepts a face as one index loop here.
-            # Use the outer loop. Inner bounds/openings are ignored in this fast path.
-            loop = loops[0]
-            if len(loop) < 3:
-                continue
-            idxs = []
-            for p in loop:
-                wp = IFCFastTopology._transform_point(p, matrix, scale)
-                key = IFCFastTopology._point_key(wp)
-                idx = key_to_index.get(key)
-                if idx is None:
-                    idx = len(vertices)
-                    key_to_index[key] = idx
-                    vertices.append(wp)
-                idxs.append(idx)
-            if len(idxs) > 1 and idxs[0] == idxs[-1]:
-                idxs = idxs[:-1]
-            if len(set(idxs)) >= 3:
-                faces.append(idxs)
-        if not vertices:
-            return None
-        return {"vertices": vertices, "edges": [], "faces": faces}
+        meshes = []
+        for ref in IFCFastTopology._refs_in_value(shell.args[0]):
+            face = IFCFastTopology._entity_from_ref(ref, entities)
+            if face is None or face.type not in ("IFCFACE", "IFCADVANCEDFACE"):
+                raise ValueError("Unsupported IFC shell face")
+            meshes.append(IFCFastTopology._face_mesh(face, entities, matrix, scale))
+        return IFCFastTopology._merge_meshes(meshes, dedupe=True) if meshes else None
+
+    @staticmethod
+    def _loops_mesh(loops: list) -> dict:
+        """Preserve inner bounds by triangulating a native face only when needed."""
+        cleaned = []
+        for loop in loops:
+            pts = []
+            for point in loop:
+                if not pts or not IFCFastTopology._points_close(pts[-1], point):
+                    pts.append(point)
+            if len(pts) > 1 and IFCFastTopology._points_close(pts[0], pts[-1]):
+                pts.pop()
+            if len(pts) < 3:
+                raise ValueError("Invalid IFC face boundary")
+            cleaned.append(pts)
+        if len(cleaned) == 1:
+            return {"vertices": cleaned[0], "edges": [], "faces": [list(range(len(cleaned[0])))]}
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Wire import Wire
+        from topologicpy.Face import Face
+        from topologicpy.Topology import Topology
+        wires = [Wire.ByVertices([Vertex.ByCoordinates(*p) for p in loop], close=True) for loop in cleaned]
+        face = Face.ByWires(wires[0], wires[1:], silent=True)
+        if face is None:
+            raise ValueError("Could not construct IFC face with inner bounds")
+        mesh = Topology.Geometry(face, triangulate=True, silent=True)
+        if not mesh or not mesh.get("faces"):
+            raise ValueError("Could not triangulate IFC face with inner bounds")
+        return mesh
 
     @staticmethod
     def _face_mesh(face: IFCFastEntity, entities: Dict[int, IFCFastEntity], matrix: list, scale: float) -> Optional[dict]:
+        if face.type == "IFCADVANCEDFACE":
+            surface = IFCFastTopology._entity_from_ref(face.args[1] if len(face.args) > 1 else None, entities)
+            if surface is None or surface.type != "IFCPLANE":
+                raise ValueError("Curved IfcAdvancedFace surfaces are not supported; refusing a planar approximation")
         loops = IFCFastTopology._face_loops(face, entities)
         if not loops:
-            return None
-        pts = [IFCFastTopology._transform_point(p, matrix, scale) for p in loops[0]]
-        if len(pts) > 1 and IFCFastTopology._points_close(pts[0], pts[-1]):
-            pts = pts[:-1]
-        return {"vertices": pts, "edges": [], "faces": [list(range(len(pts)))] if len(pts) >= 3 else []}
+            raise ValueError("IFC face has no valid boundary")
+        mesh = IFCFastTopology._loops_mesh([[IFCFastTopology._transform_point(p, matrix, scale) for p in loop] for loop in loops])
+        if face.type == "IFCADVANCEDFACE" and len(face.args) > 2 and face.args[2] is False:
+            mesh["faces"] = [list(reversed(f)) for f in mesh["faces"]]
+        return mesh
 
     @staticmethod
     def _face_loops(face: IFCFastEntity, entities: Dict[int, IFCFastEntity]) -> list:
         loops = []
+        outer = None
         for bound_ref in IFCFastTopology._refs_in_value(face.args[0] if face.args else None):
             bound = IFCFastTopology._entity_from_ref(bound_ref, entities)
             if bound is None or bound.type not in ("IFCFACEOUTERBOUND", "IFCFACEBOUND"):
@@ -1247,23 +1376,52 @@ class IFCFastTopology:
                 for edge_ref in IFCFastTopology._refs_in_value(loop_ent.args[0] if loop_ent.args else None):
                     edge = IFCFastTopology._entity_from_ref(edge_ref, entities)
                     pts.extend(IFCFastTopology._edge_points(edge, entities))
+            if len(bound.args) > 1 and bound.args[1] is False:
+                pts.reverse()
             if len(pts) >= 3:
-                loops.append(pts)
-        # Ensure outer loop first if present.
-        return loops
+                if bound.type == "IFCFACEOUTERBOUND":
+                    outer = pts
+                else:
+                    loops.append(pts)
+        if outer is None and loops:
+            # IFC permits faces whose bounds are all IfcFaceBound. The set is
+            # unordered; for planar polygonal faces the enclosing loop has the
+            # greatest area vector magnitude (independent of plane or winding).
+            def area_vector_length(loop):
+                vector = [0.0, 0.0, 0.0]
+                for a, b in zip(loop, loop[1:]+loop[:1]):
+                    cross = IFCFastTopology._cross(a, b)
+                    vector = [vector[i]+cross[i] for i in range(3)]
+                return IFCFastTopology._norm(vector)
+            outer = max(loops, key=area_vector_length)
+            loops = [loop for loop in loops if loop is not outer]
+        return ([outer] if outer is not None else []) + loops
 
     @staticmethod
     def _edge_points(edge: Optional[IFCFastEntity], entities: Dict[int, IFCFastEntity]) -> list:
         if edge is None:
             return []
         if edge.type == "IFCORIENTEDEDGE":
-            edge_element = IFCFastTopology._entity_from_ref(edge.args[3] if len(edge.args) > 3 else None, entities)
+            edge_element = IFCFastTopology._entity_from_ref(edge.args[2] if len(edge.args) > 2 else None, entities)
             pts = IFCFastTopology._edge_points(edge_element, entities)
-            orientation = edge.args[4] if len(edge.args) > 4 else True
+            orientation = edge.args[3] if len(edge.args) > 3 else True
             return pts if orientation is not False else list(reversed(pts))
         if edge.type in ("IFCEDGE", "IFCEDGECURVE"):
             a = IFCFastTopology._vertex_point(edge.args[0] if len(edge.args) > 0 else None, entities)
             b = IFCFastTopology._vertex_point(edge.args[1] if len(edge.args) > 1 else None, entities)
+            if edge.type == "IFCEDGECURVE":
+                curve = IFCFastTopology._entity_from_ref(edge.args[2] if len(edge.args)>2 else None, entities)
+                if curve is None:
+                    raise ValueError("Missing IFC edge curve")
+                if curve.type != "IFCLINE":
+                    points = IFCFastTopology._curve_points_local(curve, entities)
+                    if not points or a is None or b is None:
+                        raise ValueError("Unsupported IFC edge curve: " + curve.type)
+                    if len(edge.args)>3 and edge.args[3] is False:
+                        points.reverse()
+                    if not IFCFastTopology._points_close(points[0],a) or not IFCFastTopology._points_close(points[-1],b):
+                        raise ValueError("Unsupported trimmed IFC edge curve")
+                    return points
             return [p for p in [a, b] if p is not None]
         return []
 
@@ -1334,6 +1492,24 @@ class IFCFastTopology:
         loops = IFCFastTopology._profile_loops(profile, entities, circleSides)
         if not loops:
             return None
+        if len(loops) > 1:
+            direction = IFCFastTopology._normalize(IFCFastTopology._normalise_point(direction))
+            offset = [v * depth for v in direction]
+            matrix = IFCFastTopology._matmul(product_matrix, position)
+            bottom = []
+            top = []
+            sides = []
+            for loop in loops:
+                if IFCFastTopology._points_close(loop[0], loop[-1]):
+                    loop = loop[:-1]
+                low = [IFCFastTopology._transform_point(p, matrix, scale) for p in loop]
+                high = [IFCFastTopology._transform_point([p[i]+offset[i] for i in range(3)], matrix, scale) for p in loop]
+                bottom.append(low)
+                top.append(high)
+                for i in range(len(low)):
+                    j = (i+1) % len(low)
+                    sides.append({"vertices": [low[i], low[j], high[j], high[i]], "edges": [], "faces": [[0,1,2,3]]})
+            return IFCFastTopology._merge_meshes([IFCFastTopology._loops_mesh(bottom), IFCFastTopology._loops_mesh(top)] + sides, dedupe=True)
         outer = loops[0]
         if len(outer) > 1 and IFCFastTopology._points_close(outer[0], outer[-1]):
             outer = outer[:-1]
@@ -1364,8 +1540,13 @@ class IFCFastTopology:
         if t == "IFCARBITRARYPROFILEDEFWITHVOIDS":
             outer_curve = IFCFastTopology._entity_from_ref(profile.args[2] if len(profile.args) > 2 else None, entities)
             pts = IFCFastTopology._curve_points_local(outer_curve, entities)
-            # Inner voids are ignored in this fast topology path.
-            return [pts] if pts else []
+            loops = [pts] if pts else []
+            for ref in IFCFastTopology._refs_in_value(profile.args[3] if len(profile.args) > 3 else None):
+                inner = IFCFastTopology._curve_points_local(IFCFastTopology._entity_from_ref(ref, entities), entities)
+                if not inner:
+                    raise ValueError("Unsupported IFC profile void curve")
+                loops.append(inner)
+            return loops
         if t == "IFCRECTANGLEPROFILEDEF":
             xdim = IFCFastTopology._as_float(profile.args[3] if len(profile.args) > 3 else 0.0, 0.0)
             ydim = IFCFastTopology._as_float(profile.args[4] if len(profile.args) > 4 else 0.0, 0.0)
@@ -1390,8 +1571,15 @@ class IFCFastTopology:
         if curve.type == "IFCPOLYLINE":
             return IFCFastTopology._polyline_points(curve, entities)
         if curve.type == "IFCINDEXEDPOLYCURVE":
-            pts, _ = IFCFastTopology._indexed_polycurve_points_edges(curve, entities)
-            return pts
+            pts, edges = IFCFastTopology._indexed_polycurve_points_edges(curve, entities)
+            ordered = []
+            for a, b in edges:
+                if ordered and not IFCFastTopology._points_close(ordered[-1], pts[a]):
+                    raise ValueError("Disconnected IfcIndexedPolyCurve segments")
+                if not ordered:
+                    ordered.append(pts[a])
+                ordered.append(pts[b])
+            return ordered
         return []
 
     @staticmethod
@@ -1402,6 +1590,34 @@ class IFCFastTopology:
             if p is not None:
                 pts.append(p)
         return pts
+
+    @staticmethod
+    def _arc_points(a, b, c, circleSides=24):
+        u = [b[i]-a[i] for i in range(3)]
+        v = [c[i]-a[i] for i in range(3)]
+        normal = IFCFastTopology._cross(u, v)
+        norm2 = IFCFastTopology._dot(normal, normal)
+        if norm2 <= 1e-24:
+            raise ValueError("Collinear IFC arc points")
+        vx = IFCFastTopology._cross(v, normal)
+        nx = IFCFastTopology._cross(normal, u)
+        center = [a[i]+(IFCFastTopology._dot(u,u)*vx[i]+IFCFastTopology._dot(v,v)*nx[i])/(2*norm2) for i in range(3)]
+        x = IFCFastTopology._normalize([a[i]-center[i] for i in range(3)])
+        y = IFCFastTopology._cross(IFCFastTopology._normalize(normal), x)
+        radius = IFCFastTopology._norm([a[i]-center[i] for i in range(3)])
+        def angle(p):
+            delta = [p[i]-center[i] for i in range(3)]
+            return math.atan2(IFCFastTopology._dot(delta,y), IFCFastTopology._dot(delta,x)) % (2*math.pi)
+        mid, end = angle(b), angle(c)
+        if mid > end:
+            mid -= 2*math.pi
+            end -= 2*math.pi
+        points = [a]
+        for start, finish in ((0.0,mid),(mid,end)):
+            count = max(1, math.ceil(abs(finish-start)*max(8,circleSides)/(2*math.pi)))
+            points.extend([[center[j]+radius*(math.cos(start+(finish-start)*i/count)*x[j]+math.sin(start+(finish-start)*i/count)*y[j]) for j in range(3)] for i in range(1,count+1)])
+        points[-1] = c
+        return points
 
     @staticmethod
     def _indexed_polycurve_points_edges(curve: IFCFastEntity, entities: Dict[int, IFCFastEntity]) -> tuple[list, list]:
@@ -1419,11 +1635,23 @@ class IFCFastTopology:
         if isinstance(segments, list) and segments:
             edges = []
             for seg in segments:
-                if isinstance(seg, tuple) and len(seg) == 3 and seg[0] == "CALL" and seg[1] == "IFCLINEINDEX":
-                    idxs = [int(x) - 1 for x in seg[2][0] if isinstance(x, (int, float))]
-                    for a, b in zip(idxs[:-1], idxs[1:]):
-                        if 0 <= a < len(pts) and 0 <= b < len(pts):
-                            edges.append([a, b])
+                if not (isinstance(seg, tuple) and len(seg) == 3 and seg[0] == "CALL"):
+                    raise ValueError("Invalid IFC indexed curve segment")
+                idxs = [int(x)-1 for x in seg[2][0]]
+                if any(i < 0 or i >= len(coords) for i in idxs):
+                    raise ValueError("IFC indexed curve point index out of range")
+                if seg[1] == "IFCLINEINDEX":
+                    edges.extend([[a,b] for a,b in zip(idxs[:-1],idxs[1:])])
+                elif seg[1] == "IFCARCINDEX" and len(idxs) == 3:
+                    arc = IFCFastTopology._arc_points(*(pts[i] for i in idxs))
+                    chain = [idxs[0]]
+                    for point in arc[1:-1]:
+                        chain.append(len(pts))
+                        pts.append(point)
+                    chain.append(idxs[-1])
+                    edges.extend([[a,b] for a,b in zip(chain[:-1],chain[1:])])
+                else:
+                    raise ValueError("Unsupported IFC indexed curve segment: " + str(seg[1]))
         return pts, edges
 
     @staticmethod

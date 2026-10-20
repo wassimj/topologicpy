@@ -1,0 +1,7 @@
+name: topologicpy-tutorials
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12.14
+  - pythonocc-core=8.0.1.1
+  - pip

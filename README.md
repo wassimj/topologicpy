@@ -79,6 +79,31 @@ conda create -n topologicpy -c conda-forge topologicpy
 conda activate topologicpy
 ```
 
+### Optional features
+
+TopologicPy never installs packages during import or a method call. Install
+optional features explicitly in the Python environment running your application:
+
+```bash
+python -m pip install "topologicpy[sun]"
+python -m pip install "topologicpy[graph]"
+python -m pip install "topologicpy[honeybee]"
+python -m pip install "topologicpy[kuzu]"
+python -m pip install "topologicpy[ladybugdb]"
+python -m pip install "topologicpy[ifc]"
+```
+
+The `sun` extra provides PyEphem; `graph` provides NetworkX, igraph, Graphviz,
+PyVis and RDFLib; `honeybee` provides the Honeybee and Ladybug Tools packages.
+The database extras provide their respective drivers, and `ifc` provides
+IfcOpenShell. Extras can be combined, for example `topologicpy[sun,graph]`.
+Graphviz rendering also requires the Graphviz application to be installed.
+
+Optional dependencies are imported when their feature is used. A missing
+dependency raises `ImportError` with an installation hint instead of modifying
+the environment or returning an unexplained empty result. NumPy, SciPy and
+webcolors remain required dependencies and are installed by the package manager.
+
 ## How to start using TopologicPy
 1. Open your favourite python editor ([jupyter notebook](https://jupyter.org/) is highly recommended)
 1. Type 'import topologicpy'

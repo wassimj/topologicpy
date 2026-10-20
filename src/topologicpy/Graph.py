@@ -28,15 +28,13 @@ from typing import Any
 
 try:
     import numpy as np
-except Exception as e:
-    np = None
-    warnings.warn(f"Graph - Error: Could not import numpy. Install numpy manually if required. Original error: {e}")
+except ImportError as exc:
+    raise ImportError('Graph requires numpy. Install it with: python -m pip install numpy') from exc
 
 try:
     import pandas as pd
-except Exception as e:
-    pd = None
-    warnings.warn(f"Graph - Error: Could not import pandas. Install pandas manually if required. Original error: {e}")
+except ImportError as exc:
+    raise ImportError('Graph requires pandas. Install it with: python -m pip install pandas') from exc
     
 GraphQueueItem = namedtuple('GraphQueueItem', ['edges'])
 
@@ -2518,20 +2516,8 @@ class Graph:
             from rdflib import Graph as RDFGraph
             from rdflib import URIRef, Literal, Namespace
             from rdflib.namespace import RDF, RDFS, XSD
-        except Exception:
-            print("Graph.BOTGraph - Information: Installing required rdflib library.")
-            try:
-                pass  # automatic pip installation disabled
-            except Exception:
-                pass  # automatic pip installation disabled
-            try:
-                from rdflib import Graph as RDFGraph
-                from rdflib import URIRef, Literal, Namespace
-                from rdflib.namespace import RDF, RDFS, XSD
-                print("Graph.BOTGraph - Information: rdflib library installed correctly.")
-            except Exception:
-                warnings.warn("Graph.BOTGraph - Error: Could not import rdflib. Please try to install rdflib manually. Returning None.")
-                return None
+        except ImportError as exc:
+            raise ImportError('Graph requires rdflib. Install it in this environment with: python -m pip install "topologicpy[graph]"') from exc
 
         def _safe_local_name(value):
             value = "unnamed" if value is None else str(value).strip()
@@ -4145,9 +4131,7 @@ class Graph:
     #     except:
     #         print("Graph.BetwennessCentrality - Information: Installing required networkx library.")
     #         try:
-    #             os.system("pip install networkx")
     #         except:
-    #             os.system("pip install networkx --user")
     #         try:
     #             import networkx as nx
     #             print("Graph.BetwennessCentrality - Information: networkx library installed correctly.")
@@ -4544,18 +4528,8 @@ class Graph:
             import rdflib
             from rdflib import URIRef
             from rdflib.namespace import RDF, RDFS
-        except Exception:
-            if not silent:
-                print("Graph.ByBOTGraph - Information: Installing required rdflib library.")
-            try:
-                pass  # automatic pip installation disabled
-                import rdflib
-                from rdflib import URIRef
-                from rdflib.namespace import RDF, RDFS
-            except Exception:
-                if not silent:
-                    warnings.warn("Graph.ByBOTGraph - Error: Could not import rdflib. Returning None.")
-                return None
+        except ImportError as exc:
+            raise ImportError('Graph requires rdflib. Install it in this environment with: python -m pip install "topologicpy[graph]"') from exc
 
         try:
             from topologicpy.Ontology import Ontology
@@ -4870,17 +4844,8 @@ class Graph:
         try:
             import rdflib
             from rdflib import Graph as RDFGraph
-        except Exception:
-            if not silent:
-                print("Graph.ByBOTPath - Information: Installing required rdflib library.")
-            try:
-                pass  # automatic pip installation disabled
-                import rdflib
-                from rdflib import Graph as RDFGraph
-            except Exception:
-                if not silent:
-                    warnings.warn("Graph.ByBOTPath - Error: Could not import rdflib. Please try to install rdflib manually. Returning None.")
-                return None
+        except ImportError as exc:
+            raise ImportError('Graph requires rdflib. Install it in this environment with: python -m pip install "topologicpy[graph]"') from exc
         
         bot_graph = RDFGraph()
         bot_graph.parse(path)
@@ -8254,24 +8219,8 @@ class Graph:
             import ifcopenshell.geom
             from topologicpy.Color import Color
             from topologicpy.IFC import IFC
-        except:
-            print("Graph.ByIFCPath - Warning: Installing required ifcopenshell library.")
-            try:
-                pass  # automatic pip installation disabled
-            except:
-                pass  # automatic pip installation disabled
-            try:
-                import ifcopenshell
-                import ifcopenshell.util.placement
-                import ifcopenshell.util.element
-                import ifcopenshell.util.shape
-                import ifcopenshell.geom
-                from topologicpy.Color import Color
-                from topologicpy.IFC import IFC
-                print("Graph.ByIFCPath - Warning: ifcopenshell library installed correctly.")
-            except:
-                warnings.warn("Graph.ByIFCPath - Error: Could not import ifcopenshell. Please try to install ifcopenshell manually. Returning None.")
-                return None
+        except ImportError as exc:
+            raise ImportError('Graph requires ifcopenshell. Install it in this environment with: python -m pip install "topologicpy[ifc]"') from exc
         if not path:
             if not silent:
                 print("Graph.ByIFCPath - Error: the input path is not a valid path. Returning None.")
@@ -14060,20 +14009,8 @@ class Graph:
 
         try:
             import igraph as ig
-        except Exception:
-            if not silent:
-                print("Graph.CommunityPartition - Installing required python-igraph library.")
-            try:
-                pass  # automatic pip installation disabled
-            except Exception:
-                pass  # automatic pip installation disabled
-            try:
-                import igraph as ig
-                if not silent:
-                    print("Graph.CommunityPartition - python-igraph library installed correctly.")
-            except Exception:
-                warnings.warn("Graph.CommunityPartition - Error: Could not import python-igraph. Please install it manually.")
-                return None
+        except ImportError as exc:
+            raise ImportError('Graph requires igraph. Install it in this environment with: python -m pip install "topologicpy[graph]"') from exc
 
         if not Topology.IsInstance(graph, "graph"):
             if not silent:
@@ -14425,17 +14362,8 @@ class Graph:
 
         try:
             import igraph as ig
-        except:
-            print("Graph.CutVertices - Installing required pyhon-igraph library.")
-            try:
-                pass  # automatic pip installation disabled
-            except:
-                pass  # automatic pip installation disabled
-            try:
-                import igraph as ig
-                print("Graph.CutVertices - python-igraph library installed correctly.")
-            except:
-                warnings.warn("Graph.CutVertices - Error: Could not import python-igraph. Please install manually.")
+        except ImportError as exc:
+            raise ImportError('Graph requires igraph. Install it in this environment with: python -m pip install "topologicpy[graph]"') from exc
         
         if not Topology.IsInstance(graph, "graph"):
             if not silent:
@@ -18985,18 +18913,8 @@ class Graph:
             from graphviz import Digraph
             from graphviz import Graph as Udgraph
 
-        except:
-            print("Graph - Installing required graphviz library.")
-            try:
-                pass  # automatic pip installation disabled
-            except:
-                pass  # automatic pip installation disabled
-            try:
-                from graphviz import Digraph
-                from graphviz import Graph as Udgraph
-                print("Graph - graphviz library installed correctly.")
-            except:
-                warnings.warn("Graph - Error: Could not import graphviz.")
+        except ImportError as exc:
+            raise ImportError('Graph requires graphviz. Install it in this environment with: python -m pip install "topologicpy[graph]"') from exc
 
         from topologicpy.Graph import Graph
         from topologicpy.Topology import Topology
@@ -22720,18 +22638,8 @@ class Graph:
 
         try:
             import networkx as nx
-        except:
-            print("Graph.NetworkXGraph - Information: Installing required networkx library.")
-            try:
-                pass  # automatic pip installation disabled
-            except:
-                pass  # automatic pip installation disabled
-            try:
-                import networkx as nx
-                print("Graph.NetworkXGraph - Information: networkx library installed correctly.")
-            except:
-                warnings.warn("Graph - Error: Could not import networkx. Please try to install networkx manually. Returning None.")
-                return None
+        except ImportError as exc:
+            raise ImportError('Graph requires networkx. Install it in this environment with: python -m pip install "topologicpy[graph]"') from exc
 
         if not Topology.IsInstance(graph, "Graph"):
             if not silent:
@@ -23514,18 +23422,8 @@ class Graph:
 
         try:
             from pyvis.network import Network
-        except Exception:
-            print("Graph.PyvisGraph - Information: Installing required pyvis library.")
-            try:
-                pass  # automatic pip installation disabled
-            except Exception:
-                pass  # automatic pip installation disabled
-            try:
-                from pyvis.network import Network
-                print("Graph.PyvisGraph - Information: pyvis library installed correctly.")
-            except Exception:
-                warnings.warn("Graph.PyvisGraph - Error: Could not import pyvis. Please try to install pyvis manually. Returning None.")
-                return None
+        except ImportError as exc:
+            raise ImportError('Graph requires pyvis. Install it in this environment with: python -m pip install "topologicpy[graph]"') from exc
 
         def _dict_value(d, key, default=None):
             if d is None or key is None:
@@ -23873,9 +23771,7 @@ class Graph:
     #     except:
     #         print("Graph.PyvisGraph - Information: Installing required pyvis library.")
     #         try:
-    #             os.system("pip install pyvis")
     #         except:
-    #             os.system("pip install pyvis --user")
     #         try:
     #             from pyvis.network import Network
     #             print("Graph.PyvisGraph - Information: pyvis library installed correctly.")

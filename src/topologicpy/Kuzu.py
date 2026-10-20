@@ -24,20 +24,6 @@ import time
 import warnings
 from typing import Any, Dict, List, Optional
 
-try:
-    import kuzu
-except Exception:
-    print("Kuzu - Installing required kuzu library.")
-    try:
-        os.system("pip install kuzu")
-    except Exception:
-        os.system("pip install kuzu --user")
-    try:
-        import kuzu
-    except Exception:
-        warnings.warn("Kuzu - Error: Could not import Kuzu.")
-        kuzu = None
-
 
 # -----------------------------------------------------------------------------
 # Internal helpers
@@ -428,8 +414,7 @@ class _DBCache:
         self._cache: Dict[str, "kuzu.Database"] = {}
 
     def get(self, path: str) -> "kuzu.Database":
-        if kuzu is None:
-            raise RuntimeError("Kuzu - Error: Kuzu is not available.")
+        kuzu = Kuzu._ImportDriver()
         if path is None:
             raise ValueError("Kuzu - Error: The input path is None.")
         path = os.path.abspath(os.path.expanduser(str(path)))
@@ -461,6 +446,7 @@ class _ConnectionPool:
         self._local = threading.local()
 
     def _ensure(self) -> "kuzu.Connection":
+        kuzu = Kuzu._ImportDriver()
         if not hasattr(self._local, "conn"):
             self._local.conn = kuzu.Connection(self.db)
         return self._local.conn
@@ -582,6 +568,14 @@ class Kuzu:
     # -------------------------------------------------------------------------
 
     @staticmethod
+    def _ImportDriver():
+        try:
+            import kuzu
+            return kuzu
+        except ImportError as exc:
+            raise ImportError('Kuzu requires kuzu. Install it in this environment with: python -m pip install "topologicpy[kuzu]"') from exc
+
+    @staticmethod
     def EnsureSchema(manager, silent: bool = False) -> bool:
         try:
             manager.ensure_schema()
@@ -593,6 +587,7 @@ class Kuzu:
 
     @staticmethod
     def Database(path: str, silent: bool = False):
+        Kuzu._ImportDriver()
         try:
             return _db_cache.get(path)
         except Exception as e:
@@ -602,6 +597,7 @@ class Kuzu:
 
     @staticmethod
     def Connection(manager, silent: bool = False):
+        Kuzu._ImportDriver()
         try:
             return manager._pool._ensure()
         except Exception as e:
@@ -611,6 +607,7 @@ class Kuzu:
 
     @staticmethod
     def Manager(path: str, silent: bool = False):
+        Kuzu._ImportDriver()
         try:
             return _Mgr(path)
         except Exception as e:

@@ -24,17 +24,8 @@ import warnings
 try:
     from scipy.spatial import Delaunay
     from scipy.spatial import Voronoi
-except:
-    print("Shell - Install required scipy library.")
-    try:
-        os.system("pip install scipy")
-    except:
-        os.system("pip install scipy --user")
-    try:
-        from scipy.spatial import Delaunay
-        from scipy.spatial import Voronoi
-    except:
-        warnings.warn("Shell - Error: Could not import scipy.")
+except ImportError as exc:
+    raise ImportError('Shell requires scipy. Install it in this environment with: python -m pip install "scipy"') from exc
 
 class Shell():
     @staticmethod

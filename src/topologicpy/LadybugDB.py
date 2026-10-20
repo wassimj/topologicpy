@@ -29,28 +29,11 @@ from typing import Any, Dict, List, Optional
 LadybugDB backend adapter for TopologicPy GraphDB.
 
 LadybugDB is the actively developed successor/fork of Kuzu. The public Python
-package is currently installed as ``ladybug`` and is expected to expose a
+package is installed as ``real_ladybug`` and is expected to expose a
 Kuzu-compatible embedded database API with ``Database`` and ``Connection``
 classes. This class mirrors the TopologicPy Kuzu backend API so GraphDB can
 dispatch to it in the same way it dispatches to Kuzu and Neo4j.
 """
-
-try:
-    import real_ladybug as ladybug
-except Exception:
-    try:
-        import ladybug
-    except Exception:
-        print("LadybugDB - Installing required LadybugDB library.")
-        import os
-        try:
-            os.system("pip install real_ladybug")
-        except Exception:
-            os.system("pip install real_ladybug --user")
-        try:
-            import real_ladybug as ladybug
-        except Exception:
-            ladybug = None
 
 
 # -----------------------------------------------------------------------------
@@ -442,8 +425,7 @@ class _DBCache:
         self._cache: Dict[str, "ladybug.Database"] = {}
 
     def get(self, path: str) -> "ladybug.Database":
-        if ladybug is None:
-            raise RuntimeError("LadybugDB - Error: LadybugDB is not available.")
+        ladybug = LadybugDB._ImportDriver()
         if path is None:
             raise ValueError("LadybugDB - Error: The input path is None.")
         path = os.path.abspath(os.path.expanduser(str(path)))
@@ -475,6 +457,7 @@ class _ConnectionPool:
         self._local = threading.local()
 
     def _ensure(self) -> "ladybug.Connection":
+        ladybug = LadybugDB._ImportDriver()
         if not hasattr(self._local, "conn"):
             self._local.conn = ladybug.Connection(self.db)
         return self._local.conn
@@ -596,6 +579,23 @@ class LadybugDB:
     # -------------------------------------------------------------------------
 
     @staticmethod
+    def _ImportDriver():
+        try:
+            import real_ladybug
+            return real_ladybug
+        except ImportError as exc:
+            # Support the legacy driver name, but do not mistake Ladybug Tools
+            # (which uses the same import name) for the database driver.
+            try:
+                import ladybug
+            except ImportError:
+                ladybug = None
+            if (ladybug is not None and hasattr(ladybug, "Database")
+                    and hasattr(ladybug, "Connection")):
+                return ladybug
+            raise ImportError('LadybugDB requires real_ladybug. Install it in this environment with: python -m pip install "topologicpy[ladybugdb]"') from exc
+
+    @staticmethod
     def EnsureSchema(manager, silent: bool = False) -> bool:
         try:
             manager.ensure_schema()
@@ -607,6 +607,7 @@ class LadybugDB:
 
     @staticmethod
     def Database(path: str, silent: bool = False):
+        LadybugDB._ImportDriver()
         try:
             return _db_cache.get(path)
         except Exception as e:
@@ -616,6 +617,7 @@ class LadybugDB:
 
     @staticmethod
     def Connection(manager, silent: bool = False):
+        LadybugDB._ImportDriver()
         try:
             return manager._pool._ensure()
         except Exception as e:
@@ -625,6 +627,7 @@ class LadybugDB:
 
     @staticmethod
     def Manager(path: str, silent: bool = False):
+        LadybugDB._ImportDriver()
         try:
             return _Mgr(path)
         except Exception as e:

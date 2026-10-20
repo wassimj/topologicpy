@@ -10132,18 +10132,8 @@ class Wire():
 
         try:
             import numpy as np
-        except:
-            print("Wire.Normal - Warning: Installing required numpy library.")
-            try:
-                os.system("pip install numpy")
-            except:
-                os.system("pip install numpy --user")
-            try:
-                import numpy as np
-                print("Wire.Normal - Warning: numpy library installed correctly.")
-            except:
-                warnings.warn("Wire.Normal - Error: Could not import numpy. Please try to install numpy manually. Returning None.")
-                return None
+        except ImportError as exc:
+            raise ImportError('Wire requires numpy. Install it in this environment with: python -m pip install "numpy"') from exc
 
         if not Topology.IsInstance(wire, "Wire"):
             print("Wire.Normal - Error: The input wire parameter is not a valid wire. Returning None.")

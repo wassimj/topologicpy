@@ -560,7 +560,8 @@ def test_lookup_wrappers_string_and_export_to_hbjson(monkeypatch, tmp_path):
     assert program_ids == ["Generic Office Program", "Residential"]
     assert program_types[1]["identifier"] == "Residential"
 
-    model = module.HBModel("Exported", rooms=[object()], orphaned_shades=[object()])
+    from honeybee.model import Model
+    model = Model("Exported", rooms=[object()], orphaned_shades=[object()])
     assert Honeybee.String(model) == {
         "type": "Model",
         "identifier": "Exported",

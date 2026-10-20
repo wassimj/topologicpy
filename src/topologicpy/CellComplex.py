@@ -23,31 +23,13 @@ import warnings
 
 try:
     import numpy as np
-except:
-    print("CellComplex - Installing required numpy library.")
-    try:
-        os.system("pip install numpy")
-    except:
-        os.system("pip install numpy --user")
-    try:
-        import numpy as np
-        print("CellComplex - numpy library installed correctly.")
-    except:
-        warnings.warn("CellComplex - Error: Could not import numpy.")
+except ImportError as exc:
+    raise ImportError('CellComplex requires numpy. Install it in this environment with: python -m pip install "numpy"') from exc
 try:
     from scipy.spatial import Delaunay
     from scipy.spatial import Voronoi
-except:
-    print("CellComplex - Install required scipy library.")
-    try:
-        os.system("pip install scipy")
-    except:
-        os.system("pip install scipy --user")
-    try:
-        from scipy.spatial import Delaunay
-        from scipy.spatial import Voronoi
-    except:
-        warnings.warn("CellComplex - Error: Could not import scipy.")
+except ImportError as exc:
+    raise ImportError('CellComplex requires scipy. Install it in this environment with: python -m pip install "scipy"') from exc
 
 class CellComplex():
     @staticmethod
@@ -146,6 +128,7 @@ class CellComplex():
             return None
 
         cell_complex = None
+        native_supported = False
         method = getattr(Core.CellComplex, "ByCells", None)
         if callable(method):
             attempts = (
@@ -156,17 +139,21 @@ class CellComplex():
             for attempt in attempts:
                 try:
                     cell_complex = attempt()
+                    native_supported = True
                 except (TypeError, AttributeError):
                     continue
                 except Exception:
+                    native_supported = True
                     cell_complex = None
                     break
-                if Topology.IsInstance(cell_complex, "CellComplex"):
+                if native_supported:
                     break
 
         # Compatibility fallback: preserve the exact source Faces and ask the
         # backend to assemble those. This does not polygonise curved geometry.
-        if not Topology.IsInstance(cell_complex, "CellComplex"):
+        # A native rejection is authoritative; face reconstruction can combine
+        # disconnected shells into a misleading single-cell result.
+        if not native_supported:
             faces = []
             for cell in cells:
                 cell_faces = Topology.Faces(cell)

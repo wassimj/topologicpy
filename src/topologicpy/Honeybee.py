@@ -17,98 +17,6 @@
 from __future__ import annotations
 import os
 import warnings
-
-try:
-    import honeybee.facetype
-    from honeybee.face import Face as HBFace
-    from honeybee.model import Model as HBModel
-    from honeybee.room import Room as HBRoom
-    from honeybee.shade import Shade as HBShade
-    from honeybee.aperture import Aperture as HBAperture
-    from honeybee.door import Door as HBDoor
-except:
-    print("Honeybee - Installing required honeybee library.")
-    try:
-        os.system("pip install honeybee")
-    except:
-        os.system("pip install honeybee --user")
-    try:
-        import honeybee.facetype
-        from honeybee.face import Face as HBFace
-        from honeybee.model import Model as HBModel
-        from honeybee.room import Room as HBRoom
-        from honeybee.shade import Shade as HBShade
-        from honeybee.aperture import Aperture as HBAperture
-        from honeybee.door import Door as HBDoor
-    except:
-        warnings.warn("Honeybee - ERROR: Could not import honeybee")
-
-try:
-    import honeybee_energy.lib.constructionsets as constr_set_lib
-    import honeybee_energy.lib.programtypes as prog_type_lib
-    import honeybee_energy.lib.scheduletypelimits as schedule_types
-    from honeybee_energy.schedule.ruleset import ScheduleRuleset
-    from honeybee_energy.schedule.day import ScheduleDay
-    from honeybee_energy.load.setpoint import Setpoint
-    from honeybee_energy.load.hotwater import  ServiceHotWater
-except:
-    print("Honeybee - Installing required honeybee-energy library.")
-    try:
-        os.system("pip install -U honeybee-energy[standards]")
-    except:
-        os.system("pip install -U honeybee-energy[standards] --user")
-    try:
-        import honeybee_energy.lib.constructionsets as constr_set_lib
-        import honeybee_energy.lib.programtypes as prog_type_lib
-        import honeybee_energy.lib.scheduletypelimits as schedule_types
-        from honeybee_energy.schedule.ruleset import ScheduleRuleset
-        from honeybee_energy.schedule.day import ScheduleDay
-        from honeybee_energy.load.setpoint import Setpoint
-        from honeybee_energy.load.hotwater import  ServiceHotWater
-    except:
-        warnings.warn("Honeybee - Error: Could not import honeybee-energy")
-
-try:
-    from honeybee_radiance.sensorgrid import SensorGrid
-except:
-    print("Honeybee - Installing required honeybee-radiance library.")
-    try:
-        os.system("pip install -U honeybee-radiance")
-    except:
-        os.system("pip install -U honeybee-radiance --user")
-    try:
-        from honeybee_radiance.sensorgrid import SensorGrid
-    except:
-        warnings.warn("Honeybee - Error: Could not import honeybee-radiance")
-
-try:
-    from ladybug.dt import Time
-except:
-    print("Honeybee - Installing required ladybug library.")
-    try:
-        os.system("pip install -U ladybug")
-    except:
-        os.system("pip install -U ladybug --user")
-    try:
-        from ladybug.dt import Time
-    except:
-        warnings.warn("Honeybee - Error: Could not import ladybug")
-
-try:
-    from ladybug_geometry.geometry3d.face import Face3D
-    from ladybug_geometry.geometry3d.pointvector import Point3D, Vector3D
-except:
-    print("Honeybee - Installing required ladybug-geometry library.")
-    try:
-        os.system("pip install -U ladybug-geometry")
-    except:
-        os.system("pip install -U ladybug-geometry --user")
-    try:
-        from ladybug_geometry.geometry3d.face import Face3D
-        from ladybug_geometry.geometry3d.pointvector import Point3D, Vector3D
-    except:
-        warnings.warn("Honeybee - Error: Could not import ladybug-geometry")
-
 import json
 
 class Honeybee:
@@ -652,6 +560,10 @@ class Honeybee:
             The found built-in construction set.
 
         """
+        try:
+            import honeybee_energy.lib.constructionsets as constr_set_lib
+        except ImportError as exc:
+            raise ImportError('Honeybee requires Honeybee/Ladybug packages. Install it in this environment with: python -m pip install "topologicpy[honeybee]"') from exc
         return constr_set_lib.construction_set_by_identifier(id)
     
     @staticmethod
@@ -665,6 +577,10 @@ class Honeybee:
             The list of built-in construction sets.
 
         """
+        try:
+            import honeybee_energy.lib.constructionsets as constr_set_lib
+        except ImportError as exc:
+            raise ImportError('Honeybee requires Honeybee/Ladybug packages. Install it in this environment with: python -m pip install "topologicpy[honeybee]"') from exc
         constrSets = []
         constrIdentifiers = list(constr_set_lib.CONSTRUCTION_SETS)
         for constrIdentifier in constrIdentifiers: 
@@ -769,6 +685,27 @@ class Honeybee:
             The created HB Model
 
         """
+        try:
+            import honeybee.facetype
+            from honeybee.face import Face as HBFace
+            from honeybee.model import Model as HBModel
+            from honeybee.room import Room as HBRoom
+            from honeybee.shade import Shade as HBShade
+            from honeybee.aperture import Aperture as HBAperture
+            from honeybee.door import Door as HBDoor
+            import honeybee_energy.lib.constructionsets as constr_set_lib
+            import honeybee_energy.lib.programtypes as prog_type_lib
+            import honeybee_energy.lib.scheduletypelimits as schedule_types
+            from honeybee_energy.schedule.ruleset import ScheduleRuleset
+            from honeybee_energy.schedule.day import ScheduleDay
+            from honeybee_energy.load.setpoint import Setpoint
+            from honeybee_energy.load.hotwater import ServiceHotWater
+            from honeybee_radiance.sensorgrid import SensorGrid
+            from ladybug.dt import Time
+            from ladybug_geometry.geometry3d.face import Face3D
+            from ladybug_geometry.geometry3d.pointvector import Point3D, Vector3D
+        except ImportError as exc:
+            raise ImportError('Honeybee requires Honeybee/Ladybug packages. Install it in this environment with: python -m pip install "topologicpy[honeybee]"') from exc
         from topologicpy.Vertex import Vertex
         from topologicpy.Wire import Wire
         from topologicpy.Face import Face
@@ -964,6 +901,10 @@ class Honeybee:
             The found built-in program.
 
         """
+        try:
+            import honeybee_energy.lib.programtypes as prog_type_lib
+        except ImportError as exc:
+            raise ImportError('Honeybee requires Honeybee/Ladybug packages. Install it in this environment with: python -m pip install "topologicpy[honeybee]"') from exc
         return prog_type_lib.program_type_by_identifier(id)
     
     @staticmethod
@@ -977,6 +918,10 @@ class Honeybee:
             The list of available built-in program types.
 
         """
+        try:
+            import honeybee_energy.lib.programtypes as prog_type_lib
+        except ImportError as exc:
+            raise ImportError('Honeybee requires Honeybee/Ladybug packages. Install it in this environment with: python -m pip install "topologicpy[honeybee]"') from exc
         progTypes = []
         progIdentifiers = list(prog_type_lib.PROGRAM_TYPES)
         for progIdentifier in progIdentifiers: 

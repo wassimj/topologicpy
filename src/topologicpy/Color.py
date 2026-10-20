@@ -91,21 +91,8 @@ class Color:
         try:
             import webcolors
             return webcolors
-        except Exception:
-            print(f"Color.{caller_name} - Information: Installing required webcolors library.")
-            try:
-                os.system("pip install webcolors")
-            except Exception:
-                os.system("pip install webcolors --user")
-            try:
-                import webcolors
-                print(f"Color.{caller_name} - Information: webcolors library installed correctly.")
-                return webcolors
-            except Exception:
-                warnings.warn(
-                    f"Color.{caller_name} - Error: Could not import webcolors library. Please manually install webcolors. Returning None."
-                )
-                return None
+        except ImportError as exc:
+            raise ImportError('Color requires webcolors. Install it in this environment with: python -m pip install "webcolors"') from exc
 
     @staticmethod
     def _css_color_names(webcolors):

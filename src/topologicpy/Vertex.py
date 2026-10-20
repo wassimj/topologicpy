@@ -23,17 +23,8 @@ import warnings
 
 try:
     import numpy as np
-except:
-    print("Vertex - Installing required numpy library.")
-    try:
-        os.system("pip install numpy")
-    except:
-        os.system("pip install numpy --user")
-    try:
-        import numpy as np
-        print("Vertex - numpy library installed successfully.")
-    except:
-        warnings.warn("Vertex - Error: Could not import numpy.")
+except ImportError as exc:
+    raise ImportError('Vertex requires numpy. Install it in this environment with: python -m pip install "numpy"') from exc
 
 class Vertex():
     @staticmethod

@@ -29,6 +29,18 @@ dependencies = [
     "packaging"
 ]
 [project.optional-dependencies]
+sun = ["ephem"]
+graph = ["networkx", "igraph", "graphviz", "pyvis", "rdflib>=6.0.0"]
+ifc = ["ifcopenshell"]
+honeybee = [
+    "honeybee-core",
+    "honeybee-energy[standards]",
+    "honeybee-radiance",
+    "ladybug-core",
+    "ladybug-geometry",
+]
+kuzu = ["kuzu"]
+ladybugdb = ["real_ladybug"]
 test = [
     "pytest-xdist>=2.4.0",
     "rdflib>=6.0.0",

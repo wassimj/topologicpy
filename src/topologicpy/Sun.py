@@ -19,19 +19,6 @@ from __future__ import annotations
 import os
 import warnings
 
-try:
-    import ephem
-except:
-    print("Sun - Installing required ephem library.")
-    try:
-        os.system("pip install ephem")
-    except:
-        os.system("pip install ephem --user")
-    try:
-        import ephem
-        print("Sun - ephem library installed successfully.")
-    except:
-        warnings.warn("Sun - Error: Could not import ephem.")
 
 class Sun():
     @staticmethod
@@ -56,18 +43,8 @@ class Sun():
         import warnings
         try:
             import ephem
-        except:
-            print("Sun.WinterSolstice - Information: Installing required ephem library.")
-            try:
-                os.system("pip install ephem")
-            except:
-                os.system("pip install ephem --user")
-            try:
-                import ephem
-                print("Sun.WinterSolstice - Information: ephem library installed correctly.")
-            except:
-                warnings.warn("Sun.WinterSolstice - Error: Could not import ephem. Please try to install ephem manually. Returning None.")
-                return None
+        except ImportError as exc:
+            raise ImportError('Sun requires ephem. Install it in this environment with: python -m pip install "topologicpy[sun]"') from exc
         from datetime import datetime
         if year == None:
             year = datetime.now().year
@@ -99,18 +76,8 @@ class Sun():
         import warnings
         try:
             import ephem
-        except:
-            print("Sun.SummerSolstice - Information: Installing required ephem library.")
-            try:
-                os.system("pip install ephem")
-            except:
-                os.system("pip install ephem --user")
-            try:
-                import ephem
-                print("Sun.SummerSolstice - Information: ephem library installed correctly.")
-            except:
-                warnings.warn("Sun.SummerSolstice - Error: Could not import ephem. Please try to install ephem manually. Returning None.")
-                return None
+        except ImportError as exc:
+            raise ImportError('Sun requires ephem. Install it in this environment with: python -m pip install "topologicpy[sun]"') from exc
         
         if latitude >= 0:
             solstice = ephem.next_solstice(ephem.Date(f"{year}/6/1"))
@@ -139,18 +106,8 @@ class Sun():
         import warnings
         try:
             import ephem
-        except:
-            print("Sun.SpringEquinox - Information: Installing required ephem library.")
-            try:
-                os.system("pip install ephem")
-            except:
-                os.system("pip install ephem --user")
-            try:
-                import ephem
-                print("Sun.SpringEquinox - Information: ephem library installed correctly.")
-            except:
-                warnings.warn("Sun.SpringEquinox - Error: Could not import ephem. Please try to install ephem manually. Returning None.")
-                return None
+        except ImportError as exc:
+            raise ImportError('Sun requires ephem. Install it in this environment with: python -m pip install "topologicpy[sun]"') from exc
         
         if latitude >= 0:
             equinox = ephem.next_equinox(ephem.Date(f"{year}/3/1"))
@@ -179,18 +136,8 @@ class Sun():
         import warnings
         try:
             import ephem
-        except:
-            print("Sun.AutumnEquinox - Information: Installing required ephem library.")
-            try:
-                os.system("pip install ephem")
-            except:
-                os.system("pip install ephem --user")
-            try:
-                import ephem
-                print("Sun.AutumnEquinox - Information: ephem library installed correctly.")
-            except:
-                warnings.warn("Sun.AutumnEquinox - Error: Could not import ephem. Please try to install ephem manually. Returning None.")
-                return None
+        except ImportError as exc:
+            raise ImportError('Sun requires ephem. Install it in this environment with: python -m pip install "topologicpy[sun]"') from exc
         
         if latitude >= 0:
             equinox = ephem.next_equinox(ephem.Date(f"{year}/9/1"))
@@ -222,18 +169,8 @@ class Sun():
         import math
         try:
             import ephem
-        except:
-            print("Sun.Azimuth - Information: Installing required ephem library.")
-            try:
-                os.system("pip install ephem")
-            except:
-                os.system("pip install ephem --user")
-            try:
-                import ephem
-                print("Sun.Azimuth - Information: ephem library installed correctly.")
-            except:
-                warnings.warn("Sun.Azimuth - Error: Could not import ephem. Please try to install ephem manually. Returning None.")
-                return None
+        except ImportError as exc:
+            raise ImportError('Sun requires ephem. Install it in this environment with: python -m pip install "topologicpy[sun]"') from exc
         
         observer = ephem.Observer()
         observer.date = date
@@ -269,18 +206,8 @@ class Sun():
         import math
         try:
             import ephem
-        except:
-            print("Sun.Altitude - Information: Installing required ephem library.")
-            try:
-                os.system("pip install ephem")
-            except:
-                os.system("pip install ephem --user")
-            try:
-                import ephem
-                print("Sun.Altitude - Information: ephem library installed correctly.")
-            except:
-                warnings.warn("Sun.Altitude - Error: Could not import ephem. Please try to install ephem manually. Returning None.")
-                return None
+        except ImportError as exc:
+            raise ImportError('Sun requires ephem. Install it in this environment with: python -m pip install "topologicpy[sun]"') from exc
         
         observer = ephem.Observer()
         observer.date = date
@@ -315,18 +242,8 @@ class Sun():
         import warnings
         try:
             import ephem
-        except:
-            print("Sun.Sunrise - Information: Installing required ephem library.")
-            try:
-                os.system("pip install ephem")
-            except:
-                os.system("pip install ephem --user")
-            try:
-                import ephem
-                print("Sun.Sunrise - Information: ephem library installed correctly.")
-            except:
-                warnings.warn("Sun.Sunrise - Error: Could not import ephem. Please try to install ephem manually. Returning None.")
-                return None
+        except ImportError as exc:
+            raise ImportError('Sun requires ephem. Install it in this environment with: python -m pip install "topologicpy[sun]"') from exc
         
         date = date.replace(hour=12, minute=0, second=0, microsecond=0)
         observer = ephem.Observer()
@@ -360,18 +277,8 @@ class Sun():
         import warnings
         try:
             import ephem
-        except:
-            print("Sun.Sunset - Information: Installing required ephem library.")
-            try:
-                os.system("pip install ephem")
-            except:
-                os.system("pip install ephem --user")
-            try:
-                import ephem
-                print("Sun.Sunset - Information: ephem library installed correctly.")
-            except:
-                warnings.warn("Sun.Sunset - Error: Could not import ephem. Please try to install ephem manually. Returning None.")
-                return None
+        except ImportError as exc:
+            raise ImportError('Sun requires ephem. Install it in this environment with: python -m pip install "topologicpy[sun]"') from exc
         
         date = date.replace(hour=12, minute=0, second=0, microsecond=0)
         observer = ephem.Observer()
