@@ -158,6 +158,28 @@ conda<span class="w"> </span>activate<span class="w"> </span>topologicpy
 </pre></div>
 </div>
 </section>
+<section id="optional-features">
+<h3>Optional features<a class="headerlink" href="#optional-features" title="Permalink to this heading"></a></h3>
+<p>TopologicPy never installs packages during import or a method call. Install
+optional features explicitly in the Python environment running your application:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">"topologicpy[sun]"</span>
+python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">"topologicpy[graph]"</span>
+python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">"topologicpy[honeybee]"</span>
+python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">"topologicpy[kuzu]"</span>
+python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">"topologicpy[ladybugdb]"</span>
+python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">"topologicpy[ifc]"</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">sun</span></code> extra provides PyEphem; <code class="docutils literal notranslate"><span class="pre">graph</span></code> provides NetworkX, igraph, Graphviz,
+PyVis and RDFLib; <code class="docutils literal notranslate"><span class="pre">honeybee</span></code> provides the Honeybee and Ladybug Tools packages.
+The database extras provide their respective drivers, and <code class="docutils literal notranslate"><span class="pre">ifc</span></code> provides
+IfcOpenShell. Extras can be combined, for example <code class="docutils literal notranslate"><span class="pre">topologicpy[sun,graph]</span></code>.
+Graphviz rendering also requires the Graphviz application to be installed.</p>
+<p>Optional dependencies are imported when their feature is used. A missing
+dependency raises <code class="docutils literal notranslate"><span class="pre">ImportError</span></code> with an installation hint instead of modifying
+the environment or returning an unexplained empty result. NumPy, SciPy and
+webcolors remain required dependencies and are installed by the package manager.</p>
+</section>
 </section>
 <section id="how-to-start-using-topologicpy">
 <h2>How to start using TopologicPy<a class="headerlink" href="#how-to-start-using-topologicpy" title="Permalink to this heading"></a></h2>
