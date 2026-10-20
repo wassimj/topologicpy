@@ -128,6 +128,7 @@ conda<span class="w"> </span>activate<span class="w"> </span>topologicpy
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>topologicpy<span class="w"> </span>--upgrade
 </pre></div>
 </div>
+<p>Note:  pip install falls back to topologic_core when pythonOCC is absent. topologic_core is much slower, faulty in places, and is not recommended. It will be deprecated soon.</p>
 </section>
 </section>
 <section id="prerequisites">
@@ -253,6 +254,19 @@ webcolors remain required dependencies and are installed by the package manager.
 <span class="nb">print</span><span class="p">(</span><span class="n">ttl</span><span class="p">)</span>
 </pre></div>
 </div>
+</section>
+<section id="tgraph-graph-api">
+<h3>TGraph graph API<a class="headerlink" href="#tgraph-graph-api" title="Permalink to this heading"></a></h3>
+<p>Graph-producing library methods now return <code class="docutils literal notranslate"><span class="pre">TGraph</span></code>. Navigation, database
+retrieval, GQL, GraphRAG, plotting, and topology utilities no longer depend on
+<code class="docutils literal notranslate"><span class="pre">Graph.py</span></code> or either geometry backend’s native Graph class.</p>
+<p>Use <code class="docutils literal notranslate"><span class="pre">TGraph.Vertices(graph)</span></code> and <code class="docutils literal notranslate"><span class="pre">TGraph.Edges(graph)</span></code> for records. Request
+<code class="docutils literal notranslate"><span class="pre">asTopologic=True</span></code> when geometry objects are needed. <code class="docutils literal notranslate"><span class="pre">TGraph.ShortestPath</span></code>
+returns vertex indices by default, and <code class="docutils literal notranslate"><span class="pre">TGraph.Dictionary</span></code> returns a Python
+dictionary.</p>
+<p>The older <code class="docutils literal notranslate"><span class="pre">graphType=&quot;graph&quot;</span></code> and <code class="docutils literal notranslate"><span class="pre">asTGraph=False</span></code> selector spellings are retained
+for call compatibility, but they also produce <code class="docutils literal notranslate"><span class="pre">TGraph</span></code>. <code class="docutils literal notranslate"><span class="pre">Plotly.DataByGraph</span></code>
+delegates to <code class="docutils literal notranslate"><span class="pre">Plotly.DataByTGraph</span></code>.</p>
 </section>
 </section>
 <section id="api-documentation">

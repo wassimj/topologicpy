@@ -970,7 +970,7 @@ added to the input topology. Default is None.</p>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>topology</strong><span class="classifier">topologic_core.Topology, topologic_core.Graph entity, TGraph vertex/edge index, or TGraph vertex/edge record</span></dt><dd><p>The input topology or graph entity.</p>
 </dd>
-<dt><strong>hostTopology</strong><span class="classifier">topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph</span></dt><dd><p>The host topology or graph in which to search.</p>
+<dt><strong>hostTopology</strong><span class="classifier">topologic_core.Topology or topologicpy.TGraph</span></dt><dd><p>The host topology or graph in which to search.</p>
 </dd>
 <dt><strong>topologyType</strong><span class="classifier">str</span></dt><dd><p>The type of topology for which to search. This can be one of “vertex”, “edge”, “wire”, “face”, “shell”, “cell”, “cellcomplex”.
 It is case-insensitive. If it is set to None, the type will be inferred from the input topology where possible. Default is None.</p>
@@ -2769,7 +2769,7 @@ The diameter is the maximum distance between any two vertices on the convex hull
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph</span></dt><dd><p>The input topology or graph.</p>
+<dt><strong>topology</strong><span class="classifier">topologic_core.Topology or topologicpy.TGraph</span></dt><dd><p>The input topology or graph.</p>
 </dd>
 <dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
@@ -2819,7 +2819,7 @@ The diameter is the maximum distance between any two vertices on the convex hull
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph</span></dt><dd><p>The input topology or graph.</p>
+<dt><strong>topology</strong><span class="classifier">topologic_core.Topology or topologicpy.TGraph</span></dt><dd><p>The input topology or graph.</p>
 </dd>
 <dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
@@ -2896,7 +2896,7 @@ The diameter is the maximum distance between any two vertices on the convex hull
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph</span></dt><dd><p>The input topology or graph.</p>
+<dt><strong>topology</strong><span class="classifier">topologic_core.Topology or topologicpy.TGraph</span></dt><dd><p>The input topology or graph.</p>
 </dd>
 <dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
@@ -2946,7 +2946,7 @@ specified tolerance. For CellComplex inputs, the external boundary is used for c
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph</span></dt><dd><p>The input topology or graph.</p>
+<dt><strong>topology</strong><span class="classifier">topologic_core.Topology or topologicpy.TGraph</span></dt><dd><p>The input topology or graph.</p>
 </dd>
 <dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin of the explosion. If set to None, the centroid of the input topology will be used. Default is None.</p>
 </dd>
@@ -3673,9 +3673,9 @@ Returns None if the input or parameters are invalid.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>topologyA</strong><span class="classifier">topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph</span></dt><dd><p>The first input topology or graph.</p>
+<dt><strong>topologyA</strong><span class="classifier">topologic_core.Topology or topologicpy.TGraph</span></dt><dd><p>The first input topology or graph.</p>
 </dd>
-<dt><strong>topologyB</strong><span class="classifier">topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph</span></dt><dd><p>The second input topology or graph.</p>
+<dt><strong>topologyB</strong><span class="classifier">topologic_core.Topology or topologicpy.TGraph</span></dt><dd><p>The second input topology or graph.</p>
 </dd>
 <dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
@@ -5728,7 +5728,7 @@ Warning: This is prone to combinatorial explosion.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph</span></dt><dd><p>The input topology. This cannot be vertex or edge.</p>
+<dt><strong>topology</strong><span class="classifier">topologic_core.Topology or topologicpy.TGraph</span></dt><dd><p>The input topology. This cannot be vertex or edge.</p>
 </dd>
 <dt><strong>subTopologyType</strong><span class="classifier">str , optional except when topology is a Cluster</span></dt><dd><p>The type of subTopology to include in the combinations.</p>
 </dd>
@@ -5771,7 +5771,7 @@ Default is False.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph</span></dt><dd><p>The input topology or graph.</p>
+<dt><strong>topology</strong><span class="classifier">topologic_core.Topology or topologicpy.TGraph</span></dt><dd><p>The input topology or graph.</p>
 </dd>
 <dt><strong>subTopologyType</strong><span class="classifier">str , optional</span></dt><dd><p>The requested subtopology type. This can be one of “vertex”, “edge”, “wire”, “face”, “shell”,
 “cell”, “cellcomplex”, “cluster”, or “aperture”. It is case insensitive. Default is “vertex”.</p>
@@ -6332,7 +6332,7 @@ False.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph</span></dt><dd><p>The input topology or graph.</p>
+<dt><strong>topology</strong><span class="classifier">topologic_core.Topology or topologicpy.TGraph</span></dt><dd><p>The input topology or graph.</p>
 </dd>
 <dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
@@ -6399,7 +6399,7 @@ topology or graph.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph</span></dt><dd><p>The input topology or graph.</p>
+<dt><strong>topology</strong><span class="classifier">topologic_core.Topology or topologicpy.TGraph</span></dt><dd><p>The input topology or graph.</p>
 </dd>
 <dt><strong>namespace</strong><span class="classifier">str , optional</span></dt><dd><p>The namespace string to use when deterministic is True. Default is “topologicpy”.</p>
 </dd>
@@ -6487,7 +6487,7 @@ Default is False.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph</span></dt><dd><p>The input topology or graph.</p>
+<dt><strong>topology</strong><span class="classifier">topologic_core.Topology or topologicpy.TGraph</span></dt><dd><p>The input topology or graph.</p>
 </dd>
 <dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is True.</p>
 </dd>
