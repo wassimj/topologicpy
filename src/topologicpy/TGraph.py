@@ -9608,7 +9608,7 @@ class TGraph:
         graph: "TGraph",
         vertexKey: str = None,
         showZero: bool = False,
-        zeroChar: str = "Ã‚Â·",
+        zeroChar: str = "ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â·",
         zeroColor: str = "rgba(0,0,0,0)",
         valueColor: str = "rgba(0,0,0,0.05)",
         diagonalHighlight: bool = True,
@@ -9643,7 +9643,7 @@ class TGraph:
         showZero : bool , optional
             If set to True, show zero are shown. Default is False.
         zeroChar : str , optional
-            The input zero char value. Default is 'Ã‚Â·'.
+            The input zero char value. Default is 'ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â·'.
         zeroColor : str , optional
             The color value to use. Default is 'rgba(0,0,0,0)'.
         valueColor : str , optional
@@ -11387,7 +11387,7 @@ class TGraph:
         return order
 
     @staticmethod
-    def Bridges(graph: "TGraph") -> List[Dict[str, Any]]:
+    def _BridgesUnannotated(graph: "TGraph") -> List[Dict[str, Any]]:
         """
         Returns the bridge edges of the input TGraph.
 
@@ -11586,126 +11586,71 @@ class TGraph:
         )
 
     @staticmethod
-    def ByAdjacencyMatrix(
-        adjacencyMatrix: Optional[List[List[Any]]] = None,
-        directed: bool = False,
-        allowSelfLoops: bool = True,
-        allowParallelEdges: bool = False,
-        dictionary: Optional[Dict[str, Any]] = None,
-        edgeKey: str = "weight",
-        ontology: bool = True,
-    ) -> "TGraph":
+    def ByAdjacencyMatrix(adjacencyMatrix=None, directed=False, allowSelfLoops=True,
+                          allowParallelEdges=False, dictionary=None, edgeKey="weight",
+                          ontology=True, *, dictionaries=None, vertexDictionaries=None,
+                          edgeKeyFwd=None, edgeKeyBwd=None):
+        """Create a graph from a square finite numeric matrix.
+
+        dictionaries/vertexDictionaries provide one dictionary per row. Directed
+        matrices create one arc per nonzero entry. In undirected mode, setting
+        edgeKeyFwd/Bwd creates one edge per unordered pair, storing the upper and
+        lower triangular values separately (including zero reverse capacity).
+        Without these options, the existing incidence construction is preserved.
         """
-        Creates a TGraph from an adjacency matrix.
-
-        Parameters
-        ----------
-        adjacencyMatrix : Optional[List[List[Any]]] , optional
-            The input adjacency matrix value. Default is None.
-        directed : bool , optional
-            If set to True, graph edges are treated as directed. Default is False.
-        allowSelfLoops : bool , optional
-            If set to True, self-loop edges are allowed. Default is True.
-        allowParallelEdges : bool , optional
-            If set to True, parallel edges are allowed. Default is False.
-        dictionary : Optional[Dict[str, Any]] , optional
-            The input dictionary. Default is None.
-        edgeKey : str , optional
-            The edge dictionary key to use. Default is 'weight'.
-        ontology : bool , optional
-            If set to True, ontology metadata is added or preserved where applicable. Default is
-            True.
-
-        Returns
-        -------
-        TGraph
-            The resulting TGraph, or None if the operation fails.
-        """
-
-        matrix = adjacencyMatrix or []
+        import numbers
+        matrix = [] if adjacencyMatrix is None else list(adjacencyMatrix)
         n = len(matrix)
-        pairs = []
-        eds = []
+        if any(not isinstance(row, (list, tuple)) or len(row) != n for row in matrix):
+            raise ValueError("Adjacency matrix must be square")
+        if any(value is not None and (not isinstance(value, numbers.Real) or not math.isfinite(value))
+               for row in matrix for value in row):
+            raise ValueError("Adjacency matrix entries must be finite numbers or None")
+        if dictionaries is not None and vertexDictionaries is not None:
+            raise ValueError("Supply dictionaries or vertexDictionaries, not both")
+        attrs = vertexDictionaries if vertexDictionaries is not None else dictionaries
+        if attrs is not None and len(attrs) != n: raise ValueError("One vertex dictionary is required per matrix row")
+        vertex_dicts = [TGraph._DictionaryToPython(d) for d in attrs] if attrs is not None else [{} for _ in range(n)]
+        pairs, eds = [], []
+        directional = edgeKeyFwd is not None or edgeKeyBwd is not None
         for i, row in enumerate(matrix):
-            if not isinstance(row, list):
-                continue
-            for j, value in enumerate(row[:n]):
-                if value in [0, None, False]:
-                    continue
-                pairs.append((i, j))
-                d = {}
-                if value != 1:
-                    d[edgeKey] = value
-                eds.append(d)
-        vertex_dicts = [{"index": i} for i in range(n)]
-        return TGraph.ByEdgeIndexPairs(
-            n,
-            pairs,
-            vertexDictionaries=vertex_dicts,
-            edgeDictionaries=eds,
-            directed=directed,
-            allowSelfLoops=allowSelfLoops,
-            allowParallelEdges=allowParallelEdges,
-            dictionary=dictionary,
-            ontology=ontology,
-        )
+            for j, value in enumerate(row):
+                if not directed and directional:
+                    if j < i or (not value and not matrix[j][i]): continue
+                    d = {edgeKeyFwd or edgeKey: value or 0}
+                    if i != j: d[edgeKeyBwd or (edgeKey+"_backward")] = matrix[j][i] or 0
+                else:
+                    if value in (0, None, False): continue
+                    d = {edgeKey: value}
+                    if directional:
+                        d[edgeKeyFwd if i <= j and edgeKeyFwd else edgeKeyBwd or edgeKey] = value
+                pairs.append((i, j)); eds.append(d)
+        return TGraph.ByEdgeIndexPairs(n, pairs, vertexDictionaries=vertex_dicts,
+            edgeDictionaries=eds, directed=directed, allowSelfLoops=allowSelfLoops,
+            allowParallelEdges=allowParallelEdges, dictionary=dictionary, ontology=ontology)
+
 
     @staticmethod
-    def ByAdjacencyMatrixCSVPath(path: str, directed: bool = False, silent: bool = False) -> Optional["TGraph"]:
+    def ByAdjacencyMatrixCSVPath(path, directed=False, silent=False, *, dictionaries=None,
+                                 vertexDictionaries=None, edgeKey="weight", edgeKeyFwd=None,
+                                 edgeKeyBwd=None, allowSelfLoops=True, allowParallelEdges=False,
+                                 dictionary=None, ontology=True):
+        """Read an adjacency matrix CSV with the same validation/options as ByAdjacencyMatrix.
+
+        Malformed input returns None with a diagnostic unless silent=True.
         """
-        Creates a TGraph from an adjacency-matrix CSV file.
-
-        Parameters
-        ----------
-        path : str
-            The input adjacency-matrix CSV path.
-        directed : bool , optional
-            If set to True, graph edges are treated as directed. Default is False.
-        silent : bool , optional
-            If set to True, errors and warnings are suppressed. Default is False.
-
-        Returns
-        -------
-        TGraph or None
-            The created TGraph, or None if the operation fails.
-        """
-
-        if not isinstance(path, str) or path.strip() == "":
-            if not silent:
-                print("TGraph.ByAdjacencyMatrixCSVPath - Error: The input path is not a valid string. Returning None.")
-            return None
-
+        import csv
         try:
-            import csv
-
-            matrix = []
-
-            with open(path, newline="", encoding="utf-8") as f:
-                reader = csv.reader(f)
-                for row in reader:
-                    if not row:
-                        continue
-                    matrix.append([TGraph._CSVValue(v) for v in row])
-
-            if len(matrix) < 1:
-                if not silent:
-                    print("TGraph.ByAdjacencyMatrixCSVPath - Error: The CSV file is empty. Returning None.")
-                return None
-
-            return TGraph.ByAdjacencyMatrix(matrix, directed=directed, silent=silent)
-
-        except TypeError:
-            try:
-                return TGraph.ByAdjacencyMatrix(matrix, directed=directed)
-            except Exception as exc:
-                if not silent:
-                    print(f"TGraph.ByAdjacencyMatrixCSVPath - Error: {exc}. Returning None.")
-                return None
-
-        except Exception as exc:
-            if not silent:
-                print(f"TGraph.ByAdjacencyMatrixCSVPath - Error: {exc}. Returning None.")
+            with open(path, newline="", encoding="utf-8-sig") as stream:
+                matrix = [[TGraph._CSVValue(value) for value in row] for row in csv.reader(stream) if row]
+            return TGraph.ByAdjacencyMatrix(matrix, directed=directed, dictionaries=dictionaries,
+                vertexDictionaries=vertexDictionaries, edgeKey=edgeKey, edgeKeyFwd=edgeKeyFwd,
+                edgeKeyBwd=edgeKeyBwd, allowSelfLoops=allowSelfLoops, allowParallelEdges=allowParallelEdges,
+                dictionary=dictionary, ontology=ontology)
+        except (OSError, TypeError, ValueError) as exc:
+            if not silent: print(f"TGraph.ByAdjacencyMatrixCSVPath - Error: {exc}. Returning None.")
             return None
+
 
 
     @staticmethod
@@ -22069,7 +22014,7 @@ class TGraph:
         return graph
 
     @staticmethod
-    def ConnectedComponents(graph: "TGraph", mode: str = "all") -> List[List[int]]:
+    def _ConnectedComponentsUnannotated(graph: "TGraph", mode: str = "all") -> List[List[int]]:
         """
         Returns the connected components of the input TGraph.
 
@@ -22280,16 +22225,7 @@ class TGraph:
         return components
 
     @staticmethod
-    def Connectivity(
-        graph: "TGraph",
-        key: str = "connectivity",
-        colorKey: str = None,
-        mode: str = "all",
-        normalize: bool = False,
-        mantissa: int = 6,
-        silent: bool = False,
-        colorScale: str = "viridis",
-    ) -> List[float]:
+    def Connectivity(graph: 'TGraph', key: str='connectivity', colorKey: str=None, mode: str='all', normalize: bool=False, mantissa: int=6, silent: bool=False, colorScale: str='viridis', *, weightKey=None):
         """
         Returns graph connectivity information for the input TGraph.
 
@@ -22318,6 +22254,9 @@ class TGraph:
         -------
         list
             The resulting connectivity values.
+
+        weightKey sums incident edge weights instead of counting edges. Missing values
+        count as one. Existing normalization and annotation options apply to strengths.
         """
         if not isinstance(graph, TGraph):
             return []
@@ -22335,6 +22274,8 @@ class TGraph:
             for index in vertices
         ]
 
+        if weightKey is not None:
+            values = [TGraph.VertexDegree(graph, index, mode=mode, weightKey=weightKey) for index in vertices]
         if normalize and values:
             maximum = max(values)
 
@@ -22845,7 +22786,7 @@ class TGraph:
         }
 
     @staticmethod
-    def CutVertices(graph: "TGraph") -> List[Dict[str, Any]]:
+    def _CutVerticesUnannotated(graph: "TGraph") -> List[Dict[str, Any]]:
         """
         Returns the articulation vertices of the input TGraph.
 
@@ -23611,8 +23552,7 @@ class TGraph:
         return order
 
     @staticmethod
-    def DepthMap(graph: "TGraph", source: Any = None, mode: str = "out", key: str = "depth",
-                 silent: bool = False) -> Dict[int, int]:
+    def DepthMap(graph: 'TGraph', source: Any=None, mode: str='out', key: str='depth', silent: bool=False, *, sources=None, method='single', distanceType='topological', weightKey=None, unreachable='ignore', radius=None):
         """
         Returns a dictionary mapping vertices to traversal depths.
 
@@ -23634,7 +23574,19 @@ class TGraph:
         -------
         Dict[int, int]
             The resulting depth map dictionary.
+
+        method='single' retains source traversal depths. method='total' sums distances
+        from each selected source (sources=None selects all active vertices).
+        distanceType='metric' uses geometric lengths; weightKey overrides distance costs.
+        For total depth, unreachable='ignore' sums the reachable component, 'infinity'
+        returns infinity for disconnected sources, and 'raise' rejects them. radius is
+        an inclusive distance cutoff. Return type remains a stable-index dictionary.
         """
+        if not isinstance(graph, TGraph):
+            return {}
+        if method != 'single' or distanceType != 'topological' or weightKey is not None or sources is not None or radius is not None or key is None:
+            return TGraph._DepthValues(graph, source, sources, method, distanceType,
+                                      weightKey, mode, key, unreachable, radius)
         if not isinstance(graph, TGraph):
             return {}
         active = TGraph._ActiveVertexIndices(graph)
@@ -23837,7 +23789,7 @@ class TGraph:
         return dict(graph._dictionary) if isinstance(graph, TGraph) else {}
 
     @staticmethod
-    def Difference(graphA: "TGraph", graphB: "TGraph", silent: bool = False) -> Optional["TGraph"]:
+    def Difference(graphA: 'TGraph', graphB: 'TGraph', silent: bool=False, *, vertexKeys=None, edgeKeys=None, tolerance=None, useCentroid=False, matchBy=None, ambiguous='separate'):
         """
         Returns the graph difference between the first and second input TGraphs.
 
@@ -23859,7 +23811,18 @@ class TGraph:
         -------
         Optional[TGraph]
             The resulting TGraph, or None if the operation fails.
+
+        Extended matching
+        -----------------
+        vertexKeys/edgeKeys select identity attributes. matchBy='coordinates' uses
+        Euclidean tolerance; useCentroid averages matched vertex coordinates.
+        Ambiguous cross-input matches remain separate unless ambiguous='error'.
+        Shared matching uses A's conflicting attributes; Impose/Imprint use B's.
+        With no new matching options the established identity behavior is retained.
         """
+        if vertexKeys is not None or edgeKeys is not None or tolerance is not None or useCentroid or matchBy is not None or ambiguous != 'separate':
+            return TGraph._BooleanOverlay(graphA, graphB, 'difference', vertexKeys, edgeKeys,
+                matchBy, tolerance, useCentroid, ambiguous, silent)
 
         if not isinstance(graphA, TGraph) or not isinstance(graphB, TGraph):
             if not silent:
@@ -24711,24 +24674,7 @@ class TGraph:
         return idx if isinstance(graph, TGraph) and graph._validate_edge_index(idx) else None
 
     @staticmethod
-    def Edges(
-        graph: "TGraph",
-        asTopologic: bool = False,
-        useRepresentation: bool = True,
-        active: bool = True,
-        segmentCurves: bool = True,
-        mantissa: int = 6,
-        tolerance: float = 0.0001,
-        silent: bool = False,
-        selfLoopMode: str = "circle",
-        selfLoopRadius: float = 0.25,
-        selfLoopMajorRadius: Optional[float] = None,
-        selfLoopMinorRadius: Optional[float] = None,
-        selfLoopSides: int = 32,
-        selfLoopNormal: Optional[List[float]] = None,
-        sagittaKey: str = "sagitta",
-        copy: bool = False,
-    ) -> List[Any]:
+    def Edges(graph: 'TGraph', asTopologic: bool=False, useRepresentation: bool=True, active: bool=True, segmentCurves: bool=True, mantissa: int=6, tolerance: float=0.0001, silent: bool=False, selfLoopMode: str='circle', selfLoopRadius: float=0.25, selfLoopMajorRadius: Optional[float]=None, selfLoopMinorRadius: Optional[float]=None, selfLoopSides: int=32, selfLoopNormal: Optional[List[float]]=None, sagittaKey: str='sagitta', copy: bool=False, *, sortBy=None, reverse=False):
         """
         Returns the edges of the input TGraph.
 
@@ -24775,6 +24721,9 @@ class TGraph:
         -------
         list
             The requested edge records or Topologic representations.
+
+        sortBy selects dictionary keys; reverse sorts descending. Missing values sort last.
+        Record IDs and graph incidence remain unchanged.
         """
         if not isinstance(graph, TGraph):
             return []
@@ -24785,6 +24734,7 @@ class TGraph:
             if not active or edge.get("active", True)
         ]
 
+        records = TGraph._SortedRecords(records, sortBy, reverse)
         if not asTopologic:
             if not copy:
                 return records
@@ -26382,69 +26332,69 @@ class TGraph:
         return round(float(triangles_times_3)/float(connected_triples), mantissa)
 
     @staticmethod
-    def GraphVizGraph(graph: "TGraph", directed: Optional[bool] = None, rankDir: str = "TB",
-                      showVertexLabel: bool = True, vertexLabelKey: str = "label",
-                      showEdgeLabel: bool = False, edgeLabelKey: str = "label") -> str:
+    def GraphVizGraph(graph, directed=None, rankDir="TB", showVertexLabel=True,
+                      vertexLabelKey="label", showEdgeLabel=False, edgeLabelKey="label",
+                      *, layout="dot", graphAttributes=None, vertexAttributes=None,
+                      edgeAttributes=None, graphAttributeKeys=None, vertexAttributeKeys=None,
+                      edgeAttributeKeys=None, asObject=False, bgColor=None, fontName=None,
+                      fontSize=None, splines=None, vertexShape=None, vertexShapeKey=None,
+                      vertexFillColor=None, vertexFillColorKey=None, vertexColor=None,
+                      vertexColorKey=None, vertexWidth=None, vertexWidthKey=None,
+                      vertexHeight=None, vertexHeightKey=None, vertexFixedSize=None,
+                      vertexStyle=None, edgeColor=None, edgeColorKey=None,
+                      edgeWidth=None, edgeWidthKey=None, edgeStyle=None, edgeStyleKey=None,
+                      showGraphLabel=False, graphLabel="", graphLabelKey=None):
+        """Return styled DOT text, or a graphviz.Source with asObject=True.
+
+        *Attributes dictionaries map DOT attribute names to constant values.
+        *AttributeKeys map DOT names to graph/vertex/edge dictionary keys, which
+        override constants where present. Convenience styling options follow the
+        same rule. Layout is stored in DOT and selects the optional object's engine.
+        DOT generation requires no Graphviz package; no rendering or file writing
+        occurs. asObject needs the optional graphviz Python package.
         """
-        Returns a GraphViz graph representation of the input TGraph.
+        import json
+        if not isinstance(graph, TGraph): return ""
+        directed = graph._directed if directed is None else bool(directed)
+        def attrs(defaults, constants, keys, dictionary):
+            result = dict(defaults); result.update(constants or {})
+            for attr, key in (keys or {}).items():
+                if key in dictionary: result[attr] = dictionary[key]
+            return {k:v for k,v in result.items() if v is not None}
+        ga = attrs({"rankdir":rankDir, "layout":layout, "bgcolor":bgColor,
+                    "fontname":fontName, "fontsize":fontSize, "splines":splines},
+                   graphAttributes, graphAttributeKeys, graph._dictionary)
+        if showGraphLabel: ga["label"] = graph._dictionary.get(graphLabelKey, graphLabel) if graphLabelKey else graphLabel
+        vkeys = dict(vertexAttributeKeys or {})
+        for attr,key in (("shape",vertexShapeKey),("fillcolor",vertexFillColorKey),("color",vertexColorKey),
+                         ("width",vertexWidthKey),("height",vertexHeightKey)):
+            if key is not None: vkeys[attr] = key
+        ekeys = dict(edgeAttributeKeys or {})
+        for attr,key in (("color",edgeColorKey),("penwidth",edgeWidthKey),("style",edgeStyleKey)):
+            if key is not None: ekeys[attr] = key
+        lines = [("digraph" if directed else "graph")+" TGraph {",
+                 "  graph ["+TGraph._GraphvizAttributes(ga)+"];"]
+        active = set(TGraph.ActiveVertexIndices(graph))
+        for v in TGraph.Vertices(graph):
+            d=v["dictionary"]
+            va=attrs({"shape":vertexShape,"fillcolor":vertexFillColor,"color":vertexColor,
+                      "width":vertexWidth,"height":vertexHeight,"fixedsize":vertexFixedSize,
+                      "style":vertexStyle,"fontname":fontName,"fontsize":fontSize},vertexAttributes,vkeys,d)
+            va["label"]=d.get(vertexLabelKey,v["index"]) if showVertexLabel else ""
+            lines.append(f"  {v['index']} ["+TGraph._GraphvizAttributes(va)+"];")
+        for e in TGraph.Edges(graph):
+            if e["src"] not in active or e["dst"] not in active: continue
+            ea=attrs({"color":edgeColor,"penwidth":edgeWidth,"style":edgeStyle},edgeAttributes,ekeys,e["dictionary"])
+            if showEdgeLabel: ea["label"]=e["dictionary"].get(edgeLabelKey,"")
+            if directed and not e.get("directed",graph._directed): ea.setdefault("dir","none")
+            lines.append(f"  {e['src']} {'->' if directed else '--'} {e['dst']} ["+TGraph._GraphvizAttributes(ea)+"];")
+        lines.append("}"); dot="\n".join(lines)+"\n"
+        if asObject:
+            try: from graphviz import Source
+            except ImportError as exc: raise ImportError('Install Graphviz support with python -m pip install "topologicpy[graph]"') from exc
+            return Source(dot, engine=layout)
+        return dot
 
-        Parameters
-        ----------
-        graph : 'TGraph'
-            The input TGraph.
-        directed : Optional[bool] , optional
-            If set to True, graph edges are treated as directed. Default is None.
-        rankDir : str , optional
-            The input rank dir value. Default is 'TB'.
-        showVertexLabel : bool , optional
-            If set to True, show vertex label are shown. Default is True.
-        vertexLabelKey : str , optional
-            The dictionary key to use. Default is 'label'.
-        showEdgeLabel : bool , optional
-            If set to True, show edge label are shown. Default is False.
-        edgeLabelKey : str , optional
-            The dictionary key to use. Default is 'label'.
-
-        Returns
-        -------
-        str
-            The resulting graph viz graph string.
-        """
-
-        if not isinstance(graph, TGraph):
-            return ""
-        is_directed = graph._directed if directed is None else bool(directed)
-        connector = "->" if is_directed else "--"
-        graph_type = "digraph" if is_directed else "graph"
-
-        def esc(value: Any) -> str:
-            return str(value).replace('\\', '\\\\').replace('"', '\\"')
-
-        lines = [f"{graph_type} TGraph {{", f"  rankdir={rankDir};"]
-        for vertex in graph._vertices:
-            if not vertex.get("active", True):
-                continue
-            d = vertex.get("dictionary", {})
-            label = d.get(vertexLabelKey, vertex.get("index")) if showVertexLabel else vertex.get("index")
-            lines.append(f"  {vertex.get('index')} [label=\"{esc(label)}\"];")
-        emitted = set()
-        for edge in graph._edges:
-            if not edge.get("active", True):
-                continue
-            src = edge.get("src")
-            dst = edge.get("dst")
-            if not is_directed:
-                key = tuple(sorted((src, dst))) + (edge.get("index"),)
-                if key in emitted:
-                    continue
-                emitted.add(key)
-            d = edge.get("dictionary", {})
-            attrs = ""
-            if showEdgeLabel:
-                attrs = f" [label=\"{esc(d.get(edgeLabelKey, ''))}\"]"
-            lines.append(f"  {src} {connector} {dst}{attrs};")
-        lines.append("}")
-        return "\n".join(lines) + "\n"
 
     @staticmethod
     def Guid(graph: "TGraph") -> Optional[str]:
@@ -26665,46 +26615,29 @@ class TGraph:
         return round(TGraph._P8Cosine(fA, fB, normalize=normalize), mantissa)
 
     @staticmethod
-    def Impose(graphA: "TGraph", graphB: "TGraph", silent: bool = False) -> Optional["TGraph"]:
-        """
-        Returns the imposed graph relationship between two input TGraphs.
+    def Impose(graphA, graphB, silent=False, *, vertexKeys=None, edgeKeys=None,
+               matchBy=None, tolerance=1e-6, useCentroid=False, ambiguous="separate"):
+        """Combine both graphs, letting B overwrite matching attributes.
 
-        Parameters
-        ----------
-        graphA : 'TGraph'
-            The first input TGraph.
-        graphB : 'TGraph'
-            The second input TGraph.
-        silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
-
-        Returns
-        -------
-        Optional[TGraph]
-            The resulting TGraph, or None if the operation fails.
+        Matching is one-to-one across inputs. Supply vertexKeys for semantic
+        identity or matchBy='coordinates' and tolerance for geometry. Ambiguities
+        stay separate unless ambiguous='error'. Inputs are not modified.
         """
-        return TGraph.Union(graphA, graphB, silent=silent)
+        return TGraph._BooleanOverlay(graphA, graphB, "impose", vertexKeys, edgeKeys,
+            matchBy, tolerance, useCentroid, ambiguous, silent)
+
 
     @staticmethod
-    def Imprint(graphA: "TGraph", graphB: "TGraph", silent: bool = False) -> Optional["TGraph"]:
-        """
-        Returns the imprinted graph relationship between two input TGraphs.
+    def Imprint(graphA, graphB, silent=False, *, vertexKeys=None, edgeKeys=None,
+                matchBy=None, tolerance=1e-6, useCentroid=False, ambiguous="separate"):
+        """Keep A's structure and overwrite matching attributes from B.
 
-        Parameters
-        ----------
-        graphA : 'TGraph'
-            The first input TGraph.
-        graphB : 'TGraph'
-            The second input TGraph.
-        silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
-
-        Returns
-        -------
-        Optional[TGraph]
-            The resulting TGraph, or None if the operation fails.
+        No B-only vertex or edge is added. A's coordinates are retained unless
+        useCentroid=True. Matching options follow Impose.
         """
-        return TGraph.Union(graphA, graphB, silent=silent)
+        return TGraph._BooleanOverlay(graphA, graphB, "imprint", vertexKeys, edgeKeys,
+            matchBy, tolerance, useCentroid, ambiguous, silent)
+
 
     @staticmethod
     def IncidentEdges(graph: "TGraph", index: int, mode: str = "all") -> List[Dict[str, Any]]:
@@ -26876,10 +26809,7 @@ class TGraph:
             return None
 
     @staticmethod
-    def Integration(graph: "TGraph", normalize: bool = True, key: str = "integration", mantissa: int = 6,
-                    silent: bool = False, radius: Optional[float] = None,
-                    method: str = "closeness", colorKey: str = "cc_color",
-                    colorScale: str = "viridis") -> Optional[List[float]]:
+    def Integration(graph: 'TGraph', normalize: bool=True, key: str='integration', mantissa: int=6, silent: bool=False, radius: Optional[float]=None, method: str='closeness', colorKey: str='cc_color', colorScale: str='viridis', *, weightKey=None, distanceType='topological', mode='out', nxCompatible=True):
         """Compute closeness-based or Depthmap Hillier-Hanson integration.
 
         Parameters
@@ -26928,13 +26858,19 @@ class TGraph:
         when available, preserving the same cutoffs and reached-node counts.
         Small graphs and unavailable acceleration use Python traversal.
         """
+        if distanceType not in ('topological', 'metric'):
+            raise ValueError("distanceType must be 'topological' or 'metric'")
+        if str(method).lower() in ('hh', 'depthmap') and (weightKey is not None or distanceType != 'topological'):
+            raise ValueError("HH integration is topological; use method='closeness' for weighted/metric distances")
         import numbers
 
         name = method.strip().lower() if isinstance(method, str) else None
         if name == "closeness":
             return TGraph.ClosenessCentrality(
                 graph, normalize=normalize, key=key, mantissa=mantissa,
-                silent=silent, radius=radius, colorKey=colorKey, colorScale=colorScale)
+                silent=silent, radius=radius, colorKey=colorKey, colorScale=colorScale,
+                weightKey=weightKey or ("Length" if distanceType == "metric" else None),
+                mode=mode, nxCompatible=nxCompatible)
         if name not in ("depthmap", "hh") or not isinstance(graph, TGraph):
             if not silent:
                 print("TGraph.Integration - Error: Supply a valid TGraph and method 'closeness', 'depthmap', or 'hh'. Returning None.")
@@ -26998,7 +26934,7 @@ class TGraph:
         return values
 
     @staticmethod
-    def Intersect(graphA: "TGraph", graphB: "TGraph", silent: bool = False) -> Optional["TGraph"]:
+    def Intersect(graphA: 'TGraph', graphB: 'TGraph', silent: bool=False, *, vertexKeys=None, edgeKeys=None, tolerance=None, useCentroid=False, matchBy=None, ambiguous='separate'):
         """
         Returns the graph intersection of two input TGraphs.
 
@@ -27020,7 +26956,18 @@ class TGraph:
         -------
         Optional[TGraph]
             The resulting TGraph, or None if the operation fails.
+
+        Extended matching
+        -----------------
+        vertexKeys/edgeKeys select identity attributes. matchBy='coordinates' uses
+        Euclidean tolerance; useCentroid averages matched vertex coordinates.
+        Ambiguous cross-input matches remain separate unless ambiguous='error'.
+        Shared matching uses A's conflicting attributes; Impose/Imprint use B's.
+        With no new matching options the established identity behavior is retained.
         """
+        if vertexKeys is not None or edgeKeys is not None or tolerance is not None or useCentroid or matchBy is not None or ambiguous != 'separate':
+            return TGraph._BooleanOverlay(graphA, graphB, 'intersect', vertexKeys, edgeKeys,
+                matchBy, tolerance, useCentroid, ambiguous, silent)
 
         if not isinstance(graphA, TGraph) or not isinstance(graphB, TGraph):
             if not silent:
@@ -27566,7 +27513,7 @@ class TGraph:
     @staticmethod
     def IsErdoesGallai(sequence: Any, silent: bool = False) -> bool:
         """
-        Returns True if the input degree sequence satisfies the ErdÃ…â€˜s-Gallai theorem.
+        Returns True if the input degree sequence satisfies the ErdÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã‹Å“s-Gallai theorem.
 
         Parameters
         ----------
@@ -28457,35 +28404,37 @@ class TGraph:
         return _TGraph_KnowledgeGraphView(graph, **kwargs)
 
     @staticmethod
-    def Laplacian(graph: "TGraph", mode: str = "all", silent: bool = False) -> List[List[int]]:
-        """
-        Returns the Laplacian matrix of the input TGraph.
+    def Laplacian(graph, mode="all", silent=False, *, normalized=False, weightKey=None):
+        """Return D-A, or the symmetric degree-normalized form.
 
-        Parameters
-        ----------
-        graph : 'TGraph'
-            The input TGraph.
-        mode : str , optional
-            The traversal or adjacency mode. Valid values are typically "out", "in", or "all".
-            Default is 'all'.
-        silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
-
-        Returns
-        -------
-        List[List[int]]
-            The resulting laplacian list.
+        Active vertices define row order. Parallel weights are summed; self-loops
+        cancel in D-A. Undirected edges contribute both directions (loops once).
+        Directed 'out' uses outgoing adjacency, 'in' its transpose, and 'all'
+        symmetrizes arcs by addition. Normalization uses D^-1/2 L D^-1/2;
+        zero-degree vertices have zero rows/columns in the undirected case.
+        Directed normalized forms use the same algebra, not Chung's Laplacian.
         """
-        if not isinstance(graph, TGraph):
-            return []
-        A = TGraph.AdjacencyMatrix(graph)
-        n = len(A)
-        L = [[0 for _ in range(n)] for _ in range(n)]
-        for i in range(n):
-            deg = sum(1 for x in A[i] if x != 0)
-            for j in range(n):
-                L[i][j] = deg if i == j else (-1 if A[i][j] != 0 else 0)
+        if mode not in ("all", "out", "in"): raise ValueError("Invalid adjacency mode")
+        vertices = TGraph.ActiveVertexIndices(graph); pos = {v:i for i,v in enumerate(vertices)}
+        n = len(vertices); A = [[0.0]*n for _ in vertices]
+        for e in graph._edges:
+            u, v = e.get("src"), e.get("dst")
+            if not e.get("active", True) or u not in pos or v not in pos: continue
+            w = float(e.get("dictionary", {}).get(weightKey, 1.0)) if weightKey else 1.0
+            if not math.isfinite(w) or w < 0: raise ValueError("Laplacian weights must be finite and non-negative")
+            i, j = pos[u], pos[v]
+            directed = bool(e.get("directed", graph._directed))
+            if not directed or mode == "all":
+                A[i][j] += w
+                if i != j: A[j][i] += w
+            elif mode == "out": A[i][j] += w
+            else: A[j][i] += w
+        degree = [sum(row) for row in A]
+        L = [[(degree[i] if i == j else 0)-A[i][j] for j in range(n)] for i in range(n)]
+        if normalized:
+            return [[L[i][j]/math.sqrt(degree[i]*degree[j]) if degree[i] and degree[j] else 0.0 for j in range(n)] for i in range(n)]
         return L
+
 
     @staticmethod
     def Leaves(graph: "TGraph") -> List[Dict[str, Any]]:
@@ -28684,35 +28633,65 @@ class TGraph:
         return values
 
     @staticmethod
-    def LongestPath(graph: "TGraph", mode: str = "all", silent: bool = False) -> List[int]:
-        """
-        Returns a longest path approximation for the input TGraph.
+    def LongestPath(graph, mode="all", silent=False, *, source=None, target=None,
+                    vertexKey=None, edgeKey=None, costKey=None, timeLimit=10,
+                    strategy="auto", returnInfo=False):
+        """Search for a longest simple path, optionally between fixed endpoints.
 
-        Parameters
-        ----------
-        graph : 'TGraph'
-            The input TGraph.
-        mode : str , optional
-            The traversal or adjacency mode. Valid values are typically "out", "in", or "all".
-            Default is 'all'.
-        silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
-
-        Returns
-        -------
-        List[int]
-            The resulting longest path list.
+        strategy='auto' retains the historical diameter approximation without
+        endpoints and selects exhaustive DFS with endpoints. 'exact'/'dfs' searches
+        simple paths; 'diameter' selects the longest shortest path. Exact search
+        is exponential and respects timeLimit. returnInfo reports path, cost,
+        strategy, completed, timedOut and optimal. optimal is never true for the
+        diameter heuristic. Costs are non-negative; edgeKey=None counts hops.
         """
-        if not isinstance(graph, TGraph):
-            return []
-        best=[]
-        active=TGraph._ActiveVertexIndices(graph)
-        for i,a in enumerate(active):
-            for b in active[i+1:]:
-                p=TGraph.ShortestPath(graph,a,b,mode=mode)
-                if p and len(p)>len(best):
-                    best=p
-        return best
+        import time
+        if timeLimit is not None and (not math.isfinite(timeLimit) or timeLimit < 0): raise ValueError("timeLimit must be finite and non-negative")
+        name = strategy.lower()
+        if name == "auto": name = "exact" if source is not None or target is not None else "diameter"
+        if name not in ("exact", "dfs", "diameter"): raise ValueError("Unknown longest-path strategy")
+        adjacency = TGraph._SearchNetwork(graph, mode, edgeKey or costKey, vertexKey)
+        starts = list(adjacency) if source is None else [TGraph._SearchVertex(graph, source)]
+        end = TGraph._SearchVertex(graph, target) if target is not None else None
+        if target is not None and end is None: starts = []
+        deadline = None if timeLimit is None else time.perf_counter()+timeLimit
+        best, best_cost, timed_out = [], -1.0, False
+        def consider(path, cost):
+            nonlocal best, best_cost
+            if (target is None or path[-1] == end) and cost > best_cost:
+                best, best_cost = list(path), cost
+        try:
+            for start in starts:
+                if start not in adjacency: continue
+                if name == "diameter":
+                    for dest in ([end] if target is not None else adjacency):
+                        result = TGraph._SearchDijkstra(adjacency, start, dest, deadline=deadline)
+                        if result: consider(result[0], result[2])
+                else:
+                    # Keep one traversal stack/path, using O(V) search memory.
+                    path, visited = [start], {start}
+                    consider(path, 0.0)
+                    initial = [] if target is not None and start == end else adjacency[start]
+                    stack = [(iter(initial), 0.0)]
+                    while stack:
+                        if deadline is not None and time.perf_counter() >= deadline: raise TimeoutError()
+                        neighbors, cost = stack[-1]
+                        try:
+                            v, _, weight = next(neighbors)
+                        except StopIteration:
+                            stack.pop(); visited.remove(path.pop()); continue
+                        if v in visited: continue
+                        path.append(v); visited.add(v); next_cost = cost+weight
+                        consider(path, next_cost)
+                        following = [] if target is not None and v == end else adjacency[v]
+                        stack.append((iter(following), next_cost))
+        except TimeoutError:
+            timed_out = True
+        info = {"path": best, "cost": max(0.0, best_cost), "strategy": name,
+                "completed": not timed_out, "timedOut": timed_out,
+                "optimal": name in ("exact", "dfs") and not timed_out}
+        return info if returnInfo else best
+
 
     @staticmethod
     def Match(graphA: "TGraph", graphB: "TGraph", vertexKeys: Any = None, edgeKeys: Any = None,
@@ -28800,79 +28779,58 @@ class TGraph:
         return max(seq) if seq else 0
 
     @staticmethod
-    def MaximumFlow(
-        graph: "TGraph",
-        source: Any,
-        sink: Any,
-        capacityKey: str = "capacity",
-        defaultCapacity: float = 1.0,
-        silent: bool = False,
-    ) -> float:
+    def MaximumFlow(graph, source, sink, capacityKey="capacity", defaultCapacity=1.0,
+                    silent=False, *, edgeKeyFwd=None, edgeKeyBwd=None, bidirKey=None,
+                    bidirectional=None, flowKey=None, residualKey=None, returnDetails=False):
+        """Return maximum flow, optionally with per-arc flow/residual details.
+
+        Forward/backward keys override capacityKey in their respective directions.
+        Reverse traversal follows each edge's directedness unless bidirectional or
+        its per-edge bidirKey overrides it. Supplying edgeKeyBwd also enables a
+        reverse arc when no explicit override is given. Parallel arcs retain IDs.
+        flowKey/residualKey annotate each edge with forward/backward values;
+        returnDetails returns the flow engine result, default remains a float.
         """
-        Returns the maximum flow between two vertices of the input TGraph.
+        if not isinstance(graph, TGraph): return None if returnDetails else 0.0
+        source, sink = TGraph._SearchVertex(graph, source), TGraph._SearchVertex(graph, sink)
+        if source is None or sink is None or source == sink:
+            return {"value":0.0, "arcs":[], "residual":[]} if returnDetails else 0.0
+        network = TGraph._FlowNetwork(graph, capacityKey, defaultCapacity, silent)
+        if network is None: return None if returnDetails else 0.0
+        custom = any(v is not None for v in (edgeKeyFwd, edgeKeyBwd, bidirKey, bidirectional))
+        if custom:
+            arcs = []
+            def capacity(d, key):
+                try: value = float(d.get(key, defaultCapacity) if key else defaultCapacity)
+                except (TypeError, ValueError): value = float(defaultCapacity)
+                return max(0.0, value) if math.isfinite(value) else float(defaultCapacity)
+            nodes = set(network["nodes"])
+            for e in graph._edges:
+                if not e.get("active", True) or e["src"] not in nodes or e["dst"] not in nodes: continue
+                d = e.get("dictionary", {})
+                both = (not e.get("directed", graph._directed)) or edgeKeyBwd is not None
+                if bidirectional is not None: both = bool(bidirectional)
+                if bidirKey and bidirKey in d: both = bool(d[bidirKey])
+                for orientation in ([1, -1] if both else [1]):
+                    u,v = (e["src"],e["dst"]) if orientation == 1 else (e["dst"],e["src"])
+                    ck = (edgeKeyFwd or capacityKey) if orientation == 1 else (edgeKeyBwd or capacityKey)
+                    arcs.append({"arc_index":len(arcs), "edge_index":e["index"], "src":u, "dst":v,
+                                 "orientation":orientation, "capacity":capacity(d, ck)})
+            network["arcs"] = arcs
+        result = TGraph._MaximumFlowEngine(network["nodes"], network["arcs"], source, sink)
+        if flowKey is not None or residualKey is not None:
+            for e in TGraph.Edges(graph):
+                matching = [arc for arc in result["arcs"] if arc.get("edge_index") == e["index"]]
+                for key, field in ((flowKey, "flow"), (residualKey, "residual_capacity")):
+                    if key is not None:
+                        e["dictionary"][key] = {"forward":sum(a[field] for a in matching if a.get("orientation",1)==1),
+                                                 "backward":sum(a[field] for a in matching if a.get("orientation",1)==-1)}
+            graph._invalidate_cache()
+        return result if returnDetails else float(result["value"])
 
-        The method constructs an internal capacitated flow network and computes the
-        maximum source-to-sink flow using the reusable TGraph flow engine.
-
-        Parameters
-        ----------
-        graph : TGraph
-            The input TGraph.
-        source : Any
-            The source vertex index or TGraph vertex record.
-        sink : Any
-            The sink vertex index or TGraph vertex record.
-        capacityKey : str , optional
-            The edge dictionary key containing the capacity value.
-            Default is "capacity".
-        defaultCapacity : float , optional
-            The capacity assigned to edges for which capacityKey is absent or invalid.
-            Default is 1.0.
-        silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
-
-        Returns
-        -------
-        float
-            The maximum flow value.
-        """
-        if not isinstance(graph, TGraph):
-            if not silent:
-                print("TGraph.MaximumFlow - Error: The input graph is not a valid TGraph. Returning 0.")
-            return 0.0
-
-        source_index = TGraph.VertexIndex(graph, source)
-        sink_index = TGraph.VertexIndex(graph, sink)
-
-        if source_index is None or sink_index is None:
-            if not silent:
-                print("TGraph.MaximumFlow - Error: Could not resolve the source or sink vertex. Returning 0.")
-            return 0.0
-
-        if source_index == sink_index:
-            return 0.0
-
-        network = TGraph._FlowNetwork(
-            graph,
-            capacityKey=capacityKey,
-            defaultCapacity=defaultCapacity,
-            silent=silent,
-        )
-
-        if not isinstance(network, dict):
-            return 0.0
-
-        result = TGraph._MaximumFlowEngine(
-            nodes=network.get("nodes", []),
-            arcs=network.get("arcs", []),
-            source=source_index,
-            sink=sink_index,
-        )
-
-        return float(result.get("value", 0.0))
 
     @staticmethod
-    def Merge(graphA: "TGraph", graphB: "TGraph", silent: bool = False) -> Optional["TGraph"]:
+    def Merge(graphA: 'TGraph', graphB: 'TGraph', silent: bool=False, *, vertexKeys=None, edgeKeys=None, tolerance=None, useCentroid=False, matchBy=None, ambiguous='separate'):
         """
         Returns a merged graph from two input TGraphs.
 
@@ -28889,7 +28847,20 @@ class TGraph:
         -------
         Optional[TGraph]
             The resulting TGraph, or None if the operation fails.
+
+        Extended matching
+        -----------------
+        vertexKeys/edgeKeys select identity attributes. matchBy='coordinates' uses
+        Euclidean tolerance; useCentroid averages matched vertex coordinates.
+        Ambiguous cross-input matches remain separate unless ambiguous='error'.
+        Shared matching uses A's conflicting attributes; Impose/Imprint use B's.
+        With no new matching options the established identity behavior is retained.
         """
+        if isinstance(vertexKeys, bool) and edgeKeys is None:
+            silent, vertexKeys = vertexKeys, None
+        if vertexKeys is not None or edgeKeys is not None or tolerance is not None or useCentroid or matchBy is not None or ambiguous != 'separate':
+            return TGraph._BooleanOverlay(graphA, graphB, 'union', vertexKeys, edgeKeys,
+                matchBy, tolerance, useCentroid, ambiguous, silent)
         if not isinstance(graphA, TGraph) or not isinstance(graphB, TGraph):
             return None
         g = TGraph._CopyGraph(graphA)
@@ -28983,7 +28954,7 @@ class TGraph:
         return graph
 
     @staticmethod
-    def MeshData(graph: "TGraph", active: bool = True) -> Dict[str, Any]:
+    def MeshData(graph: 'TGraph', active: bool=True, *, includeDictionaries=False, includeIndices=False):
         """
         Returns mesh data representing the input TGraph.
 
@@ -28998,6 +28969,9 @@ class TGraph:
         -------
         Dict[str, Any]
             The resulting mesh data dictionary.
+
+        includeDictionaries adds copied vertexDictionaries/edgeDictionaries in mesh order.
+        includeIndices adds stable IDs, allowing compact mesh incidence to be mapped back.
         """
         if not isinstance(graph, TGraph):
             return {"vertices": [], "edges": []}
@@ -29020,7 +28994,18 @@ class TGraph:
             dstIndex = e.get("dst")
             if srcIndex in index_map and dstIndex in index_map:
                 edges.append([index_map[srcIndex], index_map[dstIndex]])
-        return {"vertices": coords, "edges": edges}
+        result = {"vertices": coords, "edges": edges}
+        selected_vertices = [v for v in graph._vertices if not active or v.get("active", True)]
+        selected_edges = [e for e in graph._edges if (not active or e.get("active", True))
+                          and e.get("src") in index_map and e.get("dst") in index_map]
+        if includeDictionaries:
+            import copy
+            result["vertexDictionaries"] = [copy.deepcopy(v.get("dictionary", {})) for v in selected_vertices]
+            result["edgeDictionaries"] = [copy.deepcopy(e.get("dictionary", {})) for e in selected_edges]
+        if includeIndices:
+            result["vertexIndices"] = [v["index"] for v in selected_vertices]
+            result["edgeIndices"] = [e["index"] for e in selected_edges]
+        return result
 
     @staticmethod
     def MetricDistance(graph: "TGraph", vertexA: Any, vertexB: Any, mantissa: int = 6,
@@ -30583,75 +30568,56 @@ class TGraph:
         return graph
 
     @staticmethod
-    def PyvisGraph(
-        graph: "TGraph",
-        height: str = "750px",
-        width: str = "100%",
-        directed: Optional[bool] = None,
-        vertexLabelKey: str = "label",
-        edgeLabelKey: str = "label",
-        notebook: bool = False,
-        bgcolor: str = "#ffffff",
-        fontColor: str = "#000000",
-        silent: bool = False,
-    ) -> Optional[Any]:
-        """
-        Returns a PyVis graph representation of the input TGraph.
+    def PyvisGraph(graph, height="750px", width="100%", directed=None,
+                    vertexLabelKey="label", edgeLabelKey="label", notebook=False,
+                    bgcolor="#ffffff", fontColor="#000000", silent=False, *,
+                    vertexSize=6, vertexSizeKey=None, vertexColor=None, vertexColorKey=None,
+                    vertexGroupKey=None, vertexGroups=None, edgeColor=None, edgeColorKey=None,
+                    edgeWeight=None, edgeWeightKey=None, selectMenu=False, filterMenu=False,
+                    showNeighbours=True, colorScale="viridis", vertexAttributes=None,
+                    edgeAttributes=None):
+        """Create a styled Pyvis Network; write HTML explicitly with write_html.
 
-        Parameters
-        ----------
-        graph : 'TGraph'
-            The input TGraph.
-        height : str , optional
-            The figure or output height. Default is '750px'.
-        width : str , optional
-            The figure or output width. Default is '100%'.
-        directed : Optional[bool] , optional
-            If set to True, graph edges are treated as directed. Default is None.
-        vertexLabelKey : str , optional
-            The dictionary key to use. Default is 'label'.
-        edgeLabelKey : str , optional
-            The dictionary key to use. Default is 'label'.
-        notebook : bool , optional
-            The input notebook value. Default is False.
-        bgcolor : str , optional
-            The input bgcolor value. Default is '#ffffff'.
-        fontColor : str , optional
-            The color value to use. Default is '#000000'.
-        silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
-
-        Returns
-        -------
-        Optional[Any]
-            The resulting pyvis graph object or value.
+        Dictionary keys override fixed sizes/colors/weights. Groups are retained
+        as Pyvis groups; vertexGroups optionally maps categories to colors from
+        colorScale. Constant vertexAttributes/edgeAttributes are also supported.
+        Attribute tooltips are escaped. Missing Pyvis raises an install hint.
         """
-        if not isinstance(graph, TGraph):
-            return None
-        try:
-            from pyvis.network import Network
-        except Exception:
-            if not silent:
-                print("TGraph.PyvisGraph - Error: pyvis is not installed. Returning None.")
-            return None
-        is_directed = graph._directed if directed is None else bool(directed)
-        net = Network(height=height, width=width, directed=is_directed, notebook=notebook, bgcolor=bgcolor, font_color=fontColor)
-        for v in graph._vertices:
-            if not v.get("active", True):
-                continue
-            d = v.get("dictionary", {}) if isinstance(v.get("dictionary", {}), dict) else {}
-            idx = v.get("index")
-            label = d.get(vertexLabelKey, idx)
-            title = "<br>".join([f"{k}: {d[k]}" for k in sorted(d.keys())])
-            net.add_node(idx, label=str(label), title=title)
-        for e in graph._edges:
-            if not e.get("active", True):
-                continue
-            d = e.get("dictionary", {}) if isinstance(e.get("dictionary", {}), dict) else {}
-            label = d.get(edgeLabelKey, "")
-            title = "<br>".join([f"{k}: {d[k]}" for k in sorted(d.keys())])
-            net.add_edge(e.get("src"), e.get("dst"), label=str(label) if label is not None else "", title=title)
+        import html
+        if not isinstance(graph,TGraph): return None
+        try: from pyvis.network import Network
+        except ImportError as exc: raise ImportError('Install Pyvis support with python -m pip install "topologicpy[graph]"') from exc
+        directed=graph._directed if directed is None else bool(directed)
+        if isinstance(height,(int,float)): height=f"{height}px"
+        if isinstance(width,(int,float)): width=f"{width}px"
+        net=Network(height=height,width=width,directed=directed,notebook=notebook,bgcolor=bgcolor,
+                    font_color=fontColor,select_menu=selectMenu,filter_menu=filterMenu,
+                    neighborhood_highlight=showNeighbours)
+        def tooltip(d): return "<br>".join(html.escape(f"{k}: {v}") for k,v in sorted(d.items(),key=lambda item:str(item[0])))
+        groups=list(vertexGroups or [])
+        active=set(TGraph.ActiveVertexIndices(graph))
+        for v in TGraph.Vertices(graph):
+            d=v["dictionary"]; attrs=dict(vertexAttributes or {})
+            attrs.update(label=str(d.get(vertexLabelKey,v["index"])), title=tooltip(d),size=d.get(vertexSizeKey,vertexSize))
+            color=d.get(vertexColorKey,vertexColor)
+            if vertexGroupKey is not None and vertexGroupKey in d:
+                group=d[vertexGroupKey]; attrs["group"]=group
+                if group in groups and color is None:
+                    from topologicpy.Color import Color
+                    color=Color.AnyToHex(Color.ByValueInRange(groups.index(group),0,max(1,len(groups)-1),colorScale=colorScale))
+            if color is not None: attrs["color"]=color
+            net.add_node(v["index"],**attrs)
+        for e in TGraph.Edges(graph):
+            if e["src"] not in active or e["dst"] not in active: continue
+            d=e["dictionary"]; attrs=dict(edgeAttributes or {})
+            attrs.update(label=str(d.get(edgeLabelKey,"")), title=tooltip(d))
+            color=d.get(edgeColorKey,edgeColor); weight=d.get(edgeWeightKey,edgeWeight)
+            if color is not None: attrs["color"]=color
+            if weight is not None: attrs["value"]=weight
+            if directed: attrs["arrows"]="to" if e.get("directed",graph._directed) else ""
+            net.add_edge(e["src"],e["dst"],**attrs)
         return net
+
 
 
     @staticmethod
@@ -31075,32 +31041,28 @@ class TGraph:
         return self
 
     @staticmethod
-    def RemoveIsolatedEdges(graph: "TGraph", silent: bool = False) -> Optional["TGraph"]:
-        """
-        Removes isolated or invalid edge records from the input TGraph.
+    def RemoveIsolatedEdges(graph, silent=False, *, removeVertices=True, removeInvalid=True):
+        """Remove standalone edge components; optionally remove their vertices.
 
-        Parameters
-        ----------
-        graph : 'TGraph'
-            The input TGraph.
-        silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
-
-        Returns
-        -------
-        Optional[TGraph]
-            The resulting TGraph, or None if the operation fails.
+        Classification uses the original active incidence, so removing one edge
+        never cascades through a chain. Parallel edges and self-loops are retained.
+        removeInvalid also cleans records referencing inactive/missing endpoints.
         """
-        if not isinstance(graph, TGraph):
-            return None
-        for rec in list(graph._edges):
-            if not rec.get("active", True):
+        if not isinstance(graph, TGraph): return None
+        invalid, isolated, vertices = [], [], set()
+        for e in list(graph._edges):
+            if not e.get("active", True): continue
+            u, v = e.get("src"), e.get("dst")
+            if not graph._validate_vertex_index(u) or not graph._validate_vertex_index(v):
+                if removeInvalid: invalid.append(e["index"])
                 continue
-            srcIndex = rec.get("src")
-            dstIndex = rec.get("dst")
-            if not graph._validate_vertex_index(srcIndex) or not graph._validate_vertex_index(dstIndex):
-                graph.RemoveEdge(rec.get("index"), silent=True)
+            if u != v and len(TGraph.IncidentEdges(graph, u, mode="all")) == 1 and len(TGraph.IncidentEdges(graph, v, mode="all")) == 1:
+                isolated.append(e["index"]); vertices.update((u, v))
+        for i in invalid+isolated: graph.RemoveEdge(i, silent=silent)
+        if removeVertices:
+            for i in sorted(vertices): graph.RemoveVertex(i, silent=silent)
         return graph
+
 
     @staticmethod
     def RemoveIsolatedVertices(graph: "TGraph", mode: str = "all", silent: bool = False) -> Optional["TGraph"]:
@@ -35409,7 +35371,7 @@ class TGraph:
         return result
 
     @staticmethod
-    def SymmetricDifference(graphA: "TGraph", graphB: "TGraph", silent: bool = False) -> Optional["TGraph"]:
+    def SymmetricDifference(graphA: 'TGraph', graphB: 'TGraph', silent: bool=False, *, vertexKeys=None, edgeKeys=None, tolerance=None, useCentroid=False, matchBy=None, ambiguous='separate'):
         """
         Returns the symmetric difference of two input TGraphs.
 
@@ -35431,7 +35393,18 @@ class TGraph:
         -------
         Optional[TGraph]
             The resulting TGraph, or None if the operation fails.
+
+        Extended matching
+        -----------------
+        vertexKeys/edgeKeys select identity attributes. matchBy='coordinates' uses
+        Euclidean tolerance; useCentroid averages matched vertex coordinates.
+        Ambiguous cross-input matches remain separate unless ambiguous='error'.
+        Shared matching uses A's conflicting attributes; Impose/Imprint use B's.
+        With no new matching options the established identity behavior is retained.
         """
+        if vertexKeys is not None or edgeKeys is not None or tolerance is not None or useCentroid or matchBy is not None or ambiguous != 'separate':
+            return TGraph._BooleanOverlay(graphA, graphB, 'xor', vertexKeys, edgeKeys,
+                matchBy, tolerance, useCentroid, ambiguous, silent)
 
         if not isinstance(graphA, TGraph) or not isinstance(graphB, TGraph):
             if not silent:
@@ -36383,14 +36356,7 @@ class TGraph:
         )
 
     @staticmethod
-    def Union(
-        graphA: "TGraph",
-        graphB: "TGraph",
-        vertexKeys: list = None,
-        edgeKeys: list = None,
-        mantissa: int = 6,
-        silent: bool = False,
-    ) -> Optional["TGraph"]:
+    def Union(graphA: 'TGraph', graphB: 'TGraph', vertexKeys: list=None, edgeKeys: list=None, mantissa: int=6, silent: bool=False, *, tolerance=None, useCentroid=False, matchBy=None, ambiguous='separate'):
         """
         Returns the union of two input TGraphs.
 
@@ -36435,7 +36401,20 @@ class TGraph:
         -------
         Optional[TGraph]
             The resulting TGraph, or None if the operation fails.
+
+        Extended matching
+        -----------------
+        vertexKeys/edgeKeys select identity attributes. matchBy='coordinates' uses
+        Euclidean tolerance; useCentroid averages matched vertex coordinates.
+        Ambiguous cross-input matches remain separate unless ambiguous='error'.
+        Shared matching uses A's conflicting attributes; Impose/Imprint use B's.
+        With no new matching options the established identity behavior is retained.
         """
+        if isinstance(vertexKeys, bool) and edgeKeys is None:
+            silent, vertexKeys = vertexKeys, None
+        if vertexKeys is not None or edgeKeys is not None or tolerance is not None or useCentroid or matchBy is not None or ambiguous != 'separate':
+            return TGraph._BooleanOverlay(graphA, graphB, 'union', vertexKeys, edgeKeys,
+                matchBy, tolerance, useCentroid, ambiguous, silent)
 
         # Backward compatibility with the old signature:
         # Union(graphA, graphB, silent)
@@ -37133,7 +37112,7 @@ class TGraph:
         )
 
     @staticmethod
-    def VertexDegree(graph: "TGraph", vertex: Any, mode: str = "all", silent: bool = False) -> Optional[int]:
+    def VertexDegree(graph: 'TGraph', vertex: Any, mode: str='all', silent: bool=False, *, weightKey=None):
         """
         Returns the degree of the input vertex.
 
@@ -37153,7 +37132,21 @@ class TGraph:
         -------
         Optional[int]
             The resulting vertex degree index or count.
+
+        weightKey requests weighted degree (strength); missing weights count as one.
+        Self-loops count twice in total/undirected degree and once per directed in/out degree.
         """
+        if weightKey is not None:
+            index = TGraph.VertexIndex(graph, vertex)
+            if index is None or not graph._validate_vertex_index(index): return None
+            if mode not in ('all','in','out'): raise ValueError("Invalid degree mode")
+            value = 0.0
+            for edge in TGraph.IncidentEdges(graph, index, mode=mode):
+                weight = float(edge.get('dictionary', {}).get(weightKey, 1.0))
+                if not math.isfinite(weight): raise ValueError("Degree weights must be finite")
+                multiplier = 2 if edge['src'] == edge['dst'] and (mode == 'all' or not edge.get('directed', graph._directed)) else 1
+                value += multiplier*weight
+            return value
         if not isinstance(graph, TGraph):
             return None
         idx = TGraph.VertexIndex(graph, vertex)
@@ -37283,12 +37276,7 @@ class TGraph:
         return dictionary.get(key, default)
 
     @staticmethod
-    def Vertices(graph: "TGraph",
-                 copy: bool = False,
-                 asTopologic: bool = False,
-                 useRepresentation: bool = True,
-                 active: bool = True, mantissa: int = 6, tolerance: float = 0.0001,
-                 silent: bool = False) -> List[Any]:
+    def Vertices(graph: 'TGraph', copy: bool=False, asTopologic: bool=False, useRepresentation: bool=True, active: bool=True, mantissa: int=6, tolerance: float=0.0001, silent: bool=False, *, sortBy=None, reverse=False):
         """
         Returns the vertices of the input TGraph.
 
@@ -37319,12 +37307,16 @@ class TGraph:
         -------
         list
             The requested vertex records or Topologic vertices.
+
+        sortBy selects one dictionary key or a sequence of keys; reverse sorts descending.
+        Missing values sort last. Sorting changes the returned view, never stored indices.
         """
         if not isinstance(graph, TGraph):
             if not silent:
                 print("TGraph.Vertices - Error: The input graph parameter is not a valid TGraph. Returning None.")
             return None
         records = [v for v in graph._vertices if (not active or v.get("active", True))]
+        records = TGraph._SortedRecords(records, sortBy, reverse)
         if not asTopologic:
             if not copy:
                 return records
@@ -39258,7 +39250,7 @@ class TGraph:
         return round(TGraph._P8Cosine(fA, fB, normalize=normalize), mantissa)
 
     @staticmethod
-    def XOR(graphA: "TGraph", graphB: "TGraph", silent: bool = False) -> Optional["TGraph"]:
+    def XOR(graphA: 'TGraph', graphB: 'TGraph', silent: bool=False, *, vertexKeys=None, edgeKeys=None, tolerance=None, useCentroid=False, matchBy=None, ambiguous='separate'):
         """
         Returns the symmetric difference of two input TGraphs.
 
@@ -39275,7 +39267,18 @@ class TGraph:
         -------
         Optional[TGraph]
             The resulting TGraph, or None if the operation fails.
+
+        Extended matching
+        -----------------
+        vertexKeys/edgeKeys select identity attributes. matchBy='coordinates' uses
+        Euclidean tolerance; useCentroid averages matched vertex coordinates.
+        Ambiguous cross-input matches remain separate unless ambiguous='error'.
+        Shared matching uses A's conflicting attributes; Impose/Imprint use B's.
+        With no new matching options the established identity behavior is retained.
         """
+        if vertexKeys is not None or edgeKeys is not None or tolerance is not None or useCentroid or matchBy is not None or ambiguous != 'separate':
+            return TGraph._BooleanOverlay(graphA, graphB, 'xor', vertexKeys, edgeKeys,
+                matchBy, tolerance, useCentroid, ambiguous, silent)
         return TGraph.SymmetricDifference(graphA, graphB, silent=silent)
 
     # ---------------------------------------------------------------------
@@ -40247,6 +40250,410 @@ class TGraph:
 
 
     AngularBetweenness = AngularChoice
+
+    @staticmethod
+    def _BooleanOverlay(graphA, graphB, operation, vertexKeys=None, edgeKeys=None,
+                        matchBy=None, tolerance=None, useCentroid=False,
+                        ambiguous="separate", silent=False):
+        """Build a Boolean result using unique, one-to-one cross-graph matches.
+
+        No vertices within either input are collapsed. Ambiguous matches are kept
+        separate (with a warning), or rejected with ambiguous='error'. Explicit
+        keys require all key values; they never fall back to coincident geometry.
+        A owns conflicting attributes except for impose/imprint, where B wins.
+        Directedness and endpoint identity are always part of edge matching.
+        """
+        import copy
+        import warnings
+        if not isinstance(graphA, TGraph) or not isinstance(graphB, TGraph):
+            raise TypeError("Boolean operands must be TGraphs")
+        if ambiguous not in ("separate", "error"):
+            raise ValueError("ambiguous must be 'separate' or 'error'")
+        tol = 1e-6 if tolerance is None else float(tolerance)
+        if not math.isfinite(tol) or tol < 0:
+            raise ValueError("tolerance must be finite and non-negative")
+        keys = [vertexKeys] if isinstance(vertexKeys, str) else list(vertexKeys or [])
+        if len(keys) == 1 and str(keys[0]).lower() in ("loc", "coord", "xyz"):
+            keys = []; matchBy = "coordinates"
+        strategy = (matchBy or ("keys" if keys else "auto")).lower()
+        if strategy not in ("keys", "coordinates", "auto") or (strategy == "keys" and not keys):
+            raise ValueError("matchBy must be 'auto', 'coordinates', or 'keys' with vertexKeys")
+        ekeys = [edgeKeys] if isinstance(edgeKeys, str) else list(edgeKeys or [])
+        av = TGraph.ActiveVertexIndices(graphA); bv = TGraph.ActiveVertexIndices(graphB)
+        def identity(record, names):
+            d = record.get("dictionary", {})
+            if any(k not in d or d[k] is None for k in names):
+                return None
+            return [d[k] for k in names]
+        def equivalent(a, b):
+            ra, rb = graphA._vertices[a], graphB._vertices[b]
+            if strategy == "keys":
+                ka, kb = identity(ra, keys), identity(rb, keys)
+                return ka is not None and kb is not None and ka == kb
+            if strategy == "auto":
+                for key in ("id", "uuid", "guid", "uid", "name", "label"):
+                    ka, kb = identity(ra, [key]), identity(rb, [key])
+                    if ka is not None and kb is not None:
+                        return ka == kb
+            ca = TGraph.Coordinates(graphA, a, default=None)
+            cb = TGraph.Coordinates(graphB, b, default=None)
+            return ca is not None and cb is not None and math.dist(ca, cb) <= tol
+        candidates = {b: [a for a in av if equivalent(a, b)] for b in bv}
+        counts = {}
+        for values in candidates.values():
+            for a in values: counts[a] = counts.get(a, 0) + 1
+        bad = any(len(values) > 1 or any(counts[a] > 1 for a in values)
+                  for values in candidates.values())
+        if bad:
+            if ambiguous == "error":
+                raise ValueError("Ambiguous cross-graph vertex matches")
+            if not silent:
+                warnings.warn("Ambiguous Boolean vertex matches were kept separate", RuntimeWarning, stacklevel=2)
+        matches = {b: values[0] for b, values in candidates.items()
+                   if len(values) == 1 and counts[values[0]] == 1}
+        matched_a = set(matches.values())
+        clean = lambda d: {k: copy.deepcopy(v) for k, v in d.items()
+                           if k not in ("index", "src", "dst", "active", "directed")}
+        overwrite = operation in ("impose", "imprint")
+        g = TGraph(directed=graphA._directed or graphB._directed, allowSelfLoops=True,
+                   allowParallelEdges=True, dictionary=copy.deepcopy(graphA._dictionary))
+        if operation in ("union", "impose"):
+            for k, v in graphB._dictionary.items():
+                if overwrite or k not in g._dictionary: g._dictionary[k] = copy.deepcopy(v)
+        amap = {}; bmap = {}; reverse = {a: b for b, a in matches.items()}
+        for a in av:
+            if operation == "intersect" and a not in matched_a: continue
+            ra = graphA._vertices[a]; d = clean(ra.get("dictionary", {})); rep = ra.get("representation")
+            if a in reverse:
+                b = reverse[a]; rb = graphB._vertices[b]; bd = clean(rb.get("dictionary", {}))
+                for k, value in bd.items():
+                    if overwrite or k not in d: d[k] = value
+                ca = TGraph.Coordinates(graphA, a, default=None)
+                cb = TGraph.Coordinates(graphB, b, default=None)
+                if useCentroid and ca is not None and cb is not None:
+                    d.update(zip(("x", "y", "z"), [(x+y)/2 for x, y in zip(ca, cb)])); rep = None
+                elif operation == "impose" and cb is not None:
+                    d.update(zip(("x", "y", "z"), cb)); rep = rb.get("representation")
+                elif ca is not None:
+                    # Imprint preserves A's placement; coordinates are structural.
+                    d.update(zip(("x", "y", "z"), ca))
+            amap[a] = g.AddVertex(dictionary=d, representation=rep)
+        for b in bv:
+            if b in matches:
+                if matches[b] in amap: bmap[b] = amap[matches[b]]
+            elif operation in ("union", "impose", "xor"):
+                rb = graphB._vertices[b]
+                bmap[b] = g.AddVertex(dictionary=clean(rb.get("dictionary", {})), representation=rb.get("representation"))
+        def edges(graph, mapping):
+            return [e for e in graph._edges if e.get("active", True)
+                    and e.get("src") in mapping and e.get("dst") in mapping]
+        ae, be = edges(graphA, amap), edges(graphB, bmap)
+        def edge_key(e, mapping):
+            u, v = mapping[e["src"]], mapping[e["dst"]]
+            directed = bool(e.get("directed", False))
+            endpoints = (u, v) if directed else tuple(sorted((u, v)))
+            values = identity(e, ekeys) if ekeys else []
+            return endpoints, directed, values
+        used = set(); pairs = {}
+        for a in ae:
+            key_a = edge_key(a, amap)
+            if key_a[2] is None: continue
+            for b in be:
+                if b["index"] not in used and key_a == edge_key(b, bmap):
+                    pairs[a["index"]] = b; used.add(b["index"]); break
+        def add(e, mapping, other=None):
+            d = clean(e.get("dictionary", {})); rep = e.get("representation")
+            if other is not None:
+                for k, value in clean(other.get("dictionary", {})).items():
+                    if overwrite or k not in d: d[k] = value
+                if overwrite: rep = other.get("representation")
+            # Geometry may have moved; regenerating edges preserves new incidence.
+            if useCentroid or overwrite:
+                rep = None
+            elif rep is not None:
+                source_graph = graphB if mapping is bmap else graphA
+                for endpoint in (e["src"], e["dst"]):
+                    before = TGraph.Coordinates(source_graph, endpoint, default=None)
+                    after = TGraph.Coordinates(g, mapping[endpoint], default=None)
+                    if before is not None and after is not None and math.dist(before, after) > 1e-12:
+                        rep = None
+            g.AddEdge(mapping[e["src"]], mapping[e["dst"]], directed=e.get("directed", False),
+                      dictionary=d, representation=rep)
+        for a in ae:
+            b = pairs.get(a["index"])
+            if operation == "intersect" and b is None: continue
+            if operation in ("difference", "xor") and b is not None: continue
+            add(a, amap, b)
+        if operation in ("union", "impose", "xor"):
+            for b in be:
+                if b["index"] not in used: add(b, bmap)
+        g._allow_self_loops = graphA._allow_self_loops or graphB._allow_self_loops
+        incidence = [g._edge_key(e["src"], e["dst"], e.get("directed", False)) for e in g._edges]
+        g._allow_parallel_edges = (graphA._allow_parallel_edges or graphB._allow_parallel_edges
+                                   or len(incidence) != len(set(incidence)))
+        return g
+
+    @staticmethod
+    def _SearchVertex(graph, value):
+        """Resolve a stable record/index or snap a geometric endpoint."""
+        index = TGraph._as_index(value)
+        if index is None and value is not None:
+            record = TGraph.NearestVertex(graph, value, active=True, silent=True)
+            index = TGraph._as_index(record)
+        return index if graph._validate_vertex_index(index) else None
+
+    @staticmethod
+    def _SearchNetwork(graph, mode="out", edgeKey="Length", vertexKey=None,
+                       edgeFilter=None, vertexFilter=None, edgeCostFunc=None, vertexCostFunc=None):
+        """Build finite, non-negative traversal costs for path searches.
+
+        Vertex cost is charged on arrival; the source has no entry charge.
+        Self-loops are excluded from simple paths. Parallel edges retain IDs.
+        """
+        if not isinstance(graph, TGraph):
+            raise TypeError("graph must be a TGraph")
+        if mode not in ("out", "in", "all"):
+            raise ValueError("mode must be 'out', 'in', or 'all'")
+        def number(value):
+            value = float(value)
+            if not math.isfinite(value) or value < 0:
+                raise ValueError("Path costs must be finite and non-negative")
+            return value
+        vertices = [i for i in TGraph.ActiveVertexIndices(graph)
+                    if vertexFilter is None or vertexFilter(graph._vertices[i])]
+        adjacency = {i: [] for i in vertices}
+        for e in graph._edges:
+            u, v = e.get("src"), e.get("dst")
+            if not e.get("active", True) or u not in adjacency or v not in adjacency or u == v: continue
+            if edgeFilter is not None and not edgeFilter(e): continue
+            if edgeCostFunc is not None:
+                base = number(edgeCostFunc(e))
+            elif str(edgeKey).lower() == "length":
+                ca, cb = TGraph.Coordinates(graph, u, default=None), TGraph.Coordinates(graph, v, default=None)
+                base = number(e.get("dictionary", {}).get("Length", e.get("dictionary", {}).get("length",
+                    math.dist(ca, cb) if ca is not None and cb is not None else 1.0)))
+            else:
+                base = number(e.get("dictionary", {}).get(edgeKey, 1.0) if edgeKey else 1.0)
+            def add(a, b):
+                rec = graph._vertices[b]
+                vc = vertexCostFunc(rec) if vertexCostFunc else rec.get("dictionary", {}).get(vertexKey, 0) if vertexKey else 0
+                adjacency[a].append((b, e["index"], base + number(vc)))
+            directed = bool(e.get("directed", graph._directed))
+            if not directed or mode == "all": add(u, v); add(v, u)
+            elif mode == "out": add(u, v)
+            else: add(v, u)
+        for row in adjacency.values(): row.sort(key=lambda item: (item[0], item[1]))
+        return adjacency
+
+    @staticmethod
+    def _SearchDijkstra(adjacency, source, target=None, blockedVertices=None, blockedEdges=None, deadline=None):
+        """Return a path/cost or a full distance map, with optional exclusions."""
+        import heapq
+        import time
+        blocked_v, blocked_e = set(blockedVertices or []), set(blockedEdges or [])
+        if source not in adjacency or source in blocked_v: return None if target is not None else {}
+        distances = {source: 0.0}; parents = {}; heap = [(0.0, source)]
+        while heap:
+            if deadline is not None and time.perf_counter() >= deadline: raise TimeoutError("Path search time limit reached")
+            cost, u = heapq.heappop(heap)
+            if cost != distances.get(u): continue
+            if u == target:
+                path, edges = [u], []
+                while u != source:
+                    u, edge = parents[u]; path.append(u); edges.append(edge)
+                return list(reversed(path)), list(reversed(edges)), cost
+            for v, edge, weight in adjacency[u]:
+                if v in blocked_v or edge in blocked_e: continue
+                value = cost + weight
+                if value < distances.get(v, float("inf")):
+                    distances[v] = value; parents[v] = (u, edge); heapq.heappush(heap, (value, v))
+        return None if target is not None else distances
+
+    @staticmethod
+    def KShortestPaths(graph, source, target, k=10, mode="out", edgeKey="Length",
+                       vertexKey=None, edgeFilter=None, vertexFilter=None,
+                       edgeCostFunc=None, vertexCostFunc=None, timeLimit=None,
+                       returnVertices=False, returnEdges=False, returnCost=False,
+                       returnInfo=False, silent=False):
+        """Return up to k distinct simple paths in increasing cost order (Yen).
+
+        Non-negative edge costs and optional arrival vertex costs are supported.
+        Filters/cost callbacks receive live records and must not mutate the graph.
+        Parallel edge sequences count as distinct routes. Optional result flags
+        append vertex records, edge records and cost to each index path, matching
+        ShortestPath's result convention. returnInfo returns paths, completed and
+        timedOut. A time-limited result is a sorted prefix, never an unranked list.
+        """
+        import heapq
+        import time
+        import itertools
+        if isinstance(k, bool) or not isinstance(k, int) or k < 0: raise ValueError("k must be a non-negative integer")
+        if timeLimit is not None and (not math.isfinite(timeLimit) or timeLimit < 0): raise ValueError("timeLimit must be finite and non-negative")
+        adjacency = TGraph._SearchNetwork(graph, mode, edgeKey, vertexKey, edgeFilter, vertexFilter, edgeCostFunc, vertexCostFunc)
+        source, target = TGraph._SearchVertex(graph, source), TGraph._SearchVertex(graph, target)
+        deadline = None if timeLimit is None else time.perf_counter() + timeLimit
+        paths = []; candidates = []; seen = set(); counter = itertools.count(); timed_out = False
+        weights = {(u, v, e): w for u, row in adjacency.items() for v, e, w in row}
+        try:
+            first = TGraph._SearchDijkstra(adjacency, source, target, deadline=deadline) if k and target is not None else None
+            if first is not None:
+                paths.append(first); seen.add(tuple(first[1]))
+            while len(paths) < k and paths:
+                nodes, edges, _ = paths[-1]; root_cost = 0.0
+                for i in range(len(nodes)-1):
+                    blocked = {p[1][i] for p in paths if len(p[1]) > i and p[0][:i+1] == nodes[:i+1] and p[1][:i] == edges[:i]}
+                    spur = TGraph._SearchDijkstra(adjacency, nodes[i], target, nodes[:i], blocked, deadline)
+                    if spur:
+                        pnodes = nodes[:i] + spur[0]; pedges = edges[:i] + spur[1]
+                        signature = tuple(pedges)
+                        if signature not in seen:
+                            seen.add(signature)
+                            heapq.heappush(candidates, (root_cost + spur[2], next(counter), pnodes, pedges))
+                    root_cost += weights[(nodes[i], nodes[i+1], edges[i])]
+                if not candidates: break
+                cost, _, nodes, edges = heapq.heappop(candidates); paths.append((nodes, edges, cost))
+        except TimeoutError:
+            timed_out = True
+        output = []
+        for nodes, edges, cost in paths:
+            parts = [nodes]
+            if returnVertices: parts.append([graph._vertices[i] for i in nodes])
+            if returnEdges: parts.append([graph._edges[i] for i in edges])
+            if returnCost: parts.append(cost)
+            output.append(parts[0] if len(parts) == 1 else tuple(parts))
+        return {"paths": output, "completed": not timed_out, "timedOut": timed_out} if returnInfo else output
+
+    @staticmethod
+    def AdjacencyMatrixCSVString(graph, vertexKey=None, reverse=False, edgeKeyFwd=None,
+                                 edgeKeyBwd=None, bidirKey=None, bidirectional=None,
+                                 useEdgeIndex=False, useEdgeLength=False, mantissa=6, tolerance=0.0001):
+        """Serialize AdjacencyMatrix with Python's CSV quoting and escaping."""
+        import csv
+        import io
+        stream = io.StringIO(newline="")
+        csv.writer(stream).writerows(TGraph.AdjacencyMatrix(graph, vertexKey=vertexKey,
+            reverse=reverse, edgeKeyFwd=edgeKeyFwd, edgeKeyBwd=edgeKeyBwd, bidirKey=bidirKey,
+            bidirectional=bidirectional, useEdgeIndex=useEdgeIndex, useEdgeLength=useEdgeLength,
+            mantissa=mantissa, tolerance=tolerance))
+        return stream.getvalue()
+
+    @staticmethod
+    def AngularBetweenness(graph, normalize=False, nxCompatible=True, key="angular_betweenness",
+                           colorKey="angular_betweenness_color", colorScale="viridis",
+                           mantissa=6, tolerance=0.001, silent=False, **kwargs):
+        """Alias AngularChoice; store the resulting values/colors on its segments.
+
+        nxCompatible=True requests AngularChoice's normalized results. Additional
+        radius/mode/algorithm options are forwarded unchanged.
+        """
+        values = TGraph.AngularChoice(graph, normalize=True if nxCompatible else normalize,
+                                      key=key, mantissa=mantissa, silent=silent, **kwargs)
+        # AngularChoice uses SegmentGraph vertices and ordinary graph edges.
+        if colorKey is not None and values:
+            from topologicpy.Color import Color
+            lo, hi = min(values), max(values)
+            records = TGraph.Vertices(graph) if graph._dictionary.get("graph_type") == "segment" else TGraph.Edges(graph)
+            for record, value in zip(records, values):
+                record["dictionary"][colorKey] = Color.AnyToHex(Color.ByValueInRange(value, lo, hi, colorScale=colorScale))
+            graph._invalidate_cache()
+        return values
+
+    @staticmethod
+    def _SortedRecords(records, sortBy=None, reverse=False):
+        """Sort a view without changing IDs; missing values are always last."""
+        if sortBy is None: return list(reversed(records)) if reverse else records
+        keys = [sortBy] if isinstance(sortBy, str) else list(sortBy)
+        def values(record):
+            d = record.get("dictionary", {})
+            return [d.get(key, record.get(key)) for key in keys]
+        present = [r for r in records if all(v is not None for v in values(r))]
+        absent = [r for r in records if any(v is None for v in values(r))]
+        def token(v):
+            if isinstance(v, (int, float)): return (0, float(v))
+            if isinstance(v, str): return (1, v)
+            return (2, repr(v))
+        return sorted(present, key=lambda r: tuple(token(v) for v in values(r)), reverse=reverse)+absent
+
+    @staticmethod
+    def _DepthValues(graph, source=None, sources=None, method="single", distanceType="topological",
+                      weightKey=None, mode="out", key="depth", unreachable="ignore", radius=None):
+        """Calculate single-source distances or total distances per selected root."""
+        if method not in ("single", "total"): raise ValueError("method must be 'single' or 'total'")
+        if distanceType not in ("topological", "metric"): raise ValueError("distanceType must be 'topological' or 'metric'")
+        if unreachable not in ("ignore", "infinity", "raise"): raise ValueError("Invalid unreachable policy")
+        if radius is not None and (not math.isfinite(radius) or radius < 0): raise ValueError("Invalid radius")
+        adjacency = TGraph._SearchNetwork(graph, mode, weightKey or ("Length" if distanceType == "metric" else None))
+        if method == "single":
+            start = next(iter(adjacency), None) if source is None else TGraph._SearchVertex(graph, source)
+            values = TGraph._SearchDijkstra(adjacency, start)
+            if radius is not None: values = {v:d for v,d in values.items() if d <= radius}
+        else:
+            selected = sources if sources is not None else ([source] if source is not None else list(adjacency))
+            if isinstance(selected, (int, dict)): selected = [selected]
+            values = {}
+            for root in selected:
+                root = TGraph._SearchVertex(graph, root)
+                if root not in adjacency: continue
+                distances = TGraph._SearchDijkstra(adjacency, root)
+                missing = set(adjacency)-set(distances)
+                if missing and unreachable == "raise": raise ValueError("Unreachable vertices in total-depth calculation")
+                value = float("inf") if missing and unreachable == "infinity" else sum(d for d in distances.values() if radius is None or d <= radius)
+                values[root] = value
+        if key is not None:
+            for index, value in values.items(): graph._vertices[index]["dictionary"][key] = value
+            graph._invalidate_cache()
+        return values
+
+    @staticmethod
+    def _GraphvizAttributes(attributes):
+        """Quote DOT attribute values; names are restricted to identifiers."""
+        import json
+        import re
+        result=[]
+        for key,value in attributes.items():
+            if value is None: continue
+            if not re.fullmatch(r"[A-Za-z_][A-Za-z_0-9]*", str(key)):
+                raise ValueError("Invalid Graphviz attribute name")
+            if isinstance(value, bool): value = "true" if value else "false"
+            result.append(str(key)+"="+json.dumps(str(value), ensure_ascii=False))
+        return ", ".join(result)
+
+    @staticmethod
+    def Bridges(graph, *, key=None):
+        """Return matching records; optionally annotate all active records with 1/0."""
+        result = TGraph._BridgesUnannotated(graph)
+        if key is not None:
+            indices = {record["index"] for record in result}
+            for record in TGraph.Edges(graph): record["dictionary"][key] = int(record["index"] in indices)
+            graph._invalidate_cache()
+        return result
+
+    @staticmethod
+    def CutVertices(graph, *, key=None):
+        """Return matching records; optionally annotate all active records with 1/0."""
+        result = TGraph._CutVerticesUnannotated(graph)
+        if key is not None:
+            indices = {record["index"] for record in result}
+            for record in TGraph.Vertices(graph): record["dictionary"][key] = int(record["index"] in indices)
+            graph._invalidate_cache()
+        return result
+
+    @staticmethod
+    def ConnectedComponents(graph, mode="all", *, key=None):
+        """Return stable-index components; optionally annotate vertices and edges.
+
+        Component labels are one-based. Edges crossing distinct traversal groups
+        receive zero (possible for directed out/in reachability partitions).
+        """
+        result = TGraph._ConnectedComponentsUnannotated(graph, mode)
+        if key is not None:
+            labels = {v:i for i,component in enumerate(result,1) for v in component}
+            for v in TGraph.Vertices(graph): v["dictionary"][key] = labels[v["index"]]
+            for e in TGraph.Edges(graph):
+                e["dictionary"][key] = labels.get(e["src"],0) if labels.get(e["src"]) == labels.get(e["dst"]) else 0
+            graph._invalidate_cache()
+        return result
+
 
 
 # -----------------------------------------------------------------------------

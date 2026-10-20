@@ -197,6 +197,10 @@ The older `graphType="graph"` and `asTGraph=False` selector spellings are retain
 for call compatibility, but they also produce `TGraph`. `Plotly.DataByGraph`
 delegates to `Plotly.DataByTGraph`.
 
+See the [TGraph capability guide](docs/TGraph_Capability_Parity.md) for graph
+overlays, alternative routes, total depth, weighted analysis, flow details and
+visualization styling options.
+
 ## API Documentation
 API documentation can be found at [https://topologicpy.readthedocs.io](https://topologicpy.readthedocs.io)
 
