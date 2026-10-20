@@ -149,3 +149,54 @@ def test_bounded_half_space_limits_the_cut(kind):
     e[9]=half
     mesh=F._mesh_from_item(E(10,'IFCBOOLEANCLIPPINGRESULT',['DIFFERENCE',R(2),R(9)]),e,I)
     assert volume(mesh)==pytest.approx(48)
+
+
+def test_composite_arc_opening_is_subtracted():
+    # A semicircular opening uses a trimmed circle followed by a reversed line.
+    e = {
+        1: E(1, 'IFCCIRCLE', [None, 1]),
+        2: E(2, 'IFCTRIMMEDCURVE', [R(1), [0.0], [3.141592653589793], True, 'PARAMETER']),
+        3: E(3, 'IFCCARTESIANPOINT', [[1, 0]]),
+        4: E(4, 'IFCCARTESIANPOINT', [[-1, 0]]),
+        5: E(5, 'IFCPOLYLINE', [[R(3), R(4)]]),
+        6: E(6, 'IFCCOMPOSITECURVESEGMENT', ['CONTINUOUS', True, R(2)]),
+        7: E(7, 'IFCCOMPOSITECURVESEGMENT', ['CONTINUOUS', False, R(5)]),
+        8: E(8, 'IFCCOMPOSITECURVE', [[R(6), R(7)], False]),
+        9: E(9, 'IFCARBITRARYCLOSEDPROFILEDEF', ['AREA', None, R(8)]),
+        10: E(10, 'IFCEXTRUDEDAREASOLID', [R(9), None, None, 2]),
+        11: E(11, 'IFCCARTESIANPOINT', [[-2, -2, 0]]),
+        12: E(12, 'IFCBOUNDINGBOX', [R(11), 4, 4, 2]),
+        13: E(13, 'IFCSHAPEREPRESENTATION', [None, 'Body', 'BoundingBox', [R(12)]]),
+        14: E(14, 'IFCSHAPEREPRESENTATION', [None, 'Body', 'SweptSolid', [R(10)]]),
+        15: E(15, 'IFCPRODUCTDEFINITIONSHAPE', [None, None, [R(13)]]),
+        16: E(16, 'IFCPRODUCTDEFINITIONSHAPE', [None, None, [R(14)]]),
+        17: E(17, 'IFCWALL', [None, None, None, None, None, None, R(15)]),
+        18: E(18, 'IFCOPENINGELEMENT', [None, None, None, None, None, None, R(16)]),
+        19: E(19, 'IFCRELVOIDSELEMENT', [None, None, None, None, R(17), R(18)]),
+    }
+    mesh = F.MeshDataByProduct(e[17], e, scale=1)
+    assert volume(mesh) == pytest.approx(32 - 3.141592653589793, abs=.05)
+
+
+@pytest.mark.parametrize('sense,start,end,first,last', [
+    (True, 270, 0, [2, 2, 0], [3, 3, 0]),
+    (False, 0, 270, [3, 3, 0], [2, 2, 0]),
+])
+def test_trimmed_circle_uses_assigned_degrees_and_sense(sense, start, end, first, last):
+    import math
+    e = {
+        1: E(1, 'IFCSIUNIT', ['*', 'PLANEANGLEUNIT', None, 'RADIAN']),
+        2: E(2, 'IFCMEASUREWITHUNIT', [('CALL', 'IFCRATIOMEASURE', [math.pi / 180]), R(1)]),
+        3: E(3, 'IFCCONVERSIONBASEDUNIT', [None, 'PLANEANGLEUNIT', 'DEGREE', R(2)]),
+        4: E(4, 'IFCUNITASSIGNMENT', [[R(3)]]),
+        5: E(5, 'IFCCARTESIANPOINT', [[2, 3]]),
+        6: E(6, 'IFCAXIS2PLACEMENT2D', [R(5), None]),
+        7: E(7, 'IFCCIRCLE', [R(6), 1]),
+    }
+    curve = E(8, 'IFCTRIMMEDCURVE', [R(7), [('CALL', 'IFCPARAMETERVALUE', [start])],
+                                  [('CALL', 'IFCPARAMETERVALUE', [end])], sense, 'PARAMETER'])
+    points = F._curve_points_local(curve, e)
+    assert points[0] == pytest.approx(first)
+    assert points[-1] == pytest.approx(last)
+    assert 6 <= len(points) <= 8  # a quarter circle, not the long way around
+    assert all((p[0]-2)**2 + (p[1]-3)**2 == pytest.approx(1) for p in points)

@@ -1049,7 +1049,9 @@ class Navigation:
         from shapely import make_valid,set_precision
         pieces=[]
         # IFC section seams can leave micron-scale cracks or duplicate
-        # intersections. Resolve them at the caller's geometric tolerance.
+        # intersections. Remove sub-tolerance contour detail before snapping:
+        # otherwise nearby nonadjacent edges can fail native simplicity checks.
+        polygon=polygon.simplify(tolerance,preserve_topology=True)
         polygon=set_precision(make_valid(polygon).buffer(0),tolerance)
         for part in Navigation._Polygons(polygon):
             face=Navigation._Face(Navigation._Surface(part,[0,0,0],'0'))

@@ -1535,14 +1535,14 @@ class IFCFastTopology:
         t = profile.type
         if t == "IFCARBITRARYCLOSEDPROFILEDEF":
             curve = IFCFastTopology._entity_from_ref(profile.args[2] if len(profile.args) > 2 else None, entities)
-            pts = IFCFastTopology._curve_points_local(curve, entities)
+            pts = IFCFastTopology._curve_points_local(curve, entities, circleSides)
             return [pts] if pts else []
         if t == "IFCARBITRARYPROFILEDEFWITHVOIDS":
             outer_curve = IFCFastTopology._entity_from_ref(profile.args[2] if len(profile.args) > 2 else None, entities)
-            pts = IFCFastTopology._curve_points_local(outer_curve, entities)
+            pts = IFCFastTopology._curve_points_local(outer_curve, entities, circleSides)
             loops = [pts] if pts else []
             for ref in IFCFastTopology._refs_in_value(profile.args[3] if len(profile.args) > 3 else None):
-                inner = IFCFastTopology._curve_points_local(IFCFastTopology._entity_from_ref(ref, entities), entities)
+                inner = IFCFastTopology._curve_points_local(IFCFastTopology._entity_from_ref(ref, entities), entities, circleSides)
                 if not inner:
                     raise ValueError("Unsupported IFC profile void curve")
                 loops.append(inner)
@@ -1565,9 +1565,102 @@ class IFCFastTopology:
         return []
 
     @staticmethod
-    def _curve_points_local(curve: Optional[IFCFastEntity], entities: Dict[int, IFCFastEntity]) -> list:
+    def _plane_angle_unit_scale(entities):
+        """Resolve assigned curve parameters to radians (unitless fragments use radians)."""
+        def factor(unit, seen):
+            if unit is None or unit.id in seen:
+                raise ValueError("Invalid IFC plane angle unit")
+            if len(unit.args) < 2 or unit.args[1] != "PLANEANGLEUNIT":
+                raise ValueError("Invalid IFC plane angle conversion unit")
+            if unit.type == "IFCSIUNIT" and unit.args[2] is None and unit.args[3] == "RADIAN":
+                return 1.0
+            if unit.type == "IFCCONVERSIONBASEDUNIT":
+                measure = IFCFastTopology._entity_from_ref(unit.args[3], entities)
+                if measure is None or measure.type != "IFCMEASUREWITHUNIT":
+                    raise ValueError("Invalid IFC plane angle conversion factor")
+                value = IFCFastTopology._validated_scale(IFCFastTopology._as_float(measure.args[0]))
+                base = IFCFastTopology._entity_from_ref(measure.args[1], entities)
+                return value * factor(base, seen | {unit.id})
+            raise ValueError("Unsupported IFC plane angle unit")
+
+        projects = [e for e in entities.values() if e.type == "IFCPROJECT"]
+        assignments = [IFCFastTopology._entity_from_ref(e.args[8], entities)
+                       for e in projects if len(e.args) > 8 and e.args[8] is not None]
+        if not projects:
+            assignments = [e for e in entities.values() if e.type == "IFCUNITASSIGNMENT"]
+        factors = []
+        for assignment in assignments:
+            if assignment is None or assignment.type != "IFCUNITASSIGNMENT":
+                raise ValueError("Invalid IFC project unit assignment")
+            for ref in IFCFastTopology._refs_in_value(assignment.args[0]):
+                unit = IFCFastTopology._entity_from_ref(ref, entities)
+                if unit is not None and len(unit.args) > 1 and unit.args[1] == "PLANEANGLEUNIT":
+                    factors.append(factor(unit, set()))
+        if factors and any(not math.isclose(v, factors[0], rel_tol=1e-12) for v in factors):
+            raise ValueError("Conflicting IFC plane angle units")
+        return factors[0] if factors else 1.0
+
+    @staticmethod
+    def _curve_points_local(curve: Optional[IFCFastEntity], entities: Dict[int, IFCFastEntity], circleSides: int = 24, _active=None) -> list:
         if curve is None:
             return []
+        active = set() if _active is None else _active
+        if curve.id in active:
+            raise ValueError("Cyclic IFC composite curve")
+        active = active | {curve.id}
+        if curve.type == "IFCCOMPOSITECURVE":
+            points = []
+            for ref in IFCFastTopology._refs_in_value(curve.args[0]):
+                segment = IFCFastTopology._entity_from_ref(ref, entities)
+                if segment is None or segment.type != "IFCCOMPOSITECURVESEGMENT":
+                    raise ValueError("Invalid IFC composite curve segment")
+                parent = IFCFastTopology._entity_from_ref(segment.args[2], entities)
+                part = IFCFastTopology._curve_points_local(parent, entities, circleSides, active)
+                if not part:
+                    raise ValueError("Unsupported IFC composite curve segment")
+                if segment.args[1] is False:
+                    part = list(reversed(part))
+                if points:
+                    if not IFCFastTopology._points_close(points[-1], part[0]):
+                        raise ValueError("Disconnected IFC composite curve segments")
+                    part = part[1:]
+                points.extend(part)
+            return points
+        if curve.type == "IFCTRIMMEDCURVE":
+            basis = IFCFastTopology._entity_from_ref(curve.args[0], entities)
+            if basis is None or basis.type != "IFCCIRCLE":
+                return []
+            frame = IFCFastTopology._axis2placement_matrix(
+                IFCFastTopology._entity_from_ref(basis.args[0], entities), entities)
+            inverse = IFCFastTopology._inverse_rigid_matrix(frame)
+            radius = IFCFastTopology._as_float(basis.args[1])
+            if radius <= 0:
+                raise ValueError("Invalid IFC trimmed circle radius")
+            angle_scale = IFCFastTopology._plane_angle_unit_scale(entities)
+
+            def parameter(values):
+                # Honour the preferred trimming representation when both are present.
+                prefer_parameter = len(curve.args) > 4 and curve.args[4] == "PARAMETER"
+                ordered = sorted(values, key=lambda v: (isinstance(v, tuple) and v[0] == "REF") == prefer_parameter)
+                for value in ordered:
+                    point = IFCFastTopology._entity_from_ref(value, entities)
+                    if point is not None and point.type == "IFCCARTESIANPOINT":
+                        local = IFCFastTopology._transform_point(
+                            IFCFastTopology._normalise_point(point.args[0]), inverse)
+                        return math.atan2(local[1], local[0])
+                    if isinstance(value, (int, float)) or (isinstance(value, tuple) and value[0] == "CALL"):
+                        return IFCFastTopology._as_float(value) * angle_scale
+                raise ValueError("Unsupported IFC circle trimming parameter")
+
+            start, end = parameter(curve.args[1]), parameter(curve.args[2])
+            sweep = (end - start) % (2 * math.pi)
+            if curve.args[3] is False:
+                sweep = -((start - end) % (2 * math.pi))
+            count = max(1, math.ceil(abs(sweep) * max(8, int(circleSides)) / (2 * math.pi)))
+            return [IFCFastTopology._transform_point(
+                [radius * math.cos(start + sweep*i/count),
+                 radius * math.sin(start + sweep*i/count), 0], frame)
+                for i in range(count + 1)]
         if curve.type == "IFCPOLYLINE":
             return IFCFastTopology._polyline_points(curve, entities)
         if curve.type == "IFCINDEXEDPOLYCURVE":
@@ -10800,7 +10893,7 @@ class IFC:
                         else:
                             faces = [[int(i) - 1 for i in f] for f in item.args[3]]
                         direct = True
-                    elif item.type == 'IFCEXTRUDEDAREASOLID':
+                    elif item.type == 'IFCEXTRUDEDAREASOLID' and e.id not in imported:
                         profile = ref(item.args[0])
                         curve = ref(profile.args[2]) if profile and profile.type == 'IFCARBITRARYCLOSEDPROFILEDEF' else None
                         if curve is None or curve.type != 'IFCCOMPOSITECURVE':
