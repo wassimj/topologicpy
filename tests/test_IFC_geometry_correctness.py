@@ -10,9 +10,31 @@ I = F._identity()
 def volume(mesh):
     if not mesh['vertices']:
         return 0
-    solid = Topology.ByGeometry(vertices=mesh['vertices'], faces=mesh['faces'], topologyType='cell', silent=True)
-    assert solid is not None
-    return sum(Cell.Volume(c) for c in Topology.Cells(solid)) if not Topology.IsInstance(solid, 'Cell') else Cell.Volume(solid)
+    # A Boolean can legitimately produce several disconnected solids. Validate
+    # each closed face component as a Cell rather than forcing all into one.
+    parents = list(range(len(mesh['faces'])))
+    def root(i):
+        while parents[i] != i:
+            parents[i] = parents[parents[i]]
+            i = parents[i]
+        return i
+    owners = {}
+    for i, face in enumerate(mesh['faces']):
+        for a, b in zip(face, face[1:] + face[:1]):
+            edge = tuple(sorted((a, b)))
+            if edge in owners:
+                parents[root(i)] = root(owners[edge])
+            else:
+                owners[edge] = i
+    groups = {}
+    for i, face in enumerate(mesh['faces']):
+        groups.setdefault(root(i), []).append(face)
+    total = 0
+    for faces in groups.values():
+        solid = Topology.ByGeometry(vertices=mesh['vertices'], faces=faces, topologyType='cell', silent=True)
+        assert Topology.IsInstance(solid, 'Cell')
+        total += Cell.Volume(solid)
+    return total
 
 def test_boolean_operations_and_empty_results():
     entities = {1:E(1,'IFCCARTESIANPOINT',[[0,0,0]]), 2:E(2,'IFCCARTESIANPOINT',[[1,0,0]]),
@@ -200,3 +222,34 @@ def test_trimmed_circle_uses_assigned_degrees_and_sense(sense, start, end, first
     assert points[-1] == pytest.approx(last)
     assert 6 <= len(points) <= 8  # a quarter circle, not the long way around
     assert all((p[0]-2)**2 + (p[1]-3)**2 == pytest.approx(1) for p in points)
+
+
+def test_fully_contained_difference_is_empty():
+    e = {
+        1: E(1, 'IFCCARTESIANPOINT', [[0, 0, 0]]),
+        2: E(2, 'IFCCARTESIANPOINT', [[-1, -1, -1]]),
+        3: E(3, 'IFCBOUNDINGBOX', [R(1), 1, 1, 1]),
+        4: E(4, 'IFCBOUNDINGBOX', [R(2), 3, 3, 3]),
+    }
+    mesh = F._mesh_from_item(E(5, 'IFCBOOLEANRESULT', ['DIFFERENCE', R(3), R(4)]), e, I)
+    assert mesh == {'vertices': [], 'edges': [], 'faces': []}
+
+
+def test_native_core_boolean_exception_is_not_an_empty_result(monkeypatch):
+    if not Topology._IsTopologicCoreBackend():
+        pytest.skip('TopologicCore native exception contract')
+    from topologicpy.Core import Core
+    original = Core.InstanceCall
+    failure = RuntimeError('Injected native Boolean failure')
+
+    def instance_call(obj, method, *args, **kwargs):
+        if method == 'Difference':
+            raise failure
+        return original(obj, method, *args, **kwargs)
+
+    monkeypatch.setattr(Core, 'InstanceCall', staticmethod(instance_call))
+    e = {1: E(1, 'IFCCARTESIANPOINT', [[0, 0, 0]])}
+    mesh = F._mesh_from_item(E(2, 'IFCBOUNDINGBOX', [R(1), 2, 2, 2]), e, I)
+    with pytest.raises(ValueError, match='Native IFC Boolean operation failed') as error:
+        F._boolean_mesh(mesh, mesh, 'DIFFERENCE')
+    assert error.value.__cause__ is failure
