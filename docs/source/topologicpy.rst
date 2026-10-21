@@ -23,7 +23,6 @@ Submodules
    topologicpy.Face
    topologicpy.GA
    topologicpy.GQL
-   topologicpy.Graph
    topologicpy.GraphDB
    topologicpy.GraphRAG
    topologicpy.Grid
