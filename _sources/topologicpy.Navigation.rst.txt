@@ -3,7 +3,7 @@ Navigation
 
 The navigation API separates source extraction, editable geometry, grid
 construction and graph analysis. It does not depend on SpatialLab or a web
-framework. Navigation sampling and geometry helpers reside in ``Navigation.py``; IFC mesh adaptation and extraction helpers reside in ``IFC.py`` as private class methods. Existing ``Grid.OnFace`` and ``Graph.NavigationGraph`` are unchanged.
+framework. Navigation sampling and geometry helpers reside in ``Navigation.py``; IFC mesh adaptation and extraction helpers reside in ``IFC.py`` as private class methods. Existing ``Grid.OnFace`` is unchanged.
 
 Quick start
 -----------
@@ -74,10 +74,10 @@ Connectors
 Graph construction
 ------------------
 
-``Navigation.Graph`` returns a standard Topologic graph. Set ``graphType="tgraph"`` to return a ``TGraph`` with the same nodes, edges and metadata. Existing ``Graph``
-analysis and shortest-path methods operate on it. Edge dictionary ``Length`` is
-Euclidean distance in the model units, so geometric routing uses the usual
-``Graph.ShortestPath(..., edgeKey="Length")``.
+``Navigation.Graph`` returns a ``TGraph`` with navigation nodes, edges and tile
+metadata. Use ``TGraph`` analysis and shortest-path methods on the result. Edge
+dictionary ``Length`` is Euclidean distance in model units, so geometric routing
+uses ``TGraph.ShortestPath(graph, start, end, edgeKey="Length")``.
 
 The default graph connects adjacent clipped grid cells. ``mode="visibility"``
 adds same-storey visibility connections while checking surface discontinuities.
@@ -95,11 +95,13 @@ unsupported modes and empty walking geometry raise explicit exceptions.
 
 Overlapping coplanar floor faces are merged before gridding. ``sourceIDs``
 retains the contributing source identifiers for each merged region. Coincident
-connector and grid points share one vertex; ``kinds`` and ``storeyIDs`` retain
-their combined classifications.
+connector and grid points on the same storey share one vertex; ``kinds`` retains
+their combined classifications. Coincident points with different storey identifiers
+remain separate vertices, with separate tile associations. Inter-storey routes
+require explicit connector edges.
 
 Vertices carry ``navigationID``, ``storey``, ``source``, ``kind`` and ``tileIDs``.
-Edges carry ``Length`` and ``kind``. ``Navigation.Tiles(model, graph)`` returns
+Edges carry ``Length`` and ``kind``. ``Navigation.Tiles(model, graph)`` requires a ``TGraph`` and returns
 Topologic Faces with ``navigationID`` and ``tileID`` dictionaries. Tile geometry
 is stored as JSON in the graph dictionary so it survives graph serialization;
 associations describe the graph at construction time, even if the source model
@@ -114,6 +116,41 @@ be restricted to a storey and passed to existing planar isovist methods.
 ``Grid.OnFaces`` produces shared, clipped grid-line geometry on several planar
 faces. It uses the same XY projection convention as navigation, whereas
 ``Grid.OnFace`` retains its existing surface-grid behavior.
+
+Exact visibility performance
+----------------------------
+
+``mode="visibility"`` calls ``TGraph.VisibilityGraph`` for line-of-sight
+construction. Both classes now use the same conservative corner-contact rule:
+a boundary corner inside a sightline blocks it, even when contact is tangential.
+This deliberately replaces Navigation's former permissive tangency rule. Local
+floor links in visibility mode cannot bypass the shared engine.
+
+Navigation adds its physical constraints after shared visibility: exact cleared
+floor support and elevation/step-height continuity. Coplanar models need no
+height-interval reconstruction. These filters are batched; geometry is prepared
+once per storey. No distance or neighbour cutoff is applied.
+
+``useNumba=False`` uses TGraph's angular-event/direct Python engine without
+compilation delay. ``useNumba=True`` requests its optional compiled full-visibility
+engine, with the same Python fallback if unavailable. The same option and engine
+are used by both classes; compiled first-use overhead can exceed its warm-call
+savings on small models.
+
+Keyword-only construction controls are available::
+
+   graph = Navigation.Graph(model, mode="visibility",
+                            visibilityBatchSize=4096,
+                            maxVisibilityPairs=5_000_000,
+                            maxVisibilityEdges=1_000_000, useNumba=False)
+
+All three values must be positive integers. The pair limit is checked before
+visibility candidate geometry is allocated. The edge budget applies to temporary shared visibility graphs as well as final
+visibility/connector construction, before coincident-node
+merging. Exceeding a budget raises ``ValueError``; construction never silently
+returns a truncated graph. Increase spacing, use local ``mode="navigation"``,
+or explicitly raise the relevant limit. Batching reduces geometry overhead,
+but a fully visible set of n nodes still requires n(n-1)/2 edges.
 
 Clearance
 ---------
@@ -147,7 +184,7 @@ constraint, not an accessibility or headroom assessment. Isovist faces are
 unchanged; their grid can independently use ``Grid.OnFace`` clearance if desired.
 
 The margin is stored in the graph dictionary as ``clearance`` and applies to
-both native Graph and TGraph output. All implementation helpers remain within
+the returned TGraph. All implementation helpers remain within
 ``Navigation.py``, ``Grid.py`` and the corresponding existing backend class files.
 
 Isovist boundary roles
@@ -178,3 +215,83 @@ API reference
    :members:
    :undoc-members:
    :show-inheritance:
+
+
+Routing queries
+--------------
+
+``Navigation.ShortestPath(model, graph, start, end, startStorey=None,
+endStorey=None, maxSnapDistance=None, edgeKey="Length", tolerance=0.00001,
+straighten=False)``
+resolves endpoints and delegates pathfinding to ``TGraph.ShortestPath``.
+Endpoints may be stable TGraph node indices, Topologic vertices, or XYZ lists
+or tuples. Indices select an exact node; coordinate inputs matching multiple
+storeys require explicit storey identifiers, even at an existing grid point.
+
+The returned dictionary contains ``status``, ``message``, ``coordinates``,
+``nodeIDs``, ``length``, ``cost``, ``snapDistances`` and ``wire``. Successful
+queries have status ``ok``. Geometric failures return empty routes with status
+``ambiguous_endpoint``, ``endpoint_unreachable`` or ``disconnected`` and a
+human-readable message. Invalid arguments raise exceptions. ``nodeIDs`` are
+stable indices in the input graph; temporary coordinate endpoints use ``None``.
+``length`` is geometric length in model units, while ``cost`` uses ``edgeKey``.
+``wire`` is absent for zero-length routes or where geometry cannot represent
+the path. Existing-node queries retain the input graph topology.
+
+Coordinate endpoints connect to reachable nodes through straight segments within
+a single saved planar floor patch, including its holes and clearance envelope.
+Every eligible node is considered, rather than selecting a nearest node across
+a wall. Two temporary endpoints can also connect directly on a shared patch.
+``maxSnapDistance`` bounds these endpoint connections; ``None`` is unlimited.
+``snapDistances`` reports the first and last connection lengths (zero for an
+existing-node endpoint). Connection distances contribute to route cost.
+Custom edge costs require existing-node endpoints because no cost model is
+inferred for temporary connections.
+
+Routing floor support, construction tolerance, clearance, step/riser limits,
+spacing and mode are saved in the graph's JSON ``navigationRouting`` dictionary.
+The snapshot survives TGraph serialization and copying. Neither the graph nor
+model is changed by a query. Model edits require rebuilding the graph; graphs
+built before this metadata was introduced must also be rebuilt. Inter-storey
+travel follows explicit graph connectors. Floor attachments do not bridge
+separate floor planes.
+
+Connector coordinate endpoints
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Coordinates on stair treads, landings, ramp surfaces and supplied lift cabin
+footprints attach only to their own saved connector nodes. Width checks use the
+saved connector footprint with obstacle cuts; they do not erode every stair
+riser as though it were an external wall. Coordinates on an existing 3D
+stair/ramp/lift segment attach along that segment, with partial lengths included
+in the cost. Two endpoints on the same segment can travel directly between
+their positions. Directed segments preserve their direction.
+
+No off-surface or off-centreline projection is inferred. A lift without a cabin
+footprint therefore accepts its actual graph segments and nodes, not arbitrary
+positions elsewhere in the cabin. A segment between storeys uses its lower
+endpoint's storey by default; an explicit storey may select either endpoint's
+storey. Coordinates intersecting separate connector segments/surfaces are
+reported as ambiguous instead of creating a new connection between them.
+
+Checked straightening
+~~~~~~~~~~~~~~~~~~~~~
+
+``straighten=True`` calls ``Wire.Straighten`` on consecutive floor-only runs
+supported by one saved planar floor patch. Connector edges, their endpoint
+connections and changes of storey or support plane remain fixed. Proposed
+results must be ordered subsequences of the original run, retain its endpoints,
+and have every replacement segment inside the saved clearance envelope at the
+correct height. Invalid proposals retain the original run. Snap-distance limits
+are also retained. This option requires ``edgeKey="Length"``; returned coordinates,
+node IDs, Wire, geometric length and cost describe the resulting route.
+
+Example::
+
+    graph = Navigation.Graph(model, spacing=1.0, clearance=0.2)
+    route = Navigation.ShortestPath(
+        model, graph, [1.2, 2.3, 0.0], [8.1, 4.7, 0.0],
+        startStorey="ground", endStorey="ground", maxSnapDistance=2.0)
+    if route["status"] == "ok":
+        points = route["coordinates"]
+        length = route["length"]

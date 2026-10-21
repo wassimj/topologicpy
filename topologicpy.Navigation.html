@@ -153,7 +153,7 @@
 <h1>Navigation<a class="headerlink" href="#navigation" title="Permalink to this heading"></a></h1>
 <p>The navigation API separates source extraction, editable geometry, grid
 construction and graph analysis. It does not depend on SpatialLab or a web
-framework. Navigation sampling and geometry helpers reside in <code class="docutils literal notranslate"><span class="pre">Navigation.py</span></code>; IFC mesh adaptation and extraction helpers reside in <code class="docutils literal notranslate"><span class="pre">IFC.py</span></code> as private class methods. Existing <code class="docutils literal notranslate"><span class="pre">Grid.OnFace</span></code> and <code class="docutils literal notranslate"><span class="pre">Graph.NavigationGraph</span></code> are unchanged.</p>
+framework. Navigation sampling and geometry helpers reside in <code class="docutils literal notranslate"><span class="pre">Navigation.py</span></code>; IFC mesh adaptation and extraction helpers reside in <code class="docutils literal notranslate"><span class="pre">IFC.py</span></code> as private class methods. Existing <code class="docutils literal notranslate"><span class="pre">Grid.OnFace</span></code> is unchanged.</p>
 <section id="quick-start">
 <h2>Quick start<a class="headerlink" href="#quick-start" title="Permalink to this heading"></a></h2>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">topologicpy.IFC</span><span class="w"> </span><span class="kn">import</span> <span class="n">IFC</span>
@@ -217,10 +217,10 @@ attach to floor grids. Lifts have no dedicated colour tiles.</p></li>
 </section>
 <section id="graph-construction">
 <h2>Graph construction<a class="headerlink" href="#graph-construction" title="Permalink to this heading"></a></h2>
-<p><code class="docutils literal notranslate"><span class="pre">Navigation.Graph</span></code> returns a standard Topologic graph. Set <code class="docutils literal notranslate"><span class="pre">graphType=&quot;tgraph&quot;</span></code> to return a <code class="docutils literal notranslate"><span class="pre">TGraph</span></code> with the same nodes, edges and metadata. Existing <code class="docutils literal notranslate"><span class="pre">Graph</span></code>
-analysis and shortest-path methods operate on it. Edge dictionary <code class="docutils literal notranslate"><span class="pre">Length</span></code> is
-Euclidean distance in the model units, so geometric routing uses the usual
-<code class="docutils literal notranslate"><span class="pre">Graph.ShortestPath(...,</span> <span class="pre">edgeKey=&quot;Length&quot;)</span></code>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">Navigation.Graph</span></code> returns a <code class="docutils literal notranslate"><span class="pre">TGraph</span></code> with navigation nodes, edges and tile
+metadata. Use <code class="docutils literal notranslate"><span class="pre">TGraph</span></code> analysis and shortest-path methods on the result. Edge
+dictionary <code class="docutils literal notranslate"><span class="pre">Length</span></code> is Euclidean distance in model units, so geometric routing
+uses <code class="docutils literal notranslate"><span class="pre">TGraph.ShortestPath(graph,</span> <span class="pre">start,</span> <span class="pre">end,</span> <span class="pre">edgeKey=&quot;Length&quot;)</span></code>.</p>
 <p>The default graph connects adjacent clipped grid cells. <code class="docutils literal notranslate"><span class="pre">mode=&quot;visibility&quot;</span></code>
 adds same-storey visibility connections while checking surface discontinuities.
 <code class="docutils literal notranslate"><span class="pre">origin</span></code> and <code class="docutils literal notranslate"><span class="pre">direction</span></code> define a shared XY grid frame. <code class="docutils literal notranslate"><span class="pre">storey</span></code> restricts
@@ -235,10 +235,12 @@ attachments use the nearest reachable floor-grid point. Invalid spacing,
 unsupported modes and empty walking geometry raise explicit exceptions.</p>
 <p>Overlapping coplanar floor faces are merged before gridding. <code class="docutils literal notranslate"><span class="pre">sourceIDs</span></code>
 retains the contributing source identifiers for each merged region. Coincident
-connector and grid points share one vertex; <code class="docutils literal notranslate"><span class="pre">kinds</span></code> and <code class="docutils literal notranslate"><span class="pre">storeyIDs</span></code> retain
-their combined classifications.</p>
+connector and grid points on the same storey share one vertex; <code class="docutils literal notranslate"><span class="pre">kinds</span></code> retains
+their combined classifications. Coincident points with different storey identifiers
+remain separate vertices, with separate tile associations. Inter-storey routes
+require explicit connector edges.</p>
 <p>Vertices carry <code class="docutils literal notranslate"><span class="pre">navigationID</span></code>, <code class="docutils literal notranslate"><span class="pre">storey</span></code>, <code class="docutils literal notranslate"><span class="pre">source</span></code>, <code class="docutils literal notranslate"><span class="pre">kind</span></code> and <code class="docutils literal notranslate"><span class="pre">tileIDs</span></code>.
-Edges carry <code class="docutils literal notranslate"><span class="pre">Length</span></code> and <code class="docutils literal notranslate"><span class="pre">kind</span></code>. <code class="docutils literal notranslate"><span class="pre">Navigation.Tiles(model,</span> <span class="pre">graph)</span></code> returns
+Edges carry <code class="docutils literal notranslate"><span class="pre">Length</span></code> and <code class="docutils literal notranslate"><span class="pre">kind</span></code>. <code class="docutils literal notranslate"><span class="pre">Navigation.Tiles(model,</span> <span class="pre">graph)</span></code> requires a <code class="docutils literal notranslate"><span class="pre">TGraph</span></code> and returns
 Topologic Faces with <code class="docutils literal notranslate"><span class="pre">navigationID</span></code> and <code class="docutils literal notranslate"><span class="pre">tileID</span></code> dictionaries. Tile geometry
 is stored as JSON in the graph dictionary so it survives graph serialization;
 associations describe the graph at construction time, even if the source model
@@ -251,6 +253,37 @@ be restricted to a storey and passed to existing planar isovist methods.</p>
 <p><code class="docutils literal notranslate"><span class="pre">Grid.OnFaces</span></code> produces shared, clipped grid-line geometry on several planar
 faces. It uses the same XY projection convention as navigation, whereas
 <code class="docutils literal notranslate"><span class="pre">Grid.OnFace</span></code> retains its existing surface-grid behavior.</p>
+</section>
+<section id="exact-visibility-performance">
+<h2>Exact visibility performance<a class="headerlink" href="#exact-visibility-performance" title="Permalink to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">mode=&quot;visibility&quot;</span></code> calls <code class="docutils literal notranslate"><span class="pre">TGraph.VisibilityGraph</span></code> for line-of-sight
+construction. Both classes now use the same conservative corner-contact rule:
+a boundary corner inside a sightline blocks it, even when contact is tangential.
+This deliberately replaces Navigation’s former permissive tangency rule. Local
+floor links in visibility mode cannot bypass the shared engine.</p>
+<p>Navigation adds its physical constraints after shared visibility: exact cleared
+floor support and elevation/step-height continuity. Coplanar models need no
+height-interval reconstruction. These filters are batched; geometry is prepared
+once per storey. No distance or neighbour cutoff is applied.</p>
+<p><code class="docutils literal notranslate"><span class="pre">useNumba=False</span></code> uses TGraph’s angular-event/direct Python engine without
+compilation delay. <code class="docutils literal notranslate"><span class="pre">useNumba=True</span></code> requests its optional compiled full-visibility
+engine, with the same Python fallback if unavailable. The same option and engine
+are used by both classes; compiled first-use overhead can exceed its warm-call
+savings on small models.</p>
+<p>Keyword-only construction controls are available:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">graph</span> <span class="o">=</span> <span class="n">Navigation</span><span class="o">.</span><span class="n">Graph</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">"visibility"</span><span class="p">,</span>
+                         <span class="n">visibilityBatchSize</span><span class="o">=</span><span class="mi">4096</span><span class="p">,</span>
+                         <span class="n">maxVisibilityPairs</span><span class="o">=</span><span class="mi">5_000_000</span><span class="p">,</span>
+                         <span class="n">maxVisibilityEdges</span><span class="o">=</span><span class="mi">1_000_000</span><span class="p">,</span> <span class="n">useNumba</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>All three values must be positive integers. The pair limit is checked before
+visibility candidate geometry is allocated. The edge budget applies to temporary shared visibility graphs as well as final
+visibility/connector construction, before coincident-node
+merging. Exceeding a budget raises <code class="docutils literal notranslate"><span class="pre">ValueError</span></code>; construction never silently
+returns a truncated graph. Increase spacing, use local <code class="docutils literal notranslate"><span class="pre">mode=&quot;navigation&quot;</span></code>,
+or explicitly raise the relevant limit. Batching reduces geometry overhead,
+but a fully visible set of n nodes still requires n(n-1)/2 edges.</p>
 </section>
 <section id="clearance">
 <h2>Clearance<a class="headerlink" href="#clearance" title="Permalink to this heading"></a></h2>
@@ -279,7 +312,7 @@ information and retain their explicit connections. <code class="docutils literal
 constraint, not an accessibility or headroom assessment. Isovist faces are
 unchanged; their grid can independently use <code class="docutils literal notranslate"><span class="pre">Grid.OnFace</span></code> clearance if desired.</p>
 <p>The margin is stored in the graph dictionary as <code class="docutils literal notranslate"><span class="pre">clearance</span></code> and applies to
-both native Graph and TGraph output. All implementation helpers remain within
+the returned TGraph. All implementation helpers remain within
 <code class="docutils literal notranslate"><span class="pre">Navigation.py</span></code>, <code class="docutils literal notranslate"><span class="pre">Grid.py</span></code> and the corresponding existing backend class files.</p>
 </section>
 <section id="isovist-boundary-roles">
@@ -327,7 +360,7 @@ nonzero XY projection. No spatial links are inferred across horizontal gaps.</p>
 <td><p>Parse an IFC path once and extract a metre-based model.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Navigation.Navigation.Graph" title="topologicpy.Navigation.Navigation.Graph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Graph</span></code></a>(model[, spacing, maxStepHeight, ...])</p></td>
-<td><p>Return a standard Topologic graph with persistent tile associations.</p></td>
+<td><p>Return a TGraph with persistent tile associations.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Navigation.Navigation.IsovistFaces" title="topologicpy.Navigation.Navigation.IsovistFaces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsovistFaces</span></code></a>(model[, eyeHeight, storey, ...])</p></td>
 <td><p>Return horizontal Faces at each storey/walking elevation + eyeHeight.</p></td>
@@ -338,11 +371,14 @@ nonzero XY projection. No spatial links are inferred across horizontal gaps.</p>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Navigation.Navigation.Ramp" title="topologicpy.Navigation.Navigation.Ramp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Ramp</span></code></a>([ramp, spacing, spacingRatio, ...])</p></td>
 <td><p>Describe ramp top Faces, or an explicit ordered centreline.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Navigation.Navigation.Stair" title="topologicpy.Navigation.Navigation.Stair"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Stair</span></code></a>(stair[, storey, source, group, kind])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Navigation.Navigation.ShortestPath" title="topologicpy.Navigation.Navigation.ShortestPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ShortestPath</span></code></a>(model, graph, start, end[, ...])</p></td>
+<td><p>Route node indices, Topologic vertices or XYZ endpoints through TGraph.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Navigation.Navigation.Stair" title="topologicpy.Navigation.Navigation.Stair"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Stair</span></code></a>(stair[, storey, source, group, kind])</p></td>
 <td><p>Describe horizontal tread/landing Faces of a Stair topology or list.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Navigation.Navigation.Tiles" title="topologicpy.Navigation.Navigation.Tiles"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Tiles</span></code></a>(model, graph[, storey])</p></td>
-<td><p>Return Topologic tile Faces with navigationID and tileID metadata.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Navigation.Navigation.Tiles" title="topologicpy.Navigation.Navigation.Tiles"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Tiles</span></code></a>(model, graph[, storey])</p></td>
+<td><p>Return tile Faces from a TGraph with navigationID and tileID metadata.</p></td>
 </tr>
 </tbody>
 </table>
@@ -364,8 +400,8 @@ falling back to rounded face elevations. Units are unchanged.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Navigation.Navigation.Graph">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Graph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spacing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxStepHeight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.17</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxHorizontalGap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">storey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'navigation'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">graphType</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'tgraph'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxStairRiser</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.35</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clearance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Navigation.Navigation.Graph" title="Permalink to this definition"></a></dt>
-<dd><p>Return a standard Topologic graph with persistent tile associations.</p>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Graph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spacing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxStepHeight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.17</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxHorizontalGap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">storey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'navigation'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxStairRiser</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.35</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clearance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">visibilityBatchSize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4096</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxVisibilityPairs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5000000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxVisibilityEdges</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">useNumba</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Navigation.Navigation.Graph" title="Permalink to this definition"></a></dt>
+<dd><p>Return a TGraph with persistent tile associations.</p>
 <p>mode is ‘navigation’ (adjacent grid cells) or ‘visibility’. Grid spacing
 is measured in XY, projected onto each surface. origin and direction
 define a shared XY frame. Horizontal gap bridging is unsupported;
@@ -384,6 +420,15 @@ Stair/ramp width and attachment corridors are checked across assembled
 footprints, rather than offsetting every tread along travel. Explicit
 geometry-free centrelines and cabin edges have no width to infer.
 Curved/nonplanar grids require a separate clearance definition.</p>
+<p>Visibility uses TGraph.VisibilityGraph with conservative corner contacts.
+Navigation then checks floor support and elevation intervals in batches.
+useNumba selects TGraph’s optional compiled engine (default False).
+visibilityBatchSize bounds candidate geometry batches (default 4096).
+maxVisibilityPairs limits the same-storey candidate count (default
+5000000); maxVisibilityEdges limits constructed visibility
+and connector edges (default 1000000). These keyword-only limits are
+positive integers. Exceeding a limit raises ValueError; no edges are
+silently dropped. Full visibility can still require quadratic output.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -422,6 +467,26 @@ an explicit centreline bypasses automatic elevation-slice inference.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Navigation.Navigation.ShortestPath">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ShortestPath</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">startStorey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">endStorey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxSnapDistance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Length'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-05</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">straighten</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Navigation.Navigation.ShortestPath" title="Permalink to this definition"></a></dt>
+<dd><p>Route node indices, Topologic vertices or XYZ endpoints through TGraph.</p>
+<p>Return a dictionary with status, message, coordinates, nodeIDs, length,
+cost, snapDistances and wire. Geometric failures return an empty route
+with a descriptive status; invalid arguments raise ValueError/TypeError.
+Coordinate attachments use the graph’s saved floor/clearance snapshot.
+Floor coordinates attach inside a supported planar patch. Connector
+coordinates attach to their own saved tread/ramp/cabin surfaces or lie
+on an existing 3D connector segment. No nearest-airborne snapping is
+performed. Ambiguous intersecting connectors require node indices. maxSnapDistance bounds
+each endpoint-to-node connection, in model units (None is unlimited).
+Non-Length edge costs require endpoints resolving to existing nodes.
+straighten=True calls Wire.Straighten on floor-only runs, retaining
+connector edges and checking every replacement against saved clearance
+and height support. This requires edgeKey=”Length”.
+Neither graph nor model is modified. Rebuild after editing geometry.</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Navigation.Navigation.Stair">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Stair</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">stair</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">storey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">group</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kind</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'tread'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Navigation.Navigation.Stair" title="Permalink to this definition"></a></dt>
 <dd><p>Describe horizontal tread/landing Faces of a Stair topology or list.</p>
@@ -433,7 +498,7 @@ kind=’landing’ describes an explicit landing.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Navigation.Navigation.Tiles">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Tiles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">storey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Navigation.Navigation.Tiles" title="Permalink to this definition"></a></dt>
-<dd><p>Return Topologic tile Faces with navigationID and tileID metadata.</p>
+<dd><p>Return tile Faces from a TGraph with navigationID and tileID metadata.</p>
 <p>Associations are captured on the graph at construction time, so results
 remain stable if the source model is later edited. Lift nodes have none.</p>
 </dd></dl>
@@ -476,6 +541,78 @@ Rebuilding a graph reads current geometry; parsing is never repeated.</p>
 
 </dd></dl>
 
+</section>
+<section id="routing-queries">
+<h2>Routing queries<a class="headerlink" href="#routing-queries" title="Permalink to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">Navigation.ShortestPath(model,</span> <span class="pre">graph,</span> <span class="pre">start,</span> <span class="pre">end,</span> <span class="pre">startStorey=None,</span>
+<span class="pre">endStorey=None,</span> <span class="pre">maxSnapDistance=None,</span> <span class="pre">edgeKey=&quot;Length&quot;,</span> <span class="pre">tolerance=0.00001,</span>
+<span class="pre">straighten=False)</span></code>
+resolves endpoints and delegates pathfinding to <code class="docutils literal notranslate"><span class="pre">TGraph.ShortestPath</span></code>.
+Endpoints may be stable TGraph node indices, Topologic vertices, or XYZ lists
+or tuples. Indices select an exact node; coordinate inputs matching multiple
+storeys require explicit storey identifiers, even at an existing grid point.</p>
+<p>The returned dictionary contains <code class="docutils literal notranslate"><span class="pre">status</span></code>, <code class="docutils literal notranslate"><span class="pre">message</span></code>, <code class="docutils literal notranslate"><span class="pre">coordinates</span></code>,
+<code class="docutils literal notranslate"><span class="pre">nodeIDs</span></code>, <code class="docutils literal notranslate"><span class="pre">length</span></code>, <code class="docutils literal notranslate"><span class="pre">cost</span></code>, <code class="docutils literal notranslate"><span class="pre">snapDistances</span></code> and <code class="docutils literal notranslate"><span class="pre">wire</span></code>. Successful
+queries have status <code class="docutils literal notranslate"><span class="pre">ok</span></code>. Geometric failures return empty routes with status
+<code class="docutils literal notranslate"><span class="pre">ambiguous_endpoint</span></code>, <code class="docutils literal notranslate"><span class="pre">endpoint_unreachable</span></code> or <code class="docutils literal notranslate"><span class="pre">disconnected</span></code> and a
+human-readable message. Invalid arguments raise exceptions. <code class="docutils literal notranslate"><span class="pre">nodeIDs</span></code> are
+stable indices in the input graph; temporary coordinate endpoints use <code class="docutils literal notranslate"><span class="pre">None</span></code>.
+<code class="docutils literal notranslate"><span class="pre">length</span></code> is geometric length in model units, while <code class="docutils literal notranslate"><span class="pre">cost</span></code> uses <code class="docutils literal notranslate"><span class="pre">edgeKey</span></code>.
+<code class="docutils literal notranslate"><span class="pre">wire</span></code> is absent for zero-length routes or where geometry cannot represent
+the path. Existing-node queries retain the input graph topology.</p>
+<p>Coordinate endpoints connect to reachable nodes through straight segments within
+a single saved planar floor patch, including its holes and clearance envelope.
+Every eligible node is considered, rather than selecting a nearest node across
+a wall. Two temporary endpoints can also connect directly on a shared patch.
+<code class="docutils literal notranslate"><span class="pre">maxSnapDistance</span></code> bounds these endpoint connections; <code class="docutils literal notranslate"><span class="pre">None</span></code> is unlimited.
+<code class="docutils literal notranslate"><span class="pre">snapDistances</span></code> reports the first and last connection lengths (zero for an
+existing-node endpoint). Connection distances contribute to route cost.
+Custom edge costs require existing-node endpoints because no cost model is
+inferred for temporary connections.</p>
+<p>Routing floor support, construction tolerance, clearance, step/riser limits,
+spacing and mode are saved in the graph’s JSON <code class="docutils literal notranslate"><span class="pre">navigationRouting</span></code> dictionary.
+The snapshot survives TGraph serialization and copying. Neither the graph nor
+model is changed by a query. Model edits require rebuilding the graph; graphs
+built before this metadata was introduced must also be rebuilt. Inter-storey
+travel follows explicit graph connectors. Floor attachments do not bridge
+separate floor planes.</p>
+<section id="connector-coordinate-endpoints">
+<h3>Connector coordinate endpoints<a class="headerlink" href="#connector-coordinate-endpoints" title="Permalink to this heading"></a></h3>
+<p>Coordinates on stair treads, landings, ramp surfaces and supplied lift cabin
+footprints attach only to their own saved connector nodes. Width checks use the
+saved connector footprint with obstacle cuts; they do not erode every stair
+riser as though it were an external wall. Coordinates on an existing 3D
+stair/ramp/lift segment attach along that segment, with partial lengths included
+in the cost. Two endpoints on the same segment can travel directly between
+their positions. Directed segments preserve their direction.</p>
+<p>No off-surface or off-centreline projection is inferred. A lift without a cabin
+footprint therefore accepts its actual graph segments and nodes, not arbitrary
+positions elsewhere in the cabin. A segment between storeys uses its lower
+endpoint’s storey by default; an explicit storey may select either endpoint’s
+storey. Coordinates intersecting separate connector segments/surfaces are
+reported as ambiguous instead of creating a new connection between them.</p>
+</section>
+<section id="checked-straightening">
+<h3>Checked straightening<a class="headerlink" href="#checked-straightening" title="Permalink to this heading"></a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">straighten=True</span></code> calls <code class="docutils literal notranslate"><span class="pre">Wire.Straighten</span></code> on consecutive floor-only runs
+supported by one saved planar floor patch. Connector edges, their endpoint
+connections and changes of storey or support plane remain fixed. Proposed
+results must be ordered subsequences of the original run, retain its endpoints,
+and have every replacement segment inside the saved clearance envelope at the
+correct height. Invalid proposals retain the original run. Snap-distance limits
+are also retained. This option requires <code class="docutils literal notranslate"><span class="pre">edgeKey=&quot;Length&quot;</span></code>; returned coordinates,
+node IDs, Wire, geometric length and cost describe the resulting route.</p>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">graph</span> <span class="o">=</span> <span class="n">Navigation</span><span class="o">.</span><span class="n">Graph</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">spacing</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">clearance</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
+<span class="n">route</span> <span class="o">=</span> <span class="n">Navigation</span><span class="o">.</span><span class="n">ShortestPath</span><span class="p">(</span>
+    <span class="n">model</span><span class="p">,</span> <span class="n">graph</span><span class="p">,</span> <span class="p">[</span><span class="mf">1.2</span><span class="p">,</span> <span class="mf">2.3</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">],</span> <span class="p">[</span><span class="mf">8.1</span><span class="p">,</span> <span class="mf">4.7</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">],</span>
+    <span class="n">startStorey</span><span class="o">=</span><span class="s2">"ground"</span><span class="p">,</span> <span class="n">endStorey</span><span class="o">=</span><span class="s2">"ground"</span><span class="p">,</span> <span class="n">maxSnapDistance</span><span class="o">=</span><span class="mf">2.0</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">route</span><span class="p">[</span><span class="s2">"status"</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"ok"</span><span class="p">:</span>
+    <span class="n">points</span> <span class="o">=</span> <span class="n">route</span><span class="p">[</span><span class="s2">"coordinates"</span><span class="p">]</span>
+    <span class="n">length</span> <span class="o">=</span> <span class="n">route</span><span class="p">[</span><span class="s2">"length"</span><span class="p">]</span>
+</pre></div>
+</div>
+</section>
 </section>
 </section>
 
