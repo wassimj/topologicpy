@@ -37436,6 +37436,7 @@ class TGraph:
         storeEdgeRepresentations: bool = True,
         ontology: bool = True,
         useNumba: bool = False,
+        *, maxCandidatePairs: Optional[int] = None, maxEdges: Optional[int] = None,
     ) -> Optional["TGraph"]:
         """
         Returns a fast visibility graph derived from the input planar face.
@@ -37509,6 +37510,13 @@ class TGraph:
             edges before return. Set to False to avoid this final annotation pass when
             maximum construction speed is required. Default is True.
 
+        maxCandidatePairs, maxEdges : Optional[int], keyword-only
+            Positive resource budgets, or None for no budget. Candidate pairs
+            are counted before geometric visibility tests (directed source
+            searches count both orientations). maxEdges counts output edges,
+            including both orientations when bidirectional=False. Exceeding a
+            budget raises ValueError; results are never silently truncated.
+
         Returns
         -------
         Optional[TGraph]
@@ -37554,6 +37562,10 @@ class TGraph:
                 print("TGraph.VisibilityGraph - Error: Could not import required modules. Returning None.")
             return None
 
+        from numbers import Integral
+        for name, value in [('maxCandidatePairs', maxCandidatePairs), ('maxEdges', maxEdges)]:
+            if value is not None and (isinstance(value, bool) or not isinstance(value, Integral) or value <= 0):
+                raise ValueError(f'{name} must be a positive integer or None.')
         tol = max(float(tolerance), 1e-12)
         tol2 = tol * tol
         pi = math.pi
@@ -37859,6 +37871,9 @@ class TGraph:
 
         vertices = clean_vertices
         n = len(vertices)
+        candidate_count = n*(n-1)//2 if maxNeighbors is None else n*(n-1)
+        if maxCandidatePairs is not None and candidate_count > maxCandidatePairs:
+            raise ValueError(f'Visibility requires {candidate_count} candidate pairs, exceeding maxCandidatePairs={maxCandidatePairs}.')
 
         # ---------------------------------------------------------------------
         # Extract blocker segments once.
@@ -38415,6 +38430,11 @@ class TGraph:
             pair = (i, j) if i < j else (j, i)
             if pair in added_pairs:
                 return False
+
+            added_count = len(added_pairs) * (1 if bidirectional else 2)
+            required = 1 if bidirectional else 2
+            if maxEdges is not None and added_count + required > maxEdges:
+                raise ValueError('Visibility edge limit exceeded (maxEdges).')
 
             rep = None
             if storeEdgeRepresentations:

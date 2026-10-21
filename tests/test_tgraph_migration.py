@@ -42,8 +42,7 @@ def test_backend_does_not_register_native_graph(no_legacy_graph):
     assert not hasattr(backend, 'GraphUtility')
 
 
-@pytest.mark.parametrize('selector', [None, 'graph', 'tgraph'])
-def test_navigation_always_constructs_tgraph(no_legacy_graph, selector):
+def test_navigation_always_constructs_tgraph(no_legacy_graph):
     from topologicpy.TGraph import TGraph
     from topologicpy.Navigation import Navigation
     from topologicpy.Face import Face
@@ -51,7 +50,7 @@ def test_navigation_always_constructs_tgraph(no_legacy_graph, selector):
     from topologicpy.Topology import Topology
     face = Face.ByVertices([Vertex.ByCoordinates(x,y,0) for x,y in [(0,0),(2,0),(2,2),(0,2)]])
     model = Navigation.ByFaces([face])
-    graph = Navigation.Graph(model, **({'graphType':selector} if selector else {}))
+    graph = Navigation.Graph(model)
     assert isinstance(graph, TGraph)
     assert TGraph.Order(graph) == 4
     assert TGraph.Size(graph) == 4

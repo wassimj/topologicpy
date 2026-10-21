@@ -181,12 +181,11 @@ def test_narrow_circulation_width_closes_without_shrinking_treads(kind):
     assert not any(Navigation._Metadata(v)['kind'] in ('tread','ramp') for v in TGraph.Vertices(graph, asTopologic=True))
 
 
-def test_tgraph_clearance_and_tiles_match_native_graph():
-    from topologicpy.TGraph import TGraph
+def test_tgraph_clearance_and_tiles():
     model=Navigation.ByFaces([rect()])
-    native=Navigation.Graph(model,clearance=.75)
-    graph=Navigation.Graph(model,graphType='tgraph',clearance=.75)
-    assert len(TGraph.Vertices(graph, asTopologic=True))==len(TGraph.Vertices(native, asTopologic=True))
+    graph=Navigation.Graph(model,clearance=.75)
+    assert isinstance(graph,TGraph)
+    assert len(TGraph.Vertices(graph, asTopologic=True))==16
     assert sum(Face.Area(f) for f in Navigation.Tiles(model,graph))==pytest.approx(16)
     assert TGraph.Dictionary(graph)['clearance']==.75
 

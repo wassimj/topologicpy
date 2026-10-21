@@ -394,8 +394,8 @@ class Navigation:
         return result
 
     @staticmethod
-    def Graph(model, spacing=1.0, maxStepHeight=0.17, maxHorizontalGap=0.0, storey=None, mode='navigation', origin=None, direction=None, tolerance=1e-05, graphType='tgraph', maxStairRiser=0.35, clearance=0.0):
-        """Return a standard Topologic graph with persistent tile associations.
+    def Graph(model, spacing=1.0, maxStepHeight=0.17, maxHorizontalGap=0.0, storey=None, mode='navigation', origin=None, direction=None, tolerance=1e-05, maxStairRiser=0.35, clearance=0.0, *, visibilityBatchSize=4096, maxVisibilityPairs=5000000, maxVisibilityEdges=1000000, useNumba=False):
+        """Return a TGraph with persistent tile associations.
 
         mode is 'navigation' (adjacent grid cells) or 'visibility'. Grid spacing
         is measured in XY, projected onto each surface. origin and direction
@@ -416,9 +416,25 @@ class Navigation:
         footprints, rather than offsetting every tread along travel. Explicit
         geometry-free centrelines and cabin edges have no width to infer.
         Curved/nonplanar grids require a separate clearance definition.
+
+        Visibility uses TGraph.VisibilityGraph with conservative corner contacts.
+        Navigation then checks floor support and elevation intervals in batches.
+        useNumba selects TGraph's optional compiled engine (default False).
+        visibilityBatchSize bounds candidate geometry batches (default 4096).
+        maxVisibilityPairs limits the same-storey candidate count (default
+        5000000); maxVisibilityEdges limits constructed visibility
+        and connector edges (default 1000000). These keyword-only limits are
+        positive integers. Exceeding a limit raises ValueError; no edges are
+        silently dropped. Full visibility can still require quadratic output.
         """
         from topologicpy.IFC import IFC
         from topologicpy.TGraph import TGraph
+        from numbers import Integral
+        for name, value in [('visibilityBatchSize', visibilityBatchSize),
+                            ('maxVisibilityPairs', maxVisibilityPairs),
+                            ('maxVisibilityEdges', maxVisibilityEdges)]:
+            if isinstance(value, bool) or not isinstance(value, Integral) or value <= 0:
+                raise ValueError(f'{name} must be a positive integer.')
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
         if not math.isfinite(clearance) or clearance < 0:
@@ -433,8 +449,6 @@ class Navigation:
             raise ValueError('tolerance must be positive and finite.')
         if maxHorizontalGap != 0:
             raise ValueError('Horizontal gap bridging is unsupported; use explicit connectors.')
-        if graphType not in ('graph', 'tgraph'):
-            raise ValueError('graphType must be graph or tgraph.')
         if mode not in ('navigation', 'visibility'):
             raise ValueError('mode must be navigation or visibility.')
         origin, direction = Navigation._Frame(origin, direction)
@@ -482,7 +496,7 @@ class Navigation:
                 near=[level for level in levels if level['elevation']<=z+maxStepHeight]
                 sid=(near[-1] if near else levels[0])['id']
                 data['obstacles'].extend(Navigation._Surface(part,[0,0,z],sid,'obstacle') for part in Navigation._Polygons(solid_sections(z+.10)))
-        entry, _ = Navigation._Build(data, spacing=spacing, storey=str(storey) if storey is not None else None, mode=mode, maxStepHeight=maxStepHeight, tolerance=tolerance, origin=origin, direction=direction, maxStairRiser=maxStairRiser, clearance=clearance)
+        entry, _ = Navigation._Build(data, spacing=spacing, storey=str(storey) if storey is not None else None, mode=mode, maxStepHeight=maxStepHeight, tolerance=tolerance, origin=origin, direction=direction, maxStairRiser=maxStairRiser, clearance=clearance, visibilityBatchSize=visibilityBatchSize, maxVisibilityPairs=maxVisibilityPairs, maxVisibilityEdges=maxVisibilityEdges, useNumba=useNumba)
         entry = Navigation._UniquePoints(entry, tolerance)
         tile_records = []
         tile_ids = {}
@@ -494,14 +508,376 @@ class Navigation:
         for i, n in enumerate(entry['nodes']):
             vertex_data.append({'navigationID': i, 'storey': n['storey'], 'storeyIDs': n.get('storeyIDs', [n['storey']]), 'kind': n['kind'], 'kinds': n.get('kinds', [n['kind']]), 'source': str(n.get('source') or ''), 'group': str(n.get('group') or ''), 'sourceIDs': n.get('sourceIDs', []), 'tileIDs': tile_ids.get(i, [])})
         edge_data = [{'Length': e['length'], 'kind': e['kind']} for e in entry['edges']]
-        graph_metadata = {'navigationTiles': json.dumps(tile_records), 'navigationUnit': model.metadata.get('unit', 'model'), 'clearance':clearance}
-        from topologicpy.TGraph import TGraph
+        routing_floors = [s for s in data['faces'] if storey is None or s['storey'] == str(storey)]
+        routing_domains = (Navigation._ClearanceDomains(
+            routing_floors, clearance, tolerance, maxStepHeight,
+            Navigation._ClearanceConnectors(data), data.get('obstacles', []))
+            if clearance else [Navigation._Shape(s) for s in routing_floors])
+        routing_surfaces = [Navigation._Surface(part, s['plane'], s['storey'])
+                            for s, domain in zip(routing_floors, routing_domains)
+                            for part in Navigation._Polygons(domain.intersection(Navigation._Shape(s)))]
+        routing_connectors = Navigation._RoutingConnectors(entry, data, clearance, tolerance, maxStepHeight)
+        routing = dict(surfaces=routing_surfaces, connectorSurfaces=routing_connectors, tolerance=tolerance,
+                       clearance=clearance, maxStepHeight=maxStepHeight,
+                       maxStairRiser=maxStairRiser, spacing=spacing, mode=mode)
+        graph_metadata = {'navigationTiles': json.dumps(tile_records),
+                          'navigationUnit': model.metadata.get('unit', 'model'),
+                          'clearance': clearance, 'navigationRouting': json.dumps(routing)}
         return TGraph.ByMeshData(
             [n['point'] for n in entry['nodes']],
             [[e['src'], e['dst']] for e in entry['edges']],
             vertexDictionaries=vertex_data, edgeDictionaries=edge_data,
             ontology=False, tolerance=tolerance,
         ).SetDictionary(graph_metadata)
+
+    @staticmethod
+    def ShortestPath(model, graph, start, end, startStorey=None, endStorey=None,
+                     maxSnapDistance=None, edgeKey='Length', tolerance=0.00001, *, straighten=False):
+        """Route node indices, Topologic vertices or XYZ endpoints through TGraph.
+
+        Return a dictionary with status, message, coordinates, nodeIDs, length,
+        cost, snapDistances and wire. Geometric failures return an empty route
+        with a descriptive status; invalid arguments raise ValueError/TypeError.
+        Coordinate attachments use the graph's saved floor/clearance snapshot.
+        Floor coordinates attach inside a supported planar patch. Connector
+        coordinates attach to their own saved tread/ramp/cabin surfaces or lie
+        on an existing 3D connector segment. No nearest-airborne snapping is
+        performed. Ambiguous intersecting connectors require node indices. maxSnapDistance bounds
+        each endpoint-to-node connection, in model units (None is unlimited).
+        Non-Length edge costs require endpoints resolving to existing nodes.
+        straighten=True calls Wire.Straighten on floor-only runs, retaining
+        connector edges and checking every replacement against saved clearance
+        and height support. This requires edgeKey="Length".
+        Neither graph nor model is modified. Rebuild after editing geometry.
+        """
+        from numbers import Integral
+        from topologicpy.TGraph import TGraph
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Wire import Wire
+        from shapely.geometry import Point, LineString
+        if not isinstance(model, NavigationModel) or not isinstance(graph, TGraph):
+            raise TypeError('Expected a NavigationModel and TGraph.')
+        if not math.isfinite(tolerance) or tolerance <= 0:
+            raise ValueError('tolerance must be positive and finite.')
+        if maxSnapDistance is not None and (not math.isfinite(maxSnapDistance) or maxSnapDistance < 0):
+            raise ValueError('maxSnapDistance must be nonnegative and finite, or None.')
+        if not isinstance(straighten, bool):
+            raise TypeError('straighten must be a boolean.')
+        if straighten and edgeKey != 'Length':
+            raise ValueError('Straightening requires edgeKey="Length".')
+        if not isinstance(edgeKey, str) or not edgeKey:
+            raise ValueError('edgeKey must be a nonempty string.')
+        def failure(status, message):
+            return dict(status=status, message=message, coordinates=[], nodeIDs=[],
+                        length=None, cost=None, snapDistances=None, wire=None)
+        snapshot = TGraph.Dictionary(graph).get('navigationRouting')
+        if not snapshot:
+            raise ValueError('Graph has no routing snapshot. Rebuild with Navigation.Graph.')
+        snapshot = json.loads(snapshot) if isinstance(snapshot, str) else snapshot
+        # Query tolerances must not enlarge the construction's walkable envelope.
+        eps = min(tolerance, snapshot['tolerance'])
+        records = snapshot['surfaces']
+        shapes = [Navigation._Shape(s) for s in records]
+        mesh = TGraph.MeshData(graph, includeDictionaries=True, includeIndices=True)
+        coords = dict(zip(mesh['vertexIndices'], mesh['vertices']))
+        metadata = dict(zip(mesh['vertexIndices'], mesh['vertexDictionaries']))
+        connector_records = snapshot.get('connectorSurfaces', [])
+        connector_shapes = [Navigation._Shape(s) for s in connector_records]
+        connector_edges = [e for e in graph._edges if e.get('active', True)
+                           and e['src'] in coords and e['dst'] in coords
+                           and e.get('dictionary', {}).get('kind') in ('stair', 'ramp', 'lift', 'lift_door', 'ramp_landing')]
+        def edge_hits(point, sid):
+            hits = []
+            for e in connector_edges:
+                a, b = coords[e['src']], coords[e['dst']]
+                delta = [y-x for x, y in zip(a, b)]
+                square = sum(v*v for v in delta)
+                if square <= eps*eps:
+                    continue
+                t = sum((p-x)*d for p, x, d in zip(point, a, delta))/square
+                if not 0 < t < 1 or math.dist(point, [x+t*d for x, d in zip(a, delta)]) > eps:
+                    continue
+                levels = {metadata[e['src']].get('storey'), metadata[e['dst']].get('storey')}
+                if sid is not None and sid not in levels:
+                    continue
+                lower = e['src'] if a[2] <= b[2] else e['dst']
+                hits.append(dict(edge=e, t=t, storey=sid if sid is not None else metadata[lower].get('storey')))
+            return hits
+        def connector_hits(point, sid):
+            return [i for i, r in enumerate(connector_records)
+                    if (sid is None or r['storey'] == sid)
+                    and connector_shapes[i].covers(Point(point[:2]))
+                    and abs(Navigation._Height(r, *point[:2])-point[2]) <= eps]
+        def connector_link(point, index, hits):
+            for i in hits:
+                r = connector_records[i]
+                if index not in r['nodes']:
+                    continue
+                p = coords[index]
+                line = Point(point[:2]) if point[:2] == p[:2] else LineString([point[:2], p[:2]])
+                if not connector_shapes[i].covers(line):
+                    continue
+                width = snapshot['clearance']
+                if width and line.geom_type == 'LineString':
+                    corridor = line.buffer(width, cap_style='flat', join_style='mitre')
+                    if not Navigation._Shape(r['corridor']).buffer(eps*.1).covers(corridor):
+                        continue
+                elif width and not Navigation._Shape(r['corridor']).covers(Point(point[:2]).buffer(width)):
+                    continue
+                return True
+            return False
+        def supports(point, sid):
+            return [i for i, s in enumerate(records) if s['storey'] == sid
+                    and shapes[i].covers(Point(point[:2]))
+                    and abs(Navigation._Height(s, *point[:2])-point[2]) <= eps]
+        def link(a, b, surface_ids):
+            geometry = Point(a[:2]) if a[:2] == b[:2] else LineString([a[:2], b[:2]])
+            return any(shapes[i].covers(geometry)
+                       and abs(Navigation._Height(records[i], *b[:2])-b[2]) <= eps
+                       for i in surface_ids)
+        resolved = []
+        for label, value, storey in [('start', start, startStorey), ('end', end, endStorey)]:
+            sid = str(storey) if storey is not None else None
+            if isinstance(value, Integral) and not isinstance(value, bool):
+                index = int(value)
+                if index not in coords:
+                    raise ValueError(f'{label} is not an active graph node index.')
+                actual = metadata[index].get('storey')
+                if sid is not None and sid != actual:
+                    raise ValueError(f'{label} node does not belong to the requested storey.')
+                resolved.append(dict(index=index, point=coords[index], storey=actual, surfaces=[]))
+                continue
+            if isinstance(value, (list, tuple)):
+                point = list(value)
+            else:
+                point = Vertex.Coordinates(value)
+            if point is None or len(point) != 3:
+                raise ValueError(f'{label} must be a node index, Vertex or finite XYZ coordinates.')
+            try:
+                point = [float(v) for v in point]
+            except (ValueError, TypeError):
+                raise ValueError(f'{label} must contain finite XYZ coordinates.') from None
+            if not all(math.isfinite(v) for v in point):
+                raise ValueError(f'{label} must contain finite XYZ coordinates.')
+            matches = [i for i, p in coords.items() if math.dist(p, point) <= eps
+                       and (sid is None or metadata[i].get('storey') == sid)]
+            possible = {s['storey'] for i, s in enumerate(records)
+                        if (sid is None or s['storey'] == sid)
+                        and shapes[i].covers(Point(point[:2]))
+                        and abs(Navigation._Height(s, *point[:2])-point[2]) <= eps}
+            surface_hits = connector_hits(point, sid)
+            line_hits = edge_hits(point, sid)
+            # Floor support wins at shared landings/doorways. Otherwise use
+            # only this connector's own saved nodes or actual graph segments.
+            if not possible and not matches:
+                if len(line_hits) > 1 and not set.intersection(*(
+                        {h['edge']['src'], h['edge']['dst']} for h in line_hits)):
+                    return failure('ambiguous_endpoint', f'{label} intersects separate connector segments; use a node index.')
+                owners = {connector_records[i].get('owner') for i in surface_hits}
+                if len(owners) > 1:
+                    return failure('ambiguous_endpoint', f'{label} overlaps separate connector surfaces; use a node index.')
+                possible.update(connector_records[i]['storey'] for i in surface_hits)
+                possible.update(h['storey'] for h in line_hits)
+            possible.update(metadata[i].get('storey') for i in matches)
+            if len(possible) > 1:
+                return failure('ambiguous_endpoint', f'{label} overlaps multiple storeys; specify its storey.')
+            if not possible:
+                return failure('endpoint_unreachable', f'{label} is outside saved floor/connector support.')
+            sid = next(iter(possible))
+            if len(matches) > 1:
+                return failure('ambiguous_endpoint', f'{label} matches multiple nodes; use a node index.')
+            resolved.append(dict(index=matches[0] if matches else None, point=point,
+                                 storey=sid, surfaces=supports(point, sid),
+                                 connectorHits=[i for i in surface_hits if connector_records[i]['storey']==sid],
+                                 edgeHits=[h for h in line_hits if h['storey']==sid]))
+        if edgeKey != 'Length' and any(e['index'] is None for e in resolved):
+            raise ValueError('Coordinate attachments require edgeKey="Length"; use node indices for custom costs.')
+        query = TGraph.Copy(graph)
+        original_ids = set(coords)
+        for label, endpoint in zip(['start', 'end'], resolved):
+            if endpoint['index'] is not None:
+                continue
+            line_hits = endpoint.get('edgeHits', []) if not endpoint['surfaces'] else []
+            surface_hits = endpoint.get('connectorHits', []) if not endpoint['surfaces'] else []
+            candidates = [i for i, p in coords.items()
+                          if metadata[i].get('storey') == endpoint['storey']
+                          and (maxSnapDistance is None or math.dist(p, endpoint['point']) <= maxSnapDistance)
+                          and (link(endpoint['point'], p, endpoint['surfaces'])
+                               or connector_link(endpoint['point'], i, surface_hits))]
+            line_nodes = {i for h in line_hits for i in (h['edge']['src'], h['edge']['dst'])
+                          if maxSnapDistance is None or math.dist(coords[i], endpoint['point']) <= maxSnapDistance}
+            if not candidates and not line_nodes:
+                return failure('endpoint_unreachable', f'{label} has no reachable node within maxSnapDistance.')
+            x, y, z = endpoint['point']
+            endpoint['index'] = query.AddVertex(dictionary=dict(x=x, y=y, z=z, storey=endpoint['storey']))
+            for i in candidates:
+                query.AddEdge(endpoint['index'], i, directed=False,
+                              dictionary={'Length': math.dist(endpoint['point'], coords[i]), 'kind': 'endpoint' if endpoint['surfaces'] else 'connector_endpoint'})
+            for h in line_hits:
+                e = h['edge']
+                for i in (e['src'], e['dst']):
+                    if i not in line_nodes:
+                        continue
+                    src, dst = (i, endpoint['index']) if i == e['src'] else (endpoint['index'], i)
+                    query.AddEdge(src, dst, directed=e.get('directed', False),
+                                  dictionary={'Length': math.dist(coords[i], endpoint['point']), 'kind': 'connector_endpoint'})
+        a, b = resolved
+        # A direct connection is valid only within the same saved floor patch.
+        # Keep existing-node queries faithful to the supplied graph topology.
+        if (a['index'] not in original_ids and b['index'] not in original_ids
+                and a['storey'] == b['storey'] and link(a['point'], b['point'], a['surfaces'])
+                and (maxSnapDistance is None or math.dist(a['point'], b['point']) <= maxSnapDistance)):
+            query.AddEdge(a['index'], b['index'], directed=False,
+                          dictionary={'Length': math.dist(a['point'], b['point']), 'kind': 'endpoint'})
+        if a['index'] not in original_ids and b['index'] not in original_ids:
+            for ha in a.get('edgeHits', []):
+                for hb in b.get('edgeHits', []):
+                    if ha['edge']['index'] != hb['edge']['index']:
+                        continue
+                    distance = math.dist(a['point'], b['point'])
+                    if maxSnapDistance is not None and distance > maxSnapDistance:
+                        continue
+                    src, dst = (a['index'], b['index']) if ha['t'] <= hb['t'] else (b['index'], a['index'])
+                    query.AddEdge(src, dst, directed=ha['edge'].get('directed', False),
+                                  dictionary={'Length': distance, 'kind': 'connector_endpoint'})
+        path = TGraph.ShortestPath(query, a['index'], b['index'], edgeKey=edgeKey,
+                                  returnCost=True, returnEdges=True, tolerance=eps, silent=True)
+        if path is None:
+            return failure('disconnected', 'No route connects the resolved endpoints.')
+        indices, path_edges, cost = path
+        points = [list(TGraph.Coordinates(query, i)) for i in indices]
+        ids = [i if i in original_ids else None for i in indices]
+        length = sum(math.dist(p, q) for p, q in zip(points, points[1:]))
+        snaps = [math.dist(points[0], points[1]) if len(points)>1 and ids[0] is None else 0.0,
+                 math.dist(points[-1], points[-2]) if len(points)>1 and ids[-1] is None else 0.0]
+        if straighten and len(points) > 2:
+            points, ids = Navigation._StraightenRoute(points, ids, path_edges, metadata, records, eps, maxSnapDistance)
+            length = sum(math.dist(p, q) for p, q in zip(points, points[1:]))
+            cost = length
+            snaps = [math.dist(points[0], points[1]) if ids[0] is None else 0.0,
+                     math.dist(points[-1], points[-2]) if ids[-1] is None else 0.0]
+        clean = [points[0]]
+        for p in points[1:]:
+            if math.dist(p, clean[-1]) > eps:
+                clean.append(p)
+        wire = Wire.ByVertices([Vertex.ByCoordinates(*p) for p in clean], close=False,
+                               tolerance=eps, silent=True) if len(clean)>1 else None
+        return dict(status='ok', message='', coordinates=points, nodeIDs=ids,
+                    length=length, cost=cost, snapDistances=snaps, wire=wire)
+
+    @staticmethod
+    def _RoutingConnectors(entry, data, clearance, tolerance, maxStepHeight):
+        """Save connector surfaces with exact node ownership and width support."""
+        from shapely.ops import unary_union
+        groups = Navigation._ConnectorSupports(Navigation._ClearanceConnectors(data))
+        result = []
+        def add(record, index, corridor):
+            node = entry['nodes'][index]
+            blocked = unary_union([Navigation._Shape(o) for o in data.get('obstacles', [])
+                                   if o['storey'] == node['storey']
+                                   and abs(Navigation._Height(o, *node['point'][:2])-node['point'][2])
+                                   <= maxStepHeight+tolerance])
+            support = Navigation._Shape(record).difference(blocked)
+            corridor = corridor.difference(blocked)
+            for part in Navigation._Polygons(support):
+                # Store polygons, not live backend objects, for serialization.
+                for region in Navigation._Polygons(corridor):
+                    clipped = part.intersection(region)
+                    for piece in Navigation._Polygons(clipped):
+                        result.append({**Navigation._Surface(piece, record['plane'], node['storey']),
+                                       'nodes': [index], 'owner': node.get('group') or f'node:{index}',
+                                       'corridor': Navigation._Surface(
+                                           region, record['plane'], node['storey'])})
+        for tile in entry['tiles']:
+            index = tile['node']
+            node = entry['nodes'][index]
+            if not any(k in ('tread', 'landing', 'ramp') for k in node.get('kinds', [node['kind']])):
+                continue
+            group = groups.get(node.get('group'))
+            add(tile, index, group['polygon'] if group else Navigation._Shape(tile))
+        for connector in data.get('explicit_connectors', []):
+            footprint = connector.get('attachment_support')
+            if connector['kind'] != 'lift' or not footprint:
+                continue
+            cabin_points = [p for p, kind in zip(connector['points'], connector['kinds']) if kind == 'lift']
+            for index, node in enumerate(entry['nodes']):
+                if 'lift' not in node.get('kinds', [node['kind']]):
+                    continue
+                if not any(math.dist(node['point'], p) <= tolerance for p in cabin_points):
+                    continue
+                record = {**footprint, 'plane': [0, 0, node['point'][2]]}
+                add(record, index, Navigation._Shape(record))
+        return result
+
+    @staticmethod
+    def _StraightenRoute(points, ids, edges, metadata, records, tolerance, maxSnapDistance=None):
+        """Straighten only floor runs; validate every proposed segment afterward."""
+        from shapely.geometry import Point, LineString
+        from topologicpy.Wire import Wire
+        from topologicpy.Vertex import Vertex
+        shapes = [Navigation._Shape(r) for r in records]
+        def supports(a, b, node_ids):
+            storeys = {metadata[i].get('storey') for i in node_ids if i is not None}
+            geometry = Point(a[:2]) if a[:2] == b[:2] else LineString([a[:2], b[:2]])
+            return {i for i, r in enumerate(records)
+                    if (not storeys or storeys == {r['storey']})
+                    and shapes[i].covers(geometry)
+                    and abs(Navigation._Height(r, *a[:2])-a[2]) <= tolerance
+                    and abs(Navigation._Height(r, *b[:2])-b[2]) <= tolerance}
+        allowed_kinds = {'floor', 'visibility', 'endpoint'}
+        result, result_ids = [points[0]], [ids[0]]
+        start = 0
+        while start < len(points)-1:
+            edge = edges[start]
+            domains = (supports(points[start], points[start+1], ids[start:start+2])
+                       if edge.get('dictionary', {}).get('kind') in allowed_kinds else set())
+            end = start+1
+            while domains and end < len(points)-1:
+                if edges[end].get('dictionary', {}).get('kind') not in allowed_kinds:
+                    break
+                shared = domains & supports(points[end], points[end+1], ids[end:end+2])
+                if not shared:
+                    break
+                domains = shared
+                end += 1
+            original = points[start:end+1]
+            selected = list(range(start, end+1))
+            if domains and end > start+1:
+                wire = Wire.ByVertices([Vertex.ByCoordinates(*p) for p in original],
+                                       close=False, tolerance=tolerance, silent=True)
+                if wire is not None:
+                    candidate = Wire.Straighten(wire, Navigation._Face(records[min(domains)]),
+                                                tolerance=tolerance, silent=True)
+                    if candidate is not None:
+                        proposed = [Vertex.Coordinates(v) for v in Wire.Vertices(candidate)]
+                        if proposed and math.dist(proposed[0], original[-1]) <= tolerance:
+                            proposed.reverse()
+                        # Require an ordered subsequence with identical endpoints.
+                        mapped = []
+                        cursor = start
+                        for point in proposed:
+                            match = next((i for i in range(cursor, end+1)
+                                          if math.dist(point, points[i]) <= tolerance), None)
+                            if match is None:
+                                mapped = []
+                                break
+                            mapped.append(match)
+                            cursor = match+1
+                        if (len(mapped) >= 2 and mapped[0] == start and mapped[-1] == end
+                                and (maxSnapDistance is None or all(
+                                    (ids[a] is not None and ids[b] is not None)
+                                    or math.dist(points[a], points[b]) <= maxSnapDistance
+                                    for a, b in zip(mapped, mapped[1:])))
+                                and all(domains & supports(points[a], points[b], [ids[a], ids[b]])
+                                        for a, b in zip(mapped, mapped[1:]))
+                                and sum(math.dist(points[a], points[b]) for a, b in zip(mapped, mapped[1:]))
+                                <= sum(math.dist(a, b) for a, b in zip(original, original[1:]))+tolerance):
+                            selected = mapped
+            for i in selected[1:]:
+                result.append(points[i])
+                result_ids.append(ids[i])
+            start = end
+        return result, result_ids
 
     @staticmethod
     def _UniquePoints(entry, tolerance):
@@ -513,7 +889,9 @@ class Navigation:
             point = node['point']
             key = tuple((math.floor(v / tolerance) for v in point))
             candidates = [i for offset in product((-1, 0, 1), repeat=3) for i in buckets.get(tuple((k + d for k, d in zip(key, offset))), [])]
-            existing = next((i for i in candidates if math.dist(nodes[i]['point'], point) <= tolerance), None)
+            # Coordinate coincidence alone must not connect distinct storeys.
+            existing = next((i for i in candidates if nodes[i]['storey'] == node['storey']
+                             and math.dist(nodes[i]['point'], point) <= tolerance), None)
             if existing is None:
                 existing = len(nodes)
                 nodes.append({**node, 'kinds': [node['kind']], 'storeyIDs': [node['storey']]})
@@ -546,7 +924,7 @@ class Navigation:
 
     @staticmethod
     def Tiles(model, graph, storey=None):
-        """Return Topologic tile Faces with navigationID and tileID metadata.
+        """Return tile Faces from a TGraph with navigationID and tileID metadata.
 
         Associations are captured on the graph at construction time, so results
         remain stable if the source model is later edited. Lift nodes have none.
@@ -554,11 +932,12 @@ class Navigation:
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
         from topologicpy.TGraph import TGraph
-        d = TGraph.Dictionary(graph) if isinstance(graph, TGraph) else Navigation._Metadata(graph)
+        if not isinstance(graph, TGraph):
+            raise TypeError('Expected TGraph.')
+        d = TGraph.Dictionary(graph)
         result = []
         records = d.get('navigationTiles', [])
-        # PythonOCC/TGraph retain the JSON string; Core's dictionary reader
-        # already decodes it. Both representations describe the same records.
+        # Tile metadata may contain a JSON string or decoded records.
         if isinstance(records, (str, bytes, bytearray)):
             records = json.loads(records)
         for record in records:
@@ -772,7 +1151,7 @@ class Navigation:
         return result
 
     @staticmethod
-    def _Build(model, spacing=4, mode='navigation', storey=None, maxStepHeight=0.17, tolerance=1e-05, origin=(0, 0), direction=(1, 0), maxStairRiser=0.35, clearance=0.0):
+    def _Build(model, spacing=4, mode='navigation', storey=None, maxStepHeight=0.17, tolerance=1e-05, origin=(0, 0), direction=(1, 0), maxStairRiser=0.35, clearance=0.0, visibilityBatchSize=4096, maxVisibilityPairs=5000000, maxVisibilityEdges=1000000, useNumba=False):
         import math
         import numpy as np
         from shapely.geometry import Polygon, Point, LineString, box
@@ -810,6 +1189,8 @@ class Navigation:
             return i
 
         def edge(a, b, kind='floor'):
+            if mode == 'visibility' and kind == 'floor':
+                return  # All floor sightlines must pass the shared TGraph engine.
             if a == b:
                 return
             k = tuple(sorted((a, b)))
@@ -818,6 +1199,8 @@ class Navigation:
             d = math.dist(nodes[a]['point'], nodes[b]['point'])
             if d < EPS:
                 return
+            if mode == 'visibility' and len(edges) >= maxVisibilityEdges:
+                raise ValueError('Visibility edge limit exceeded. Increase maxVisibilityEdges or use a coarser/local navigation graph.')
             seen.add(k)
             edges.append({'src': a, 'dst': b, 'length': d, 'kind': kind})
         for surface_index,s in enumerate(floors):
@@ -882,41 +1265,10 @@ class Navigation:
                             edge(previous,current);previous=current
                         edge(previous,j)
         if mode == 'visibility':
-            for i in range(floor_count):
-                p = nodes[i]['point']
-                sid = nodes[i]['storey']
-                for j in range(i + 1, floor_count):
-                    q = nodes[j]['point']
-                    if nodes[j]['storey'] != sid:
-                        continue
-                    line = LineString([p[:2], q[:2]])
-                    if line.length < EPS:
-                        continue
-                    if not clear_floor_union[sid].buffer(EPS * 0.1).covers(line):
-                        continue
-                    traversed = [int(k) for k in tree.query(line) if footprints[int(k)].intersection(line).length > EPS]
-                    if not traversed:
-                        continue
-                    valid = True
-                    intervals = []
-                    for k in traversed:
-                        part = footprints[k].intersection(line)
-                        for geom in [part] if part.geom_type == 'LineString' else getattr(part, 'geoms', []):
-                            if geom.geom_type != 'LineString':
-                                continue
-                            ends = [Point(geom.coords[0]), Point(geom.coords[-1])]
-                            ts = sorted((line.project(e) / line.length for e in ends))
-                            intervals.append((*ts, k))
-                    intervals.sort()
-                    for left, right in zip(intervals, intervals[1:]):
-                        t = (left[1] + right[0]) / 2
-                        r = line.interpolate(t, normalized=True)
-                        a, b = (planes[left[2]], planes[right[2]])
-                        if abs((a[0] - b[0]) * r.x + (a[1] - b[1]) * r.y + a[2] - b[2]) > MAX_RISE + EPS:
-                            valid = False
-                            break
-                    if valid:
-                        edge(i, j, 'visibility')
+            for i, j in Navigation._VisibilityLinks(nodes, footprints,
+                    planes, clear_floor_union, len(nodes), MAX_RISE,
+                    EPS, visibilityBatchSize, maxVisibilityPairs, maxVisibilityEdges, useNumba):
+                edge(i, j, 'visibility')
         connector_ids = []
         levels = sorted(m['storeys'], key=lambda s: s['elevation'])
 
@@ -1028,6 +1380,101 @@ class Navigation:
         if clearance:
             entry=Navigation._ConnectorClearance(entry,clearance,tolerance,maxStepHeight)
         return (entry, False)
+
+    @staticmethod
+    def _VisibilityLinks(nodes, footprints, planes, domains, count, maxRise,
+                         tolerance, batchSize=4096, maxPairs=5000000,
+                         maxEdges=1000000, useNumba=False):
+        """Adapt shared TGraph visibility to floor support and height constraints."""
+        import numpy as np
+        import shapely
+        from shapely.geometry import Point
+        from shapely.strtree import STRtree
+        from topologicpy.TGraph import TGraph
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+        groups = {}
+        for i in range(count):
+            groups.setdefault(nodes[i]['storey'], []).append(i)
+        total = sum(len(ids)*(len(ids)-1)//2 for ids in groups.values())
+        if total > maxPairs:
+            raise ValueError(f'Visibility requires {total} candidate pairs, exceeding maxVisibilityPairs={maxPairs}. Increase the limit or use a coarser/local navigation graph.')
+        shapes = np.asarray(footprints, dtype=object)
+        tree = STRtree(shapes)
+        flat = all(tuple(p) == tuple(planes[0]) for p in planes) if planes else True
+        for sid, ids in groups.items():
+            support = domains[sid].buffer(tolerance*.1)
+            shapely.prepare(support)
+            for component in Navigation._Polygons(domains[sid]):
+                # Exact XY duplicates share one visibility query but retain all
+                # original node IDs for Navigation's height checks and output.
+                by_point = {}
+                for i in ids:
+                    xy = tuple(nodes[i]['point'][:2])
+                    if component.buffer(tolerance*.1).covers(Point(xy)):
+                        by_point.setdefault(xy, []).append(i)
+                if len(by_point) < 2:
+                    continue
+                vertices = []
+                for xy, originals in by_point.items():
+                    v = Vertex.ByCoordinates(*xy, 0)
+                    vertices.append(Topology.SetDictionary(v, Dictionary.ByPythonDictionary({'navigationQueryID': originals[0]})))
+                host = Navigation._Face(Navigation._Surface(component, [0,0,0], sid))
+                visible = TGraph.VisibilityGraph(host, vertices=vertices,
+                    includeBoundaryVertices=False, allowBoundaryPaths=True, trim=True,
+                    tolerance=tolerance, storeEdgeRepresentations=False, ontology=False,
+                    useNumba=useNumba, maxCandidatePairs=maxPairs, maxEdges=maxEdges)
+                if visible is None:
+                    raise ValueError('TGraph.VisibilityGraph could not construct Navigation visibility.')
+                records = TGraph.Vertices(visible)
+                if len(records) != len(by_point):
+                    raise ValueError('Navigation visibility samples are too close for the requested tolerance.')
+                query_nodes = {v['index']: by_point[tuple(nodes[int(v['dictionary']['navigationQueryID'])]['point'][:2])] for v in records}
+                pending = []
+                def checked(pairs):
+                    coords = np.asarray([[nodes[i]['point'][:2], nodes[j]['point'][:2]] for i,j in pairs])
+                    lines = shapely.linestrings(coords)
+                    keep = (shapely.length(lines) >= tolerance) & shapely.covers(support, lines)
+                    indices = np.flatnonzero(keep)
+                    if not len(indices): return
+                    if flat:
+                        # Shared LOS plus exact support containment suffices on
+                        # one plane; no height intervals need reconstruction.
+                        for k in indices: yield pairs[int(k)]
+                        return
+                    hits = tree.query(lines[indices], predicate='intersects')
+                    if not hits.shape[1]: return
+                    parts = shapely.intersection(lines[indices[hits[0]]], shapes[hits[1]])
+                    long = shapely.length(parts) > tolerance
+                    line_ids, shape_ids, parts = indices[hits[0][long]], hits[1][long], parts[long]
+                    traversed = {}
+                    for line_id, shape_id, part in zip(line_ids, shape_ids, parts):
+                        traversed.setdefault(int(line_id), []).append((int(shape_id), part))
+                    for k in indices:
+                        crossed = traversed.get(int(k))
+                        if not crossed: continue
+                        line = lines[k]; intervals = []
+                        for shape_id, part in crossed:
+                            geometries = [part] if part.geom_type == 'LineString' else getattr(part, 'geoms', [])
+                            for geom in geometries:
+                                if geom.geom_type != 'LineString': continue
+                                ts = sorted(line.project(Point(e))/line.length for e in [geom.coords[0],geom.coords[-1]])
+                                intervals.append((*ts,shape_id))
+                        intervals.sort(); valid=True
+                        for left,right in zip(intervals,intervals[1:]):
+                            at=line.interpolate((left[1]+right[0])/2,normalized=True)
+                            a,b=planes[left[2]],planes[right[2]]
+                            if abs((a[0]-b[0])*at.x+(a[1]-b[1])*at.y+a[2]-b[2]) > maxRise+tolerance:
+                                valid=False;break
+                        if valid: yield pairs[int(k)]
+                for edge in visible._edges:
+                    for i in query_nodes[edge['src']]:
+                        for j in query_nodes[edge['dst']]:
+                            pending.append((min(i,j),max(i,j)))
+                            if len(pending) >= batchSize:
+                                yield from checked(pending);pending=[]
+                if pending: yield from checked(pending)
 
     @staticmethod
     def _InsetXY(polygon, clearance, tolerance):

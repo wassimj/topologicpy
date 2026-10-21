@@ -96,3 +96,18 @@ For example::
    :members:
    :undoc-members:
    :show-inheritance:
+
+Shared navigation visibility
+----------------------------
+
+``Navigation.Graph(mode="visibility")`` delegates line-of-sight construction to
+``TGraph.VisibilityGraph``. Both use conservative corner blocking. Navigation
+adds walking-support and elevation checks; it does not maintain another LOS
+engine. Both expose ``useNumba`` for optional compiled acceleration.
+
+``TGraph.VisibilityGraph`` accepts keyword-only ``maxCandidatePairs`` and
+``maxEdges`` resource budgets (positive integers or ``None``). Pair budgets are
+checked after vertex deduplication and before geometric pair tests. Sparse
+source-local searches count both candidate orientations. Edge budgets include
+both output orientations when ``bidirectional=False``. Exceeding a budget raises
+``ValueError`` rather than returning a silently truncated graph.

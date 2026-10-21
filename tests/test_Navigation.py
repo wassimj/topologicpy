@@ -167,7 +167,7 @@ def test_holes_remain_obstacles_and_tiles_preserve_area():
 def test_tgraph_routing_analysis_and_tiles():
     from topologicpy.TGraph import TGraph
     model=Navigation.ByFaces([rectangle()])
-    graph=Navigation.Graph(model,graphType='tgraph')
+    graph=Navigation.Graph(model)
     assert isinstance(graph,TGraph)
     assert TGraph.ShortestPath(graph,0,15,edgeKey='Length',silent=True)
     assert len(Navigation.Tiles(model,graph))==16
@@ -251,22 +251,31 @@ def test_overlapping_coplanar_slabs_form_one_grid():
     assert all(Navigation._Metadata(v)['sourceIDs']==['0','1'] for v in TGraph.Vertices(graph, asTopologic=True))
 
 
-@pytest.mark.parametrize('graph_type',['graph','tgraph'])
-def test_coincident_lift_doors_preserve_tile_associations(graph_type):
+def test_coincident_lift_doors_preserve_tile_associations():
     model=Navigation.ByFaces([rectangle(),rectangle(z=3)],connectors=[
         Navigation.Lift([[.5,.5,0],[.5,.5,3]],[[1,.5,0],[1,.5,3]])])
-    graph=Navigation.Graph(model,graphType=graph_type)
+    graph=Navigation.Graph(model)
+    assert isinstance(graph,TGraph)
     tiles=Navigation.Tiles(model,graph)
     assert len(tiles)==32
-    if graph_type=='graph':
-        vertices=TGraph.Vertices(graph, asTopologic=True)
-        assert len(vertices)==34
-        ids={Navigation._Metadata(v)['navigationID'] for v in vertices}
-        assert {Navigation._Metadata(t)['navigationID'] for t in tiles}.issubset(ids)
-        assert route(graph,[.5,.5,0],[.5,.5,3])
-    else:
-        assert len(TGraph.Vertices(graph, asTopologic=True))==34
-        assert TGraph.ShortestPath(graph,0,16,silent=True)
+    vertices=TGraph.Vertices(graph, asTopologic=True)
+    assert len(vertices)==34
+    ids={Navigation._Metadata(v)['navigationID'] for v in vertices}
+    assert {Navigation._Metadata(t)['navigationID'] for t in tiles}.issubset(ids)
+    assert route(graph,[.5,.5,0],[.5,.5,3])
+    assert TGraph.ShortestPath(graph,0,16,silent=True)
+
+
+def test_navigation_rejects_removed_type_selector():
+    model=Navigation.ByFaces([rectangle()])
+    with pytest.raises(TypeError,match='graphType'):
+        Navigation.Graph(model,graphType='tgraph')
+
+
+def test_tiles_require_tgraph():
+    model=Navigation.ByFaces([rectangle()])
+    with pytest.raises(TypeError,match='Expected TGraph'):
+        Navigation.Tiles(model,{})
 
 
 @pytest.mark.parametrize('identifier',['42','1e3','null','true','"quoted"'])
@@ -288,10 +297,48 @@ def test_navigation_tiles_accept_json_and_decoded_metadata(decoded):
     import json
     from topologicpy.TGraph import TGraph
     model=Navigation.ByFaces([rectangle()])
-    graph=Navigation.Graph(model,spacing=2,graphType='tgraph')
+    graph=Navigation.Graph(model,spacing=2)
     metadata=TGraph.Dictionary(graph)
     if decoded:metadata['navigationTiles']=json.loads(metadata['navigationTiles'])
     graph.SetDictionary(metadata)
     tiles=Navigation.Tiles(model,graph)
     assert len(tiles)==4
     assert sum(Face.Area(f) for f in tiles)==pytest.approx(16)
+
+
+@pytest.mark.parametrize('mode', ['navigation', 'visibility'])
+def test_coincident_storeys_remain_disconnected(mode):
+    model = Navigation.ByFaces([rectangle(), rectangle()], storeyIDs=['a', 'b'])
+    graph = Navigation.Graph(model, mode=mode)
+    metadata = [Navigation._Metadata(v) for v in TGraph.Vertices(graph, asTopologic=True)]
+    assert len(metadata) == 32
+    ids = {sid: {d['navigationID'] for d in metadata if d['storey'] == sid}
+           for sid in ['a', 'b']}
+    assert len(ids['a']) == len(ids['b']) == 16
+    assert ids['a'].isdisjoint(ids['b'])
+    assert all(d['storeyIDs'] == [d['storey']] for d in metadata)
+    for sid in ['a', 'b']:
+        tiles = Navigation.Tiles(model, graph, storey=sid)
+        assert len(tiles) == 16
+        assert {Navigation._Metadata(t)['navigationID'] for t in tiles} == ids[sid]
+    assert not TGraph.ShortestPath(graph, min(ids['a']), min(ids['b']), silent=True)
+
+
+def test_unique_points_respects_storeys_and_preserves_explicit_links():
+    nodes = [dict(point=p, storey=sid, kind=kind, sourceIDs=[str(i)])
+             for i, (p, sid, kind) in enumerate([
+                 ([0, 0, 0], 'a', 'floor'),
+                 ([0, 0, 0], 'b', 'floor'),
+                 ([0.000001, 0, 0], 'a', 'lift_door'),
+                 ([0.000001, 0, 0], 'b', 'lift_door')])]
+    entry = dict(nodes=nodes, edges=[dict(src=2, dst=3, kind='lift')],
+                 tiles=[dict(node=0), dict(node=1)])
+    result = Navigation._UniquePoints(entry, 0.00001)
+    assert len(result['nodes']) == 2
+    assert [n['storeyIDs'] for n in result['nodes']] == [['a'], ['b']]
+    assert all(n['kinds'] == ['floor', 'lift_door'] for n in result['nodes'])
+    assert [n['sourceIDs'] for n in result['nodes']] == [['0', '2'], ['1', '3']]
+    assert [t['node'] for t in result['tiles']] == [0, 1]
+    assert len(result['edges']) == 1
+    assert (result['edges'][0]['src'], result['edges'][0]['dst']) == (0, 1)
+    assert result['edges'][0]['kind'] == 'lift'
