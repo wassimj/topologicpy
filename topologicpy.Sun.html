@@ -154,6 +154,8 @@
 <dt class="sig sig-object py" id="topologicpy.Sun.Sun">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">topologicpy.Sun.</span></span><span class="sig-name descname"><span class="pre">Sun</span></span><a class="headerlink" href="#topologicpy.Sun.Sun" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Solar positions, drawing geometry and geometric solar access.</p>
+<p>Weather and PV electrical modelling are intentionally separate.</p>
 <p class="rubric">Methods</p>
 <table class="autosummary longtable docutils align-default">
 <colgroup>
@@ -162,131 +164,100 @@
 </colgroup>
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Sun.Sun.Altitude" title="topologicpy.Sun.Sun.Altitude"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Altitude</span></code></a>(latitude, longitude, date)</p></td>
-<td><p>Returns the Altitude angle.</p></td>
+<td><p>Apparent solar-centre elevation, degrees; naive datetime means UTC.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Sun.Sun.AutumnEquinox" title="topologicpy.Sun.Sun.AutumnEquinox"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AutumnEquinox</span></code></a>(latitude, year)</p></td>
-<td><p>Returns the autumnal equinox date for the input latitude and year.</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Sun.Sun.AutumnEquinox" title="topologicpy.Sun.Sun.AutumnEquinox"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AutumnEquinox</span></code></a>(latitude[, year])</p></td>
+<td><p>Autumn equinox for the hemisphere and year, as naive UTC.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Sun.Sun.Azimuth" title="topologicpy.Sun.Sun.Azimuth"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Azimuth</span></code></a>(latitude, longitude, date)</p></td>
-<td><p>Returns the Azimuth angle.</p></td>
+<td><p>Geographic clockwise azimuth in degrees; naive datetime means UTC.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Sun.Sun.Diagram" title="topologicpy.Sun.Sun.Diagram"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Diagram</span></code></a>(latitude, longitude[, ...])</p></td>
 <td><p>Returns the sun diagram based on the input parameters.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Sun.Sun.Edge" title="topologicpy.Sun.Sun.Edge"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Edge</span></code></a>(latitude, longitude, date[, origin, ...])</p></td>
-<td><p>Returns the Sun as a vector.</p></td>
+<td><p>Drawing edge from the sun vertex toward the origin.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Sun.Sun.PathByDate" title="topologicpy.Sun.Sun.PathByDate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PathByDate</span></code></a>(latitude, longitude, date[, ...])</p></td>
-<td><p>Returns the sun path based on the input parameters.</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Sun.Sun.EventsByDate" title="topologicpy.Sun.Sun.EventsByDate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EventsByDate</span></code></a>(latitude, longitude, date, *[, ...])</p></td>
+<td><p>Rising/setting events INSIDE one civil date in the specified zone.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Sun.Sun.PathByHour" title="topologicpy.Sun.Sun.PathByHour"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PathByHour</span></code></a>(latitude, longitude, hour[, ...])</p></td>
-<td><p>Returns the sun locations based on the input parameters.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Sun.Sun.PathByDate" title="topologicpy.Sun.Sun.PathByDate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PathByDate</span></code></a>(latitude, longitude, date[, ...])</p></td>
+<td><p>Open daylight path(s); disconnected civil-day spans return a Cluster.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Sun.Sun.Position" title="topologicpy.Sun.Sun.Position"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Position</span></code></a>(latitude, longitude, date[, ...])</p></td>
-<td><p>Returns the Sun as a position ([X,Y,Z]).</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Sun.Sun.PathByHour" title="topologicpy.Sun.Sun.PathByHour"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PathByHour</span></code></a>(latitude, longitude, hour[, ...])</p></td>
+<td><p>Open hourly path by default; close=True explicitly joins endpoints.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Sun.Sun.SpringEquinox" title="topologicpy.Sun.Sun.SpringEquinox"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SpringEquinox</span></code></a>(latitude, year)</p></td>
-<td><p>Returns the spring (vernal) equinox date for the input latitude and year.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Sun.Sun.Position" title="topologicpy.Sun.Sun.Position"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Position</span></code></a>(latitude, longitude, date[, ...])</p></td>
+<td><p>Sun drawing position as XYZ coordinates; use PositionData for physics.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Sun.Sun.SummerSolstice" title="topologicpy.Sun.Sun.SummerSolstice"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SummerSolstice</span></code></a>(latitude, year)</p></td>
-<td><p>Returns the winter solstice date for the input latitude and year.</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Sun.Sun.PositionData" title="topologicpy.Sun.Sun.PositionData"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PositionData</span></code></a>(latitude, longitude, date[, north])</p></td>
+<td><p>One record; see PositionsByDates for units, time and vector conventions.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Sun.Sun.Sunrise" title="topologicpy.Sun.Sun.Sunrise"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Sunrise</span></code></a>(latitude, longitude, date)</p></td>
-<td><p>Returns the Sunrise datetime.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Sun.Sun.PositionsByDates" title="topologicpy.Sun.Sun.PositionsByDates"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PositionsByDates</span></code></a>(latitude, longitude, dates)</p></td>
+<td><p>Numeric records at explicit instants; no geometry objects are created.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Sun.Sun.Sunset" title="topologicpy.Sun.Sun.Sunset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Sunset</span></code></a>(latitude, longitude, date)</p></td>
-<td><p>Returns the Sunset datetime.</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Sun.Sun.SkyPatches" title="topologicpy.Sun.Sun.SkyPatches"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SkyPatches</span></code></a>([azimuthDivisions, ...])</p></td>
+<td><p>Equal-solid-angle upper-hemisphere patches, sampled at mu midpoints.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Sun.Sun.Vector" title="topologicpy.Sun.Sun.Vector"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Vector</span></code></a>(latitude, longitude, date[, north])</p></td>
-<td><p>Returns the Sun as a vector.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Sun.Sun.SkyVisibility" title="topologicpy.Sun.Sun.SkyVisibility"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SkyVisibility</span></code></a>(points, normals, scene, *[, ...])</p></td>
+<td><p>Return patch visibility and projected sky-view factors.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Sun.Sun.SolarAccess" title="topologicpy.Sun.Sun.SolarAccess"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SolarAccess</span></code></a>(points, normals, positions, scene)</p></td>
+<td><p>Integrate point sunlight hours, with explicit interval durations.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Sun.Sun.SpringEquinox" title="topologicpy.Sun.Sun.SpringEquinox"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SpringEquinox</span></code></a>(latitude[, year])</p></td>
+<td><p>Spring equinox for the hemisphere and year, as naive UTC.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Sun.Sun.SummerSolstice" title="topologicpy.Sun.Sun.SummerSolstice"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SummerSolstice</span></code></a>(latitude[, year])</p></td>
+<td><p>Summer solstice for the hemisphere and year, as naive UTC.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Sun.Sun.Sunrise" title="topologicpy.Sun.Sun.Sunrise"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Sunrise</span></code></a>(latitude, longitude, date, *[, timeZone])</p></td>
+<td><p>Sunrise inside the civil date, returned as naive UTC; None if absent.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Sun.Sun.Sunset" title="topologicpy.Sun.Sun.Sunset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Sunset</span></code></a>(latitude, longitude, date, *[, timeZone])</p></td>
+<td><p>Sunset inside the civil date as naive UTC, or None; see EventsByDate.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Sun.Sun.Vector" title="topologicpy.Sun.Sun.Vector"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Vector</span></code></a>(latitude, longitude, date[, north, ...])</p></td>
+<td><p>Unit incoming sunlight vector (sun to origin), preserving legacy sign.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Sun.Sun.Vertex" title="topologicpy.Sun.Sun.Vertex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Vertex</span></code></a>(latitude, longitude, date[, origin, ...])</p></td>
-<td><p>Returns the Sun as a vertex.</p></td>
+<td><p>Sun drawing vertex at a positive model-unit radius from origin.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Sun.Sun.VerticesByDate" title="topologicpy.Sun.Sun.VerticesByDate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VerticesByDate</span></code></a>(latitude, longitude, date[, ...])</p></td>
-<td><p>Returns the Sun locations as vertices based on the input parameters.</p></td>
+<td><p>Time-sampled sun vertices, including exact interval endpoints.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Sun.Sun.VerticesByHour" title="topologicpy.Sun.Sun.VerticesByHour"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VerticesByHour</span></code></a>(latitude, longitude, hour[, ...])</p></td>
-<td><p>Returns the sun locations based on the input parameters.</p></td>
+<td><p>Sun vertices at numeric civil hour [0,24), inclusive day range.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Sun.Sun.WinterSolstice" title="topologicpy.Sun.Sun.WinterSolstice"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WinterSolstice</span></code></a>(latitude[, year])</p></td>
-<td><p>Returns the winter solstice date for the input latitude and year.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Sun.Sun.Visibility" title="topologicpy.Sun.Sun.Visibility"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Visibility</span></code></a>(points, normals, positions, scene, *)</p></td>
+<td><p>Geometric sun visibility for receiver XYZs/normals and position records.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Sun.Sun.WinterSolstice" title="topologicpy.Sun.Sun.WinterSolstice"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WinterSolstice</span></code></a>(latitude[, year])</p></td>
+<td><p>Winter solstice for the hemisphere and year, as naive UTC.</p></td>
 </tr>
 </tbody>
 </table>
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Sun.Sun.Altitude">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Altitude</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">latitude</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">longitude</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Sun.Sun.Altitude" title="Permalink to this definition"></a></dt>
-<dd><p>Returns the Altitude angle. See <a class="reference external" href="https://en.wikipedia.org/wiki/Altitude">https://en.wikipedia.org/wiki/Altitude</a>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>latitude</strong><span class="classifier">float</span></dt><dd><p>The input latitude. See <a class="reference external" href="https://en.wikipedia.org/wiki/Latitude">https://en.wikipedia.org/wiki/Latitude</a>.</p>
-</dd>
-<dt><strong>longitude</strong><span class="classifier">float</span></dt><dd><p>The input longitude. See <a class="reference external" href="https://en.wikipedia.org/wiki/Longitude">https://en.wikipedia.org/wiki/Longitude</a>.</p>
-</dd>
-<dt><strong>date</strong><span class="classifier">datetime</span></dt><dd><p>The input datetime.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>float</dt><dd><p>The altitude angle.</p>
-</dd>
-</dl>
-</dd>
-</dl>
+<dd><p>Apparent solar-centre elevation, degrees; naive datetime means UTC.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Sun.Sun.AutumnEquinox">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AutumnEquinox</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">latitude</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">year</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Sun.Sun.AutumnEquinox" title="Permalink to this definition"></a></dt>
-<dd><p>Returns the autumnal equinox date for the input latitude and year. See <a class="reference external" href="https://en.wikipedia.org/wiki/September_equinox">https://en.wikipedia.org/wiki/September_equinox</a>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>latitude</strong><span class="classifier">float</span></dt><dd><p>The input latitude. See <a class="reference external" href="https://en.wikipedia.org/wiki/Latitude">https://en.wikipedia.org/wiki/Latitude</a>.</p>
-</dd>
-<dt><strong>year</strong><span class="classifier">integer , optional</span></dt><dd><p>The input year. Default is the current year.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>datetime</dt><dd><p>The datetime of the summer solstice</p>
-</dd>
-</dl>
-</dd>
-</dl>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AutumnEquinox</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">latitude</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">year</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Sun.Sun.AutumnEquinox" title="Permalink to this definition"></a></dt>
+<dd><p>Autumn equinox for the hemisphere and year, as naive UTC.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Sun.Sun.Azimuth">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Azimuth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">latitude</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">longitude</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Sun.Sun.Azimuth" title="Permalink to this definition"></a></dt>
-<dd><p>Returns the Azimuth angle. See <a class="reference external" href="https://en.wikipedia.org/wiki/Azimuth">https://en.wikipedia.org/wiki/Azimuth</a>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>latitude</strong><span class="classifier">float</span></dt><dd><p>The input latitude. See <a class="reference external" href="https://en.wikipedia.org/wiki/Latitude">https://en.wikipedia.org/wiki/Latitude</a>.</p>
-</dd>
-<dt><strong>longitude</strong><span class="classifier">float</span></dt><dd><p>The input longitude. See <a class="reference external" href="https://en.wikipedia.org/wiki/Longitude">https://en.wikipedia.org/wiki/Longitude</a>.</p>
-</dd>
-<dt><strong>date</strong><span class="classifier">datetime</span></dt><dd><p>The input datetime.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>float</dt><dd><p>The azimuth angle.</p>
-</dd>
-</dl>
-</dd>
-</dl>
+<dd><p>Geographic clockwise azimuth in degrees; naive datetime means UTC.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Sun.Sun.Diagram">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Diagram</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">latitude</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">longitude</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">minuteInterval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">30</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dayInterval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">15</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">uSides</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">180</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vSides</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">180</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">north</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compass</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shell</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Sun.Sun.Diagram" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Diagram</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">latitude</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">longitude</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">minuteInterval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">30</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dayInterval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">15</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">uSides</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">180</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vSides</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">180</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">north</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compass</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shell</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">year</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeZone</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'UTC'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Sun.Sun.Diagram" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the sun diagram based on the input parameters. See <a class="reference external" href="https://hyperfinearchitecture.com/how-to-read-sun-path-diagrams/">https://hyperfinearchitecture.com/how-to-read-sun-path-diagrams/</a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -333,383 +304,172 @@
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Sun.Sun.Edge">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Edge</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">latitude</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">longitude</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">north</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Sun.Sun.Edge" title="Permalink to this definition"></a></dt>
-<dd><p>Returns the Sun as a vector.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>latitude</strong><span class="classifier">float</span></dt><dd><p>The input latitude. See <a class="reference external" href="https://en.wikipedia.org/wiki/Latitude">https://en.wikipedia.org/wiki/Latitude</a>.</p>
-</dd>
-<dt><strong>longitude</strong><span class="classifier">float</span></dt><dd><p>The input longitude. See <a class="reference external" href="https://en.wikipedia.org/wiki/Longitude">https://en.wikipedia.org/wiki/Longitude</a>.</p>
-</dd>
-<dt><strong>date</strong><span class="classifier">datetime</span></dt><dd><p>The input datetime.</p>
-</dd>
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The desired origin of the world. If set to None, the origin will be set to (0,0,0). Default is None.</p>
-</dd>
-<dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The desired radius of the sun orbit. Default is 0.5.</p>
-</dd>
-<dt><strong>north</strong><span class="classifier">float, optional</span></dt><dd><p>The desired compass angle of the north direction. Default is 0 which points in the positive Y-axis direction.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>topologic_core.Edge</dt><dd><p>The sun represented as an edge pointing from the location of the sun towards the origin.</p>
-</dd>
-</dl>
-</dd>
-</dl>
+<dd><p>Drawing edge from the sun vertex toward the origin.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Sun.Sun.EventsByDate">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">EventsByDate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">latitude</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">longitude</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeZone</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'UTC'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elevation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pressure</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">101325</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">temperature</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">15</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">horizon</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">useCenter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Sun.Sun.EventsByDate" title="Permalink to this definition"></a></dt>
+<dd><p>Rising/setting events INSIDE one civil date in the specified zone.</p>
+<p>Output events and day bounds are aware datetimes in that zone. Sunrise
+and sunset may occur in either order in a UTC civil day. They must not
+be independently paired as a daylight duration. daylightIntervals gives
+clipped, correctly paired intervals, including midnight-spanning light.
+status is normal, polar_day, polar_night, or transition (one event).
+Defaults use the apparent upper limb at horizon=0, matching ephem’s
+event convention. useCenter=True selects the solar centre. PositionData
+aboveHorizon instead refers to the solar centre; it is a distinct test.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Sun.Sun.PathByDate">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">PathByDate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">latitude</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">longitude</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">startTime</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">endTime</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">60</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sides</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">north</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Sun.Sun.PathByDate" title="Permalink to this definition"></a></dt>
-<dd><p>Returns the sun path based on the input parameters.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>latitude</strong><span class="classifier">float</span></dt><dd><p>The input latitude. See <a class="reference external" href="https://en.wikipedia.org/wiki/Latitude">https://en.wikipedia.org/wiki/Latitude</a>.</p>
-</dd>
-<dt><strong>longitude</strong><span class="classifier">float</span></dt><dd><p>The input longitude. See <a class="reference external" href="https://en.wikipedia.org/wiki/Longitude">https://en.wikipedia.org/wiki/Longitude</a>.</p>
-</dd>
-<dt><strong>date</strong><span class="classifier">datetime</span></dt><dd><p>The input datetime.</p>
-</dd>
-<dt><strong>startTime</strong><span class="classifier">datetime , optional</span></dt><dd><p>The desired start time to compute the sun location. If set to None, Sun.Sunrise is used. Default is None.</p>
-</dd>
-<dt><strong>endTime</strong><span class="classifier">datetime , optional</span></dt><dd><p>The desired end time to compute the sun location. If set to None, Sun.Sunset is used. Default is None.</p>
-</dd>
-<dt><strong>interval</strong><span class="classifier">int , optional</span></dt><dd><p>The interval in minutes to compute the sun location. Default is 60.</p>
-</dd>
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The desired origin of the world. If set to None, the origin will be set to (0,0,0). Default is None.</p>
-</dd>
-<dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The desired radius of the sun orbit. Default is 0.5.</p>
-</dd>
-<dt><strong>sides</strong><span class="classifier">int , optional</span></dt><dd><p>If set to None, the path is divided based on the interval. Otherwise, it is equally divided into the number of sides.
-The default is None.</p>
-</dd>
-<dt><strong>north</strong><span class="classifier">float, optional</span></dt><dd><p>The desired compass angle of the north direction. Default is 0 which points in the positive Y-axis direction.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>topologic_core.Wire</dt><dd><p>The sun path represented as a wire.</p>
-</dd>
-</dl>
-</dd>
-</dl>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">PathByDate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">latitude</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">longitude</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">startTime</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">endTime</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">60</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sides</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">north</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeZone</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'UTC'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Sun.Sun.PathByDate" title="Permalink to this definition"></a></dt>
+<dd><p>Open daylight path(s); disconnected civil-day spans return a Cluster.</p>
+<p>Explicit bounds create one open path, including nighttime if requested.
+sides resamples drawing geometry, never the numerical time series.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Sun.Sun.PathByHour">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">PathByHour</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">latitude</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">longitude</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hour</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">startDay</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">endDay</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">365</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sides</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">north</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Sun.Sun.PathByHour" title="Permalink to this definition"></a></dt>
-<dd><p>Returns the sun locations based on the input parameters.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>latitude</strong><span class="classifier">float</span></dt><dd><p>The input latitude. See <a class="reference external" href="https://en.wikipedia.org/wiki/Latitude">https://en.wikipedia.org/wiki/Latitude</a>.</p>
-</dd>
-<dt><strong>longitude</strong><span class="classifier">float</span></dt><dd><p>The input longitude. See <a class="reference external" href="https://en.wikipedia.org/wiki/Longitude">https://en.wikipedia.org/wiki/Longitude</a>.</p>
-</dd>
-<dt><strong>hour</strong><span class="classifier">datetime</span></dt><dd><p>The input hour.</p>
-</dd>
-<dt><strong>startDay</strong><span class="classifier">integer , optional</span></dt><dd><p>The desired start day of the year to compute the sun location. Default is 1.</p>
-</dd>
-<dt><strong>endDay</strong><span class="classifier">integer , optional</span></dt><dd><p>The desired end day of the year to compute the sun location. Default is 365.</p>
-</dd>
-<dt><strong>interval</strong><span class="classifier">int , optional</span></dt><dd><p>The interval in days to compute the sun location. Default is 5.</p>
-</dd>
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The desired origin of the world. If set to None, the origin will be set to (0,0,0). Default is None.</p>
-</dd>
-<dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The desired radius of the sun orbit. Default is 0.5.</p>
-</dd>
-<dt><strong>sides</strong><span class="classifier">int , optional</span></dt><dd><p>If set to None, the path is divided based on the interval. Otherwise, it is equally divided into the number of sides.
-The default is None.</p>
-</dd>
-<dt><strong>north</strong><span class="classifier">float, optional</span></dt><dd><p>The desired compass angle of the north direction. Default is 0 which points in the positive Y-axis direction.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>topologic_core.Wire</dt><dd><p>The sun path represented as a topologic wire.</p>
-</dd>
-</dl>
-</dd>
-</dl>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">PathByHour</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">latitude</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">longitude</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hour</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">startDay</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">endDay</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sides</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">north</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">year</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeZone</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'UTC'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">close</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Sun.Sun.PathByHour" title="Permalink to this definition"></a></dt>
+<dd><p>Open hourly path by default; close=True explicitly joins endpoints.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Sun.Sun.Position">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Position</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">latitude</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">longitude</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">north</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">6</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Sun.Sun.Position" title="Permalink to this definition"></a></dt>
-<dd><p>Returns the Sun as a position ([X,Y,Z]).</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>latitude</strong><span class="classifier">float</span></dt><dd><p>The input latitude. See <a class="reference external" href="https://en.wikipedia.org/wiki/Latitude">https://en.wikipedia.org/wiki/Latitude</a>.</p>
-</dd>
-<dt><strong>longitude</strong><span class="classifier">float</span></dt><dd><p>The input longitude. See <a class="reference external" href="https://en.wikipedia.org/wiki/Longitude">https://en.wikipedia.org/wiki/Longitude</a>.</p>
-</dd>
-<dt><strong>date</strong><span class="classifier">datetime</span></dt><dd><p>The input datetime.</p>
-</dd>
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The desired origin of the world. If set to None, the origin will be set to (0,0,0). Default is None.</p>
-</dd>
-<dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The desired radius of the sun orbit. Default is 0.5.</p>
-</dd>
-<dt><strong>north</strong><span class="classifier">float, optional</span></dt><dd><p>The desired compass angle of the north direction. Default is 0 which points in the positive Y-axis direction.</p>
-</dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>topologic_core.Vertex</dt><dd><p>The sun represented as a vertex.</p>
-</dd>
-</dl>
-</dd>
-</dl>
+<dd><p>Sun drawing position as XYZ coordinates; use PositionData for physics.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Sun.Sun.PositionData">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">PositionData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">latitude</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">longitude</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">north</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Sun.Sun.PositionData" title="Permalink to this definition"></a></dt>
+<dd><p>One record; see PositionsByDates for units, time and vector conventions.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Sun.Sun.PositionsByDates">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">PositionsByDates</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">latitude</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">longitude</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dates</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">north</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">engine</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'ephem'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elevation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pressure</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">101325</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">temperature</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">15</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeZone</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">apparent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Sun.Sun.PositionsByDates" title="Permalink to this definition"></a></dt>
+<dd><p>Numeric records at explicit instants; no geometry objects are created.</p>
+<p>Latitude is -90..90; east longitude -180..180. elevation is metres,
+pressure Pa, temperature Celsius. Naive datetimes mean UTC unless an
+explicit timeZone is supplied. Output timestamps are aware UTC.
+engine is explicitly ‘ephem’ or optional ‘pvlib’; no implicit fallback.
+Azimuth is geographic clockwise from north. Vectors are model XYZ,
++Z up, model north rotated clockwise from +Y by north degrees.
+Apparent elevation includes refraction; geometric elevation does not.
+toSun/fromSun use the selected elevation and have unit length without
+display rounding. All callers should share this same record series.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Sun.Sun.SkyPatches">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SkyPatches</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">azimuthDivisions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">36</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">altitudeDivisions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">12</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">north</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Sun.Sun.SkyPatches" title="Permalink to this definition"></a></dt>
+<dd><p>Equal-solid-angle upper-hemisphere patches, sampled at mu midpoints.</p>
+<p>mu=sin(altitude); patch solidAngle is steradians. Directions are model
+space. These are quadrature patches, not a named standard sky basis.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Sun.Sun.SkyVisibility">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SkyVisibility</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">points</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normals</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scene</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">azimuthDivisions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">36</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">altitudeDivisions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">12</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">north</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Sun.Sun.SkyVisibility" title="Permalink to this definition"></a></dt>
+<dd><p>Return patch visibility and projected sky-view factors.</p>
+<p>skyViewFactor=sum(visible * max(n dot direction,0) * solidAngle)/pi.
+An unobstructed upward surface is 1, a vertical surface approximately
+0.5, and a downward surface 0. Ground reflection is excluded. Patch
+solid angles and weights are retained for anisotropic sky integration;
+this method itself assumes uniform sky radiance. Refine divisions for
+convergence. Visibility can be reused while geometry is unchanged.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Sun.Sun.SolarAccess">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SolarAccess</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">points</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normals</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">positions</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scene</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">durations</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeEdges</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">areas</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Sun.Sun.SolarAccess" title="Permalink to this definition"></a></dt>
+<dd><p>Integrate point sunlight hours, with explicit interval durations.</p>
+<p>Supply either durations in seconds (one per position), or N+1 aware/
+UTC timeEdges. Positions must lie inside their respective intervals.
+Duration weights are NOT inferred from drawing paths or treated as
+cosine weights. This is geometric sunlight duration, not irradiation.
+Optional positive cell areas give an area-weighted mean, not XY area.
+Zero-duration endpoint samples are allowed. Total duration must be &gt;0.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Sun.Sun.SpringEquinox">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SpringEquinox</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">latitude</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">year</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Sun.Sun.SpringEquinox" title="Permalink to this definition"></a></dt>
-<dd><p>Returns the spring (vernal) equinox date for the input latitude and year. See <a class="reference external" href="https://en.wikipedia.org/wiki/March_equinox">https://en.wikipedia.org/wiki/March_equinox</a>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>latitude</strong><span class="classifier">float</span></dt><dd><p>The input latitude.</p>
-</dd>
-<dt><strong>year</strong><span class="classifier">integer , optional</span></dt><dd><p>The input year. Default is the current year.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>datetime</dt><dd><p>The datetime of the summer solstice</p>
-</dd>
-</dl>
-</dd>
-</dl>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SpringEquinox</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">latitude</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">year</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Sun.Sun.SpringEquinox" title="Permalink to this definition"></a></dt>
+<dd><p>Spring equinox for the hemisphere and year, as naive UTC.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Sun.Sun.SummerSolstice">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SummerSolstice</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">latitude</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">year</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Sun.Sun.SummerSolstice" title="Permalink to this definition"></a></dt>
-<dd><p>Returns the winter solstice date for the input latitude and year. See <a class="reference external" href="https://en.wikipedia.org/wiki/Summer_solstice">https://en.wikipedia.org/wiki/Summer_solstice</a>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>latitude</strong><span class="classifier">float</span></dt><dd><p>The input latitude.</p>
-</dd>
-<dt><strong>year</strong><span class="classifier">integer , optional</span></dt><dd><p>The input year. Default is the current year.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>datetime</dt><dd><p>The datetime of the summer solstice</p>
-</dd>
-</dl>
-</dd>
-</dl>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SummerSolstice</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">latitude</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">year</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Sun.Sun.SummerSolstice" title="Permalink to this definition"></a></dt>
+<dd><p>Summer solstice for the hemisphere and year, as naive UTC.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Sun.Sun.Sunrise">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Sunrise</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">latitude</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">longitude</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Sun.Sun.Sunrise" title="Permalink to this definition"></a></dt>
-<dd><p>Returns the Sunrise datetime.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>latitude</strong><span class="classifier">float</span></dt><dd><p>The input latitude. See <a class="reference external" href="https://en.wikipedia.org/wiki/Latitude">https://en.wikipedia.org/wiki/Latitude</a>.</p>
-</dd>
-<dt><strong>longitude</strong><span class="classifier">float</span></dt><dd><p>The input longitude. See <a class="reference external" href="https://en.wikipedia.org/wiki/Longitude">https://en.wikipedia.org/wiki/Longitude</a>.</p>
-</dd>
-<dt><strong>date</strong><span class="classifier">datetime</span></dt><dd><p>The input datetime.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>datetime</dt><dd><p>The Sunrise datetime.</p>
-</dd>
-</dl>
-</dd>
-</dl>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Sunrise</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">latitude</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">longitude</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeZone</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'UTC'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Sun.Sun.Sunrise" title="Permalink to this definition"></a></dt>
+<dd><p>Sunrise inside the civil date, returned as naive UTC; None if absent.</p>
+<p>Use EventsByDate for timezone-aware records and polar/interval status.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Sun.Sun.Sunset">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Sunset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">latitude</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">longitude</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Sun.Sun.Sunset" title="Permalink to this definition"></a></dt>
-<dd><p>Returns the Sunset datetime.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>latitude</strong><span class="classifier">float</span></dt><dd><p>The input latitude. See <a class="reference external" href="https://en.wikipedia.org/wiki/Latitude">https://en.wikipedia.org/wiki/Latitude</a>.</p>
-</dd>
-<dt><strong>longitude</strong><span class="classifier">float</span></dt><dd><p>The input longitude. See <a class="reference external" href="https://en.wikipedia.org/wiki/Longitude">https://en.wikipedia.org/wiki/Longitude</a>.</p>
-</dd>
-<dt><strong>date</strong><span class="classifier">datetime</span></dt><dd><p>The input datetime.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>datetime</dt><dd><p>The Sunset datetime.</p>
-</dd>
-</dl>
-</dd>
-</dl>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Sunset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">latitude</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">longitude</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeZone</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'UTC'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Sun.Sun.Sunset" title="Permalink to this definition"></a></dt>
+<dd><p>Sunset inside the civil date as naive UTC, or None; see EventsByDate.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Sun.Sun.Vector">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Vector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">latitude</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">longitude</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">north</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Sun.Sun.Vector" title="Permalink to this definition"></a></dt>
-<dd><p>Returns the Sun as a vector.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>latitude</strong><span class="classifier">float</span></dt><dd><p>The input latitude. See <a class="reference external" href="https://en.wikipedia.org/wiki/Latitude">https://en.wikipedia.org/wiki/Latitude</a>.</p>
-</dd>
-<dt><strong>longitude</strong><span class="classifier">float</span></dt><dd><p>The input longitude. See <a class="reference external" href="https://en.wikipedia.org/wiki/Longitude">https://en.wikipedia.org/wiki/Longitude</a>.</p>
-</dd>
-<dt><strong>date</strong><span class="classifier">datetime</span></dt><dd><p>The input datetime.</p>
-</dd>
-<dt><strong>north</strong><span class="classifier">float, optional</span></dt><dd><p>The desired compass angle of the north direction. Default is 0 which points in the positive Y-axis direction.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>list</dt><dd><p>The sun vector pointing from the location of the sun towards the origin.</p>
-</dd>
-</dl>
-</dd>
-</dl>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Vector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">latitude</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">longitude</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">north</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reverse</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Sun.Sun.Vector" title="Permalink to this definition"></a></dt>
+<dd><p>Unit incoming sunlight vector (sun to origin), preserving legacy sign.</p>
+<p>Set reverse=True for the receiver-to-sun visibility direction. Numerical
+output is unrounded. See PositionsByDates for optional engine/atmosphere.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Sun.Sun.Vertex">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Vertex</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">latitude</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">longitude</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">north</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Sun.Sun.Vertex" title="Permalink to this definition"></a></dt>
-<dd><p>Returns the Sun as a vertex.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>latitude</strong><span class="classifier">float</span></dt><dd><p>The input latitude. See <a class="reference external" href="https://en.wikipedia.org/wiki/Latitude">https://en.wikipedia.org/wiki/Latitude</a>.</p>
-</dd>
-<dt><strong>longitude</strong><span class="classifier">float</span></dt><dd><p>The input longitude. See <a class="reference external" href="https://en.wikipedia.org/wiki/Longitude">https://en.wikipedia.org/wiki/Longitude</a>.</p>
-</dd>
-<dt><strong>date</strong><span class="classifier">datetime</span></dt><dd><p>The input datetime.</p>
-</dd>
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The desired origin of the world. If set to None, the origin will be set to (0,0,0). Default is None.</p>
-</dd>
-<dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The desired radius of the sun orbit. Default is 0.5.</p>
-</dd>
-<dt><strong>north</strong><span class="classifier">float, optional</span></dt><dd><p>The desired compass angle of the north direction. Default is 0 which points in the positive Y-axis direction.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>topologic_core.Vertex</dt><dd><p>The sun represented as a vertex.</p>
-</dd>
-</dl>
-</dd>
-</dl>
+<dd><p>Sun drawing vertex at a positive model-unit radius from origin.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Sun.Sun.VerticesByDate">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">VerticesByDate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">latitude</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">longitude</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">startTime</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">endTime</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">60</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">north</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Sun.Sun.VerticesByDate" title="Permalink to this definition"></a></dt>
-<dd><p>Returns the Sun locations as vertices based on the input parameters.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>latitude</strong><span class="classifier">float</span></dt><dd><p>The input latitude. See <a class="reference external" href="https://en.wikipedia.org/wiki/Latitude">https://en.wikipedia.org/wiki/Latitude</a>.</p>
-</dd>
-<dt><strong>longitude</strong><span class="classifier">float</span></dt><dd><p>The input longitude. See <a class="reference external" href="https://en.wikipedia.org/wiki/Longitude">https://en.wikipedia.org/wiki/Longitude</a>.</p>
-</dd>
-<dt><strong>date</strong><span class="classifier">datetime</span></dt><dd><p>The input datetime.</p>
-</dd>
-<dt><strong>startTime</strong><span class="classifier">datetime , optional</span></dt><dd><p>The desired start time to compute the sun location. If set to None, Sun.Sunrise is used. Default is None.</p>
-</dd>
-<dt><strong>endTime</strong><span class="classifier">datetime , optional</span></dt><dd><p>The desired end time to compute the sun location. If set to None, Sun.Sunset is used. Default is None.</p>
-</dd>
-<dt><strong>interval</strong><span class="classifier">int , optional</span></dt><dd><p>The interval in minutes to compute the sun location. Default is 60.</p>
-</dd>
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The desired origin of the world. If set to None, the origin will be set to (0,0,0). Default is None.</p>
-</dd>
-<dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The desired radius of the sun orbit. Default is 0.5.</p>
-</dd>
-<dt><strong>north</strong><span class="classifier">float, optional</span></dt><dd><p>The desired compass angle of the north direction. Default is 0 which points in the positive Y-axis direction.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>list</dt><dd><p>The sun locations represented as a list of vertices.</p>
-</dd>
-</dl>
-</dd>
-</dl>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">VerticesByDate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">latitude</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">longitude</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">startTime</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">endTime</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">60</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">north</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeZone</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'UTC'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Sun.Sun.VerticesByDate" title="Permalink to this definition"></a></dt>
+<dd><p>Time-sampled sun vertices, including exact interval endpoints.</p>
+<p>With no start/end, sample the civil day’s daylight intervals; polar
+night returns []. Explicit bounds include nighttime and denote instants.
+Endpoint vertices are drawing samples, not integration weights.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Sun.Sun.VerticesByHour">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">VerticesByHour</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">latitude</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">longitude</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hour</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">startDay</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">endDay</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">365</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">north</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Sun.Sun.VerticesByHour" title="Permalink to this definition"></a></dt>
-<dd><p>Returns the sun locations based on the input parameters.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>latitude</strong><span class="classifier">float</span></dt><dd><p>The input latitude. See <a class="reference external" href="https://en.wikipedia.org/wiki/Latitude">https://en.wikipedia.org/wiki/Latitude</a>.</p>
-</dd>
-<dt><strong>longitude</strong><span class="classifier">float</span></dt><dd><p>The input longitude. See <a class="reference external" href="https://en.wikipedia.org/wiki/Longitude">https://en.wikipedia.org/wiki/Longitude</a>.</p>
-</dd>
-<dt><strong>hour</strong><span class="classifier">datetime</span></dt><dd><p>The input hour.</p>
-</dd>
-<dt><strong>startDay</strong><span class="classifier">integer , optional</span></dt><dd><p>The desired start day to compute the sun location. Default is 1.</p>
-</dd>
-<dt><strong>endDay</strong><span class="classifier">integer , optional</span></dt><dd><p>The desired end day to compute the sun location. Default is 365.</p>
-</dd>
-<dt><strong>interval</strong><span class="classifier">int , optional</span></dt><dd><p>The interval in days to compute the sun location. Default is 5.</p>
-</dd>
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The desired origin of the world. If set to None, the origin will be set to (0,0,0). Default is None.</p>
-</dd>
-<dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The desired radius of the sun orbit. Default is 0.5.</p>
-</dd>
-<dt><strong>north</strong><span class="classifier">float, optional</span></dt><dd><p>The desired compass angle of the north direction. Default is 0 which points in the positive Y-axis direction.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>list</dt><dd><p>The sun locations represented as a list of vertices.</p>
-</dd>
-</dl>
-</dd>
-</dl>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">VerticesByHour</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">latitude</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">longitude</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hour</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">startDay</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">endDay</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">north</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">year</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeZone</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'UTC'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Sun.Sun.VerticesByHour" title="Permalink to this definition"></a></dt>
+<dd><p>Sun vertices at numeric civil hour [0,24), inclusive day range.</p>
+<p>year defaults to the current year; endDay defaults to 365/366. An exact
+endDay sample is appended when spacing does not divide the range.
+Ambiguous/nonexistent DST wall-clock times raise; use explicit dated
+instants with PositionsByDates when a fixed civil hour is ambiguous.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Sun.Sun.Visibility">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Visibility</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">points</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normals</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">positions</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scene</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batchSize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4096</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">minDistance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxDistance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">inf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxPairs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10000000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cancelled</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Sun.Sun.Visibility" title="Permalink to this definition"></a></dt>
+<dd><p>Geometric sun visibility for receiver XYZs/normals and position records.</p>
+<p>Returns uint8 states shaped (receivers,times): 0 visible, 1 occluded,
+2 back-facing, 3 below horizon (precedence: horizon, back-facing, hit).
+Points and normals are paired; a single normal broadcasts. Model-space
+directions come from toSun, with no implicit sign conversion. Explicit
+numeric directions must first be wrapped as records with toSun and
+aboveHorizon. This is point sampling, not panel electrical shading.
+Work is chunked; maxPairs bounds the materialized output. The caller
+supplies receiver cell areas and integration durations separately.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Sun.Sun.WinterSolstice">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">WinterSolstice</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">latitude</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">year</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Sun.Sun.WinterSolstice" title="Permalink to this definition"></a></dt>
-<dd><p>Returns the winter solstice date for the input latitude and year. See <a class="reference external" href="https://en.wikipedia.org/wiki/Winter_solstice">https://en.wikipedia.org/wiki/Winter_solstice</a>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>latitude</strong><span class="classifier">float</span></dt><dd><p>The input latitude.</p>
-</dd>
-<dt><strong>year</strong><span class="classifier">integer , optional</span></dt><dd><p>The input year. Default is the current year.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>datetime</dt><dd><p>The datetime of the winter solstice</p>
-</dd>
-</dl>
-</dd>
-</dl>
+<dd><p>Winter solstice for the hemisphere and year, as naive UTC.</p>
 </dd></dl>
 
 </dd></dl>

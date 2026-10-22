@@ -283,17 +283,29 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.BVH.BVH.ByTopologies" title="topologicpy.BVH.BVH.ByTopologies"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByTopologies</span></code></a>(*topologies[, maxLeafSize, ...])</p></td>
 <td><p>Creates a BVH tree from the input topologies.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.BVH.BVH.Clashes" title="topologicpy.BVH.BVH.Clashes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Clashes</span></code></a>(bvh, *topologies[, mantissa, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.BVH.BVH.ByTriangles" title="topologicpy.BVH.BVH.ByTriangles"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByTriangles</span></code></a>(triangles[, sourceIds, faceIds, ...])</p></td>
+<td><p>Prepare explicit (N,3,3) triangles, without requiring a geometry backend.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.BVH.BVH.Clashes" title="topologicpy.BVH.BVH.Clashes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Clashes</span></code></a>(bvh, *topologies[, mantissa, ...])</p></td>
 <td><p>Returns BVH items whose AABBs overlap the AABBs of the input topologies.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.BVH.BVH.Depth" title="topologicpy.BVH.BVH.Depth"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Depth</span></code></a>(bvh)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.BVH.BVH.Depth" title="topologicpy.BVH.BVH.Depth"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Depth</span></code></a>(bvh)</p></td>
 <td><p>Returns the depth of the BVH tree.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.BVH.BVH.IsOccluded" title="topologicpy.BVH.BVH.IsOccluded"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsOccluded</span></code></a>(scene, origins, directions[, ...])</p></td>
+<td><p>Return a boolean per ray, stopping at any actual triangle hit.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.BVH.BVH.Nearest" title="topologicpy.BVH.BVH.Nearest"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Nearest</span></code></a>(bvh, vertex[, mantissa, silent])</p></td>
 <td><p>Returns the BVH item whose AABB centroid is nearest to the input vertex.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.BVH.BVH.QueryAABB" title="topologicpy.BVH.BVH.QueryAABB"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QueryAABB</span></code></a>(bvh, query_box)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.BVH.BVH.PrepareScene" title="topologicpy.BVH.BVH.PrepareScene"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PrepareScene</span></code></a>(topologies[, linearDeflection, ...])</p></td>
+<td><p>Prepare two-sided surface triangles for repeated actual-hit queries.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.BVH.BVH.QueryAABB" title="topologicpy.BVH.BVH.QueryAABB"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QueryAABB</span></code></a>(bvh, query_box)</p></td>
 <td><p>Returns item indices whose AABBs overlap the input query AABB.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.BVH.BVH.RayHits" title="topologicpy.BVH.BVH.RayHits"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RayHits</span></code></a>(scene, origins, directions[, ...])</p></td>
+<td><p>Nearest actual hit per ray, or None; retain primitive/source/face IDs.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.BVH.BVH.Raycast" title="topologicpy.BVH.BVH.Raycast"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Raycast</span></code></a>(bvh, origin, direction[, mantissa, ...])</p></td>
 <td><p>Returns candidate item indices whose AABBs are intersected by the input ray.</p></td>
@@ -327,6 +339,15 @@
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.BVH.BVH.ByTriangles">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByTriangles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">triangles</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sourceIds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">faceIds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxLeafSize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">8</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.BVH.BVH.ByTriangles" title="Permalink to this definition"></a></dt>
+<dd><p>Prepare explicit (N,3,3) triangles, without requiring a geometry backend.</p>
+<p>Coordinates must be finite and triangles nondegenerate. Source/face IDs
+are optional integer arrays. Distances use model units. Triangle indices
+are stable primitive IDs. Input arrays are copied and made read-only.</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.BVH.BVH.Clashes">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Clashes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bvh</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">topologies</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.BVH.BVH.Clashes" title="Permalink to this definition"></a></dt>
 <dd><p>Returns BVH items whose AABBs overlap the AABBs of the input topologies.</p>
@@ -355,9 +376,32 @@ Boolean operations afterwards when exact intersection classification is required
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.BVH.BVH.IsOccluded">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">IsOccluded</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scene</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">origins</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">directions</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">minDistance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxDistance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">inf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batchSize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4096</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cancelled</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.BVH.BVH.IsOccluded" title="Permalink to this definition"></a></dt>
+<dd><p>Return a boolean per ray, stopping at any actual triangle hit.</p>
+<p>XYZ arrays are paired, with one-row broadcasting. Directions normalize
+internally. Positive minDistance defaults to scene tolerance. No entire
+building/face is excluded. maxDistance includes its endpoint. Temporary
+pair storage is bounded by batchSize * maxLeafSize; output is O(rays).
+A true-returning cancellation callback raises InterruptedError.</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.BVH.BVH.Nearest">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Nearest</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bvh</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertex</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.BVH.BVH.Nearest" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the BVH item whose AABB centroid is nearest to the input vertex.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.BVH.BVH.PrepareScene">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">PrepareScene</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topologies</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">linearDeflection</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.01</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angularDeflection</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxLeafSize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">8</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cancelled</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.BVH.BVH.PrepareScene" title="Permalink to this definition"></a></dt>
+<dd><p>Prepare two-sided surface triangles for repeated actual-hit queries.</p>
+<p>Unlike Raycast, RayHits/IsOccluded intersect trimmed geometry, not boxes.
+Deflection is absolute in model units; angles are degrees. Curved faces
+are approximated by the active backend’s Tessellate. Holes are retained.
+Each triangle retains its input topology index and face index. Empty
+input is a valid clear scene; failed/empty face tessellation raises.
+The returned scene is an opaque snapshot; rebuild after geometry edits.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -365,6 +409,14 @@ Boolean operations afterwards when exact intersection classification is required
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">QueryAABB</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bvh</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">query_box</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#topologicpy.BVH.AABB" title="topologicpy.BVH.AABB"><span class="pre">AABB</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.BVH.BVH.QueryAABB" title="Permalink to this definition"></a></dt>
 <dd><p>Returns item indices whose AABBs overlap the input query AABB.</p>
 <p>Invalid input returns None. A valid but empty BVH returns an empty list.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.BVH.BVH.RayHits">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RayHits</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scene</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">origins</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">directions</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">minDistance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxDistance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">inf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batchSize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4096</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cancelled</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.BVH.BVH.RayHits" title="Permalink to this definition"></a></dt>
+<dd><p>Nearest actual hit per ray, or None; retain primitive/source/face IDs.</p>
+<p>Returned points and distances are in original world coordinates/units.
+See IsOccluded for boundary, self-hit, batching and cancellation policy.</p>
 </dd></dl>
 
 <dl class="py method">
