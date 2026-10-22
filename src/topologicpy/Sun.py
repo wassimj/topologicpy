@@ -148,7 +148,7 @@ class Sun:
         try:
             import ephem
         except ImportError as exc:
-            raise ImportError('Sun requires ephem. Install topologicpy[sun] in your environment.') from exc
+            raise ImportError('Sun requires ephem. Install it in this environment with: python -m pip install "topologicpy[sun]"') from exc
         return ephem
 
 
