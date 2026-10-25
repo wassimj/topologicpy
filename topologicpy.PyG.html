@@ -185,11 +185,29 @@ gradient_clip_norm=1.0</p>
 <col style="width: 90%" />
 </colgroup>
 <tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.BuildMSAHierarchy" title="topologicpy.PyG.PyG.BuildMSAHierarchy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BuildMSAHierarchy</span></code></a>(positions, edgeIndex[, ...])</p></td>
+<td><p>Build deterministic sparse, barrier-aware spectral graph coarsening.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.ByCFDDataset" title="topologicpy.PyG.PyG.ByCFDDataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByCFDDataset</span></code></a>(path, **kwargs)</p></td>
+<td><p>Load a previously exported CFD dataset using its increment/feature manifest.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.ByCFDPaths" title="topologicpy.PyG.PyG.ByCFDPaths"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByCFDPaths</span></code></a>(path, sequences[, velocityKey, ...])</p></td>
+<td><p>Import independent CFD file sequences and construct a trainable dataset.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.ByCFDSequences" title="topologicpy.PyG.PyG.ByCFDSequences"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByCFDSequences</span></code></a>(path, sequences[, timeStep, ...])</p></td>
+<td><p>Write/load fixed-mesh transient velocity trajectories as increment targets.</p></td>
+</tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.ByCSVPath" title="topologicpy.PyG.PyG.ByCSVPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByCSVPath</span></code></a>(path[, level, task, ...])</p></td>
 <td><p>Creates a <a class="reference internal" href="#topologicpy.PyG.PyG" title="topologicpy.PyG.PyG"><code class="xref py py-class docutils literal notranslate"><span class="pre">PyG</span></code></a> instance from a TopologicPy-exported CSV dataset folder.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.CrossValidate" title="topologicpy.PyG.PyG.CrossValidate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CrossValidate</span></code></a>([k_folds, epochs, batch_size])</p></td>
-<td><p>Perform k-fold cross-validation for graph-level tasks.</p></td>
+<td><p>Independent graph/group folds with fold-specific scalers and validation.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.EvaluatePhysics" title="topologicpy.PyG.PyG.EvaluatePhysics"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EvaluatePhysics</span></code></a>([split])</p></td>
+<td><p>Evaluate model outputs in physical units with mesh weights/boundary masks.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.EvaluateRollout" title="topologicpy.PyG.PyG.EvaluateRollout"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EvaluateRollout</span></code></a>(prediction, truth[, ...])</p></td>
+<td><p>Evaluate supplied physical rollout sequences [steps, samples, components].</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.LoadModel" title="topologicpy.PyG.PyG.LoadModel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LoadModel</span></code></a>(path[, strict, ...])</p></td>
 <td><p>Load model weights from disk.</p></td>
@@ -200,26 +218,38 @@ gradient_clip_norm=1.0</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.OntologyMetadata" title="topologicpy.PyG.PyG.OntologyMetadata"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OntologyMetadata</span></code></a>()</p></td>
 <td><p>Returns preserved ontology and semantic metadata for the loaded dataset.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.PlotConfusionMatrix" title="topologicpy.PyG.PyG.PlotConfusionMatrix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PlotConfusionMatrix</span></code></a>([split, normalize, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.PhysicsMetrics" title="topologicpy.PyG.PyG.PhysicsMetrics"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PhysicsMetrics</span></code></a>(prediction, truth[, weights, ...])</p></td>
+<td><p>Physical-unit scalar/vector errors, optional spatial weighting and boundaries.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.PlotConfusionMatrix" title="topologicpy.PyG.PyG.PlotConfusionMatrix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PlotConfusionMatrix</span></code></a>([split, normalize, ...])</p></td>
 <td><p>Returns a Plotly Figure of the confusion matrix of the inference.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.PlotCrossValidationSummary" title="topologicpy.PyG.PyG.PlotCrossValidationSummary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PlotCrossValidationSummary</span></code></a>([cv_report, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.PlotCrossValidationSummary" title="topologicpy.PyG.PyG.PlotCrossValidationSummary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PlotCrossValidationSummary</span></code></a>([cv_report, ...])</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.PlotHistory" title="topologicpy.PyG.PyG.PlotHistory"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PlotHistory</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.PlotHistory" title="topologicpy.PyG.PyG.PlotHistory"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PlotHistory</span></code></a>()</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.PlotParity" title="topologicpy.PyG.PyG.PlotParity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PlotParity</span></code></a>([split, title, xTitle, yTitle, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.PlotParity" title="topologicpy.PyG.PyG.PlotParity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PlotParity</span></code></a>([split, title, xTitle, yTitle, ...])</p></td>
 <td><p>Plot a parity / correlation plot for regression tasks by delegating to <code class="docutils literal notranslate"><span class="pre">Plotly.FigureByCorrelation</span></code>.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.Predict" title="topologicpy.PyG.PyG.Predict"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Predict</span></code></a>([split, threshold, return_logits, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.Predict" title="topologicpy.PyG.PyG.Predict"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Predict</span></code></a>([split, threshold, return_logits, ...])</p></td>
 <td><p>Run inference (prediction) using the current model on the loaded dataset.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.SaveModel" title="topologicpy.PyG.PyG.SaveModel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SaveModel</span></code></a>(path[, include_config])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.ReadCFDSequence" title="topologicpy.PyG.PyG.ReadCFDSequence"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ReadCFDSequence</span></code></a>(paths[, velocityKey, ...])</p></td>
+<td><p>Read a safe NPZ trajectory or fixed-mesh VTK/VTU files via optional meshio.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.RegisterModel" title="topologicpy.PyG.PyG.RegisterModel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RegisterModel</span></code></a>(name, factory)</p></td>
+<td><p>Register a factory(context)-&gt;nn.Module with forward(data)-&gt;prediction.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.SaveModel" title="topologicpy.PyG.PyG.SaveModel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SaveModel</span></code></a>(path[, include_config])</p></td>
 <td><p>Save the model to disk.</p></td>
 </tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.SetGraphData" title="topologicpy.PyG.PyG.SetGraphData"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetGraphData</span></code></a>(graphID, **attributes)</p></td>
+<td><p>Attach simulation inputs by source graph ID, independent of ontology metadata.</p></td>
+</tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.SetHyperparameters" title="topologicpy.PyG.PyG.SetHyperparameters"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetHyperparameters</span></code></a>(**kwargs)</p></td>
-<td><p>Set one or more configuration values (hyperparameters) on this instance.</p></td>
+<td><p>Apply validated settings to the active runner.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.Summary" title="topologicpy.PyG.PyG.Summary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Summary</span></code></a>()</p></td>
 <td><p>Return a compact summary of the current configuration and dataset size.</p></td>
@@ -227,14 +257,55 @@ gradient_clip_norm=1.0</p>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.Test" title="topologicpy.PyG.PyG.Test"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Test</span></code></a>()</p></td>
 <td><p>Compute metrics on the test split.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.Train" title="topologicpy.PyG.PyG.Train"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Train</span></code></a>([epochs, batch_size])</p></td>
-<td><p>Train the model using the current configuration.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.Train" title="topologicpy.PyG.PyG.Train"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Train</span></code></a>([epochs, batch_size, resume])</p></td>
+<td><p>Train deterministically within an isolated random context.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.Validate" title="topologicpy.PyG.PyG.Validate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Validate</span></code></a>()</p></td>
 <td><p>Compute metrics on the validation split.</p></td>
 </tr>
 </tbody>
 </table>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 52%" />
+<col style="width: 48%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><strong>Rollout</strong></p></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.PyG.PyG.BuildMSAHierarchy">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">BuildMSAHierarchy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">positions</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeIndex</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nClusters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ratio</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxClusters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">128</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">42</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.PyG.PyG.BuildMSAHierarchy" title="Permalink to this definition"></a></dt>
+<dd><p>Build deterministic sparse, barrier-aware spectral graph coarsening.</p>
+<p>Spatially weighted mesh adjacency defines affinity. Spectral seeds are
+expanded by graph shortest paths, guaranteeing connected clusters without
+crossing disconnected air regions. No dense fine-mesh affinity is created.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.PyG.PyG.ByCFDDataset">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByCFDDataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.PyG.PyG.ByCFDDataset" title="Permalink to this definition"></a></dt>
+<dd><p>Load a previously exported CFD dataset using its increment/feature manifest.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.PyG.PyG.ByCFDPaths">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByCFDPaths</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sequences</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">velocityKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'U'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">location</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'point'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundaryKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weightKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeStep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.PyG.PyG.ByCFDPaths" title="Permalink to this definition"></a></dt>
+<dd><p>Import independent CFD file sequences and construct a trainable dataset.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.PyG.PyG.ByCFDSequences">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByCFDSequences</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sequences</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeStep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.PyG.PyG.ByCFDSequences" title="Permalink to this definition"></a></dt>
+<dd><p>Write/load fixed-mesh transient velocity trajectories as increment targets.</p>
+<p>Each sequence is a dictionary or consolidated NPZ path. Boundary types are
+0=interior, 1=prescribed wall, 2=prescribed inlet, 3=outlet. Only types 1/2
+are enforced during rollout. All input fields use physical units.</p>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.PyG.PyG.ByCSVPath">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByCSVPath</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">level</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'graph'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'node'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'edge'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'link'</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'graph'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">task</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'classification'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'regression'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'link_prediction'</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'classification'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">graphLabelType</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'categorical'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'continuous'</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'categorical'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodeLabelType</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'categorical'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'continuous'</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'categorical'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeLabelType</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'categorical'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'continuous'</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'categorical'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ontology</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#topologicpy.PyG.PyG" title="topologicpy.PyG.PyG"><span class="pre">PyG</span></a></span></span><a class="headerlink" href="#topologicpy.PyG.PyG.ByCSVPath" title="Permalink to this definition"></a></dt>
@@ -305,53 +376,28 @@ feature columns are found.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.PyG.PyG.CrossValidate">
-<span class="sig-name descname"><span class="pre">CrossValidate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">k_folds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epochs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#topologicpy.PyG.PyG.CrossValidate" title="Permalink to this definition"></a></dt>
-<dd><p>Perform k-fold cross-validation for graph-level tasks.</p>
-<p>This method rebuilds and retrains a fresh model per fold, evaluates on the fold’s
-held-out set, and returns fold-wise metrics along with mean/std aggregates.</p>
-<dl class="field-list">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>k_folds</strong><span class="classifier">int, optional</span></dt><dd><p>Number of folds. Defaults to <code class="docutils literal notranslate"><span class="pre">config.k_folds</span></code>.</p>
-</dd>
-<dt><strong>epochs</strong><span class="classifier">int, optional</span></dt><dd><p>Training epochs per fold. Defaults to <code class="docutils literal notranslate"><span class="pre">config.epochs</span></code>.</p>
-</dd>
-<dt><strong>batch_size</strong><span class="classifier">int, optional</span></dt><dd><p>Batch size for DataLoader. Defaults to <code class="docutils literal notranslate"><span class="pre">config.batch_size</span></code>.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl>
-<dt>dict</dt><dd><p>A dictionary of the form:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
-  <span class="s2">"fold_metrics"</span><span class="p">:</span> <span class="p">[{</span><span class="s2">"fold"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="o">...</span><span class="p">},</span> <span class="p">{</span><span class="s2">"fold"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="o">...</span><span class="p">},</span> <span class="o">...</span><span class="p">],</span>
-  <span class="s2">"mean_&lt;metric&gt;"</span><span class="p">:</span> <span class="o">...</span><span class="p">,</span>
-  <span class="s2">"std_&lt;metric&gt;"</span><span class="p">:</span> <span class="o">...</span>
-<span class="p">}</span>
-</pre></div>
-</div>
-</dd>
-</dl>
-</dd>
-<dt class="field-odd">Raises</dt>
-<dd class="field-odd"><dl class="simple">
-<dt>ValueError</dt><dd><p>If called for non-graph levels, or if <code class="docutils literal notranslate"><span class="pre">k_folds</span> <span class="pre">&lt;</span> <span class="pre">2</span></code>.</p>
-</dd>
-</dl>
-</dd>
-</dl>
-<p class="rubric">Notes</p>
-<ul class="simple">
-<li><p>Stratified folding is available for categorical graph labels when
-<code class="docutils literal notranslate"><span class="pre">config.k_stratify</span></code> is <code class="docutils literal notranslate"><span class="pre">True</span></code>.</p></li>
-<li><p>Cross-validation is intentionally limited to graph-level tasks; node/edge tasks
-typically rely on per-graph masks rather than splitting graphs.</p></li>
-</ul>
+<span class="sig-name descname"><span class="pre">CrossValidate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">k_folds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epochs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.PyG.PyG.CrossValidate" title="Permalink to this definition"></a></dt>
+<dd><p>Independent graph/group folds with fold-specific scalers and validation.</p>
+<p>Supports graph tasks and node/edge tasks using split_mode=’graph’. The
+caller’s trained model, data, optimizer, scalers, RNG and history are retained.
+Reports include fold memberships and fitted normalization statistics.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.PyG.PyG.EvaluatePhysics">
+<span class="sig-name descname"><span class="pre">EvaluatePhysics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">split</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'test'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.PyG.PyG.EvaluatePhysics" title="Permalink to this definition"></a></dt>
+<dd><p>Evaluate model outputs in physical units with mesh weights/boundary masks.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.PyG.PyG.EvaluateRollout">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">EvaluateRollout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prediction</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">truth</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weights</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundaryMask</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">componentNames</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeStep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.PyG.PyG.EvaluateRollout" title="Permalink to this definition"></a></dt>
+<dd><p>Evaluate supplied physical rollout sequences [steps, samples, components].</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.PyG.PyG.LoadModel">
-<span class="sig-name descname"><span class="pre">LoadModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rebuild_from_checkpoint</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.PyG.PyG.LoadModel" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">LoadModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rebuild_from_checkpoint</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trusted</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resume_training</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.PyG.PyG.LoadModel" title="Permalink to this definition"></a></dt>
 <dd><p>Load model weights from disk.</p>
 <p>This method is backward compatible with older <code class="docutils literal notranslate"><span class="pre">.pt</span></code> files that contain only
 a raw <code class="docutils literal notranslate"><span class="pre">state_dict</span></code>. If the file contains a checkpoint dict produced by
@@ -366,6 +412,13 @@ can be rebuilt automatically to match the saved architecture.</p>
 </dd>
 <dt><strong>rebuild_from_checkpoint</strong><span class="classifier">bool, optional</span></dt><dd><p>If True and the checkpoint contains saved config fields, rebuilds the model
 before loading weights. Default is True.</p>
+</dd>
+<dt><strong>trusted</strong><span class="classifier">bool, optional</span></dt><dd><p>Permit unrestricted deserialisation only after safe loading fails.
+Default is False. Enable only for a checkpoint from a trusted source.</p>
+</dd>
+<dt><strong>resume_training</strong><span class="classifier">bool, optional</span></dt><dd><p>Restore optimizer, random state, epoch/history and early-stopping
+continuation. Requires the same labelled dataset and split. Call
+Train(…, resume=True) to append additional epochs.</p>
 </dd>
 </dl>
 </dd>
@@ -410,6 +463,12 @@ sections. Metadata is keyed by graph index and graph id where possible.</p>
 </dl>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.PyG.PyG.PhysicsMetrics">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">PhysicsMetrics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prediction</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">truth</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weights</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundaryMask</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">componentNames</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.PyG.PyG.PhysicsMetrics" title="Permalink to this definition"></a></dt>
+<dd><p>Physical-unit scalar/vector errors, optional spatial weighting and boundaries.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -485,7 +544,7 @@ Predicted categories are displayed on the Y-Axis.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.PyG.PyG.PlotParity">
-<span class="sig-name descname"><span class="pre">PlotParity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">split</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'test'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xTitle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Actual</span> <span class="pre">Values'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yTitle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Predicted</span> <span class="pre">Values'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">showIdentity</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">showBestFit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dotSize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dotColor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'blue'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lineColor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'red'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">800</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">600</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">theme</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backgroundColor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'rgba(0,0,0,0)'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginLeft</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginRight</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginTop</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">40</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginBottom</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.PyG.PyG.PlotParity" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">PlotParity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">split</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'test'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xTitle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Actual</span> <span class="pre">Values'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yTitle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Predicted</span> <span class="pre">Values'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">showIdentity</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">showBestFit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dotSize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dotColor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'blue'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lineColor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'red'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">800</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">600</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">theme</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backgroundColor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'rgba(0,0,0,0)'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginLeft</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginRight</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginTop</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">40</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginBottom</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">component</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.PyG.PyG.PlotParity" title="Permalink to this definition"></a></dt>
 <dd><p>Plot a parity / correlation plot for regression tasks by delegating to
 <code class="docutils literal notranslate"><span class="pre">Plotly.FigureByCorrelation</span></code>.</p>
 <dl class="field-list simple">
@@ -659,7 +718,40 @@ Default is False.</p>
 <p>(or otherwise populated <code class="xref py py-attr docutils literal notranslate"><span class="pre">data_list</span></code>), and that
 <code class="xref py py-attr docutils literal notranslate"><span class="pre">model</span></code> is loaded/initialised (e.g., via
 <a class="reference internal" href="#topologicpy.PyG.PyG.Train" title="topologicpy.PyG.PyG.Train"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Train()</span></code></a> or <a class="reference internal" href="#topologicpy.PyG.PyG.LoadModel" title="topologicpy.PyG.PyG.LoadModel"><code class="xref py py-meth docutils literal notranslate"><span class="pre">LoadModel()</span></code></a>).
-- For classification tasks, the returned class indices follow the encoding present in the CSV labels.</p>
+- Classification <code class="docutils literal notranslate"><span class="pre">pred</span></code> and <code class="docutils literal notranslate"><span class="pre">y_true</span></code> contain original CSV labels.</p>
+<blockquote>
+<div><p><code class="docutils literal notranslate"><span class="pre">class_index</span></code> / <code class="docutils literal notranslate"><span class="pre">y_true_index</span></code> retain numeric indices, and
+<code class="docutils literal notranslate"><span class="pre">class_labels</span></code> defines probability and logit column order.</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.PyG.PyG.ReadCFDSequence">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ReadCFDSequence</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">paths</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">velocityKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'U'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">location</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'point'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundaryKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weightKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeStep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.PyG.PyG.ReadCFDSequence" title="Permalink to this definition"></a></dt>
+<dd><p>Read a safe NPZ trajectory or fixed-mesh VTK/VTU files via optional meshio.</p>
+<p>NPZ keys: positions[N,2/3], edge_index[2,E], velocity[T,N,2/3], with optional
+times[T], boundary_type[N], weights[N], graph_features[T,G] and
+extra_node_features[N,F]. VTK data can be point- or cell-centred; mesh identity
+and node/cell ordering must remain fixed across the supplied files.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.PyG.PyG.RegisterModel">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RegisterModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">factory</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.PyG.PyG.RegisterModel" title="Permalink to this definition"></a></dt>
+<dd><p>Register a factory(context)-&gt;nn.Module with forward(data)-&gt;prediction.</p>
+<p>The returned module may alternatively return a dictionary with ‘prediction’
+and optional ‘embedding’ tensors. Factories are registered by name in each
+process; executable Python code is never serialized into a checkpoint.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.PyG.PyG.Rollout">
+<span class="sig-name descname"><span class="pre">Rollout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graphID</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">steps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeStep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundaryValues</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">graphFeatures</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reference</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.PyG.PyG.Rollout" title="Permalink to this definition"></a></dt>
+<dd><p>Autoregress physical velocities from a fixed mesh, predicting increments.</p>
+<p>Boundary values, if supplied, are physical [steps,nodes,components] next-step
+Dirichlet velocities; omitted values hold the initial boundary state fixed.
+graphFeatures are physical [steps,graph_features]. Returned states include
+the initial field. Reference, if supplied, includes that initial state too.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -685,43 +777,41 @@ Default is True.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.PyG.PyG.SetGraphData">
+<span class="sig-name descname"><span class="pre">SetGraphData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graphID</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">attributes</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.PyG.PyG.SetGraphData" title="Permalink to this definition"></a></dt>
+<dd><p>Attach simulation inputs by source graph ID, independent of ontology metadata.</p>
+<p>Accepted attributes are pos, boundary_mask, node_weight, edge_weight, time,
+dt and a hierarchy dictionary of tensors. Hierarchies are processed one
+graph per batch until a model provides a specialized hierarchy batch policy.</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.PyG.PyG.SetHyperparameters">
-<span class="sig-name descname"><span class="pre">SetHyperparameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">bool</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#topologicpy.PyG.PyG.SetHyperparameters" title="Permalink to this definition"></a></dt>
-<dd><p>Set one or more configuration values (hyperparameters) on this instance.</p>
-<p>This method updates <code class="xref py py-attr docutils literal notranslate"><span class="pre">config</span></code> fields using keyword
-arguments. If any <em>model-shaping</em> setting changes (e.g. <code class="docutils literal notranslate"><span class="pre">conv</span></code>, <code class="docutils literal notranslate"><span class="pre">hidden_dims</span></code>,
-<code class="docutils literal notranslate"><span class="pre">activation</span></code>, <code class="docutils literal notranslate"><span class="pre">dropout</span></code>, <code class="docutils literal notranslate"><span class="pre">batch_norm</span></code>, <code class="docutils literal notranslate"><span class="pre">residual</span></code>, <code class="docutils literal notranslate"><span class="pre">pooling</span></code>), the
-model is rebuilt automatically.</p>
+<span class="sig-name descname"><span class="pre">SetHyperparameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.PyG.PyG.SetHyperparameters" title="Permalink to this definition"></a></dt>
+<dd><p>Apply validated settings to the active runner.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>**kwargs</strong><span class="classifier">dict</span></dt><dd><p>Key/value pairs matching fields in <code class="xref py py-class docutils literal notranslate"><span class="pre">_RunConfig</span></code>.
-Unknown keys are ignored.</p>
+<dt><strong>**kwargs</strong><span class="classifier">dict</span></dt><dd><p>Configuration fields to update. Optimizer parameters take effect
+immediately. Architecture changes rebuild the model and optimizer.
+Changes to task, label types, inference mode, or CSV schema require
+a new instance. Link split changes also require a new instance.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>dict</dt><dd><p>A compact configuration summary (same as <a class="reference internal" href="#topologicpy.PyG.PyG.Summary" title="topologicpy.PyG.PyG.Summary"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Summary()</span></code></a>).</p>
+<dt>dict</dt><dd><p>The current <a class="reference internal" href="#topologicpy.PyG.PyG.Summary" title="topologicpy.PyG.PyG.Summary"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Summary()</span></code></a>.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-odd">Raises</dt>
 <dd class="field-odd"><dl class="simple">
-<dt>ValueError</dt><dd><p>If an attempted setting fails validation (e.g. malformed <code class="docutils literal notranslate"><span class="pre">split</span></code> or empty
-<code class="docutils literal notranslate"><span class="pre">hidden_dims</span></code>).</p>
+<dt>ValueError</dt><dd><p>An unknown, invalid, or unsupported setting was supplied.</p>
 </dd>
 </dl>
 </dd>
 </dl>
-<p class="rubric">Notes</p>
-<ul class="simple">
-<li><p>For graph-level tasks, changing <code class="docutils literal notranslate"><span class="pre">split</span></code> affects holdout splitting. You may
-want to call <a class="reference internal" href="#topologicpy.PyG.PyG.ByCSVPath" title="topologicpy.PyG.PyG.ByCSVPath"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ByCSVPath()</span></code></a> again (or re-instantiate)
-if you need a fresh split with new ratios.</p></li>
-<li><p>For node/edge tasks, masks are taken from CSV columns if present; otherwise
-they are generated using <code class="docutils literal notranslate"><span class="pre">split</span></code> ratios within each graph.</p></li>
-</ul>
 </dd></dl>
 
 <dl class="py method">
@@ -769,40 +859,11 @@ logging and reproducibility.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.PyG.PyG.Train">
-<span class="sig-name descname"><span class="pre">Train</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">epochs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#topologicpy.PyG.PyG.Train" title="Permalink to this definition"></a></dt>
-<dd><p>Train the model using the current configuration.</p>
-<p>Training behaviour depends on <code class="xref py py-attr docutils literal notranslate"><span class="pre">level</span></code>:</p>
-<ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">&quot;graph&quot;</span></code>: uses the current holdout split (train/val sets)</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">&quot;node&quot;</span></code> : uses in-graph boolean masks (<code class="docutils literal notranslate"><span class="pre">train_mask</span></code>, <code class="docutils literal notranslate"><span class="pre">val_mask</span></code>)</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">&quot;edge&quot;</span></code> : uses in-graph boolean masks (<code class="docutils literal notranslate"><span class="pre">edge_train_mask</span></code>, <code class="docutils literal notranslate"><span class="pre">edge_val_mask</span></code>)</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">&quot;link&quot;</span></code> : uses <code class="xref py py-class docutils literal notranslate"><span class="pre">torch_geometric.transforms.RandomLinkSplit</span></code> per graph</p></li>
-</ul>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>epochs</strong><span class="classifier">int, optional</span></dt><dd><p>If provided, overrides <code class="docutils literal notranslate"><span class="pre">config.epochs</span></code> for this run.</p>
-</dd>
-<dt><strong>batch_size</strong><span class="classifier">int, optional</span></dt><dd><p>If provided, overrides <code class="docutils literal notranslate"><span class="pre">config.batch_size</span></code> for this run. For node/edge/link
-tasks the loader uses <code class="docutils literal notranslate"><span class="pre">batch_size=1</span></code> (one graph at a time).</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>dict</dt><dd><p>Training history dictionary with keys <code class="docutils literal notranslate"><span class="pre">&quot;train_loss&quot;</span></code> and <code class="docutils literal notranslate"><span class="pre">&quot;val_loss&quot;</span></code>.
-Each value is a list of floats (one per epoch).</p>
-</dd>
-</dl>
-</dd>
-</dl>
-<p class="rubric">Notes</p>
-<ul class="simple">
-<li><p>For graph-level tasks, early stopping can be enabled via
-<code class="docutils literal notranslate"><span class="pre">config.early_stopping</span></code> and <code class="docutils literal notranslate"><span class="pre">config.early_stopping_patience</span></code>.</p></li>
-<li><p>For k-fold cross-validation on graph-level tasks, use
-<a class="reference internal" href="#topologicpy.PyG.PyG.CrossValidate" title="topologicpy.PyG.PyG.CrossValidate"><code class="xref py py-meth docutils literal notranslate"><span class="pre">CrossValidate()</span></code></a> instead.</p></li>
-</ul>
+<span class="sig-name descname"><span class="pre">Train</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">epochs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resume</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.PyG.PyG.Train" title="Permalink to this definition"></a></dt>
+<dd><p>Train deterministically within an isolated random context.</p>
+<p>epochs specifies additional epochs. resume=True preserves accumulated
+history/epoch count after LoadModel(…, resume_training=True) or an earlier
+Train call. Model weights and optimizer are retained on subsequent calls.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -831,6 +892,364 @@ Each value is a list of floats (one per epoch).</p>
 
 </dd></dl>
 
+<section id="usage-and-compatibility-notes">
+<h2>Usage and compatibility notes<a class="headerlink" href="#usage-and-compatibility-notes" title="Permalink to this heading"></a></h2>
+<ul class="simple">
+<li><p>Classification <code class="docutils literal notranslate"><span class="pre">Predict</span></code> results contain original CSV labels in <code class="docutils literal notranslate"><span class="pre">pred</span></code>
+and <code class="docutils literal notranslate"><span class="pre">y_true</span></code>. Numeric indices are available in <code class="docutils literal notranslate"><span class="pre">class_index</span></code> and
+<code class="docutils literal notranslate"><span class="pre">y_true_index</span></code>. <code class="docutils literal notranslate"><span class="pre">class_labels</span></code> gives the probability/logit column order.</p></li>
+<li><p>Use <code class="docutils literal notranslate"><span class="pre">ByCSVPath(path,</span> <span class="pre">inference=True,</span> <span class="pre">...)</span></code> for unlabelled input, then
+<code class="docutils literal notranslate"><span class="pre">LoadModel</span></code> with a full training checkpoint before predicting. Training and
+evaluation require a labelled instance. Masks are unnecessary for inference.</p></li>
+<li><p>Checkpoints preserve training feature order and categorical encoders. Missing
+required features raise <code class="docutils literal notranslate"><span class="pre">ValueError</span></code>. Features intentionally absent from a
+new dataset may be named in <code class="docutils literal notranslate"><span class="pre">optional_feature_columns</span></code> during training;
+only these columns are filled with zero when loading a checkpoint.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">LoadModel</span></code> uses safe deserialisation by default. Legacy checkpoints that
+require unrestricted deserialisation must be explicitly loaded with
+<code class="docutils literal notranslate"><span class="pre">trusted=True</span></code>, and only when their source is trusted.</p></li>
+<li><p>Graph features from <code class="docutils literal notranslate"><span class="pre">graphs.csv</span></code> are stored as one row per graph in <code class="docutils literal notranslate"><span class="pre">u</span></code>.
+A learned projection conditions node embeddings for every prediction level;
+graph predictions also concatenate these features with pooled embeddings.</p></li>
+<li><p>Edge features from <code class="docutils literal notranslate"><span class="pre">edges.csv</span></code> condition message passing in every backbone.
+GATv2 uses its native edge-aware attention. GraphSAGE and GCN add a learned
+edge-conditioned message residual, averaged over incoming neighbours. Edge
+prediction heads additionally concatenate each edge’s own attributes with its
+endpoint embeddings. Link prediction uses attributes on the observed message
+edges; held-out candidate edges do not supply attributes to the predictor.</p></li>
+<li><p>Existing node-only checkpoints remain compatible. Older checkpoints that
+supplied edge/graph features but ignored them require retraining; loading them
+now raises an explicit error. Coordinates must still be explicitly encoded as
+numeric features.</p></li>
+<li><p>Link prediction retains one seeded split for each graph. Split settings cannot
+be changed on a live instance; construct a new instance for a new experiment.
+Validation and test samples remain fixed across epochs and repeated calls.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">CrossValidate</span></code> honours <code class="docutils literal notranslate"><span class="pre">holdout_group_by</span></code> and creates a separate inner
+validation set when early stopping is enabled. It restores the caller’s model,
+optimizer and history, including when a fold fails. Fold reports include the
+train, validation and test indices for inspection.</p></li>
+<li><p>Early stopping is supported for graph, node, edge and link tasks. The best
+weights and optimizer state are restored. Empty evaluation splits raise an
+explicit error rather than returning misleading scores.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">SetHyperparameters</span></code> applies optimizer updates to the active optimizer and
+validates settings before use. Architecture changes rebuild the model;
+changes to the task, labels or CSV schema require a new instance. Unknown
+configuration keys now raise <code class="docutils literal notranslate"><span class="pre">ValueError</span></code>.</p></li>
+<li><p>Split ratios are honoured, including zero ratios. Counts use largest-remainder
+allocation; small datasets may have empty validation/test splits. Explicit
+masks must be valid booleans and mutually exclusive.</p></li>
+</ul>
+</section>
+<section id="regression-tests">
+<h2>Regression tests<a class="headerlink" href="#regression-tests" title="Permalink to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">tests/test_PyG.py</span></code> exercises real PyTorch/PyG training and prediction for all
+three backbones and graph/node/edge classification and regression, plus link
+prediction. It covers fixed link splits, safe checkpoint round trips, original
+label decoding, unlabelled inference, feature schemas, prediction attachment,
+configuration updates, grouped cross-validation, early stopping, invalid masks
+and synthetic learning convergence.</p>
+</section>
+<section id="graph-and-edge-feature-inputs">
+<h2>Graph and edge feature inputs<a class="headerlink" href="#graph-and-edge-feature-inputs" title="Permalink to this heading"></a></h2>
+<p>Use numeric columns with the configured feature prefix in each CSV. For example,
+<code class="docutils literal notranslate"><span class="pre">graphs.csv</span></code> may include <code class="docutils literal notranslate"><span class="pre">feat_inlet_speed</span></code> and <code class="docutils literal notranslate"><span class="pre">feat_temperature</span></code>;
+<code class="docutils literal notranslate"><span class="pre">edges.csv</span></code> may include <code class="docutils literal notranslate"><span class="pre">feat_distance</span></code> and <code class="docutils literal notranslate"><span class="pre">feat_aperture_area</span></code>. Existing
+<code class="docutils literal notranslate"><span class="pre">TGraph.ExportToCSV</span></code> options <code class="docutils literal notranslate"><span class="pre">graphFeaturesKeys</span></code> and <code class="docutils literal notranslate"><span class="pre">edgeFeaturesKeys</span></code>
+produce these inputs from graph and edge dictionaries. Feature dimensions are
+inferred automatically; no additional model flag is needed.</p>
+<p>Graph, node and edge classification/regression and link prediction all use the
+feature-aware encoder. Training, validation, testing, cross-validation, prediction
+and checkpoint reload share the same forward-input contract. Graph contexts are
+kept separate when multiple graphs are batched. Required/optional feature schema
+checks apply to graph and edge features as well as node features.</p>
+<p>The regression suite also verifies nonzero feature gradients, prediction changes
+when only graph or edge attributes change, batched-versus-independent results,
+feature-aware checkpoints and learning tasks where the only predictive signal is
+in graph or edge attributes.</p>
+</section>
+<section id="simulation-ready-training">
+<h2>Simulation-ready training<a class="headerlink" href="#simulation-ready-training" title="Permalink to this heading"></a></h2>
+<section id="vector-targets-and-complete-simulation-splits">
+<h3>Vector targets and complete simulation splits<a class="headerlink" href="#vector-targets-and-complete-simulation-splits" title="Permalink to this heading"></a></h3>
+<p>Regression accepts <code class="docutils literal notranslate"><span class="pre">target_columns</span></code> from the table corresponding to the
+prediction level. For example, node targets <code class="docutils literal notranslate"><span class="pre">vx</span></code>, <code class="docutils literal notranslate"><span class="pre">vy</span></code> and <code class="docutils literal notranslate"><span class="pre">vz</span></code> belong in
+<code class="docutils literal notranslate"><span class="pre">nodes.csv</span></code>. Multi-component predictions retain shape <code class="docutils literal notranslate"><span class="pre">[samples,</span> <span class="pre">components]</span></code>;
+scalar targets keep their existing one-dimensional output. Standard metrics also
+report each named component. <code class="docutils literal notranslate"><span class="pre">PlotParity(component=&quot;vx&quot;)</span></code> selects a component
+instead of combining unlike quantities in one scatter plot.</p>
+<p>For node/edge prediction, <code class="docutils literal notranslate"><span class="pre">split_mode=&quot;entity&quot;</span></code> retains the original within-graph
+masks. <code class="docutils literal notranslate"><span class="pre">split_mode=&quot;graph&quot;</span></code> holds out entire graphs and applies each graph’s
+split to all its node/edge targets, overriding per-entity CSV masks. Set
+<code class="docutils literal notranslate"><span class="pre">holdout_group_by=&quot;simulation_id&quot;</span></code> or a layout/building column in <code class="docutils literal notranslate"><span class="pre">graphs.csv</span></code>
+to keep every snapshot from a simulation or building in the same subset. Grouped
+cross-validation supports these whole-graph node/edge tasks too.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="n">PyG</span><span class="o">.</span><span class="n">ByCSVPath</span><span class="p">(</span>
+    <span class="n">path</span><span class="o">=</span><span class="s2">"airflow_dataset"</span><span class="p">,</span>
+    <span class="n">level</span><span class="o">=</span><span class="s2">"node"</span><span class="p">,</span> <span class="n">task</span><span class="o">=</span><span class="s2">"regression"</span><span class="p">,</span> <span class="n">nodeLabelType</span><span class="o">=</span><span class="s2">"continuous"</span><span class="p">,</span>
+    <span class="n">target_columns</span><span class="o">=</span><span class="p">(</span><span class="s2">"vx"</span><span class="p">,</span> <span class="s2">"vy"</span><span class="p">,</span> <span class="s2">"vz"</span><span class="p">),</span>
+    <span class="n">target_units</span><span class="o">=</span><span class="p">(</span><span class="s2">"m/s"</span><span class="p">,</span> <span class="s2">"m/s"</span><span class="p">,</span> <span class="s2">"m/s"</span><span class="p">),</span>
+    <span class="n">split_mode</span><span class="o">=</span><span class="s2">"graph"</span><span class="p">,</span> <span class="n">holdout_group_by</span><span class="o">=</span><span class="s2">"simulation_id"</span><span class="p">,</span>
+    <span class="n">normalize_features</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">normalize_targets</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">random_state</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">Train</span><span class="p">(</span><span class="n">epochs</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+<span class="n">metrics</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">Test</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+<section id="training-only-normalization">
+<h3>Training-only normalization<a class="headerlink" href="#training-only-normalization" title="Permalink to this heading"></a></h3>
+<p>Normalization is optional and disabled by default. Feature scalers and target
+scalers are fitted using training data only. Entity-split node/edge tasks use
+training masks for the corresponding feature/target rows; whole-graph tasks use
+only training graphs. Constant columns receive unit scale. Every cross-validation
+fold fits separate scalers using its own inner training subset, excluding both
+validation and test data. Inference uses the saved training scalers without
+refitting. <code class="docutils literal notranslate"><span class="pre">Predict</span></code> and metrics return targets/predictions in physical units;
+<code class="docutils literal notranslate"><span class="pre">return_logits=True</span></code> exposes the raw model outputs in training units.</p>
+<p>Full checkpoints store the scaler statistics and target names/units. Exporting
+raw weights with <code class="docutils literal notranslate"><span class="pre">include_config=False</span></code> is rejected when normalization is active
+because weights alone cannot reproduce preprocessing or physical-unit outputs.</p>
+</section>
+<section id="reproducibility-and-continuation">
+<h3>Reproducibility and continuation<a class="headerlink" href="#reproducibility-and-continuation" title="Permalink to this heading"></a></h3>
+<p>The seed controls model initialization, training sampling and dropout inside an
+isolated random context. Python, NumPy and PyTorch random states outside the
+runner are restored after training. Non-shuffling evaluation loaders use local
+random generators. <code class="docutils literal notranslate"><span class="pre">deterministic=True</span></code> additionally requests deterministic
+PyTorch algorithms; this may raise when an operation has no deterministic device
+implementation. CPU reproducibility is regression-tested; GPU execution is not.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">model</span><span class="o">.</span><span class="n">SaveModel</span><span class="p">(</span><span class="s2">"airflow.pt"</span><span class="p">)</span>
+<span class="n">continued</span> <span class="o">=</span> <span class="n">PyG</span><span class="o">.</span><span class="n">ByCSVPath</span><span class="p">(</span><span class="s2">"airflow_dataset"</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="s2">"node"</span><span class="p">,</span>
+                         <span class="n">task</span><span class="o">=</span><span class="s2">"regression"</span><span class="p">,</span> <span class="n">nodeLabelType</span><span class="o">=</span><span class="s2">"continuous"</span><span class="p">,</span>
+                         <span class="n">target_columns</span><span class="o">=</span><span class="p">(</span><span class="s2">"vx"</span><span class="p">,</span> <span class="s2">"vy"</span><span class="p">,</span> <span class="s2">"vz"</span><span class="p">))</span>
+<span class="n">continued</span><span class="o">.</span><span class="n">LoadModel</span><span class="p">(</span><span class="s2">"airflow.pt"</span><span class="p">,</span> <span class="n">resume_training</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">continued</span><span class="o">.</span><span class="n">Train</span><span class="p">(</span><span class="n">epochs</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">resume</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># additional epochs</span>
+</pre></div>
+</div>
+<p>The full checkpoint retains optimizer state, random states, epoch count/history,
+scalers and early-stopping continuation. Early stopping still exposes the best
+weights for prediction, while retaining the last training state for exact
+continuation. Resume requires the same labelled CSV data, split configuration
+and physical inputs; mismatches raise an error. Changing a trained experiment’s
+split/seed requires a new instance. Changing the seed before training rebuilds
+the model consistently.</p>
+</section>
+<section id="structured-inputs-and-model-factories">
+<h3>Structured inputs and model factories<a class="headerlink" href="#structured-inputs-and-model-factories" title="Permalink to this heading"></a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">PyG.RegisterModel(name,</span> <span class="pre">factory)</span></code> registers a named factory that receives a
+context dictionary with node/edge/graph/output dimensions, task, target names and
+units, position dimension and <code class="docutils literal notranslate"><span class="pre">model_options</span></code>. It returns a <code class="docutils literal notranslate"><span class="pre">torch.nn.Module</span></code>
+whose <code class="docutils literal notranslate"><span class="pre">forward(data)</span></code> returns a prediction tensor, or a dictionary containing
+<code class="docutils literal notranslate"><span class="pre">prediction</span></code> and optional <code class="docutils literal notranslate"><span class="pre">embedding</span></code>. Classification expects logits;
+regression expects training-unit outputs with the target component dimension.
+Link models receive the fixed query pairs in <code class="docutils literal notranslate"><span class="pre">data.edge_label_index</span></code>.</p>
+<p>The model receives a PyG <code class="docutils literal notranslate"><span class="pre">Data</span></code>/<code class="docutils literal notranslate"><span class="pre">Batch</span></code> with <code class="docutils literal notranslate"><span class="pre">x</span></code>, <code class="docutils literal notranslate"><span class="pre">edge_index</span></code>, optional
+<code class="docutils literal notranslate"><span class="pre">edge_attr</span></code> and <code class="docutils literal notranslate"><span class="pre">u</span></code>, plus any configured simulation fields:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">position_columns=(&quot;x&quot;,</span> <span class="pre">&quot;y&quot;,</span> <span class="pre">&quot;z&quot;)</span></code> in nodes.csv populates <code class="docutils literal notranslate"><span class="pre">data.pos</span></code>.
+All configured coordinate columns must be present or all absent. The default
+backbone does not implicitly add these coordinates to numeric node features.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">node_weight_column</span></code> and <code class="docutils literal notranslate"><span class="pre">edge_weight_column</span></code> populate physical integration
+weights, such as cell volumes or face areas. Weights are finite and nonnegative.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">boundary_column</span></code> populates <code class="docutils literal notranslate"><span class="pre">boundary_mask</span></code> from explicit booleans.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">time_column</span></code> and <code class="docutils literal notranslate"><span class="pre">time_step_column</span></code> in graphs.csv populate <code class="docutils literal notranslate"><span class="pre">time</span></code> and
+positive <code class="docutils literal notranslate"><span class="pre">dt</span></code>. Their defaults are <code class="docutils literal notranslate"><span class="pre">time</span></code> and <code class="docutils literal notranslate"><span class="pre">dt</span></code>.</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">SetGraphData(source_graph_id,</span> <span class="pre">...)</span></code> can also attach positions, masks, weights,
+time, time step and a tensor dictionary named <code class="docutils literal notranslate"><span class="pre">hierarchy</span></code>. A supplied hierarchy
+forces one graph per batch so coarse indices never receive incorrect fine-node
+batch offsets. This carries externally constructed hierarchies; it does not
+construct an MSA-GNN hierarchy. Attached inputs are retained in checkpoints and
+restored for matching CSV data. New inference geometry retains its own inputs.</p>
+<p>Factories must be registered by the application before loading a custom model’s
+checkpoint. Checkpoints contain the factory name/options and weights, never
+executable factory code. Built-in GraphSAGE/GCN/GATv2 models remain the default.</p>
+</section>
+<section id="physical-evaluation">
+<h3>Physical evaluation<a class="headerlink" href="#physical-evaluation" title="Permalink to this heading"></a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">EvaluatePhysics(split=&quot;test&quot;)</span></code> evaluates regression predictions in physical
+units, using configured mesh weights and boundary masks. It returns component
+MAE/RMSE/R-squared, vector errors and boundary-specific errors, plus declared
+units. <code class="docutils literal notranslate"><span class="pre">PhysicsMetrics(prediction,</span> <span class="pre">truth,</span> <span class="pre">...)</span></code> applies the same checks to
+external arrays.</p>
+<p><code class="docutils literal notranslate"><span class="pre">EvaluateRollout(prediction,</span> <span class="pre">truth,</span> <span class="pre">weights=...,</span> <span class="pre">boundaryMask=...,</span>
+<span class="pre">componentNames=...,</span> <span class="pre">timeStep=...)</span></code> assesses supplied time-major sequences. It
+reports per-step metrics, accumulated physical times and RMSE growth. This is
+rollout evaluation; an autoregressive simulator will be implemented with MSA-GNN.</p>
+</section>
+<section id="strict-input-identities">
+<h3>Strict input identities<a class="headerlink" href="#strict-input-identities" title="Permalink to this heading"></a></h3>
+<p>CSV loading rejects duplicate graph records, duplicate node IDs within a graph,
+missing identity values, orphan graph references and edges with unknown endpoints.
+Parallel edges remain allowed. Prediction outputs retain source graph IDs and
+node/edge identities independently of ontology metadata.</p>
+<p><code class="docutils literal notranslate"><span class="pre">tests/test_PyG_simulation.py</span></code> covers these APIs, including exact resumed versus
+uninterrupted CPU training with dropout, early-stopping continuation, vector
+regression, fold-specific scalers and weighted physical metrics.</p>
+</section>
+</section>
+<section id="msa-gnn-airflow-surrogate">
+<h2>MSA-GNN airflow surrogate<a class="headerlink" href="#msa-gnn-airflow-surrogate" title="Permalink to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">model_name=&quot;msa_gnn&quot;</span></code> selects the built-in multi-scale attention model; no
+manual factory registration is required. It is intended for node-level velocity
+increment regression on fixed airflow meshes, with two or three target components.
+The default architecture uses a latent width of 128, four processor blocks, two
+attention heads and GRU aggregation.</p>
+<p>The encoder combines current node features, normalized geometric coordinates,
+graph conditions and the physical prediction interval. Edge encoding uses relative
+positions/distances plus supplied edge attributes. Each processor performs local
+fine-graph message passing, cluster aggregation, coarse-graph message passing,
+coarse self-attention and a feed-forward residual, followed by learned fine-node
+reconstruction with a skip connection. The decoder predicts velocity increments.</p>
+<p>This is a paper-inspired implementation, not a claim of reproducing the paper’s
+numerical results. Deliberate choices include sparse barrier-aware coarsening,
+connected shortest-path cluster assignment, deterministic geometric ordering for
+GRU inputs, and fine/coarse processing with skip reconstruction in each block.
+Message aggregation uses degree-normalized incoming sums. Benchmark these choices
+on the intended CFD dataset before drawing accuracy or speed conclusions.</p>
+<section id="hierarchy-construction">
+<h3>Hierarchy construction<a class="headerlink" href="#hierarchy-construction" title="Permalink to this heading"></a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">BuildMSAHierarchy(positions,</span> <span class="pre">edgeIndex,</span> <span class="pre">nClusters=None,</span> <span class="pre">ratio=.1,</span>
+<span class="pre">maxClusters=128,</span> <span class="pre">seed=42)</span></code> constructs a reusable hierarchy. Affinity exists only
+on physical mesh edges and is weighted by distance. Sparse spectral embeddings
+choose cluster seeds, then shortest-path assignment produces connected clusters.
+Disconnected air regions remain separate. Attention is masked between disconnected
+components. No dense fine-mesh affinity matrix is constructed.</p>
+<p>The returned tensor dictionary contains cluster assignments, coarse edges and
+positions, component IDs, and deterministic within-group membership order. The
+runner caches it by geometry, connectivity and coarsening settings. Hierarchies
+and settings are checkpointed; changed automatic coarsening settings rebuild the
+hierarchy. Explicit external hierarchies are respected and validated. One scene
+is processed per batch so unrelated scenes cannot share attention or coarse-index
+offsets. Packed GRU aggregation materializes only actual hidden-state vectors,
+not a dense cluster-count by maximum-group-length feature array.</p>
+</section>
+<section id="cfd-sequence-adapters">
+<h3>CFD sequence adapters<a class="headerlink" href="#cfd-sequence-adapters" title="Permalink to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">sequences</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">{</span>
+        <span class="s2">"positions"</span><span class="p">:</span> <span class="n">positions</span><span class="p">,</span>           <span class="c1"># [nodes, 2 or 3]</span>
+        <span class="s2">"edge_index"</span><span class="p">:</span> <span class="n">mesh_edges</span><span class="p">,</span>         <span class="c1"># [2, edges], integer</span>
+        <span class="s2">"velocity"</span><span class="p">:</span> <span class="n">velocities</span><span class="p">,</span>           <span class="c1"># [frames, nodes, 2 or 3], physical units</span>
+        <span class="s2">"times"</span><span class="p">:</span> <span class="n">times</span><span class="p">,</span>                   <span class="c1"># [frames], strictly increasing</span>
+        <span class="s2">"boundary_type"</span><span class="p">:</span> <span class="n">boundary_types</span><span class="p">,</span>  <span class="c1"># 0 interior, 1 wall, 2 inlet, 3 outlet</span>
+        <span class="s2">"weights"</span><span class="p">:</span> <span class="n">cell_volumes</span><span class="p">,</span>          <span class="c1"># [nodes]; optional</span>
+        <span class="s2">"graph_features"</span><span class="p">:</span> <span class="n">inlet_settings</span><span class="p">,</span> <span class="c1"># [frames, graph_features]; optional</span>
+    <span class="p">},</span>
+    <span class="c1"># Independent simulations may use different fixed meshes/node counts.</span>
+<span class="p">]</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">PyG</span><span class="o">.</span><span class="n">ByCFDSequences</span><span class="p">(</span>
+    <span class="s2">"airflow_dataset"</span><span class="p">,</span> <span class="n">sequences</span><span class="p">,</span>
+    <span class="n">model_options</span><span class="o">=</span><span class="p">{</span><span class="s2">"latent_dim"</span><span class="p">:</span> <span class="mi">128</span><span class="p">,</span> <span class="s2">"processor_blocks"</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+                   <span class="s2">"attention_heads"</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">"noise_std"</span><span class="p">:</span> <span class="mf">.01</span><span class="p">,</span>
+                   <span class="s2">"rollout_steps"</span><span class="p">:</span> <span class="mi">3</span><span class="p">},</span>
+    <span class="n">epochs</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">use_gpu</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">Train</span><span class="p">()</span>
+<span class="n">model</span><span class="o">.</span><span class="n">SaveModel</span><span class="p">(</span><span class="s2">"airflow.pt"</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The adapter writes graphs.csv, nodes.csv, edges.csv and msa_manifest.json. It
+creates consecutive velocity-increment targets and stores the current velocities,
+static boundary-type encodings and optional static extra_node_features. It makes
+mesh connections bidirectional and assigns opposite displacement vectors to
+opposite directions. Graph conditions can be numeric arrays or a dictionary of
+named scalar/time-varying conditions; named schemas must match across simulations.</p>
+<p>Default splitting is 60/20/20 by simulation_id, with training-only feature/target
+normalization. Requested nonzero graph holdouts receive a sample/group when the
+number of independent groups permits. Fewer independent simulations may leave
+some evaluation splits empty; evaluation then raises rather than inventing scores.
+Node integration weights default to uniform weights when actual weights are not
+provided; uniform weights are not estimates of physical cell volumes.</p>
+<p><code class="docutils literal notranslate"><span class="pre">ReadCFDSequence(&quot;simulation.npz&quot;)</span></code> reads consolidated NumPy trajectories using
+allow_pickle=False. <code class="docutils literal notranslate"><span class="pre">ReadCFDSequence(frame_paths,</span> <span class="pre">velocityKey=&quot;U&quot;,</span>
+<span class="pre">location=&quot;point&quot;,</span> <span class="pre">boundaryKey=None,</span> <span class="pre">weightKey=None,</span> <span class="pre">timeStep=.1)</span></code> reads ordered
+VTK/VTU files using optional meshio. Supported linear cells are line, triangle,
+quad, tetra, hexahedron, wedge and pyramid. Cell mode creates cell-centre nodes and
+face-sharing adjacency, retaining cell-centred field values. Point mode retains
+point fields and mesh edges. Unknown cell types, missing fields and changing mesh
+identity/order are rejected. Supply integration weights through a field or the
+sequence dictionary; they are not inferred from cell geometry.</p>
+<p><code class="docutils literal notranslate"><span class="pre">ByCFDPaths</span></code> imports independent lists of CFD frame paths and delegates to the
+same adapter. <code class="docutils literal notranslate"><span class="pre">ByCFDDataset(path)</span></code> reloads an exported dataset using its saved
+schema, split and model options. To resume, load a full checkpoint with
+resume_training=True and then call Train(…, resume=True). overwrite=True replaces
+only the adapter’s four named dataset files and leaves unrelated files intact.
+The current CSV/PyG data path is memory-resident; large production CFD datasets
+must fit the available memory. Remeshing, native OpenFOAM case parsing, thermal
+fields and moving geometric boundaries are outside this first implementation.</p>
+</section>
+<section id="training-and-ablations">
+<h3>Training and ablations<a class="headerlink" href="#training-and-ablations" title="Permalink to this heading"></a></h3>
+<p>Optional noise_std perturbs current velocity input features during training,
+leaving prescribed boundaries unchanged. Target increments are corrected for the
+same physical perturbation, including when input/target scalers differ. A value
+of zero disables noise.</p>
+<p>rollout_steps=1 uses ordinary one-step training. Larger values train differentiable
+short autoregressive windows, using actual next-frame conditions and reapplying
+known boundaries. Entire simulations must stay in one split. rollout_loss_decay
+weights later steps; its default is 1. Validation/early stopping currently uses
+one-step validation loss, while EvaluateRollout measures long-horizon behaviour.</p>
+<p>Options attention=False and multiscale=False support ablations. aggregation=”mean”
+replaces GRU aggregation. For a controlled architecture comparison, use identical
+sequences, splits, normalization, training budgets and one-step protocols. The
+existing feature-aware GNN can use the same exported increment dataset by loading
+it with model_name=”default”.</p>
+<p>Supported model_options are latent_dim, processor_blocks, attention_heads,
+max_coarse_nodes, n_clusters, coarsening_ratio, aggregation, attention, multiscale,
+dropout, noise_std, rollout_steps, rollout_loss_decay, velocity_feature_columns,
+time_steps and allow_unseen_time_step. The adapter supplies velocity-column and
+time-step metadata automatically. Manual CSV users must provide velocity-column
+metadata before using input noise or autoregressive rollout.</p>
+</section>
+<section id="physical-rollout">
+<h3>Physical rollout<a class="headerlink" href="#physical-rollout" title="Permalink to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">result</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">Rollout</span><span class="p">(</span>
+    <span class="n">graphID</span><span class="o">=</span><span class="n">initial_graph_id</span><span class="p">,</span> <span class="n">steps</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span>
+    <span class="n">boundaryValues</span><span class="o">=</span><span class="n">prescribed_next_velocities</span><span class="p">,</span>  <span class="c1"># [steps, nodes, components]</span>
+    <span class="n">graphFeatures</span><span class="o">=</span><span class="n">known_inlet_conditions</span><span class="p">,</span>       <span class="c1"># [steps, graph_features]</span>
+    <span class="n">reference</span><span class="o">=</span><span class="n">reference_sequence</span><span class="p">,</span>               <span class="c1"># optional, includes initial state</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>Rollout repeatedly predicts an increment, restores physical units, updates velocity,
+applies prescribed wall/inlet values and re-encodes the next input. Type-3 outlets
+are not clamped. Omitted boundaryValues hold the initial prescribed boundary values
+fixed. Only prescribed boundary entries are used, even when full-node arrays are
+supplied. Graph conditions and boundary values are caller-known inputs, not
+predicted future interior reference values.</p>
+<p>Returned velocity contains the initial field followed by every predicted field;
+increments, physical times, source node IDs and the boundary mask are also returned.
+With reference supplied, physical component/vector/weighted/boundary errors and
+error growth are added. Inputs are cloned and model mode is restored. Non-finite
+rollouts raise. Prediction intervals absent from training are rejected unless the
+caller explicitly opts into allow_unseen_time_step=True; doing so does not establish
+accuracy at that interval. Boundaries are enforced, but no pressure projection or
+explicit incompressibility/PDE constraint is imposed.</p>
+</section>
+<section id="example-and-regression-tests">
+<h3>Example and regression tests<a class="headerlink" href="#example-and-regression-tests" title="Permalink to this heading"></a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">examples/msa_gnn_airflow.py</span></code> trains on clearly labelled synthetic discrete
+flow dynamics, saves a checkpoint and rollout arrays, and writes a self-contained
+HTML preview. Run with –compare for the feature-aware GNN and no-attention
+multi-scale baselines under shared one-step protocols. Run separately with
+–training-rollout-steps 3 to exercise short-rollout training. Synthetic examples
+are implementation demonstrations, not CFD or real-building validation.</p>
+<p><code class="docutils literal notranslate"><span class="pre">tests/test_PyG_MSA.py</span></code> checks sparse connected clustering, permutation behaviour,
+attention gradients, packed GRU correctness, learning, two/three-component fields,
+VTK/VTU and safe NPZ ingestion, boundary conditions, long rollouts, ablations,
+noise correction, exact multi-step checkpoint continuation and reload settings.</p>
+</section>
+<section id="optional-dependencies">
+<h3>Optional dependencies<a class="headerlink" href="#optional-dependencies" title="Permalink to this heading"></a></h3>
+<p>From this source checkout, install the learning and VTK/VTU reader dependencies
+explicitly with <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span> <span class="pre">pip</span> <span class="pre">install</span> <span class="pre">-e</span> <span class="pre">&quot;.[pyg,cfd]&quot;</span></code>. The pyg extra supplies
+PyTorch, PyTorch Geometric and scikit-learn; cfd supplies meshio. NumPy, SciPy,
+pandas and Plotly are core dependencies. No import or method installs packages.
+NPZ/in-memory sequence adapters do not require meshio.</p>
+</section>
+</section>
 </section>
 
 
