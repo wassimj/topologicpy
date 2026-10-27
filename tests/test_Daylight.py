@@ -221,3 +221,48 @@ def test_different_domain_rejected(model):
     shifted = dict(b, grid=g, gridId=g['gridId'])
     with pytest.raises(ValueError, match='domain shapes'):
         Daylight.Convergence(b, shifted)
+
+def test_room_identity_survives_native_preparation(model):
+    r, grid, original, _ = model
+    # On TopologicCore, sectioning/meshing adds representation data to the
+    # shared room shape. Its physical boundaries and apertures remain unchanged.
+    Daylight.PrepareScene([r])
+    Daylight.WorkingPlane(r['cell'], height=1.1)
+    repeated = Daylight.Waldram(r, Daylight.PrepareScene([]), grid=grid, resolution='low')
+    assert repeated['roomId'] == original['roomId']
+    assert Daylight.Compare(original, repeated)['percentagePointChange'] == 0
+
+
+def test_scene_identity_ignores_serialization_and_face_order():
+    points = [(0, 0, 1), (2, 0, 1), (2, 2, 1), (0, 2, 1)]
+    a = polygon(points)
+    b = polygon([(x, y, z+2) for x, y, z in points])
+    first = Daylight.PrepareScene([a, b])
+    Topology.Tessellate(a, silent=True)
+    assert Daylight.PrepareScene([b, a])['sceneId'] == first['sceneId']
+    reordered = polygon(list(reversed(points[1:] + points[:1])))
+    assert Daylight.PrepareScene([reordered, b])['sceneId'] == first['sceneId']
+    moved = Topology.Translate(b, z=.1)
+    assert Daylight.PrepareScene([a, moved])['sceneId'] != first['sceneId']
+
+
+def test_window_changes_still_reject_comparison(model):
+    _, grid, original, _ = model
+    cell = room(False)['cell']
+    small_window = polygon([(1.5, 0, 1), (2.5, 0, 1), (2.5, 0, 2), (1.5, 0, 2)])
+    cell = Topology.AddApertures(cell, [small_window], subTopologyType='face')
+    altered = Daylight.Waldram(Daylight.PrepareRoom(cell), Daylight.PrepareScene([]), grid=grid, resolution='low')
+    assert altered['roomId'] != original['roomId']
+    with pytest.raises(ValueError, match='Incompatible'):
+        Daylight.Compare(original, altered)
+    with pytest.raises(ValueError, match='Different room'):
+        Daylight.Convergence(original, altered)
+
+
+def test_scene_identity_preserves_aperture_holes():
+    outer = Face.ExternalBoundary(polygon([(0,0,1), (3,0,1), (3,3,1), (0,3,1)]))
+    small_hole = Face.ExternalBoundary(polygon([(1,1,1), (2,1,1), (2,2,1), (1,2,1)]))
+    large_hole = Face.ExternalBoundary(polygon([(.5,.5,1), (2.5,.5,1), (2.5,2.5,1), (.5,2.5,1)]))
+    a = Daylight.PrepareScene([Face.ByWires(outer, [small_hole])])
+    b = Daylight.PrepareScene([Face.ByWires(outer, [large_hole])])
+    assert a['sceneId'] != b['sceneId']

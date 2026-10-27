@@ -138,6 +138,13 @@ omitted. This is an explanatory sampled diagram, not an exact silhouette.
 Records and persistence
 -----------------------
 
+Geometry identities use canonical planar polygon boundaries rather than BREP
+serialization text, which can change when native preparation updates internal
+representation data. Ring start/winding and Face/hole ordering are ignored;
+coordinates are rounded to nine decimal places in model units. Grid identities
+retain sensor/cell ordering. Aperture holes and window geometry remain part of
+the identity, so genuinely different assessments are still rejected.
+
 Prepared rooms, grids and scenes are snapshots, immutable by convention.
 Rebuild after edits; do not change record arrays or geometry in place.
 Results retain method version, identities, coordinates, areas, settings,

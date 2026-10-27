@@ -36,6 +36,35 @@ class Daylight:
         return [topology] if Topology.IsInstance(topology, 'Face') else Topology.Faces(topology, silent=True) or []
 
     @staticmethod
+    def _GeometryKey(topology):
+        """Canonical boundary identity for the supported planar polygon geometry.
+
+        BREP text is unsuitable: native preparation may change p-curves or mesh
+        caches without changing the boundary. Ignore ring starts/winding, hole
+        order and Face enumeration. Round coordinates to nine decimal places
+        (model units); keep aperture geometry separate from the room envelope.
+        """
+        from topologicpy.Face import Face
+        from topologicpy.Wire import Wire
+        from topologicpy.Vertex import Vertex
+
+        def ring_key(wire):
+            points = tuple(tuple(0.0 if round(float(x), 9) == 0 else round(float(x), 9) for x in Vertex.Coordinates(v))
+                           for v in Wire.Vertices(wire))
+            if not points:
+                raise ValueError('Cannot fingerprint an empty boundary')
+            candidates = []
+            for sequence in (points, tuple(reversed(points))):
+                smallest = min(sequence)
+                candidates.extend(sequence[i:] + sequence[:i]
+                                  for i, point in enumerate(sequence) if point == smallest)
+            return min(candidates)
+
+        return tuple(sorted((ring_key(Face.ExternalBoundary(face)),
+                             tuple(sorted(ring_key(w) for w in Face.InternalBoundaries(face) or [])))
+                            for face in Daylight._Faces(topology)))
+
+    @staticmethod
     def _Resolution(resolution):
         levels = ('low', 'medium', 'high', 'very_high')
         if resolution not in levels:
@@ -189,7 +218,7 @@ class Daylight:
         expected = sum((Face.Area(f, mantissa=12) for f in faces))
         if abs(sum(areas) - expected) > max(tol * tol * 10, expected * 1e-06):
             raise ValueError('Grid area not conserved')
-        payload = repr((Daylight._XYZ(vertices).tolist(), areas, [Topology.BREPString(f) for f in cells]))
+        payload = repr((Daylight._XYZ(vertices).round(9).tolist(), [round(a, 12) for a in areas], [Daylight._GeometryKey(f) for f in cells]))
         return dict(
             kind='DaylightGrid',
             faces=faces,
@@ -230,7 +259,7 @@ class Daylight:
         for f in faces:
             Daylight._PlanarPolygon(f, tol)
         bvh = BVH.PrepareScene(faces, tolerance=tol)
-        identity = hashlib.sha256(''.join((Topology.BREPString(f) for f in faces)).encode()).hexdigest()
+        identity = hashlib.sha256(repr(sorted(Daylight._GeometryKey(f) for f in faces)).encode()).hexdigest()
         return dict(kind='DaylightScene', bvh=bvh, sceneId=identity, tolerance=tol, faceCount=len(faces))
 
     @staticmethod
@@ -394,7 +423,7 @@ class Daylight:
             gridId=grid['gridId'],
             values=values,
             sceneId=scene['sceneId'],
-            roomId=hashlib.sha256((Topology.BREPString(room['cell']) + ''.join((Topology.BREPString(w) for w in room['apertures']))).encode()).hexdigest(),
+            roomId=hashlib.sha256(repr((Daylight._GeometryKey(room['cell']), sorted(Daylight._GeometryKey(w) for w in room['apertures']))).encode()).hexdigest(),
             assumptions=['Direct uniform sky', 'No glazing or frame losses', 'No reflected light'],
             warnings=list(room['warnings']),
             areaMethod='piecewise-constant clipped cells',
