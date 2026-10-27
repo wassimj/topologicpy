@@ -12,6 +12,29 @@ All distances use model units; the examples assume metres. Factors and
 thresholds use **percent**: ``threshold=0.2`` means 0.2%, not 20%.
 A percentage-point change is distinct from a relative percentage change.
 
+Window host matching
+--------------------
+
+``Daylight.ApertureHosts(window, topologies)`` returns all fully containing
+host walls as ``topologyIndex`` / ``faceIndex`` records. An empty list means
+no host, and multiple records retain ambiguity for the caller to resolve.
+Geometric coplanarity uses native normals and plane-distance checks in both
+directions, independent of normal orientation or fitted eigenvector sign.
+Native intersection-area validation retains wall holes and concave boundaries.
+``PrepareRoom`` uses the same predicate for validating its windows. The app
+uses this API for matching instead of duplicating the geometry calculation.
+
+Explicit window handoff
+-----------------------
+
+``PrepareRoom(cell, apertures=windows)`` accepts an authoritative list or tuple
+of native window Faces. Use this after ``Topology.AddApertures`` when a native
+wrapper cannot recover contents attached to transient wall objects. Every
+window still undergoes the same unique coplanar-host containment check and
+area-checked opening cut. No alternate geometry solver or unvalidated opening
+is introduced. ``apertures=None`` retains attached-aperture discovery;
+``apertures=[]`` deliberately prepares an opaque room.
+
 Quick start
 -----------
 

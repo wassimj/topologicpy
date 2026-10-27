@@ -94,10 +94,63 @@ class Daylight:
                 raise ValueError('Only straight polygon boundaries supported')
 
     @staticmethod
-    def PrepareRoom(cell, *, tolerance=0.0001):
+    def _CoplanarFaces(a, b, tolerance):
+        """Geometric plane coincidence independent of fitted-plane coefficient sign."""
+        import numpy as np
+        from topologicpy.Face import Face
+        from topologicpy.Topology import Topology
+        na=np.asarray(Face.Normal(a,mantissa=12),dtype=float)
+        nb=np.asarray(Face.Normal(b,mantissa=12),dtype=float)
+        la,lb=np.linalg.norm(na),np.linalg.norm(nb)
+        if la<1e-12 or lb<1e-12:return False
+        na,nb=na/la,nb/lb
+        if np.linalg.norm(np.cross(na,nb))>tolerance:return False
+        pa=Daylight._XYZ(Topology.Vertices(a));pb=Daylight._XYZ(Topology.Vertices(b))
+        return bool(np.max(np.abs((pb-pa[0])@na))<=tolerance and
+                    np.max(np.abs((pa-pb[0])@nb))<=tolerance)
+
+    @staticmethod
+    def _ContainingWalls(aperture, walls, tolerance):
+        from topologicpy.Topology import Topology
+        from topologicpy.Face import Face
+        area=Face.Area(aperture,mantissa=12)
+        candidates=[]
+        for i,wall in enumerate(walls):
+            if not Daylight._CoplanarFaces(aperture,wall,tolerance):continue
+            common=Topology.Intersect(aperture,wall,tolerance=tolerance,silent=True)
+            covered=sum(Face.Area(f,mantissa=12) for f in Daylight._Faces(common))
+            if abs(covered-area)<=max(tolerance*tolerance,area*1e-7):candidates.append(i)
+        return candidates
+
+    @staticmethod
+    def ApertureHosts(aperture, topologies, *, tolerance=0.0001):
+        """Return containing host indices for a planar window Face.
+
+        Each record contains topologyIndex and faceIndex. Plane matching is
+        independent of face winding and signed fitted-plane coefficients.
+        Native intersection area verifies complete containment, including holes.
+        No match returns []; several records are deliberately not resolved.
+        """
+        tol=Daylight._Positive(tolerance,'tolerance')
+        Daylight._PlanarPolygon(aperture,tol)
+        from topologicpy.Topology import Topology
+        if Topology.IsInstance(topologies,'Topology'):topologies=[topologies]
+        matches=[]
+        for index,topology in enumerate(topologies):
+            walls=Daylight._Faces(topology)
+            if not walls:raise ValueError('Host topology must contain Faces')
+            for faceIndex in Daylight._ContainingWalls(aperture,walls,tol):
+                matches.append(dict(topologyIndex=index,faceIndex=faceIndex))
+        return matches
+
+    @staticmethod
+    def PrepareRoom(cell, *, apertures=None, tolerance=0.0001):
         """Validate Cell/windows and cut actual analytical openings.
 
         Reads Faces attached by Topology.AddApertures to Cell or its Faces.
+        An explicit apertures list is authoritative when supplied; this avoids
+        relying on subtopology content identity across native wrapper builds.
+        With apertures=None, attached apertures are discovered as before.
         Windows must be contained in one coplanar host. Overlaps are unioned.
         Only planar straight-edged geometry supported. Does not mutate input.
         """
@@ -110,17 +163,12 @@ class Daylight:
         for f in walls:
             Daylight._PlanarPolygon(f, tol)
         groups = [[] for _ in walls]
-        for w in Topology.Apertures(cell, subTopologyType='all', silent=True) or []:
+        if apertures is not None and not isinstance(apertures,(list,tuple)):
+            raise ValueError('apertures must be a list or tuple of window Faces')
+        windows = (Topology.Apertures(cell, subTopologyType='all', silent=True) or []) if apertures is None else list(apertures)
+        for w in windows:
             Daylight._PlanarPolygon(w, tol)
-            area = Face.Area(w, mantissa=12)
-            candidates = []
-            for i, wall in enumerate(walls):
-                if not Face.IsCoplanar(w, wall, tolerance=tol):
-                    continue
-                common = Topology.Intersect(w, wall, tolerance=tol, silent=True)
-                covered = sum((Face.Area(f, mantissa=12) for f in Daylight._Faces(common)))
-                if abs(covered - area) <= max(tol * tol, area * 1e-07):
-                    candidates.append(i)
+            candidates = Daylight._ContainingWalls(w,walls,tol)
             if len(candidates) != 1:
                 raise ValueError('Aperture needs exactly one containing coplanar host')
             groups[candidates[0]].append(w)

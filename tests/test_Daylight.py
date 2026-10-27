@@ -320,3 +320,50 @@ def test_calibrated_labels_full_frame_and_cancellation(model):
     assert all(-180<=point[0]<=180 and 0<=point[1]<=1 for outline in reverse['apertureOutlines'] for segment in outline['segments'] for point in segment)
     with pytest.raises(InterruptedError):
         Daylight.WaldramDiagramComparison(before,after,0,cancelled=lambda:True)
+
+def test_explicit_windows_survive_missing_native_attachments(model,monkeypatch):
+    raw=room(False)['cell']
+    window=polygon([(1,0,1),(3,0,1),(3,0,2.5),(1,0,2.5)])
+    monkeypatch.setattr(Topology,'Apertures',staticmethod(lambda *args,**kwargs:[]))
+    assert Daylight.PrepareRoom(raw)['apertures']==[]
+    prepared=Daylight.PrepareRoom(raw,apertures=[window])
+    assert len(prepared['apertures'])==1
+    assert sum(Face.Area(f) for f in prepared['opaqueFaces'])==pytest.approx(Cell.Area(raw)-3)
+    result=Daylight.Waldram(prepared,Daylight.PrepareScene([]),grid=model[1],resolution='low')
+    assert result['values']==pytest.approx(model[2]['values'])
+
+def test_explicit_windows_still_require_valid_hosts(model):
+    raw=room(False)['cell']
+    outside=polygon([(10,0,1),(11,0,1),(11,0,2),(10,0,2)])
+    with pytest.raises(ValueError,match='host'):Daylight.PrepareRoom(raw,apertures=[outside])
+    with pytest.raises(ValueError,match='list or tuple'):Daylight.PrepareRoom(raw,apertures=outside)
+    assert Daylight.PrepareRoom(model[0]['cell'],apertures=[])['apertures']==[]
+
+def test_hosts_ignore_opposite_fitted_plane_sign(monkeypatch):
+    raw=room(False)['cell']
+    w=polygon([(1,0,1),(3,0,1),(3,0,2.5),(1,0,2.5)])
+    original=Face.PlaneEquation
+    # A valid eigensolver may choose either sign for the same geometric plane.
+    def signed(face,*args,**kwargs):
+        values=original(face,*args,**kwargs)
+        return {k:-v for k,v in values.items()} if face is w else values
+    monkeypatch.setattr(Face,'PlaneEquation',staticmethod(signed))
+    hosts=Daylight.ApertureHosts(w,[raw])
+    assert len(hosts)==1 and hosts[0]['topologyIndex']==0
+    assert len(Daylight.PrepareRoom(raw,apertures=[w])['apertures'])==1
+
+def test_hosts_are_winding_invariant_and_reject_parallel_offset():
+    raw=room(False)['cell']
+    points=[(1,0,1),(3,0,1),(3,0,2.5),(1,0,2.5)]
+    first=Daylight.ApertureHosts(polygon(points),[raw])
+    assert first==Daylight.ApertureHosts(polygon(list(reversed(points))),[raw])
+    assert len(first)==1
+    offset=polygon([(x,y+.01,z) for x,y,z in points])
+    assert Daylight.ApertureHosts(offset,[raw])==[]
+    assert len(Daylight.ApertureHosts(polygon(points),[raw,Topology.Copy(raw)]))==2
+
+def test_host_containment_does_not_accept_window_spanning_hole():
+    wall=Face.ByWires(Face.ExternalBoundary(polygon([(0,0,0),(4,0,0),(4,0,4),(0,0,4)])),
+                      [Face.ExternalBoundary(polygon([(1.5,0,1.5),(2.5,0,1.5),(2.5,0,2.5),(1.5,0,2.5)]))])
+    spanning=polygon([(1,0,1),(3,0,1),(3,0,3),(1,0,3)])
+    assert Daylight.ApertureHosts(spanning,[wall])==[]

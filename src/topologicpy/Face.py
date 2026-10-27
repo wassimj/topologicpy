@@ -7660,7 +7660,9 @@ class Face():
         def are_planes_coplanar(plane1, plane2, tolerance=0.0001):
             normalized_plane1 = normalize_plane_coefficients(plane1)
             normalized_plane2 = normalize_plane_coefficients(plane2)
-            return np.allclose(normalized_plane1, normalized_plane2, atol=tolerance)
+            # Plane equations p and -p describe the same geometric plane.
+            return (np.allclose(normalized_plane1, normalized_plane2, atol=tolerance)
+                    or np.allclose(normalized_plane1, -np.asarray(normalized_plane2), atol=tolerance))
         
         eq_a = Face.PlaneEquation(faceA, mantissa=mantissa)
         plane_a = [eq_a['a'], eq_a['b'], eq_a['c'], eq_a['d']]
