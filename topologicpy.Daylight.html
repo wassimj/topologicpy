@@ -160,6 +160,27 @@ infringement, compensation, planning compliance or total daylight factor.</p>
 thresholds use <strong>percent</strong>: <code class="docutils literal notranslate"><span class="pre">threshold=0.2</span></code> means 0.2%, not 20%.
 A percentage-point change is distinct from a relative percentage change.</p>
 </section>
+<section id="window-host-matching">
+<h2>Window host matching<a class="headerlink" href="#window-host-matching" title="Permalink to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">Daylight.ApertureHosts(window,</span> <span class="pre">topologies)</span></code> returns all fully containing
+host walls as <code class="docutils literal notranslate"><span class="pre">topologyIndex</span></code> / <code class="docutils literal notranslate"><span class="pre">faceIndex</span></code> records. An empty list means
+no host, and multiple records retain ambiguity for the caller to resolve.
+Geometric coplanarity uses native normals and plane-distance checks in both
+directions, independent of normal orientation or fitted eigenvector sign.
+Native intersection-area validation retains wall holes and concave boundaries.
+<code class="docutils literal notranslate"><span class="pre">PrepareRoom</span></code> uses the same predicate for validating its windows. The app
+uses this API for matching instead of duplicating the geometry calculation.</p>
+</section>
+<section id="explicit-window-handoff">
+<h2>Explicit window handoff<a class="headerlink" href="#explicit-window-handoff" title="Permalink to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">PrepareRoom(cell,</span> <span class="pre">apertures=windows)</span></code> accepts an authoritative list or tuple
+of native window Faces. Use this after <code class="docutils literal notranslate"><span class="pre">Topology.AddApertures</span></code> when a native
+wrapper cannot recover contents attached to transient wall objects. Every
+window still undergoes the same unique coplanar-host containment check and
+area-checked opening cut. No alternate geometry solver or unvalidated opening
+is introduced. <code class="docutils literal notranslate"><span class="pre">apertures=None</span></code> retains attached-aperture discovery;
+<code class="docutils literal notranslate"><span class="pre">apertures=[]</span></code> deliberately prepares an opaque room.</p>
+</section>
 <section id="quick-start">
 <h2>Quick start<a class="headerlink" href="#quick-start" title="Permalink to this heading"></a></h2>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">topologicpy.Daylight</span><span class="w"> </span><span class="kn">import</span> <span class="n">Daylight</span>
@@ -355,47 +376,60 @@ Lengths use model units. No reflections, glazing losses or legal classification.
 <col style="width: 90%" />
 </colgroup>
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Daylight.Daylight.Compare" title="topologicpy.Daylight.Daylight.Compare"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Compare</span></code></a>(before, after, *[, threshold, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Daylight.Daylight.ApertureHosts" title="topologicpy.Daylight.Daylight.ApertureHosts"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ApertureHosts</span></code></a>(aperture, topologies, *[, ...])</p></td>
+<td><p>Return containing host indices for a planar window Face.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Daylight.Daylight.Compare" title="topologicpy.Daylight.Daylight.Compare"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Compare</span></code></a>(before, after, *[, threshold, ...])</p></td>
 <td><p>Same-grid numeric comparison, including gains, losses and reference crossing.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Daylight.Daylight.Contours" title="topologicpy.Daylight.Daylight.Contours"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Contours</span></code></a>(assessment[, levels, tolerance])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Daylight.Daylight.Contours" title="topologicpy.Daylight.Daylight.Contours"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Contours</span></code></a>(assessment[, levels, tolerance])</p></td>
 <td><p>Piecewise-constant cell-region Faces/Wires, NOT interpolated isolines.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Daylight.Daylight.Convergence" title="topologicpy.Daylight.Daylight.Convergence"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Convergence</span></code></a>(coarse, fine, *[, threshold])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Daylight.Daylight.Convergence" title="topologicpy.Daylight.Daylight.Convergence"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Convergence</span></code></a>(coarse, fine, *[, threshold])</p></td>
 <td><p>Sensitivity on same domain/scene; different spatial grids allowed.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Daylight.Daylight.PrepareRoom" title="topologicpy.Daylight.Daylight.PrepareRoom"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PrepareRoom</span></code></a>(cell, *[, tolerance])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Daylight.Daylight.PrepareRoom" title="topologicpy.Daylight.Daylight.PrepareRoom"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PrepareRoom</span></code></a>(cell, *[, apertures, tolerance])</p></td>
 <td><p>Validate Cell/windows and cut actual analytical openings.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Daylight.Daylight.PrepareScene" title="topologicpy.Daylight.Daylight.PrepareScene"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PrepareScene</span></code></a>(topologies, *[, tolerance, labels])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Daylight.Daylight.PrepareScene" title="topologicpy.Daylight.Daylight.PrepareScene"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PrepareScene</span></code></a>(topologies, *[, tolerance, labels])</p></td>
 <td><p>Prepare opaque two-sided geometry.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Daylight.Daylight.ResultData" title="topologicpy.Daylight.Daylight.ResultData"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ResultData</span></code></a>(assessment, *[, includeGeometry])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Daylight.Daylight.ResultData" title="topologicpy.Daylight.Daylight.ResultData"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ResultData</span></code></a>(assessment, *[, includeGeometry])</p></td>
 <td><p>Portable JSON-compatible assessment, excluding live scene/diagram cache.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Daylight.Daylight.SensorGrid" title="topologicpy.Daylight.Daylight.SensorGrid"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SensorGrid</span></code></a>(faces[, spacing, origin, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Daylight.Daylight.SensorGrid" title="topologicpy.Daylight.Daylight.SensorGrid"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SensorGrid</span></code></a>(faces[, spacing, origin, ...])</p></td>
 <td><p>Clipped horizontal grid; sensors lie inside their real area-weighted cells.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Daylight.Daylight.SkyComponent" title="topologicpy.Daylight.Daylight.SkyComponent"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SkyComponent</span></code></a>(vertices, normals, scene, *[, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Daylight.Daylight.SkyComponent" title="topologicpy.Daylight.Daylight.SkyComponent"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SkyComponent</span></code></a>(vertices, normals, scene, *[, ...])</p></td>
 <td><p>Direct sky component (%) for arbitrary normals, not total daylight factor.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Daylight.Daylight.SkyFactor" title="topologicpy.Daylight.Daylight.SkyFactor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SkyFactor</span></code></a>(vertices, scene, *[, resolution, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Daylight.Daylight.SkyFactor" title="topologicpy.Daylight.Daylight.SkyFactor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SkyFactor</span></code></a>(vertices, scene, *[, resolution, ...])</p></td>
 <td><p>Horizontal uniform-sky component (%).</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Daylight.Daylight.Waldram" title="topologicpy.Daylight.Daylight.Waldram"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Waldram</span></code></a>(room, scene, *[, grid, height, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Daylight.Daylight.Waldram" title="topologicpy.Daylight.Daylight.Waldram"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Waldram</span></code></a>(room, scene, *[, grid, height, ...])</p></td>
 <td><p>Aperture-focused uniform-sky horizontal assessment (%).</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Daylight.Daylight.WaldramDiagram" title="topologicpy.Daylight.Daylight.WaldramDiagram"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WaldramDiagram</span></code></a>(assessment, sensorIndex, *[, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Daylight.Daylight.WaldramDiagram" title="topologicpy.Daylight.Daylight.WaldramDiagram"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WaldramDiagram</span></code></a>(assessment, sensorIndex, *[, ...])</p></td>
 <td><p>Sampled sheet Faces: x=azimuth radians, y=sin(altitude)^2/2.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Daylight.Daylight.WaldramDiagramComparison" title="topologicpy.Daylight.Daylight.WaldramDiagramComparison"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WaldramDiagramComparison</span></code></a>(before, after, ...)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Daylight.Daylight.WaldramDiagramComparison" title="topologicpy.Daylight.Daylight.WaldramDiagramComparison"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WaldramDiagramComparison</span></code></a>(before, after, ...)</p></td>
 <td><p>Calibrated paired uniform-sky charts and loss/gain regions.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Daylight.Daylight.WorkingPlane" title="topologicpy.Daylight.Daylight.WorkingPlane"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WorkingPlane</span></code></a>(cell[, height, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Daylight.Daylight.WorkingPlane" title="topologicpy.Daylight.Daylight.WorkingPlane"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WorkingPlane</span></code></a>(cell[, height, ...])</p></td>
 <td><p>Horizontal room section Faces.</p></td>
 </tr>
 </tbody>
 </table>
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Daylight.Daylight.ApertureHosts">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ApertureHosts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">aperture</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">topologies</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Daylight.Daylight.ApertureHosts" title="Permalink to this definition"></a></dt>
+<dd><p>Return containing host indices for a planar window Face.</p>
+<p>Each record contains topologyIndex and faceIndex. Plane matching is
+independent of face winding and signed fitted-plane coefficients.
+Native intersection area verifies complete containment, including holes.
+No match returns []; several records are deliberately not resolved.</p>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Daylight.Daylight.Compare">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Compare</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">before</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">after</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">referencePercentage</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">50.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Daylight.Daylight.Compare" title="Permalink to this definition"></a></dt>
@@ -419,9 +453,12 @@ Region area agrees with the sampled assessment estimate.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Daylight.Daylight.PrepareRoom">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">PrepareRoom</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cell</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Daylight.Daylight.PrepareRoom" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">PrepareRoom</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cell</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">apertures</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Daylight.Daylight.PrepareRoom" title="Permalink to this definition"></a></dt>
 <dd><p>Validate Cell/windows and cut actual analytical openings.</p>
 <p>Reads Faces attached by Topology.AddApertures to Cell or its Faces.
+An explicit apertures list is authoritative when supplied; this avoids
+relying on subtopology content identity across native wrapper builds.
+With apertures=None, attached apertures are discovered as before.
 Windows must be contained in one coplanar host. Overlaps are unioned.
 Only planar straight-edged geometry supported. Does not mutate input.</p>
 </dd></dl>
