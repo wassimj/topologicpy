@@ -17,6 +17,7 @@ Submodules
    topologicpy.Color
    topologicpy.Context
    topologicpy.Core
+   topologicpy.Daylight
    topologicpy.Dictionary
    topologicpy.Edge
    topologicpy.EnergyModel

@@ -143,6 +143,7 @@ class _RunConfig:
 
     target_columns: Tuple[str, ...] = ()
     target_units: Tuple[str, ...] = ()
+    split_column: Optional[str] = None
     split_mode: str = "entity"  # "graph" holds out complete simulations
     normalize_features: bool = False
     normalize_targets: bool = False
@@ -590,6 +591,573 @@ if _PYG_IMPORT_ERROR is None:
                 return {"prediction": self.decoder(nodes), "embedding": nodes}
 
         @staticmethod
+        def BuildFVGNMesh(positions, cells, faceTypes=None):
+            """Build a planar triangular finite-volume mesh (SI geometry).
+
+            Face order is lexicographic in the two vertex IDs. Normals point out of
+            owner cells; neighbour=-1 denotes an exterior face. Face labels are
+            0=internal, 1=wall, 2=inlet, 3=outlet. Exterior faces default to walls.
+            """
+            pos = np.asarray(positions, dtype=float)
+            tri = np.asarray(cells)
+            if pos.ndim != 2 or pos.shape[1] not in (2,3) or not len(pos) or not np.isfinite(pos).all():
+                raise ValueError("FVGN positions must be finite planar [vertices,2/3].")
+            if pos.shape[1] == 3 and not np.allclose(pos[:,2],pos[0,2],rtol=0,atol=1e-10):
+                raise ValueError("FVGN currently supports meshes in an XY plane only.")
+            pos = pos[:,:2]
+            if tri.ndim != 2 or tri.shape[1] != 3 or not len(tri) or not np.issubdtype(tri.dtype,np.integer):
+                raise ValueError("FVGN cells must be integer [cells,3] triangles.")
+            if tri.min()<0 or tri.max()>=len(pos) or np.any(np.diff(np.sort(tri,axis=1),axis=1)==0):
+                raise ValueError("FVGN triangle vertex indices are invalid.")
+            if len(np.unique(np.sort(tri,axis=1),axis=0)) != len(tri): raise ValueError("Duplicate FVGN cells.")
+            points=pos[tri]; centers=points.mean(1)
+            a,b=points[:,1]-points[:,0],points[:,2]-points[:,0]
+            area=np.abs(a[:,0]*b[:,1]-a[:,1]*b[:,0])*.5
+            if (area<=0).any(): raise ValueError("Degenerate FVGN triangle.")
+            incidence={}
+            for i,t in enumerate(tri):
+                for j,k in ((0,1),(1,2),(2,0)):
+                    incidence.setdefault(tuple(sorted((int(t[j]),int(t[k])))),[]).append(i)
+            if any(len(v)>2 for v in incidence.values()): raise ValueError("Non-manifold FVGN face.")
+            # Choose physical owners independently of cell numbering.
+            for key in incidence:incidence[key].sort(key=lambda i:tuple(centers[i]))
+            faces=np.asarray(sorted(incidence),dtype=np.int64)
+            owner=np.asarray([incidence[tuple(v)][0] for v in faces],dtype=np.int64)
+            neighbour=np.asarray([incidence[tuple(v)][1] if len(incidence[tuple(v)])==2 else -1 for v in faces],dtype=np.int64)
+            mid=pos[faces].mean(1); tangent=pos[faces[:,1]]-pos[faces[:,0]]
+            length=np.linalg.norm(tangent,axis=1)
+            normal=np.stack((tangent[:,1],-tangent[:,0]),axis=1)/length[:,None]
+            normal*=np.where(np.sum(normal*(mid-centers[owner]),axis=1)>=0,1.,-1.)[:,None]
+            internal=neighbour>=0
+            if (np.sum(normal[internal]*(centers[neighbour[internal]]-mid[internal]),axis=1)<=0).any():
+                raise ValueError("Adjacent FVGN cells overlap or have inconsistent geometry.")
+            tags=np.where(internal,0,1) if faceTypes is None else np.asarray(faceTypes)
+            if tags.shape!=(len(faces),) or not np.isin(tags,(0,1,2,3)).all() or np.any((tags==0)!=internal):
+                raise ValueError("FVGN face types must mark internal=0 and exterior=1/2/3.")
+            index=np.stack((owner[internal],neighbour[internal]))
+            index=np.concatenate((index,index[::-1]),axis=1)
+            values=dict(vertices=pos,cells=tri,centers=centers,area=area,face_vertices=faces,
+                        owner=owner,neighbour=neighbour,normal=normal,length=length,
+                        midpoint=mid,face_type=tags,edge_index=index)
+            integers={'cells','face_vertices','owner','neighbour','face_type','edge_index'}
+            result={k:torch.tensor(v,dtype=torch.long if k in integers else torch.float32) for k,v in values.items()}
+            if any(not bool(torch.isfinite(v).all()) for v in result.values()) or not bool((result['area']>0).all()) or not bool((result['length']>0).all()):
+                raise ValueError('FVGN geometry is outside the representable float32 range.')
+            return result
+
+        @staticmethod
+        def FVGNIntegrate(mesh, faceVelocity, facePressure, velocityGradient, timeStep, density=1., viscosity=.001):
+            """Differentiable conservative FV momentum update and cell divergence.
+
+            velocityGradient[f,i,j] is d(u_i)/d(x_j); pressure is physical (Pa),
+            viscosity is kinematic (m2/s). Internal face fluxes cancel exactly
+            algebraically between owner and neighbour cells. No pressure projection
+            or hard incompressibility constraint is implied by this integration.
+            """
+            uv=torch.as_tensor(faceVelocity)
+            if not uv.is_floating_point(): uv=uv.float()
+            device,dtype=uv.device,uv.dtype
+            m={k:torch.as_tensor(v,device=device).to(dtype=dtype) if k in ('area','normal','length') else torch.as_tensor(v,device=device) for k,v in mesh.items()}
+            p=torch.as_tensor(facePressure,device=device,dtype=dtype).reshape(-1)
+            grad=torch.as_tensor(velocityGradient,device=device,dtype=dtype)
+            dt=torch.as_tensor(timeStep,device=device,dtype=dtype)
+            rho=torch.as_tensor(density,device=device,dtype=dtype)
+            nu=torch.as_tensor(viscosity,device=device,dtype=dtype)
+            nf=len(m['owner'])
+            if uv.shape!=(nf,2) or p.shape!=(nf,) or grad.shape!=(nf,2,2): raise ValueError("FVGN face field shapes do not match the mesh.")
+            for value in (uv,p,grad,dt,rho,nu):
+                if not bool(torch.isfinite(value).all()): raise ValueError("FVGN physical values must be finite.")
+            if dt.numel()!=1 or rho.numel()!=1 or nu.numel()!=1 or dt.item()<=0 or rho.item()<=0 or nu.item()<0:
+                raise ValueError("FVGN requires positive dt/density and nonnegative viscosity.")
+            normal=m['normal']; flow=(uv*normal).sum(-1)
+            flux=(uv*flow[:,None]+p[:,None]*normal/rho-nu*torch.einsum('fij,fj->fi',grad,normal))*m['length'][:,None]
+            nc=len(m['area']); balance=uv.new_zeros((nc,2)); mass=uv.new_zeros(nc)
+            owner,nei=m['owner'].long(),m['neighbour'].long(); inside=nei>=0
+            balance.index_add_(0,owner,-flux);balance.index_add_(0,nei[inside],flux[inside])
+            volume_flux=flow*m['length']
+            mass.index_add_(0,owner,volume_flux);mass.index_add_(0,nei[inside],-volume_flux[inside])
+            return {'increment':dt*balance/m['area'][:,None],'divergence':mass/m['area']}
+
+        @staticmethod
+        def _FVGNMLP(inputs, outputs, width, norm=True):
+            layers=[nn.Linear(inputs,width),nn.SiLU(),nn.Linear(width,width),nn.SiLU(),nn.Linear(width,outputs)]
+            if norm: layers.append(nn.LayerNorm(outputs))
+            return nn.Sequential(*layers)
+
+        class _FVGNBlock(nn.Module):
+            def __init__(self,width):
+                super().__init__()
+                self.cell=PyG._FVGNMLP(width*2,width,width)
+                self.face=PyG._FVGNMLP(width*3,width,width)
+            def forward(self,cells,faces,mesh):
+                vertex=faces.new_zeros((len(mesh['vertices']),faces.shape[1]))
+                for endpoint in (0,1): vertex.index_add_(0,mesh['face_vertices'][:,endpoint],faces)
+                aggregate=vertex[mesh['cells']].mean(1)
+                cells=cells+self.cell(torch.cat((cells,aggregate),-1))
+                owner,nei=mesh['owner'],mesh['neighbour'].clamp_min(0)
+                neighbour=torch.where((mesh['neighbour']>=0)[:,None],cells[nei],cells[owner])
+                faces=faces+self.face(torch.cat((faces,cells[owner],neighbour),-1))
+                return cells,faces
+
+        class _FVGNPhysicalModel(nn.Module):
+            """Independent FVGN implementation; predicts physical face U,p,grad(U)."""
+            def __init__(self,context):
+                super().__init__()
+                opts=context['options'];width=opts.get('latent_dim',128)
+                self.options=opts;self.graph_dim=context['graph_dim'];self.edge_dim=context['edge_dim']
+                self.velocity_indices=context['velocity_indices']
+                for name,size in [('x',context['node_dim']),('u',self.graph_dim),('targets',2)]:
+                    scaler=context['normalization'].get(name,{})
+                    self.register_buffer(name+'_mean',torch.tensor(scaler.get('mean',[0.]*size),dtype=torch.float32))
+                    self.register_buffer(name+'_scale',torch.tensor(scaler.get('scale',[1.]*size),dtype=torch.float32))
+                self.cell_encoder=PyG._FVGNMLP(context['node_dim']+self.graph_dim+1,width,width)
+                # Relative cell geometry, face normal/length, type, prescribed U,
+                # physical velocity difference, optional graph/adjacency features.
+                self.face_encoder=PyG._FVGNMLP(3+2+1+4+2+2+2*self.edge_dim+self.graph_dim,width,width)
+                self.processors=nn.ModuleList([PyG._FVGNBlock(width) for _ in range(opts.get('processor_blocks',15))])
+                self.decoder=PyG._FVGNMLP(width,7,width,norm=False)
+            def forward(self,data):
+                if getattr(data,'num_graphs',1)!=1: raise ValueError("FVGN processes one mesh per batch.")
+                mesh=data.fv_mesh
+                owner,raw_nei=mesh['owner'],mesh['neighbour'];nei=torch.where(raw_nei>=0,raw_nei,owner)
+                physical=data.x*self.x_scale+self.x_mean
+                velocity=physical[:,self.velocity_indices]
+                dt=data.dt.reshape(1,1)
+                parts=[data.x,dt.expand(len(data.x),1)]
+                if self.graph_dim: parts.append(data.u.expand(len(data.x),-1))
+                cells=self.cell_encoder(torch.cat(parts,-1))
+                scale=(mesh['vertices'].max(0).values-mesh['vertices'].min(0).values).norm().clamp_min(1e-12)
+                relative=(mesh['centers'][nei]-mesh['centers'][owner])/scale
+                relative=torch.where((raw_nei>=0)[:,None],relative,(mesh['midpoint']-mesh['centers'][owner])/scale)
+                types=mesh['face_type'];prescribed=(types==1)|(types==2)
+                geometry=[relative,relative.norm(dim=-1,keepdim=True),mesh['normal'],mesh['length'][:,None]/scale,
+                          F.one_hot(types,4).to(data.x.dtype),torch.where(prescribed[:,None],data.fv_face_velocity,0.),
+                          velocity[nei]-velocity[owner]]
+                if self.edge_dim:
+                    idx=data.fv_edge_map
+                    features=data.edge_attr[idx.clamp_min(0)].reshape(len(idx),-1) if data.num_edges else data.x.new_zeros((len(idx),2*self.edge_dim))
+                    geometry.append(torch.where((idx[:,0]>=0)[:,None],features,0.))
+                if self.graph_dim: geometry.append(data.u.expand(len(owner),-1))
+                faces=self.face_encoder(torch.cat(geometry,-1))
+                for block in self.processors: cells,faces=block(cells,faces,mesh)
+                raw=self.decoder(faces)
+                uv_scale=self.x_scale[self.velocity_indices].clamp_min(1e-6)
+                base=(velocity[owner]+velocity[nei])*.5
+                uv=base+raw[:,:2]*uv_scale
+                uv=torch.where(prescribed[:,None],data.fv_face_velocity,uv)
+                pressure=raw[:,2]*self.options.get('pressure_scale',1.)
+                pressure=torch.where(types==3,data.fv_boundary_pressure,pressure)
+                gradient=raw[:,3:].reshape(-1,2,2)*uv_scale[None,:,None]/scale
+                if not all(bool(torch.isfinite(v).all()) for v in (uv,pressure,gradient)):
+                    raise FloatingPointError('Non-finite FVGN face prediction; check training coverage and rollout stability.')
+                result=PyG.FVGNIntegrate(mesh,uv,pressure,gradient,data.dt,data.fv_density,data.fv_viscosity)
+                result.update(prediction=(result['increment']-self.targets_mean)/self.targets_scale,
+                              embedding=cells,face_velocity=uv,face_pressure=pressure,velocity_gradient=gradient)
+                return result
+
+        @staticmethod
+        def ByFVGNSequences(path, sequences, timeStep=.01, overwrite=False, fieldLocation='cell', **kwargs):
+            """Export/load 2D triangular flow trajectories for model_name='fvgn'.
+
+            Required: positions[vertices,2/3], cells[cells,3], velocity[T,cells,2].
+            fieldLocation='vertex' explicitly interpolates vertex U/p to cells.
+            face_types follow BuildFVGNMesh's sorted face order. face_velocity
+            [T,faces,2] optionally supplies exact face supervision and prescribed
+            boundary values; otherwise boundary_velocity[faces,2] is required for
+            inlets, walls default to zero, and internal face targets are interpolated.
+            Optional face_pressure[T,faces] or pressure[T,cells] supplies pressure
+            targets. The default reference formulation uses the author's normalized
+            five-output update; formulation='physical' retains the older SI-gradient
+            variant. Vertex fields use reference squared-distance cell interpolation
+            and endpoint-mean face targets; the physical variant uses cell means.
+            Reference pressure supervision defaults to weight one and is required
+            unless explicitly disabled. density and kinematic_viscosity default to
+            1 and .001 (SI), though the reference compensation does not explicitly
+            multiply viscosity, matching the author program.
+            """
+            sequences=list(sequences)
+            if not sequences or not all(isinstance(v,dict) for v in sequences) or fieldLocation not in ('cell','vertex'): raise ValueError("Provide FVGN dictionaries and fieldLocation='cell' or 'vertex'.")
+            if not math.isfinite(timeStep) or timeStep<=0:raise ValueError('FVGN timeStep must be positive and finite.')
+            path=os.fspath(path);os.makedirs(path,exist_ok=True)
+            if not overwrite and any(os.path.exists(os.path.join(path,n)) for n in ('graphs.csv','fvgn_manifest.json')):
+                raise FileExistsError("FVGN dataset already exists; pass overwrite=True.")
+            converted=[];entries=[];archives=[];seen=set()
+            options={'formulation':'reference','velocity_feature_columns':['feat_0','feat_1']}
+            options.update(kwargs.pop('model_options',{}) or {})
+            if options['formulation']=='reference':
+                options.setdefault('continuity_loss_weight',0.)
+                options.setdefault('pressure_loss_weight',1.)
+                options.setdefault('noise_std',.02)
+            if kwargs.get('model_name','fvgn')!='fvgn': raise ValueError("ByFVGNSequences requires model_name='fvgn'.")
+            kwargs['model_name']='fvgn'
+            for i,s in enumerate(sequences):
+                mesh=PyG._FVGNSequenceMesh(s['positions'],s['cells'],s.get('face_types'),options['formulation']=='reference')
+                scalar_type=np.float32 if options['formulation']=='reference' else float
+                v=PyG._CFDArray(s['velocity'],'FVGN velocity').astype(scalar_type)
+                vertex_velocity=v if fieldLocation=='vertex' else None
+                nc=len(mesh['cells']);nf=len(mesh['owner'])
+                if v.ndim!=3 or v.shape[-1]!=2 or len(v)<2: raise ValueError("FVGN velocity must be [frames,cells/vertices,2].")
+                if fieldLocation=='vertex':
+                    if v.shape[1]!=len(mesh['vertices']): raise ValueError("FVGN vertex velocity size mismatch.")
+                    v=(v[:,mesh['cells'].numpy()]*mesh['vertex_weights'].numpy()[None,:,:,None]).sum(2) if options['formulation']=='reference' else v[:,mesh['cells'].numpy()].mean(2)
+                if v.shape[1]!=nc: raise ValueError("FVGN cell velocity size mismatch.")
+                nt=len(v);times=PyG._CFDArray(s.get('times',np.arange(nt)*timeStep),'FVGN times')
+                if times.shape!=(nt,) or (np.diff(times)<=0).any(): raise ValueError("FVGN times must strictly increase.")
+                sim=s.get('simulation_id',i);offset=s.get('frame_offset',0)
+                if not isinstance(offset,(int,np.integer)) or isinstance(offset,bool) or offset<0: raise ValueError("FVGN frame_offset must be a nonnegative integer.")
+                for f in range(nt-1):
+                    key=(str(sim),int(offset)+f)
+                    if key in seen: raise ValueError("Duplicate FVGN simulation/frame windows.")
+                    seen.add(key)
+                owner=mesh['owner'].numpy();nei=mesh['neighbour'].numpy();safe=np.where(nei>=0,nei,owner)
+                tags=mesh['face_type'].numpy();fixed=np.isin(tags,(1,2))
+                face=vertex_velocity[:,mesh['face_vertices'].numpy()].mean(2) if vertex_velocity is not None and options['formulation']=='reference' else (v[:,owner]+v[:,safe])*.5
+                supplied=s.get('face_velocity')
+                if supplied is not None:
+                    face=PyG._CFDArray(supplied,'FVGN face_velocity').astype(float)
+                    if face.shape!=(nt,nf,2): raise ValueError("FVGN face_velocity must be [frames,faces,2].")
+                else:
+                    if (tags==2).any() and 'boundary_velocity' not in s: raise ValueError("FVGN inlet faces require prescribed boundary_velocity or face_velocity.")
+                    boundary=PyG._CFDArray(s.get('boundary_velocity',np.zeros((nf,2))),'boundary_velocity')
+                    if boundary.shape!=(nf,2): raise ValueError("FVGN boundary_velocity must be [faces,2].")
+                    face[:,fixed]=boundary[None,fixed]
+                bp=PyG._CFDArray(s.get('boundary_pressure',np.zeros(nf)),'boundary_pressure')
+                if bp.shape!=(nf,): raise ValueError("FVGN boundary_pressure must be [faces].")
+                pressure=s.get('face_pressure')
+                if pressure is None and 'pressure' in s:
+                    cp=PyG._CFDArray(s['pressure'],'FVGN pressure').astype(scalar_type)
+                    if cp.ndim==3 and cp.shape[-1]==1:cp=cp[:,:,0]
+                    if fieldLocation=='vertex':
+                        if cp.shape!=(nt,len(mesh['vertices'])):raise ValueError("FVGN vertex pressure size mismatch.")
+                        if options['formulation']=='reference':
+                            pressure=cp[:,mesh['face_vertices'].numpy()].mean(2)
+                        else:
+                            cp=cp[:,mesh['cells'].numpy()].mean(2)
+                    if pressure is None:
+                        if cp.shape!=(nt,nc):raise ValueError("FVGN pressure must be [frames,cells].")
+                        pressure=(cp[:,owner]+cp[:,safe])*.5
+                if pressure is not None:
+                    pressure=PyG._CFDArray(pressure,'FVGN face_pressure').astype(float)
+                    if pressure.shape==(nt,nf,1):pressure=pressure[:,:,0]
+                    if pressure.shape!=(nt,nf):raise ValueError("FVGN face_pressure must be [frames,faces].")
+                density=float(s.get('density',1.));viscosity=float(s.get('kinematic_viscosity',.001))
+                if not math.isfinite(density) or density<=0 or not math.isfinite(viscosity) or viscosity<0:
+                    raise ValueError("Invalid FVGN density/kinematic_viscosity.")
+                filename=f'fvgn-sequence-{i}.npz'
+                archive=dict(positions=np.asarray(s['positions']),cells=np.asarray(s['cells']),face_types=tags,
+                             face_velocity=face,boundary_pressure=bp,times=times,density=density,viscosity=viscosity)
+                if pressure is not None:archive['face_pressure']=pressure
+                archives.append((filename,archive))
+                entries.append(dict(simulation_id=str(sim),frame_offset=int(offset),transitions=nt-1,file=filename,
+                                    face_velocity_targets='provided' if supplied is not None else 'vertex_endpoint_mean' if vertex_velocity is not None and options['formulation']=='reference' else 'cell_interpolation'))
+                q=dict(s);q.update(positions=mesh['centers'].numpy(),velocity=v,edge_index=mesh['edge_index'].numpy(),
+                                  weights=mesh['area'].numpy(),times=times,simulation_id=sim,frame_offset=int(offset))
+                # Face boundaries do not make their adjacent finite-volume cells Dirichlet cells.
+                q['boundary_type']=s.get('cell_boundary_type',np.zeros(nc,dtype=int))
+                converted.append(q)
+            # Validate options before replacing any existing dataset files.
+            check=_RunConfig(model_name='fvgn',level='node',task='regression',node_label_type='continuous',
+                             target_columns=('delta_vx','delta_vy'),split_mode='graph',model_options=options)
+            PyG._ValidateConfig(check)
+            if not kwargs.get('inference',False) and options.get('pressure_loss_weight',0.)>0 and any('face_pressure' not in a for _,a in archives):
+                raise ValueError("FVGN pressure loss requires pressure targets for every sequence.")
+            for filename,archive in archives:
+                temporary=os.path.join(path,filename+'.partial')
+                try:
+                    with open(temporary,'wb') as stream:np.savez_compressed(stream,**archive)
+                    os.replace(temporary,os.path.join(path,filename))
+                finally:
+                    if os.path.exists(temporary):os.unlink(temporary)
+            PyG._WriteCFDFile(os.path.join(path,'fvgn_manifest.json'),dict(format_version=1,sequences=entries))
+            del archives, archive
+            return PyG.ByCFDSequences(path,converted,timeStep=timeStep,overwrite=overwrite,model_options=options,**kwargs)
+
+        def _AttachFVGN(self,data,graph,nodes,edges):
+            if self.config.model_name!='fvgn':return
+            if not hasattr(self,'_fvgn_sources'):
+                with open(os.path.join(self.path,'fvgn_manifest.json'),encoding='utf-8') as stream:manifest=json.load(stream)
+                if manifest.get('format_version')!=1:raise ValueError("Unsupported FVGN manifest.")
+                self._fvgn_sources=manifest['sequences'];self._fvgn_archive_cache={}
+            sim=str(graph.simulation_id.iloc[0]);frame=int(graph.frame_index.iloc[0])
+            entries=[e for e in self._fvgn_sources if e['simulation_id']==sim and e['frame_offset']<=frame<e['frame_offset']+e['transitions']]
+            if len(entries)!=1:raise ValueError("FVGN graph must identify exactly one archived mesh/frame.")
+            entry=entries[0];name=entry['file'];f=frame-entry['frame_offset']
+            if not isinstance(name,str) or os.path.basename(name)!=name:raise ValueError("FVGN archive must be a local dataset filename.")
+            if name not in self._fvgn_archive_cache:
+                with np.load(os.path.join(self.path,name),allow_pickle=False) as archive:values={k:archive[k] for k in archive.files}
+                mesh=PyG._FVGNSequenceMesh(values['positions'],values['cells'],values['face_types'],(self.config.model_options or {}).get('formulation','reference')=='reference')
+                self._fvgn_archive_cache[name]=(mesh,values)
+            mesh,values=self._fvgn_archive_cache[name]
+            if (self.config.model_options or {}).get('formulation','reference')=='reference':mesh=self._FVGNReferenceMesh(mesh)
+            if data.num_nodes!=len(mesh['cells']) or not np.array_equal(nodes[self.config.node_id_header],np.arange(data.num_nodes)):
+                raise ValueError("FVGN CSV nodes must follow archived cell order with IDs 0..cells-1.")
+            if not torch.allclose(data.pos[:,:2],mesh['centers'],rtol=1e-5,atol=1e-7):raise ValueError("FVGN cell positions differ from the archived mesh.")
+            if not np.isclose(float(data.dt),values['times'][f+1]-values['times'][f],rtol=1e-5):raise ValueError("FVGN CSV time step differs from archive.")
+            pairs={(int(a),int(b)):i for i,(a,b) in enumerate(data.edge_index.T.tolist())}
+            expected={tuple(v) for v in mesh['edge_index'].T.tolist()}
+            if set(pairs)!=expected or len(pairs)!=data.num_edges:raise ValueError('FVGN cell adjacency must match the archived mesh exactly.')
+            edge_map=[]
+            for a,b in zip(mesh['owner'].tolist(),mesh['neighbour'].tolist()):
+                if b>=0 and (a,b) not in pairs:raise ValueError("FVGN cell graph is missing an internal face adjacency.")
+                edge_map.append([-1,-1] if b<0 else [pairs[a,b],pairs[b,a]])
+            attrs=dict(fv_mesh=mesh,fv_edge_map=torch.tensor(edge_map,dtype=torch.long),
+                       fv_face_velocity=torch.tensor(values['face_velocity'][f+1],dtype=torch.float32),
+                       fv_target_velocity=torch.tensor(values['face_velocity'][f+1],dtype=torch.float32),
+                       fv_boundary_pressure=torch.tensor(values['boundary_pressure'],dtype=torch.float32),
+                       fv_density=torch.tensor([float(values['density'])]),fv_viscosity=torch.tensor([float(values['viscosity'])]))
+            if 'face_pressure' in values:attrs['fv_target_pressure']=torch.tensor(values['face_pressure'][f+1],dtype=torch.float32)
+            for key,value in attrs.items():setattr(data,key,value)
+            gid=self._label_key(graph[self.config.graph_id_header].iloc[0])
+            self._external_simulation.setdefault(gid,{}).update(attrs)
+
+        def _FVGNObjective(self,data,prediction,mask):
+            opts=self.config.model_options or {};result=self._fvgn_output
+            if opts.get('formulation','reference')=='reference':
+                if opts.get('pressure_loss_weight',1.) and getattr(data,'fv_target_pressure',None) is None:raise ValueError('Reference FVGN pressure supervision requires face pressure targets.')
+                momentum=(result['_delta_normalized'][mask]-result['_target_delta'][mask]).square().mean()
+                interior=(data.fv_mesh['face_type']==0)|(data.fv_mesh['face_type']==3)
+                face_loss=(result['_face_normalized'][interior,:2]-result['_target_face'][interior,:2]).square().mean() if bool(interior.any()) else momentum*0
+                pressure=(result['_face_normalized'][:,2]-result['_target_face'][:,2]).square().mean()
+                continuity=result['_continuity'][mask].square().mean()
+                loss=opts.get('momentum_loss_weight',10.)*momentum+opts.get('face_velocity_loss_weight',1.)*face_loss+opts.get('pressure_loss_weight',1.)*pressure+opts.get('continuity_loss_weight',0.)*continuity
+                return loss.clamp_min(torch.finfo(loss.dtype).tiny).log()
+            loss=opts.get('momentum_loss_weight',10.)*self._loss_from_logits(prediction[mask],data.y[mask],'regression')
+            weight=opts.get('continuity_loss_weight',1.)
+            if weight:loss=loss+weight*(data.dt*result['divergence'][mask]).square().mean()
+            m=data.fv_mesh;owner,nei=m['owner'],m['neighbour'];valid=mask[owner]|((nei>=0)&mask[nei.clamp_min(0)])
+            if opts.get('face_velocity_loss_weight',1.) and bool(valid.any()):
+                scale=self.model.x_scale[self.model.velocity_indices]
+                loss=loss+opts.get('face_velocity_loss_weight',1.)*((result['face_velocity'][valid]-data.fv_target_velocity[valid])/scale).square().mean()
+            if opts.get('pressure_loss_weight',0.):
+                if getattr(data,'fv_target_pressure',None) is None:raise ValueError("FVGN pressure loss requires face pressure targets.")
+                free=valid & (m['face_type']!=3)
+                if bool(free.any()):loss=loss+opts['pressure_loss_weight']*((result['face_pressure'][free]-data.fv_target_pressure[free])/opts.get('pressure_scale',1.)).square().mean()
+            return loss
+
+        @torch.no_grad()
+        def PredictFVGN(self,graphID):
+            """Return physical cell increments, face U/p, gradients and divergence."""
+            if self.config.model_name!='fvgn':raise ValueError("PredictFVGN requires model_name='fvgn'.")
+            i=next((i for i,v in enumerate(self._identities) if v['graph_id']==graphID),None)
+            if i is None:raise ValueError("Unknown FVGN graph ID.")
+            mode=self.model.training;self.model.eval()
+            try:
+                data=next(iter(self._Loader([self.data_list[i]],shuffle=False))).to(self.device)
+                self._Forward(data)
+                return {k:v.detach().cpu().numpy().copy() for k,v in self._fvgn_output.items() if k not in ('prediction','embedding') and not k.startswith('_')}
+            finally:self.model.train(mode)
+
+        @staticmethod
+        def _FVGNSequenceMesh(positions,cells,face_types,reference):
+            if not reference:return PyG.BuildFVGNMesh(positions,cells,face_types)
+            mesh=PyG.BuildFVGNMesh(positions,cells)
+            if face_types is not None:
+                tags=np.asarray(face_types)
+                exterior=mesh['neighbour'].numpy()<0
+                if tags.shape!=(len(mesh['owner']),) or not np.isin(tags,(0,1,2,3)).all():
+                    raise ValueError('Reference FVGN face labels must be 0/1/2/3.')
+                # Endpoint-derived author labels need not coincide with physical
+                # boundary topology. Preserve them as encoder metadata; reference
+                # decoded faces are not hard-clamped by these labels.
+                mesh['face_type']=torch.tensor(tags,dtype=torch.long)
+            return PyG._FVGNReferenceMesh(mesh)
+
+        @staticmethod
+        def _FVGNReferenceMesh(mesh):
+            if 'cell_faces' in mesh:return mesh
+            result=dict(mesh);cells=mesh['cells'].sort(1).values
+            vertices=mesh['vertices'];points=vertices[cells]
+            centers=(points[:,0]+points[:,1]+points[:,2])/3.
+            squared=(points-centers[:,None]).square().sum(-1)
+            result['vertex_weights']=squared/squared.sum(1,keepdim=True)
+            result['cells']=cells;result['centers']=centers
+            # Author mesh conversion orients vertex pairs max-ID first and
+            # cell pairs from greater (x,y) to lesser (x,y); exterior self-loops.
+            result['face_vertices']=mesh['face_vertices'].flip(1)
+            tangent=vertices[result['face_vertices'][:,0]]-vertices[result['face_vertices'][:,1]]
+            result['length']=tangent.norm(dim=1)
+            result['midpoint']=(vertices[result['face_vertices'][:,0]]+vertices[result['face_vertices'][:,1]])/2
+            valid=mesh['neighbour']>=0
+            first=mesh['owner'];second=mesh['neighbour'].clamp_min(0)
+            swap=valid & ((centers[first,0]<centers[second,0])|((centers[first,0]==centers[second,0])&(centers[first,1]<centers[second,1])))
+            result['owner']=torch.where(swap,mesh['neighbour'],mesh['owner'])
+            result['neighbour']=torch.where(swap,mesh['owner'],mesh['neighbour'])
+            normal=torch.stack((-tangent[:,1],tangent[:,0]),1)/result['length'][:,None]
+            orientation=((normal*(centers[result['owner']]-result['midpoint'])).sum(1)>0)
+            result['normal']=torch.where(orientation[:,None],-normal,normal)
+            lookup={tuple(sorted(v)):i for i,v in enumerate(result['face_vertices'].cpu().tolist())}
+            indices=torch.tensor([[lookup[tuple(sorted((t[a],t[b])))] for a,b in ((0,1),(1,2),(2,0))] for t in cells.cpu().tolist()],dtype=torch.long,device=cells.device)
+            lengths=result['length'][indices];semi=(lengths[:,0]+lengths[:,1]+lengths[:,2])*.5
+            heron=(semi*(semi-lengths[:,0])*(semi-lengths[:,1])*(semi-lengths[:,2])).clamp_min(0).sqrt()
+            if not bool((heron>0).all()):raise ValueError('Reference FVGN Heron areas lost precision; use a better conditioned mesh or physical formulation.')
+            result['area']=heron
+            signs=torch.where(result['owner'][indices]==torch.arange(len(cells),device=indices.device)[:,None],1.,-1.)
+            result['cell_faces']=indices;result['cell_normals']=result['normal'][indices]*signs[:,:,None]
+            return result
+
+        class _FVGNNormalizer(nn.Module):
+            """Reference online moments, including its unit pseudocount."""
+            def __init__(self,width,limit=10**7):
+                super().__init__();self.limit=limit
+                self.register_buffer('count',torch.tensor(1.))
+                self.register_buffer('updates',torch.tensor(1.))
+                self.register_buffer('total',torch.ones(width))
+                self.register_buffer('squared',torch.ones(width))
+            def moments(self):
+                mean=self.total/self.count.clamp_min(1.)
+                # Clamp cancellation error; the reference does not guard sqrt here.
+                variance=(self.squared/self.count.clamp_min(1.)-mean.square()).clamp_min(0.)
+                std=variance.sqrt();std=torch.where(std<1e-8,torch.ones_like(std),std)
+                return mean,std
+            def forward(self,value,accumulate=False):
+                if accumulate and self.updates.item()<self.limit:
+                    with torch.no_grad():
+                        self.count.add_(len(value));self.updates.add_(1.)
+                        self.total.add_(value.detach().sum(0));self.squared.add_(value.detach().square().sum(0))
+                mean,std=self.moments()
+                return (value-mean)/std
+            def inverse(self,value):
+                mean,std=self.moments();return value*std+mean
+
+        class _FVGNReferenceBlock(nn.Module):
+            """Directed half-channel aggregation and reference residual ordering."""
+            def __init__(self,width):
+                super().__init__()
+                self.cell=PyG._FVGNMLP(width+width//2,width,width)
+                self.face=PyG._FVGNMLP(3*width,width,width)
+            def forward(self,cells,faces,mesh):
+                first,second=faces.chunk(2,dim=-1)
+                vertices=faces.new_zeros((len(mesh['vertices']),first.shape[1]))
+                vertices.index_add_(0,mesh['face_vertices'][:,0],first)
+                vertices.index_add_(0,mesh['face_vertices'][:,1],second)
+                delta_cell=self.cell(torch.cat((cells,vertices[mesh['cells']].mean(1)),-1))
+                owner=mesh['owner'];neighbour=torch.where(mesh['neighbour']>=0,mesh['neighbour'],owner)
+                # Author code updates faces with the cell MLP OUTPUT, before adding
+                # the cell residual. Using cells+delta_cell here changes the model.
+                delta_face=self.face(torch.cat((delta_cell[owner],delta_cell[neighbour],faces),-1))
+                return cells+delta_cell,faces+delta_face
+
+        @staticmethod
+        def _FVGNReferenceIntegrate(mesh,decoded,coefficients,density):
+            """Published executable's normalised integration, not an SI FV solver.
+
+            Last two decoder channels are learned compensation, summed without
+            orientation/length factors exactly as in the pinned author program.
+            Pressure is detached from the momentum path; its own supervision trains it.
+            """
+            face=mesh['cell_faces'];normal=mesh['cell_normals']
+            uv=decoded[:,:2][face];pressure=decoded[:,2:3].detach()[face]
+            weight=coefficients.reshape(-1)[face]
+            flow=(uv*normal).sum(-1)
+            continuity=(flow*weight).sum(1)
+            advection=(uv*(flow*weight)[:,:,None]).sum(1)
+            pressure_force=(pressure*normal*weight[:,:,None]).sum(1)/density
+            compensation=decoded[:,3:5][face].sum(1)
+            return -advection-pressure_force+compensation,continuity
+
+        class _FVGNModel(nn.Module):
+            """Reference-compatible five-output FVGN; optional feature extensions."""
+            def __init__(self,context):
+                super().__init__()
+                self.options=context['options'];width=self.options.get('latent_dim',128)
+                self.velocity_indices=context['velocity_indices']
+                self.graph_dim=context['graph_dim'];self.extra_node=max(0,context['node_dim']-6)
+                self.extra_edge=max(0,context['edge_dim']-4)
+                for name,size in [('x',context['node_dim']),('targets',2)]:
+                    scaler=context['normalization'].get(name,{})
+                    self.register_buffer(name+'_mean',torch.tensor(scaler.get('mean',[0.]*size),dtype=torch.float32))
+                    self.register_buffer(name+'_scale',torch.tensor(scaler.get('scale',[1.]*size),dtype=torch.float32))
+                cell_width=2+self.extra_node+self.graph_dim
+                face_width=14+2*self.extra_edge+self.graph_dim
+                self.cell_encoder=PyG._FVGNMLP(cell_width,width,width)
+                self.face_encoder=PyG._FVGNMLP(face_width,width,width)
+                self.processors=nn.ModuleList([PyG._FVGNReferenceBlock(width) for _ in range(self.options.get('processor_blocks',15))])
+                self.decoder=PyG._FVGNMLP(width,5,width,norm=False)
+                limit=self.options.get('normalizer_accumulations',10**7)
+                self.cell_normalizer=PyG._FVGNNormalizer(cell_width,limit)
+                self.face_normalizer=PyG._FVGNNormalizer(face_width,limit)
+                self.delta_normalizer=PyG._FVGNNormalizer(2,limit)
+                self.uvp_normalizer=PyG._FVGNNormalizer(3,limit)
+                self.geometry_normalizer=nn.BatchNorm1d(1)
+                self.register_buffer('warmup_complete',torch.tensor(False))
+            def forward(self,data):
+                if getattr(data,'num_graphs',1)!=1:raise ValueError('FVGN reference processes one mesh per batch.')
+                mesh=data.fv_mesh;owner=mesh['owner'];neighbour=torch.where(mesh['neighbour']>=0,mesh['neighbour'],owner)
+                physical=data.x*self.x_scale+self.x_mean;velocity=physical[:,self.velocity_indices]
+                types=mesh['face_type'];prescribed=(types==1)|(types==2)
+                relative=mesh['centers'][owner]-mesh['centers'][neighbour]
+                difference=velocity[owner]-velocity[neighbour]
+                if self.training and self.options.get('random_edge_flip',True):
+                    flip=torch.where(torch.rand(len(owner),device=velocity.device)>.5,1.,-1.)
+                    difference=difference*flip[:,None];relative=relative*flip[:,None]
+                difference=torch.where(prescribed[:,None],data.fv_face_velocity,difference)
+                # Author defaults: two cell velocities, five physical edge fields,
+                # nine one-hot face types; boundary faces have self-loop neighbours.
+                mapped=types.new_tensor([0,6,4,5])[types]
+                raw_face=[difference,relative,mesh['length'][:,None],F.one_hot(mapped,9).to(data.x.dtype)]
+                raw_cell=[velocity]
+                if self.extra_node:raw_cell.append(data.x[:,6:])
+                if self.extra_edge:
+                    index=data.fv_edge_map
+                    extra=data.edge_attr[index.clamp_min(0),4:].reshape(len(owner),-1) if data.num_edges else velocity.new_zeros((len(owner),2*self.extra_edge))
+                    raw_face.append(torch.where((index[:,0]>=0)[:,None],extra,0.))
+                if self.graph_dim:
+                    raw_cell.append(data.u.expand(len(velocity),-1));raw_face.append(data.u.expand(len(owner),-1))
+                # Match reference accumulation order: output targets, then inputs.
+                targets={}
+                if getattr(data,'y',None) is not None:
+                    delta=data.y*self.targets_scale+self.targets_mean
+                    target_delta=self.delta_normalizer((velocity+delta)-velocity,accumulate=self.training)
+                    pressure=getattr(data,'fv_target_pressure',velocity.new_zeros(len(owner)))
+                    uvp_target=torch.cat((data.fv_target_velocity,pressure[:,None]),-1)
+                    target_face=self.uvp_normalizer(uvp_target,accumulate=self.training)
+                    targets={'_target_delta':target_delta,'_target_face':target_face}
+                cells=self.cell_encoder(self.cell_normalizer(torch.cat(raw_cell,-1),accumulate=self.training))
+                faces=self.face_encoder(self.face_normalizer(torch.cat(raw_face,-1),accumulate=self.training))
+                for block in self.processors:cells,faces=block(cells,faces,mesh)
+                decoded=self.decoder(faces)
+                if not bool(torch.isfinite(decoded).all()):raise FloatingPointError('Non-finite FVGN reference decoder output.')
+                coefficients=self.geometry_normalizer((mesh['length']*(data.dt/((mesh['area'][owner]+mesh['area'][neighbour])/2)))[:,None])
+                normal_delta,continuity=PyG._FVGNReferenceIntegrate(mesh,decoded,coefficients,data.fv_density)
+                if not self.options.get('continuity_loss_weight',0.):continuity=torch.zeros_like(continuity)
+                increment=self.delta_normalizer.inverse(normal_delta)
+                uvp=self.uvp_normalizer.inverse(decoded[:,:3])
+                if not bool(torch.isfinite(increment).all()):raise FloatingPointError('Non-finite FVGN reference update.')
+                # Physical divergence is diagnostic; it does not replace the
+                # reference normalised continuity residual used in training.
+                volume_flux=(uvp[:,:2]*mesh['normal']).sum(-1)*mesh['length']
+                divergence=velocity.new_zeros(len(velocity));valid=mesh['neighbour']>=0
+                divergence.index_add_(0,owner,volume_flux)
+                divergence.index_add_(0,mesh['neighbour'][valid],-volume_flux[valid])
+                result=dict(prediction=(increment-self.targets_mean)/self.targets_scale,embedding=cells,
+                            increment=increment,face_velocity=uvp[:,:2],face_pressure=uvp[:,2],
+                            divergence=divergence/mesh['area'],normalized_compensation=decoded[:,3:5],
+                            _delta_normalized=normal_delta,_face_normalized=decoded,_continuity=continuity)
+                result.update(targets);return result
+
+        def _FVGNNoise(self,data):
+            if (self.config.model_options or {}).get('formulation','reference')=='physical':return self._MSANoise(data)
+            std=(self.config.model_options or {}).get('noise_std',.02)
+            if not std:return data
+            data=data.clone();current=self._MSACurrentVelocity(data)
+            noise=torch.cat((torch.randn_like(current[:,:1]),torch.randn_like(current[:,:1])),1)*std
+            boundary=getattr(data,'boundary_mask',None)
+            if boundary is not None:noise=noise.masked_fill(boundary[:,None],0.)
+            self._MSASetVelocity(data,current+noise)
+            scale=data.y.new_tensor(self._scalers.get('targets',{}).get('scale',[1.,1.]))
+            data.y=data.y-noise/scale
+            return data
+
+        def _FVGNWarmup(self,loader):
+            if self.config.model_name!='fvgn' or (self.config.model_options or {}).get('formulation','reference')=='physical' or bool(self.model.warmup_complete):return
+            passes=(self.config.model_options or {}).get('normalizer_warmup_passes',2)
+            self.model.train()
+            with torch.no_grad():
+                for _ in range(passes):
+                    for data in loader:self._Forward(self._FVGNNoise(data.to(self.device)))
+            self.model.warmup_complete.fill_(True)
+
+        @staticmethod
         def BuildMSAHierarchy(positions, edgeIndex, nClusters=None, ratio=.1, maxClusters=128, seed=42):
             """Build deterministic sparse, barrier-aware spectral graph coarsening.
 
@@ -842,6 +1410,8 @@ if _PYG_IMPORT_ERROR is None:
             """
             if not sequences or not math.isfinite(timeStep) or timeStep <= 0: raise ValueError("Provide sequences and a positive timeStep.")
             sequences = [PyG.ReadCFDSequence(v) if isinstance(v,(str,os.PathLike)) else v for v in sequences]
+            explicit = ["split" in value for value in sequences]
+            if any(explicit) and not all(explicit): raise ValueError("Supply an official split for every sequence or none.")
             graphs, nodes, edges, dimensions, timesteps = [], [], [], None, []
             feature_width, extra_width, graph_names = None, None, None
             for sequence_id, sequence in enumerate(sequences):
@@ -855,6 +1425,8 @@ if _PYG_IMPORT_ERROR is None:
                 if velocity.ndim != 3 or velocity.shape[0] < 2 or velocity.shape[1] != n or velocity.shape[2] not in (2,3):
                     raise ValueError("velocity must have shape [at least 2 frames, nodes, 2/3].")
                 t, _, d = velocity.shape
+                supervision = PyG._ParseMask(sequence.get("supervision_mask",np.ones(n,dtype=bool))).numpy()
+                if supervision.shape != (n,): raise ValueError("supervision_mask must have one value per node.")
                 if dimensions is not None and dimensions != d: raise ValueError("All sequences need the same velocity dimension.")
                 dimensions = d
                 if index.ndim != 2 or index.shape[0] != 2 or not np.issubdtype(index.dtype, np.integer) or (index.size and (index.min()<0 or index.max()>=n)):
@@ -889,13 +1461,16 @@ if _PYG_IMPORT_ERROR is None:
                 feature_width, extra_width = global_features.shape[1], extra.shape[1]
                 for frame in range(t-1):
                     graph_id = len(graphs); dt = float(times[frame+1]-times[frame]); timesteps.append(dt)
-                    row = {"graph_id":graph_id,"label":0,"simulation_id":sequence_id,"frame_index":frame,"time":float(times[frame]),"dt":dt}
+                    row = {"graph_id":graph_id,"label":0,"simulation_id":sequence.get("simulation_id",sequence_id),"frame_index":frame+int(sequence.get("frame_offset",0)),"time":float(times[frame]),"dt":dt}
+                    if all(explicit):
+                        if sequence["split"] not in ("train","val","valid","test"): raise ValueError("Invalid official CFD split.")
+                        row["official_split"] = "val" if sequence["split"] == "valid" else sequence["split"]
                     row.update({f"feat_{j}":float(v) for j,v in enumerate(global_features[frame])}); graphs.append(row)
                     delta = velocity[frame+1]-velocity[frame]
                     for i in range(n):
                         features = np.r_[velocity[frame,i], np.eye(4)[tags[i]], extra[i]]
                         row = {"graph_id":graph_id,"node_id":i,"x":positions[i,0],"y":positions[i,1],"z":positions[i,2],
-                               "boundary_mask":bool(tags[i] in (1,2)),"volume":float(weights[i])}
+                               "boundary_mask":bool(tags[i] in (1,2)),"volume":float(weights[i]),"supervision_mask":bool(supervision[i])}
                         row.update({f"feat_{j}":float(v) for j,v in enumerate(features)})
                         row.update({f"delta_v{axis}":float(delta[i,j]) for j,axis in enumerate("xyz"[:d])}); nodes.append(row)
                     for a,b in pairs:
@@ -909,6 +1484,7 @@ if _PYG_IMPORT_ERROR is None:
                             target_columns=tuple("delta_v"+a for a in "xyz"[:dimensions]), target_units=("m/s",)*dimensions,
                             split_mode="graph", holdout_group_by="simulation_id", split=(.6,.2,.2), normalize_features=True, normalize_targets=True,
                             node_weight_column="volume", boundary_column="boundary_mask", model_options=options)
+            if all(explicit): defaults["split_column"] = "official_split"
             defaults.update(kwargs)
             if defaults["level"] != "node" or defaults["task"] != "regression" or defaults["target_columns"] != tuple("delta_v"+a for a in "xyz"[:dimensions]):
                 raise ValueError("CFD adapters use node velocity-increment regression.")
@@ -932,6 +1508,7 @@ if _PYG_IMPORT_ERROR is None:
                         "sequences":len(sequences),"transitions":len(graphs),"graph_feature_names":graph_names,
                         "loader_options":{k:getattr(validation,spellings.get(k,k)) for k in defaults}}
             PyG._WriteCFDFile(expected[3],manifest)
+            del graphs, nodes, edges, frames
             return PyG.ByCSVPath(path, **defaults)
 
         def _MSAVelocityIndices(self):
@@ -1032,7 +1609,7 @@ if _PYG_IMPORT_ERROR is None:
             return float(np.mean(losses)) if losses else 0.
 
         @torch.no_grad()
-        def Rollout(self, graphID, steps, timeStep=None, boundaryValues=None, graphFeatures=None, reference=None):
+        def Rollout(self, graphID, steps, timeStep=None, boundaryValues=None, graphFeatures=None, reference=None, faceBoundaryValues=None):
             """Autoregress physical velocities from a fixed mesh, predicting increments.
 
             Boundary values, if supplied, are physical [steps,nodes,components] next-step
@@ -1066,6 +1643,11 @@ if _PYG_IMPORT_ERROR is None:
             if graphFeatures is not None:
                 graphFeatures = np.asarray(graphFeatures,dtype=float)
                 if graphFeatures.shape != (steps,self._graph_dim) or not np.isfinite(graphFeatures).all(): raise ValueError("Invalid rollout graphFeatures shape/values.")
+            if faceBoundaryValues is not None:
+                faceBoundaryValues=np.asarray(faceBoundaryValues,dtype=float)
+                if self.config.model_name!='fvgn' or faceBoundaryValues.shape!=(steps,len(data.fv_mesh['owner']),2) or not np.isfinite(faceBoundaryValues).all():
+                    raise ValueError("FVGN faceBoundaryValues must be finite [steps,faces,2].")
+            face_fields=[];divergences=[]
             initial_time = float(data.time.item()) if getattr(data,"time",None) is not None else 0.
             states, increments, times = [state.cpu().numpy().copy()], [], [initial_time]
             mode = self.model.training; self.model.eval()
@@ -1078,13 +1660,20 @@ if _PYG_IMPORT_ERROR is None:
                         scaler = self._scalers.get("u")
                         if scaler: value = (value-value.new_tensor(scaler["mean"]))/value.new_tensor(scaler["scale"])
                         data.u = value
+                    if faceBoundaryValues is not None: data.fv_face_velocity=state.new_tensor(faceBoundaryValues[step])
                     batch = next(iter(self._Loader([data],batch_size=1,shuffle=False))).to(self.device)
-                    prediction,_ = self._Forward(batch)
+                    try:
+                        prediction,_ = self._Forward(batch)
+                    except FloatingPointError as error:
+                        raise FloatingPointError(f'Rollout failed at predicted step {step+1}: {error}') from error
+                    if self.config.model_name=='fvgn':
+                        face_fields.append(self._fvgn_output['face_pressure'].cpu().numpy().copy())
+                        divergences.append(self._fvgn_output['divergence'].cpu().numpy().copy())
                     delta = self._PhysicalTensor(prediction)
                     next_state = state+delta
                     prescribed = boundary if boundaryValues is None else state.new_tensor(boundaryValues[step])
                     next_state = torch.where(mask[:,None],prescribed,next_state)
-                    if not bool(torch.isfinite(next_state).all()): raise FloatingPointError("Non-finite autoregressive velocity field.")
+                    if not bool(torch.isfinite(next_state).all()): raise FloatingPointError(f"Non-finite autoregressive velocity field at predicted step {step+1}.")
                     increments.append((next_state-state).cpu().numpy().copy())
                     state = next_state
                     states.append(state.cpu().numpy().copy()); times.append(times[-1]+float(dt[step]))
@@ -1093,6 +1682,8 @@ if _PYG_IMPORT_ERROR is None:
                 self.model.train(mode)
             result = {"velocity":np.stack(states),"increments":np.stack(increments),"times":np.asarray(times),
                       "node_ids":copy.deepcopy(self._identities[i]["node_ids"]),"graph_id":graphID,"boundary_mask":mask.cpu().numpy()}
+            if self.config.model_name=='fvgn':
+                result['face_pressure']=np.stack(face_fields);result['divergence']=np.stack(divergences)
             if reference is not None:
                 reference = np.asarray(reference)
                 if reference.shape != result["velocity"].shape: raise ValueError("Reference must include the initial state and match the rollout shape.")
@@ -1109,6 +1700,8 @@ if _PYG_IMPORT_ERROR is None:
             if manifest.get("format_version") != 1 or manifest.get("target_kind") != "velocity_increment":
                 raise ValueError("Unsupported CFD dataset manifest.")
             options = dict(manifest["loader_options"])
+            if options.get('model_name')=='fvgn' and 'formulation' not in (options.get('model_options') or {}):
+                options['model_options']=dict(options.get('model_options') or {},formulation='physical')
             options.update(kwargs)
             return PyG.ByCSVPath(os.fspath(path),**options)
 
@@ -1124,6 +1717,182 @@ if _PYG_IMPORT_ERROR is None:
             finally:
                 if temporary and os.path.exists(temporary): os.unlink(temporary)
 
+        @staticmethod
+        def _TFVarint(data, offset):
+            value,shift = 0,0
+            while offset < len(data) and shift < 70:
+                byte = data[offset]; offset += 1
+                value |= (byte & 127) << shift
+                if byte < 128: return value,offset
+                shift += 7
+            raise ValueError("Malformed protobuf varint.")
+
+        @staticmethod
+        def _TFFields(data):
+            data = memoryview(data); offset = 0
+            while offset < len(data):
+                tag,offset = PyG._TFVarint(data,offset)
+                number,wire = tag >> 3,tag & 7
+                if not number: raise ValueError("Invalid protobuf field number.")
+                if wire == 2:
+                    size,offset = PyG._TFVarint(data,offset)
+                    end = offset+size
+                    if end > len(data): raise ValueError("Truncated protobuf field.")
+                    yield number,data[offset:end]; offset=end
+                elif wire == 0:
+                    value,offset = PyG._TFVarint(data,offset); yield number,value
+                elif wire in (1,5):
+                    size=8 if wire==1 else 4
+                    if offset+size>len(data): raise ValueError("Truncated protobuf scalar.")
+                    offset += size
+                else: raise ValueError("Unsupported protobuf wire encoding.")
+
+        @staticmethod
+        def _TFExample(payload):
+            """Decode only standard tf.train.Example bytes-list features, without TensorFlow."""
+            output = {}
+            for field,features in PyG._TFFields(payload):
+                if field != 1: continue
+                for entry_number,entry in PyG._TFFields(features):
+                    if entry_number != 1: continue
+                    key,value = None,None
+                    for number,item in PyG._TFFields(entry):
+                        if number == 1: key=bytes(item).decode("utf-8")
+                        if number == 2:
+                            for kind,encoded in PyG._TFFields(item):
+                                if kind != 1: raise ValueError("MeshGraphNets requires bytes-list features.")
+                                value=b"".join(bytes(v) for n,v in PyG._TFFields(encoded) if n==1)
+                    if key is None or value is None or key in output: raise ValueError("Invalid/duplicate TF Example feature.")
+                    output[key]=value
+            return output
+
+        @staticmethod
+        def _TFCRC(data):
+            try:
+                import google_crc32c
+                crc=google_crc32c.value(bytes(data))
+            except ImportError:
+                crc=0xffffffff
+                for byte in data:
+                    crc ^= byte
+                    for _ in range(8): crc=(crc>>1)^ (0x82f63b78 if crc&1 else 0)
+                crc ^= 0xffffffff
+            return (((crc>>15)|(crc<<17)) + 0xa282ead8) & 0xffffffff
+
+        @staticmethod
+        def ReadMeshGraphNets(path, meta, limit=None, verify=True, includePressure=False):
+            """Yield official cylinder-flow trajectories from local TFRecords.
+
+            TFRecord length/payload CRC32C are checked by default. Optional
+            google-crc32c accelerates validation; TensorFlow is not needed.
+            includePressure=True also yields the physical [frames,vertices,1] field.
+            """
+            import struct
+            if isinstance(meta,(str,os.PathLike)):
+                with open(meta,encoding="utf-8") as stream: meta=json.load(stream)
+            if limit is not None and (not isinstance(limit,int) or limit<1): raise ValueError("limit must be positive.")
+            with open(path,"rb") as stream:
+                count=0
+                while limit is None or count<limit:
+                    header=stream.read(12)
+                    if not header: break
+                    if len(header)!=12: raise ValueError("Truncated TFRecord header.")
+                    size,crc=struct.unpack("<QI",header)
+                    if size>2**31: raise ValueError("Unreasonably large TFRecord.")
+                    payload=stream.read(size); footer=stream.read(4)
+                    if len(payload)!=size or len(footer)!=4: raise ValueError("Truncated TFRecord payload.")
+                    if verify and (PyG._TFCRC(header[:8])!=crc or PyG._TFCRC(payload)!=struct.unpack("<I",footer)[0]):
+                        raise ValueError("TFRecord CRC32C mismatch.")
+                    fields=PyG._TFExample(payload)
+                    decoded={}
+                    for key in ("cells","mesh_pos","node_type","velocity") + (("pressure",) if includePressure else ()):
+                        if key not in fields or key not in meta["features"]: raise ValueError("Missing MeshGraphNets feature.")
+                        feature=meta["features"][key]
+                        dtype=np.dtype(feature["dtype"]).newbyteorder("<")
+                        decoded[key]=np.frombuffer(fields[key],dtype=dtype).reshape(feature["shape"]).copy()
+                    cells=decoded["cells"][0].astype(np.int64)
+                    pos=decoded["mesh_pos"][0]
+                    types=decoded["node_type"][0,:,0]
+                    velocity=decoded["velocity"]
+                    if cells.ndim!=2 or cells.shape[1]!=3 or velocity.shape[1]!=len(pos) or types.shape!=(len(pos),):
+                        raise ValueError("Inconsistent cylinder-flow mesh fields.")
+                    edge=np.concatenate([cells[:,[0,1]],cells[:,[1,2]],cells[:,[2,0]]])
+                    undirected=np.unique(np.sort(edge,axis=1),axis=0)
+                    index=np.concatenate([undirected,undirected[:,::-1]]).T
+                    weights=np.zeros(len(pos))
+                    triangle=pos[cells]
+                    area=np.abs((triangle[:,1,0]-triangle[:,0,0])*(triangle[:,2,1]-triangle[:,0,1])-(triangle[:,1,1]-triangle[:,0,1])*(triangle[:,2,0]-triangle[:,0,0]))*.5
+                    for j in range(3): np.add.at(weights,cells[:,j],area/3)
+                    tags=np.ones(len(pos),dtype=np.int64)
+                    tags[types==0]=0; tags[types==4]=2; tags[types==5]=3
+                    record = {"positions":pos,"edge_index":index,"velocity":velocity,"weights":weights,
+                           "times":np.arange(len(velocity))*float(meta["dt"]),"boundary_type":tags,
+                           "supervision_mask":np.isin(types,(0,5)),"original_node_type":types,
+                           "cells":cells,"record_index":count}
+                    if includePressure:
+                        pressure=decoded['pressure']
+                        if pressure.shape!=(len(velocity),len(pos),1) or not np.isfinite(pressure).all():raise ValueError('Invalid MeshGraphNets pressure field.')
+                        record['pressure']=pressure
+                    yield record
+                    count += 1
+
+        @staticmethod
+        def DownloadMeshGraphNets(path, counts=None):
+            """Download CRC-verified prefixes of official cylinder-flow splits.
+
+            Filenames/manifests explicitly identify prefixes rather than pretending
+            they are the complete official dataset. HTTP byte ranges avoid whole-file
+            multi-gigabyte downloads. Existing complete requested prefixes are reused.
+            """
+            import struct
+            import urllib.request
+            counts=dict(counts or {"train":8,"valid":2,"test":2})
+            if set(counts)-{"train","valid","test"} or any(not isinstance(v,int) or v<1 for v in counts.values()):
+                raise ValueError("Use positive train/valid/test record counts.")
+            path=os.fspath(path); os.makedirs(path,exist_ok=True)
+            base="https://storage.googleapis.com/dm-meshgraphnets/cylinder_flow/"
+            with urllib.request.urlopen(base+"meta.json",timeout=120) as response: metadata=json.load(response)
+            PyG._WriteCFDFile(os.path.join(path,"meta.json"),metadata)
+            output={"meta":os.path.join(path,"meta.json"),"splits":{}}
+            for split,count in counts.items():
+                filename=os.path.join(path,f"{split}.first-{count}.tfrecord")
+                manifest=filename+".json"
+                if os.path.isfile(filename) and os.path.isfile(manifest):
+                    with open(manifest,encoding="utf-8") as stream: info=json.load(stream)
+                    digest=hashlib.sha256()
+                    with open(filename,"rb") as stream:
+                        for chunk in iter(lambda:stream.read(1024*1024),b""): digest.update(chunk)
+                    if info.get("records")==count and digest.hexdigest()==info.get("sha256"):
+                        output["splits"][split]=filename; continue
+                temporary=filename+".partial"; offset=0; digest=hashlib.sha256(); total_size=None
+                def fetch(start,end):
+                    request=urllib.request.Request(base+split+".tfrecord",headers={"Range":f"bytes={start}-{end}"})
+                    with urllib.request.urlopen(request,timeout=180) as response:
+                        content_range=response.headers.get("Content-Range","")
+                        if response.status!=206 or not content_range.startswith(f"bytes {start}-"):
+                            raise ValueError("Official host did not honour the requested bounded byte range.")
+                        result=response.read(end-start+2)
+                        if len(result)!=end-start+1: raise ValueError("Truncated or oversized dataset range.")
+                        return result,int(content_range.rsplit("/",1)[1])
+                try:
+                    with open(temporary,"wb") as target:
+                        for record in range(count):
+                            header,total_size=fetch(offset,offset+11)
+                            size,crc=struct.unpack("<QI",header)
+                            if size>2**31 or PyG._TFCRC(header[:8])!=crc: raise ValueError("Invalid remote TFRecord length/CRC.")
+                            body,_=fetch(offset+12,offset+12+size+3)
+                            if PyG._TFCRC(body[:-4])!=struct.unpack("<I",body[-4:])[0]: raise ValueError("Remote TFRecord payload CRC mismatch.")
+                            target.write(header); target.write(body); digest.update(header); digest.update(body)
+                            offset += 16+size
+                    os.replace(temporary,filename)
+                finally:
+                    if os.path.exists(temporary): os.unlink(temporary)
+                PyG._WriteCFDFile(manifest,{"url":base+split+".tfrecord","source_split":split,"records":count,
+                                          "record_indices":list(range(count)),"downloaded_bytes":offset,
+                                          "official_split_bytes":total_size,"full_split":False,"sha256":digest.hexdigest()})
+                output["splits"][split]=filename
+            return output
+
         _ModelFactories = {}
 
         @staticmethod
@@ -1134,7 +1903,7 @@ if _PYG_IMPORT_ERROR is None:
             and optional 'embedding' tensors. Factories are registered by name in each
             process; executable Python code is never serialized into a checkpoint.
             """
-            if not isinstance(name, str) or not name or name in ("default", "msa_gnn") or not callable(factory):
+            if not isinstance(name, str) or not name or name in ("default", "msa_gnn", "fvgn") or not callable(factory):
                 raise ValueError("Use a nonempty custom name and a callable factory.")
             PyG._ModelFactories[name] = factory
 
@@ -1196,6 +1965,13 @@ if _PYG_IMPORT_ERROR is None:
                 if not set(frame[cfg.graph_id_header]) <= known:
                     raise ValueError(f"{name}.csv contains orphan graph references.")
             if not known: raise ValueError("Dataset contains no graphs.")
+            if cfg.split_column:
+                if cfg.split_column not in self.graph_df or not self.graph_df[cfg.split_column].isin(("train","val","valid","test")).all():
+                    raise ValueError("Explicit split labels must be train/val/valid/test.")
+                if cfg.holdout_group_by and cfg.holdout_group_by in self.graph_df:
+                    canonical = self.graph_df[cfg.split_column].replace({"valid":"val"})
+                    if canonical.groupby(self.graph_df[cfg.holdout_group_by]).nunique().max() > 1:
+                        raise ValueError("A group crosses explicit official splits.")
             if cfg.holdout_group_by:
                 if cfg.holdout_group_by not in self.graph_df or self.graph_df[cfg.holdout_group_by].isna().any():
                     raise ValueError("holdout_group_by must name a nonmissing graph column.")
@@ -1231,7 +2007,7 @@ if _PYG_IMPORT_ERROR is None:
         def _Loader(self, data, batch_size=1, shuffle=False):
             # A hierarchy is deliberately processed one scene at a time; arbitrary
             # coarse-level index tensors cannot use PyG's fine-node batch offsets.
-            if self.config.model_name == "msa_gnn" or any(getattr(d, "hierarchy", None) is not None for d in data): batch_size = 1
+            if self.config.model_name in ("msa_gnn","fvgn") or any(getattr(d, "hierarchy", None) is not None for d in data): batch_size = 1
             generator = None if shuffle else torch.Generator().manual_seed(self.config.random_state)
             return DataLoader(data, batch_size=batch_size, shuffle=shuffle, generator=generator)
 
@@ -1239,6 +2015,7 @@ if _PYG_IMPORT_ERROR is None:
             """Structured model contract shared by every training/inference path."""
             if self.config.model_name != "default":
                 result = self.model(data)
+                if self.config.model_name == 'fvgn': self._fvgn_output=result
                 if isinstance(result, dict):
                     prediction, embedding = result["prediction"], result.get("embedding")
                 else:
@@ -1268,6 +2045,8 @@ if _PYG_IMPORT_ERROR is None:
 
         def _AttachSimulation(self, data, graph, nodes, edges):
             cfg = self.config
+            if "supervision_mask" in nodes:
+                data.supervision_mask = self._ParseMask(nodes["supervision_mask"].values)
             present = [col in nodes for col in cfg.position_columns]
             if any(present) and not all(present): raise ValueError("Supply all configured position columns or none.")
             if present and all(present):
@@ -1291,6 +2070,8 @@ if _PYG_IMPORT_ERROR is None:
                     if not math.isfinite(value) or (attr == "dt" and value <= 0):
                         raise ValueError("Time must be finite and time step must be positive.")
                     setattr(data, attr, torch.tensor([value], dtype=torch.float32))
+
+            self._AttachFVGN(data,graph,nodes,edges)
 
         def SetGraphData(self, graphID, **attributes):
             """Attach simulation inputs by source graph ID, independent of ontology metadata.
@@ -1323,6 +2104,8 @@ if _PYG_IMPORT_ERROR is None:
                     raise ValueError("Simulation attribute size does not match the mesh.")
                 if key == "pos" and (tensor.ndim != 2 or tensor.shape[0] != count):
                     raise ValueError("pos must contain one coordinate vector per node.")
+                if key == "pos" and self.config.model_name=='fvgn':
+                    raise ValueError("Re-export FVGN geometry with ByFVGNSequences; cell positions cannot replace mesh incidence.")
                 if key in ("time", "dt"):
                     if tensor.numel() != 1 or (key == "dt" and tensor.item() <= 0):
                         raise ValueError("time/dt must be scalar and dt must be positive.")
@@ -1345,7 +2128,8 @@ if _PYG_IMPORT_ERROR is None:
             for i, data in enumerate(self.data_list):
                 n = data.num_edges if prefix else data.num_nodes
                 for split, selected in zip(("train", "val", "test"), sets):
-                    setattr(data, prefix + split + "_mask", torch.full((n,), i in selected, dtype=torch.bool))
+                    supervision = getattr(data,"supervision_mask",torch.ones(n,dtype=torch.bool)) if not prefix else torch.ones(n,dtype=torch.bool)
+                    setattr(data, prefix + split + "_mask", torch.full((n,), i in selected, dtype=torch.bool) & supervision)
 
         def _TrainingValues(self, key):
             result = []
@@ -1385,6 +2169,9 @@ if _PYG_IMPORT_ERROR is None:
                     name = "targets" if key in ("y", "edge_y") else key
                     if not width or name in self._scalers: continue
                     values = self._TrainingValues(key)
+                    if not values and key=='edge_attr' and not any(d.num_edges for d in self.data_list):
+                        self._scalers[name]={'mean':[0.]*width,'scale':[1.]*width}
+                        continue
                     if not values: raise ValueError(f"No training values available to fit {key} normalization.")
                     matrix = torch.cat([v.reshape(-1, width).double() for v in values])
                     mean, scale = matrix.mean(0), matrix.std(0, unbiased=False)
@@ -1495,9 +2282,10 @@ if _PYG_IMPORT_ERROR is None:
                 digest.update(pd.util.hash_pandas_object(frame, index=True).values.tobytes())
             settings = {k: getattr(self.config, k) for k in ("level", "task", "target_columns", "split_mode", "split",
                         "holdout_group_by", "random_state", "shuffle", "link_val_ratio", "link_test_ratio", "link_is_undirected")}
+            if self.config.split_column is not None: settings["split_column"]=self.config.split_column
             digest.update(json.dumps(settings, sort_keys=True).encode())
             for data in self.data_list:
-                for key in ("pos", "boundary_mask", "node_weight", "edge_weight", "time", "dt", "hierarchy"):
+                for key in ("pos", "boundary_mask", "node_weight", "edge_weight", "time", "dt", "hierarchy", "fv_mesh", "fv_edge_map", "fv_face_velocity", "fv_target_velocity", "fv_target_pressure", "fv_boundary_pressure", "fv_density", "fv_viscosity"):
                     value = getattr(data, key, None)
                     values = sorted(value.items()) if isinstance(value, dict) else [(key, value)]
                     for name, tensor in values:
@@ -1524,13 +2312,19 @@ if _PYG_IMPORT_ERROR is None:
                 raise ValueError("Target normalization requires regression.")
             if cfg.target_units and len(cfg.target_units) != (len(cfg.target_columns) or 1):
                 raise ValueError("target_units must match the number of target components.")
+            if cfg.split_column is not None and (not isinstance(cfg.split_column,str) or not cfg.split_column):
+                raise ValueError("split_column must be a nonempty column name or None.")
+            if cfg.split_column and cfg.level == "link":
+                raise ValueError("Explicit graph split_column is not supported for link prediction.")
+            if cfg.split_column and cfg.level in ("node","edge") and cfg.split_mode != "graph":
+                raise ValueError("Explicit graph splits require split_mode='graph'.")
             if cfg.split_mode not in ("entity", "graph"):
                 raise ValueError("split_mode must be 'entity' or 'graph'.")
             if cfg.level == "link" and cfg.split_mode == "graph":
                 raise ValueError("Link tasks use fixed edge splits; whole-graph splits require a node/edge/graph task.")
             if not isinstance(cfg.model_name, str) or not cfg.model_name:
                 raise ValueError("model_name must be a nonempty string.")
-            if cfg.model_name not in ("default", "msa_gnn") and cfg.model_name not in PyG._ModelFactories:
+            if cfg.model_name not in ("default", "msa_gnn", "fvgn") and cfg.model_name not in PyG._ModelFactories:
                 raise ValueError(f"Register custom model {cfg.model_name!r} before constructing/loading it.")
             if cfg.model_options is not None and not isinstance(cfg.model_options, dict):
                 raise ValueError("model_options must be a dictionary.")
@@ -1538,6 +2332,31 @@ if _PYG_IMPORT_ERROR is None:
                 json.dumps(cfg.model_options, allow_nan=False)
             except (TypeError, ValueError) as error:
                 raise ValueError("model_options must contain JSON-compatible finite values.") from error
+            if cfg.model_name == "fvgn":
+                if cfg.level!='node' or cfg.task!='regression' or len(cfg.target_columns)!=2 or cfg.split_mode!='graph':
+                    raise ValueError("FVGN requires whole-graph node regression with two velocity-increment targets.")
+                opts=cfg.model_options or {}
+                known={'formulation','random_edge_flip','normalizer_warmup_passes','normalizer_accumulations','latent_dim','processor_blocks','momentum_loss_weight','continuity_loss_weight',
+                       'face_velocity_loss_weight','pressure_loss_weight','pressure_scale','noise_std',
+                       'velocity_feature_columns','time_steps','allow_unseen_time_step'}
+                if set(opts)-known:raise ValueError(f"Unknown FVGN options: {sorted(set(opts)-known)}.")
+                if opts.get('formulation','reference') not in ('reference','physical'):raise ValueError('FVGN formulation must be reference or physical.')
+                if opts.get('formulation','reference')=='reference' and 'pressure_scale' in opts:raise ValueError('Reference FVGN uses its online face-pressure normalizer; pressure_scale is a physical-formulation option.')
+                if opts.get('formulation','reference')=='reference' and opts.get('latent_dim',128)%2:raise ValueError('Reference FVGN latent_dim must be even.')
+                if not isinstance(opts.get('random_edge_flip',True),bool):raise ValueError('FVGN random_edge_flip must be boolean.')
+                for name,default,lower in [('normalizer_warmup_passes',2,0),('normalizer_accumulations',10**7,2)]:
+                    v=opts.get(name,default)
+                    if not isinstance(v,int) or isinstance(v,bool) or v<lower:raise ValueError(f'Invalid FVGN {name}.')
+                for key,default in [('latent_dim',128),('processor_blocks',15)]:
+                    v=opts.get(key,default)
+                    if not isinstance(v,int) or isinstance(v,bool) or v<1:raise ValueError(f"Invalid FVGN {key}.")
+                for key,default in [('momentum_loss_weight',10.),('continuity_loss_weight',1.),('face_velocity_loss_weight',1.),('pressure_loss_weight',0.),('noise_std',0.)]:
+                    v=opts.get(key,default)
+                    if not isinstance(v,(int,float)) or isinstance(v,bool) or v<0:raise ValueError(f"Invalid FVGN {key}.")
+                if opts.get('momentum_loss_weight',10.)<=0:raise ValueError("FVGN momentum loss weight must be positive.")
+                if not isinstance(opts.get('pressure_scale',1.),(int,float)) or opts.get('pressure_scale',1.)<=0:raise ValueError("FVGN pressure_scale must be positive.")
+                if 'allow_unseen_time_step' in opts and not isinstance(opts['allow_unseen_time_step'],bool):raise ValueError("FVGN time-step flag must be boolean.")
+                if 'time_steps' in opts and (not isinstance(opts['time_steps'],(list,tuple)) or not opts['time_steps'] or any(not isinstance(v,(int,float)) or isinstance(v,bool) or v<=0 for v in opts['time_steps'])):raise ValueError("FVGN time_steps must be positive.")
             if cfg.model_name == "msa_gnn":
                 if cfg.level != "node" or cfg.task != "regression" or len(cfg.target_columns) not in (2, 3):
                     raise ValueError("MSA-GNN requires node regression with two or three velocity-increment target columns.")
@@ -1700,6 +2519,7 @@ if _PYG_IMPORT_ERROR is None:
                 raise ValueError(f"No supervised samples in the {split} split.")
 
         def _Fit(self, train_loader, val_loader, train_epoch, eval_epoch):
+            self._FVGNWarmup(train_loader)
             best, best_state, best_optimizer, best_rng, patience = float("inf"), None, None, None, 0
             if getattr(self, "_continue_history", False) and getattr(self, "_early_state", None):
                 state = self._early_state
@@ -1935,7 +2755,7 @@ if _PYG_IMPORT_ERROR is None:
             """
             cfg = copy.deepcopy(self.config)
             immutable = {"level", "task", "inference", "ontology", "optional_feature_columns",
-                         "target_columns", "target_units", "normalize_features", "normalize_targets", "split_mode",
+                         "target_columns", "target_units", "normalize_features", "normalize_targets", "split_mode", "split_column",
                          "position_columns", "node_weight_column", "edge_weight_column", "boundary_column",
                          "time_column", "time_step_column"}
             for key, value in kwargs.items():
@@ -2029,7 +2849,9 @@ if _PYG_IMPORT_ERROR is None:
                 "num_outputs": int(self._num_outputs),
                 "target_columns": list(self.config.target_columns),
                 "split_mode": self.config.split_mode,
+                "split_column": self.config.split_column,
                 "model_name": self.config.model_name,
+                "model_formulation": (self.config.model_options or {}).get("formulation","reference") if self.config.model_name=="fvgn" else None,
                 "epochs_completed": self._epochs_completed,
                 "normalization": copy.deepcopy(self._scalers),
                 "edge_feature_dim": int(self._edge_dim),
@@ -2432,14 +3254,16 @@ if _PYG_IMPORT_ERROR is None:
                     node_id_to_local[key] = int(local_i)
 
                 edge_pairs = []
-                for row_i, row in g_edges.iterrows():
-                    src_key = self._label_key(row[cfg.edge_src_header])
-                    dst_key = self._label_key(row[cfg.edge_dst_header])
+                sources = g_edges[cfg.edge_src_header].to_numpy()
+                destinations = g_edges[cfg.edge_dst_header].to_numpy()
+                for row_i, source, destination in zip(g_edges.index,sources,destinations):
+                    src_key = self._label_key(source)
+                    dst_key = self._label_key(destination)
                     if src_key not in node_id_to_local or dst_key not in node_id_to_local:
                         raise ValueError(
                             "PyG - Error: Edge references a node_id that is not present in nodes.csv "
                             f"for graph {gid!r} at edges.csv row {row_i!r}: "
-                            f"{row[cfg.edge_src_header]!r} -> {row[cfg.edge_dst_header]!r}."
+                            f"{source!r} -> {destination!r}."
                         )
                     edge_pairs.append([node_id_to_local[src_key], node_id_to_local[dst_key]])
 
@@ -2513,7 +3337,7 @@ if _PYG_IMPORT_ERROR is None:
                     setattr(data, key, copy.deepcopy(value))
                 self._identities.append({"graph_id": self._clean_metadata_value(gid),
                                          "node_ids": [self._clean_metadata_value(v) for v in node_ids],
-                                         "edge_endpoints": [(self._clean_metadata_value(row[cfg.edge_src_header]), self._clean_metadata_value(row[cfg.edge_dst_header])) for _, row in g_edges.iterrows()]})
+                                         "edge_endpoints": [(self._clean_metadata_value(a), self._clean_metadata_value(b)) for a,b in zip(sources,destinations)]})
                 self.data_list.append(data)
 
             # output dimensionality
@@ -2548,6 +3372,12 @@ if _PYG_IMPORT_ERROR is None:
         # ----------------------------
         def _split_holdout(self):
             cfg = self.config
+            if cfg.split_column:
+                labels = self.graph_df[cfg.split_column].replace({"valid":"val"}).to_numpy()
+                selected = [np.flatnonzero(labels == split).tolist() for split in ("train","val","test")]
+                self.train_set,self.val_set,self.test_set = [[self.data_list[i] for i in rows] for rows in selected]
+                if cfg.level in ("node","edge"): self._SetGraphMasks(*selected)
+                return
             if cfg.level in ["node", "edge", "link"] and cfg.split_mode != "graph":
                 self.train_set = self.data_list
                 self.val_set = self.data_list
@@ -2648,7 +3478,7 @@ if _PYG_IMPORT_ERROR is None:
                 in_dim = int(self.data_list[0].x.shape[1])  # fallback (training-time)
 
             if cfg.model_name != "default":
-                factory = self._MSAModel if cfg.model_name == "msa_gnn" else self._ModelFactories.get(cfg.model_name)
+                factory = self._MSAModel if cfg.model_name == "msa_gnn" else (self._FVGNPhysicalModel if (cfg.model_options or {}).get('formulation','reference')=='physical' else self._FVGNModel) if cfg.model_name == 'fvgn' else self._ModelFactories.get(cfg.model_name)
                 if factory is None:
                     raise ValueError(f"Register custom model {cfg.model_name!r} before constructing/loading it.")
                 context = {"node_dim": in_dim, "edge_dim": self._edge_dim,
@@ -2658,6 +3488,12 @@ if _PYG_IMPORT_ERROR is None:
                            "target_units": tuple(cfg.target_units),
                            "position_dim": int(self.data_list[0].pos.shape[1]) if getattr(self.data_list[0], "pos", None) is not None else 0,
                            "options": copy.deepcopy(cfg.model_options or {})}
+                if cfg.model_name=='fvgn':
+                    if any(getattr(d,'fv_mesh',None) is None for d in self.data_list):raise ValueError('FVGN requires ByFVGNSequences mesh incidence data.')
+                    if (cfg.model_options or {}).get('formulation','reference')=='reference':
+                        for d in self.data_list:d.fv_mesh=self._FVGNReferenceMesh(d.fv_mesh)
+                    context['normalization']=copy.deepcopy(self._scalers)
+                    context['velocity_indices']=self._MSAVelocityIndices()
                 self.model = factory(context)
                 if not isinstance(self.model, nn.Module): raise ValueError("Model factory must return nn.Module.")
                 self.model = self.model.to(self.device)
@@ -2744,6 +3580,7 @@ if _PYG_IMPORT_ERROR is None:
                     group.update(lr=self.config.lr, weight_decay=self.config.weight_decay)
                 self._rng_state = copy.deepcopy(continuation["rng"])
             with self._RandomContext():
+                self._FVGNWarmup(train_loader)
                 result = self._Fit(train_loader, val_loader, getattr(self, "_train_epoch_" + level), getattr(self, "_eval_epoch_" + level))
             self._training_signature = signature
             return result
@@ -2755,6 +3592,8 @@ if _PYG_IMPORT_ERROR is None:
             caller's trained model, data, optimizer, scalers, RNG and history are retained.
             Reports include fold memberships and fitted normalization statistics.
             """
+            if self.config.split_column:
+                raise ValueError("CrossValidate cannot remix an explicit official split; use its validation/test sets.")
             if self.config.inference or self.config.level == "link" or not self._GraphSplit():
                 raise ValueError("CrossValidate requires labelled graph-level or whole-graph node/edge tasks.")
             from sklearn.model_selection import KFold, StratifiedKFold, GroupKFold, GroupShuffleSplit, train_test_split
@@ -3379,13 +4218,14 @@ if _PYG_IMPORT_ERROR is None:
             losses = []
             for data in loader:
                 data = data.to(self.device)
-                if self.config.model_name == "msa_gnn": data = self._MSANoise(data)
+                if self.config.model_name=='fvgn': data=self._FVGNNoise(data)
+                elif self.config.model_name=='msa_gnn': data=self._MSANoise(data)
                 self.optimizer.zero_grad()
                 logits, node_emb = self._Forward(data)
                 mask = data.train_mask
                 if not bool(mask.any()):
                     continue
-                loss = self._loss_from_logits(logits[mask], data.y[mask], self.config.task)
+                loss = self._FVGNObjective(data,logits,mask) if self.config.model_name=='fvgn' else self._loss_from_logits(logits[mask], data.y[mask], self.config.task)
                 loss.backward()
                 self._apply_gradients()
                 losses.append(float(loss.detach().cpu()))
@@ -3401,7 +4241,7 @@ if _PYG_IMPORT_ERROR is None:
                 mask = data.val_mask
                 if not bool(mask.any()):
                     continue
-                loss = self._loss_from_logits(logits[mask], data.y[mask], self.config.task)
+                loss = self._FVGNObjective(data,logits,mask) if self.config.model_name=='fvgn' else self._loss_from_logits(logits[mask], data.y[mask], self.config.task)
                 losses.append(float(loss.detach().cpu()))
             return float(np.mean(losses)) if losses else 0.0
 
@@ -4105,6 +4945,8 @@ if _PYG_IMPORT_ERROR is None:
                     for key, value in obj.get("config_fields", {}).items():
                         if hasattr(cfg, key) and key not in {"inference", "use_gpu", "verbose"}:
                             setattr(cfg, key, value)
+                    if cfg.model_name=='fvgn' and 'formulation' not in (cfg.model_options or {}):
+                        cfg.model_options=dict(cfg.model_options or {},formulation='physical')
                     self._ValidateConfig(cfg)
                     self.config = cfg
                 self._in_dim = obj.get("in_dim", self._in_dim)

@@ -30,7 +30,7 @@ dependencies = [
 ]
 [project.optional-dependencies]
 pyg = ["torch", "torch-geometric", "scikit-learn"]
-cfd = ["meshio"]
+cfd = ["meshio", "google-crc32c"]
 sun = ["ephem"]
 graph = ["networkx", "igraph", "graphviz", "pyvis", "rdflib>=6.0.0"]
 ifc = ["ifcopenshell"]
