@@ -270,6 +270,53 @@ counted. Azimuth seam patches may extend beyond the nominal sheet width.
 Numeric sky factor remains the complete calculation even if a sheet patch is
 omitted. This is an explanatory sampled diagram, not an exact silhouette.</p>
 </section>
+<section id="calibrated-diagrams">
+<h2>Calibrated diagrams<a class="headerlink" href="#calibrated-diagrams" title="Permalink to this heading"></a></h2>
+<p>For scientific charts, use <code class="docutils literal notranslate"><span class="pre">WaldramDiagram(result,</span> <span class="pre">index,</span> <span class="pre">calibrated=True)</span></code> or
+<code class="docutils literal notranslate"><span class="pre">WaldramDiagramComparison(before,</span> <span class="pre">after,</span> <span class="pre">index)</span></code>. The existing native Face
+sheet remains available as the default for compatibility. The calibrated data
+are JSON-compatible and contain no SVG or other presentation code.</p>
+<p>The uniform-sky, horizontal-plane chart has x = azimuth in degrees and
+y = sin(altitude)^2, on a common 0..1 vertical range. Equal chart areas represent
+equal sky-factor contributions. An unobstructed 180-degree frame contributes
+50%, while a full 360-degree frame contributes 100%. These are not the vertical
+sky-component or CIE-overcast chart conventions. Altitude tick positions are
+nonlinear. The frame is centred on the first aperture’s horizontal normal,
+or on the supplied horizontal <code class="docutils literal notranslate"><span class="pre">direction</span></code>; the returned bearing is clockwise
+from model +Y. Automatic frames use -90..90 degrees for forward-facing windows
+and -180..180 where required. Explicit frames deliberately crop to their range.</p>
+<p><code class="docutils literal notranslate"><span class="pre">graticule</span></code> provides azimuth/altitude lines and, for a forward 180-degree
+frame, the droop curves of horizontal edges parallel to the window plane.
+Their central elevations are spaced by <code class="docutils literal notranslate"><span class="pre">gridStep</span></code> (default 15 degrees).
+<code class="docutils literal notranslate"><span class="pre">apertureOutlines</span></code> adaptively projects straight native boundary edges,
+including internal boundaries, clipping at the horizon and angular seam.
+<code class="docutils literal notranslate"><span class="pre">projectionTolerance</span></code> is the maximum midpoint deviation in normalized
+chart coordinates (azimuth divided by 360 and projected height), not an error
+bound for visibility or sky factor. Edges are approximated to depth 14.</p>
+<p>Visibility uses independent angular cells (default maximum width/height
+0.5 degrees), sampled at projected-area midpoints. Each rectangle’s exact
+projected area determines its sky-factor weight. Cells outside apertures are
+excluded; holes remain excluded. Region categories distinguish visible sky
+and the nearest opaque scene source. Pass one string per topology using
+<code class="docutils literal notranslate"><span class="pre">PrepareScene(...,</span> <span class="pre">labels=...)</span></code> to preserve semantic obstruction labels.
+The default label is <code class="docutils literal notranslate"><span class="pre">Existing</span></code>; selected-room occlusion is labelled <code class="docutils literal notranslate"><span class="pre">Room</span></code>.
+Source labels do not change the geometry identity or the physical calculation.
+The <code class="docutils literal notranslate"><span class="pre">plan</span></code> record contains native floor footprints, window vertices and
+world-XY axes for an optional context inset; it is not a boundary survey.</p>
+<p>Comparison uses identical axes, angular grids and aperture masks. It returns
+retained, lost, gained and blocked regions, with loss/gain as percentages of
+unobstructed external horizontal illuminance. <code class="docutils literal notranslate"><span class="pre">diagramChangePP</span></code> is gained
+minus lost. <code class="docutils literal notranslate"><span class="pre">assessmentChangePP</span></code> comes from the original quadrature.
+<code class="docutils literal notranslate"><span class="pre">reconciliation</span></code> reports both integrations and their signed difference in
+percentage points. The comparison refines the chart grid once by default if
+that difference exceeds <code class="docutils literal notranslate"><span class="pre">reconciliationTolerance</span></code> (default 0.05 pp), up to
+the 600,000-cell limit. A discrepancy remains explicit; no value is forced to
+match. Refine the original assessment too when needed. <code class="docutils literal notranslate"><span class="pre">maxRefinements</span></code> can
+be 0..3, subject to that limit. Cancellation callbacks are supported.</p>
+<p>Recalculate assessments to populate the new geometry cache. These sampled
+obstruction silhouettes and adaptive aperture curves are preliminary numerical
+outputs, not certified survey drawings or legal determinations.</p>
+</section>
 <section id="records-and-persistence">
 <h2>Records and persistence<a class="headerlink" href="#records-and-persistence" title="Permalink to this heading"></a></h2>
 <p>Geometry identities use canonical planar polygon boundaries rather than BREP
@@ -320,7 +367,7 @@ Lengths use model units. No reflections, glazing losses or legal classification.
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Daylight.Daylight.PrepareRoom" title="topologicpy.Daylight.Daylight.PrepareRoom"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PrepareRoom</span></code></a>(cell, *[, tolerance])</p></td>
 <td><p>Validate Cell/windows and cut actual analytical openings.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Daylight.Daylight.PrepareScene" title="topologicpy.Daylight.Daylight.PrepareScene"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PrepareScene</span></code></a>(topologies, *[, tolerance])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Daylight.Daylight.PrepareScene" title="topologicpy.Daylight.Daylight.PrepareScene"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PrepareScene</span></code></a>(topologies, *[, tolerance, labels])</p></td>
 <td><p>Prepare opaque two-sided geometry.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Daylight.Daylight.ResultData" title="topologicpy.Daylight.Daylight.ResultData"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ResultData</span></code></a>(assessment, *[, includeGeometry])</p></td>
@@ -341,7 +388,10 @@ Lengths use model units. No reflections, glazing losses or legal classification.
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Daylight.Daylight.WaldramDiagram" title="topologicpy.Daylight.Daylight.WaldramDiagram"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WaldramDiagram</span></code></a>(assessment, sensorIndex, *[, ...])</p></td>
 <td><p>Sampled sheet Faces: x=azimuth radians, y=sin(altitude)^2/2.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Daylight.Daylight.WorkingPlane" title="topologicpy.Daylight.Daylight.WorkingPlane"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WorkingPlane</span></code></a>(cell[, height, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Daylight.Daylight.WaldramDiagramComparison" title="topologicpy.Daylight.Daylight.WaldramDiagramComparison"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WaldramDiagramComparison</span></code></a>(before, after, ...)</p></td>
+<td><p>Calibrated paired uniform-sky charts and loss/gain regions.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Daylight.Daylight.WorkingPlane" title="topologicpy.Daylight.Daylight.WorkingPlane"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WorkingPlane</span></code></a>(cell[, height, ...])</p></td>
 <td><p>Horizontal room section Faces.</p></td>
 </tr>
 </tbody>
@@ -378,7 +428,7 @@ Only planar straight-edged geometry supported. Does not mutate input.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Daylight.Daylight.PrepareScene">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">PrepareScene</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topologies</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Daylight.Daylight.PrepareScene" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">PrepareScene</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topologies</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Daylight.Daylight.PrepareScene" title="Permalink to this definition"></a></dt>
 <dd><p>Prepare opaque two-sided geometry. Prepared rooms retain window holes.</p>
 <p>Raw Cells remain opaque. Rebuild snapshot after edits. Display properties
 have no analytical effect. Curved geometry is rejected in this version.</p>
@@ -427,11 +477,22 @@ No glazing/frame losses, reflections, sunlight or legal conclusions.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Daylight.Daylight.WaldramDiagram">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">WaldramDiagram</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">assessment</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sensorIndex</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Daylight.Daylight.WaldramDiagram" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">WaldramDiagram</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">assessment</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sensorIndex</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">calibrated</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">azimuthRange</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angularStep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gridStep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">15</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">projectionTolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cancelled</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Daylight.Daylight.WaldramDiagram" title="Permalink to this definition"></a></dt>
 <dd><p>Sampled sheet Faces: x=azimuth radians, y=sin(altitude)^2/2.</p>
 <p>Midpoint visibility and straight projected edges are approximations.
 Numeric contributions equal assessment quadrature, not sheet-face areas.
 Horizon-straddling patches are omitted from geometry and flagged.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Daylight.Daylight.WaldramDiagramComparison">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">WaldramDiagramComparison</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">before</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">after</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sensorIndex</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">azimuthRange</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angularStep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gridStep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">15</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">projectionTolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reconciliationTolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxRefinements</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cancelled</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Daylight.Daylight.WaldramDiagramComparison" title="Permalink to this definition"></a></dt>
+<dd><p>Calibrated paired uniform-sky charts and loss/gain regions.</p>
+<p>Uses one angular frame/grid for both states. Equal projected chart areas
+represent equal horizontal sky-factor contributions. Reconciliation
+compares an independent angular integration to the assessment, in
+percentage points; it is reported, never forced to match. This is a
+sampled numerical diagram, not an exact legal/certified silhouette.</p>
 </dd></dl>
 
 <dl class="py method">
