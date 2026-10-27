@@ -58,6 +58,7 @@
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Color.html">topologicpy.Color module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Context.html">topologicpy.Context module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Core.html">topologicpy.Core module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Daylight.html">topologicpy.Daylight module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Dictionary.html">topologicpy.Dictionary module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Edge.html">topologicpy.Edge module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.EnergyModel.html">topologicpy.EnergyModel module</a></li>
@@ -185,29 +186,41 @@ gradient_clip_norm=1.0</p>
 <col style="width: 90%" />
 </colgroup>
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.BuildMSAHierarchy" title="topologicpy.PyG.PyG.BuildMSAHierarchy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BuildMSAHierarchy</span></code></a>(positions, edgeIndex[, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.BuildFVGNMesh" title="topologicpy.PyG.PyG.BuildFVGNMesh"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BuildFVGNMesh</span></code></a>(positions, cells[, faceTypes])</p></td>
+<td><p>Build a planar triangular finite-volume mesh (SI geometry).</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.BuildMSAHierarchy" title="topologicpy.PyG.PyG.BuildMSAHierarchy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BuildMSAHierarchy</span></code></a>(positions, edgeIndex[, ...])</p></td>
 <td><p>Build deterministic sparse, barrier-aware spectral graph coarsening.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.ByCFDDataset" title="topologicpy.PyG.PyG.ByCFDDataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByCFDDataset</span></code></a>(path, **kwargs)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.ByCFDDataset" title="topologicpy.PyG.PyG.ByCFDDataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByCFDDataset</span></code></a>(path, **kwargs)</p></td>
 <td><p>Load a previously exported CFD dataset using its increment/feature manifest.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.ByCFDPaths" title="topologicpy.PyG.PyG.ByCFDPaths"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByCFDPaths</span></code></a>(path, sequences[, velocityKey, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.ByCFDPaths" title="topologicpy.PyG.PyG.ByCFDPaths"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByCFDPaths</span></code></a>(path, sequences[, velocityKey, ...])</p></td>
 <td><p>Import independent CFD file sequences and construct a trainable dataset.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.ByCFDSequences" title="topologicpy.PyG.PyG.ByCFDSequences"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByCFDSequences</span></code></a>(path, sequences[, timeStep, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.ByCFDSequences" title="topologicpy.PyG.PyG.ByCFDSequences"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByCFDSequences</span></code></a>(path, sequences[, timeStep, ...])</p></td>
 <td><p>Write/load fixed-mesh transient velocity trajectories as increment targets.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.ByCSVPath" title="topologicpy.PyG.PyG.ByCSVPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByCSVPath</span></code></a>(path[, level, task, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.ByCSVPath" title="topologicpy.PyG.PyG.ByCSVPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByCSVPath</span></code></a>(path[, level, task, ...])</p></td>
 <td><p>Creates a <a class="reference internal" href="#topologicpy.PyG.PyG" title="topologicpy.PyG.PyG"><code class="xref py py-class docutils literal notranslate"><span class="pre">PyG</span></code></a> instance from a TopologicPy-exported CSV dataset folder.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.ByFVGNSequences" title="topologicpy.PyG.PyG.ByFVGNSequences"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByFVGNSequences</span></code></a>(path, sequences[, timeStep, ...])</p></td>
+<td><p>Export/load 2D triangular flow trajectories for model_name='fvgn'.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.CrossValidate" title="topologicpy.PyG.PyG.CrossValidate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CrossValidate</span></code></a>([k_folds, epochs, batch_size])</p></td>
 <td><p>Independent graph/group folds with fold-specific scalers and validation.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.EvaluatePhysics" title="topologicpy.PyG.PyG.EvaluatePhysics"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EvaluatePhysics</span></code></a>([split])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.DownloadMeshGraphNets" title="topologicpy.PyG.PyG.DownloadMeshGraphNets"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DownloadMeshGraphNets</span></code></a>(path[, counts])</p></td>
+<td><p>Download CRC-verified prefixes of official cylinder-flow splits.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.EvaluatePhysics" title="topologicpy.PyG.PyG.EvaluatePhysics"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EvaluatePhysics</span></code></a>([split])</p></td>
 <td><p>Evaluate model outputs in physical units with mesh weights/boundary masks.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.EvaluateRollout" title="topologicpy.PyG.PyG.EvaluateRollout"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EvaluateRollout</span></code></a>(prediction, truth[, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.EvaluateRollout" title="topologicpy.PyG.PyG.EvaluateRollout"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EvaluateRollout</span></code></a>(prediction, truth[, ...])</p></td>
 <td><p>Evaluate supplied physical rollout sequences [steps, samples, components].</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.FVGNIntegrate" title="topologicpy.PyG.PyG.FVGNIntegrate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FVGNIntegrate</span></code></a>(mesh, faceVelocity, ...[, ...])</p></td>
+<td><p>Differentiable conservative FV momentum update and cell divergence.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.LoadModel" title="topologicpy.PyG.PyG.LoadModel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LoadModel</span></code></a>(path[, strict, ...])</p></td>
 <td><p>Load model weights from disk.</p></td>
@@ -239,43 +252,58 @@ gradient_clip_norm=1.0</p>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.ReadCFDSequence" title="topologicpy.PyG.PyG.ReadCFDSequence"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ReadCFDSequence</span></code></a>(paths[, velocityKey, ...])</p></td>
 <td><p>Read a safe NPZ trajectory or fixed-mesh VTK/VTU files via optional meshio.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.RegisterModel" title="topologicpy.PyG.PyG.RegisterModel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RegisterModel</span></code></a>(name, factory)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.ReadMeshGraphNets" title="topologicpy.PyG.PyG.ReadMeshGraphNets"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ReadMeshGraphNets</span></code></a>(path, meta[, limit, ...])</p></td>
+<td><p>Yield official cylinder-flow trajectories from local TFRecords.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.RegisterModel" title="topologicpy.PyG.PyG.RegisterModel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RegisterModel</span></code></a>(name, factory)</p></td>
 <td><p>Register a factory(context)-&gt;nn.Module with forward(data)-&gt;prediction.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.SaveModel" title="topologicpy.PyG.PyG.SaveModel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SaveModel</span></code></a>(path[, include_config])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.SaveModel" title="topologicpy.PyG.PyG.SaveModel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SaveModel</span></code></a>(path[, include_config])</p></td>
 <td><p>Save the model to disk.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.SetGraphData" title="topologicpy.PyG.PyG.SetGraphData"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetGraphData</span></code></a>(graphID, **attributes)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.SetGraphData" title="topologicpy.PyG.PyG.SetGraphData"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetGraphData</span></code></a>(graphID, **attributes)</p></td>
 <td><p>Attach simulation inputs by source graph ID, independent of ontology metadata.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.SetHyperparameters" title="topologicpy.PyG.PyG.SetHyperparameters"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetHyperparameters</span></code></a>(**kwargs)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.SetHyperparameters" title="topologicpy.PyG.PyG.SetHyperparameters"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetHyperparameters</span></code></a>(**kwargs)</p></td>
 <td><p>Apply validated settings to the active runner.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.Summary" title="topologicpy.PyG.PyG.Summary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Summary</span></code></a>()</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.Summary" title="topologicpy.PyG.PyG.Summary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Summary</span></code></a>()</p></td>
 <td><p>Return a compact summary of the current configuration and dataset size.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.Test" title="topologicpy.PyG.PyG.Test"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Test</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.Test" title="topologicpy.PyG.PyG.Test"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Test</span></code></a>()</p></td>
 <td><p>Compute metrics on the test split.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.Train" title="topologicpy.PyG.PyG.Train"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Train</span></code></a>([epochs, batch_size, resume])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.Train" title="topologicpy.PyG.PyG.Train"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Train</span></code></a>([epochs, batch_size, resume])</p></td>
 <td><p>Train deterministically within an isolated random context.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.Validate" title="topologicpy.PyG.PyG.Validate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Validate</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.Validate" title="topologicpy.PyG.PyG.Validate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Validate</span></code></a>()</p></td>
 <td><p>Compute metrics on the validation split.</p></td>
 </tr>
 </tbody>
 </table>
 <table class="docutils align-default">
 <colgroup>
-<col style="width: 52%" />
-<col style="width: 48%" />
+<col style="width: 60%" />
+<col style="width: 40%" />
 </colgroup>
 <tbody>
-<tr class="row-odd"><td><p><strong>Rollout</strong></p></td>
+<tr class="row-odd"><td><p><strong>PredictFVGN</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><strong>Rollout</strong></p></td>
 <td></td>
 </tr>
 </tbody>
 </table>
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.PyG.PyG.BuildFVGNMesh">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">BuildFVGNMesh</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">positions</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cells</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">faceTypes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.PyG.PyG.BuildFVGNMesh" title="Permalink to this definition"></a></dt>
+<dd><p>Build a planar triangular finite-volume mesh (SI geometry).</p>
+<p>Face order is lexicographic in the two vertex IDs. Normals point out of
+owner cells; neighbour=-1 denotes an exterior face. Face labels are
+0=internal, 1=wall, 2=inlet, 3=outlet. Exterior faces default to walls.</p>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.PyG.PyG.BuildMSAHierarchy">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">BuildMSAHierarchy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">positions</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeIndex</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nClusters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ratio</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxClusters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">128</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">42</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.PyG.PyG.BuildMSAHierarchy" title="Permalink to this definition"></a></dt>
@@ -375,12 +403,42 @@ feature columns are found.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.PyG.PyG.ByFVGNSequences">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByFVGNSequences</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sequences</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeStep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.01</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fieldLocation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'cell'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.PyG.PyG.ByFVGNSequences" title="Permalink to this definition"></a></dt>
+<dd><p>Export/load 2D triangular flow trajectories for model_name=’fvgn’.</p>
+<p>Required: positions[vertices,2/3], cells[cells,3], velocity[T,cells,2].
+fieldLocation=’vertex’ explicitly interpolates vertex U/p to cells.
+face_types follow BuildFVGNMesh’s sorted face order. face_velocity
+[T,faces,2] optionally supplies exact face supervision and prescribed
+boundary values; otherwise boundary_velocity[faces,2] is required for
+inlets, walls default to zero, and internal face targets are interpolated.
+Optional face_pressure[T,faces] or pressure[T,cells] supplies pressure
+targets. The default reference formulation uses the author’s normalized
+five-output update; formulation=’physical’ retains the older SI-gradient
+variant. Vertex fields use reference squared-distance cell interpolation
+and endpoint-mean face targets; the physical variant uses cell means.
+Reference pressure supervision defaults to weight one and is required
+unless explicitly disabled. density and kinematic_viscosity default to
+1 and .001 (SI), though the reference compensation does not explicitly
+multiply viscosity, matching the author program.</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.PyG.PyG.CrossValidate">
 <span class="sig-name descname"><span class="pre">CrossValidate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">k_folds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epochs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.PyG.PyG.CrossValidate" title="Permalink to this definition"></a></dt>
 <dd><p>Independent graph/group folds with fold-specific scalers and validation.</p>
 <p>Supports graph tasks and node/edge tasks using split_mode=’graph’. The
 caller’s trained model, data, optimizer, scalers, RNG and history are retained.
 Reports include fold memberships and fitted normalization statistics.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.PyG.PyG.DownloadMeshGraphNets">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DownloadMeshGraphNets</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">counts</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.PyG.PyG.DownloadMeshGraphNets" title="Permalink to this definition"></a></dt>
+<dd><p>Download CRC-verified prefixes of official cylinder-flow splits.</p>
+<p>Filenames/manifests explicitly identify prefixes rather than pretending
+they are the complete official dataset. HTTP byte ranges avoid whole-file
+multi-gigabyte downloads. Existing complete requested prefixes are reused.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -393,6 +451,16 @@ Reports include fold memberships and fitted normalization statistics.</p>
 <dt class="sig sig-object py" id="topologicpy.PyG.PyG.EvaluateRollout">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">EvaluateRollout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prediction</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">truth</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weights</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundaryMask</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">componentNames</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeStep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.PyG.PyG.EvaluateRollout" title="Permalink to this definition"></a></dt>
 <dd><p>Evaluate supplied physical rollout sequences [steps, samples, components].</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.PyG.PyG.FVGNIntegrate">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">FVGNIntegrate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mesh</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">faceVelocity</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facePressure</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">velocityGradient</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeStep</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">density</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">viscosity</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.PyG.PyG.FVGNIntegrate" title="Permalink to this definition"></a></dt>
+<dd><p>Differentiable conservative FV momentum update and cell divergence.</p>
+<p>velocityGradient[f,i,j] is d(u_i)/d(x_j); pressure is physical (Pa),
+viscosity is kinematic (m2/s). Internal face fluxes cancel exactly
+algebraically between owner and neighbour cells. No pressure projection
+or hard incompressibility constraint is implied by this integration.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -726,6 +794,12 @@ Default is False.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.PyG.PyG.PredictFVGN">
+<span class="sig-name descname"><span class="pre">PredictFVGN</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graphID</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.PyG.PyG.PredictFVGN" title="Permalink to this definition"></a></dt>
+<dd><p>Return physical cell increments, face U/p, gradients and divergence.</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.PyG.PyG.ReadCFDSequence">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ReadCFDSequence</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">paths</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">velocityKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'U'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">location</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'point'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundaryKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weightKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeStep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.PyG.PyG.ReadCFDSequence" title="Permalink to this definition"></a></dt>
 <dd><p>Read a safe NPZ trajectory or fixed-mesh VTK/VTU files via optional meshio.</p>
@@ -733,6 +807,15 @@ Default is False.</p>
 times[T], boundary_type[N], weights[N], graph_features[T,G] and
 extra_node_features[N,F]. VTK data can be point- or cell-centred; mesh identity
 and node/cell ordering must remain fixed across the supplied files.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.PyG.PyG.ReadMeshGraphNets">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ReadMeshGraphNets</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">limit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verify</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includePressure</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.PyG.PyG.ReadMeshGraphNets" title="Permalink to this definition"></a></dt>
+<dd><p>Yield official cylinder-flow trajectories from local TFRecords.</p>
+<p>TFRecord length/payload CRC32C are checked by default. Optional
+google-crc32c accelerates validation; TensorFlow is not needed.
+includePressure=True also yields the physical [frames,vertices,1] field.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -746,7 +829,7 @@ process; executable Python code is never serialized into a checkpoint.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.PyG.PyG.Rollout">
-<span class="sig-name descname"><span class="pre">Rollout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graphID</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">steps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeStep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundaryValues</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">graphFeatures</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reference</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.PyG.PyG.Rollout" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">Rollout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graphID</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">steps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeStep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundaryValues</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">graphFeatures</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reference</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">faceBoundaryValues</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.PyG.PyG.Rollout" title="Permalink to this definition"></a></dt>
 <dd><p>Autoregress physical velocities from a fixed mesh, predicting increments.</p>
 <p>Boundary values, if supplied, are physical [steps,nodes,components] next-step
 Dirichlet velocities; omitted values hold the initial boundary state fixed.
@@ -1245,9 +1328,233 @@ noise correction, exact multi-step checkpoint continuation and reload settings.<
 <h3>Optional dependencies<a class="headerlink" href="#optional-dependencies" title="Permalink to this heading"></a></h3>
 <p>From this source checkout, install the learning and VTK/VTU reader dependencies
 explicitly with <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span> <span class="pre">pip</span> <span class="pre">install</span> <span class="pre">-e</span> <span class="pre">&quot;.[pyg,cfd]&quot;</span></code>. The pyg extra supplies
-PyTorch, PyTorch Geometric and scikit-learn; cfd supplies meshio. NumPy, SciPy,
+PyTorch, PyTorch Geometric and scikit-learn; cfd supplies meshio and google-crc32c. NumPy, SciPy,
 pandas and Plotly are core dependencies. No import or method installs packages.
 NPZ/in-memory sequence adapters do not require meshio.</p>
+</section>
+<section id="official-cylinder-flow-verification">
+<h3>Official cylinder-flow verification<a class="headerlink" href="#official-cylinder-flow-verification" title="Permalink to this heading"></a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">PyG.DownloadMeshGraphNets(path,</span> <span class="pre">counts={&quot;train&quot;:</span> <span class="pre">8,</span> <span class="pre">&quot;valid&quot;:</span> <span class="pre">2,</span> <span class="pre">&quot;test&quot;:</span> <span class="pre">2})</span></code>
+retrieves bounded prefixes of the official MeshGraphNets cylinder-flow TFRecords.
+Each prefix has a manifest recording its source URL, original record indices,
+byte count and SHA256. Download and ingestion verify TFRecord CRC32C checksums.
+<code class="docutils literal notranslate"><span class="pre">PyG.ReadMeshGraphNets(record_path,</span> <span class="pre">meta_path)</span></code> yields fixed-mesh trajectory
+dictionaries without requiring TensorFlow. Optional google-crc32c accelerates
+checksum verification; a Python fallback is provided. Triangle edges are made
+bidirectional and node weights are mass-lumped triangle areas. Pressure is omitted
+by default; includePressure=True also returns the physical vertex pressure field.</p>
+<p>The reader maps NORMAL to interior, INFLOW to prescribed inlet, OUTFLOW to outlet,
+and other labels to prescribed boundaries. Its supervision_mask selects NORMAL
+and OUTFLOW nodes, matching the reference velocity-update supervision. The
+boundary values remain fixed during rollout unless supplied by the caller.</p>
+<p>ByCFDSequences also accepts split=”train”/”valid”/”val”/”test”, simulation_id and
+frame_offset on every input sequence. These preserve official trajectory membership
+and original frame indices when using short windows. All sequences must supply a
+split, or none may do so. The generated official_split column is selected through
+split_column; a simulation cannot cross splits. CrossValidate refuses to remix
+explicit splits. Optional per-node supervision_mask excludes prescribed nodes from
+loss and supervised metrics. Feature/target scaling is fitted on training data.</p>
+<p>Run the bounded GPU benchmark from a source checkout:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">examples</span><span class="o">/</span><span class="n">msa_gnn_cylinder_flow</span><span class="o">.</span><span class="n">py</span> <span class="o">--</span><span class="n">data</span> <span class="n">cylinder</span><span class="o">-</span><span class="n">data</span> <span class="o">--</span><span class="n">output</span> <span class="n">cylinder</span><span class="o">-</span><span class="n">results</span> <span class="o">--</span><span class="n">epochs</span> <span class="mi">12</span>
+</pre></div>
+</div>
+<p>It uses the first 8/2/2 official trajectories, three 16-transition training windows
+per trajectory, and two validation windows. Checkpoints are selected by validation
+20-step rollout error. Test trajectories are evaluated only after selection, from
+source frame 1 over 200 predicted steps. The reported cumulative MSE averages both
+velocity components, all nodes and predicted frames 1 through the stated horizon,
+excluding the initial field, following the reference cfd_eval protocol. A constant
+initial-velocity persistence baseline is included. Training uses area weights;
+the official-style evaluation metric is unweighted. This compact, short-budget run
+is an implementation verification, not a full published benchmark reproduction.</p>
+<p><code class="docutils literal notranslate"><span class="pre">tests/test_PyG_MeshGraphNets.py</span></code> checks TF Example decoding, CRC validation,
+truncation handling, bounded range downloads and cache reuse, official split
+isolation, supervision masks and checkpoint reload.</p>
+</section>
+</section>
+<section id="finite-volume-graph-network-fvgn">
+<h2>Finite Volume Graph Network (FVGN)<a class="headerlink" href="#finite-volume-graph-network-fvgn" title="Permalink to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">model_name=&quot;fvgn&quot;</span></code> now defaults to the reference-compatible formulation of
+Li et al., <em>Predicting unsteady incompressible fluid dynamics with finite volume
+informed neural network</em>, Physics of Fluids 36, 043601 (2024),
+<a class="reference external" href="https://doi.org/10.1063/5.0197425">https://doi.org/10.1063/5.0197425</a>. The reference code is pinned to author commit
+668cce81546868c7e4cc1b9340690b6cc296fd50. Numerical fixtures are generated by
+executing that code; the TopologicPy implementation uses native PyTorch and does
+not require downloading the author repository or installing torch-scatter.</p>
+<p>The earlier independent SI-gradient implementation is retained explicitly as
+<code class="docutils literal notranslate"><span class="pre">model_options={&quot;formulation&quot;:</span> <span class="pre">&quot;physical&quot;,</span> <span class="pre">...}</span></code>. Existing exported datasets and
+checkpoints without a formulation marker are migrated to that legacy mode in
+memory, preserving their computational meaning. They are not silently interpreted
+as the corrected reference model. <code class="docutils literal notranslate"><span class="pre">Summary()[&quot;model_formulation&quot;]</span></code> identifies
+the active mode. Earlier unstable checkpoints are not repaired by loading them.</p>
+<section id="reference-architecture-and-update">
+<h3>Reference architecture and update<a class="headerlink" href="#reference-architecture-and-update" title="Permalink to this heading"></a></h3>
+<p>The default reference formulation uses:</p>
+<ul class="simple">
+<li><p>Fixed XY-planar triangular meshes, with distinct mesh vertices, cells and faces.</p></li>
+<li><p>Cell-centred velocity, velocity differences on faces, relative cell positions,
+face length and nine-class face-type encoding.</p></li>
+<li><p>128 latent features, 15 processor blocks, two hidden layers per MLP, SiLU and
+LayerNorm except at the decoder output.</p></li>
+<li><p>Directed split-channel aggregation: the two halves of each face representation
+go to its two vertices. Vertex features are averaged at each triangle cell.</p></li>
+<li><p>The reference residual order: the edge MLP receives the cell MLP output before
+the cell residual is added. Cells and faces then receive their residual updates.</p></li>
+<li><p>Five decoder channels: normalised face u, v, p and two learned compensation
+components. These are not four physical velocity-gradient components.</p></li>
+<li><p>The author’s online normalisers, including their initial unit pseudocount, and
+BatchNorm of the geometric length*dt/mean-adjacent-area coefficient.</p></li>
+<li><p>Integration in normalised space, with pressure detached from the momentum
+gradient path. The learned compensation is summed as in the author code. The
+resulting velocity increment is inverse-normalised before updating cell state.</p></li>
+</ul>
+<p>This update should not be interpreted as the standalone conservative SI flux
+operator. In particular, the learned compensation and normalised geometry do not
+establish exact physical local conservation. Pressure learns through its own
+supervision. A variance-roundoff clamp and a finite log-loss floor are explicit
+numerical safeguards beyond the source implementation; ordinary finite golden
+cases match its results.</p>
+<p>Graph features condition cell and face encoders. Static node features beyond the
+adapter’s velocity/type fields and custom adjacency columns beyond its four
+geometry columns are optional extensions. Both directed rows of custom adjacency
+fields are included. The adapter’s four cell-type indicators and geometry columns
+are replaced by the reference face-type/geometric encoding, not redundantly fed
+into the reference network. Exact author parity is checked with those optional
+extensions absent.</p>
+</section>
+<section id="geometry-and-sequence-input">
+<h3>Geometry and sequence input<a class="headerlink" href="#geometry-and-sequence-input" title="Permalink to this heading"></a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">BuildFVGNMesh(positions,</span> <span class="pre">cells,</span> <span class="pre">faceTypes=None)</span></code> validates physical geometry and
+builds centres, areas, unique faces, owner/neighbour cells, normals, lengths and
+cell adjacency. positions is [vertices,2] or constant-Z [vertices,3]; cells is
+integer [cells,3]. Faces are indexed lexicographically by their two vertex IDs.
+Physical labels are 0=internal, 1=wall, 2=inlet, 3=outlet. Exterior faces default
+to walls. Degenerate, duplicate, non-manifold and non-planar cells are rejected.
+The function does not globally detect intersections between arbitrary triangles.</p>
+<p><code class="docutils literal notranslate"><span class="pre">ByFVGNSequences(path,</span> <span class="pre">sequences,</span> <span class="pre">fieldLocation=&quot;cell&quot;,</span> <span class="pre">overwrite=False,</span> <span class="pre">**kwargs)</span></code>
+exports CFD tables and compressed mesh archives, then constructs the runner.
+Each sequence supplies:</p>
+<ul class="simple">
+<li><p>positions, cells and velocity[frames,cells,2].</p></li>
+<li><p>Optional times[frames], density (default 1 kg/m3) and kinematic_viscosity
+(default .001 m2/s). These defaults are not inferred from the source simulation.</p></li>
+<li><p>face_types[faces] in the public BuildFVGNMesh face order.</p></li>
+<li><p>Optional face_velocity[frames,faces,2] for exact face supervision and known
+prescribed boundary inputs. Otherwise face targets are interpolated, and
+boundary_velocity[faces,2] is required for inlets; walls default to zero.</p></li>
+<li><p>face_pressure[frames,faces] or pressure[frames,cells] for pressure supervision.</p></li>
+<li><p>Optional graph_features, extra_node_features, supervision_mask and
+cell_boundary_type, with one row per cell where applicable.</p></li>
+<li><p>Optional official split=”train”/”valid”/”val”/”test”, simulation_id and
+frame_offset. Simulations cannot cross splits; overlapping windows are rejected.</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">fieldLocation=&quot;vertex&quot;</span></code> accepts vertex velocity and pressure. Reference cell
+velocities use the source converter’s squared-distance vertex weights, not a
+centroid average. Reference face targets use endpoint means. The implementation
+also matches sorted triangle vertices, max-ID-first directed vertex pairs,
+greater-(x,y)-first neighbouring cell pairs, exterior self-loops and float32 Heron
+areas. CSV graph nodes remain in triangle order with IDs 0..cells-1.</p>
+<p>In the reference mode, provided face labels are preserved as encoder metadata
+even if they differ from physical boundary topology, enabling literal comparison
+with the author’s converter. It is the caller’s responsibility to provide correct
+inlet/outlet/wall labels. The physical mode retains stricter topological label
+validation. Re-export mesh geometry through this adapter rather than replacing
+cell positions alone.</p>
+</section>
+<section id="training-and-loss">
+<h3>Training and loss<a class="headerlink" href="#training-and-loss" title="Permalink to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="n">PyG</span><span class="o">.</span><span class="n">ByFVGNSequences</span><span class="p">(</span>
+    <span class="s2">"fvgn_dataset"</span><span class="p">,</span> <span class="n">sequences</span><span class="p">,</span>
+    <span class="n">model_options</span><span class="o">=</span><span class="p">{</span><span class="s2">"formulation"</span><span class="p">:</span> <span class="s2">"reference"</span><span class="p">,</span> <span class="s2">"latent_dim"</span><span class="p">:</span> <span class="mi">128</span><span class="p">,</span>
+                   <span class="s2">"processor_blocks"</span><span class="p">:</span> <span class="mi">15</span><span class="p">,</span> <span class="s2">"momentum_loss_weight"</span><span class="p">:</span> <span class="mf">10.</span><span class="p">,</span>
+                   <span class="s2">"face_velocity_loss_weight"</span><span class="p">:</span> <span class="mf">1.</span><span class="p">,</span> <span class="s2">"pressure_loss_weight"</span><span class="p">:</span> <span class="mf">1.</span><span class="p">,</span>
+                   <span class="s2">"continuity_loss_weight"</span><span class="p">:</span> <span class="mf">0.</span><span class="p">,</span> <span class="s2">"noise_std"</span><span class="p">:</span> <span class="mf">.02</span><span class="p">},</span>
+    <span class="n">epochs</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">lr</span><span class="o">=</span><span class="mf">.001</span><span class="p">,</span> <span class="n">optimizer</span><span class="o">=</span><span class="s2">"adamw"</span><span class="p">,</span> <span class="n">use_gpu</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">Train</span><span class="p">()</span>
+<span class="n">model</span><span class="o">.</span><span class="n">SaveModel</span><span class="p">(</span><span class="s2">"fvgn.pt"</span><span class="p">)</span>
+<span class="n">restored</span> <span class="o">=</span> <span class="n">PyG</span><span class="o">.</span><span class="n">ByCFDDataset</span><span class="p">(</span><span class="s2">"fvgn_dataset"</span><span class="p">)</span>
+<span class="n">restored</span><span class="o">.</span><span class="n">LoadModel</span><span class="p">(</span><span class="s2">"fvgn.pt"</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The default reference loss matches the source’s direct_mean_loss configuration:
+log(10*momentum_MSE + face_velocity_MSE + face_pressure_MSE), using its normalised
+quantities. Face velocity supervision includes internal/outlet-labelled faces;
+pressure supervision includes all faces. Pressure targets are required by default for training;
+<code class="docutils literal notranslate"><span class="pre">inference=True</span></code> permits prediction without future pressure labels;
+explicitly set pressure_loss_weight=0 for velocity-only data. The reference uses an
+online face-pressure normaliser, so pressure_scale is rejected in this mode.</p>
+<p>continuity_loss_weight defaults to zero to match the executable source defaults.
+The author’s loss helper accidentally references an undefined continuity variable
+and falls back to zero even when configured otherwise. TopologicPy does not copy
+that defect: an explicit nonzero weight adds the computed normalised continuity
+residual to the loss. That is a deliberate correction, not exact source-loss parity.</p>
+<p>noise_std is a physical velocity standard deviation (m/s), matching the reference
+noise function. Inputs receive noise and increment targets are corrected. Random
+edge feature-direction flips default to enabled, following the source data loader;
+random_edge_flip=False disables them for controlled comparisons. Two normaliser
+warm-up passes occur before the first optimizer update; configure
+normalizer_warmup_passes (default 2) or normalizer_accumulations (default 10000000)
+as needed. Validation and inference never update statistics. Checkpoints preserve
+online moments, geometry BatchNorm, warm-up completion, optimizer and RNG state.
+CPU exact checkpoint continuation is tested. CUDA reductions need not be bit-exact.</p>
+<p>Other supported options are velocity_feature_columns, time_steps and
+allow_unseen_time_step. Training is one-step and one mesh is processed per batch.
+Existing generic feature/target normalisation can remain enabled; physical values
+are recovered before the reference online normalisers are applied. These choices
+and training budgets must be matched explicitly when comparing published results.</p>
+</section>
+<section id="prediction-and-boundaries">
+<h3>Prediction and boundaries<a class="headerlink" href="#prediction-and-boundaries" title="Permalink to this heading"></a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">PredictFVGN(graphID)</span></code> returns physical velocity increment, raw decoded face
+velocity/pressure, physical face-divergence diagnostics and normalized_compensation.
+It does not expose training targets. Generic Predict/Test continue to report
+velocity increments in physical units. No reference viscous gradient is returned,
+because its two compensation outputs are not physical gradient components.</p>
+<p><code class="docutils literal notranslate"><span class="pre">Rollout(graphID,</span> <span class="pre">steps,</span> <span class="pre">faceBoundaryValues=schedule)</span></code> updates cell velocity
+states. schedule is [steps,faces,2] of caller-known wall/inlet inputs. If omitted,
+the stored conditions for the first prediction are held fixed. Future interior
+reference fields never enter the encoder or update. In the reference formulation,
+these conditions constrain the encoder inputs; decoded face velocities are not
+hard-clamped before integration, matching the author model. Existing boundaryValues
+can additionally prescribe explicit cell velocities. <code class="docutils literal notranslate"><span class="pre">graphFeatures</span></code> supplies known
+global conditions. Returned fields include face pressure and cell divergence.
+Non-finite predictions raise FloatingPointError with the failing step.</p>
+</section>
+<section id="physical-formulation">
+<h3>Physical formulation<a class="headerlink" href="#physical-formulation" title="Permalink to this heading"></a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">formulation=&quot;physical&quot;</span></code> retains the earlier full-width aggregation, seven-output
+U/p/grad(U) decoder and SI finite-volume integration. FVGNIntegrate remains a public,
+differentiable physical operator whose shared internal-face fluxes cancel between
+neighbours. This is a separate experimental formulation, not the reference update.
+Its earlier small Cylinder Flow trials failed at step 8 and are retained as evidence.
+Its noise is in normalised feature units, pressure_scale is a physical pressure
+scale, and its loss uses the earlier unlogged physical/normalised residual mixture.</p>
+</section>
+<section id="verification-and-known-reference-defects">
+<h3>Verification and known reference defects<a class="headerlink" href="#verification-and-known-reference-defects" title="Permalink to this heading"></a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">tests/test_PyG_FVGN_reference.py</span></code> uses a compact golden fixture generated by the
+unchanged author model, integration, loss and autograd code. The fixture’s commit,
+SHA256 and compatibility details are recorded in tests/data/fvgn-author-golden.json.
+Tests cover forward/loss/gradient parity, pressure detachment, frozen inference
+statistics, reference-field isolation, feature extensions, weighted vertex and face
+interpolation, exact CPU resume and legacy checkpoint migration. The separate
+physical tests retain geometric/analytic conservation checks and CUDA coverage.</p>
+<p>The literal author mesh converter also has a substring condition in which
+“compressible” matches “incompressible”. Its default main configuration therefore
+leaves some walls/outlets labelled NORMAL. The control records this behaviour and
+does not silently repair the author files. The production example derives explicit
+wall/inlet/outlet labels from the original dataset. These are distinct preprocessing
+configurations; neither should be confused with a verified reproduction of the
+published trained model.</p>
+<p><code class="docutils literal notranslate"><span class="pre">examples/fvgn_cylinder_flow.py</span></code> provides a small official-split diagnostic.
+It defaults to reference mode and loads pressure. –formulation physical selects
+the earlier variant. –latent-dim 128 –processor-blocks 15 uses the published
+width/depth; the lightweight example defaults to 32/2. Failed horizons, persistence,
+reference conversion and checkpoint checks are recorded. Finite long rollouts do
+not establish physical accuracy. The small training budget is not a publication
+benchmark reproduction, and the tested corrected checkpoints remain less accurate
+than persistence over the evaluated long horizons.</p>
 </section>
 </section>
 </section>

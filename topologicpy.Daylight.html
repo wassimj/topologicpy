@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>topologicpy.Daylight module &mdash; topologicpy 0.9.87 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="topologicpy.Dictionary module" href="topologicpy.Dictionary.html" />
+    <link rel="prev" title="topologicpy.Core module" href="topologicpy.Core.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> topologicpy
+          </a>
+              <div class="version">
+                0.9.87
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">topologicpy</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="topologicpy.html">topologicpy package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="topologicpy.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.ANN.html">topologicpy.ANN module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Aperture.html">topologicpy.Aperture module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.BVH.html">topologicpy.BVH module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.CSG.html">topologicpy.CSG module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Cell.html">topologicpy.Cell module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.CellComplex.html">topologicpy.CellComplex module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Cluster.html">topologicpy.Cluster module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Color.html">topologicpy.Color module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Context.html">topologicpy.Context module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Core.html">topologicpy.Core module</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">topologicpy.Daylight module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Dictionary.html">topologicpy.Dictionary module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Edge.html">topologicpy.Edge module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.EnergyModel.html">topologicpy.EnergyModel module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Face.html">topologicpy.Face module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.GA.html">topologicpy.GA module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.GQL.html">topologicpy.GQL module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.GraphDB.html">topologicpy.GraphDB module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.GraphRAG.html">topologicpy.GraphRAG module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Grid.html">topologicpy.Grid module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Helper.html">topologicpy.Helper module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Honeybee.html">topologicpy.Honeybee module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.IFC.html">topologicpy.IFC module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Kuzu.html">topologicpy.Kuzu module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.LLM.html">topologicpy.LLM module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Matrix.html">topologicpy.Matrix module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Navigation.html">Navigation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Neo4j.html">topologicpy.Neo4j module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Ontology.html">topologicpy.Ontology module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Plotly.html">topologicpy.Plotly module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Polyskel.html">topologicpy.Polyskel module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.PyG.html">topologicpy.PyG module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.ShapeGrammar.html">topologicpy.ShapeGrammar module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Shell.html">topologicpy.Shell module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Speckle.html">topologicpy.Speckle module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Sun.html">topologicpy.Sun module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.TGraph.html">topologicpy.TGraph module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Topology.html">topologicpy.Topology module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Vector.html">topologicpy.Vector module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Vertex.html">topologicpy.Vertex module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Wire.html">topologicpy.Wire module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.version.html">topologicpy.version module</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.html#module-topologicpy">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">topologicpy</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="modules.html">topologicpy</a> &raquo;</li>
+          <li><a href="topologicpy.html">topologicpy package</a> &raquo;</li>
+      <li>topologicpy.Daylight module</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/topologicpy.Daylight.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast.container,
+.nboutput.nblast.container {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast.container + .nbinput.container {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<section id="topologicpy-daylight-module">
+<h1>topologicpy.Daylight module<a class="headerlink" href="#topologicpy-daylight-module" title="Permalink to this heading"></a></h1>
+<section id="direct-daylight-and-preliminary-waldram-assessment">
+<h2>Direct daylight and preliminary Waldram assessment<a class="headerlink" href="#direct-daylight-and-preliminary-waldram-assessment" title="Permalink to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">Daylight</span></code> provides direct sky calculations using TopologicPy geometry and
+its existing BVH visibility engine. It does not determine legal rights,
+infringement, compensation, planning compliance or total daylight factor.</p>
+<p>All distances use model units; the examples assume metres. Factors and
+thresholds use <strong>percent</strong>: <code class="docutils literal notranslate"><span class="pre">threshold=0.2</span></code> means 0.2%, not 20%.
+A percentage-point change is distinct from a relative percentage change.</p>
+</section>
+<section id="quick-start">
+<h2>Quick start<a class="headerlink" href="#quick-start" title="Permalink to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">topologicpy.Daylight</span><span class="w"> </span><span class="kn">import</span> <span class="n">Daylight</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">topologicpy.Cell</span><span class="w"> </span><span class="kn">import</span> <span class="n">Cell</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">topologicpy.Face</span><span class="w"> </span><span class="kn">import</span> <span class="n">Face</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">topologicpy.Topology</span><span class="w"> </span><span class="kn">import</span> <span class="n">Topology</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">topologicpy.Vertex</span><span class="w"> </span><span class="kn">import</span> <span class="n">Vertex</span>
+
+<span class="n">cell</span> <span class="o">=</span> <span class="n">Cell</span><span class="o">.</span><span class="n">Prism</span><span class="p">(</span><span class="n">Vertex</span><span class="o">.</span><span class="n">ByCoordinates</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">width</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">length</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+                  <span class="n">height</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">placement</span><span class="o">=</span><span class="s2">"lowerleft"</span><span class="p">)</span>
+<span class="n">window</span> <span class="o">=</span> <span class="n">Face</span><span class="o">.</span><span class="n">ByVertices</span><span class="p">([</span>
+    <span class="n">Vertex</span><span class="o">.</span><span class="n">ByCoordinates</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">Vertex</span><span class="o">.</span><span class="n">ByCoordinates</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+    <span class="n">Vertex</span><span class="o">.</span><span class="n">ByCoordinates</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">),</span> <span class="n">Vertex</span><span class="o">.</span><span class="n">ByCoordinates</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">)</span>
+<span class="p">])</span>
+<span class="n">cell</span> <span class="o">=</span> <span class="n">Topology</span><span class="o">.</span><span class="n">AddApertures</span><span class="p">(</span><span class="n">cell</span><span class="p">,</span> <span class="p">[</span><span class="n">window</span><span class="p">],</span> <span class="n">subTopologyType</span><span class="o">=</span><span class="s2">"face"</span><span class="p">)</span>
+<span class="n">room</span> <span class="o">=</span> <span class="n">Daylight</span><span class="o">.</span><span class="n">PrepareRoom</span><span class="p">(</span><span class="n">cell</span><span class="p">)</span>
+<span class="n">plane</span> <span class="o">=</span> <span class="n">Daylight</span><span class="o">.</span><span class="n">WorkingPlane</span><span class="p">(</span><span class="n">cell</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="mf">0.85</span><span class="p">)</span>
+<span class="n">grid</span> <span class="o">=</span> <span class="n">Daylight</span><span class="o">.</span><span class="n">SensorGrid</span><span class="p">(</span><span class="n">plane</span><span class="p">,</span> <span class="n">spacing</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+
+<span class="c1"># Retained surrounding geometry appears in both scenes. Do NOT include</span>
+<span class="c1"># an additional uncut copy of the selected room Cell.</span>
+<span class="n">before_scene</span> <span class="o">=</span> <span class="n">Daylight</span><span class="o">.</span><span class="n">PrepareScene</span><span class="p">([])</span>
+<span class="n">obstruction</span> <span class="o">=</span> <span class="n">Face</span><span class="o">.</span><span class="n">ByVertices</span><span class="p">([</span>
+    <span class="n">Vertex</span><span class="o">.</span><span class="n">ByCoordinates</span><span class="p">(</span><span class="o">-</span><span class="mi">5</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">Vertex</span><span class="o">.</span><span class="n">ByCoordinates</span><span class="p">(</span><span class="mi">9</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+    <span class="n">Vertex</span><span class="o">.</span><span class="n">ByCoordinates</span><span class="p">(</span><span class="mi">9</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">9</span><span class="p">),</span> <span class="n">Vertex</span><span class="o">.</span><span class="n">ByCoordinates</span><span class="p">(</span><span class="o">-</span><span class="mi">5</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">9</span><span class="p">)</span>
+<span class="p">])</span>
+<span class="n">after_scene</span> <span class="o">=</span> <span class="n">Daylight</span><span class="o">.</span><span class="n">PrepareScene</span><span class="p">([</span><span class="n">obstruction</span><span class="p">])</span>
+<span class="n">before</span> <span class="o">=</span> <span class="n">Daylight</span><span class="o">.</span><span class="n">Waldram</span><span class="p">(</span><span class="n">room</span><span class="p">,</span> <span class="n">before_scene</span><span class="p">,</span> <span class="n">grid</span><span class="o">=</span><span class="n">grid</span><span class="p">)</span>
+<span class="n">after</span> <span class="o">=</span> <span class="n">Daylight</span><span class="o">.</span><span class="n">Waldram</span><span class="p">(</span><span class="n">room</span><span class="p">,</span> <span class="n">after_scene</span><span class="p">,</span> <span class="n">grid</span><span class="o">=</span><span class="n">grid</span><span class="p">)</span>
+<span class="n">comparison</span> <span class="o">=</span> <span class="n">Daylight</span><span class="o">.</span><span class="n">Compare</span><span class="p">(</span><span class="n">before</span><span class="p">,</span> <span class="n">after</span><span class="p">)</span>
+<span class="n">regions</span> <span class="o">=</span> <span class="n">Daylight</span><span class="o">.</span><span class="n">Contours</span><span class="p">(</span><span class="n">before</span><span class="p">,</span> <span class="n">levels</span><span class="o">=</span><span class="p">[</span><span class="mf">0.2</span><span class="p">])</span>
+<span class="n">diagram</span> <span class="o">=</span> <span class="n">Daylight</span><span class="o">.</span><span class="n">WaldramDiagram</span><span class="p">(</span><span class="n">before</span><span class="p">,</span> <span class="n">sensorIndex</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">Daylight</span><span class="o">.</span><span class="n">ResultData</span><span class="p">(</span><span class="n">before</span><span class="p">,</span> <span class="n">includeGeometry</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Scene roles belong to the calling application: Before uses retained geometry
+plus removals; After uses retained geometry plus proposals. Prepared rooms
+provide real window openings; raw topologies are opaque. Display opacity and
+visibility do not affect calculations. All analytical surfaces are two-sided.</p>
+</section>
+<section id="method">
+<h2>Method<a class="headerlink" href="#method" title="Permalink to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">SkyComponent</span></code> uses equal-solid-angle hemisphere midpoint quadrature and
+projected incidence weights. It supports uniform and CIE standard overcast
+relative luminance. The reference is unobstructed external horizontal
+illuminance under the same sky. <code class="docutils literal notranslate"><span class="pre">SkyFactor</span></code> specialises this for horizontal
+sensors and a uniform sky. These methods are useful outdoors or where apertures
+are large; coarse angular patches may miss a narrow window altogether.</p>
+<p><code class="docutils literal notranslate"><span class="pre">Waldram</span></code> instead integrates over the room’s actual apertures. For a window
+triangle with area A, sensor-to-triangle distance r, aperture incidence cosine
+c_w and upward sensor incidence cosine c_h, its midpoint contribution is:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">skyFactorPercent</span> <span class="o">=</span> <span class="mi">100</span> <span class="o">*</span> <span class="n">A</span> <span class="o">*</span> <span class="nb">abs</span><span class="p">(</span><span class="n">c_w</span><span class="p">)</span> <span class="o">*</span> <span class="nb">max</span><span class="p">(</span><span class="n">c_h</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">pi</span> <span class="o">*</span> <span class="n">r</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Native tessellation retains aperture holes. Uniform subdivision refines its
+triangles; full-scene ray queries reject occluded contributions. Overlapping
+coplanar windows are unioned, and nearer aperture intersections prevent
+projected windows being counted more than once. Windows may be vertical,
+inclined or horizontal. All room/context Faces must currently be planar with
+straight polygon boundaries. Unsupported geometry raises an error.</p>
+<p>Windows are read from TopologicPy aperture attachments on the Cell or its
+Faces. Preparation checks coplanarity and complete host containment before
+subtracting windows from opaque analytical walls. It does not interpret
+aperture metadata alone as a geometric hole.</p>
+<p>The uniform-sky method excludes reflected light, glazing/frame losses, material
+transmission and direct sunlight. It is a geometric sky-factor assessment, not
+an indoor illuminance or annual daylight simulation. <code class="docutils literal notranslate"><span class="pre">SkyComponent</span></code> with an
+overcast distribution remains a <strong>direct sky component</strong>, not total daylight
+factor. Full reflected-light and annual metrics are outside this version.</p>
+</section>
+<section id="sampling-and-sensitivity">
+<h2>Sampling and sensitivity<a class="headerlink" href="#sampling-and-sensitivity" title="Permalink to this heading"></a></h2>
+<p>Working-plane height defaults to 0.85 above the room’s lowest vertex elevation.
+Use <code class="docutils literal notranslate"><span class="pre">referenceElevation</span></code> explicitly for stepped or sloping floors. The plane
+must cut the room interior. Multiple disconnected section Faces are supported.</p>
+<p>Grid cells are clipped to the domain; each receives an interior sensor and its
+actual area. Threshold area is a <strong>piecewise-constant sampled-cell estimate</strong>.
+It is not a continuous exact contour-area integral. Nonconvex domains and holes
+are retained. Grid partition area conservation is checked.</p>
+<p><code class="docutils literal notranslate"><span class="pre">resolution</span></code> accepts <code class="docutils literal notranslate"><span class="pre">low</span></code>, <code class="docutils literal notranslate"><span class="pre">medium</span></code>, <code class="docutils literal notranslate"><span class="pre">high</span></code> and <code class="docutils literal notranslate"><span class="pre">very_high</span></code>. Aperture
+triangles have respectively 2, 3, 4 or 5 subdivision levels, each replacing one
+triangle by four. The default convergence check evaluates one additional level,
+returns the finer values and reports their difference from the requested level.
+It does not certify convergence or an error bound. An explicit triangle-count
+limit prevents unbounded angular subdivision.</p>
+<p>To examine spatial sensitivity, repeat <code class="docutils literal notranslate"><span class="pre">Waldram</span></code> with a finer grid over the
+same working plane, then call <code class="docutils literal notranslate"><span class="pre">Convergence(coarse,</span> <span class="pre">fine)</span></code>. Large rooms and
+small openings may need both finer spatial and angular sampling. Tiny losses
+or threshold crossings should not be interpreted without this check.</p>
+<p><code class="docutils literal notranslate"><span class="pre">Compare</span></code> requires the same room, grid, method, resolution and refinement
+settings. It reports area gained/lost, before/after threshold percentages,
+percentage-point change and crossing of a configurable reference (default 50%).
+There is deliberately no legal pass/fail or automated risk classification.</p>
+</section>
+<section id="contours-and-diagrams">
+<h2>Contours and diagrams<a class="headerlink" href="#contours-and-diagrams" title="Permalink to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">Contours</span></code> unions above/below-threshold grid cells into native Faces. Its
+boundary Wires include the domain perimeter and holes. These are staircase
+sampled-region boundaries, <strong>not smooth interpolated isolines</strong>. The reported
+areas agree with the numerical threshold estimate.</p>
+<p><code class="docutils literal notranslate"><span class="pre">WaldramDiagram</span></code> maps aperture triangles to an XY sheet with azimuth in
+radians and y = sin(altitude)^2 / 2. The projection’s Jacobian corresponds to
+horizontal projected solid angle. Each patch carries its midpoint visibility
+and its original numerical contribution. Sheet triangles approximate curved
+projected edges; their geometric areas are not used to recompute sky factors.
+Horizon-straddling or degenerate projected patches can be omitted and are
+counted. Azimuth seam patches may extend beyond the nominal sheet width.
+Numeric sky factor remains the complete calculation even if a sheet patch is
+omitted. This is an explanatory sampled diagram, not an exact silhouette.</p>
+</section>
+<section id="records-and-persistence">
+<h2>Records and persistence<a class="headerlink" href="#records-and-persistence" title="Permalink to this heading"></a></h2>
+<p>Prepared rooms, grids and scenes are snapshots, immutable by convention.
+Rebuild after edits; do not change record arrays or geometry in place.
+Results retain method version, identities, coordinates, areas, settings,
+assumptions, warnings, refinement metadata and summary values. The private
+<code class="docutils literal notranslate"><span class="pre">_diagram</span></code> cache holds live ray geometry.</p>
+<p><code class="docutils literal notranslate"><span class="pre">ResultData</span></code> produces JSON-compatible data without native geometry/cache.
+<code class="docutils literal notranslate"><span class="pre">includeGeometry=True</span></code> adds working-plane and clipped-cell BREP strings.
+Recalculate from source geometry to restore a diagram cache. The result export
+is not a complete project or prepared-scene persistence format.</p>
+<p>Failures use <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> rather than silent alternative calculations.
+Cancellation callbacks raise <code class="docutils literal notranslate"><span class="pre">InterruptedError</span></code> during angular integration
+and ray tracing. Native geometry preparation is synchronous and not interruptible.</p>
+</section>
+<section id="module-topologicpy.Daylight">
+<span id="api-reference"></span><h2>API reference<a class="headerlink" href="#module-topologicpy.Daylight" title="Permalink to this heading"></a></h2>
+<p>Direct daylight geometry and preliminary Waldram studies.</p>
+<p>Factors are percentages of unobstructed external horizontal illuminance.
+Lengths use model units. No reflections, glazing losses or legal classification.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="topologicpy.Daylight.Daylight">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">topologicpy.Daylight.</span></span><span class="sig-name descname"><span class="pre">Daylight</span></span><a class="headerlink" href="#topologicpy.Daylight.Daylight" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Static direct-sky API; prepared records are immutable-by-convention snapshots.</p>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Daylight.Daylight.Compare" title="topologicpy.Daylight.Daylight.Compare"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Compare</span></code></a>(before, after, *[, threshold, ...])</p></td>
+<td><p>Same-grid numeric comparison, including gains, losses and reference crossing.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Daylight.Daylight.Contours" title="topologicpy.Daylight.Daylight.Contours"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Contours</span></code></a>(assessment[, levels, tolerance])</p></td>
+<td><p>Piecewise-constant cell-region Faces/Wires, NOT interpolated isolines.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Daylight.Daylight.Convergence" title="topologicpy.Daylight.Daylight.Convergence"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Convergence</span></code></a>(coarse, fine, *[, threshold])</p></td>
+<td><p>Sensitivity on same domain/scene; different spatial grids allowed.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Daylight.Daylight.PrepareRoom" title="topologicpy.Daylight.Daylight.PrepareRoom"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PrepareRoom</span></code></a>(cell, *[, tolerance])</p></td>
+<td><p>Validate Cell/windows and cut actual analytical openings.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Daylight.Daylight.PrepareScene" title="topologicpy.Daylight.Daylight.PrepareScene"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PrepareScene</span></code></a>(topologies, *[, tolerance])</p></td>
+<td><p>Prepare opaque two-sided geometry.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Daylight.Daylight.ResultData" title="topologicpy.Daylight.Daylight.ResultData"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ResultData</span></code></a>(assessment, *[, includeGeometry])</p></td>
+<td><p>Portable JSON-compatible assessment, excluding live scene/diagram cache.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Daylight.Daylight.SensorGrid" title="topologicpy.Daylight.Daylight.SensorGrid"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SensorGrid</span></code></a>(faces[, spacing, origin, ...])</p></td>
+<td><p>Clipped horizontal grid; sensors lie inside their real area-weighted cells.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Daylight.Daylight.SkyComponent" title="topologicpy.Daylight.Daylight.SkyComponent"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SkyComponent</span></code></a>(vertices, normals, scene, *[, ...])</p></td>
+<td><p>Direct sky component (%) for arbitrary normals, not total daylight factor.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Daylight.Daylight.SkyFactor" title="topologicpy.Daylight.Daylight.SkyFactor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SkyFactor</span></code></a>(vertices, scene, *[, resolution, ...])</p></td>
+<td><p>Horizontal uniform-sky component (%).</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Daylight.Daylight.Waldram" title="topologicpy.Daylight.Daylight.Waldram"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Waldram</span></code></a>(room, scene, *[, grid, height, ...])</p></td>
+<td><p>Aperture-focused uniform-sky horizontal assessment (%).</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Daylight.Daylight.WaldramDiagram" title="topologicpy.Daylight.Daylight.WaldramDiagram"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WaldramDiagram</span></code></a>(assessment, sensorIndex, *[, ...])</p></td>
+<td><p>Sampled sheet Faces: x=azimuth radians, y=sin(altitude)^2/2.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Daylight.Daylight.WorkingPlane" title="topologicpy.Daylight.Daylight.WorkingPlane"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WorkingPlane</span></code></a>(cell[, height, ...])</p></td>
+<td><p>Horizontal room section Faces.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Daylight.Daylight.Compare">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Compare</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">before</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">after</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">referencePercentage</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">50.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Daylight.Daylight.Compare" title="Permalink to this definition"></a></dt>
+<dd><p>Same-grid numeric comparison, including gains, losses and reference crossing.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Daylight.Daylight.Contours">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Contours</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">assessment</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">levels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Daylight.Daylight.Contours" title="Permalink to this definition"></a></dt>
+<dd><p>Piecewise-constant cell-region Faces/Wires, NOT interpolated isolines.</p>
+<p>Native unions remove internal cell edges. Wires include domain boundary.
+Region area agrees with the sampled assessment estimate.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Daylight.Daylight.Convergence">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Convergence</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coarse</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fine</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Daylight.Daylight.Convergence" title="Permalink to this definition"></a></dt>
+<dd><p>Sensitivity on same domain/scene; different spatial grids allowed.</p>
+<p>Reports changes, never a certified error bound or automatic convergence.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Daylight.Daylight.PrepareRoom">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">PrepareRoom</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cell</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Daylight.Daylight.PrepareRoom" title="Permalink to this definition"></a></dt>
+<dd><p>Validate Cell/windows and cut actual analytical openings.</p>
+<p>Reads Faces attached by Topology.AddApertures to Cell or its Faces.
+Windows must be contained in one coplanar host. Overlaps are unioned.
+Only planar straight-edged geometry supported. Does not mutate input.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Daylight.Daylight.PrepareScene">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">PrepareScene</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topologies</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Daylight.Daylight.PrepareScene" title="Permalink to this definition"></a></dt>
+<dd><p>Prepare opaque two-sided geometry. Prepared rooms retain window holes.</p>
+<p>Raw Cells remain opaque. Rebuild snapshot after edits. Display properties
+have no analytical effect. Curved geometry is rejected in this version.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Daylight.Daylight.ResultData">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ResultData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">assessment</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeGeometry</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Daylight.Daylight.ResultData" title="Permalink to this definition"></a></dt>
+<dd><p>Portable JSON-compatible assessment, excluding live scene/diagram cache.</p>
+<p>Optional geometry uses TopologicPy BREP strings. Recalculate to recreate
+diagram caches; this export is not a prepared-scene persistence format.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Daylight.Daylight.SensorGrid">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SensorGrid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">faces</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spacing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.3</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rotation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Daylight.Daylight.SensorGrid" title="Permalink to this definition"></a></dt>
+<dd><p>Clipped horizontal grid; sensors lie inside their real area-weighted cells.</p>
+<p>Source Faces must be coplanar and nonoverlapping. IDs fingerprint geometry.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Daylight.Daylight.SkyComponent">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SkyComponent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vertices</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normals</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scene</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sky</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'uniform'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resolution</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'medium'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cancelled</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Daylight.Daylight.SkyComponent" title="Permalink to this definition"></a></dt>
+<dd><p>Direct sky component (%) for arbitrary normals, not total daylight factor.</p>
+<p>Uniform or CIE overcast relative luminance (1+2*sin(altitude))/3.
+Denominator: unobstructed external horizontal illuminance under same sky.
+Whole-sky midpoint quadrature may miss narrow windows; use Waldram there.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Daylight.Daylight.SkyFactor">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SkyFactor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vertices</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scene</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resolution</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'medium'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cancelled</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Daylight.Daylight.SkyFactor" title="Permalink to this definition"></a></dt>
+<dd><p>Horizontal uniform-sky component (%). See SkyComponent limitations.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Daylight.Daylight.Waldram">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Waldram</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">room</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scene</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grid</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.85</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spacing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resolution</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'medium'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">checkConvergence</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cancelled</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Daylight.Daylight.Waldram" title="Permalink to this definition"></a></dt>
+<dd><p>Aperture-focused uniform-sky horizontal assessment (%).</p>
+<p>Includes room opaque faces automatically. Do not also supply its uncut
+Cell. Midpoint quadrature subdivides each aperture triangle. Optional
+convergence checks one finer angular level and RETURNS the finer result.
+Spatial refinement is separate. Threshold 0.2 means 0.2 percent.
+No glazing/frame losses, reflections, sunlight or legal conclusions.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Daylight.Daylight.WaldramDiagram">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">WaldramDiagram</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">assessment</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sensorIndex</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Daylight.Daylight.WaldramDiagram" title="Permalink to this definition"></a></dt>
+<dd><p>Sampled sheet Faces: x=azimuth radians, y=sin(altitude)^2/2.</p>
+<p>Midpoint visibility and straight projected edges are approximations.
+Numeric contributions equal assessment quadrature, not sheet-face areas.
+Horizon-straddling patches are omitted from geometry and flagged.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Daylight.Daylight.WorkingPlane">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">WorkingPlane</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cell</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.85</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">referenceElevation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Daylight.Daylight.WorkingPlane" title="Permalink to this definition"></a></dt>
+<dd><p>Horizontal room section Faces. Default reference is lowest vertex Z.</p>
+<p>Set referenceElevation explicitly for split levels/sloping floors.
+Plane must be strictly inside the room height.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="topologicpy.Core.html" class="btn btn-neutral float-left" title="topologicpy.Core module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="topologicpy.Dictionary.html" class="btn btn-neutral float-right" title="topologicpy.Dictionary module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Wassim Jabi.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
