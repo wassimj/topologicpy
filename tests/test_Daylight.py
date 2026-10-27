@@ -1,4 +1,5 @@
 import math
+import json
 import numpy as np
 import pytest
 from topologicpy.Daylight import Daylight
@@ -266,3 +267,56 @@ def test_scene_identity_preserves_aperture_holes():
     a = Daylight.PrepareScene([Face.ByWires(outer, [small_hole])])
     b = Daylight.PrepareScene([Face.ByWires(outer, [large_hole])])
     assert a['sceneId'] != b['sceneId']
+
+
+def test_calibrated_frame_and_normalization(model):
+    _,_,before,after=model
+    d=Daylight.WaldramDiagramComparison(before,after,0,angularStep=1,maxRefinements=0)
+    b,a=d['before'],d['after']
+    assert b['frame']==a['frame']
+    assert b['frame']['azimuthRange']==[-90,90]
+    assert b['frame']['fullFrameSkyFactor']==50
+    assert b['graticule']['altitude'][3]['angle']==45
+    assert b['graticule']['altitude'][3]['points'][0][1]==pytest.approx(.5)
+    assert b['graticule']['droop'][2]['points'][180][1]==pytest.approx(.5)
+    assert a['diagramSkyFactor']==0
+    assert d['change']['lost']==pytest.approx(b['diagramSkyFactor'])
+    assert d['change']['gained']==0
+    assert d['change']['diagramChangePP']==pytest.approx(-d['change']['lost'])
+    assert b['apertureOutlines'][0]['segments']
+    json.dumps(d,allow_nan=False)
+
+def test_calibrated_refinement_and_identical_state(model):
+    _,_,before,_=model
+    d=Daylight.WaldramDiagramComparison(before,before,0,angularStep=1,maxRefinements=1)
+    assert d['change']['lost']==d['change']['gained']==0
+    assert d['change']['retained']==pytest.approx(d['before']['diagramSkyFactor'])
+    assert d['withinTolerance']==all(x['reconciliation']['withinTolerance'] for x in (d['before'],d['after']))
+    single=Daylight.WaldramDiagram(before,0,calibrated=True,angularStep=1)
+    assert '_angular' not in single
+    assert single['diagramSkyFactor']==pytest.approx(Daylight.WaldramDiagramComparison(before,before,0,angularStep=1,maxRefinements=0)['before']['diagramSkyFactor'])
+
+def test_calibrated_validation_and_labels(model):
+    _,_,before,_=model
+    with pytest.raises(ValueError):Daylight.PrepareScene([],labels=['x'])
+    for opts in [dict(angularStep=0),dict(gridStep=46),dict(azimuthRange=[90,-90]),dict(direction=[0,0,1]),dict(maxRefinements=4)]:
+        with pytest.raises(ValueError):Daylight.WaldramDiagramComparison(before,before,0,**opts)
+    with pytest.raises(ValueError):Daylight.WaldramDiagramComparison(before,before,True)
+
+
+def test_calibrated_labels_full_frame_and_cancellation(model):
+    r,g,before,_=model
+    wall=polygon([(-5,-1,0),(9,-1,0),(9,-1,9),(-5,-1,9)])
+    after=Daylight.Waldram(r,Daylight.PrepareScene([wall],labels=['Proposed']),grid=g,resolution='low')
+    d=Daylight.WaldramDiagramComparison(before,after,0,angularStep=2,maxRefinements=0)
+    assert any(region['category']=='Proposed' for region in d['after']['regions'])
+    assert d['before']['plan']['room']
+    assert d['after']['plan']['scene']==[]  # A standalone vertical Face has no floor footprint.
+    reverse=Daylight.WaldramDiagram(before,0,calibrated=True,direction=[0,1,0],angularStep=1)
+    assert reverse['frame']['azimuthRange']==[-180,180]
+    assert reverse['frame']['fullFrameSkyFactor']==100
+    forward=Daylight.WaldramDiagram(before,0,calibrated=True,angularStep=1)
+    assert reverse['diagramSkyFactor']==pytest.approx(forward['diagramSkyFactor'],abs=1e-10)
+    assert all(-180<=point[0]<=180 and 0<=point[1]<=1 for outline in reverse['apertureOutlines'] for segment in outline['segments'] for point in segment)
+    with pytest.raises(InterruptedError):
+        Daylight.WaldramDiagramComparison(before,after,0,cancelled=lambda:True)

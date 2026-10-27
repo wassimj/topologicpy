@@ -135,6 +135,60 @@ counted. Azimuth seam patches may extend beyond the nominal sheet width.
 Numeric sky factor remains the complete calculation even if a sheet patch is
 omitted. This is an explanatory sampled diagram, not an exact silhouette.
 
+
+Calibrated diagrams
+-------------------
+
+For scientific charts, use ``WaldramDiagram(result, index, calibrated=True)`` or
+``WaldramDiagramComparison(before, after, index)``. The existing native Face
+sheet remains available as the default for compatibility. The calibrated data
+are JSON-compatible and contain no SVG or other presentation code.
+
+The uniform-sky, horizontal-plane chart has x = azimuth in degrees and
+y = sin(altitude)^2, on a common 0..1 vertical range. Equal chart areas represent
+equal sky-factor contributions. An unobstructed 180-degree frame contributes
+50%, while a full 360-degree frame contributes 100%. These are not the vertical
+sky-component or CIE-overcast chart conventions. Altitude tick positions are
+nonlinear. The frame is centred on the first aperture's horizontal normal,
+or on the supplied horizontal ``direction``; the returned bearing is clockwise
+from model +Y. Automatic frames use -90..90 degrees for forward-facing windows
+and -180..180 where required. Explicit frames deliberately crop to their range.
+
+``graticule`` provides azimuth/altitude lines and, for a forward 180-degree
+frame, the droop curves of horizontal edges parallel to the window plane.
+Their central elevations are spaced by ``gridStep`` (default 15 degrees).
+``apertureOutlines`` adaptively projects straight native boundary edges,
+including internal boundaries, clipping at the horizon and angular seam.
+``projectionTolerance`` is the maximum midpoint deviation in normalized
+chart coordinates (azimuth divided by 360 and projected height), not an error
+bound for visibility or sky factor. Edges are approximated to depth 14.
+
+Visibility uses independent angular cells (default maximum width/height
+0.5 degrees), sampled at projected-area midpoints. Each rectangle's exact
+projected area determines its sky-factor weight. Cells outside apertures are
+excluded; holes remain excluded. Region categories distinguish visible sky
+and the nearest opaque scene source. Pass one string per topology using
+``PrepareScene(..., labels=...)`` to preserve semantic obstruction labels.
+The default label is ``Existing``; selected-room occlusion is labelled ``Room``.
+Source labels do not change the geometry identity or the physical calculation.
+The ``plan`` record contains native floor footprints, window vertices and
+world-XY axes for an optional context inset; it is not a boundary survey.
+
+Comparison uses identical axes, angular grids and aperture masks. It returns
+retained, lost, gained and blocked regions, with loss/gain as percentages of
+unobstructed external horizontal illuminance. ``diagramChangePP`` is gained
+minus lost. ``assessmentChangePP`` comes from the original quadrature.
+``reconciliation`` reports both integrations and their signed difference in
+percentage points. The comparison refines the chart grid once by default if
+that difference exceeds ``reconciliationTolerance`` (default 0.05 pp), up to
+the 600,000-cell limit. A discrepancy remains explicit; no value is forced to
+match. Refine the original assessment too when needed. ``maxRefinements`` can
+be 0..3, subject to that limit. Cancellation callbacks are supported.
+
+Recalculate assessments to populate the new geometry cache. These sampled
+obstruction silhouettes and adaptive aperture curves are preliminary numerical
+outputs, not certified survey drawings or legal determinations.
+
 Records and persistence
 -----------------------
 

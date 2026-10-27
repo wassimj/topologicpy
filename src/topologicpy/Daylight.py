@@ -234,7 +234,7 @@ class Daylight:
         )
 
     @staticmethod
-    def PrepareScene(topologies, *, tolerance=0.0001):
+    def PrepareScene(topologies, *, tolerance=0.0001, labels=None):
         """Prepare opaque two-sided geometry. Prepared rooms retain window holes.
 
         Raw Cells remain opaque. Rebuild snapshot after edits. Display properties
@@ -245,8 +245,13 @@ class Daylight:
         tol = Daylight._Positive(tolerance, 'tolerance')
         if isinstance(topologies, dict) or Topology.IsInstance(topologies, 'Topology'):
             topologies = [topologies]
-        faces = []
-        for t in topologies:
+        topologies = list(topologies)
+        if labels is None: labels = ['Existing']*len(topologies)
+        if len(labels)!=len(topologies) or any(not isinstance(label,str) for label in labels):
+            raise ValueError('One string label per scene topology is required')
+        faces = []; face_labels = []
+        for t,label in zip(topologies,labels):
+            start_count = len(faces)
             if isinstance(t, dict) and t.get('kind') == 'DaylightRoom':
                 faces.extend(t['opaqueFaces'])
             elif Topology.IsInstance(t, 'Topology'):
@@ -256,11 +261,12 @@ class Daylight:
                 faces.extend(items)
             else:
                 raise ValueError('Expected topologies or prepared room records')
+            face_labels.extend([label]*(len(faces)-start_count))
         for f in faces:
             Daylight._PlanarPolygon(f, tol)
         bvh = BVH.PrepareScene(faces, tolerance=tol)
         identity = hashlib.sha256(repr(sorted(Daylight._GeometryKey(f) for f in faces)).encode()).hexdigest()
-        return dict(kind='DaylightScene', bvh=bvh, sceneId=identity, tolerance=tol, faceCount=len(faces))
+        return dict(kind='DaylightScene', bvh=bvh, sceneId=identity, tolerance=tol, faceCount=len(faces), faceLabels=face_labels, _context=list(zip(topologies,labels)))
 
     @staticmethod
     def SkyComponent(vertices, normals, scene, *, sky='uniform', resolution='medium', cancelled=None):
@@ -407,7 +413,8 @@ class Daylight:
         local = BVH.PrepareScene(room['opaqueFaces'], tolerance=tol)
         evaluation = dict(
             scene,
-            bvh=BVH.ByTriangles(np.concatenate([scene['bvh']['triangles'] + scene['bvh']['offset'], local['triangles'] + local['offset']]), tolerance=tol)
+            bvh=BVH.ByTriangles(np.concatenate([scene['bvh']['triangles'] + scene['bvh']['offset'], local['triangles'] + local['offset']]), sourceIds=np.concatenate([scene['bvh']['sourceIds'],local['sourceIds']+scene['faceCount']]), tolerance=tol),
+            faceLabels=scene.get('faceLabels',['Existing']*scene['faceCount'])+['Room']*len(room['opaqueFaces'])
         )
         triangles = Daylight._Triangles(room['apertures'], level + 2, cancelled)
         values, _ = Daylight._Integrate(grid['vertices'], triangles, evaluation, cancelled)
@@ -442,7 +449,7 @@ class Daylight:
         result['denominator'] = 'unobstructed external horizontal illuminance'
         result['angularSubdivisionDepth'] = level + 3 if checkConvergence else level + 2
         result['apertureTriangleCount'] = len(triangles)
-        result['_diagram'] = dict(triangles=triangles, scene=evaluation)
+        result['_diagram'] = dict(triangles=triangles, scene=evaluation, apertures=room['apertures'], cell=room['cell'])
         return result
 
     @staticmethod
@@ -557,7 +564,9 @@ class Daylight:
         return output
 
     @staticmethod
-    def WaldramDiagram(assessment, sensorIndex, *, origin=None, direction=None, scale=1.0, tolerance=0.0001):
+    def WaldramDiagram(assessment, sensorIndex, *, origin=None, direction=None, scale=1.0, tolerance=0.0001,
+                       calibrated=False, azimuthRange=None, angularStep=.5, gridStep=15,
+                       projectionTolerance=1e-4, cancelled=None):
         """Sampled sheet Faces: x=azimuth radians, y=sin(altitude)^2/2.
 
         Midpoint visibility and straight projected edges are approximations.
@@ -567,6 +576,12 @@ class Daylight:
         import numpy as np
         from topologicpy.Face import Face
         from topologicpy.Vertex import Vertex
+        # Legacy native Face sheets remain the default for compatibility.
+        # calibrated=True returns portable chart data in degrees and sin² altitude.
+        if calibrated:
+            data=Daylight._CalibratedWaldram(assessment,sensorIndex,direction,azimuthRange,angularStep,gridStep,projectionTolerance,cancelled)
+            data.pop('_angular')
+            return data
         tol = Daylight._Positive(tolerance, 'tolerance')
         scale = Daylight._Positive(scale, 'scale')
         if isinstance(sensorIndex, bool) or not isinstance(sensorIndex, int) or (not 0 <= sensorIndex < len(assessment['values'])):
@@ -610,6 +625,237 @@ class Daylight:
             projection='azimuth / half sine-squared altitude',
             warnings=['Sampled visibility; straight projected edges; seam may extend beyond sheet bounds']
         )
+
+    @staticmethod
+    def _WaldramProjection(point, sensor, forward):
+        import numpy as np
+        q = np.asarray(point, dtype=float)-sensor
+        horizontal = math.hypot(q[0], q[1])
+        azimuth = math.degrees(math.atan2(q[0]*forward[1]-q[1]*forward[0], q[0]*forward[0]+q[1]*forward[1]))
+        altitude = math.degrees(math.atan2(q[2], horizontal))
+        return [azimuth, math.sin(math.radians(altitude))**2]
+
+    @staticmethod
+    def _WaldramRuns(categories, azimuths, heights):
+        """Coalesce horizontal sampled cells, retaining their exact projected area."""
+        regions = {}
+        for j, row in enumerate(categories):
+            start = 0
+            while start < len(row):
+                value = str(row[start]); end = start+1
+                while end < len(row) and row[end] == row[start]: end += 1
+                if value != 'outside':
+                    regions.setdefault(value, []).append([float(azimuths[start]), float(azimuths[end]),
+                                                         float(heights[j]), float(heights[j+1])])
+                start = end
+        return [{'category': key, 'rectangles': value} for key, value in regions.items()]
+
+    @staticmethod
+    def _WaldramOutline(aperture, sensor, forward, bounds, error):
+        """Adaptive curved projection of straight aperture edges, clipped at horizon/seam."""
+        import numpy as np
+        from topologicpy.Face import Face
+        from topologicpy.Wire import Wire
+        from topologicpy.Vertex import Vertex
+        segments = []
+        def projected(p): return Daylight._WaldramProjection(p, sensor, forward)
+        def sample(a, b, depth=0):
+            pa, pb = projected(a), projected(b)
+            while pb[0]-pa[0] > 180: pb[0] -= 360
+            while pb[0]-pa[0] < -180: pb[0] += 360
+            middle = (a+b)/2; pm = projected(middle)
+            while pm[0]-(pa[0]+pb[0])/2 > 180: pm[0] -= 360
+            while pm[0]-(pa[0]+pb[0])/2 < -180: pm[0] += 360
+            deviation = max(abs(pm[0]-(pa[0]+pb[0])/2)/360, abs(pm[1]-(pa[1]+pb[1])/2))
+            if depth < 14 and deviation > error:
+                sample(a,middle,depth+1); sample(middle,b,depth+1)
+            else:
+                for shift in (-360,0,360):
+                    x0,x1 = pa[0]+shift,pb[0]+shift
+                    lo,hi = 0.,1.
+                    for origin,delta,minimum,maximum in ((x0,x1-x0,bounds[0],bounds[1]),(pa[1],pb[1]-pa[1],0,1)):
+                        if abs(delta)<1e-15:
+                            if not minimum <= origin <= maximum: lo,hi=1,0
+                        else:
+                            t0,t1=(minimum-origin)/delta,(maximum-origin)/delta
+                            lo=max(lo,min(t0,t1));hi=min(hi,max(t0,t1))
+                    if hi>lo:
+                        segments.append([[x0+(x1-x0)*t,pa[1]+(pb[1]-pa[1])*t] for t in (lo,hi)])
+        for wire in [Face.ExternalBoundary(aperture), *(Face.InternalBoundaries(aperture) or [])]:
+            vertices = Daylight._XYZ(Wire.Vertices(wire))
+            for a,b in zip(vertices,np.roll(vertices,-1,axis=0)):
+                a,b=a.copy(),b.copy()
+                if a[2]<sensor[2] and b[2]<sensor[2]: continue
+                if (a[2]<sensor[2]) != (b[2]<sensor[2]):
+                    p=a+(b-a)*(sensor[2]-a[2])/(b[2]-a[2])
+                    if a[2]<sensor[2]: a=p
+                    else: b=p
+                sample(a,b)
+        return segments
+
+    @staticmethod
+    def _WaldramPlan(cache):
+        """Native floor footprints and window edges for a world-XY context inset."""
+        from topologicpy.Face import Face
+        from topologicpy.Topology import Topology
+        from topologicpy.Wire import Wire
+        from topologicpy.Vertex import Vertex
+        def footprint(topology):
+            if isinstance(topology,dict):topology=topology['cell']
+            faces=Daylight._Faces(topology)
+            candidates=[f for f in faces if abs(Face.Normal(f)[2])>.999]
+            if not candidates:return []
+            low=min(Vertex.Z(Topology.Centroid(f)) for f in candidates)
+            return [[[float(p[0]),float(p[1])] for p in Daylight._XYZ(Wire.Vertices(Face.ExternalBoundary(f)))]
+                    for f in candidates if abs(Vertex.Z(Topology.Centroid(f))-low)<cache['scene']['tolerance']]
+        scene=[]
+        for topology,label in cache['scene'].get('_context',[]):
+            scene.extend(dict(role=label,polygon=p) for p in footprint(topology))
+        return dict(scene=scene,room=footprint(cache['cell']),
+                    windows=[Daylight._XYZ(Topology.Vertices(f))[:,:2].tolist() for f in cache['apertures']],
+                    axes='world XY',unit='model units')
+
+    @staticmethod
+    def _CalibratedWaldram(assessment, sensorIndex, direction=None, azimuthRange=None,
+                           angularStep=.5, gridStep=15, projectionTolerance=1e-4,
+                           cancelled=None):
+        import numpy as np
+        from topologicpy.BVH import BVH
+        from topologicpy.Face import Face
+        from topologicpy.Topology import Topology
+        Daylight._Positive(angularStep,'angularStep')
+        Daylight._Positive(gridStep,'gridStep')
+        Daylight._Positive(projectionTolerance,'projectionTolerance')
+        if angularStep > 10 or gridStep > 45: raise ValueError('Angular/grid steps are too coarse')
+        if isinstance(sensorIndex,bool) or not isinstance(sensorIndex,int) or not 0 <= sensorIndex < len(assessment['values']):
+            raise ValueError('Invalid sensor index')
+        cache=assessment.get('_diagram')
+        if not cache or 'apertures' not in cache:
+            raise ValueError('Recalculate assessment to populate calibrated diagram geometry')
+        p=np.asarray(assessment['grid']['coordinates'][sensorIndex],dtype=float)
+        apertures=cache['apertures']
+        if direction is None:
+            forward=np.array([0.,1.,0.])
+            if apertures:
+                n=np.asarray(Face.Normal(apertures[0],mantissa=12),dtype=float)
+                centre=Daylight._XYZ([Topology.Centroid(apertures[0])])[0]
+                if np.dot(n,centre-p)<0:n=-n
+                if np.linalg.norm(n[:2])>1e-8:forward=np.array([n[0],n[1],0.])/np.linalg.norm(n[:2])
+        else:
+            forward=Daylight._XYZ([direction])[0]
+            if np.linalg.norm(forward[:2])<1e-12: raise ValueError('Direction must have a horizontal component')
+            forward=np.array([forward[0],forward[1],0.])/np.linalg.norm(forward[:2])
+        if azimuthRange is None:
+            wide=any(abs(Face.Normal(f)[2])>.99 for f in apertures)
+            for f in apertures:
+                wide |= any(abs(Daylight._WaldramProjection(v,p,forward)[0])>90+1e-7
+                            for v in Daylight._XYZ(Topology.Vertices(f)))
+            azimuthRange=(-180,180) if wide else (-90,90)
+        if len(azimuthRange)!=2 or not all(math.isfinite(float(v)) for v in azimuthRange):
+            raise ValueError('Invalid azimuth range')
+        amin,amax=map(float,azimuthRange)
+        if not -180<=amin<amax<=180:raise ValueError('Azimuth range must be within -180..180 degrees')
+        nx=int(math.ceil((amax-amin)/angularStep));ny=int(math.ceil(90/angularStep))
+        if nx*ny>600000:raise ValueError('Diagram exceeds 600000 angular cells; increase angularStep')
+        az=np.linspace(amin,amax,nx+1);alt=np.linspace(0,90,ny+1)
+        y=np.sin(np.radians(alt))**2
+        mid_alt=np.arcsin(np.sqrt((y[:-1]+y[1:])/2))
+        mid_az=np.radians((az[:-1]+az[1:])/2)
+        a,h=np.meshgrid(mid_az,mid_alt)
+        right=np.array([forward[1],-forward[0],0.])
+        directions=(np.cos(h)[...,None]*(np.cos(a)[...,None]*forward+np.sin(a)[...,None]*right)
+                    +np.sin(h)[...,None]*np.array([0,0,1])).reshape(-1,3)
+        Daylight._Cancelled(cancelled)
+        aperture_scene=BVH.ByTriangles(cache['triangles'],tolerance=cache['scene']['tolerance'])
+        aperture_hits=BVH.RayHits(aperture_scene,p,directions,cancelled=cancelled)
+        mask=np.array([hit is not None for hit in aperture_hits])
+        active=np.flatnonzero(mask)
+        visible=np.zeros(nx*ny,dtype=bool)
+        categories=np.full(nx*ny,'outside',dtype=object)
+        categories[active]='Existing'
+        if len(active):
+            hits=BVH.RayHits(cache['scene']['bvh'],p,directions[active],cancelled=cancelled)
+            labels=cache['scene'].get('faceLabels',[])
+            for index,hit in zip(active,hits):
+                if hit is None:visible[index]=True;categories[index]='visible'
+                else:
+                    source=hit['sourceId']
+                    categories[index]=labels[source] if 0<=source<len(labels) else 'Existing'
+        weights=np.diff(y)[:,None]*np.diff(az)[None,:]*100/360
+        visible=visible.reshape(ny,nx);mask=mask.reshape(ny,nx)
+        factor=float(np.sum(weights*visible))
+        graticule=dict(azimuth=[],altitude=[],droop=[])
+        for angle in np.arange(math.ceil(amin/gridStep)*gridStep,amax+1e-7,gridStep):
+            graticule['azimuth'].append(dict(angle=float(angle),points=[[float(angle),0],[float(angle),1]]))
+        for angle in np.arange(0,90+1e-7,gridStep):
+            yy=math.sin(math.radians(float(angle)))**2
+            graticule['altitude'].append(dict(angle=float(angle),points=[[amin,yy],[amax,yy]]))
+        if amin>=-90 and amax<=90:
+            xx=np.linspace(amin,amax,361)
+            for angle in np.arange(gridStep,90,gridStep):
+                hh=np.arctan(math.tan(math.radians(float(angle)))*np.cos(np.radians(xx)))
+                graticule['droop'].append(dict(angle=float(angle),points=np.column_stack([xx,np.sin(hh)**2]).tolist()))
+        outlines=[dict(windowIndex=i,segments=Daylight._WaldramOutline(f,p,forward,(amin,amax),projectionTolerance))
+                  for i,f in enumerate(apertures)]
+        target=float(assessment['values'][sensorIndex])
+        return dict(kind='CalibratedWaldram',sensorIndex=sensorIndex,sensor=p.tolist(),unit='percent',
+                    skyFactor=target,diagramSkyFactor=factor,
+                    frame=dict(azimuthRange=[amin,amax],altitudeRange=[0,90],forward=forward.tolist(),
+                               bearingDegrees=math.degrees(math.atan2(forward[0],forward[1]))%360,
+                               projection='uniform-sky horizontal; y = sin²(altitude)',
+                               fullFrameSkyFactor=(amax-amin)*100/360),
+                    graticule=graticule,apertureOutlines=outlines,plan=Daylight._WaldramPlan(cache),
+                    regions=Daylight._WaldramRuns(categories.reshape(ny,nx),az,y),
+                    angularStep=[float(az[1]-az[0]),float(alt[1]-alt[0])],
+                    angularCellCount=nx*ny,projectionTolerance=projectionTolerance,
+                    reconciliation=dict(assessmentSkyFactor=target,diagramSkyFactor=factor,differencePP=factor-target),
+                    warnings=['Angularly sampled visibility; curved aperture edges are adaptively approximated'],
+                    _angular=dict(azimuth=az,heights=y,visible=visible,window=mask,weights=weights))
+
+    @staticmethod
+    def WaldramDiagramComparison(before, after, sensorIndex, *, direction=None,
+                                  azimuthRange=None, angularStep=.5, gridStep=15,
+                                  projectionTolerance=1e-4, reconciliationTolerance=.05,
+                                  maxRefinements=1, cancelled=None):
+        """Calibrated paired uniform-sky charts and loss/gain regions.
+
+        Uses one angular frame/grid for both states. Equal projected chart areas
+        represent equal horizontal sky-factor contributions. Reconciliation
+        compares an independent angular integration to the assessment, in
+        percentage points; it is reported, never forced to match. This is a
+        sampled numerical diagram, not an exact legal/certified silhouette.
+        """
+        import numpy as np
+        Daylight.Compare(before,after)
+        Daylight._Positive(reconciliationTolerance,'reconciliationTolerance')
+        if isinstance(maxRefinements,bool) or not isinstance(maxRefinements,int) or not 0<=maxRefinements<=3:
+            raise ValueError('maxRefinements must be an integer in 0..3')
+        step=angularStep
+        for refinement in range(maxRefinements+1):
+            b=Daylight._CalibratedWaldram(before,sensorIndex,direction,azimuthRange,step,gridStep,projectionTolerance,cancelled)
+            frame=b['frame']
+            a=Daylight._CalibratedWaldram(after,sensorIndex,frame['forward'],frame['azimuthRange'],step,gridStep,projectionTolerance,cancelled)
+            agreement=all(abs(d['reconciliation']['differencePP'])<=reconciliationTolerance for d in (b,a))
+            nx=math.ceil((frame['azimuthRange'][1]-frame['azimuthRange'][0])/(step/2));ny=math.ceil(90/(step/2))
+            if agreement or refinement==maxRefinements or nx*ny>600000:break
+            step/=2
+        bg,ag=b['_angular'],a['_angular']
+        if not np.array_equal(bg['window'],ag['window']):raise ValueError('Before/After window masks differ')
+        categories=np.full(bg['visible'].shape,'outside',dtype=object)
+        categories[bg['window']]='blocked'
+        categories[bg['visible']&ag['visible']]='retained'
+        categories[bg['visible']&~ag['visible']]='lost'
+        categories[~bg['visible']&ag['visible']]='gained'
+        changes={name:float(np.sum(bg['weights']*(categories==name))) for name in ('lost','gained','retained')}
+        regions=Daylight._WaldramRuns(categories,bg['azimuth'],bg['heights'])
+        for d in (b,a):
+            d.pop('_angular')
+            d['reconciliation'].update(tolerancePP=reconciliationTolerance,withinTolerance=abs(d['reconciliation']['differencePP'])<=reconciliationTolerance)
+        return dict(kind='WaldramDiagramComparison',before=b,after=a,
+                    change=dict(regions=regions,**changes,diagramChangePP=a['diagramSkyFactor']-b['diagramSkyFactor'],
+                                assessmentChangePP=a['skyFactor']-b['skyFactor']),
+                    withinTolerance=agreement,refinements=refinement,
+                    warnings=[] if agreement else ['Diagram/assessment discrepancy exceeds tolerance; refine both angular and room sampling'])
 
     @staticmethod
     def ResultData(assessment, *, includeGeometry=False):
