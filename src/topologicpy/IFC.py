@@ -19,11 +19,10 @@
 
 from __future__ import annotations
 
-try:
-    from topologicpy.ifc.exporter import IFCReferenceViewExporter, IFCExportConfig
-except Exception:
-    IFCReferenceViewExporter = None
-    IFCExportConfig = None
+# The optional exporter is loaded only when exporting. Reading IFC and IDS
+# assessment must not import its IfcOpenShell dependency.
+IFCReferenceViewExporter = None
+IFCExportConfig = None
 
 import math
 import os
@@ -38,6 +37,9 @@ Ref = Tuple[str, int]
 Call = Tuple[str, str, list]
 
 
+class IFCLogicalUnknown(str):
+    """STEP logical UNKNOWN, distinguished from a literal string value."""
+    pass
 
 
 @dataclass
@@ -3635,7 +3637,21 @@ class _STEPArgParser:
                 break
             chars.append(c)
             self.i += 1
-        return ''.join(chars)
+        value = ''.join(chars)
+        # Decode once, recognizing escaped backslashes before STEP directives.
+        # Separate substitutions could reinterpret literal text as an escape.
+        def decode(match):
+            if match[0] == '\\\\':
+                return '\\'
+            if match[1] is not None:
+                return bytes.fromhex(match[1]).decode('utf-16-be')
+            if match[2] is not None:
+                return bytes.fromhex(match[2]).decode('utf-32-be')
+            if match[3] is not None:
+                return bytes.fromhex(match[3]).decode('latin-1')
+            return chr(ord(match[4]) + 128)
+        return re.sub(r'\\\\|\\X2\\([0-9A-Fa-f]+)\\X0\\|\\X4\\([0-9A-Fa-f]+)\\X0\\|\\X\\([0-9A-Fa-f]{2})|\\S\\(.)', decode, value)
+
 
     def _parse_list(self) -> list:
         self.i += 1
@@ -3670,7 +3686,7 @@ class _STEPArgParser:
         if token == 'F':
             return False
         if token == 'U':
-            return None
+            return IFCLogicalUnknown('UNKNOWN')
         return token
 
     def _parse_call_or_word(self):
@@ -3994,7 +4010,7 @@ class IFC:
                     )
 
         def quote_step_string(value):
-            return "'" + str(value).replace("'", "''") + "'"
+            return "'" + str(value).replace("\\", "\\\\").replace("'", "''") + "'"
 
         enum_argument_positions = {
             "IFCRELSPACEBOUNDARY": {7, 8},
@@ -4014,6 +4030,8 @@ class IFC:
             return text
 
         def serialize_value(value, entity_type=None, argument_index=None):
+            if isinstance(value, IFCLogicalUnknown):
+                return ".U."
             if value is None:
                 return "$"
             if value == "*":
@@ -10207,6 +10225,14 @@ class IFC:
         length_unit: str = "METRE", angle_unit: str = "RADIAN", area_unit: str = "SQUARE_METRE", volume_unit: str = "CUBIC_METRE",
         use_sweeps: bool = True, use_tessellation_fallback: bool = True, transfer_dictionaries: bool = True, validate: bool = True, silent: bool = False) -> str:
         """Export a TopologicPy-authored model to an IFC4 Reference View-compatible IFC."""
+        global IFCReferenceViewExporter, IFCExportConfig
+        if IFCExportConfig is None or IFCReferenceViewExporter is None:
+            try:
+                from topologicpy.ifc.exporter import IFCReferenceViewExporter, IFCExportConfig
+            except ImportError:
+                if not silent:
+                    print("IFC.ExportReferenceView - Error: Install topologicpy[ifc] to use the optional exporter. Returning None.")
+                return None
         if IFCExportConfig is None or IFCReferenceViewExporter is None:
             if not silent:
                 print("IFC.ExportReferenceView - Error: Could not import topologicpy.ifc.exporter. Returning None.")

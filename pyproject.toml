@@ -34,6 +34,7 @@ cfd = ["meshio", "google-crc32c"]
 sun = ["ephem"]
 graph = ["networkx", "igraph", "graphviz", "pyvis", "rdflib>=6.0.0"]
 ifc = ["ifcopenshell"]
+ids = ["defusedxml>=0.7.1", "xmlschema>=4.3.2,<5", "elementpath>=5.1.4,<6"]
 honeybee = [
     "honeybee-core",
     "honeybee-energy[standards]",
@@ -78,3 +79,6 @@ xfail_strict = true
 dev = [
     "pytest>=8.3.5",
 ]
+
+[tool.setuptools.package-data]
+topologicpy = ["ids_schemas/*.json", "ids_schemas/*.xsd", "ids_schemas/*.md"]

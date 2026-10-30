@@ -241,3 +241,9 @@ Or you can import the following .bib formatted references into your favourite re
 ```
 
 topologicpy: © 2026 Wassim Jabi
+
+## IDS assessment
+
+Use `from topologicpy.IDS import IDS` to assess IFC model information against
+IDS 1.0 without IfcOpenShell or IfcTester. Install the optional XML packages with
+`pip install "topologicpy[ids]"`. See [IDS API and verification](docs/IDS.md).

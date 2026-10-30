@@ -367,3 +367,12 @@ def test_host_containment_does_not_accept_window_spanning_hole():
                       [Face.ExternalBoundary(polygon([(1.5,0,1.5),(2.5,0,1.5),(2.5,0,2.5),(1.5,0,2.5)]))])
     spanning=polygon([(1,0,1),(3,0,1),(3,0,3),(1,0,3)])
     assert Daylight.ApertureHosts(spanning,[wall])==[]
+
+
+def test_face_coplanarity_accepts_opposite_equations(monkeypatch):
+    a=polygon([(0,0,0),(2,0,0),(2,0,2),(0,0,2)])
+    b=polygon([(0,0,0),(0,0,2),(2,0,2),(2,0,0)])
+    monkeypatch.setattr(Face,'PlaneEquation',staticmethod(lambda f,**kw:dict(a=0,b=1 if f is a else -1,c=0,d=0)))
+    assert Face.IsCoplanar(a,b)
+    monkeypatch.setattr(Face,'PlaneEquation',staticmethod(lambda f,**kw:dict(a=0,b=1,c=0,d=0 if f is a else .1)))
+    assert not Face.IsCoplanar(a,b)
