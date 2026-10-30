@@ -1,0 +1,23 @@
+{
+  "schemas": {
+    "IFC2X3": {
+      "source": "https://raw.githubusercontent.com/buildingSMART/IFC4.x-development/ifc4.3-main/reference_schemas/IFC2X3_TC1.exp",
+      "express_sha256": "e18a1b2c3e29f5256904c83378ccad0850f52287a8d0122d149aba4a417fe5e5",
+      "metadata_sha256": "4f5594e9a7fb7b16ae9b29bf65a44172685c49bb9694b6c61604c629356edfd6"
+    },
+    "IFC4": {
+      "source": "https://raw.githubusercontent.com/buildingSMART/IFC4.x-development/ifc4.3-main/reference_schemas/IFC4_ADD2_TC1.exp",
+      "express_sha256": "a2704ba20a1b3d0b7d9b61d6fd37d0baa3b4996ba3e90d968a1d2ca2819d1046",
+      "metadata_sha256": "7a7344b7f2130a6b480d08dc4398f8a6600ffc4b1944855c341eda5d355d5b0c"
+    },
+    "IFC4X3_ADD2": {
+      "source": "https://raw.githubusercontent.com/Autodesk/revit-ifc/master/Source/RevitIFCTools/IFC4X3_ADD2.exp",
+      "express_sha256": "f67c8762b13a099c28082061e6f16b9ef1284ceec34069792afc702725675860",
+      "metadata_sha256": "c2792e16a3a80ddd927b46b7797a55b622821e70ae29a32174b73134b5fd0820"
+    }
+  },
+  "compiler": "validation/compile_schemas.py; independently extracts inheritance, serialized attributes and type metadata.",
+  "IDS_schema": "buildingSMART IDS 1.0, commit 870f9c4e6e8f414e737b4d84ca1aa9b46fc6c8f3/Schema/ids.xsd",
+  "mapping": "buildingSMART IDS IFC2X3 occurrence/type mapping at the same commit",
+  "attribution": "IFC and IDS schemas \u00a9 buildingSMART International; IFC4X3 schema mirror maintained by Autodesk."
+}

@@ -9,6 +9,8 @@
 *.json
 # Saved reference data required by offline tests and CI.
 !tests/fixtures/depthmap/*.json
+# IDS validation requires these bundled IFC schemas and provenance.
+!src/topologicpy/ids_schemas/*.json
 *.suo
 *.wsuo
 *.lock
