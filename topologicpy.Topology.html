@@ -556,7 +556,7 @@
 <td><p>Exports a topology to neutral STEP BREP geometry.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ExportToTPY" title="topologicpy.Topology.Topology.ExportToTPY"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExportToTPY</span></code></a>(topology, path[, overwrite, ...])</p></td>
-<td><p>Exports a topology to TopologicPy's native TPY persistence format.</p></td>
+<td><p>Exports a topology, TGraph or mixed collection to native TPY v2.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ExternalBoundary" title="topologicpy.Topology.Topology.ExternalBoundary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExternalBoundary</span></code></a>(topology[, silent])</p></td>
 <td><p>Returns the external boundary of the input topology.</p></td>
@@ -715,7 +715,7 @@
 <td><p>Rotates the input topology using Quaternion rotations.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Save" title="topologicpy.Topology.Topology.Save"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Save</span></code></a>(topology, path[, overwrite, silent])</p></td>
-<td><p>Saves a topology using the codec selected by the output extension.</p></td>
+<td><p>Saves geometry, a TGraph or a mixed TPY collection using its extension.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Scale" title="topologicpy.Topology.Topology.Scale"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Scale</span></code></a>(topology[, origin, x, y, z, ...])</p></td>
 <td><p>Scales the input topology</p></td>
@@ -3242,7 +3242,7 @@ Default is False.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Topology.Topology.ExportToTPY">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ExportToTPY</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeSubtopologyDictionaries</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeContents</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeApertures</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#topologicpy.Topology.Topology.ExportToTPY" title="Permalink to this definition"></a></dt>
-<dd><p>Exports a topology to TopologicPy’s native TPY persistence format.</p>
+<dd><p>Exports a topology, TGraph or mixed collection to native TPY v2.</p>
 <p>TPY preserves exact BREP geometry together with TopologicPy dictionaries
 and, by default, dictionaries on constituent subtopologies, Contents,
 Apertures, and Context parameters. The archive is a versioned ZIP/JSON
@@ -4808,9 +4808,8 @@ provenance.supported=False. Default is False.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Topology.Topology.Save">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#topologicpy.Topology.Topology.Save" title="Permalink to this definition"></a></dt>
-<dd><p>Saves a topology using the codec selected by the output extension.</p>
-<p>At present, the unified TopologicPy persistence registry supports
-neutral STEP BREP exchange through <code class="docutils literal notranslate"><span class="pre">.step</span></code> and <code class="docutils literal notranslate"><span class="pre">.stp</span></code>.</p>
+<dd><p>Saves geometry, a TGraph or a mixed TPY collection using its extension.</p>
+<p>TPY v2 preserves graphs and native geometry; STEP/STP supports native BREP geometry.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
