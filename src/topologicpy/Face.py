@@ -8468,7 +8468,8 @@ class Face():
                 radiusSides: int = 64,
                 holes: list = None,
                 boundaryTypeKey: str = "isovistType",
-                defaultBoundaryType: str = "obstacle"):
+                defaultBoundaryType: str = "obstacle",
+                outputType: str = "face"):
         """
         Returns the face representing the isovist projection from the input viewpoint.
 
@@ -8507,6 +8508,13 @@ class Face():
             occluded_length stores the absolute length in model units. Physical
             wall coverage is matched within tolerance, including adjacent wall
             segments. Edge dictionaries contain occlusive and occluded_length.
+        outputType : str, optional
+            "face" (default) preserves the existing Face return and full metrics.
+            "data" returns a dictionary with world-coordinate outer/holes rings,
+            centroid and metrics, without constructing an output native Face.
+            With metrics=True, data mode calculates only area, external-boundary
+            perimeter and compactness. Area includes interior-ring subtraction.
+            Data mode does not support triangles or transferDictionaries.
         triangles : bool , optional
             If True, radial triangles from the viewpoint to isovist edges are stored as contents.
         method : str , optional
@@ -8579,6 +8587,16 @@ class Face():
         except Exception:
             if not silent:
                 print("Face.Isovist - Error: This method requires the shapely package. Please install it using: pip install shapely. Returning None.")
+            return None
+
+        output_type = outputType.lower() if isinstance(outputType, str) else ""
+        if output_type not in ("face", "data"):
+            if not silent:
+                print('Face.Isovist - Error: outputType must be "face" or "data". Returning None.')
+            return None
+        if output_type == "data" and (triangles or transferDictionaries):
+            if not silent:
+                print('Face.Isovist - Error: data output does not support triangles or edge dictionary transfer. Returning None.')
             return None
 
         # -------------------------------------------------------------------------
@@ -9412,6 +9430,36 @@ class Face():
             tolerance, preserve_topology=True)
         if isinstance(cleaned, Polygon) and cleaned.is_valid and not cleaned.is_empty:
             visible_polygon = cleaned
+
+        if output_type == "data":
+            # The visibility solver already produced the exact clipped polygon.
+            # Keep it as numeric data: no native face/wire/edge construction,
+            # occlusive-edge tagging or unrelated radial metrics are required.
+            from topologicpy.Vector import Vector
+            matrix = np.asarray(Vector.TransformationMatrix(Vector.Up(), normal), dtype=float)
+            offset = np.asarray(Vertex.Coordinates(origin), dtype=float)
+            def world_xy(xy):
+                local = np.asarray([float(xy[0]), float(xy[1]), 0.0, 1.0])
+                return [round(float(v), mantissa) for v in ((matrix @ local)[:3] + offset)]
+            exterior = _clean_ring(list(visible_polygon.exterior.coords), close=False)
+            interior_rings = [_clean_ring(list(r.coords), close=False) for r in visible_polygon.interiors]
+            result = {"outer": [world_xy(p) for p in exterior],
+                      "holes": [[world_xy(p) for p in ring] for ring in interior_rings],
+                      "centroid": world_xy(visible_polygon.centroid.coords[0]), "metrics": {}}
+            if metrics:
+                measure_method = method.strip().lower() if isinstance(method, str) else ""
+                if measure_method not in ("depthmap", "topologicpy"):
+                    if not silent:
+                        print('Face.Isovist - Error: unsupported compactness method for data output. Returning None.')
+                    return None
+                area = round(float(visible_polygon.area), mantissa)
+                perimeter = round(float(visible_polygon.exterior.length), mantissa)
+                compactness = ((4.0 * math.pi * area) / (perimeter * perimeter)) if perimeter > 0 else 0.0
+                if measure_method == "topologicpy":
+                    compactness = math.sqrt(compactness)
+                result["metrics"] = {"area": area, "perimeter": perimeter,
+                                     "compactness": round(compactness, mantissa)}
+            return result
 
         return_face = _shapely_polygon_to_face(visible_polygon)
 
