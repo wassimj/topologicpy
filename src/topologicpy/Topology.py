@@ -14820,7 +14820,7 @@ class Topology():
         silent: bool = False,
     ) -> bool:
         """
-        Exports a topology to TopologicPy's native TPY persistence format.
+        Exports a topology, TGraph or mixed collection to native TPY v2.
 
         TPY preserves exact BREP geometry together with TopologicPy dictionaries
         and, by default, dictionaries on constituent subtopologies, Contents,
@@ -14855,10 +14855,9 @@ class Topology():
         bool
             True if the TPY archive was written successfully, otherwise False.
         """
-        if not Topology.IsInstance(
-            topology,
-            "Topology",
-        ):
+        from topologicpy.io.tpy import TPYCodec
+        _tpy_input = TPYCodec._IsGraphOrCollection(topology)
+        if not Topology.IsInstance(topology, "Topology") and not _tpy_input:
             if not silent:
                 print(
                     "Topology.ExportToTPY - Error: The input topology parameter "
@@ -14892,6 +14891,7 @@ class Topology():
                 silent=silent,
             )
         )
+
     
     @staticmethod
     def ExportToOBJ(*topologies,
@@ -21621,10 +21621,9 @@ class Topology():
         silent: bool = False,
     ) -> bool:
         """
-        Saves a topology using the codec selected by the output extension.
+        Saves geometry, a TGraph or a mixed TPY collection using its extension.
 
-        At present, the unified TopologicPy persistence registry supports
-        neutral STEP BREP exchange through ``.step`` and ``.stp``.
+        TPY v2 preserves graphs and native geometry; STEP/STP supports native BREP geometry.
 
         Parameters
         ----------
@@ -21643,10 +21642,13 @@ class Topology():
         bool
             True if the topology was saved successfully, otherwise False.
         """
-        if not Topology.IsInstance(
-            topology,
-            "Topology",
-        ):
+        from topologicpy.io.tpy import TPYCodec
+        import os
+        try:
+            _tpy_input = os.path.splitext(os.fspath(path))[1].lower() == '.tpy' and TPYCodec._IsGraphOrCollection(topology)
+        except TypeError:
+            _tpy_input = False
+        if not Topology.IsInstance(topology, "Topology") and not _tpy_input:
             if not silent:
                 print(
                     "Topology.Save - Error: The input topology parameter is "
@@ -21691,6 +21693,7 @@ class Topology():
                     f"{exc}. Returning False."
                 )
             return False
+
     
     @staticmethod
     def Scale(topology,

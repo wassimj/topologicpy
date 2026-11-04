@@ -758,6 +758,97 @@ class TGraph:
         "_analysis_context",
     )
 
+    @staticmethod
+    def _TPYState(graph):
+        """Semantic records for native persistence, including inactive slots."""
+        if not isinstance(graph, TGraph):
+            raise TypeError("Expected a TGraph.")
+        return {"directed": graph._directed,
+                "allowSelfLoops": graph._allow_self_loops,
+                "allowParallelEdges": graph._allow_parallel_edges,
+                "dictionary": graph._dictionary, "vertices": graph._vertices,
+                "edges": graph._edges, "revision": graph._version}
+
+    @staticmethod
+    def _RestoreTPYState(graph, state):
+        """Restore validated stable slots without AddEdge filtering/reindexing."""
+        if not isinstance(graph, TGraph) or not isinstance(state, dict):
+            raise ValueError("Invalid TPY graph state.")
+        if set(state) - {'directed','allowSelfLoops','allowParallelEdges','dictionary','vertices','edges','revision'}:
+            raise ValueError("Unsupported TPY graph state fields.")
+        for key in ("directed", "allowSelfLoops", "allowParallelEdges"):
+            if type(state.get(key)) is not bool:
+                raise ValueError("Invalid TPY graph setting: " + key)
+        vertices, edges = state.get("vertices"), state.get("edges")
+        if not isinstance(vertices, list) or not isinstance(edges, list) or not isinstance(state.get("dictionary"), dict):
+            raise ValueError("Invalid TPY graph records.")
+        for index, vertex in enumerate(vertices):
+            if not isinstance(vertex, dict) or type(vertex.get("index")) is not int or vertex["index"] != index or type(vertex.get("active")) is not bool or not isinstance(vertex.get("dictionary"), dict):
+                raise ValueError("Invalid TPY vertex slot.")
+        keys = set()
+        for index, edge in enumerate(edges):
+            if not isinstance(edge, dict) or type(edge.get("index")) is not int or edge["index"] != index or type(edge.get("active")) is not bool or type(edge.get("directed")) is not bool or not isinstance(edge.get("dictionary"), dict):
+                raise ValueError("Invalid TPY edge slot.")
+            a, b = edge.get("src"), edge.get("dst")
+            if any(type(v) is not int or not 0 <= v < len(vertices) for v in (a, b)):
+                raise ValueError("TPY edge endpoint is out of range.")
+            if edge["active"]:
+                if not vertices[a]["active"] or not vertices[b]["active"]:
+                    raise ValueError("Active TPY edge has an inactive endpoint.")
+                if a == b and not state["allowSelfLoops"]:
+                    raise ValueError("TPY graph disallows an active self-loop.")
+                key = (a, b, True) if edge["directed"] else (min(a, b), max(a, b), False)
+                if not state["allowParallelEdges"] and key in keys:
+                    raise ValueError("TPY graph disallows active parallel edges.")
+                keys.add(key)
+        revision = state.get("revision", 0)
+        if type(revision) is not int or revision < 0:
+            raise ValueError("Invalid TPY graph revision.")
+        graph._directed = state["directed"]
+        graph._allow_self_loops = state["allowSelfLoops"]
+        graph._allow_parallel_edges = state["allowParallelEdges"]
+        graph._vertices, graph._edges, graph._dictionary = vertices, edges, state["dictionary"]
+        graph._out_edges = {i: set() for i in range(len(vertices))}
+        graph._in_edges = {i: set() for i in range(len(vertices))}
+        graph._incident_edges = {i: set() for i in range(len(vertices))}
+        graph._edge_lookup = {}
+        for edge in edges:
+            if edge["active"]:
+                graph._register_edge_adjacency(edge["index"], edge["src"], edge["dst"], edge["directed"])
+        graph._version, graph._compiled, graph._analysis_context = revision, None, None
+        return graph
+
+    @staticmethod
+    def Save(graph, path, overwrite: bool = False, silent: bool = False) -> bool:
+        """Save a complete TGraph as native TPY, including geometry references."""
+        from topologicpy.Topology import Topology
+        return bool(isinstance(graph, TGraph) and Topology.Save(graph, path, overwrite=overwrite, silent=silent))
+
+    @staticmethod
+    def Load(path, silent: bool = False):
+        """Load a native TGraph from TPY. Use Topology.Load for mixed archives."""
+        from topologicpy.Topology import Topology
+        value = Topology.Load(path, silent=silent)
+        return value if isinstance(value, TGraph) else None
+
+    @staticmethod
+    def ExportToTPY(graph, path, overwrite: bool = False,
+                    includeSubtopologyDictionaries: bool = True,
+                    includeContents: bool = True, includeApertures: bool = True,
+                    tolerance: float = 0.0001, silent: bool = False) -> bool:
+        """Export a complete graph, preserving native representations/originators."""
+        from topologicpy.Topology import Topology
+        return bool(isinstance(graph, TGraph) and Topology.ExportToTPY(
+            graph, path, overwrite=overwrite,
+            includeSubtopologyDictionaries=includeSubtopologyDictionaries,
+            includeContents=includeContents, includeApertures=includeApertures,
+            tolerance=tolerance, silent=silent))
+
+    @staticmethod
+    def ByTPYPath(path, silent: bool = False):
+        """Load a TGraph from a native TPY path."""
+        return TGraph.Load(path, silent=silent)
+
     def __init__(
         self,
         directed: bool = False,

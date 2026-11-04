@@ -36,7 +36,7 @@ import zipfile
 
 
 _FORMAT = "topologicpy.tpy"
-_VERSION = 1
+_VERSION = 2
 _MANIFEST_NAME = "manifest.json"
 
 _SUBTOPOLOGY_TYPES = (
@@ -58,129 +58,11 @@ def _sha256_text(text):
 
 
 def _encode_value(value):
-    """Encode common Python values to JSON-safe tagged data."""
-    if value is None or isinstance(
-        value,
-        (bool, int, str),
-    ):
-        return value
-
-    if isinstance(value, float):
-        if math.isnan(value):
-            return {
-                "__tpy_type__": "float",
-                "value": "nan",
-            }
-        if math.isinf(value):
-            return {
-                "__tpy_type__": "float",
-                "value": (
-                    "+inf"
-                    if value > 0
-                    else "-inf"
-                ),
-            }
-        return value
-
-    if isinstance(value, bytes):
-        return {
-            "__tpy_type__": "bytes",
-            "data": base64.b64encode(
-                value
-            ).decode("ascii"),
-        }
-
-    if isinstance(value, tuple):
-        return {
-            "__tpy_type__": "tuple",
-            "items": [
-                _encode_value(item)
-                for item in value
-            ],
-        }
-
-    if isinstance(value, list):
-        return [
-            _encode_value(item)
-            for item in value
-        ]
-
-    if isinstance(value, dict):
-        return {
-            str(key): _encode_value(item)
-            for key, item in value.items()
-        }
-
-    # Topologic dictionaries normally contain primitive/list values.
-    # Preserve an unsupported value textually rather than making the entire
-    # archive fail.
-    return {
-        "__tpy_type__": "repr",
-        "class": (
-            value.__class__.__name__
-            if value is not None
-            else "NoneType"
-        ),
-        "value": repr(value),
-    }
+    return TPYCodec._EncodeValue(value)
 
 
 def _decode_value(value):
-    if isinstance(value, list):
-        return [
-            _decode_value(item)
-            for item in value
-        ]
-
-    if not isinstance(value, dict):
-        return value
-
-    tag = value.get(
-        "__tpy_type__",
-        None,
-    )
-
-    if tag == "float":
-        raw = value.get("value")
-        if raw == "nan":
-            return float("nan")
-        if raw == "+inf":
-            return float("inf")
-        if raw == "-inf":
-            return float("-inf")
-        return None
-
-    if tag == "bytes":
-        try:
-            return base64.b64decode(
-                value.get(
-                    "data",
-                    "",
-                )
-            )
-        except Exception:
-            return b""
-
-    if tag == "tuple":
-        return tuple(
-            _decode_value(item)
-            for item in value.get(
-                "items",
-                [],
-            )
-        )
-
-    if tag == "repr":
-        # Do not eval archived text.
-        return value.get(
-            "value",
-            "",
-        )
-
-    return {
-        str(key): _decode_value(item)
-        for key, item in value.items()
-    }
+    return TPYCodec._DecodeValue(value, legacy=True)
 
 
 def _python_dictionary(topology):
@@ -727,122 +609,52 @@ def _candidate_brep_hash(topology):
     return value
 
 
-def _resolve_locator(
-    topology,
-    locator,
-):
+def _resolve_locator(topology, locator):
     from topologicpy.Topology import Topology
-
     if locator is None:
         return topology
-
-    if not isinstance(
-        locator,
-        dict,
-    ):
+    if not isinstance(locator, dict):
         return None
-
-    type_name = str(
-        locator.get(
-            "type",
-            "",
-        )
-    ).lower()
-
-    if type_name not in _SUBTOPOLOGY_TYPES:
+    if 'nativePath' in locator:
+        path = locator['nativePath']
+        if not isinstance(path, list) or len(path) > 100 or any(type(index) is not int or index < 0 for index in path): return None
+        try:
+            shape = Topology.OCCTShape(topology, silent=True)
+            for index in path: shape = TPYCodec._NativeChildren(shape)[index]
+            target = Topology.ByOCCTShape(shape, silent=True)
+            # The hierarchy path distinguishes independent coincident shapes.
+            if target is None or Topology.TypeAsString(target).lower() != str(locator.get('type', '')).lower(): return None
+            expected = locator.get('signature', {}).get('hash')
+            if expected and _signature(target).get('hash') != expected:
+                if _candidate_brep_hash(target) != locator.get('brepSha256'): return None
+            return target
+        except (AttributeError, IndexError, TypeError, ValueError): return None
+    kind = str(locator.get("type", "")).lower()
+    if kind not in _SUBTOPOLOGY_TYPES:
         return None
-
-    try:
-        candidates = Topology.SubTopologies(
-            topology,
-            subTopologyType=type_name,
-            silent=True,
-        ) or []
-    except Exception:
-        candidates = []
-
-    cleaned = []
-
-    for candidate in candidates:
-        if not Topology.IsInstance(
-            candidate,
-            "Topology",
-        ):
-            continue
-
-        if _same_topology(
-            candidate,
-            topology,
-        ):
-            continue
-
-        cleaned.append(candidate)
-
-    candidates = cleaned
-
-    if len(candidates) < 1:
-        return None
-
-    expected_brep_hash = locator.get(
-        "brepSha256"
-    )
-
-    if expected_brep_hash:
-        for candidate in candidates:
-            if (
-                _candidate_brep_hash(
-                    candidate
-                )
-                == expected_brep_hash
-            ):
-                return candidate
-
-    expected_signature = locator.get(
-        "signature",
-        {}
-    )
-
-    expected_signature_hash = (
-        expected_signature.get(
-            "hash"
-        )
-        if isinstance(
-            expected_signature,
-            dict,
-        )
-        else None
-    )
-
-    if expected_signature_hash:
-        for candidate in candidates:
-            try:
-                if (
-                    _signature(
-                        candidate
-                    ).get("hash")
-                    == expected_signature_hash
-                ):
-                    return candidate
-            except Exception:
-                pass
-
-    try:
-        index = int(
-            locator.get(
-                "index",
-                -1,
-            )
-        )
-    except Exception:
-        index = -1
-
-    if (
-        index >= 0
-        and index < len(candidates)
-    ):
-        return candidates[index]
-
-    return None
+    candidates = []
+    for item in Topology.SubTopologies(topology, subTopologyType=kind, silent=True) or []:
+        if Topology.IsInstance(item, "Topology") and not _same_topology(item, topology) and not any(_same_topology(item, old) for old in candidates):
+            candidates.append(item)
+    index = locator.get("index", -1)
+    index = index if type(index) is int else -1
+    def choose(matches):
+        # Equal geometry does not imply equal native identity. Prefer the
+        # stored occurrence when several distinct coincident shapes match.
+        if 0 <= index < len(candidates) and any(candidates[index] is item for item in matches):
+            return candidates[index]
+        return matches[0] if len(matches) == 1 else None
+    checksum = locator.get("brepSha256")
+    if checksum:
+        matches = [item for item in candidates if _candidate_brep_hash(item) == checksum]
+        if matches:
+            return choose(matches)
+    signature = locator.get("signature", {}).get("hash")
+    if signature:
+        matches = [item for item in candidates if _signature(item).get("hash") == signature]
+        if matches:
+            return choose(matches)
+    return candidates[index] if not checksum and not signature and 0 <= index < len(candidates) else None
 
 
 def _raw_contexts(subject):
@@ -1166,6 +978,7 @@ class _ArchiveBuilder:
         record = {
             "id": object_id,
             "type": type_name,
+            "signature": _signature(topology),
             "geometry": {
                 "path": geometry_path,
                 "sha256": brep_hash,
@@ -1191,6 +1004,7 @@ class _ArchiveBuilder:
             )
         ]
 
+        native_paths = TPYCodec._NativePaths(topology)
         for (
             sub_type,
             index,
@@ -1202,6 +1016,10 @@ class _ArchiveBuilder:
                 subtopology,
             )
 
+            native = Topology.OCCTShape(subtopology, silent=True)
+            if native is not None:
+                paths = [path for shape, path in native_paths.get(hash(native), []) if shape.IsSame(native)]
+                if len(paths) == 1: locator['nativePath'] = paths[0]
             hosts.append(
                 (
                     locator,
@@ -1342,6 +1160,433 @@ class TPYCodec:
     """Versioned native TopologicPy archive codec."""
 
     @staticmethod
+    def _EncodeValue(value, reference=None, active=None, depth=0):
+        """Explicit data encodings only; never textualize unsupported objects."""
+        if depth > 200:
+            raise ValueError("TPY metadata nesting exceeds 200 levels.")
+        if reference is not None:
+            result = reference(value)
+            if result is not None:
+                return result
+        active = set() if active is None else active
+        encode = lambda item: TPYCodec._EncodeValue(item, reference, active, depth + 1)
+        if type(value).__module__.split('.')[0] == "numpy":
+            import numpy as np
+            if isinstance(value, np.ndarray):
+                if value.dtype.fields is not None:
+                    raise TypeError("Structured NumPy dtypes need an explicit TPY encoding.")
+                return {"__tpy_type__": "ndarray", "dtype": str(value.dtype), "shape": list(value.shape), "items": encode(value.ravel().tolist())}
+            if isinstance(value, np.generic):
+                return {"__tpy_type__": "numpy_scalar", "dtype": str(value.dtype), "value": encode(value.item())}
+        if value is None or isinstance(value, (str, bool, int)):
+            return value
+        if isinstance(value, float):
+            return value if math.isfinite(value) else {"__tpy_type__": "float", "value": "nan" if math.isnan(value) else "+inf" if value > 0 else "-inf"}
+        if isinstance(value, (list, tuple, dict, set, frozenset)):
+            identity = id(value)
+            if identity in active:
+                raise ValueError("Cyclic Python containers require an explicit object encoding; TPY graph/topology reference cycles are supported.")
+            active.add(identity)
+            try:
+                if isinstance(value, dict):
+                    return {"__tpy_type__": "mapping", "items": [[encode(k), encode(v)] for k, v in value.items()]}
+                items = [encode(item) for item in value]
+                if isinstance(value, list):
+                    return items
+                if isinstance(value, (set, frozenset)):
+                    items.sort(key=lambda item: json.dumps(item, sort_keys=True))
+                return {"__tpy_type__": type(value).__name__, "items": items}
+            finally:
+                active.remove(identity)
+        if isinstance(value, bytes):
+            return {"__tpy_type__": "bytes", "data": base64.b64encode(value).decode("ascii")}
+        if isinstance(value, complex):
+            return {"__tpy_type__": "complex", "real": encode(value.real), "imag": encode(value.imag)}
+        from datetime import date, datetime, time
+        from decimal import Decimal
+        from fractions import Fraction
+        from uuid import UUID
+        if isinstance(value, (datetime, date, time)):
+            return {"__tpy_type__": type(value).__name__, "value": value.isoformat(), "fold": getattr(value, "fold", 0), "zone": getattr(getattr(value, "tzinfo", None), "key", None)}
+        if isinstance(value, (Decimal, UUID)):
+            return {"__tpy_type__": type(value).__name__, "value": str(value)}
+        if isinstance(value, Fraction):
+            return {"__tpy_type__": "Fraction", "numerator": value.numerator, "denominator": value.denominator}
+        raise TypeError("Unsupported TPY value type: " + type(value).__module__ + "." + type(value).__name__)
+
+    @staticmethod
+    def _DecodeValue(value, reference=None, legacy=False, depth=0):
+        if depth > 200:
+            raise ValueError("TPY metadata nesting exceeds 200 levels.")
+        decode = lambda item: TPYCodec._DecodeValue(item, reference, legacy, depth + 1)
+        if isinstance(value, list):
+            return [decode(item) for item in value]
+        if not isinstance(value, dict):
+            return value
+        tag = value.get("__tpy_type__")
+        if tag == "reference":
+            if reference is None:
+                raise ValueError("Object reference outside a TPY object archive.")
+            return reference(value)
+        if tag == "mapping":
+            result = {}
+            for pair in value.get("items", []):
+                if not isinstance(pair, list) or len(pair) != 2:
+                    raise ValueError("Invalid TPY mapping entry.")
+                key, item = decode(pair[0]), decode(pair[1])
+                if key in result:
+                    raise ValueError("Duplicate TPY mapping key.")
+                result[key] = item
+            return result
+        if tag == "float":
+            if value.get("value") not in ("nan", "+inf", "-inf"):
+                raise ValueError("Invalid tagged TPY float.")
+            return float(value["value"])
+        if tag == "bytes":
+            return base64.b64decode(value["data"], validate=True)
+        if tag in ("tuple", "set", "frozenset"):
+            return {"tuple": tuple, "set": set, "frozenset": frozenset}[tag](decode(value["items"]))
+        if tag == "complex":
+            return complex(decode(value["real"]), decode(value["imag"]))
+        if tag in ("date", "datetime", "time"):
+            import datetime
+            result = getattr(datetime, tag).fromisoformat(value["value"])
+            if tag != "date":
+                if value.get("zone") is not None:
+                    from zoneinfo import ZoneInfo
+                    zone = ZoneInfo(value["zone"])
+                    result = result.astimezone(zone) if tag == "datetime" and result.tzinfo is not None else result.replace(tzinfo=zone)
+                result = result.replace(fold=value.get("fold", 0))
+            return result
+        if tag == "Decimal":
+            from decimal import Decimal
+            return Decimal(value["value"])
+        if tag == "UUID":
+            from uuid import UUID
+            return UUID(value["value"])
+        if tag == "Fraction":
+            from fractions import Fraction
+            return Fraction(value["numerator"], value["denominator"])
+        if tag in ("ndarray", "numpy_scalar"):
+            import numpy as np
+            dtype = np.dtype(value["dtype"])
+            if dtype.fields is not None:
+                raise ValueError("Unsupported structured TPY dtype.")
+            if tag == "numpy_scalar":
+                return np.array(decode(value["value"]), dtype=dtype)[()]
+            shape = value["shape"]
+            items = decode(value["items"])
+            if not isinstance(shape, list) or any(type(n) is not int or n < 0 for n in shape) or math.prod(shape) != len(items):
+                raise ValueError("Invalid TPY array shape.")
+            result = np.empty(len(items), dtype=dtype)
+            result[:] = items
+            return result.reshape(shape)
+        if tag == "repr" and legacy:
+            return value.get("value", "")
+        if tag is not None and not legacy:
+            raise ValueError("Unsupported TPY value tag: " + str(tag))
+        return {key: decode(item) for key, item in value.items()}
+
+    @staticmethod
+    def _IsGraphOrCollection(value):
+        from topologicpy.TGraph import TGraph
+        return isinstance(value, (TGraph, list, tuple, dict))
+
+    @staticmethod
+    def _NativeChildren(shape):
+        try:
+            from OCC.Core.TopoDS import TopoDS_Iterator
+        except ImportError:
+            from OCP.TopoDS import TopoDS_Iterator
+        iterator = TopoDS_Iterator(shape)
+        children = []
+        while iterator.More():
+            children.append(iterator.Value());iterator.Next()
+        return children
+
+    @staticmethod
+    def _NativePaths(topology):
+        from topologicpy.Topology import Topology
+        root = Topology.OCCTShape(topology, silent=True)
+        result, seen = {}, {}
+        def visit(shape, path):
+            bucket = seen.setdefault(hash(shape), [])
+            if any(shape.IsSame(old) for old in bucket): return
+            bucket.append(shape)
+            result.setdefault(hash(shape), []).append((shape, path))
+            for index, child in enumerate(TPYCodec._NativeChildren(shape)):
+                visit(child, path + [index])
+        try:
+            if root is not None: visit(root, [])
+        except (ImportError, TypeError, AttributeError):
+            return {}
+        return result
+
+    @staticmethod
+    def _OrientedReference(topology, reference):
+        from topologicpy.Topology import Topology
+        result = dict(reference)
+        try:
+            shape = Topology.OCCTShape(topology, silent=True)
+            if shape is not None: result['orientation'] = int(shape.Orientation())
+        except (AttributeError, TypeError):
+            pass
+        return result
+
+    @staticmethod
+    def _SaveGraphArchive(value, path, overwrite=False, silent=False, **options):
+        """Build a mixed object archive, with native subshape references."""
+        from topologicpy.Topology import Topology
+        from topologicpy.TGraph import TGraph
+        try:
+            output = Path(os.fspath(path))
+            if output.suffix.lower() != '.tpy': output = Path(str(output) + '.tpy')
+            if output.exists() and not overwrite: raise ValueError("Output exists and overwrite is False.")
+            builder = _ArchiveBuilder(options.get('includeSubtopologyDictionaries', True), options.get('includeContents', True), options.get('includeApertures', True))
+            natives, seen, states = [], set(), {}
+            def collect(item):
+                if id(item) in seen: return
+                seen.add(id(item))
+                if isinstance(item, TGraph):
+                    states[id(item)] = TGraph._TPYState(item)
+                    collect(states[id(item)])
+                elif Topology.IsInstance(item, 'Topology'): natives.append(item)
+                elif isinstance(item, dict):
+                    for key, child in item.items(): collect(key);collect(child)
+                elif isinstance(item, (list, tuple, set, frozenset)):
+                    for child in item: collect(child)
+                elif type(item).__module__.split('.')[0] == 'numpy' and getattr(item, 'dtype', None) is not None and item.dtype.kind == 'O':
+                    for child in item.flat: collect(child)
+            collect(value)
+            # Register containing shapes first so references to their faces,
+            # edges or vertices resolve to subshapes of that same loaded object.
+            natives.sort(key=lambda item: Topology.Type(item), reverse=True)
+            native_refs, index = {}, {}
+            def key_for(item):
+                try:
+                    shape = Topology.OCCTShape(item, silent=True)
+                    return hash(shape) if shape is not None else 0
+                except Exception: return 0
+            roots, included = [], {}
+            for item in natives:
+                shape = Topology.OCCTShape(item, silent=True)
+                if shape is None: raise ValueError('Native geometry has no OCCT shape.')
+                if any(shape.IsSame(old) for old in included.get(hash(shape), [])): continue
+                roots.append(item)
+                for key, entries in TPYCodec._NativePaths(item).items():
+                    included.setdefault(key, []).extend(native for native, path in entries)
+            if roots:
+                from topologicpy.Cluster import Cluster
+                carrier = roots[0] if len(roots) == 1 else Cluster.ByTopologies(roots, silent=True)
+                native_paths = TPYCodec._NativePaths(carrier)
+                object_id = builder.register(carrier)
+                if object_id is None: raise ValueError('Could not serialize the native geometry container.')
+                root_shape = Topology.OCCTShape(carrier, silent=True)
+                for item in natives:
+                    native = Topology.OCCTShape(item, silent=True)
+                    paths = [path for shape, path in native_paths.get(hash(native), []) if shape.IsSame(native)]
+                    if len(paths) != 1: raise ValueError('Could not identify an exact native subshape path.')
+                    ref = {'__tpy_type__': 'reference', 'object': object_id}
+                    if not native.IsSame(root_shape):
+                        ref['locator'] = dict(_make_locator(Topology.TypeAsString(item).lower(), 0, item), nativePath=paths[0])
+                    native_refs[id(item)] = TPYCodec._OrientedReference(item, ref)
+            graph_ids = {}
+            def reference(item):
+                if isinstance(item, TGraph):
+                    if id(item) not in graph_ids:
+                        object_id = builder._next_id();graph_ids[id(item)] = object_id
+                        record = {'id': object_id, 'type': 'TGraph'};builder.records[object_id] = record
+                        record['state'] = TPYCodec._EncodeValue(states[id(item)], reference)
+                    return {'__tpy_type__': 'reference', 'object': graph_ids[id(item)]}
+                if Topology.IsInstance(item, 'Topology'):
+                    if id(item) not in native_refs: raise ValueError("Unregistered native geometry reference.")
+                    return native_refs[id(item)]
+                return None
+            if isinstance(value, TGraph):
+                root = reference(value)['object']
+            else:
+                root = builder._next_id();record = {'id': root, 'type': 'Collection'};builder.records[root] = record
+                record['value'] = TPYCodec._EncodeValue(value, reference)
+            manifest = {'format': _FORMAT, 'formatVersion': 2, 'rootObject': root,
+                        'options': {'includeSubtopologyDictionaries': builder.include_subtopology_dictionaries,
+                                    'includeContents': builder.include_contents, 'includeApertures': builder.include_apertures,
+                                    'tolerance': float(options.get('tolerance', .0001))},
+                        'objects': list(builder.records.values()), 'relations': builder.relations}
+            return TPYCodec._WriteGraphArchive(output, manifest, builder.geometry)
+        except Exception as exc:
+            if not silent: print('TPYCodec.save - Error: ' + str(exc) + '. Returning False.')
+            return False
+
+    @staticmethod
+    def _WriteGraphArchive(output, manifest, geometry):
+        output.parent.mkdir(parents=True, exist_ok=True)
+        pending = None
+        try:
+            text = json.dumps(manifest, ensure_ascii=False, sort_keys=True, indent=2, allow_nan=False)
+            with tempfile.NamedTemporaryFile(dir=output.parent, prefix=output.name+'.', suffix='.tmp', delete=False) as handle: pending = Path(handle.name)
+            with zipfile.ZipFile(pending, 'w', compression=zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
+                archive.writestr(_MANIFEST_NAME, text)
+                for name, brep in geometry.items(): archive.writestr(name, brep)
+            os.replace(pending, output)
+            return True
+        finally:
+            if pending is not None: pending.unlink(missing_ok=True)
+
+    @staticmethod
+    def _ValidateGraphManifest(manifest, names):
+        """Validate object IDs and references before constructing native objects."""
+        records = manifest.get('objects')
+        if not isinstance(records, list) or not 1 <= len(records) <= 100000: raise ValueError('Invalid TPY object table.')
+        by_id = {}
+        native_types = {'Vertex','Edge','Wire','Face','Shell','Cell','CellComplex','Cluster'}
+        for record in records:
+            if not isinstance(record, dict) or not isinstance(record.get('id'), str) or record['id'] in by_id: raise ValueError('Invalid or duplicate TPY object ID.')
+            if record.get('type') not in native_types | {'TGraph','Collection'}: raise ValueError('Unsupported TPY object type.')
+            by_id[record['id']] = record
+            if record['type'] in ('TGraph', 'Collection') and 'geometry' in record:
+                raise ValueError('Graph/collection records cannot declare BREP payloads.')
+        if manifest.get('rootObject') not in by_id: raise ValueError('Missing TPY root object.')
+        used = {_MANIFEST_NAME}
+        for record in records:
+            if record['type'] in native_types:
+                geometry = record.get('geometry', {})
+                name = geometry.get('path')
+                if not isinstance(name, str) or name not in names or not name.startswith('geometry/') or not name.endswith('.brep') or '\\' in name or '..' in name.split('/'):
+                    raise ValueError('Invalid native geometry member.')
+                if not isinstance(geometry.get('sha256'), str) or len(geometry['sha256']) != 64: raise ValueError('Missing native geometry checksum.')
+                used.add(name)
+            def visit(item, depth=0):
+                if depth > 200: raise ValueError('TPY reference nesting exceeds 200 levels.')
+                if isinstance(item, dict):
+                    if item.get('__tpy_type__') == 'reference':
+                        if set(item)-{'__tpy_type__','object','locator','orientation'} or item.get('object') not in by_id: raise ValueError('Invalid TPY object reference.')
+                        if 'orientation' in item and (type(item['orientation']) is not int or item['orientation'] not in (0,1,2,3)): raise ValueError('Invalid native reference orientation.')
+                        if ('orientation' in item or item.get('locator') is not None) and by_id[item['object']]['type'] not in native_types: raise ValueError('Subshape/orientation reference requires a native topology.')
+                        if item.get('locator') is not None:
+                            loc = item['locator']
+                            if not isinstance(loc, dict) or loc.get('type') not in _SUBTOPOLOGY_TYPES or type(loc.get('index')) is not int or loc['index'] < 0: raise ValueError('Invalid native subshape locator.')
+                            if 'nativePath' in loc and (not isinstance(loc['nativePath'], list) or len(loc['nativePath']) > 100 or any(type(index) is not int or index < 0 for index in loc['nativePath'])): raise ValueError('Invalid native subshape path.')
+                    if item.get('__tpy_type__') == 'repr': raise ValueError('Text-only object encoding is not supported by TPY v2.')
+                    for child in item.values(): visit(child, depth+1)
+                elif isinstance(item, list):
+                    for child in item: visit(child, depth+1)
+            visit(record)
+        if used != set(names): raise ValueError('Unreferenced or unexpected TPY archive members.')
+        for relation in manifest.get('relations', []):
+            if not isinstance(relation, dict) or relation.get('kind') not in ('content','aperture') or relation.get('hostObject') not in by_id or relation.get('childObject') not in by_id:
+                raise ValueError('Invalid native TPY relationship.')
+            if any(by_id[relation[key]]['type'] not in native_types for key in ('hostObject','childObject')): raise ValueError('Native relationships require native topology objects.')
+        return by_id
+
+    @staticmethod
+    def _LoadGraphArchive(archive, manifest, tolerance, silent):
+        from topologicpy.TGraph import TGraph
+        by_id = TPYCodec._ValidateGraphManifest(manifest, archive.namelist())
+        loaded = {}
+        natives = [record for record in by_id.values() if 'geometry' in record]
+        if natives:
+            native_manifest = dict(manifest, formatVersion=1, objects=natives, rootObject=natives[0]['id'])
+            with tempfile.TemporaryDirectory(prefix='topologicpy-tpy-native-') as directory:
+                path = Path(directory)/'native.tpy'
+                geometry = {record['geometry']['path']: archive.read(record['geometry']['path']) for record in natives}
+                TPYCodec._WriteGraphArchive(path, native_manifest, geometry)
+                if TPYCodec.load(path, tolerance=tolerance, silent=silent, _loaded=loaded) is None: raise ValueError('Native objects could not be restored.')
+        for identifier, record in by_id.items():
+            if record['type'] == 'TGraph': loaded[identifier] = TGraph()
+        resolved_refs = {}
+        def reference(item):
+            identifier = item['object']
+            if identifier not in loaded: raise ValueError('Unresolved TPY object reference.')
+            locator = item.get('locator')
+            key = (identifier, json.dumps(locator, sort_keys=True), item.get('orientation'))
+            if key not in resolved_refs:
+                target = loaded[identifier] if locator is None else _resolve_locator(loaded[identifier], locator)
+                if target is None: raise ValueError('Native subshape reference could not be restored.')
+                if item.get('orientation') is not None:
+                    from topologicpy.Topology import Topology
+                    native = Topology.OCCTShape(target, silent=True)
+                    if native is None: raise ValueError('This backend cannot restore native orientation references.')
+                    if int(native.Orientation()) != item['orientation']:
+                        target = Topology.ByOCCTShape(native.Oriented(type(native.Orientation())(item['orientation'])), silent=True)
+                        if target is None: raise ValueError('Could not restore native reference orientation.')
+                resolved_refs[key] = target
+            return resolved_refs[key]
+        for identifier, record in by_id.items():
+            if record['type'] == 'TGraph':
+                state = TPYCodec._DecodeValue(record.get('state'), reference)
+                TGraph._RestoreTPYState(loaded[identifier], state)
+        for identifier, record in by_id.items():
+            if record['type'] == 'Collection': loaded[identifier] = TPYCodec._DecodeValue(record['value'], reference)
+        return loaded[manifest['rootObject']]
+
+    @staticmethod
+    def _MetadataFingerprint(manifest, include_geometry_signatures=True):
+        """Canonical object/reference semantics, independent of archive IDs.
+
+        BREP checksums protect exact payload bytes separately. Geometric
+        signatures are used here because BREP writers may reorder shape tables.
+        """
+        by_id = {record['id']: record for record in manifest['objects']}
+        assigned, records, subshapes = {}, [], {}
+        dumps = lambda value: json.dumps(value, sort_keys=True, separators=(',', ':'), allow_nan=False)
+        def geometric_signature(value):
+            # Backend enumeration may repeat the same native vertex before a
+            # BREP round-trip. Compare geometry independently of wrapper counts.
+            if not isinstance(value, dict): return None
+            result = {key: item for key, item in value.items() if key not in ('hash', 'counts', 'vertexCount')}
+            if 'vertices' in result:
+                result['vertices'] = sorted({tuple(point) for point in result['vertices']})
+            def canonical(item):
+                if isinstance(item, float) and item == 0: return 0.0
+                if isinstance(item, (list, tuple)): return [canonical(child) for child in item]
+                if isinstance(item, dict): return {key: canonical(child) for key, child in item.items()}
+                return item
+            return canonical(result)
+        def locator(value):
+            if value is None: return None
+            return {'type': value.get('type'), 'signature': value.get('signature', {}).get('hash')}
+        def metadata(value):
+            return normalize(TPYCodec._EncodeValue(TPYCodec._DecodeValue(value, legacy=True)))
+        def shallow(identifier):
+            record = by_id[identifier]
+            return dumps({'type': record['type'], 'dictionary': record.get('dictionary'),
+                          'signature': geometric_signature(record.get('signature')) if include_geometry_signatures else None})
+        def normalize(value):
+            if isinstance(value, list): return [normalize(item) for item in value]
+            if not isinstance(value, dict): return value
+            if value.get('__tpy_type__') == 'reference':
+                result = {'object': resolve(value['object'])}
+                if value.get('locator') is not None:
+                    result['locator'] = locator(value['locator'])
+                    identity = (value['object'], value['locator'].get('type'), tuple(value['locator']['nativePath']) if 'nativePath' in value['locator'] else value['locator'].get('index'))
+                    if identity not in subshapes: subshapes[identity] = len(subshapes)
+                    result['subshape'] = subshapes[identity]
+                if 'orientation' in value: result['orientation'] = value['orientation']
+                return result
+            if value.get('__tpy_type__') == 'mapping':
+                return {'__tpy_type__': 'mapping', 'items': [[normalize(k), normalize(v)] for k, v in sorted(value['items'], key=lambda pair: dumps(pair[0]))]}
+            return {key: normalize(item) for key, item in value.items()}
+        def resolve(identifier):
+            if identifier in assigned: return assigned[identifier]
+            number = len(records);assigned[identifier] = number;records.append(None)
+            record = by_id[identifier];kind = record['type']
+            result = {'type': kind}
+            if kind == 'TGraph': result['state'] = normalize(record['state'])
+            elif kind == 'Collection': result['value'] = normalize(record['value'])
+            else:
+                result['dictionary'] = metadata(record.get('dictionary', {}))
+                result['subtopologies'] = sorted([{'locator': locator(item['locator']), 'dictionary': metadata(item.get('dictionary', {}))} for item in record.get('subtopologies', [])], key=dumps)
+                if include_geometry_signatures: result['signature'] = geometric_signature(record.get('signature'))
+                relations = [edge for edge in manifest.get('relations', []) if edge['hostObject'] == identifier]
+                relations.sort(key=lambda edge: (edge['kind'], dumps(locator(edge.get('hostLocator'))), shallow(edge['childObject']), dumps(edge.get('context'))))
+                result['relations'] = [{'kind': edge['kind'], 'locator': locator(edge.get('hostLocator')), 'child': resolve(edge['childObject']), 'context': edge.get('context')} for edge in relations]
+            records[number] = result
+            return number
+        root = resolve(manifest['rootObject'])
+        for identifier in sorted(by_id, key=shallow): resolve(identifier)
+        return dumps({'root': root, 'objects': records})
+
+    @staticmethod
     def save(
         topology,
         path,
@@ -1354,6 +1599,11 @@ class TPYCodec:
     ):
         from topologicpy.Core import Core
         from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(topology, "Topology") and TPYCodec._IsGraphOrCollection(topology):
+            return TPYCodec._SaveGraphArchive(topology, path, overwrite=overwrite, silent=silent,
+                includeSubtopologyDictionaries=includeSubtopologyDictionaries,
+                includeContents=includeContents, includeApertures=includeApertures, tolerance=tolerance)
 
         if not Topology.IsInstance(
             topology,
@@ -1420,9 +1670,11 @@ class TPYCodec:
             include_apertures=includeApertures,
         )
 
-        root_id = builder.register(
-            topology
-        )
+        try:
+            root_id = builder.register(topology)
+        except (TypeError, ValueError) as exc:
+            if not silent: print("TPYCodec.save - Error: " + str(exc) + ". Returning False.")
+            return False
 
         if root_id is None:
             if not silent:
@@ -1564,6 +1816,7 @@ class TPYCodec:
         path,
         tolerance=0.0001,
         silent=False,
+        _loaded=None,
     ):
         from topologicpy.Aperture import Aperture
         from topologicpy.Context import Context
@@ -1659,7 +1912,7 @@ class TPYCodec:
                     or manifest.get(
                         "formatVersion"
                     )
-                    != _VERSION
+                    not in (1, 2)
                 ):
                     if not silent:
                         print(
@@ -1667,6 +1920,11 @@ class TPYCodec:
                             "version. Returning None."
                         )
                     return None
+
+                if manifest['formatVersion'] == 2:
+                    if len(archive.namelist()) != len(names):
+                        raise ValueError("Duplicate TPY archive members.")
+                    return TPYCodec._LoadGraphArchive(archive, manifest, tolerance, silent)
 
                 object_records = manifest.get(
                     "objects",
@@ -1974,6 +2232,8 @@ class TPYCodec:
                 ):
                     return None
 
+                if _loaded is not None:
+                    _loaded.update(loaded)
                 return root
 
         except Exception as exc:
