@@ -1,5 +1,6 @@
 """Native persistence contracts, including stable slots and geometry identity."""
 import json, math, tempfile, unittest, zipfile
+import pytest
 from datetime import datetime, timezone
 from decimal import Decimal
 from fractions import Fraction
@@ -57,7 +58,7 @@ class GraphArchiveTests(unittest.TestCase):
     def test_native_curves_and_shared_originator_subshape(self):
         model=Cell.Prism(width=2,length=3,height=4)
         face=Topology.Faces(model)[0]
-        curve=Wire.Circle(radius=3,polyline=False)
+        curve=Edge.Circle(radius=3)
         graph=TGraph()
         graph.AddVertex(dictionary={'name':'a'},representation=curve,originator=face)
         graph.AddVertex(dictionary={'name':'b'},representation=curve,originator=face)
@@ -68,7 +69,7 @@ class GraphArchiveTests(unittest.TestCase):
         self.assertIs(a['originator'],b['originator'])
         self.assertIs(a['originator'],restored['face'])
         self.assertTrue(any(Topology.IsSame(a['originator'],f) for f in Topology.Faces(restored['model'])))
-        self.assertAlmostEqual(Wire.Length(restored['curve'],mantissa=12),6*math.pi,places=9)
+        self.assertAlmostEqual(Edge.Length(restored['curve'],mantissa=12),6*math.pi,places=9)
         self.assertEqual(Cell.Volume(restored['model']),24)
 
     def test_graph_only_archive_preserves_shared_faces_between_originators(self):
@@ -81,18 +82,24 @@ class GraphArchiveTests(unittest.TestCase):
         origins=[vertex['originator'] for vertex in restored._vertices]
         self.assertEqual(len(Topology.SharedFaces(origins[0],origins[1])),1)
 
-    def test_orientations_and_coincident_independent_vertices(self):
+    @pytest.mark.pythonocc_only
+    def test_native_shape_orientations(self):
         edge=Edge.ByVertices([Vertex.ByCoordinates(0,0,0),Vertex.ByCoordinates(3,0,0)])
         reverse=Topology.ByOCCTShape(Topology.OCCTShape(edge).Reversed())
         graph=TGraph()
         graph.AddVertex(representation=edge);graph.AddVertex(representation=reverse)
-        graph.AddVertex(representation=Vertex.ByCoordinates(1,2,3))
-        graph.AddVertex(representation=Vertex.ByCoordinates(1,2,3))
         restored=self.roundtrip(graph)
         representations=[record['representation'] for record in restored._vertices]
         self.assertEqual(Vertex.Coordinates(Edge.StartVertex(representations[0])),[0,0,0])
         self.assertEqual(Vertex.Coordinates(Edge.StartVertex(representations[1])),[3,0,0])
-        self.assertFalse(Topology.IsSame(representations[2],representations[3]))
+
+    def test_coincident_independent_vertices(self):
+        graph=TGraph()
+        graph.AddVertex(representation=Vertex.ByCoordinates(1,2,3))
+        graph.AddVertex(representation=Vertex.ByCoordinates(1,2,3))
+        restored=self.roundtrip(graph)
+        representations=[record['representation'] for record in restored._vertices]
+        self.assertFalse(Topology.IsSame(representations[0],representations[1]))
 
     def test_mixed_collections_and_graph_reference_cycles(self):
         a,b=TGraph(),TGraph()

@@ -1063,6 +1063,11 @@ class _ArchiveBuilder:
                 relation_seen = set()
 
                 for content in contents:
+                    # TopologicCore includes Aperture wrappers in Contents.
+                    # Persist their underlying geometry through the aperture
+                    # relation below, rather than a non-geometric object type.
+                    if Topology.IsInstance(content, "Aperture"):
+                        continue
                     if not Topology.IsInstance(
                         content,
                         "Topology",
@@ -1323,6 +1328,35 @@ class TPYCodec:
         return result
 
     @staticmethod
+    def _PortableNativeReferences(natives, builder):
+        """Use public topology identity when native OCCT traversal is opaque.
+
+        TopologicCore exposes TopoDS_Shape as an opaque binding. Its public
+        topology traversal still preserves native identity and verified BREP
+        locators; PythonOCC continues to use exact native hierarchy paths.
+        """
+        from topologicpy.Topology import Topology
+        from topologicpy.Cluster import Cluster
+        roots, included = [], []
+        for topology in natives:
+            if any(_same_topology(topology, old) for old in included): continue
+            roots.append(topology);included.append(topology)
+            included.extend(child for kind, ordinal, child in _subtopologies(topology))
+        carrier = roots[0] if len(roots) == 1 else Cluster.ByTopologies(roots, silent=True)
+        object_id = builder.register(carrier)
+        if object_id is None: raise ValueError('Could not serialize the native geometry container.')
+        root_ref = {'__tpy_type__': 'reference', 'object': object_id}
+        references = [(carrier, root_ref)]
+        for kind, ordinal, child in _subtopologies(carrier):
+            references.append((child, dict(root_ref, locator=_make_locator(kind, ordinal, child))))
+        result = {}
+        for topology in natives:
+            matches = [ref for old, ref in references if _same_topology(topology, old)]
+            if len(matches) != 1: raise ValueError('Native topology identity could not be resolved in its container.')
+            result[id(topology)] = TPYCodec._OrientedReference(topology, matches[0])
+        return result
+
+    @staticmethod
     def _OrientedReference(topology, reference):
         from topologicpy.Topology import Topology
         result = dict(reference)
@@ -1361,35 +1395,34 @@ class TPYCodec:
             # Register containing shapes first so references to their faces,
             # edges or vertices resolve to subshapes of that same loaded object.
             natives.sort(key=lambda item: Topology.Type(item), reverse=True)
-            native_refs, index = {}, {}
-            def key_for(item):
-                try:
-                    shape = Topology.OCCTShape(item, silent=True)
-                    return hash(shape) if shape is not None else 0
-                except Exception: return 0
-            roots, included = [], {}
-            for item in natives:
-                shape = Topology.OCCTShape(item, silent=True)
-                if shape is None: raise ValueError('Native geometry has no OCCT shape.')
-                if any(shape.IsSame(old) for old in included.get(hash(shape), [])): continue
-                roots.append(item)
-                for key, entries in TPYCodec._NativePaths(item).items():
-                    included.setdefault(key, []).extend(native for native, path in entries)
-            if roots:
-                from topologicpy.Cluster import Cluster
-                carrier = roots[0] if len(roots) == 1 else Cluster.ByTopologies(roots, silent=True)
-                native_paths = TPYCodec._NativePaths(carrier)
-                object_id = builder.register(carrier)
-                if object_id is None: raise ValueError('Could not serialize the native geometry container.')
-                root_shape = Topology.OCCTShape(carrier, silent=True)
+            native_refs = {}
+            opaque_shapes = any(not hasattr(Topology.OCCTShape(item, silent=True), 'IsSame') for item in natives)
+            if opaque_shapes:
+                native_refs = TPYCodec._PortableNativeReferences(natives, builder)
+            else:
+                roots, included = [], {}
                 for item in natives:
-                    native = Topology.OCCTShape(item, silent=True)
-                    paths = [path for shape, path in native_paths.get(hash(native), []) if shape.IsSame(native)]
-                    if len(paths) != 1: raise ValueError('Could not identify an exact native subshape path.')
-                    ref = {'__tpy_type__': 'reference', 'object': object_id}
-                    if not native.IsSame(root_shape):
-                        ref['locator'] = dict(_make_locator(Topology.TypeAsString(item).lower(), 0, item), nativePath=paths[0])
-                    native_refs[id(item)] = TPYCodec._OrientedReference(item, ref)
+                    shape = Topology.OCCTShape(item, silent=True)
+                    if shape is None: raise ValueError('Native geometry has no OCCT shape.')
+                    if any(shape.IsSame(old) for old in included.get(hash(shape), [])): continue
+                    roots.append(item)
+                    for key, entries in TPYCodec._NativePaths(item).items():
+                        included.setdefault(key, []).extend(native for native, path in entries)
+                if roots:
+                    from topologicpy.Cluster import Cluster
+                    carrier = roots[0] if len(roots) == 1 else Cluster.ByTopologies(roots, silent=True)
+                    native_paths = TPYCodec._NativePaths(carrier)
+                    object_id = builder.register(carrier)
+                    if object_id is None: raise ValueError('Could not serialize the native geometry container.')
+                    root_shape = Topology.OCCTShape(carrier, silent=True)
+                    for item in natives:
+                        native = Topology.OCCTShape(item, silent=True)
+                        paths = [path for shape, path in native_paths.get(hash(native), []) if shape.IsSame(native)]
+                        if len(paths) != 1: raise ValueError('Could not identify an exact native subshape path.')
+                        ref = {'__tpy_type__': 'reference', 'object': object_id}
+                        if not native.IsSame(root_shape):
+                            ref['locator'] = dict(_make_locator(Topology.TypeAsString(item).lower(), 0, item), nativePath=paths[0])
+                        native_refs[id(item)] = TPYCodec._OrientedReference(item, ref)
             graph_ids = {}
             def reference(item):
                 if isinstance(item, TGraph):
