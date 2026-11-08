@@ -85,3 +85,23 @@ def test_repeated_window_cuts_remain_closed():
         mesh=N._boolean_mesh(mesh,box(1+i*3,-.1,1,2+i*3,.3,2),"DIFFERENCE")
         expected-=.2
     assert volume(mesh)==pytest.approx(expected,abs=1e-6)
+
+
+def test_floor_touching_door_then_window_has_no_degenerate_cap_faces(monkeypatch):
+    # Duplex wall #4087: its first cut touches z=0 within floating-point noise.
+    # A microscopic cap triangle used to poison the following window cut.
+    host=box(0,-17.383,0,.417,-.417,3.1)
+    door=box(-.1,-2.247,4.440892098500626e-16,.6,-.997,2.01)
+    window=box(-.1,-12.605,.1,.6,-11.855,2.3)
+    with monkeypatch.context() as scope:
+        scope.setattr(Topology,'ByGeometry',staticmethod(lambda *a,**k: (_ for _ in ()).throw(AssertionError('Native CSG used'))))
+        mesh=N._boolean_mesh(host,door,'DIFFERENCE')
+        assert N._prism_profile(mesh) is not None
+        mesh=N._boolean_mesh(mesh,window,'DIFFERENCE')
+    expected=.417*(16.966*3.1-1.25*2.01-.75*2.2)
+    assert volume(mesh)==pytest.approx(expected,abs=1e-6)
+
+
+def test_collinear_faces_alone_are_not_a_solid():
+    mesh=N._closed_polygon_mesh([[[0,0,0],[1,0,0],[2,0,1e-16]]])
+    assert not mesh['faces']

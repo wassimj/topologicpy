@@ -1180,6 +1180,15 @@ class IFCFastTopology:
             if len(ids) > 1 and ids[0] == ids[-1]:
                 ids.pop()
             if len(ids) >= 3:
+                # Triangulation can create collinear cap triangles at a cut
+                # touching a floor within floating-point precision. They are
+                # not surfaces; retain their vertices for edge noding below.
+                origin = vertices[ids[0]]
+                deltas = [[p[k]-origin[k] for k in range(3)] for p in (vertices[i] for i in ids)]
+                axis = max(deltas, key=lambda d: sum(v*v for v in d))
+                length2 = sum(v*v for v in axis)
+                if all(sum((d[(k+1)%3]*axis[(k+2)%3]-d[(k+2)%3]*axis[(k+1)%3])**2 for k in range(3)) <= tolerance**2*length2 for d in deltas):
+                    continue
                 faces.append(ids)
         if not faces:
             return {"vertices": [], "faces": [], "edges": []}
@@ -1241,8 +1250,10 @@ class IFCFastTopology:
         points = np.asarray(mesh.get("vertices", []), dtype=float)
         if len(points) < 4 or not mesh.get("faces"):
             return None
-        if IFCFastTopology._closed_polygon_mesh([points[f] for f in mesh["faces"]]) is None:
+        mesh = IFCFastTopology._closed_polygon_mesh([points[f] for f in mesh["faces"]])
+        if mesh is None or not mesh["faces"]:
             return None
+        points = np.asarray(mesh["vertices"], dtype=float)
         tolerance = max(1e-7, float(np.ptp(points, axis=0).max())*1e-10)
         normals = {}
         if axis is not None:
