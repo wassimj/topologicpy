@@ -51,6 +51,9 @@ def _install_external_honeybee_fakes(monkeypatch):
         def add_aperture(self, aperture):
             self.apertures.append(aperture)
 
+        def add_door(self, door):
+            self.doors = getattr(self, "doors", []) + [door]
+
         def apertures_by_ratio(self, ratio, tolerance=0.01):
             self.aperture_ratio = ratio
 
@@ -121,6 +124,13 @@ def _install_external_honeybee_fakes(monkeypatch):
     door_mod = _new_module("honeybee.door")
     door_mod.Door = FakeHBDoor
 
+    typing_mod = _new_module("honeybee.typing")
+    import re
+    typing_mod.clean_string = lambda value: re.sub(r"[^.A-Za-z0-9_-]", "", value.replace(" ", "_")) or "Space"
+    boundary_mod = _new_module("honeybee.boundarycondition")
+    boundary_mod.boundary_conditions = types.SimpleNamespace(outdoors="Outdoors")
+    monkeypatch.setitem(sys.modules, "honeybee.typing", typing_mod)
+    monkeypatch.setitem(sys.modules, "honeybee.boundarycondition", boundary_mod)
     honeybee.facetype = facetype
     for name, module in {
         "honeybee": honeybee,

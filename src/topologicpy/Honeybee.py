@@ -752,8 +752,10 @@ class Honeybee:
         
         if not Topology.IsInstance(tpBuilding, "Topology"):
             return None
+        # Keep native topology intact while generating valid Honeybee identifiers.
+        from honeybee.typing import clean_string
         rooms = []
-        tpCells = Topology.Cells(tpBuilding)
+        tpCells = [tpBuilding] if Topology.IsInstance(tpBuilding, "Cell") else Topology.Cells(tpBuilding)
         # Sort cells by Z Levels
         tpCells.sort(key=lambda c: cellFloor(c), reverse=False)
         fl = floorLevels(tpCells, 2)
@@ -802,6 +804,12 @@ class Honeybee:
                 tpCellName = str(tpCellStory)+"_SPACE_"+(str(spaceNumber+1))
                 program = prog_type_lib.office_program
                 constr_set = constr_set_lib.construction_set_by_identifier("Default Generic Construction Set")
+            displayName = str(tpCellName)
+            try:
+                identifier = clean_string(displayName[:60])
+            except AssertionError:
+                identifier = "Space"
+            tpCellName = createUniqueName(identifier, spaceNames, 1)
             spaceNames.append(tpCellName)
 
             tpCellFaces = Topology.Faces(tpCell)
@@ -817,11 +825,14 @@ class Honeybee:
                     tpFaceApertures = []
                     tpFaceApertures = Topology.Apertures(tpCellFace)
                     if tpFaceApertures:
+                        from honeybee.boundarycondition import boundary_conditions
+                        hbRoomFace.boundary_condition = boundary_conditions.outdoors
                         for tpFaceApertureNumber, apertureTopology in enumerate(tpFaceApertures):
+                            tpFaceApertureType = None
                             tpFaceApertureDictionary = Topology.Dictionary(apertureTopology)
                             if tpFaceApertureDictionary:
                                 apertureKeyName = getKeyName(tpFaceApertureDictionary, apertureTypeKey)
-                                tpFaceApertureType = Dictionary.ValueAtKey(tpFaceApertureDictionary,apertureKeyName, silent=True)
+                                tpFaceApertureType = Dictionary.ValueAtKey(tpFaceApertureDictionary,apertureKeyName, silent=True) or Dictionary.ValueAtKey(tpFaceApertureDictionary, 'kind', silent=True)
                             hbFaceAperturePoints = []
                             tpFaceApertureVertices = []
                             tpFaceApertureVertices = Topology.Vertices(Face.ExternalBoundary(apertureTopology), silent=True)
@@ -834,7 +845,10 @@ class Honeybee:
                                     hbFaceAperture = HBAperture(tpCellName+'_Face_'+str(tpFaceNumber+1)+'_Window_'+str(tpFaceApertureNumber), Face3D(hbFaceAperturePoints))
                             else:
                                 hbFaceAperture = HBAperture(tpCellName+'_Face_'+str(tpFaceNumber+1)+'_Window_'+str(tpFaceApertureNumber), Face3D(hbFaceAperturePoints))
-                            hbRoomFace.add_aperture(hbFaceAperture)
+                            if isinstance(hbFaceAperture, HBDoor):
+                                hbRoomFace.add_door(hbFaceAperture)
+                            else:
+                                hbRoomFace.add_aperture(hbFaceAperture)
                     else:
                         tpFaceDictionary = Topology.Dictionary(tpCellFace)
                         if (abs(tpCellFaceNormal[2]) < 1e-6) and tpFaceDictionary: #It is a mostly vertical wall and has a dictionary
@@ -845,17 +859,18 @@ class Honeybee:
                     hbRoomFace.type = fType
                     hbRoomFaces.append(hbRoomFace)
                 room = HBRoom(tpCellName, hbRoomFaces, 0.01, 1)
+                room.display_name = displayName
                 if addSensorGrid:
                     floor_mesh = room.generate_grid(0.5, 0.5, 1)
                     sensorGrids.append(SensorGrid.from_mesh3d(tpCellName+"_SG", floor_mesh))
-                heat_setpt = ScheduleRuleset.from_constant_value('Room Heating', heatingSetpoint, schedule_types.temperature)
-                cool_setpt = ScheduleRuleset.from_constant_value('Room Cooling', coolingSetpoint, schedule_types.temperature)
-                humidify_setpt = ScheduleRuleset.from_constant_value('Room Humidifying', humidifyingSetpoint, schedule_types.humidity)
-                dehumidify_setpt = ScheduleRuleset.from_constant_value('Room Dehumidifying', dehumidifyingSetpoint, schedule_types.humidity)
-                setpoint = Setpoint('Room Setpoint', heat_setpt, cool_setpt, humidify_setpt, dehumidify_setpt)
-                simple_office = ScheduleDay('Simple Weekday', [0, 1, 0], [Time(0, 0), Time(9, 0), Time(17, 0)]) #Todo: Remove hardwired scheduleday
-                schedule = ScheduleRuleset('Office Water Use', simple_office, None, schedule_types.fractional) #Todo: Remove hardwired schedule
-                shw = ServiceHotWater('Office Hot Water', 0.1, schedule) #Todo: Remove hardwired schedule hot water
+                heat_setpt = ScheduleRuleset.from_constant_value('Room_Heating', heatingSetpoint, schedule_types.temperature)
+                cool_setpt = ScheduleRuleset.from_constant_value('Room_Cooling', coolingSetpoint, schedule_types.temperature)
+                humidify_setpt = ScheduleRuleset.from_constant_value('Room_Humidifying', humidifyingSetpoint, schedule_types.humidity)
+                dehumidify_setpt = ScheduleRuleset.from_constant_value('Room_Dehumidifying', dehumidifyingSetpoint, schedule_types.humidity)
+                setpoint = Setpoint('Room_Setpoint', heat_setpt, cool_setpt, humidify_setpt, dehumidify_setpt)
+                simple_office = ScheduleDay('Simple_Weekday', [0, 1, 0], [Time(0, 0), Time(9, 0), Time(17, 0)]) #Todo: Remove hardwired scheduleday
+                schedule = ScheduleRuleset('Office_Water_Use', simple_office, None, schedule_types.fractional) #Todo: Remove hardwired schedule
+                shw = ServiceHotWater('Office_Hot_Water', 0.1, schedule) #Todo: Remove hardwired schedule hot water
                 room.properties.energy.program_type = program
                 room.properties.energy.construction_set = constr_set
                 room.properties.energy.add_default_ideal_air() #Ideal Air Exchange
