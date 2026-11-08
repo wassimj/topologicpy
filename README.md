@@ -247,3 +247,24 @@ topologicpy: © 2026 Wassim Jabi
 Use `from topologicpy.IDS import IDS` to assess IFC model information against
 IDS 1.0 without IfcOpenShell or IfcTester. Install the optional XML packages with
 `pip install "topologicpy[ids]"`. See [IDS API and verification](docs/IDS.md).
+
+## Analytical spatial models from IFC
+
+`IFC.AnalyticalModel` reconstructs reviewable room-only spatial geometry from IFC
+evidence, including independent CellComplexes for separate buildings. The engine
+is included in `IFC.py`; no external reconstruction package or IfcOpenShell is
+needed. World coordinates are the default. Curved/stepped roofs, boundary evidence,
+editable plans, fidelity reports and verified save/load are supported.
+
+```python
+from topologicpy.IFC import IFC
+
+result = IFC.AnalyticalModel("building.ifc")
+complexes = result.cell_complexes
+IFC.AnalyticalModelSave(result, "analytical-model")
+```
+
+This feature is experimental: verified geometry does not certify simulation
+readiness or full IFC second-level-boundary compliance. See the
+[analytical IFC guide](docs/IFC-AnalyticalModel.md) for settings, coordinates,
+building separation, limitations and validation.

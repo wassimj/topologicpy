@@ -3730,6 +3730,2313 @@ class IFC:
     Source entities and semantic quantities retain their IFC values and units.
     """
 
+
+
+
+
+
+    @staticmethod
+    def AnalyticalModel(file, options=None, coordinateFrame: str = "world",
+                        verify: bool = True, progress=None):
+        """Generate an experimental analytical spatial model from IFC evidence.
+
+        Parameters
+        ----------
+        file : IFCModel or path
+            Native parsed IFC model or IFC file path. The source is not modified.
+        options : dict, optional
+            Settings in metres: tolerance (1e-5), geometry_tolerance (0.02),
+            drafting_grid (0.01), minimum_cell_height (0.4),
+            minimum_fragment_area (0.03), include_outdoor (False),
+            and role_overrides (source-space GUID or label to spatial role).
+        coordinateFrame : str, optional
+            'world' (default) or 'local'. World means native IFC engineering
+            placements converted to metres, without GIS reprojection.
+        verify : bool, optional
+            Verify closed cell incidence and genuinely shared native faces.
+        progress : callable, optional
+            Receives the stage name and keyword details.
+
+        Returns
+        -------
+        object
+            A result with topology, cell_complexes, building_models, spaces,
+            boundaries, boundary_patches, openings, editable_plan, fidelity,
+            diagnostics, statistics, readiness and report(). Separate buildings
+            have independent CellComplexes, including when they touch. Unusable
+            buildings remain diagnostic entries while usable ones are retained.
+
+        Notes
+        -----
+        The implementation is included in IFC.py and requires no external
+        reconstruction engine, registration file or IfcOpenShell. Numerical and
+        planar operations use TopologicPy's NumPy, SciPy and Shapely dependencies.
+        Unsupported source conditions remain review items. Verified geometry is
+        not certified IFC second-level boundary or energy-simulation readiness.
+        """
+        result = IFC._Analytical_api_analytical_model(
+            file, options=options, coordinate_frame=coordinateFrame,
+            verify=verify, progress=progress)
+        for building in result.building_models:
+            if building.editable_plan:
+                building.editable_plan["building_id"] = building.building_id
+        return result
+
+    @staticmethod
+    def AnalyticalModelByPlan(plan, options=None, coordinateFrame: str = "world",
+                              verify: bool = True, progress=None):
+        """Rebuild an edited analytical plan, retaining its own calculation origin.
+
+        plan may be a result.editable_plan dictionary or its saved JSON path.
+        Returns the same result contract as AnalyticalModel. Building partitions
+        in a site plan are preserved; geometric checks are applied independently.
+        """
+        import json
+        from pathlib import Path
+        if coordinateFrame not in {"world", "local"}:
+            raise ValueError("coordinateFrame must be 'world' or 'local'")
+        if isinstance(plan, (str, Path)):
+            plan = json.loads(Path(plan).read_text(encoding="utf-8"))
+        if not isinstance(plan, dict):
+            raise TypeError("plan must be a dictionary or a JSON path")
+        if not plan.get("rooms") and not plan.get("buildings"):
+            raise ValueError("plan contains no editable spatial geometry")
+        config = IFC._Analytical_model_Config(**options) if isinstance(options, dict) else options or IFC._Analytical_model_Config()
+        if not isinstance(config, IFC._Analytical_model_Config):
+            raise TypeError("options must be an analytical configuration dictionary")
+        result = IFC._Analytical_redraw_assemble(plan, config, progress)
+        result.building_id = plan.get("building_id", result.building_id)
+        for building in result.building_models:
+            if verify and building.topology is not None:
+                signature = IFC._Analytical_persistence_geometry_signature(building.topology, config.tolerance)
+                building.statistics.update(geometry_verified=True, verified_cells=len(signature[0]), verified_shared_faces=signature[2])
+        if result.buildings:
+            result.statistics["geometry_verified"] = all(b.statistics.get("geometry_verified", False) for b in result.buildings)
+        if coordinateFrame == "world":
+            if result.buildings:
+                result = IFC._Analytical_buildings_combine([IFC._Analytical_api_world(b) for b in result.buildings], [0., 0., 0.])
+                result.statistics["geometry_verified"] = all(b.statistics.get("geometry_verified", False) for b in result.buildings)
+            else:
+                result = IFC._Analytical_api_world(result)
+        return result
+
+    @staticmethod
+    def AnalyticalModelSave(model, directory, tolerance: float = 0.00001):
+        """Save world-metre BREP, coordinate/provenance metadata and editable plan.
+
+        Each building in a site has its own independently verified directory.
+        Returns True after saving and checking usable geometry and apertures.
+        Unusable buildings remain reported entries. Raises ValueError if native
+        verification fails; no simulation is performed.
+        """
+        import json
+        import math
+        from pathlib import Path
+        if not isinstance(model, IFC._Analytical_model_Result):
+            raise TypeError("model must be an IFC analytical result")
+        if not math.isfinite(tolerance) or tolerance <= 0:
+            raise ValueError("tolerance must be finite and positive")
+        if model.topology is None:
+            raise ValueError("There is no analytical geometry to save")
+        directory = Path(directory)
+        IFC._Analytical_persistence_save_model(model, directory, tolerance)
+        (directory/"report.json").write_text(json.dumps(model.report(), indent=2)+"\n", encoding="utf-8")
+        (directory/"editable-plan.json").write_text(json.dumps(model.editable_plan, indent=2)+"\n", encoding="utf-8")
+        return True
+
+    @staticmethod
+    def AnalyticalModelLoad(directory, tolerance: float = 0.00001,
+                            coordinateFrame: str = "world"):
+        """Restore a saved analytical result, with world coordinates by default.
+
+        Restores room identities, apertures, boundary patches, editable plans and
+        per-building results. Version-1 local BREP and version-2/3 world BREP
+        metadata conventions are supported. The source IFC is not needed.
+        """
+        import math
+        if coordinateFrame not in {"world", "local"}:
+            raise ValueError("coordinateFrame must be 'world' or 'local'")
+        if not math.isfinite(tolerance) or tolerance <= 0:
+            raise ValueError("tolerance must be finite and positive")
+        return IFC._AnalyticalLoadResult(directory, tolerance, coordinateFrame)
+
+    @staticmethod
+    def _AnalyticalLoadResult(directory, tolerance, frame):
+        import json
+        from pathlib import Path
+        directory = Path(directory)
+        metadata = json.loads((directory/"building.metadata.json").read_text(encoding="utf-8"))
+        if metadata.get("buildings"):
+            models = []
+            for entry in metadata["buildings"]:
+                if entry.get("usable", True):
+                    child = IFC._AnalyticalLoadResult(directory/entry["directory"], tolerance, frame)
+                    child.building_id = entry["id"]
+                else:
+                    child = IFC._Analytical_model_Result(building_id=entry["id"],
+                        diagnostics=[IFC._Analytical_model_Diagnostic("BUILDING_REQUIRES_REVIEW", "No saved geometry for this building", "warning")])
+                models.append(child)
+            origin = next((b.origin for b in models if b.topology is not None), metadata["origin"])
+            result = IFC._Analytical_buildings_combine(models, [0., 0., 0.] if frame == "world" else origin)
+            result.statistics["geometry_verified"] = all(b.statistics.get("geometry_verified", False) for b in models)
+            return result
+        topology = IFC._Analytical_persistence_load_model(directory, tolerance)
+        signature = IFC._Analytical_persistence_geometry_signature(topology, tolerance)
+        for space in metadata["spaces"]:
+            expected = space["analytical_volume"]
+            actual = signature[0].get(space["id"])
+            if actual is None or abs(actual-expected) > max(.000001, abs(expected)*.00001):
+                raise ValueError("Saved analytical room volume does not match its metadata")
+        plan = json.loads((directory/"editable-plan.json").read_text(encoding="utf-8")) if (directory/"editable-plan.json").is_file() else {}
+        report = json.loads((directory/"report.json").read_text(encoding="utf-8")) if (directory/"report.json").is_file() else {}
+        result = IFC._Analytical_model_Result(topology=topology, origin=metadata["origin"], spaces=metadata["spaces"],
+            boundaries=metadata["boundaries"], boundary_patches=metadata.get("boundary_patches", []),
+            openings=metadata["openings"], fidelity=metadata.get("fidelity", {}), editable_plan=plan,
+            diagnostics=[IFC._Analytical_model_Diagnostic(**d) for d in report.get("diagnostics", [])],
+            energy=report.get("energy", {}),
+            building_id=metadata.get("building_id", ""), statistics={**report.get("statistics", {}), "geometry_verified": True})
+        result.statistics.update(verified_cells=len(signature[0]), verified_shared_faces=signature[2])
+        if frame == "world":
+            return IFC._Analytical_api_world(result) if any(result.origin) else result
+        origin = plan.get("origin", result.statistics.get("calculation_origin", metadata["origin"]))
+        if result.origin != origin:
+            result.origin = [a-b for a, b in zip(result.origin, origin)]
+            result = IFC._Analytical_api_world(result)
+            result.origin = list(origin)
+        result.statistics.update(topology_coordinate_frame="local_metres", calculation_origin=list(origin))
+        return result
+
+
+    # Analytical spatial reconstruction (experimental).
+    # Implementation is included here; no external BIM2BEM package is required.
+    _AnalyticalRelevantTypes = frozenset({
+        "IFCWALL", "IFCWALLSTANDARDCASE", "IFCWALLELEMENTEDCASE", "IFCSLAB",
+        "IFCSLABSTANDARDCASE", "IFCSLABELEMENTEDCASE", "IFCROOF", "IFCCURTAINWALL",
+        "IFCSPACE", "IFCOPENINGELEMENT", "IFCDOOR", "IFCWINDOW", "IFCVIRTUALELEMENT"
+    })
+
+    @dataclass(frozen=True)
+    class _Analytical_model_Config:
+        tolerance: float = 1e-05
+        repair_limit: float = 0.02
+        max_regions: int = 5000
+        max_planes: int = 150
+        max_thickness: float = 1.5
+        geometry_tolerance: float = 0.02
+        drafting_grid: float = 0.01
+        minimum_cell_height: float = 0.4
+        minimum_fragment_area: float = 0.03
+        include_outdoor: bool = False
+        role_overrides: dict = field(default_factory=dict)
+
+        def __post_init__(self):
+            import math
+            for key in ('tolerance', 'repair_limit', 'max_thickness', 'geometry_tolerance', 'drafting_grid', 'minimum_cell_height', 'minimum_fragment_area'):
+                value = getattr(self, key)
+                if not math.isfinite(value) or value < 0:
+                    raise ValueError(f'{key} must be finite and non-negative')
+            if self.tolerance <= 0 or self.repair_limit < self.tolerance:
+                raise ValueError('Require 0 < tolerance <= repair_limit')
+            if self.max_thickness <= self.tolerance:
+                raise ValueError('max_thickness must exceed tolerance')
+            if self.max_planes < 6 or self.max_regions < 1:
+                raise ValueError('Invalid arrangement resource limits')
+            if min(self.geometry_tolerance, self.drafting_grid, self.minimum_cell_height, self.minimum_fragment_area) <= 0:
+                raise ValueError('Geometry and spatial modelling thresholds must be positive')
+            roles = {'room', 'atrium', 'shaft', 'stair', 'plenum', 'outdoor', 'void', 'roof', 'area_measurement'}
+            if any((role not in roles for role in self.role_overrides.values())):
+                raise ValueError('Unknown spatial role override')
+
+    @dataclass
+    class _Analytical_model_Diagnostic:
+        code: str
+        message: str
+        severity: str = 'error'
+        sources: list[str] = field(default_factory=list)
+
+    @dataclass
+    class _Analytical_model_Result:
+        topology: Any = field(default=None, repr=False)
+        diagnostics: list[IFC._Analytical_model_Diagnostic] = field(default_factory=list)
+        spaces: list[dict] = field(default_factory=list)
+        boundaries: list[dict] = field(default_factory=list)
+        boundary_patches: list[dict] = field(default_factory=list)
+        openings: list[dict] = field(default_factory=list)
+        statistics: dict = field(default_factory=dict)
+        origin: list[float] = field(default_factory=lambda: [0.0, 0.0, 0.0])
+        energy: dict = field(default_factory=dict)
+        fidelity: dict = field(default_factory=dict)
+        editable_plan: dict = field(default_factory=dict, repr=False)
+        buildings: list = field(default_factory=list, repr=False)
+        building_id: str = ''
+
+        @property
+        def building_models(self):
+            return self.buildings or ([self] if self.topology is not None or self.building_id else [])
+
+        @property
+        def cell_complexes(self):
+            from topologicpy.Topology import Topology
+            candidates = [b.topology for b in self.buildings] if self.buildings else [self.topology]
+            return [t for t in candidates if t is not None and Topology.IsInstance(t, 'CellComplex')]
+
+        @property
+        def readiness(self):
+            geometry = bool(self.statistics.get('native_roundtrip_verified') or self.statistics.get('geometry_verified'))
+            semantics = bool(self.boundaries) and all((b.get('semantics_verified', False) for b in self.boundaries))
+            return {'stage': 'boundary_semantics_verified' if geometry and semantics else 'geometry_verified' if geometry else 'draft', 'geometry_verified': geometry, 'boundary_semantics_verified': geometry and semantics, 'simulation_ready': False, 'experimental': True}
+
+        @property
+        def valid(self):
+            return self.topology is not None and (not any((d.severity == 'error' for d in self.diagnostics)))
+
+        def report(self):
+            from dataclasses import asdict
+            return {'format_version': 1, 'readiness': self.readiness, 'building_id': self.building_id, 'buildings': [{'id': b.building_id, 'statistics': b.statistics, 'readiness': b.readiness, 'fidelity': b.fidelity, 'diagnostics': [asdict(d) for d in b.diagnostics]} for b in self.building_models], 'valid': self.valid, 'coordinate_frame': {'units': 'metres', 'world_origin': self.origin, 'metadata': self.statistics.get('topology_coordinate_frame', 'local_metres'), 'brep': self.statistics.get('brep_coordinate_frame')}, 'diagnostics': [asdict(d) for d in self.diagnostics], 'spaces': self.spaces, 'boundaries': self.boundaries, 'boundary_patches': self.boundary_patches, 'openings': self.openings, 'statistics': self.statistics, 'energy': self.energy, 'usable_model': self.topology is not None, 'fidelity': self.fidelity}
+
+    @staticmethod
+    def _Analytical_geometry_unit(v):
+        import numpy as np
+        v = np.asarray(v, dtype=float)
+        length = np.linalg.norm(v)
+        if not np.isfinite(length) or length < 1e-12:
+            raise ValueError('Degenerate direction')
+        return v / length
+
+    @dataclass
+    class _Analytical_geometry_Plane:
+        normal: np.ndarray
+        offset: float
+        u: np.ndarray
+        v: np.ndarray
+
+        @classmethod
+        def polygon(cls, points, tolerance):
+            import numpy as np
+            p = np.asarray(points, dtype=float)
+            if p.ndim != 2 or p.shape[1] != 3 or len(p) < 3 or (not np.isfinite(p).all()):
+                raise ValueError('A surface requires at least three finite 3D vertices')
+            n = IFC._Analytical_geometry_unit(np.sum(np.cross(p, np.roll(p, -1, axis=0)), axis=0))
+            n[np.abs(n) < 1e-12] = 0.0
+            if next((x for x in n if abs(x) > 1e-10)) < 0:
+                n = -n
+            offset = float(n @ p[0])
+            if np.max(np.abs(p @ n - offset)) > tolerance:
+                raise ValueError('Non-planar surface')
+            basis_axis = next((i for i in range(3) if abs(n[i]) <= np.min(np.abs(n)) + 1e-10))
+            u = IFC._Analytical_geometry_unit(np.cross(np.eye(3)[basis_axis], n))
+            return cls(n, offset, u, np.cross(n, u))
+
+        def project(self, points):
+            import numpy as np
+            p = np.asarray(points, dtype=float)
+            return np.column_stack((p @ self.u, p @ self.v))
+
+        def lift(self, points):
+            import numpy as np
+            p = np.asarray(points, dtype=float)
+            return p[:, :1] * self.u + p[:, 1:2] * self.v + self.offset * self.normal
+
+        def shape(self, points):
+            from shapely.geometry import Polygon
+            return Polygon(self.project(points))
+
+    @staticmethod
+    def _Analytical_geometry_clean_polygon(points, tolerance):
+        import numpy as np
+        p = [np.asarray(x, dtype=float) for x in points]
+        if not p:
+            return []
+        out = [p[0]]
+        for point in p[1:]:
+            if np.linalg.norm(point - out[-1]) > tolerance:
+                out.append(point)
+        if len(out) > 1 and np.linalg.norm(out[0] - out[-1]) <= tolerance:
+            out.pop()
+        changed = True
+        while changed and len(out) > 3:
+            changed = False
+            for i in range(len(out)):
+                a, b, c = (out[i - 1], out[i], out[(i + 1) % len(out)])
+                if np.linalg.norm(np.cross(b - a, c - b)) <= tolerance * max(np.linalg.norm(c - a), tolerance):
+                    out.pop(i)
+                    changed = True
+                    break
+        if len(out) < 3:
+            return []
+        return out
+
+    @staticmethod
+    def _Analytical_geometry_face_key(points, tolerance):
+        points = IFC._Analytical_geometry_clean_polygon(points, tolerance)
+        return tuple(sorted((tuple((int(round(float(c) / tolerance)) for c in p)) for p in points)))
+
+    @staticmethod
+    def _Analytical_geometry_stable_id(prefix, points, tolerance):
+        import hashlib
+        return prefix + hashlib.sha256(repr(IFC._Analytical_geometry_face_key(points, tolerance)).encode()).hexdigest()[:16]
+
+    @staticmethod
+    def _Analytical_geometry_area(points):
+        import numpy as np
+        p = np.asarray(points)
+        return float(np.linalg.norm(np.sum(np.cross(p, np.roll(p, -1, axis=0)), axis=0)) / 2)
+
+    @staticmethod
+    def _Analytical_validation_contains(cell, coordinates, tolerance):
+        """Query the native classifier without constructing a tiny tolerance box."""
+        from topologicpy.Core import Core
+        from topologicpy.Vertex import Vertex
+        return int(Core.CellUtility.Contains(cell, Vertex.ByCoordinates(*coordinates), tolerance)) == 0
+
+    @dataclass
+    class _Analytical_evidence_Evidence:
+        records: list = field(default_factory=list)
+        entities: dict = field(default_factory=dict)
+        origin: list = field(default_factory=lambda: [0.0, 0.0, 0.0])
+        statistics: dict = field(default_factory=dict)
+        warnings: list = field(default_factory=list)
+        context: dict = field(default_factory=dict)
+
+    @staticmethod
+    def _Analytical_evidence_normalise_step(text):
+        """Strip comments; encode literal semicolons using lossless STEP Unicode.
+
+        The native argument reader decodes the escape back to the original character.
+        This avoids changing its fast semicolon splitter or losing valid DATA strings.
+        """
+        output, i, quoted = ([], 0, False)
+        while i < len(text):
+            if not quoted and text[i:i + 2] == '/*':
+                end = text.find('*/', i + 2)
+                if end < 0:
+                    raise ValueError('Unterminated STEP comment')
+                output.append('\n' * text[i:end + 2].count('\n') + ' ')
+                i = end + 2
+                continue
+            c = text[i]
+            if c == "'":
+                if quoted and text[i:i + 2] == "''":
+                    output.append("''")
+                    i += 2
+                    continue
+                quoted = not quoted
+            output.append('\\X2\\003B\\X0\\' if c == ';' and quoted else c)
+            i += 1
+        if quoted:
+            raise ValueError('Unterminated STEP string')
+        return ''.join(output)
+
+    @staticmethod
+    def _Analytical_evidence_ref(value):
+        return value[1] if isinstance(value, tuple) and len(value) == 2 and (str(value[0]).upper() == 'REF') else None
+
+    @staticmethod
+    def _Analytical_evidence_polygons(geometry):
+        if geometry.is_empty:
+            return []
+        if geometry.geom_type == 'Polygon':
+            return [geometry]
+        return [p for g in getattr(geometry, 'geoms', []) for p in IFC._Analytical_evidence_polygons(g)]
+
+    @staticmethod
+    def _Analytical_evidence_footprint(points, faces):
+        """Project usable faces; preserve non-convex gross footprints and voids."""
+        from shapely.geometry import MultiPoint, Polygon
+        from shapely import make_valid
+        from shapely.ops import unary_union
+        pieces = []
+        for ids in faces:
+            if len(ids) < 3:
+                continue
+            polygon = Polygon(points[ids, :2])
+            if polygon.area > 1e-08:
+                pieces.extend(IFC._Analytical_evidence_polygons(make_valid(polygon)))
+        if pieces:
+            shape = make_valid(unary_union(pieces))
+            if not shape.is_empty and shape.area > 0.001:
+                return (shape, 'projected_faces')
+        shape = MultiPoint(points[:, :2]).convex_hull
+        return (shape, 'convex_hull_fallback')
+
+    @staticmethod
+    def _Analytical_evidence_read_evidence(path, progress=None, config=None):
+        import hashlib
+        from pathlib import Path
+        import re
+        import math
+        import numpy as np
+        from shapely.ops import unary_union
+        from topologicpy.IFC import IFC, IFCModel, IFCFastEntity, IFCFastTopology
+        config = config or IFC._Analytical_model_Config()
+        output = IFC._Analytical_evidence_Evidence()
+        if isinstance(path, IFCModel):
+            model, raw = (path, None)
+        else:
+            raw = Path(path).read_bytes()
+            try:
+                text = raw.decode('utf-8-sig')
+            except UnicodeDecodeError:
+                text = raw.decode('latin-1')
+                output.warnings.append({'code': 'LEGACY_TEXT_ENCODING', 'message': 'Decoded legacy IFC text as Latin-1'})
+            text = IFC._Analytical_evidence_normalise_step(text)
+            model = IFC.Model(text, sourcePath=str(Path(path).resolve()), silent=True)
+        if model is None:
+            raise ValueError('Native IFC parser could not read the model')
+        if raw is not None:
+            expected = [int(m.group(1)) for stmt in text.split(';') if (m := re.match('\\s*#(\\d+)\\s*=', stmt))]
+            if len(set(expected)) != len(expected) or set(expected) != set(model.entities):
+                raise ValueError('Duplicate or skipped IFC entity records')
+        output.entities = model.entities
+        gross = {i: e for i, e in model.entities.items() if e.type != 'IFCRELVOIDSELEMENT'}
+        approximated = set()
+        for i, entity in list(gross.items()):
+            visited = set()
+            current = entity
+            while current.type in {'IFCBOOLEANRESULT', 'IFCBOOLEANCLIPPINGRESULT'}:
+                if current.id in visited:
+                    break
+                visited.add(current.id)
+                current = gross.get(IFC._Analytical_evidence_ref(current.args[1]))
+                if current is None:
+                    break
+            if current is not None and current is not entity and (current.type not in {'IFCBOOLEANRESULT', 'IFCBOOLEANCLIPPINGRESULT'}):
+                gross[i] = IFCFastEntity(i, current.type, list(current.args))
+                approximated.add(i)
+        products = [e for e in model.entities.values() if e.type in IFC._AnalyticalRelevantTypes | {'IFCCOVERING', 'IFCPLATE'}]
+        filled = {IFC._Analytical_evidence_ref(e.args[5]) for e in model.entities.values() if e.type == 'IFCRELFILLSELEMENT' and len(e.args) > 5}
+        omitted_details = []
+        missing = []
+        cache = {}
+        scale = IFCFastTopology._coordinate_scale(gross, None)
+        radii = [abs(float(e.args[0])) * scale for e in gross.values() if e.type == 'IFCCIRCLE' and e.args and isinstance(e.args[0], (float, int))]
+        radii += [abs(float(e.args[1])) * scale for e in gross.values() if e.type == 'IFCCIRCLE' and len(e.args) > 1 and isinstance(e.args[1], (float, int))]
+        radii += [abs(float(e.args[3])) * scale for e in gross.values() if e.type == 'IFCCIRCLEPROFILEDEF' and len(e.args) > 3 and isinstance(e.args[3], (float, int))]
+        radius = max(radii, default=1.0)
+        circle_sides = min(256, max(16, int(math.ceil(math.pi / math.acos(max(-1.0, 1 - min(config.geometry_tolerance / radius, 1.0)))))))
+        for index, entity in enumerate(products):
+            if progress and index % 25 == 0:
+                progress('collect_reference_evidence', products=index, total=len(products))
+            if entity.type in {'IFCWINDOW', 'IFCDOOR'} and entity.id in filled:
+                omitted_details.append(entity.id)
+                continue
+            try:
+                mesh = IFCFastTopology.MeshDataByProduct(entity, gross, circleSides=circle_sides, scale=scale, placementCache=cache)
+                if not mesh or not mesh.get('vertices'):
+                    mesh = IFC._Analytical_evidence_tessellated(entity, gross, scale, cache)
+                if not mesh or not mesh.get('vertices'):
+                    missing.append({'id': entity.id, 'type': entity.type, 'reason': 'unsupported reference representation'})
+                    continue
+                points = np.asarray(mesh['vertices'], dtype=float)
+                if points.ndim != 2 or points.shape[1] != 3 or (not np.isfinite(points).all()):
+                    raise ValueError('Invalid reference coordinates')
+                shape, method = IFC._Analytical_evidence_footprint(points, mesh.get('faces', []))
+                if shape.is_empty or shape.area < 1e-05:
+                    missing.append({'id': entity.id, 'type': entity.type, 'reason': 'no usable footprint'})
+                    continue
+                output.records.append({'id': entity.id, 'source': entity.args[0] or f'#{entity.id}', 'name': entity.args[2] or '' if len(entity.args) > 2 else '', 'type': entity.type, 'long_name': entity.args[7] or '' if entity.type == 'IFCSPACE' and len(entity.args) > 7 else '', 'predefined_type': entity.args[8] if entity.type in {'IFCCOVERING', 'IFCSLAB'} and len(entity.args) > 8 else None, 'external': entity.type == 'IFCSPACE' and len(entity.args) > 9 and (entity.args[9] == 'EXTERNAL'), 'points': points, 'faces': mesh.get('faces', []), 'footprint': shape, 'method': method, 'z0': float(points[:, 2].min()), 'z1': float(points[:, 2].max())})
+            except (ValueError, RuntimeError, TypeError, IndexError) as exc:
+                missing.append({'id': entity.id, 'type': entity.type, 'reason': str(exc)[:240]})
+        if not output.records:
+            raise ValueError('No usable spatial evidence in the IFC model')
+        from shapely.affinity import translate
+        origin = np.min(np.concatenate([r['points'] for r in output.records]), axis=0)
+        output.origin = origin.tolist()
+        for record in output.records:
+            record['points'] = record['points'] - origin
+            record['footprint'] = translate(record['footprint'], -origin[0], -origin[1])
+            record['z0'] -= origin[2]
+            record['z1'] -= origin[2]
+        output.context = IFC._Analytical_semantics_context(output.entities, output.origin, scale)
+        by_id = {r['id']: r for r in output.records}
+        for e in model.entities.values():
+            if e.type not in {'IFCCURTAINWALL', 'IFCROOF'} or e.id in by_id:
+                continue
+            children = [by_id[i] for i in output.context['children'].get(e.id, []) if i in by_id]
+            if not children:
+                continue
+            points = np.concatenate([c['points'] for c in children])
+            output.records.append({'id': e.id, 'source': e.args[0], 'name': e.args[2] or '', 'type': e.type, 'long_name': '', 'points': points, 'faces': [], 'footprint': unary_union([c['footprint'] for c in children]), 'method': 'aggregate_children', 'z0': float(points[:, 2].min()), 'z1': float(points[:, 2].max())})
+            missing = [m for m in missing if m['id'] != e.id]
+        for record in output.records:
+            member = output.context['membership'].get(record['id'], {})
+            record.update(building=member.get('building'), storey=member.get('storey'))
+        output.statistics = {'source_path': model.sourcePath, 'source_sha256': hashlib.sha256(raw).hexdigest() if raw is not None else None, 'native_model_id': getattr(model, 'modelId', None), 'native_model_revision': getattr(model, 'revision', None), 'coordinate_convention': 'native IFC engineering placements in metres; no CRS reprojection', 'map_conversion_present': any((e.type.startswith('IFCMAPCONVERSION') for e in model.entities.values())), 'source_length_scale_to_metres': scale, 'curve_circle_sides': circle_sides, 'requested_geometry_tolerance_m': config.geometry_tolerance, 'source_space_boundaries': len(output.context['boundaries']), 'schema': model.schema, 'entity_records': len(model.entities), 'relevant_products': len(products), 'reference_products': len(output.records), 'unavailable_products': missing, 'gross_boolean_approximations': len(approximated), 'opening_cuts_omitted': sum((e.type == 'IFCRELVOIDSELEMENT' for e in model.entities.values())), 'detailed_fills_replaced_by_opening_evidence': len(omitted_details), 'source_spaces': sum((e.type == 'IFCSPACE' for e in model.entities.values()))}
+        return output
+
+    @staticmethod
+    def _Analytical_evidence_tessellated(product, entities, scale, cache):
+        """Small compatibility adapter for direct tessellations the mesh route omits."""
+        from topologicpy.IFC import IFCFastTopology as Native
+        definition = entities.get(IFC._Analytical_evidence_ref(product.args[6])) if len(product.args) > 6 else None
+        if definition is None or len(definition.args) < 3:
+            return None
+        matrix = Native._product_placement_matrix(product, entities, cache=cache)
+        meshes = []
+        for reference in definition.args[2] or []:
+            representation = entities.get(IFC._Analytical_evidence_ref(reference))
+            if representation is None or len(representation.args) < 4 or str(representation.args[1]).upper() != 'BODY':
+                continue
+            for reference in representation.args[3] or []:
+                item = entities.get(IFC._Analytical_evidence_ref(reference))
+                if item is None or item.type not in {'IFCTRIANGULATEDFACESET', 'IFCPOLYGONALFACESET'}:
+                    continue
+                coords = entities.get(IFC._Analytical_evidence_ref(item.args[0]))
+                if coords is None:
+                    continue
+                points = [Native._transform_point(p, matrix, scale) for p in coords.args[0]]
+                faces = item.args[3] if item.type == 'IFCTRIANGULATEDFACESET' else [entities[IFC._Analytical_evidence_ref(f)].args[0] for f in item.args[2]]
+                meshes.append({'vertices': points, 'faces': [[int(i) - 1 for i in face] for face in faces], 'edges': []})
+        return Native._merge_meshes(meshes, dedupe=True) if meshes else None
+
+    @staticmethod
+    def _Analytical_semantics_value(v):
+        if isinstance(v, tuple) and len(v) == 3 and (v[0] == 'CALL'):
+            return IFC._Analytical_semantics_value(v[2][0]) if v[2] else None
+        return v
+
+    @staticmethod
+    def _Analytical_semantics_context(entities, origin, scale):
+        from collections import defaultdict
+        from topologicpy.IFC import IFCFastTopology as Native
+        parents, children, props, materials = ({}, defaultdict(list), defaultdict(dict), {})
+        for e in entities.values():
+            if e.type in {'IFCRELAGGREGATES', 'IFCRELCONTAINEDINSPATIALSTRUCTURE'}:
+                p, c = (4, 5) if e.type == 'IFCRELAGGREGATES' else (5, 4)
+                for child in e.args[c] or []:
+                    parents[IFC._Analytical_evidence_ref(child)] = IFC._Analytical_evidence_ref(e.args[p])
+                    children[IFC._Analytical_evidence_ref(e.args[p])].append(IFC._Analytical_evidence_ref(child))
+            elif e.type == 'IFCRELDEFINESBYPROPERTIES':
+                ps = entities.get(IFC._Analytical_evidence_ref(e.args[5]))
+                if ps and ps.type == 'IFCPROPERTYSET':
+                    for product in e.args[4]:
+                        for item in ps.args[4] or []:
+                            prop = entities.get(IFC._Analytical_evidence_ref(item))
+                            if prop and prop.type == 'IFCPROPERTYSINGLEVALUE':
+                                props[IFC._Analytical_evidence_ref(product)][str(prop.args[0]).upper()] = IFC._Analytical_semantics_value(prop.args[2])
+
+        def ancestry(i, kind):
+            seen = set()
+            while i in entities and i not in seen:
+                seen.add(i)
+                if entities[i].type == kind:
+                    return i
+                i = parents.get(i)
+            return None
+
+        def material(i, seen=None):
+            seen = set() if seen is None else seen
+            if i in seen or i not in entities:
+                return []
+            seen.add(i)
+            e = entities[i]
+            if e.type == 'IFCMATERIAL':
+                return [{'name': e.args[0]}]
+            if e.type == 'IFCMATERIALLAYER':
+                return [{**m, 'thickness_m': float(e.args[1]) * scale} for m in material(IFC._Analytical_evidence_ref(e.args[0]), seen)]
+            if e.type in {'IFCMATERIALLAYERSETUSAGE', 'IFCMATERIALPROFILESETUSAGE', 'IFCMATERIALCONSTITUENT'}:
+                return material(IFC._Analytical_evidence_ref(e.args[0]), seen)
+            if e.type in {'IFCMATERIALLAYERSET', 'IFCMATERIALLIST', 'IFCMATERIALCONSTITUENTSET', 'IFCMATERIALPROFILESET'}:
+                return [m for child in e.args[0] or [] for m in material(IFC._Analytical_evidence_ref(child), seen.copy())] if isinstance(e.args[0], list) else []
+            return []
+        for e in entities.values():
+            if e.type == 'IFCRELASSOCIATESMATERIAL':
+                layers = material(IFC._Analytical_evidence_ref(e.args[5]))
+                for product in e.args[4]:
+                    materials[IFC._Analytical_evidence_ref(product)] = layers
+        for e in entities.values():
+            if e.type == 'IFCRELDEFINESBYTYPE':
+                for product in e.args[4] or []:
+                    if IFC._Analytical_evidence_ref(e.args[5]) in materials and IFC._Analytical_evidence_ref(product) not in materials:
+                        materials[IFC._Analytical_evidence_ref(product)] = materials[IFC._Analytical_evidence_ref(e.args[5])]
+        membership, storeys = ({}, {})
+        for e in entities.values():
+            if e.type == 'IFCBUILDINGSTOREY':
+                matrix = Native._product_placement_matrix(e, entities)
+                z = float(matrix[2][3]) * scale if IFC._Analytical_evidence_ref(e.args[5]) else float(e.args[9] or 0) * scale
+                storeys[e.id] = {'id': e.args[0], 'name': e.args[2], 'elevation': z - origin[2], 'building': ancestry(e.id, 'IFCBUILDING')}
+            if e.type.startswith('IFC') and len(e.args) > 5:
+                membership[e.id] = {'building': ancestry(e.id, 'IFCBUILDING'), 'storey': ancestry(e.id, 'IFCBUILDINGSTOREY')}
+        boundaries = []
+        for e in entities.values():
+            if e.type.startswith('IFCRELSPACEBOUNDARY') and len(e.args) >= 9:
+                sid, eid = (IFC._Analytical_evidence_ref(e.args[4]), IFC._Analytical_evidence_ref(e.args[5]))
+                boundaries.append({'id': e.args[0], 'space': entities[sid].args[0] if sid in entities else None, 'element': entities[eid].args[0] if eid in entities else None, 'element_id': eid, 'element_type': entities[eid].type if eid in entities else None, 'physical_or_virtual': str(e.args[7]).lower(), 'internal_or_external': str(e.args[8]).lower(), 'connection': IFC._Analytical_evidence_ref(e.args[6]), 'points': IFC._Analytical_semantics_boundary_points(e, entities, scale, origin)})
+                boundaries[-1]['materials'] = materials.get(eid, [])
+        return {'membership': membership, 'storeys': storeys, 'properties': dict(props), 'materials': materials, 'boundaries': boundaries, 'children': dict(children)}
+
+    @staticmethod
+    def _Analytical_semantics_boundary_points(relation, entities, scale, origin):
+        """Common IFC2x3 extrusion/curve-bounded plane connection surfaces."""
+        import numpy as np
+        from topologicpy.IFC import IFCFastTopology as N
+        c = entities.get(IFC._Analytical_evidence_ref(relation.args[6]))
+        surface = entities.get(IFC._Analytical_evidence_ref(c.args[0])) if c and c.args else None
+        space = entities.get(IFC._Analytical_evidence_ref(relation.args[4]))
+        if surface is None or space is None:
+            return []
+        placement = np.array(N._product_placement_matrix(space, entities))
+        points = []
+        try:
+            if surface.type == 'IFCSURFACEOFLINEAREXTRUSION':
+                profile = entities.get(IFC._Analytical_evidence_ref(surface.args[0]))
+                loops = N._profile_loops(profile, entities, 32)
+                if not loops:
+                    curve = entities.get(IFC._Analytical_evidence_ref(profile.args[2])) if profile and len(profile.args) > 2 else profile
+                    loops = [N._curve_points_local(curve, entities, 32)]
+                base = [np.array(list(p[:2]) + [p[2] if len(p) > 2 else 0.0]) for p in loops[0]]
+                if len(base) > 2 and np.linalg.norm(base[0] - base[-1]) < 1e-08:
+                    base.pop()
+                direction = np.array(N._direction(surface.args[2], entities, default=[0, 0, 1])) * float(surface.args[3])
+                points = base + [p + direction for p in reversed(base)]
+                matrix = placement @ np.array(N._axis2placement_matrix(entities.get(IFC._Analytical_evidence_ref(surface.args[1])), entities))
+            elif surface.type == 'IFCCURVEBOUNDEDPLANE':
+                plane = entities.get(IFC._Analytical_evidence_ref(surface.args[0]))
+                points = N._curve_points_local(entities.get(IFC._Analytical_evidence_ref(surface.args[1])), entities, 32)
+                matrix = placement @ np.array(N._axis2placement_matrix(entities.get(IFC._Analytical_evidence_ref(plane.args[0])), entities))
+            else:
+                return []
+            result = [(matrix @ np.array(list(p[:3]) + [1.0]))[:3] * scale - np.array(origin) for p in points]
+            return [p.tolist() for p in result]
+        except (TypeError, ValueError, IndexError, AttributeError):
+            return []
+
+    @staticmethod
+    def _Analytical_semantics_role(record, ctx, config):
+        """Overrides > structured IFC properties > reviewable multilingual labels."""
+        props = ctx.get('properties', {}).get(record['id'], {})
+        label = str(record.get('long_name') or record.get('name', '')).strip().upper()
+        override = config.role_overrides.get(record['source'], config.role_overrides.get(label))
+        if override:
+            return (override, 'user_override')
+        structured = str(props.get('SPACETYPE', props.get('CATEGORY', ''))).upper()
+        text = structured or label
+        if record.get('external') or props.get('ISEXTERNAL') in {True, 'T', 'TRUE'}:
+            return ('outdoor', 'ifc_property')
+        roles = {'void': ('OPEN TO BELOW', 'OPEN TO ABOVE', 'VOID', 'LÃœFTRAUM', 'VIDE', 'VIDE SUR'), 'roof': ('ROOF', 'TOITURE', 'DACHTERRASSE'), 'outdoor': ('BALCONY', 'TERRACE', 'BALKONG', 'TERASSE', 'TERRASSE', 'MECH. YARD', 'MECHANICAL YARD', 'BALCON', 'BALKON'), 'plenum': ('PLENUM',), 'shaft': ('SHAFT', 'SCHACHT', 'GAINE'), 'atrium': ('ATRIUM',), 'stair': ('STAIR', 'TREPPE', 'ESCALIER')}
+        for r, labels in roles.items():
+            if any((text == token or (r not in {'roof'} and token in text) for token in labels)):
+                return (r, 'ifc_property' if structured else 'name_inference')
+        return ('room', 'default')
+
+    @staticmethod
+    def _Analytical_buildings_partition(evidence, gap=0.8, config=None):
+        from collections import defaultdict
+        from dataclasses import replace
+        from shapely.ops import unary_union
+        config = config or IFC._Analytical_model_Config()
+        groups = defaultdict(list)
+        spaces = [r for r in evidence.records if r['type'] == 'IFCSPACE']
+        eligible = [r for r in spaces if IFC._Analytical_semantics_role(r, evidence.context, config)[0] not in {'void', 'roof', 'area_measurement'} and (config.include_outdoor or IFC._Analytical_semantics_role(r, evidence.context, config)[0] != 'outdoor')]
+        seeds = eligible if spaces else [r for r in evidence.records if 'WALL' in r['type'] or r['type'].startswith('IFCSLAB')]
+        for r in seeds:
+            groups[r.get('building')].append(r)
+        if None in groups and any((k is not None for k in groups)):
+            unknown = groups.pop(None)
+            for r in unknown:
+                choices = [(r['footprint'].distance(unary_union([s['footprint'] for s in rs])), str(k), k) for k, rs in groups.items() if k is not None]
+                distance, _, closest = min(choices)
+                groups[closest if distance <= gap else None].append(r)
+        partitions = []
+        for building, records in sorted(groups.items(), key=lambda p: str(p[0])):
+            components = IFC._Analytical_evidence_polygons(unary_union([r['footprint'].buffer(gap / 2) for r in records]))
+            components.sort(key=lambda p: tuple(p.bounds))
+            for index, component in enumerate(components):
+                members = [r for r in records if component.covers(r['footprint'].representative_point())]
+                if not members:
+                    continue
+                source = evidence.entities.get(building)
+                name = str(source.args[0]) if source else 'inferred-building'
+                key = name + (f':component-{index + 1}' if len(components) > 1 else '')
+                partitions.append({'id': key, 'building': building, 'domain': unary_union([r['footprint'] for r in members]), 'members': members, 'records': list(members)})
+        assigned = {r['id'] for p in partitions for r in p['members']}
+        for r in evidence.records:
+            if r['id'] in assigned:
+                continue
+            candidates = [p for p in partitions if r.get('building') is None or p['building'] == r['building']]
+            if not candidates:
+                continue
+            distances = [(r['footprint'].distance(p['domain']), -r['footprint'].intersection(p['domain']).area, p['id'], p) for p in candidates]
+            min(distances, key=lambda t: t[:3])[3]['records'].append(r)
+        output = []
+        for p in partitions:
+            stats = {**evidence.statistics, 'source_spaces': sum((r['type'] == 'IFCSPACE' for r in p['records'])), 'inferred_space_membership': [r['source'] for r in p['members'] if r.get('building') is None and p['building'] is not None], 'building_id': p['id'], 'building_membership': 'ifc_hierarchy' if p['building'] is not None else 'geometric_inference'}
+            output.append((p['id'], replace(evidence, records=p['records'], statistics=stats)))
+        return output
+
+    @staticmethod
+    def _Analytical_buildings_combine(results, origin):
+        """A site is a collection of independent building results, never a union."""
+        if len(results) == 1:
+            return results[0]
+        from topologicpy.Cluster import Cluster
+        valid = [r for r in results if r.topology is not None]
+        result = IFC._Analytical_model_Result(topology=Cluster.ByTopologies([r.topology for r in valid]) if valid else None, origin=origin, buildings=results, spaces=[s for r in results for s in r.spaces], boundaries=[b for r in results for b in r.boundaries], boundary_patches=[b for r in results for b in r.boundary_patches], openings=[o for r in results for o in r.openings], diagnostics=[d for r in results for d in r.diagnostics])
+        result.statistics = {'method': 'generative_redraw', 'topology_type': 'Cluster', 'building_count': len(results), 'rooms': sum((r.statistics.get('rooms', 0) for r in results)), 'analytical_volume': sum((r.statistics.get('analytical_volume', 0) for r in results))}
+        result.editable_plan = {'format_version': 2, 'origin': origin, 'buildings': [{'id': r.building_id, 'plan': r.editable_plan} for r in results], 'rooms': [room for r in results for room in r.editable_plan.get('rooms', [])]}
+        result.fidelity = {'separate_buildings': True, 'building_count': len(results), 'source_space_coverage': min((r.fidelity.get('source_space_coverage', 0) for r in results), default=0), 'source_area_coverage': min((r.fidelity.get('source_area_coverage', 0) for r in results), default=0), 'native_cell_coverage': min((r.fidelity.get('native_cell_coverage', 0) for r in results), default=0)}
+        return result
+
+    @staticmethod
+    def _Analytical_cellular_shared_complex(rooms, tolerance, progress=None, grid=0.01):
+        from collections import defaultdict
+        import numpy as np
+        from shapely import union_all
+        from shapely.geometry import shape, LineString
+        from shapely.ops import polygonize, unary_union, linemerge
+        from shapely.strtree import STRtree
+        from topologicpy.Core import Core
+        from topologicpy.Topology import Topology
+        from topologicpy.Face import Face
+        from topologicpy.Wire import Wire
+        from topologicpy.Vertex import Vertex
+        shapes = [shape(r['footprint']) for r in rooms]
+        noded = union_all([p.boundary for p in shapes], grid_size=grid)
+        atoms = list(polygonize(noded))
+        tree = STRtree(shapes)
+        levels = sorted({r['bottom'] for r in rooms} | {r['top'] for r in rooms})
+        owners = []
+        for atom in atoms:
+            point = atom.representative_point()
+            containing = [int(i) for i in tree.query(point) if shapes[int(i)].covers(point)]
+            owners.append(containing)
+        edges = defaultdict(list)
+        for index, atom in enumerate(atoms):
+            for ring in [atom.exterior] + list(atom.interiors):
+                p = list(ring.coords)
+                for a, b in zip(p, p[1:]):
+                    key = tuple(sorted((tuple((round(c, 6) for c in a)), tuple((round(c, 6) for c in b)))))
+                    edges[key].append(index)
+
+        def face(polygon, z):
+
+            def wire(ring):
+                return Wire.ByVertices([Vertex.ByCoordinates(x, y, z) for x, y in list(ring.coords)[:-1]], close=True, tolerance=tolerance)
+            return Face.ByWires(wire(polygon.exterior), [wire(r) for r in polygon.interiors], tolerance=tolerance)
+        faces = []
+        for z in levels:
+            groups = defaultdict(list)
+            for index, atom in enumerate(atoms):
+                below = [i for i in owners[index] if abs(rooms[i]['top'] - z) < tolerance]
+                above = [i for i in owners[index] if abs(rooms[i]['bottom'] - z) < tolerance]
+                if below or above:
+                    groups[tuple(below), tuple(above)].append(atom)
+            for key, parts in groups.items():
+                for polygon in IFC._Analytical_evidence_polygons(unary_union(parts)):
+                    faces.append(face(polygon, z))
+        side_groups = defaultdict(list)
+        for lower, upper in zip(levels, levels[1:]):
+            middle = 0.5 * (lower + upper)
+            for (a, b), incidences in edges.items():
+                sides = []
+                for index in incidences:
+                    side = [i for i in owners[index] if rooms[i]['bottom'] < middle < rooms[i]['top']]
+                    sides.append(tuple(side))
+                if len(sides) == 2 and sides[0] == sides[1]:
+                    continue
+                if not any(sides):
+                    continue
+                delta = np.array(b) - a
+                normal = np.array([delta[1], -delta[0]]) / np.linalg.norm(delta)
+                if next((c for c in normal if abs(c) > 1e-09)) < 0:
+                    normal = -normal
+                key = (lower, upper, tuple(sorted(sides)), tuple(np.round(normal, 8)), round(float(normal @ a), 6))
+                side_groups[key].append(LineString([a, b]))
+        for (lower, upper, *_), lines in side_groups.items():
+            merged = unary_union(lines)
+            merged = linemerge(merged) if merged.geom_type != 'LineString' else merged
+            for line in [merged] if merged.geom_type == 'LineString' else merged.geoms:
+                points = list(line.coords)
+                vertices = [Vertex.ByCoordinates(x, y, lower) for x, y in points] + [Vertex.ByCoordinates(x, y, upper) for x, y in reversed(points)]
+                faces.append(Face.ByVertices(vertices, tolerance=tolerance, silent=True))
+        if any((f is None for f in faces)):
+            raise ValueError('A common analytical interface could not be constructed')
+        if progress:
+            progress('assemble_common_faces', faces=len(faces), planar_regions=len(atoms))
+        result = Core.CellComplex.ByFaces(faces, tolerance, False)
+        if not Topology.IsInstance(result, 'CellComplex'):
+            raise ValueError('Common face arrangement did not form a native cell complex')
+        if len(Topology.Cells(result)) < len(rooms):
+            raise ValueError(f'Common face arrangement lost room cells ({len(Topology.Cells(result))} for {len(rooms)} designs)')
+        return result
+
+    @staticmethod
+    def _Analytical_facades_fit_facades(plan):
+        import numpy as np
+        walls = [r for r in plan.get('construction_evidence', []) if 'WALL' in r['type']]
+        variable = False
+        small = 0
+        threshold = plan.get('modelling_config', {}).get('minimum_cell_height', 0.4)
+        for wall in walls:
+            p = np.array(wall['points'])
+            for ids in wall.get('faces', []):
+                try:
+                    plane = IFC._Analytical_geometry_Plane.polygon(p[ids], 0.001)
+                except ValueError:
+                    continue
+                if 0.001 < abs(plane.normal[2]) < 0.98:
+                    if np.ptp(p[ids, 2]) >= threshold:
+                        variable = True
+                    else:
+                        small += 1
+        if small:
+            plan['fidelity']['small_exterior_facets_regularised'] = small
+        if variable:
+            plan['facade_envelope'] = {'walls': walls, 'maximum_displacement_m': 1.5, 'representation': 'shared_vertex_exterior_surface_fit', 'limitations': 'Single exterior wall skin; overhangs and re-entrant surfaces remain review items.'}
+
+    class _Analytical_facades_FacadeField:
+
+        def __init__(self, rooms, envelope, roof=None, grid=0.01):
+            import numpy as np
+            from shapely.geometry import LineString
+            from shapely.strtree import STRtree
+            self.rooms, self.roof, self.grid = (rooms, roof, grid)
+            self.limit = envelope.get('maximum_displacement_m', 1.5)
+            self.facets, self.footprints = ([], [])
+            for wall in envelope['walls']:
+                p = np.array(wall['points'])
+                for ids in wall.get('faces', []):
+                    try:
+                        plane = IFC._Analytical_geometry_Plane.polygon(p[ids], 0.001)
+                        if abs(plane.normal[2]) > 0.98:
+                            continue
+                        poly = plane.shape(p[ids])
+                        if not poly.is_valid:
+                            continue
+                    except ValueError:
+                        continue
+                    self.facets.append((plane, poly))
+                    self.footprints.append(LineString(p[ids, :2]).convex_hull)
+            self.tree = STRtree(self.footprints) if self.footprints else None
+            self.cache, self.domains = ({}, {})
+            self.displacements = []
+
+        def map(self, p):
+            import numpy as np
+            from shapely.geometry import Point, shape, LineString
+            from shapely.ops import unary_union
+            from shapely.strtree import STRtree
+            key = tuple((round(v, 7) for v in p))
+            if key in self.cache:
+                return self.cache[key]
+            q = np.array(p, dtype=float)
+            self.cache[key] = q.tolist()
+            if self.tree is None:
+                return q.tolist()
+            z = key[2]
+            if z not in self.domains:
+                active = [shape(r['footprint']) for r in self.rooms if r['bottom'] - 0.001 <= z <= max(r.get('envelope_height_range', [r['top']])) + 0.001]
+                domain = unary_union(active)
+                edges = []
+                polys = [domain] if domain.geom_type == 'Polygon' else getattr(domain, 'geoms', [])
+                for poly in polys:
+                    for ring in [poly.exterior] + list(poly.interiors):
+                        coords = list(ring.coords)
+                        for a, b in zip(coords, coords[1:]):
+                            d = np.array(b) - a
+                            if np.linalg.norm(d) < 1e-08:
+                                continue
+                            n = np.array([d[1], -d[0]]) / np.linalg.norm(d)
+                            midpoint = 0.5 * (np.array(a) + b)
+                            if domain.covers(Point(*midpoint + n * 0.002)):
+                                n = -n
+                            edges.append((LineString([a, b]), n))
+                self.domains[z] = (domain, edges, STRtree([e[0] for e in edges]) if edges else None)
+            domain, edges, edge_tree = self.domains[z]
+            point = Point(*q[:2])
+            if domain.is_empty or domain.boundary.distance(point) > self.grid * 0.8:
+                return q.tolist()
+            normals = [edges[int(i)][1] for i in edge_tree.query(point.buffer(self.grid)) if edges[int(i)][0].distance(point) < self.grid * 0.8] if edge_tree else []
+            direction = np.sum(normals, axis=0) if normals else np.zeros(2)
+            if np.linalg.norm(direction) < 0.1:
+                return q.tolist()
+            direction = np.r_[direction / np.linalg.norm(direction), 0.0]
+            candidates = []
+            for index in self.tree.query(point.buffer(self.limit)):
+                plane, poly = self.facets[int(index)]
+                normal = np.r_[plane.normal[:2], 0.0]
+                normal /= np.linalg.norm(normal)
+                if abs(normal @ direction) < 0.25:
+                    continue
+                distance = (plane.offset - plane.normal @ q) / (plane.normal @ normal)
+                if abs(distance) > self.limit:
+                    continue
+                candidate = q + normal * distance
+                uv = plane.project([candidate])[0]
+                if poly.buffer(0.005).covers(Point(*uv)):
+                    candidates.append((float((candidate - q) @ direction), candidate))
+            if candidates:
+                _, moved = max(candidates, key=lambda t: t[0])
+                if self.roof is not None and abs(q[2] - self.roof.height(*q[:2], -10000)) < 0.005:
+                    moved[2] = self.roof.height(*moved[:2], moved[2])
+                self.displacements.append(float(np.linalg.norm(moved - q)))
+                self.cache[key] = [round(float(v), 9) for v in moved]
+            return self.cache[key]
+
+    @staticmethod
+    def _Analytical_envelope_fit_exterior(evidence, plan):
+        from collections import defaultdict
+        import numpy as np
+        from shapely.geometry import Polygon, shape, mapping
+        from shapely.ops import unary_union
+        from scipy.spatial import ConvexHull, QhullError
+        patches = defaultdict(list)
+        sources = set()
+        for record in evidence.records:
+            entity = evidence.entities[record['id']]
+            roof = record['type'] == 'IFCROOF' or (record['type'].startswith('IFCSLAB') and len(entity.args) > 8 and (str(entity.args[8]).upper() == 'ROOF'))
+            if not roof:
+                continue
+            points = record['points']
+            faces = record.get('faces', [])
+            if not faces:
+                try:
+                    faces = ConvexHull(points).simplices.tolist()
+                except QhullError:
+                    continue
+            candidates = []
+            for ids in faces:
+                p = points[ids]
+                if len(p) < 3:
+                    continue
+                _, _, vh = np.linalg.svd(p - p.mean(0))
+                n = vh[-1]
+                if abs(n[2]) < 0.08:
+                    continue
+                coeff = np.array([-n[0] / n[2], -n[1] / n[2], n @ p.mean(0) / n[2]])
+                poly = Polygon(p[:, :2])
+                if poly.is_valid and poly.area > 0.02:
+                    candidates.append((poly, coeff))
+            for poly, coeff in candidates:
+                c = poly.representative_point()
+                vector = np.array([c.x, c.y, 1.0])
+                highest = max((other @ vector for region, other in candidates if region.buffer(1e-06).covers(c)), default=coeff @ vector)
+                if coeff @ vector < highest - 0.005:
+                    continue
+                patches[tuple(np.round(coeff, 7))].append(poly)
+                sources.add(record['source'])
+        if not patches:
+            return
+        facets = [{'footprint': mapping(unary_union(parts)), 'plane': list(plane)} for plane, parts in patches.items()]
+        field = IFC._Analytical_envelope_RoofField(facets)
+        selected = []
+        for room in plan['rooms']:
+            poly = shape(room['footprint'])
+            if field.domain.intersection(poly).area < 0.75 * poly.area:
+                continue
+            above = [shape(other['footprint']) for other in plan['rooms'] if other['bottom'] >= room['top'] - 0.01 and other is not room]
+            if above and unary_union(above).intersection(poly).area > 0.1 * poly.area:
+                continue
+            heights = [field.height(x, y, room['top']) for x, y in poly.exterior.coords]
+            if min(heights) < room['bottom'] + plan.get('modelling_config', {}).get('minimum_cell_height', 0.4) or max(heights) > room['top'] + 12:
+                plan['warnings'].append({'code': 'EXTERIOR_CAP_REQUIRES_REVIEW', 'message': 'Roof would collapse or excessively extend a spatial cell; retained its regularised cap', 'sources': [room['source_space_id']]})
+                continue
+            room['exterior_cap'] = True
+            room['envelope_height_range'] = [min(heights), max(heights)]
+            selected.append(room['id'])
+        if selected:
+            plan['exterior_envelope'] = {'facets': facets, 'source_products': sorted(sources), 'shaped_room_ids': selected, 'representation': 'piecewise_faceted_roof_skin', 'maximum_edge_extrapolation_m': 0.8, 'minimum_cell_height_m': 0.4, 'limitations': 'Roof overhangs are not spatial volume. Re-entrant surfaces and height-dependent facade offsets require review.'}
+            plan['fidelity']['exterior_shaped_rooms'] = len(selected)
+            plan['fidelity']['prismatic_storey_approximation'] = False
+            plan['fidelity']['notes'][0] = 'Supported roof surfaces shape exposed room caps; other regions retain regularised storey geometry.'
+
+    class _Analytical_envelope_RoofField:
+
+        def __init__(self, facets):
+            import numpy as np
+            from shapely.geometry import shape
+            from shapely.ops import unary_union
+            from shapely.strtree import STRtree
+            self.shapes = [shape(f['footprint']) for f in facets]
+            self.planes = [np.array(f['plane']) for f in facets]
+            self.tree = STRtree(self.shapes)
+            self.domain = unary_union(self.shapes)
+
+        def height(self, x, y, fallback):
+            from shapely.geometry import Point
+            point = Point(x, y)
+            ids = [int(i) for i in self.tree.query(point) if self.shapes[int(i)].covers(point)]
+            if not ids:
+                nearest = int(self.tree.nearest(point))
+                if self.shapes[nearest].distance(point) > 0.8:
+                    return fallback
+                ids = [nearest]
+            return round(max((float(self.planes[i] @ [x, y, 1.0]) for i in ids)), 9)
+
+    @staticmethod
+    def _Analytical_envelope_shaped_complex(rooms, envelope, tolerance, progress=None):
+        return IFC._Analytical_piecewise_shaped_complex(rooms, envelope, tolerance, progress)
+
+    @staticmethod
+    def _Analytical_envelope_coalesce(faces, owners, tolerance):
+        """Unify strictly coplanar faces only when the spatial owners agree."""
+        from collections import defaultdict
+        import numpy as np
+        from shapely.geometry import Polygon
+        from shapely.ops import unary_union
+        from topologicpy.Topology import Topology
+        from topologicpy.Face import Face
+        from topologicpy.Wire import Wire
+        from topologicpy.Vertex import Vertex
+        groups = defaultdict(list)
+        for key, face in faces.items():
+            p = [Vertex.Coordinates(v, mantissa=10) for v in Wire.Vertices(Face.ExternalBoundary(face))]
+            try:
+                plane = IFC._Analytical_geometry_Plane.polygon(p, tolerance)
+            except ValueError:
+                groups['keep', key].append((face, None, None))
+                continue
+            group = (tuple(np.round(plane.normal, 8)), round(plane.offset, 7), tuple(sorted(owners[key])))
+            groups[group].append((face, plane, p))
+        output = []
+        for group in groups.values():
+            if len(group) < 2 or group[0][1] is None:
+                output.extend((f for f, _, _ in group))
+                continue
+            plane = group[0][1]
+            ps = []
+            for face, _, points in group:
+                holes = [[Vertex.Coordinates(v, mantissa=10) for v in Wire.Vertices(w)] for w in Face.InternalBoundaries(face)]
+                ps.append(Polygon(plane.project(points), [plane.project(h) for h in holes]))
+            merged = unary_union(ps)
+            replacement = []
+
+            def wire(ring):
+                p = plane.lift(np.array(ring.coords[:-1])).tolist()
+                return Wire.ByVertices([Vertex.ByCoordinates(*v) for v in p], close=True, tolerance=tolerance)
+            for polygon in IFC._Analytical_evidence_polygons(merged):
+                f = Face.ByWires(wire(polygon.exterior), [wire(r) for r in polygon.interiors], tolerance=tolerance, silent=True)
+                if f is None:
+                    replacement = []
+                    break
+                replacement.append(f)
+            output.extend(replacement or [f for f, _, _ in group])
+        return output
+
+    @staticmethod
+    def _Analytical_envelope_measure_roof(result, plan):
+        """Surface fit against IFC evidence, separate from footprint confidence."""
+        import numpy as np
+        from shapely.geometry import Point
+        if not plan.get('exterior_envelope') or not result.fidelity.get('exterior_fit_applied'):
+            return
+        field = IFC._Analytical_envelope_RoofField(plan['exterior_envelope']['facets'])
+        rooms = {r['id']: r for r in plan['rooms'] if r.get('exterior_cap')}
+        weighted = area = maximum = total_area = 0.0
+        for face in result.boundaries:
+            owner = next((rooms[i] for i in face['owners'] if i in rooms), None)
+            if owner is None:
+                continue
+            p = np.array(face['vertices'])
+            if p[:, 2].min() < owner['bottom'] + 0.2:
+                continue
+            plane = IFC._Analytical_geometry_Plane.polygon(p, 1e-05)
+            if abs(plane.normal[2]) < 0.08:
+                continue
+            samples = np.r_[p, p.mean(0)[None, :]]
+            supported = [q for q in samples if field.domain.distance(Point(q[0], q[1])) <= plan.get('modelling_config', {}).get('geometry_tolerance', 0.02)]
+            total_area += face['area']
+            if not supported:
+                continue
+            errors = []
+            for q in supported:
+                point = Point(q[0], q[1])
+                candidates = [int(i) for i in field.tree.query(point.buffer(0.02)) if field.shapes[int(i)].distance(point) <= 0.02]
+                errors.append(min((abs(q[2] - float(field.planes[i] @ [q[0], q[1], 1.0])) for i in candidates), default=abs(q[2] - field.height(q[0], q[1], q[2]))))
+            support_area = face['area'] * len(supported) / len(samples)
+            weighted += support_area * float(np.mean(np.square(errors)))
+            area += support_area
+            maximum = max(maximum, max(errors))
+        result.fidelity.update(roof_source_fit_rmse_m=(weighted / area) ** 0.5 if area else None, roof_source_fit_max_sample_error_m=maximum if area else None, roof_source_fit_sampled_area_m2=area, roof_source_sample_coverage=area / max(total_area, 1e-09), roof_fit_validation='generated vertices and face centroids versus IFC mesh; not independent ground truth')
+
+    @staticmethod
+    def _Analytical_piecewise_roof_plane(field, room, point):
+        """Assign a roof skin by spatial support; avoid borrowing nearby overhangs."""
+        import numpy as np
+        vector = np.array([point.x, point.y, 1.0])
+        ids = [int(i) for i in field.tree.query(point) if field.shapes[int(i)].covers(point)]
+        preferred = room.get('roof_facet_indices')
+        if preferred:
+            preferred_ids = [i for i in ids if i in preferred]
+            if preferred_ids:
+                ids = preferred_ids
+        if not ids:
+            nearest = int(field.tree.nearest(point))
+            if field.shapes[nearest].distance(point) > 0.8:
+                return np.array([0.0, 0.0, room['top']])
+            ids = [nearest]
+        return field.planes[max(ids, key=lambda i: float(field.planes[i] @ vector))]
+
+    @staticmethod
+    def _Analytical_piecewise_shaped_complex(rooms, envelope, tolerance, progress=None):
+        from collections import defaultdict
+        import numpy as np
+        from shapely import union_all
+        from shapely.geometry import shape, LineString
+        from shapely.ops import polygonize, triangulate
+        from shapely.strtree import STRtree
+        from topologicpy.Core import Core
+        from topologicpy.Topology import Topology
+        from topologicpy.Face import Face
+        from topologicpy.Wire import Wire
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Cell import Cell
+        field = IFC._Analytical_envelope_RoofField(envelope['facets']) if envelope['facets'] else None
+        settings = envelope.get('config', {})
+        grid = settings.get('drafting_grid', 0.01)
+        min_height = settings.get('minimum_cell_height', 0.4)
+        facade = IFC._Analytical_facades_FacadeField(rooms, envelope['facades'], field, grid) if envelope.get('facades') else None
+        shapes = [shape(r['footprint']) for r in rooms]
+        lines = [p.boundary for p in shapes] + ([p.boundary for p in field.shapes] if field else [])
+        if field:
+            for i, polygon in enumerate(field.shapes):
+                for j in field.tree.query(polygon):
+                    j = int(j)
+                    if j <= i:
+                        continue
+                    overlap = polygon.intersection(field.shapes[j])
+                    delta = field.planes[i] - field.planes[j]
+                    length = np.linalg.norm(delta[:2])
+                    if overlap.area < 1e-06 or length < 1e-07:
+                        continue
+                    c = np.array(overlap.representative_point().coords[0])
+                    c -= delta[:2] * (delta[:2] @ c + delta[2]) / length ** 2
+                    direction = np.array([-delta[1], delta[0]]) / length
+                    extent = max(np.ptp(np.array(polygon.bounds).reshape(2, 2), axis=0)) * 3 + 10
+                    cut = LineString([c - direction * extent, c + direction * extent]).intersection(overlap)
+                    if cut.length > 0.01:
+                        lines.append(cut)
+        atoms = list(polygonize(union_all(lines, grid_size=grid)))
+        tree = STRtree(shapes)
+        owners, caps = ([], {})
+        for j, atom in enumerate(atoms):
+            point = atom.representative_point()
+            ids = [int(i) for i in tree.query(point) if shapes[int(i)].covers(point)]
+            owners.append(ids)
+            for i in ids:
+                caps[j, i] = IFC._Analytical_piecewise_roof_plane(field, rooms[i], point) if field and rooms[i].get('exterior_cap') else np.array([0.0, 0.0, rooms[i]['top']])
+        edges = defaultdict(list)
+        for j, atom in enumerate(atoms):
+            if not owners[j]:
+                continue
+            for ring in [atom.exterior] + list(atom.interiors):
+                points = list(ring.coords)
+                for a, b in zip(points, points[1:]):
+                    edges[tuple(sorted((tuple(a), tuple(b))))].append(j)
+        faces, face_owners = ({}, defaultdict(set))
+
+        def add(points, holes=(), ids=()):
+            original = points
+            if facade:
+                points = [facade.map(p) for p in points]
+                holes = [[facade.map(p) for p in ring] for ring in holes]
+            cleaned = []
+            for p in points:
+                if not cleaned or np.linalg.norm(np.array(p) - cleaned[-1]) > tolerance:
+                    cleaned.append(p)
+            if len(cleaned) > 1 and np.linalg.norm(np.array(cleaned[0]) - cleaned[-1]) < tolerance:
+                cleaned.pop()
+            if len(cleaned) < 3:
+                return
+            points = cleaned
+            key = (tuple(sorted((tuple((round(v, 7) for v in p)) for p in points))), tuple(sorted((tuple(sorted((tuple((round(v, 7) for v in p)) for p in ring))) for ring in holes))))
+            face_owners[key].update(ids)
+            if key in faces:
+                return
+
+            def wire(ring):
+                return Wire.ByVertices([Vertex.ByCoordinates(*p) for p in ring], close=True, tolerance=tolerance)
+            f = Face.ByWires(wire(points), [wire(ring) for ring in holes], tolerance=tolerance, silent=True)
+            if f is None:
+                if len(original) > 3 and (not holes):
+                    plane = IFC._Analytical_geometry_Plane.polygon(original, 0.002)
+                    region = plane.shape(original)
+                    triangles = [t for t in triangulate(region) if region.covers(t)]
+                    if abs(sum((t.area for t in triangles)) - region.area) > 1e-05:
+                        raise ValueError('Exterior triangulation left a gap')
+                    for tri in triangles:
+                        add(plane.lift(np.array(tri.exterior.coords[:-1])).tolist(), ids=ids)
+                    return
+                raise ValueError('Could not construct a piecewise exterior face')
+            faces[key] = f
+
+        def height(coefficient, p):
+            return round(float(coefficient @ [p[0], p[1], 1.0]), 9)
+        for j, (atom, ids) in enumerate(zip(atoms, owners)):
+            for i in ids:
+                room = rooms[i]
+                for top in (False, True):
+                    coefficient = caps[j, i] if top else np.array([0.0, 0.0, room['bottom']])
+
+                    def ring(r):
+                        return [[x, y, height(coefficient, (x, y))] for x, y in list(r.coords)[:-1]]
+                    points = ring(atom.exterior)
+                    if top and min((p[2] for p in points)) < room['bottom'] + min_height:
+                        raise ValueError('Roof would collapse a spatial region')
+                    add(points, [ring(h) for h in atom.interiors], [i])
+        for (a, b), incidences in edges.items():
+            midpoint = (np.array(a) + b) * 0.5
+            functions = []
+            for j in incidences:
+                for i in owners[j]:
+                    functions += [np.array([0.0, 0.0, rooms[i]['bottom']]), caps[j, i]]
+            ordered = sorted(functions, key=lambda c: height(c, midpoint))
+            unique = []
+            for c in ordered:
+                if not unique or height(c, midpoint) - height(unique[-1], midpoint) > tolerance:
+                    unique.append(c)
+            for low, high in zip(unique, unique[1:]):
+                middle = 0.5 * (height(low, midpoint) + height(high, midpoint))
+                sides = [tuple((i for i in owners[j] if rooms[i]['bottom'] < middle < height(caps[j, i], midpoint))) for j in incidences]
+                if not any(sides) or (len(sides) == 2 and sides[0] == sides[1]):
+                    continue
+                lower = [height(low, p) for p in (a, b)]
+                upper = [height(high, p) for p in (a, b)]
+                if any((l > u + 0.02 for l, u in zip(lower, upper))):
+                    raise ValueError('Roof intersection needs additional spatial subdivision')
+                upper = [max(l, u) for l, u in zip(lower, upper)]
+                add([[*a, lower[0]], [*b, lower[1]], [*b, upper[1]], [*a, upper[0]]], ids={i for side in sides for i in side})
+        original = list(faces.values())
+        simplified = IFC._Analytical_envelope_coalesce(faces, face_owners, tolerance)
+        envelope.update(faces_before_coalescing=len(original), faces_after_coalescing=len(simplified))
+        if progress:
+            progress('assemble_exterior_faces', faces=len(simplified), spatial_cells=len(rooms))
+        result = Core.CellComplex.ByFaces(simplified, tolerance, False)
+        if not Topology.IsInstance(result, 'CellComplex') or len(Topology.Cells(result)) != len(rooms):
+            result = Core.CellComplex.ByFaces(original, tolerance, False)
+            envelope['faces_after_coalescing'] = len(original)
+        if not Topology.IsInstance(result, 'CellComplex') or len(Topology.Cells(result)) != len(rooms):
+            raise ValueError('Piecewise envelope did not preserve the designed spatial cells')
+        if any((Cell.Volume(c, mantissa=8) <= settings.get('minimum_fragment_area', 0.03) * min_height for c in Topology.Cells(result))):
+            raise ValueError('Exterior fit produced a negligible cell')
+        return result
+
+    @staticmethod
+    def _Analytical_boundary_semantics_assign(result, plan, config):
+        from collections import defaultdict
+        import numpy as np
+        from shapely.geometry import shape, Polygon, MultiPoint
+        from shapely.strtree import STRtree
+        records = plan.get('construction_evidence', [])
+        footprints = [shape(r['footprint']) for r in records]
+        tree = STRtree(footprints) if footprints else None
+        relations = defaultdict(list)
+        for relation in plan.get('source_boundaries', []):
+            relations[relation['space']].append(relation)
+        by_source = {s['id']: s['source_space_id'] for s in result.spaces}
+        construction = {r['id']: r for r in records}
+        patches, missing = ([], 0)
+        bottom = min((r['bottom'] for r in plan['rooms']), default=0.0)
+        for boundary in result.boundaries:
+            p = np.array(boundary['vertices'])
+            plane = IFC._Analytical_geometry_Plane.polygon(p, max(config.tolerance, 1e-05))
+            region = Polygon(plane.project(p), [plane.project(h) for h in boundary.get('holes', [])])
+            owners = set((by_source.get(i, i) for i in boundary['owners']))
+            evidence = []
+            for owner in sorted(owners):
+                for relation in relations[owner]:
+                    q = np.array(relation.get('points', []))
+                    if len(q) < 3:
+                        continue
+                    try:
+                        rp = IFC._Analytical_geometry_Plane.polygon(q, 0.002)
+                        if abs(plane.normal @ rp.normal) < 0.995 or np.max(np.abs(q @ plane.normal - plane.offset)) > 0.8:
+                            continue
+                        projected = plane.shape(q)
+                        if not projected.is_valid:
+                            projected = projected.buffer(0)
+                        patch = projected.intersection(region)
+                        if patch.area > 0.005:
+                            evidence.append((relation, patch))
+                    except (ValueError, TypeError):
+                        continue
+            construction_support = []
+            if tree is not None:
+                foot = MultiPoint(p[:, :2]).convex_hull
+                for index in tree.query(foot.buffer(0.8)):
+                    record = records[int(index)]
+                    q = np.array(record.get('points', []))
+                    if len(q) < 3 or record['top'] < p[:, 2].min() - 0.3 or record['bottom'] > p[:, 2].max() + 0.3:
+                        continue
+                    distances = q @ plane.normal - plane.offset
+                    if np.ptp(distances) > config.max_thickness or min(abs(distances)) > 0.8:
+                        continue
+                    kind = record['type']
+                    if abs(plane.normal[2]) > 0.7 and kind not in {'IFCSLAB', 'IFCSLABSTANDARDCASE', 'IFCROOF', 'IFCCOVERING'}:
+                        continue
+                    projected = MultiPoint(plane.project(q)).convex_hull
+                    clipped = projected.intersection(region)
+                    if clipped.area > 0.005:
+                        construction_support.append((record, clipped, float(min(abs(distances)))))
+            pieces = [region]
+            supports = [poly for _, poly in evidence] + [poly for _, poly, _ in construction_support]
+            for support in supports:
+                pieces = [part for piece in pieces for part in IFC._Analytical_evidence_polygons(piece.intersection(support)) + IFC._Analytical_evidence_polygons(piece.difference(support)) if part.area > 1e-07]
+            native_parts = []
+            for piece in pieces:
+                support = [r for r, poly in evidence if poly.intersection(piece).area > 0.9 * piece.area]
+                elements = sorted({r['element'] for r in support if r.get('element')})
+                physical = {r['physical_or_virtual'] for r in support}
+                external = {r['internal_or_external'] for r in support}
+                sources = sorted({r['id'] for r in support})
+                basis = 'source_space_boundary' if support else 'unresolved'
+                if len(owners) == 2:
+                    exposure = 'interzone'
+                elif 'external_earth' in external:
+                    exposure = 'ground'
+                elif 'external_water' in external:
+                    exposure = 'water'
+                elif 'external' in external and abs(plane.normal[2]) < 0.7:
+                    exposure = 'outdoors'
+                else:
+                    exposure = 'unknown'
+                if not support:
+                    candidates = [(distance, r['id'], r) for r, poly, distance in construction_support if poly.intersection(piece).area > 0.9 * piece.area]
+                    if candidates:
+                        distance, _, closest = min(candidates, key=lambda t: t[:2])
+                        if distance <= 0.8:
+                            elements = [closest['id']]
+                            physical = {'physical'}
+                            basis = 'construction_proximity'
+                            if len(owners) == 1 and (closest['type'] == 'IFCROOF' or closest.get('predefined_type') == 'ROOF'):
+                                exposure = 'outdoors'
+                material = [{'element': i, 'layers': construction[i].get('materials', [])} for i in elements if i in construction]
+                physical_or_virtual = next(iter(physical)) if len(physical) == 1 else 'unknown'
+                if len(owners) == 1 and p[:, 2].max() <= bottom + 0.02 and (exposure == 'unknown'):
+                    exposure = 'ground_or_outdoors_requires_review'
+                verified = basis == 'source_space_boundary' and physical_or_virtual in {'physical', 'virtual'} and (exposure in {'interzone', 'outdoors', 'ground', 'water'}) and ({r['space'] for r in support} >= owners) and (physical_or_virtual == 'virtual' or len(elements) == 1)
+                points = plane.lift(np.array(piece.exterior.coords[:-1])).tolist()
+                patch = {'id': IFC._Analytical_geometry_stable_id('patch-', points, config.tolerance), 'native_face_id': boundary['id'], 'owners': boundary['owners'], 'vertices': points, 'area': piece.area, 'holes': [plane.lift(np.array(r.coords[:-1])).tolist() for r in piece.interiors], 'source_boundaries': sources, 'construction_elements': elements, 'materials': material, 'physical_or_virtual': physical_or_virtual, 'exposure': exposure, 'evidence_basis': basis, 'semantics_verified': verified, 'thermal_properties_verified': False, 'corresponding_boundary': 'shared_native_face' if len(owners) == 2 else None}
+                patches.append(patch)
+                native_parts.append(patch)
+            boundary['patch_ids'] = [p['id'] for p in native_parts]
+            boundary['sources'] = sorted({i for p in native_parts for i in p['construction_elements']})
+            boundary['physical_or_virtual'] = next(iter({p['physical_or_virtual'] for p in native_parts})) if len({p['physical_or_virtual'] for p in native_parts}) == 1 else 'mixed'
+            boundary['exposure'] = next(iter({p['exposure'] for p in native_parts})) if len({p['exposure'] for p in native_parts}) == 1 else 'mixed'
+            boundary['construction_assignment'] = 'source_supported' if native_parts and all((p['evidence_basis'] == 'source_space_boundary' for p in native_parts)) else 'requires_review'
+            boundary['semantics_verified'] = bool(native_parts) and all((p['semantics_verified'] for p in native_parts))
+            missing += not boundary['semantics_verified']
+        result.boundary_patches = patches
+        result.fidelity['boundary_semantic_coverage'] = sum((b['area'] for b in patches if b['semantics_verified'])) / max(sum((b['area'] for b in patches)), 1e-09)
+        result.fidelity['boundaries_requiring_semantic_review'] = missing
+        result.statistics['boundary_patches'] = len(patches)
+
+    @staticmethod
+    def _Analytical_redraw_generate(path, config=None, progress=None, plan_callback=None):
+        config = config or IFC._Analytical_model_Config()
+        evidence = IFC._Analytical_evidence_read_evidence(path, progress, config)
+        results = []
+        for building_id, part in IFC._Analytical_buildings_partition(evidence, config=config):
+            try:
+                result = IFC._Analytical_redraw_generate_building(part, config, progress, plan_callback)
+                result.building_id = building_id
+            except (ValueError, RuntimeError) as exc:
+                result = IFC._Analytical_model_Result(origin=evidence.origin, building_id=building_id, statistics=part.statistics, diagnostics=[IFC._Analytical_model_Diagnostic('BUILDING_REQUIRES_REVIEW', str(exc), 'warning', [building_id])])
+            results.append(result)
+        result = IFC._Analytical_buildings_combine(results, evidence.origin) if results else IFC._Analytical_model_Result(origin=evidence.origin)
+        if not results:
+            result.diagnostics.append(IFC._Analytical_model_Diagnostic('NO_ELIGIBLE_SPATIAL_REGIONS', 'No eligible room or enclosure evidence; excluded references were not converted into cells', 'warning'))
+        if results:
+            result.statistics.setdefault('building_count', len(results))
+        result.statistics.update({k: v for k, v in evidence.statistics.items() if k not in result.statistics})
+        return result
+
+    @staticmethod
+    def _Analytical_redraw_generate_building(evidence, config, progress, plan_callback):
+        plan = IFC._Analytical_redraw_fit_layout(evidence, progress, config)
+        IFC._Analytical_facades_fit_facades(plan)
+        IFC._Analytical_envelope_fit_exterior(evidence, plan)
+        if plan_callback:
+            plan_callback(plan)
+        result = IFC._Analytical_redraw_assemble(plan, config, progress)
+        result.origin = evidence.origin
+        result.statistics.update(evidence.statistics)
+        result.statistics['method'] = 'generative_redraw'
+        result.fidelity = plan['fidelity']
+        result.editable_plan = plan
+        result.diagnostics.extend((IFC._Analytical_model_Diagnostic(w['code'], w['message'], 'warning', w.get('sources', [])) for w in plan['warnings']))
+        if evidence.statistics['unavailable_products']:
+            result.diagnostics.append(IFC._Analytical_model_Diagnostic('PARTIAL_REFERENCE_EVIDENCE', f"{len(evidence.statistics['unavailable_products'])} products supplied no usable reference geometry; model generation continued", 'warning'))
+        result.diagnostics.append(IFC._Analytical_model_Diagnostic('REVIEW_GENERATED_MODEL', 'Generated model is a reviewable starting point; confidence scores measure agreement, not probability of correctness', 'warning'))
+        return result
+
+    @staticmethod
+    def _Analytical_redraw_clean(geometry, grid=0.001, simplification=0.005):
+        from shapely import make_valid, set_precision
+        from shapely.geometry import Polygon
+        from shapely.ops import unary_union
+        geometry = make_valid(geometry)
+        ps = IFC._Analytical_evidence_polygons(geometry)
+        if not ps:
+            return Polygon()
+        geometry = unary_union(ps).simplify(simplification, preserve_topology=True)
+        return set_precision(make_valid(geometry), grid, mode='valid_output')
+
+    @staticmethod
+    def _Analytical_redraw_levels(values, tolerance=0.25):
+        import numpy as np
+        groups = []
+        for value in sorted(values):
+            if not groups or value - np.median(groups[-1]) > tolerance:
+                groups.append([value])
+            else:
+                groups[-1].append(value)
+        return [float(np.median(g)) for g in groups]
+
+    @staticmethod
+    def _Analytical_redraw_axis(record):
+        import numpy as np
+        from shapely.geometry import LineString
+        rectangle = record['footprint'].minimum_rotated_rectangle
+        if rectangle.geom_type != 'Polygon':
+            return None
+        p = np.array(rectangle.exterior.coords[:-1])
+        vectors = np.roll(p, -1, axis=0) - p
+        lengths = np.linalg.norm(vectors, axis=1)
+        i = int(np.argmax(lengths))
+        width, length = (float(lengths.min()), float(lengths.max()))
+        if not 0.015 < width < 1.5 or length < 2 * width:
+            return None
+        direction = vectors[i] / lengths[i]
+        centre = p.mean(0)
+        half = 0.5 * length + min(0.5, 2 * width)
+        return (LineString([centre - direction * half, centre + direction * half]), width)
+
+    @staticmethod
+    def _Analytical_redraw_fit_layout(evidence, progress=None, config=None):
+        from collections import defaultdict
+        import numpy as np
+        from shapely import make_valid, union_all
+        from shapely.geometry import LineString, mapping, shape
+        from shapely.ops import unary_union, polygonize
+        from shapely.strtree import STRtree
+        config = config or IFC._Analytical_model_Config()
+
+        def clean(geometry):
+            return IFC._Analytical_redraw_clean(geometry, grid=min(0.001, config.drafting_grid), simplification=min(0.005, config.geometry_tolerance / 4))
+        records = evidence.records
+        warnings = list(evidence.warnings)
+        references = []
+        excluded = []
+        all_spaces = [r for r in records if r['type'] == 'IFCSPACE']
+        aggregate_names = {'BRA', 'BOA', 'BYA', 'BTA', 'GFA', 'NFA', 'GROSS FLOOR AREA', 'NET FLOOR AREA'}
+        for record in records:
+            if record['type'] != 'IFCSPACE':
+                continue
+            entity = evidence.entities[record['id']]
+            external = len(entity.args) > 9 and str(entity.args[9]).upper() == 'EXTERNAL'
+            label = str(record.get('long_name') or record['name']).strip().upper()
+            spatial_role, role_basis = IFC._Analytical_semantics_role(record, evidence.context, config)
+            probable_outdoor = any((word in label for word in ('BALCONY', 'TERRACE', 'BALKONG', 'TERASSE', 'TERRASSE', 'MECH. YARD', 'MECHANICAL YARD')))
+            non_spatial = label in {'ROOF', 'OPEN TO BELOW', 'OPEN TO ABOVE', 'VOID'}
+            contained = [r for r in all_spaces if r is not record and abs(r['z0'] - record['z0']) < 0.25 and (r['footprint'].area < 0.5 * record['footprint'].area) and (r['footprint'].intersection(record['footprint']).area > 0.95 * r['footprint'].area)]
+            aggregate = label in aggregate_names and len(contained) >= 2 or (len(entity.args) > 8 and entity.args[8] == 'COMPLEX' and any((evidence.entities.get(i) and evidence.entities[i].type == 'IFCSPACE' for i in evidence.context.get('children', {}).get(record['id'], []))))
+            probable_outdoor = spatial_role == 'outdoor'
+            non_spatial = spatial_role in {'roof', 'void', 'area_measurement'}
+            if record['source'] in config.role_overrides or label in config.role_overrides:
+                aggregate = False
+            if aggregate or (probable_outdoor and (not config.include_outdoor)) or non_spatial:
+                reason = 'aggregate area measurement overlaps enclosed rooms' if aggregate else 'roof or void reference is not an enclosed spatial cell' if non_spatial else 'probable outdoor space inferred from name; review classification'
+                excluded.append({'source': record['source'], 'name': label, 'role': 'area_measurement' if aggregate else spatial_role, 'reason': reason, 'footprint': mapping(record['footprint']), 'bottom': record['z0'], 'top': record['z1']})
+                warnings.append({'code': 'REFERENCE_ROLE_INFERRED', 'message': label + ': ' + reason, 'sources': [record['source']]})
+                continue
+            if external and (not config.include_outdoor) and (role_basis != 'user_override') or record['z1'] - record['z0'] < config.minimum_cell_height:
+                excluded.append({'source': record['source'], 'reason': 'explicit external space' if external else 'degenerate height'})
+                continue
+            polygon = clean(record['footprint'])
+            if polygon.area < 0.05:
+                excluded.append({'source': record['source'], 'reason': 'negligible reference footprint'})
+                continue
+            references.append({**record, 'role': spatial_role, 'role_basis': role_basis, 'name': str(record['name']) + (' Â· ' + str(record['long_name']) if record.get('long_name') else ''), 'footprint': polygon})
+        inferred = not references
+        if inferred:
+            slabs = [r for r in records if r['type'].startswith('IFCSLAB') and r['footprint'].area > 5]
+            if not slabs:
+                walls = [r for r in records if 'WALL' in r['type']]
+                if not walls:
+                    raise ValueError('No usable room, slab or wall evidence from which to generate a spatial model')
+                domain = clean(unary_union([r['footprint'] for r in walls]).convex_hull)
+                z0, z1 = (min((r['z0'] for r in walls)), max((r['z1'] for r in walls)))
+                slabs = [{'footprint': domain, 'z0': z0, 'z1': z0 + 0.2, 'source': 'inferred-envelope', 'id': -1, 'method': 'wall_hull', 'type': 'INFERRED'}]
+            for index, slab in enumerate(sorted(slabs, key=lambda r: r['z0'])):
+                if index and abs(slab['z0'] - slabs[0]['z0']) < 0.3:
+                    continue
+                levels = sorted({r['z0'] for r in slabs if r['z0'] > slab['z0'] + 0.5})
+                roof = levels[0] if levels else slab['z0'] + 3.0
+                lines = [slab['footprint'].boundary]
+                for wall in records:
+                    if 'WALL' in wall['type'] and wall['z0'] < roof and (wall['z1'] > slab['z0']):
+                        axis = IFC._Analytical_redraw_axis(wall)
+                        if axis:
+                            lines.append(axis[0].intersection(slab['footprint']))
+                rooms = [p for p in polygonize(unary_union(lines)) if slab['footprint'].covers(p.representative_point()) and p.area > 1]
+                for number, room in enumerate(rooms):
+                    references.append({'id': -1000 - index * 1000 - number, 'source': f'inferred-{index}-{number}', 'name': f'Inferred room {index + 1}.{number + 1}', 'footprint': clean(room), 'z0': slab['z0'], 'z1': roof, 'type': 'INFERRED', 'method': 'wall_partition_inference'})
+            warnings.append({'code': 'ROOMS_INFERRED', 'message': 'No usable IfcSpace footprints; rooms inferred from wall/slab evidence'})
+        if not references:
+            raise ValueError('Reference evidence did not yield any usable room footprints')
+        space_storeys = {}
+        for entity in evidence.entities.values():
+            if entity.type not in {'IFCRELAGGREGATES', 'IFCRELCONTAINEDINSPATIALSTRUCTURE'}:
+                continue
+            parent_index, children_index = (4, 5) if entity.type == 'IFCRELAGGREGATES' else (5, 4)
+            parent = evidence.entities.get(IFC._Analytical_evidence_ref(entity.args[parent_index]))
+            if parent is not None and parent.type == 'IFCBUILDINGSTOREY':
+                for child in entity.args[children_index]:
+                    space_storeys[IFC._Analytical_evidence_ref(child)] = IFC._Analytical_evidence_ref(entity.args[parent_index])
+        groups = defaultdict(list)
+        for r in references:
+            if r['id'] in space_storeys:
+                groups[space_storeys[r['id']]].append(r['z0'])
+        for r in references:
+            r['layout_level'] = float(np.median(groups[space_storeys[r['id']]])) if r['id'] in space_storeys else r['z0']
+            declared = evidence.context.get('storeys', {}).get(r.get('storey'))
+            if declared:
+                r['layout_level'] = declared['elevation']
+        level_values = IFC._Analytical_redraw_levels([r['layout_level'] for r in references])
+        bands = []
+        for level in level_values:
+            members = [r for r in references if min(level_values, key=lambda z: abs(z - r['layout_level'])) == level]
+            source_domain = clean(unary_union([r['footprint'] for r in members]))
+            slabs = [r for r in records if r['type'].startswith('IFCSLAB') or r['type'] == 'IFCROOF']
+            candidates = []
+            for slab in slabs:
+                d = min(abs(slab['z0'] - level), abs(slab['z1'] - level))
+                overlap = slab['footprint'].intersection(source_domain).area
+                if d <= 0.8 and overlap >= 0.65 * source_domain.area and (slab['footprint'].area <= 2.5 * source_domain.area):
+                    score = overlap / source_domain.area - 0.2 * d - 0.1 * slab['footprint'].area / source_domain.area
+                    candidates.append((score, slab))
+            slab = max(candidates, key=lambda pair: pair[0])[1] if candidates else None
+            walls = [r for r in records if 'WALL' in r['type'] and r['z0'] < level + 2 and (r['z1'] > level + 0.5) and (r['footprint'].distance(source_domain) < 0.8)]
+            if slab:
+                domain = clean(unary_union([slab['footprint'], source_domain]))
+                bottom = slab['z0'] if level == level_values[0] else 0.5 * (slab['z0'] + slab['z1'])
+                envelope_method = 'nearby_slab_outer_footprint'
+            else:
+                nearby = [w['footprint'] for w in walls]
+                domain = clean(unary_union([source_domain] + nearby).buffer(0.05, join_style=2).buffer(-0.05, join_style=2))
+                bottom = level
+                envelope_method = 'room_and_wall_envelope'
+                warnings.append({'code': 'INFERRED_ENVELOPE', 'message': f'Storey near {level:.3f} m uses room/wall envelope; exterior wall outer-face agreement needs review'})
+            domain = clean(domain.intersection(source_domain.buffer(0.8, join_style=2)))
+            voids = [shape(e['footprint']) for e in excluded if e.get('role') == 'void' and e.get('bottom', 1000000000.0) - 0.25 <= level < e.get('top', -1000000000.0)]
+            if voids:
+                domain = clean(domain.difference(unary_union(voids)))
+            if domain.area > source_domain.area * 1.8:
+                warnings.append({'code': 'LARGE_INFERRED_AREA', 'message': f'Storey near {level:.3f} m includes substantial area beyond source room footprints'})
+            bands.append({'level': level, 'members': members, 'domain': domain, 'bottom': bottom, 'walls': walls, 'envelope_method': envelope_method})
+        for index, band in enumerate(bands):
+            if index + 1 < len(bands):
+                band['top'] = bands[index + 1]['bottom']
+            else:
+                height = float(np.median([r['z1'] for r in band['members']]))
+                roofs = [r for r in records if (r['type'].startswith('IFCSLAB') or r['type'] == 'IFCROOF') and min(abs(r['z0'] - height), abs(r['z1'] - height)) < 0.8 and (r['footprint'].intersection(band['domain']).area > 0.5 * band['domain'].area)]
+                band['top'] = max((r['z1'] for r in roofs), default=height)
+            if band['top'] - band['bottom'] < 0.5:
+                band['top'] = band['bottom'] + 3.0
+                warnings.append({'code': 'ASSUMED_STOREY_HEIGHT', 'message': 'Insufficient height evidence; generated a 3 m storey'})
+        generated = []
+        for number, band in enumerate(bands):
+            if progress:
+                progress('generate_storey_layout', storey=number + 1, total=len(bands))
+            members, domain = (band['members'], band['domain'])
+            linework = [domain.boundary] + [r['footprint'].boundary for r in members]
+            for wall in band['walls']:
+                axis = IFC._Analytical_redraw_axis(wall)
+                if axis:
+                    linework.append(axis[0].intersection(domain))
+            linework.extend(IFC._Analytical_redraw_gap_bisectors(members, domain))
+            member_ids = {r['source'] for r in members}
+            for boundary in evidence.context.get('boundaries', []):
+                if boundary['space'] in member_ids and boundary.get('points'):
+                    p = np.asarray(boundary['points'])
+                    projected = LineString(p[:, :2])
+                    if projected.length > 0.1:
+                        linework.append(projected.intersection(domain))
+            noded = union_all([line for line in linework if not line.is_empty], grid_size=config.drafting_grid)
+            regions = [p for p in polygonize(noded) if domain.covers(p.representative_point()) and p.area > 1e-08]
+            tree = STRtree([r['footprint'] for r in members])
+            owned = defaultdict(list)
+            for polygon in regions:
+                ids = tree.query(polygon)
+                scores = [(polygon.intersection(members[int(i)]['footprint']).area, members[int(i)]['source'], int(i)) for i in ids]
+                if scores and max((s[0] for s in scores)) > 1e-08:
+                    owner = max(scores, key=lambda s: (s[0], s[1]))[2]
+                else:
+                    owner = int(tree.nearest(polygon.representative_point()))
+                owned[owner].append(polygon)
+            for owner, pieces in sorted(owned.items(), key=lambda p: members[p[0]]['source']):
+                reference = members[owner]
+                fitted = make_valid(unary_union(pieces))
+                for part, polygon in enumerate(IFC._Analytical_evidence_polygons(fitted)):
+                    if polygon.area < config.minimum_fragment_area:
+                        warnings.append({'code': 'TINY_ROOM_FRAGMENT_OMITTED', 'message': 'Drafting fragment omitted from spatial cells', 'sources': [reference['source']]})
+                        continue
+                    intersection = polygon.intersection(reference['footprint']).area
+                    union = polygon.union(reference['footprint']).area
+                    iou = intersection / union if union else 0.0
+                    source_height = reference['z1'] - reference['z0']
+                    height = band['top'] - band['bottom']
+                    height_agreement = max(0.0, 1 - abs(height - source_height) / max(height, source_height, 0.1))
+                    score = (0.7 * iou + 0.3 * height_agreement) * (0.5 if inferred else 1.0)
+                    identity = reference['source'] + (f':part{part + 1}' if len(IFC._Analytical_evidence_polygons(fitted)) > 1 else '')
+                    ceilings = [r for r in records if r['type'] == 'IFCCOVERING' and r.get('predefined_type') == 'CEILING' and (r['z0'] > band['bottom'] + 0.4) and (r['z0'] < band['top'] + 0.3) and (r['footprint'].intersection(polygon).area > 0.5 * polygon.area)]
+                    air_top = min([r['z0'] for r in ceilings], default=min(reference['z1'], band['top']))
+                    generated.append({'id': identity, 'source_space_id': reference['source'], 'name': reference['name'] or identity, 'role': reference.get('role', 'room'), 'role_basis': reference.get('role_basis', 'geometric_inference'), 'air_top': air_top, 'air_volume': polygon.area * max(0.0, air_top - reference['z0']), 'air_volume_method': 'ceiling_or_source_height_prism_estimate', 'plenum_height': max(0.0, band['top'] - air_top), 'ceiling_sources': [r['source'] for r in ceilings], 'storey': number, 'footprint': mapping(polygon), 'bottom': band['bottom'], 'top': band['top'], 'reference_footprint': mapping(reference['footprint']), 'reference_bottom': reference['z0'], 'reference_top': reference['z1'], 'reference_method': reference['method'], 'envelope_method': band['envelope_method'], 'confidence': {'score': score, 'label': 'high' if score >= 0.85 else 'medium' if score >= 0.6 else 'low', 'footprint_iou': iou, 'height_agreement': height_agreement, 'meaning': 'heuristic agreement score; not a calibrated probability'}, 'reference_area': reference['footprint'].area, 'area': polygon.area, 'boundary_displacement_max_m': polygon.boundary.hausdorff_distance(reference['footprint'].boundary)})
+        IFC._Analytical_redraw_tall_spaces(generated, warnings, config)
+        IFC._Analytical_redraw_absorb_slivers(generated, warnings)
+        represented = {r['source_space_id'] for r in generated}
+        missing = [{'source': r['source'], 'reason': 'fully overlapped or unassigned source footprint'} for r in references if r['source'] not in represented]
+        reference_area = sum((r['footprint'].area for r in references))
+        covered_area = sum((r['footprint'].intersection(unary_union([shape(g['footprint']) for g in generated if g['source_space_id'] == r['source']])).area for r in references if r['source'] in represented))
+        fidelity = {'reference_spaces': len(references), 'represented_source_spaces': len(represented), 'source_space_coverage': len(represented) / len(references), 'source_area_coverage': covered_area / reference_area, 'excluded_source_spaces': excluded, 'unrepresented_source_spaces': missing, 'weighted_footprint_iou': sum((r['confidence']['footprint_iou'] * r['area'] for r in generated)) / max(sum((r['area'] for r in generated)), 1e-09), 'confidence_score': sum((r['confidence']['score'] * r['area'] for r in generated)) / max(sum((r['area'] for r in generated)), 1e-09), 'independent_ground_truth': False, 'prismatic_storey_approximation': True, 'drafting_grid_m': 0.01, 'notes': ['Roofs, split levels and tall spaces are regularised into storey prisms; review height changes.', 'Agreement is measured against usable IFC evidence, which may itself be inaccurate.', 'Construction-layer assignments and thermal exposure still require review.']}
+        aliases = {}
+        for reference in references:
+            if reference['source'] in represented:
+                continue
+            for candidate in references:
+                if candidate['source'] not in represented or abs(reference['z0'] - candidate['z0']) > 0.25:
+                    continue
+                overlap = reference['footprint'].intersection(candidate['footprint']).area
+                union = reference['footprint'].union(candidate['footprint']).area
+                if overlap / max(union, 1e-09) > 0.995 and abs(reference['z1'] - candidate['z1']) < 0.25:
+                    aliases[reference['source']] = candidate['source']
+                    break
+        for room in generated:
+            room['source_aliases'] = sorted((source for source, primary in aliases.items() if primary == room['source_space_id']))
+        fidelity['coincident_source_aliases'] = aliases
+        if aliases:
+            warnings.append({'code': 'COINCIDENT_SOURCE_SPACES', 'message': f'{len(aliases)} coincident source-space records are represented as aliases, not overlapping cells'})
+        excluded_ids = {r['source'] for r in excluded}
+        total_source = sum((r['type'] == 'IFCSPACE' and r['source'] not in excluded_ids for r in records))
+        fidelity['eligible_source_space_records'] = total_source or len(references)
+        fidelity['source_geometry_availability'] = len(references) / max(total_source, len(references), 1)
+        return {'format_version': 1, 'method': 'generative_redraw', 'origin': evidence.origin, 'modelling_config': {'geometry_tolerance': config.geometry_tolerance, 'drafting_grid': config.drafting_grid, 'minimum_cell_height': config.minimum_cell_height, 'minimum_fragment_area': config.minimum_fragment_area}, 'source_boundaries': [b for b in evidence.context.get('boundaries', []) if b['space'] in represented], 'construction_evidence': [{'id': r['source'], 'type': r['type'], 'footprint': mapping(r['footprint']), 'predefined_type': r.get('predefined_type'), 'bottom': r['z0'], 'top': r['z1'], 'materials': evidence.context.get('materials', {}).get(r['id'], []), 'points': r['points'].tolist(), 'faces': r.get('faces', [])} for r in records if r['type'] != 'IFCSPACE' and r['type'] != 'IFCOPENINGELEMENT'], 'rooms': generated, 'openings': [], 'fidelity': fidelity, 'warnings': warnings, 'reference_openings': [{'id': r['id'], 'source': r['source'], 'footprint': mapping(r['footprint']), 'points': r['points'].tolist(), 'bottom': r['z0'], 'top': r['z1']} for r in records if r['type'] == 'IFCOPENINGELEMENT'], 'fill_types': {str(IFC._Analytical_evidence_ref(e.args[4])): {'kind': 'window' if evidence.entities.get(IFC._Analytical_evidence_ref(e.args[5])) and evidence.entities[IFC._Analytical_evidence_ref(e.args[5])].type == 'IFCWINDOW' else 'door', 'source': evidence.entities[IFC._Analytical_evidence_ref(e.args[5])].args[0] if IFC._Analytical_evidence_ref(e.args[5]) in evidence.entities else None} for e in evidence.entities.values() if e.type == 'IFCRELFILLSELEMENT' and len(e.args) > 5}}
+
+    @staticmethod
+    def _Analytical_redraw_tall_spaces(rooms, warnings, config):
+        """Span explicitly identified atria/shafts without duplicating upper volume."""
+        from shapely.geometry import mapping, shape
+        for room in list(rooms):
+            if room.get('role') not in {'atrium', 'shaft'} or room['reference_top'] < room['top'] + 0.4:
+                continue
+            levels = sorted({r['bottom'] for r in rooms} | {r['top'] for r in rooms})
+            top = min(levels, key=lambda z: abs(z - room['reference_top']))
+            if abs(top - room['reference_top']) > 0.4:
+                warnings.append({'code': 'TALL_SPACE_REQUIRES_REVIEW', 'message': 'Tall-space height does not resolve to an analytical floor; retained storey extent', 'sources': [room['source_space_id']]})
+                continue
+            footprint = shape(room['footprint'])
+            affected = [r for r in rooms if r is not room and r['bottom'] >= room['top'] - 0.01 and (r['bottom'] < top - 0.01) and (shape(r['footprint']).intersection(footprint).area > 0.001)]
+            if any((r['top'] > top + 0.01 for r in affected)) or (room.get('role_basis') != 'user_override' and any((shape(r['reference_footprint']).intersection(footprint).area > 0.2 * r['reference_area'] for r in affected))):
+                warnings.append({'code': 'TALL_SPACE_CONFLICT', 'message': 'Tall-space evidence conflicts with upper rooms; requires classification override', 'sources': [room['source_space_id']]})
+                continue
+            room['top'] = top
+            room['air_top'] = room['reference_top']
+            room['air_volume'] = room['area'] * (room['reference_top'] - room['reference_bottom'])
+            for other in affected:
+                rooms.remove(other)
+                for index, poly in enumerate(IFC._Analytical_evidence_polygons(shape(other['footprint']).difference(footprint))):
+                    if poly.area >= config.minimum_fragment_area:
+                        rooms.append({**other, 'id': other['id'] + f':tall-cut-{index}', 'footprint': mapping(poly), 'area': poly.area})
+            warnings.append({'code': 'TALL_SPACE_RECONSTRUCTED', 'message': 'Tall spatial cell spans analytical storeys; overlapping upper volume excluded', 'sources': [room['source_space_id']]})
+
+    @staticmethod
+    def _Analytical_redraw_gap_bisectors(members, domain):
+        import numpy as np
+        from shapely.geometry import LineString
+        from shapely.strtree import STRtree
+        edges = []
+        for index, member in enumerate(members):
+            for poly in IFC._Analytical_evidence_polygons(member['footprint']):
+                p = np.asarray(poly.exterior.coords)
+                for a, b in zip(p, p[1:]):
+                    length = np.linalg.norm(b - a)
+                    if length > 0.25:
+                        edges.append((index, a, b, (b - a) / length))
+        lines = []
+        tree = STRtree([LineString([a, b]) for _, a, b, _ in edges]) if edges else None
+        for i, (owner, a, b, direction) in enumerate(edges):
+            line = LineString([a, b])
+            for j in tree.query(line.buffer(0.8)):
+                j = int(j)
+                if j <= i or edges[j][0] == owner:
+                    continue
+                _, c, d, other = edges[j]
+                if abs(float(direction @ other)) < 0.999:
+                    continue
+                normal = np.array([-direction[1], direction[0]])
+                distance = float((c - a) @ normal)
+                if not 0.005 < abs(distance) < 0.8:
+                    continue
+                lo, hi = (max(0.0, min((c - a) @ direction, (d - a) @ direction)), min(np.linalg.norm(b - a), max((c - a) @ direction, (d - a) @ direction)))
+                if hi - lo > 0.2:
+                    start = a + direction * (lo - 0.3) + normal * distance * 0.5
+                    end = a + direction * (hi + 0.3) + normal * distance * 0.5
+                    lines.append(LineString([start, end]).intersection(domain))
+        return lines
+
+    @staticmethod
+    def _Analytical_redraw_prism(polygon, bottom, top, tolerance):
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Wire import Wire
+        from topologicpy.Face import Face
+        from topologicpy.Cell import Cell
+
+        def wire(ring, z):
+            return Wire.ByVertices([Vertex.ByCoordinates(x, y, z) for x, y in list(ring.coords)[:-1]], close=True, tolerance=tolerance)
+        faces = [Face.ByWires(wire(polygon.exterior, z), [wire(r, z) for r in polygon.interiors], tolerance=tolerance) for z in (bottom, top)]
+        for ring in [polygon.exterior] + list(polygon.interiors):
+            p = list(ring.coords)
+            for a, b in zip(p, p[1:]):
+                faces.append(Face.ByVertices([Vertex.ByCoordinates(*a, bottom), Vertex.ByCoordinates(*b, bottom), Vertex.ByCoordinates(*b, top), Vertex.ByCoordinates(*a, top)], tolerance=tolerance, silent=True))
+        return Cell.ByFaces(faces, tolerance=tolerance, silent=True)
+
+    @staticmethod
+    def _Analytical_redraw_assemble(plan, config=None, progress=None):
+        from collections import defaultdict
+        from shapely import make_valid
+        from shapely.geometry import shape
+        from shapely.ops import unary_union
+        from topologicpy.Topology import Topology
+        from topologicpy.Cell import Cell
+        from topologicpy.CellComplex import CellComplex
+        from topologicpy.Cluster import Cluster
+        from topologicpy.Dictionary import Dictionary
+        config = config or IFC._Analytical_model_Config()
+        if plan.get('buildings'):
+            results = []
+            for entry in plan['buildings']:
+                child = IFC._Analytical_redraw_assemble(entry['plan'], config, progress)
+                child.building_id = entry['id']
+                results.append(child)
+            return IFC._Analytical_buildings_combine(results, plan.get('origin', [0.0, 0.0, 0.0]))
+        IFC._Analytical_redraw_refresh_fidelity(plan)
+        result = IFC._Analytical_model_Result(origin=plan.get('origin', [0.0, 0.0, 0.0]))
+        cells = []
+        common_only = len(plan['rooms']) > 120 and plan.get('assembly_strategy') != 'native_cells_no_attributes'
+        by_level = defaultdict(list)
+        for room in plan['rooms']:
+            polygon = make_valid(shape(room['footprint']))
+            by_level[room['bottom'], room['top']].append(polygon)
+        for key, ps in by_level.items():
+            if sum((p.area for p in ps)) - unary_union(ps).area > 0.0001:
+                raise ValueError(f'Edited/generated room footprints overlap in storey {key}')
+        for index, room in enumerate(plan['rooms']):
+            if progress and index % 20 == 0:
+                progress('construct_clean_cells', rooms=index, total=len(plan['rooms']))
+            polygon = make_valid(shape(room['footprint']))
+            try:
+                cell = None if common_only else IFC._Analytical_redraw_prism(polygon, room['bottom'], room['top'], config.tolerance)
+                expected = polygon.area * (room['top'] - room['bottom'])
+                if not common_only and (not Topology.IsInstance(cell, 'Cell') or abs(Cell.Volume(cell, mantissa=8) - expected) > max(0.001, expected * 1e-05)):
+                    raise ValueError('Native prism construction did not preserve its designed volume')
+                if cell is not None:
+                    Topology.SetDictionary(cell, {'bim2bem_space_id': room['id'], 'source_space_id': room['source_space_id'], 'TOPOLOGIC_name': room['name'] + ':' + str(index), 'confidence_score': room['confidence']['score']})
+                cells.append(cell)
+                result.spaces.append({'id': room['id'], 'name': room['name'] + ':' + str(index), 'source_space_id': room['source_space_id'], 'seed': [polygon.representative_point().x, polygon.representative_point().y, 0.5 * (room['bottom'] + room['top'])], 'analytical_volume': expected, 'source_volume': room['reference_area'] * (room['reference_top'] - room['reference_bottom']), 'confidence': room['confidence'], 'storey': room['storey']})
+                result.spaces[-1].update({k: room[k] for k in ('role', 'role_basis', 'air_volume', 'air_volume_method', 'air_top', 'plenum_height', 'ceiling_sources') if k in room})
+            except (ValueError, RuntimeError, TypeError) as exc:
+                result.diagnostics.append(IFC._Analytical_model_Diagnostic('CELL_REQUIRES_REVIEW', str(exc), 'warning', [room['id']]))
+        if not cells:
+            raise ValueError('Could not generate any closed native cells')
+
+        def fallback_cells():
+            if any((c is None for c in cells)):
+                return [IFC._Analytical_redraw_prism(shape(r['footprint']), r['bottom'], r['top'], config.tolerance) for r in plan['rooms']]
+            return cells
+        if progress:
+            progress('assemble_cell_complex', cells=len(cells))
+        if plan.get('exterior_envelope') or plan.get('facade_envelope'):
+            try:
+                envelope = {**plan.get('exterior_envelope', {'facets': []}), 'facades': plan.get('facade_envelope'), 'config': plan.get('modelling_config', {})}
+                topology = IFC._Analytical_envelope_shaped_complex(plan['rooms'], envelope, config.tolerance, progress)
+            except (ValueError, RuntimeError) as exc:
+                result.diagnostics.append(IFC._Analytical_model_Diagnostic('EXTERIOR_FIT_REQUIRES_REVIEW', str(exc) + '; retained regularised spatial cells', 'warning'))
+                plan['fidelity']['exterior_fit_applied'] = False
+                plan['fidelity']['prismatic_storey_approximation'] = True
+                if common_only:
+                    topology = IFC._Analytical_cellular_shared_complex(plan['rooms'], config.tolerance, progress, grid=config.drafting_grid)
+                else:
+                    topology = CellComplex.ByCells(cells, tolerance=config.tolerance, silent=True)
+            else:
+                plan['fidelity']['exterior_fit_applied'] = True
+                plan['fidelity'].update({k: envelope[k] for k in ('faces_before_coalescing', 'faces_after_coalescing') if k in envelope})
+        elif plan.get('assembly_strategy') == 'native_cells_no_attributes':
+            from topologicpy.Core import Core
+            topology = Core.CellComplex.ByCells(cells, False)
+        elif len(cells) > 120 and len(cells) == len(plan['rooms']):
+            try:
+                topology = IFC._Analytical_cellular_shared_complex(plan['rooms'], config.tolerance, progress, grid=config.drafting_grid)
+            except (ValueError, RuntimeError) as exc:
+                topology = Cluster.ByTopologies(fallback_cells())
+                result.diagnostics.append(IFC._Analytical_model_Diagnostic('SHARED_ASSEMBLY_REQUIRES_REVIEW', str(exc), 'warning'))
+        else:
+            from topologicpy.Core import Core
+            topology = Core.CellComplex.ByCells(cells, False) if len(cells) == 1 else CellComplex.ByCells(cells, tolerance=config.tolerance, silent=True)
+        if not Topology.IsInstance(topology, 'CellComplex') and len(cells) > 1:
+            topology = Cluster.ByTopologies(fallback_cells())
+            result.diagnostics.append(IFC._Analytical_model_Diagnostic('DISCONNECTED_CELL_COLLECTION', 'Generated closed cells retained as an editable collection; shared topology needs review', 'warning'))
+        result.topology = topology
+        result.statistics.update(rooms=len(cells), generated_rooms=len(plan['rooms']), analytical_volume=sum((r['analytical_volume'] for r in result.spaces)), topology_type=Topology.TypeAsString(topology), method='generative_redraw')
+        if progress:
+            progress('identify_spatial_cells')
+        IFC._Analytical_redraw_boundaries(result, plan, config, progress)
+        result.fidelity = plan['fidelity']
+        if progress:
+            progress('classify_boundary_patches', native_faces=len(result.boundaries))
+        IFC._Analytical_boundary_semantics_assign(result, plan, config)
+        IFC._Analytical_envelope_measure_roof(result, plan)
+        result.fidelity = plan['fidelity']
+        result.fidelity['native_cell_coverage'] = result.statistics['rooms'] / len(plan['rooms'])
+        result.fidelity['native_topology_connected'] = Topology.IsInstance(result.topology, 'CellComplex') or Topology.IsInstance(result.topology, 'Cell')
+        result.editable_plan = plan
+        dictionary = Dictionary.PythonDictionary(Topology.Dictionary(result.topology)) or {}
+        Topology.SetDictionary(result.topology, {**dictionary, 'bim2bem_world_origin': result.origin, 'method': 'generative_redraw'})
+        return result
+
+    @staticmethod
+    def _Analytical_redraw_refresh_fidelity(plan):
+        """Re-measure agreement after manual edits; never retain stale fit scores."""
+        from collections import defaultdict
+        from shapely.geometry import shape
+        from shapely.ops import unary_union
+        grouped = defaultdict(list)
+        references = {}
+        weighted_iou = weighted_score = total = covered = reference_area = 0.0
+        for room in plan['rooms']:
+            fitted = shape(room['footprint'])
+            original = shape(room['reference_footprint'])
+            intersection, union = (fitted.intersection(original).area, fitted.union(original).area)
+            iou = intersection / max(union, 1e-09)
+            height = room['top'] - room['bottom']
+            original_height = room['reference_top'] - room['reference_bottom']
+            agreement = max(0.0, 1 - abs(height - original_height) / max(height, original_height, 0.1))
+            reliability = 0.5 if room['reference_method'] == 'wall_partition_inference' else 0.7 if room['reference_method'] == 'convex_hull_fallback' else 1.0
+            score = (0.7 * iou + 0.3 * agreement) * reliability
+            room['area'] = fitted.area
+            if 'air_top' in room:
+                room['air_volume'] = fitted.area * max(0.0, room['air_top'] - room['reference_bottom'])
+            room['confidence'].update(score=score, label='high' if score >= 0.85 else 'medium' if score >= 0.6 else 'low', footprint_iou=iou, height_agreement=agreement)
+            room['boundary_displacement_max_m'] = fitted.boundary.hausdorff_distance(original.boundary)
+            grouped[room['source_space_id']].append(fitted)
+            references[room['source_space_id']] = original
+            total += fitted.area
+            weighted_iou += fitted.area * iou
+            weighted_score += fitted.area * score
+        for identity, original in references.items():
+            reference_area += original.area
+            covered += original.intersection(unary_union(grouped[identity])).area
+        fidelity = plan['fidelity']
+        aliases = fidelity.get('coincident_source_aliases', {})
+        represented_records = len(grouped) + sum((primary in grouped for primary in aliases.values()))
+        fidelity.update(weighted_footprint_iou=weighted_iou / max(total, 1e-09), confidence_score=weighted_score / max(total, 1e-09), source_area_coverage=covered / max(reference_area, 1e-09), represented_source_spaces=len(grouped), represented_source_records=represented_records, source_space_coverage=represented_records / max(fidelity.get('eligible_source_space_records', fidelity['reference_spaces']), 1), confidence_recomputed=True)
+
+    @staticmethod
+    def _Analytical_redraw_absorb_slivers(rooms, warnings):
+        """Reassign tiny drafting fragments across a shared edge, never leave holes."""
+        from shapely.geometry import mapping, shape
+        for room in sorted(list(rooms), key=lambda r: r['area']):
+            if room not in rooms or room['area'] >= 0.03:
+                continue
+            polygon = shape(room['footprint'])
+            candidates = []
+            for other in rooms:
+                if other is room or other['storey'] != room['storey'] or other['area'] < 0.03:
+                    continue
+                target = shape(other['footprint'])
+                shared = polygon.boundary.intersection(target.boundary).length
+                if shared > 0.001:
+                    merged = polygon.union(target)
+                    if merged.geom_type == 'Polygon' and merged.is_valid:
+                        candidates.append((shared, other['id'], other, merged))
+            if candidates:
+                _, _, target, merged = max(candidates, key=lambda c: (c[0], c[1]))
+                target['footprint'] = mapping(merged)
+                target['area'] = merged.area
+                target.setdefault('absorbed_fragments', []).append({'source': room['source_space_id'], 'area': polygon.area})
+                rooms.remove(room)
+                warnings.append({'code': 'DRAFTING_SLIVER_REASSIGNED', 'message': f'Reassigned a {polygon.area:.6f} mÂ² fragment across its longest shared edge', 'sources': [room['source_space_id'], target['source_space_id']]})
+
+    @staticmethod
+    def _Analytical_redraw_boundaries(result, plan, config, progress=None):
+        import numpy as np
+        from shapely import make_valid
+        from shapely.geometry import Polygon, mapping
+        from shapely.ops import unary_union
+        from topologicpy.Topology import Topology
+        from topologicpy.Face import Face
+        from topologicpy.Wire import Wire
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Dictionary import Dictionary
+        cells = Topology.Cells(result.topology) if not Topology.IsInstance(result.topology, 'Cell') else [result.topology]
+        from topologicpy.Cell import Cell
+        assigned = set()
+        for record in result.spaces:
+            matched = [c for c in cells if IFC._Analytical_validation_contains(c, record['seed'], config.tolerance)]
+            if len(matched) == 1:
+                Topology.SetDictionary(matched[0], {'bim2bem_space_id': record['id'], 'TOPOLOGIC_name': record['name'], 'source_space_id': record['source_space_id']})
+                assigned.add(next((i for i, c in enumerate(cells) if Topology.IsSame(c, matched[0]))))
+                record['analytical_volume'] = Cell.Volume(matched[0], mantissa=8)
+        unresolved_volume = 0.0
+        for index, cell in enumerate(cells):
+            if index in assigned:
+                continue
+            seed = Cell.InternalVertex(cell, tolerance=config.tolerance, silent=True)
+            coordinates = Vertex.Coordinates(seed, mantissa=10)
+            volume = Cell.Volume(cell, mantissa=8)
+            unresolved_volume += volume
+            identity = f'review-native-region-{index:04d}'
+            name = f'Review additional native region {index}'
+            Topology.SetDictionary(cell, {'bim2bem_space_id': identity, 'TOPOLOGIC_name': name, 'source_space_id': '', 'role': 'unresolved_volume', 'confidence_score': 0.2})
+            points = np.array([Vertex.Coordinates(v, mantissa=10) for v in Topology.Vertices(cell)])
+            pieces = []
+            for face in Topology.Faces(cell):
+                if abs(Face.Normal(face)[2]) > 0.99:
+                    p = [Vertex.Coordinates(v, mantissa=10)[:2] for v in Wire.Vertices(Face.ExternalBoundary(face))]
+                    polygon = make_valid(Polygon(p))
+                    if polygon.area > 1e-06:
+                        pieces.append(polygon)
+            footprint = unary_union(pieces) if pieces else Polygon(points[:, :2]).convex_hull
+            plan.setdefault('review_regions', []).append({'id': identity, 'footprint': mapping(footprint), 'bottom': float(points[:, 2].min()), 'top': float(points[:, 2].max()), 'role': 'unresolved_volume', 'volume': volume})
+        if unresolved_volume:
+            from topologicpy.Core import Core
+            selected = [cell for index, cell in enumerate(cells) if index in assigned]
+            result.topology = Core.CellComplex.ByCells(selected, False) if len(selected) > 1 else selected[0]
+            result.diagnostics.append(IFC._Analytical_model_Diagnostic('ADDITIONAL_NATIVE_REGIONS_OMITTED', f'{len(cells) - len(assigned)} residual regions ({unresolved_volume:.3f} mÂ³) excluded from spatial cells', 'warning'))
+        result.statistics['rooms'] = len(assigned)
+        result.statistics['analytical_volume'] = sum((r['analytical_volume'] for r in result.spaces))
+        plan['fidelity']['additional_native_regions'] = len(cells) - len(assigned)
+        plan['fidelity']['unresolved_native_volume_m3'] = unresolved_volume
+        plan['fidelity']['unresolved_native_volume_fraction'] = unresolved_volume / max(result.statistics['analytical_volume'], 1e-09)
+        native_faces = {}
+        if progress:
+            progress('derive_native_boundaries', cells=len(cells))
+        for face in Topology.Faces(result.topology):
+            points = [Vertex.Coordinates(v, mantissa=10) for v in Wire.Vertices(Face.ExternalBoundary(face))]
+            adjacent = Topology.AdjacentTopologies(face, result.topology, topologyType='cell') or []
+            if not adjacent and len(cells) == 1:
+                adjacent = cells
+            owners = [Dictionary.ValueAtKey(Topology.Dictionary(c), 'bim2bem_space_id') for c in adjacent]
+            owners = [o for o in owners if o]
+            bid = IFC._Analytical_geometry_stable_id('redraw-', points, config.tolerance)
+            result.boundaries.append({'id': bid, 'vertices': points, 'owners': owners, 'sources': owners, 'holes': [[Vertex.Coordinates(v, mantissa=10) for v in Wire.Vertices(w)] for w in Face.InternalBoundaries(face)], 'area': Face.Area(face, mantissa=8), 'net_opaque_area': Face.Area(face, mantissa=8), 'kind': 'internal' if len(owners) == 2 else 'external', 'exposure': 'interzone' if len(owners) == 2 else 'unknown', 'physical_or_virtual': 'physical', 'construction_assignment': 'requires_review'})
+            Topology.SetDictionary(face, {'bim2bem_boundary_id': bid, 'owners': owners, 'exposure': 'requires_review'})
+            native_faces[bid] = face
+        result.statistics['boundaries'] = len(result.boundaries)
+        result.statistics['shared_faces'] = sum((b['kind'] == 'internal' for b in result.boundaries))
+        if progress:
+            progress('project_reference_openings', native_faces=len(native_faces))
+        IFC._Analytical_redraw_openings(result, plan, native_faces, config)
+
+    @staticmethod
+    def _Analytical_redraw_openings(result, plan, native_faces, config):
+        from collections import defaultdict
+        import numpy as np
+        from shapely.geometry import Polygon, MultiPoint, shape
+        from shapely.strtree import STRtree
+        from topologicpy.Topology import Topology
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Face import Face
+        from topologicpy.Context import Context
+        from topologicpy.Aperture import Aperture
+        candidates = []
+        for boundary in result.boundaries:
+            try:
+                plane = IFC._Analytical_geometry_Plane.polygon(boundary['vertices'], config.tolerance)
+            except ValueError:
+                continue
+            points = np.asarray(boundary['vertices'])
+            horizontal = np.array([-plane.normal[1], plane.normal[0], 0.0])
+            distances = points @ horizontal
+            origin = plane.normal * plane.offset
+            segment = MultiPoint(points[:, :2]).convex_hull
+            host = Polygon(plane.project(points), [plane.project(h) for h in boundary.get('holes', [])])
+            candidates.append((boundary, plane, host, horizontal, segment))
+        tree = STRtree([row[4] for row in candidates]) if candidates else None
+        mapped, missing = (set(), [])
+        occupied = defaultdict(list)
+        for opening in plan.get('reference_openings', []):
+            foot = shape(opening['footprint'])
+            points = np.array(foot.convex_hull.exterior.coords[:-1]) if foot.convex_hull.geom_type == 'Polygon' else None
+            if points is None or tree is None or opening['top'] - opening['bottom'] < 0.05:
+                missing.append(opening['source'])
+                continue
+            rectangle = np.array(foot.minimum_rotated_rectangle.exterior.coords[:-1])
+            vectors = np.roll(rectangle, -1, axis=0) - rectangle
+            lengths = np.linalg.norm(vectors, axis=1)
+            major_direction = vectors[np.argmax(lengths)] / max(lengths.max(), 1e-09)
+            spatial_points = np.array(opening.get('points', [[x, y, z] for x, y in points for z in (opening['bottom'], opening['top'])]))
+            _, singular, axes = np.linalg.svd(spatial_points - spatial_points.mean(0))
+            opening_normal = axes[-1] if singular[-1] < 0.6 * singular[-2] else None
+            matches = []
+            for index in tree.query(foot.buffer(0.8)):
+                boundary, plane, host, direction, segment = candidates[int(index)]
+                if opening_normal is not None and abs(plane.normal @ opening_normal) < 0.8:
+                    continue
+                if opening_normal is None and abs(plane.normal[2]) < 0.1 and (lengths.max() > 1.5 * lengths.min()) and (abs(float(direction[:2] @ major_direction)) < 0.8):
+                    continue
+                distance = abs(float(np.array([foot.centroid.x, foot.centroid.y, 0.5 * (opening['bottom'] + opening['top'])]) @ plane.normal - plane.offset))
+                if distance > 0.8:
+                    continue
+                projected = MultiPoint(plane.project(spatial_points)).convex_hull
+                clipped = projected.intersection(host)
+                if clipped.area < 0.05:
+                    continue
+                score = distance + 0.05 * (1 - min(1.0, clipped.area / max(projected.area, 1e-09)))
+                matches.append((score, distance, int(index), clipped, projected.area))
+            if not matches:
+                missing.append(opening['source'])
+                continue
+            best = min(matches, key=lambda m: m[0])
+            best_plane = candidates[best[2]][1]
+            for score, distance, index, clipped, reference_area in matches:
+                boundary, plane, host, direction, _ = candidates[index]
+                if np.linalg.norm(best_plane.normal - plane.normal) <= 1e-06:
+                    if abs(best_plane.offset - plane.offset) > 0.02:
+                        continue
+                elif best_plane.normal @ plane.normal < 0.85 or distance > best[1] + 0.1:
+                    continue
+                for polygon in IFC._Analytical_evidence_polygons(clipped):
+                    if polygon.interiors or any((polygon.intersection(p).area > 0.001 for p in occupied[boundary['id']])):
+                        continue
+                    try:
+                        vertices = plane.lift(np.array(polygon.exterior.coords[:-1])).tolist()
+                        face = Face.ByVertices([Vertex.ByCoordinates(*p) for p in vertices], tolerance=config.tolerance, silent=True)
+                        context = Context.ByTopologyParameters(native_faces[boundary['id']], 0.5, 0.5, 0.5)
+                        if face is None or Aperture.ByTopologyContext(face, context) is None:
+                            continue
+                        fill = plan.get('fill_types', {}).get(str(opening['id']), {'kind': 'void', 'source': opening['source']})
+                        Topology.SetDictionary(face, {'opening_id': fill['source'] or opening['source'], 'kind': fill['kind']})
+                        result.openings.append({'id': fill['source'] or opening['source'], 'reference_opening_id': opening['source'], 'boundary_id': boundary['id'], 'vertices': vertices, 'area': polygon.area, 'kind': fill['kind'], 'owners': boundary['owners'], 'sources': [opening['source']], 'projection_distance_m': distance, 'area_retention': min(1.0, polygon.area / reference_area)})
+                        boundary['net_opaque_area'] -= polygon.area
+                        occupied[boundary['id']].append(polygon)
+                        mapped.add(opening['source'])
+                    except (ValueError, RuntimeError, TypeError):
+                        continue
+            if opening['source'] not in mapped:
+                missing.append(opening['source'])
+        plan['fidelity']['reference_openings'] = len(plan.get('reference_openings', []))
+        plan['fidelity']['mapped_reference_openings'] = len(mapped)
+        plan['fidelity']['opening_mapping_coverage'] = len(mapped) / max(len(plan.get('reference_openings', [])), 1)
+        plan['fidelity']['unmapped_openings'] = sorted(set(missing))
+        if missing:
+            result.diagnostics.append(IFC._Analytical_model_Diagnostic('OPENINGS_REQUIRE_REVIEW', f'{len(set(missing))} reference openings could not be placed confidently; retained in editable plan', 'warning', sorted(set(missing))))
+
+    @staticmethod
+    def _Analytical_persistence_geometry_signature(topology, tolerance=1e-05):
+        """Check closed cell edge incidence and genuinely shared native faces."""
+        from collections import Counter, defaultdict
+        from topologicpy.Topology import Topology
+        from topologicpy.Cell import Cell
+        from topologicpy.Face import Face
+        from topologicpy.Wire import Wire
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Dictionary import Dictionary
+        cells = [topology] if Topology.IsInstance(topology, 'Cell') else Topology.Cells(topology)
+        rooms, faces = ({}, defaultdict(list))
+        for cell in cells:
+            identity = Dictionary.ValueAtKey(Topology.Dictionary(cell), 'bim2bem_space_id')
+            if not identity or identity in rooms:
+                raise ValueError('Native persistence requires unambiguous room identities')
+            rooms[identity] = round(Cell.Volume(cell, mantissa=8), 6)
+            edges = Counter()
+            for face in Topology.Faces(cell):
+                for edge in Topology.Edges(face):
+                    coordinates = [Vertex.Coordinates(v, mantissa=10) for v in Topology.Vertices(edge)]
+                    edges[tuple(sorted((tuple((round(c / tolerance) for c in p)) for p in coordinates)))] += 1
+                points = [Vertex.Coordinates(v, mantissa=10) for v in Wire.Vertices(Face.ExternalBoundary(face))]
+                faces[IFC._Analytical_geometry_face_key(points, tolerance)].append(face)
+            if any((count != 2 for count in edges.values())):
+                raise ValueError('A generated room shell has invalid edge incidence')
+        shared = 0
+        for entries in faces.values():
+            if len(entries) > 2:
+                raise ValueError('More than two rooms occupy an interface')
+            if len(entries) == 2:
+                if not Topology.IsSame(entries[0], entries[1]):
+                    if Topology.IsInstance(topology, 'CellComplex'):
+                        raise ValueError('Coincident analytical interfaces are not topologically shared')
+                else:
+                    shared += 1
+        return (rooms, {key: len(value) for key, value in faces.items()}, shared)
+
+    @staticmethod
+    def _Analytical_persistence_restore(topology, metadata, tolerance=1e-05):
+        import numpy as np
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Face import Face
+        from topologicpy.Wire import Wire
+        from topologicpy.Context import Context
+        from topologicpy.Aperture import Aperture
+        cells = [topology] if Topology.IsInstance(topology, 'Cell') else Topology.Cells(topology)
+        bounds = []
+        for cell in cells:
+            coords = np.array([Vertex.Coordinates(v, mantissa=10) for v in Topology.Vertices(cell)])
+            bounds.append((cell, coords.min(0), coords.max(0)))
+        for room in metadata['spaces']:
+            seed = np.array(room['seed'])
+            matches = [cell for cell, low, high in bounds if np.all(seed >= low - tolerance) and np.all(seed <= high + tolerance) and IFC._Analytical_validation_contains(cell, seed, tolerance)]
+            if len(matches) != 1:
+                raise ValueError(f"Could not restore native room identity {room['id']}")
+            Topology.SetDictionary(matches[0], {'bim2bem_space_id': room['id'], 'TOPOLOGIC_name': room['name'], 'source_space_id': room.get('source_space_id', room['id']), 'role': room.get('role', 'room'), 'confidence_score': room.get('confidence', {}).get('score', 0.0)})
+        boundary_records = {IFC._Analytical_geometry_face_key(b['vertices'], tolerance): b for b in metadata['boundaries']}
+        faces = {}
+        for face in Topology.Faces(topology):
+            points = [Vertex.Coordinates(v, mantissa=10) for v in Wire.Vertices(Face.ExternalBoundary(face))]
+            record = boundary_records.get(IFC._Analytical_geometry_face_key(points, tolerance))
+            if record:
+                faces[record['id']] = face
+                Topology.SetDictionary(face, {'bim2bem_boundary_id': record['id'], 'owners': record['owners']})
+        restored_openings = 0
+        for opening in metadata.get('openings', []):
+            host = faces.get(opening['boundary_id'])
+            if host is None:
+                raise ValueError('An aperture host was lost in native persistence')
+            face = Face.ByVertices([Vertex.ByCoordinates(*p) for p in opening['vertices']], tolerance=tolerance, silent=True)
+            context = Context.ByTopologyParameters(host, 0.5, 0.5, 0.5)
+            if Aperture.ByTopologyContext(face, context) is None:
+                raise ValueError('An aperture could not be restored')
+            Topology.SetDictionary(face, {'opening_id': opening['id'], 'kind': opening['kind']})
+            restored_openings += 1
+        Topology.SetDictionary(topology, {**(Dictionary.PythonDictionary(Topology.Dictionary(topology)) or {}), 'bim2bem_world_origin': metadata['origin'], 'method': 'generative_redraw'})
+        return (topology, restored_openings)
+
+    @staticmethod
+    def _Analytical_persistence_save_model(result, directory, tolerance=1e-05):
+        import json
+        from pathlib import Path
+        from topologicpy.Topology import Topology
+        directory = Path(directory)
+        directory.mkdir(parents=True, exist_ok=True)
+        if result.buildings:
+            return IFC._Analytical_persistence_save_buildings(result, directory, tolerance)
+        signature = IFC._Analytical_persistence_geometry_signature(result.topology, tolerance)
+        metadata = {'format_version': 2, 'origin': result.origin, 'geometry_coordinate_frame': 'ifc_world_metres', 'metadata_coordinate_frame': result.statistics.get('topology_coordinate_frame', 'local_metres'), 'world_from_local_translation': result.origin, 'spaces': result.spaces, 'boundaries': result.boundaries, 'boundary_patches': result.boundary_patches, 'openings': result.openings, 'fidelity': result.fidelity, 'building_id': result.building_id}
+        path = directory / 'building.brep'
+        clean = Topology.ByBREPString(Topology.BREPString(result.topology, silent=True), silent=True)
+        exported = Topology.Translate(clean, *result.origin, transferDictionaries=False, silent=True)
+        if exported is None or not Topology.ExportToBREP(exported, str(path), overwrite=True, silent=True):
+            raise ValueError('Exact native BREP export failed')
+        (directory / 'building.metadata.json').write_text(json.dumps(metadata, indent=2) + '\n', encoding='utf-8')
+        restored = Topology.ByBREPPath(str(path), silent=True)
+        if restored is None:
+            raise ValueError('Exact native BREP could not be reopened')
+        restored = Topology.Translate(restored, *[-v for v in result.origin], transferDictionaries=False, silent=True)
+        restored, apertures = IFC._Analytical_persistence_restore(restored, metadata, tolerance)
+        if IFC._Analytical_persistence_geometry_signature(restored, tolerance) != signature or apertures != len(result.openings):
+            raise ValueError('Native geometry/provenance round trip did not preserve the designed model')
+        result.statistics.update(native_roundtrip_verified=True, persistence_format='BREP+JSON', brep_coordinate_frame='ifc_world_metres', verified_shared_faces=signature[2], native_cells_verified=len(signature[0]))
+
+    @staticmethod
+    def _Analytical_persistence_load_model(directory, tolerance=1e-05):
+        """Reopen into the local calculation frame, with provenance and apertures.
+
+        The standalone BREP is in IFC world coordinates. Version-1 BREP files were
+        local already; the sidecar explicitly distinguishes both export conventions.
+        """
+        import json
+        from pathlib import Path
+        from topologicpy.Topology import Topology
+        directory = Path(directory)
+        metadata = json.loads((directory / 'building.metadata.json').read_text(encoding='utf-8'))
+        if metadata.get('buildings'):
+            from topologicpy.Cluster import Cluster
+            return Cluster.ByTopologies([IFC._Analytical_persistence_load_model(directory / entry['directory'], tolerance) for entry in metadata['buildings'] if entry.get('usable', True)])
+        topology = Topology.ByBREPPath(str(directory / 'building.brep'), silent=True)
+        if topology is None:
+            raise ValueError('Native BREP could not be read')
+        if metadata.get('geometry_coordinate_frame') == 'ifc_world_metres':
+            topology = Topology.Translate(topology, *[-v for v in metadata['origin']], transferDictionaries=False, silent=True)
+        return IFC._Analytical_persistence_restore(topology, metadata, tolerance)[0]
+
+    @staticmethod
+    def _Analytical_persistence_save_buildings(result, directory, tolerance):
+        """Each building is independently verifiable, even when their bounds overlap."""
+        import json
+        from topologicpy.Topology import Topology
+        entries = []
+        for index, building in enumerate(result.buildings):
+            if building.topology is None:
+                entries.append({'id': building.building_id, 'directory': None, 'usable': False})
+                continue
+            child = directory / 'buildings' / f'{index + 1:03d}'
+            child.mkdir(parents=True, exist_ok=True)
+            IFC._Analytical_persistence_save_model(building, child, tolerance)
+            (child / 'report.json').write_text(json.dumps(building.report(), indent=2) + '\n', encoding='utf-8')
+            (child / 'editable-plan.json').write_text(json.dumps(building.editable_plan, indent=2) + '\n', encoding='utf-8')
+            entries.append({'id': building.building_id, 'directory': child.relative_to(directory).as_posix(), 'usable': True})
+        clean = Topology.ByBREPString(Topology.BREPString(result.topology, silent=True), silent=True)
+        world = Topology.Translate(clean, *result.origin, transferDictionaries=False, silent=True)
+        if not Topology.ExportToBREP(world, str(directory / 'building.brep'), overwrite=True, silent=True):
+            raise ValueError('Site collection export failed')
+        metadata = {'format_version': 3, 'geometry_coordinate_frame': 'ifc_world_metres', 'origin': result.origin, 'buildings': entries, 'collection_type': 'independent_buildings'}
+        (directory / 'building.metadata.json').write_text(json.dumps(metadata, indent=2) + '\n', encoding='utf-8')
+        result.statistics.update(native_roundtrip_verified=all((b.statistics.get('native_roundtrip_verified', False) for b in result.buildings)), brep_coordinate_frame='ifc_world_metres', persistence_format='independent_buildings+BREP+JSON', native_cells_verified=sum((b.statistics.get('native_cells_verified', 0) for b in result.buildings)))
+
+    @staticmethod
+    def _Analytical_api_analytical_model(source, options=None, coordinate_frame='world', verify=True, progress=None):
+        """Return a reviewable Result with independent building CellComplexes.
+
+        Accepts an IFC path or native IFCModel. Native import is unchanged. World
+        coordinates are the public default; editable plans explicitly retain their
+        own local calculation origin. No result is certified simulation-ready.
+        """
+        if coordinate_frame not in {'world', 'local'}:
+            raise ValueError("coordinate_frame must be 'world' or 'local'")
+        config = IFC._Analytical_model_Config(**options) if isinstance(options, dict) else options or IFC._Analytical_model_Config()
+        if not isinstance(config, IFC._Analytical_model_Config):
+            raise TypeError('options must be a Config or a dictionary of Config fields')
+        try:
+            result = IFC._Analytical_redraw_generate(source, config, progress)
+        except (ValueError, RuntimeError, OSError) as exc:
+            return IFC._Analytical_model_Result(diagnostics=[IFC._Analytical_model_Diagnostic('ANALYTICAL_RECONSTRUCTION_FAILED', str(exc), 'error')])
+        models = result.buildings or [result]
+        if verify:
+            for building in models:
+                if building.topology is None:
+                    continue
+                try:
+                    signatures = IFC._Analytical_persistence_geometry_signature(building.topology, config.tolerance)
+                    building.statistics.update(geometry_verified=True, verified_shared_faces=signatures[2], verified_cells=len(signatures[0]))
+                except ValueError as exc:
+                    building.diagnostics.append(IFC._Analytical_model_Diagnostic('GEOMETRY_REQUIRES_REVIEW', str(exc), 'warning'))
+                    building.statistics['geometry_verified'] = False
+            result.statistics['geometry_verified'] = all((b.statistics.get('geometry_verified', False) for b in models))
+        if coordinate_frame == 'world':
+            if result.buildings:
+                result = IFC._Analytical_buildings_combine([IFC._Analytical_api_world(b) for b in result.buildings], [0.0, 0.0, 0.0])
+                result.statistics['geometry_verified'] = all((b.statistics.get('geometry_verified', False) for b in result.buildings))
+            else:
+                result = IFC._Analytical_api_world(result)
+        return result
+
+    @staticmethod
+    def _Analytical_api_world(result):
+        from copy import deepcopy
+        from dataclasses import replace
+        if result.topology is None:
+            return result
+        from topologicpy.Topology import Topology
+        origin = result.origin
+        clean = Topology.ByBREPString(Topology.BREPString(result.topology, silent=True), silent=True)
+        topology = Topology.Translate(clean, *origin, transferDictionaries=False, silent=True)
+        if topology is None:
+            raise ValueError('Could not restore IFC world placement')
+        spaces, boundaries, openings, patches = (deepcopy(v) for v in (result.spaces, result.boundaries, result.openings, result.boundary_patches))
+        for space in spaces:
+            space['seed'] = [v + origin[i] for i, v in enumerate(space['seed'])]
+            if 'air_top' in space:
+                space['air_top'] += origin[2]
+        for record in boundaries + openings + patches:
+            record['vertices'] = [[v + origin[i] for i, v in enumerate(p)] for p in record['vertices']]
+            if 'holes' in record:
+                record['holes'] = [[[v + origin[i] for i, v in enumerate(p)] for p in ring] for ring in record['holes']]
+        meta = {'origin': [0.0, 0.0, 0.0], 'spaces': spaces, 'boundaries': boundaries, 'openings': openings}
+        topology, _ = IFC._Analytical_persistence_restore(topology, meta)
+        return replace(result, topology=topology, origin=[0.0, 0.0, 0.0], spaces=spaces, boundaries=boundaries, openings=openings, boundary_patches=patches, statistics={**result.statistics, 'topology_coordinate_frame': 'ifc_world_metres', 'calculation_origin': origin})
+
     @staticmethod
     def NavigationModel(model, eyeHeight: float = 1.6, maxSlope: float = 45.0,
                         obstacleTypes=None, excludeTypes=None):

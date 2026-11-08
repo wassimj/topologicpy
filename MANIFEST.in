@@ -1,0 +1,6 @@
+include docs/IFC-AnalyticalModel.md
+include tools/check_ifc_analytical_models.py
+include tests/test_IFCAnalyticalModel.py
+include tests/data/analytical-three-rooms.ifc
+include tests/data/analytical-three-rooms-mm.ifc
+include tests/data/ifc_analytical_real_models.csv

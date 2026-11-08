@@ -7,6 +7,7 @@
    :caption: Contents:
 
    modules
+   ifc_analytical_model
 
 
 Indices and tables
