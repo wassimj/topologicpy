@@ -1151,6 +1151,408 @@ class IFCFastTopology:
         return mesh
 
     @staticmethod
+    def _closed_polygon_mesh(polygons):
+        """Index a conforming closed polygon shell, or reject the fast path."""
+        from collections import Counter
+        from itertools import product
+        import math
+        vertices, faces, lookup = [], [], {}
+        tolerance = 1e-7
+        for polygon in polygons:
+            ids = []
+            for point in polygon:
+                key = tuple(math.floor(float(v)/tolerance) for v in point)
+                index = None
+                for offset in product((-1, 0, 1), repeat=3):
+                    neighbour = tuple(k+d for k, d in zip(key, offset))
+                    for candidate in lookup.get(neighbour, []):
+                        if sum((float(v)-w)**2 for v, w in zip(point, vertices[candidate])) <= tolerance**2:
+                            index = candidate
+                            break
+                    if index is not None:
+                        break
+                if index is None:
+                    index = len(vertices)
+                    lookup.setdefault(key, []).append(index)
+                    vertices.append([float(v) for v in point])
+                if not ids or ids[-1] != index:
+                    ids.append(index)
+            if len(ids) > 1 and ids[0] == ids[-1]:
+                ids.pop()
+            if len(ids) >= 3:
+                faces.append(ids)
+        if not faces:
+            return {"vertices": [], "faces": [], "edges": []}
+        counts = Counter(tuple(sorted((a, b))) for f in faces for a, b in zip(f, f[1:]+f[:1]))
+        if any(count != 2 for count in counts.values()):
+            # Noding T-junctions changes no surface: neighbouring wall panels
+            # can introduce intermediate heights along an existing edge.
+            import numpy as np
+            points = np.array(vertices)
+            splits = {}
+            for a, b in counts:
+                delta = points[b]-points[a]
+                length2 = delta@delta
+                if length2 < 1e-20:
+                    return None
+                t = (points-points[a])@delta/length2
+                residual = points-(points[a]+t[:, None]*delta)
+                ids = np.flatnonzero((t > 1e-9) & (t < 1-1e-9) & (np.linalg.norm(residual, axis=1) < 2e-8))
+                splits[a, b] = [int(i) for i in ids[np.argsort(t[ids])]]
+            conformed = []
+            for f in faces:
+                ring = []
+                for a, b in zip(f, f[1:]+f[:1]):
+                    ring.append(a)
+                    ring.extend(splits[a, b] if a < b else reversed(splits[b, a]))
+                conformed.append(ring)
+            faces = conformed
+            counts = Counter(tuple(sorted((a, b))) for f in faces for a, b in zip(f, f[1:]+f[:1]))
+        if any(count != 2 for count in counts.values()):
+            return None
+        # Compound shells and enclosed cavities retain the general kernel path.
+        incidence = {}
+        adjacent = [set() for _ in faces]
+        for index, f in enumerate(faces):
+            for a, b in zip(f, f[1:]+f[:1]):
+                key = tuple(sorted((a, b)))
+                if key in incidence:
+                    other = incidence[key]
+                    adjacent[index].add(other)
+                    adjacent[other].add(index)
+                else:
+                    incidence[key] = index
+        visited, pending = set(), [0]
+        while pending:
+            index = pending.pop()
+            if index not in visited:
+                visited.add(index)
+                pending.extend(adjacent[index]-visited)
+        if len(visited) != len(faces):
+            return None
+        return {"vertices": vertices, "faces": faces, "edges": []}
+
+    @staticmethod
+    def _prism_profile(mesh, axis=None):
+        """Recognise a straight prism from equal caps and straight side faces."""
+        import numpy as np
+        from shapely.geometry import Polygon
+        from shapely.ops import unary_union
+        points = np.asarray(mesh.get("vertices", []), dtype=float)
+        if len(points) < 4 or not mesh.get("faces"):
+            return None
+        if IFCFastTopology._closed_polygon_mesh([points[f] for f in mesh["faces"]]) is None:
+            return None
+        tolerance = max(1e-7, float(np.ptp(points, axis=0).max())*1e-10)
+        normals = {}
+        if axis is not None:
+            normal = np.asarray(axis, dtype=float)
+            normals[tuple(normal)] = normal
+        else:
+            for ids in mesh["faces"]:
+                p = points[ids]
+                n = np.cross(p, np.roll(p, -1, axis=0)).sum(axis=0)
+                length = np.linalg.norm(n)
+                if length < 1e-10:
+                    continue
+                n /= length
+                if next(v for v in n if abs(v) > 1e-10) < 0:
+                    n = -n
+                normals[tuple(np.round(n, 8))] = n
+        for n in sorted(normals.values(), key=lambda n: float(np.ptp(points@n))):
+            depths = points@n
+            low, high = float(depths.min()), float(depths.max())
+            if high-low < tolerance or np.any(np.minimum(abs(depths-low), abs(depths-high)) > tolerance):
+                continue
+            u = np.cross(n, np.eye(3)[int(np.argmin(abs(n)))])
+            u /= np.linalg.norm(u)
+            v = np.cross(n, u)
+            projected = np.column_stack((points@u, points@v))
+            caps = [[], []]
+            supported = True
+            for ids in mesh["faces"]:
+                d = depths[ids]
+                poly = Polygon(projected[ids])
+                if max(abs(d-low)) <= tolerance or max(abs(d-high)) <= tolerance:
+                    if not poly.is_valid or poly.area <= tolerance**2:
+                        supported = False
+                        break
+                    caps[int(max(abs(d-high)) <= tolerance)].append(poly)
+                elif poly.area > tolerance*max(1., np.ptp(projected[ids], axis=0).max()):
+                    supported = False  # A warped/non-prismatic side must use CSG.
+                    break
+            if not supported or not all(caps):
+                continue
+            first, second = (unary_union(c) for c in caps)
+            if first.symmetric_difference(second).area > max(1e-8, first.area*1e-8):
+                continue
+            return n, u, v, low, high, first
+        return None
+
+    @staticmethod
+    def _prismatic_difference(a, b):
+        """Exact through-cut in a common prism frame; None means use 3D CSG.
+
+        Partial-depth pockets, differing caps and incomplete triangulations are
+        deliberately not approximated. No source opening is omitted.
+        """
+        import numpy as np
+        from collections import Counter
+        from shapely.ops import triangulate
+        host = IFCFastTopology._prism_profile(a)
+        if host is None:
+            return None
+        n, u, v, low, high, profile = host
+        cutter = IFCFastTopology._prism_profile(b, n)
+        if cutter is None or cutter[3] > low+1e-7 or cutter[4] < high-1e-7:
+            return None
+        result = profile.difference(cutter[5])
+        if result.is_empty:
+            return {"vertices": [], "faces": [], "edges": []}
+        if not result.is_valid or result.geom_type not in {"Polygon", "MultiPolygon"}:
+            return None
+        if result.equals(profile):
+            return a
+        polygons = [result] if result.geom_type == "Polygon" else list(result.geoms)
+        faces = []
+        for polygon in polygons:
+            triangles = [t for t in triangulate(polygon) if polygon.covers(t)]
+            if abs(sum(t.area for t in triangles)-polygon.area) > max(1e-8, polygon.area*1e-8):
+                return None
+            counts, directions = Counter(), {}
+            def point(p, depth):
+                return u*p[0]+v*p[1]+n*depth
+            for triangle in triangles:
+                p = list(triangle.exterior.coords)[:-1]
+                if not triangle.exterior.is_ccw:
+                    p.reverse()
+                faces.append([point(q, low) for q in reversed(p)])
+                faces.append([point(q, high) for q in p])
+                for start, end in zip(p, p[1:]+p[:1]):
+                    key = tuple(sorted((tuple(start), tuple(end))))
+                    counts[key] += 1
+                    directions[key] = (start, end)
+            for key, count in counts.items():
+                if count == 1:
+                    start, end = directions[key]
+                    faces.append([point(start, low), point(end, low), point(end, high), point(start, high)])
+        return IFCFastTopology._closed_polygon_mesh(faces)
+
+    @staticmethod
+    def _column_difference(a, b):
+        """Exact polyhedral cuts in a conforming vertical-column arrangement.
+
+        Plane projections are subdivided at every crossing before interval
+        subtraction. This preserves mitered wall ends, roof steps, full-depth
+        openings and partial-depth pockets, without solid Boolean operations.
+        Complex/nonconforming inputs fall back to the general geometry kernel.
+        """
+        import numpy as np
+        from collections import defaultdict
+        from shapely import union_all
+        from shapely.geometry import Polygon, LineString
+        from shapely.ops import unary_union, polygonize, triangulate
+        from shapely.strtree import STRtree
+        if len(a.get("faces", []))+len(b.get("faces", [])) > 2000:
+            return None
+        pa, pb = np.asarray(a["vertices"], dtype=float), np.asarray(b["vertices"], dtype=float)
+        if np.any(pa.max(0) <= pb.min(0)+1e-8) or np.any(pb.max(0) <= pa.min(0)+1e-8):
+            return a
+        def surfaces(mesh):
+            points = np.array(mesh["vertices"], dtype=float)
+            if IFCFastTopology._closed_polygon_mesh([points[f] for f in mesh["faces"]]) is None:
+                return None
+            grouped = defaultdict(list)
+            for ids in mesh["faces"]:
+                p = points[ids]
+                shifted = p-p[0]
+                n = np.cross(shifted, np.roll(shifted, -1, axis=0)).sum(0)
+                length = np.linalg.norm(n)
+                if length < 1e-12:
+                    return None
+                n /= length
+                if max(abs(shifted@n)) > 1e-7:
+                    return None
+                if abs(n[2]) < 1e-10:
+                    continue
+                poly = Polygon(p[:, :2])
+                if not poly.is_valid or poly.area < 1e-12:
+                    return None
+                coefficient = (-n[0]/n[2], -n[1]/n[2], float(n@p[0]/n[2]))
+                grouped[tuple(round(v, 10) for v in coefficient)].append(poly)
+            if len(grouped) > 64:
+                return None
+            return [(np.array(c), unary_union(p)) for c, p in grouped.items()]
+        sa, sb = surfaces(a), surfaces(b)
+        if not sa or not sb:
+            return None
+        all_surfaces = sa+sb
+        polys = [p for _, p in all_surfaces]
+        tree = STRtree(polys)
+        lines = [p.boundary for p in polys]
+        for i, (coefficient, poly) in enumerate(all_surfaces):
+            for j in tree.query(poly):
+                j = int(j)
+                if j <= i:
+                    continue
+                delta = coefficient-all_surfaces[j][0]
+                length = np.linalg.norm(delta[:2])
+                if length < 1e-10:
+                    continue
+                overlap = poly.intersection(polys[j])
+                if overlap.area < 1e-12:
+                    continue
+                c = np.array(overlap.representative_point().coords[0])
+                c -= delta[:2]*(delta[:2]@c+delta[2])/length**2
+                d = np.array([-delta[1], delta[0]])/length
+                extent = max(overlap.bounds[2]-overlap.bounds[0], overlap.bounds[3]-overlap.bounds[1])*2+1
+                cut = LineString([c-d*extent, c+d*extent]).intersection(overlap)
+                if cut.length > 1e-8:
+                    lines.append(cut)
+        atoms = list(polygonize(union_all(lines, grid_size=1e-8)))
+        if len(atoms) > 2048:
+            return None
+        intervals, changed = [], False
+        def z(c, p):
+            return float(c@[p[0], p[1], 1.])
+        def ordered(items, point):
+            result = []
+            for c in sorted(items, key=lambda c: z(c, point)):
+                if not result or z(c, point)-z(result[-1], point) > 1e-7:
+                    result.append(c)
+            return result
+        for atom in atoms:
+            p = np.array(atom.representative_point().coords[0])
+            inside = [[c for c, poly in surfaces if poly.covers(atom.representative_point())] for surfaces in (sa, sb)]
+            aa, bb = (ordered(c, p) for c in inside)
+            if len(aa) % 2 or len(bb) % 2:
+                return None
+            bounds = ordered(aa+bb, p)
+            spans = []
+            for low, high in zip(bounds, bounds[1:]):
+                mid = .5*(z(low, p)+z(high, p))
+                in_a = any(z(aa[i], p) < mid < z(aa[i+1], p) for i in range(0, len(aa), 2))
+                in_b = any(z(bb[i], p) < mid < z(bb[i+1], p) for i in range(0, len(bb), 2))
+                changed |= in_a and in_b
+                if in_a and not in_b:
+                    spans.append((low, high))
+            intervals.append(spans)
+        if not changed:
+            return a
+        faces, edges = [], defaultdict(list)
+        for j, (atom, spans) in enumerate(zip(atoms, intervals)):
+            if not spans:
+                continue
+            caps = [atom]
+            if atom.interiors:
+                caps = [t for t in triangulate(atom) if atom.covers(t)]
+                if abs(sum(p.area for p in caps)-atom.area) > max(1e-8, atom.area*1e-8):
+                    return None
+            for low, high in spans:
+                for poly in caps:
+                    p = list(poly.exterior.coords)[:-1]
+                    if not poly.exterior.is_ccw:
+                        p.reverse()
+                    faces.append([[x, y, z(low, (x, y))] for x, y in reversed(p)])
+                    faces.append([[x, y, z(high, (x, y))] for x, y in p])
+            for ring in [atom.exterior]+list(atom.interiors):
+                p = list(ring.coords)
+                for start, end in zip(p, p[1:]):
+                    edges[tuple(sorted((tuple(start), tuple(end))))].append(j)
+        for (start, end), sides in edges.items():
+            p = (np.array(start)+end)*.5
+            coefficients = ordered([c for j in sides for span in intervals[j] for c in span], p)
+            for low, high in zip(coefficients, coefficients[1:]):
+                mid = .5*(z(low, p)+z(high, p))
+                occupied = [any(z(lo, p) < mid < z(hi, p) for lo, hi in intervals[j]) for j in sides]
+                if not any(occupied) or (len(occupied) == 2 and occupied[0] == occupied[1]):
+                    continue
+                lower, upper = [z(low, q) for q in (start, end)], [z(high, q) for q in (start, end)]
+                if any(lo > hi+1e-7 for lo, hi in zip(lower, upper)):
+                    return None
+                face = [[*start, lower[0]], [*end, lower[1]], [*end, upper[1]], [*start, upper[0]]]
+                material = atoms[next(j for j, active in zip(sides, occupied) if active)].representative_point()
+                d = np.array(end)-start
+                outward = np.array([d[1], -d[0]])
+                if outward@(np.array(material.coords[0])-p) > 0:
+                    face.reverse()
+                faces.append(face)
+        return IFCFastTopology._closed_polygon_mesh(faces)
+
+    @staticmethod
+    def _clip_convex_mesh(mesh, origin, normal, keep_negative):
+        """Clip a certified convex closed shell by a plane without solid CSG."""
+        import numpy as np
+        from shapely.geometry import MultiPoint
+        from shapely.ops import triangulate
+        points = np.asarray(mesh.get("vertices", []), dtype=float)
+        if len(points) < 4:
+            return None
+        tolerance = max(1e-7, float(np.ptp(points, axis=0).max())*1e-10)
+        normal = np.asarray(normal, dtype=float)
+        normal /= np.linalg.norm(normal)
+        origin = np.asarray(origin, dtype=float)
+        original, oriented = [], []
+        centre = points.mean(axis=0)
+        for ids in mesh["faces"]:
+            p = points[ids]
+            n = np.cross(p, np.roll(p, -1, axis=0)).sum(axis=0)
+            length = np.linalg.norm(n)
+            if length < 1e-10:
+                return None
+            n /= length
+            distance = (points-p[0])@n
+            if distance.min() < -tolerance and distance.max() > tolerance:
+                return None  # Non-convex shell: use the general kernel.
+            if max(abs((p-p[0])@n)) > tolerance:
+                return None
+            if (centre-p[0])@n > 0:
+                p = p[::-1]
+            original.append(list(p))
+            oriented.append(list(p))
+        if IFCFastTopology._closed_polygon_mesh(original) is None:
+            return None
+        sign = -1. if keep_negative else 1.
+        signed = (points-origin)@normal*sign
+        if signed.min() >= -tolerance:
+            return mesh
+        if signed.max() < tolerance:
+            return {"vertices": [], "faces": [], "edges": []}
+        faces, cuts = [], []
+        for polygon in oriented:
+            result = []
+            for a, b in zip(polygon, polygon[1:]+polygon[:1]):
+                da, db = float((a-origin)@normal*sign), float((b-origin)@normal*sign)
+                if da >= -tolerance:
+                    result.append(a)
+                if (da > tolerance and db < -tolerance) or (da < -tolerance and db > tolerance):
+                    p = a+(b-a)*da/(da-db)
+                    result.append(p)
+                    cuts.append(p)
+                elif abs(da) <= tolerance:
+                    cuts.append(a)
+            if len(result) >= 3:
+                faces.append(result)
+        if len(cuts) < 3:
+            return None
+        u = np.cross(normal, np.eye(3)[int(np.argmin(abs(normal)))])
+        u /= np.linalg.norm(u)
+        v = np.cross(normal, u)
+        uv = [(float(p@u), float(p@v)) for p in cuts]
+        cap = MultiPoint(uv).convex_hull
+        triangles = triangulate(MultiPoint(uv))
+        if cap.geom_type != "Polygon" or abs(sum(t.area for t in triangles)-cap.area) > max(1e-8, cap.area*1e-8):
+            return None
+        depth = float(origin@normal)
+        for tri in triangles:
+            p = list(tri.exterior.coords)[:-1]
+            if tri.exterior.is_ccw == (sign > 0):
+                p.reverse()
+            faces.append([u*x+v*y+normal*depth for x, y in p])
+        return IFCFastTopology._closed_polygon_mesh(faces)
+
+
+    @staticmethod
     def _boolean_mesh(a: dict, b: dict, operation: str) -> dict:
         from topologicpy.Topology import Topology
         if a is None or b is None:
@@ -1160,6 +1562,13 @@ class IFCFastTopology:
             return b if operation == "UNION" else empty
         if not b.get("vertices"):
             return empty if operation == "INTERSECTION" else a
+        if operation == "DIFFERENCE":
+            prismatic = IFCFastTopology._prismatic_difference(a, b)
+            if prismatic is not None:
+                return prismatic
+            columns = IFCFastTopology._column_difference(a, b)
+            if columns is not None:
+                return columns
         solids = [Topology.ByGeometry(vertices=m["vertices"], faces=m["faces"], topologyType="cell", silent=True) for m in (a,b)]
         if any(solid is None for solid in solids):
             raise ValueError("Could not construct IFC Boolean operand solid")
@@ -1295,7 +1704,11 @@ class IFCFastTopology:
             vertices = [IFCFastTopology._transform_point([p[0],p[1],z], boundary_frame, scale) for z in (z0,z1) for p in boundary]
             n = len(boundary)
             faces = [list(range(n)),list(range(n,2*n))] + [[i,(i+1)%n,(i+1)%n+n,i+n] for i in range(n)]
-            return IFCFastTopology._boolean_mesh(mesh, {"vertices":vertices,"edges":[],"faces":faces}, "INTERSECTION")
+            prism = {"vertices": vertices, "edges": [], "faces": faces}
+            clipped = IFCFastTopology._clip_convex_mesh(prism, origin, axes[2], item.args[1] is True)
+            if clipped is not None:
+                return clipped
+            return IFCFastTopology._boolean_mesh(mesh, prism, "INTERSECTION")
         return mesh
 
     @staticmethod
@@ -4413,7 +4826,7 @@ class IFC:
         text = structured or label
         if record.get('external') or props.get('ISEXTERNAL') in {True, 'T', 'TRUE'}:
             return ('outdoor', 'ifc_property')
-        roles = {'void': ('OPEN TO BELOW', 'OPEN TO ABOVE', 'VOID', 'LÃœFTRAUM', 'VIDE', 'VIDE SUR'), 'roof': ('ROOF', 'TOITURE', 'DACHTERRASSE'), 'outdoor': ('BALCONY', 'TERRACE', 'BALKONG', 'TERASSE', 'TERRASSE', 'MECH. YARD', 'MECHANICAL YARD', 'BALCON', 'BALKON'), 'plenum': ('PLENUM',), 'shaft': ('SHAFT', 'SCHACHT', 'GAINE'), 'atrium': ('ATRIUM',), 'stair': ('STAIR', 'TREPPE', 'ESCALIER')}
+        roles = {'void': ('OPEN TO BELOW', 'OPEN TO ABOVE', 'VOID', 'LÃƒÅ“FTRAUM', 'VIDE', 'VIDE SUR'), 'roof': ('ROOF', 'TOITURE', 'DACHTERRASSE'), 'outdoor': ('BALCONY', 'TERRACE', 'BALKONG', 'TERASSE', 'TERRASSE', 'MECH. YARD', 'MECHANICAL YARD', 'BALCON', 'BALKON'), 'plenum': ('PLENUM',), 'shaft': ('SHAFT', 'SCHACHT', 'GAINE'), 'atrium': ('ATRIUM',), 'stair': ('STAIR', 'TREPPE', 'ESCALIER')}
         for r, labels in roles.items():
             if any((text == token or (r not in {'roof'} and token in text) for token in labels)):
                 return (r, 'ifc_property' if structured else 'name_inference')
@@ -5247,7 +5660,7 @@ class IFC:
             if polygon.area < 0.05:
                 excluded.append({'source': record['source'], 'reason': 'negligible reference footprint'})
                 continue
-            references.append({**record, 'role': spatial_role, 'role_basis': role_basis, 'name': str(record['name']) + (' Â· ' + str(record['long_name']) if record.get('long_name') else ''), 'footprint': polygon})
+            references.append({**record, 'role': spatial_role, 'role_basis': role_basis, 'name': str(record['name']) + (' Ã‚Â· ' + str(record['long_name']) if record.get('long_name') else ''), 'footprint': polygon})
         inferred = not references
         if inferred:
             slabs = [r for r in records if r['type'].startswith('IFCSLAB') and r['footprint'].area > 5]
@@ -5655,7 +6068,7 @@ class IFC:
                 target['area'] = merged.area
                 target.setdefault('absorbed_fragments', []).append({'source': room['source_space_id'], 'area': polygon.area})
                 rooms.remove(room)
-                warnings.append({'code': 'DRAFTING_SLIVER_REASSIGNED', 'message': f'Reassigned a {polygon.area:.6f} mÂ² fragment across its longest shared edge', 'sources': [room['source_space_id'], target['source_space_id']]})
+                warnings.append({'code': 'DRAFTING_SLIVER_REASSIGNED', 'message': f'Reassigned a {polygon.area:.6f} mÃ‚Â² fragment across its longest shared edge', 'sources': [room['source_space_id'], target['source_space_id']]})
 
     @staticmethod
     def _Analytical_redraw_boundaries(result, plan, config, progress=None):
@@ -5702,7 +6115,7 @@ class IFC:
             from topologicpy.Core import Core
             selected = [cell for index, cell in enumerate(cells) if index in assigned]
             result.topology = Core.CellComplex.ByCells(selected, False) if len(selected) > 1 else selected[0]
-            result.diagnostics.append(IFC._Analytical_model_Diagnostic('ADDITIONAL_NATIVE_REGIONS_OMITTED', f'{len(cells) - len(assigned)} residual regions ({unresolved_volume:.3f} mÂ³) excluded from spatial cells', 'warning'))
+            result.diagnostics.append(IFC._Analytical_model_Diagnostic('ADDITIONAL_NATIVE_REGIONS_OMITTED', f'{len(cells) - len(assigned)} residual regions ({unresolved_volume:.3f} mÃ‚Â³) excluded from spatial cells', 'warning'))
         result.statistics['rooms'] = len(assigned)
         result.statistics['analytical_volume'] = sum((r['analytical_volume'] for r in result.spaces))
         plan['fidelity']['additional_native_regions'] = len(cells) - len(assigned)

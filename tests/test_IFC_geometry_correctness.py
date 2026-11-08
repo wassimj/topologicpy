@@ -120,6 +120,9 @@ def test_disjoint_solid_booleans(operation, expected):
     assert volume(F._mesh_from_item(E(5,'IFCBOOLEANRESULT',[operation,R(3),R(4)]),e,I)) == pytest.approx(expected)
 
 def test_native_boolean_failure_does_not_become_an_empty_success(monkeypatch):
+    # Exercise the general-kernel failure contract, not a certified mesh fast path.
+    monkeypatch.setattr(F, '_prismatic_difference', staticmethod(lambda *args: None))
+    monkeypatch.setattr(F, '_column_difference', staticmethod(lambda *args: None))
     if Topology._IsTopologicCoreBackend():
         pytest.skip('PythonOCC status distinction')
     from topologicpy.pythonocc_backend.topology import Topology as NativeTopology
@@ -236,6 +239,9 @@ def test_fully_contained_difference_is_empty():
 
 
 def test_native_core_boolean_exception_is_not_an_empty_result(monkeypatch):
+    # Exercise the general-kernel failure contract, not a certified mesh fast path.
+    monkeypatch.setattr(F, '_prismatic_difference', staticmethod(lambda *args: None))
+    monkeypatch.setattr(F, '_column_difference', staticmethod(lambda *args: None))
     if not Topology._IsTopologicCoreBackend():
         pytest.skip('TopologicCore native exception contract')
     from topologicpy.Core import Core
