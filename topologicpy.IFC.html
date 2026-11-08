@@ -97,6 +97,8 @@
 </li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="ifc_analytical_model.html">Analytical spatial models from IFC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ifc_analytical_model.html#id1">Analytical spatial models from IFC</a></li>
 </ul>
 
         </div>
@@ -212,6 +214,18 @@ Source entities and semantic quantities retain their IFC values and units.</p>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.AnalyticalFaces" title="topologicpy.IFC.IFC.AnalyticalFaces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AnalyticalFaces</span></code></a>(model[, circleSides, scale, ...])</p></td>
 <td><p>Returns analytical faces for IFC walls, slabs, and roofs.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.AnalyticalModel" title="topologicpy.IFC.IFC.AnalyticalModel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AnalyticalModel</span></code></a>(file[, options, ...])</p></td>
+<td><p>Generate an experimental analytical spatial model from IFC evidence.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.AnalyticalModelByPlan" title="topologicpy.IFC.IFC.AnalyticalModelByPlan"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AnalyticalModelByPlan</span></code></a>(plan[, options, ...])</p></td>
+<td><p>Rebuild an edited analytical plan, retaining its own calculation origin.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.AnalyticalModelLoad" title="topologicpy.IFC.IFC.AnalyticalModelLoad"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AnalyticalModelLoad</span></code></a>(directory[, tolerance, ...])</p></td>
+<td><p>Restore a saved analytical result, with world coordinates by default.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.AnalyticalModelSave" title="topologicpy.IFC.IFC.AnalyticalModelSave"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AnalyticalModelSave</span></code></a>(model, directory[, ...])</p></td>
+<td><p>Save world-metre BREP, coordinate/provenance metadata and editable plan.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.BrickClassByIFCClass" title="topologicpy.IFC.IFC.BrickClassByIFCClass"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BrickClassByIFCClass</span></code></a>(ifcClass[, ...])</p></td>
 <td><p>Returns the closest Brick class for an IFC MEP class.</p></td>
@@ -528,6 +542,76 @@ faces can be generated.</p>
 <p class="rubric">Notes</p>
 <p>This proof of concept assumes each construction is predominantly a thin
 extrusion with two dominant approximately parallel faces.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.IFC.IFC.AnalyticalModel">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AnalyticalModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coordinateFrame</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'world'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verify</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.IFC.IFC.AnalyticalModel" title="Permalink to this definition"></a></dt>
+<dd><p>Generate an experimental analytical spatial model from IFC evidence.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>file</strong><span class="classifier">IFCModel or path</span></dt><dd><p>Native parsed IFC model or IFC file path. The source is not modified.</p>
+</dd>
+<dt><strong>options</strong><span class="classifier">dict, optional</span></dt><dd><p>Settings in metres: tolerance (1e-5), geometry_tolerance (0.02),
+drafting_grid (0.01), minimum_cell_height (0.4),
+minimum_fragment_area (0.03), include_outdoor (False),
+and role_overrides (source-space GUID or label to spatial role).</p>
+</dd>
+<dt><strong>coordinateFrame</strong><span class="classifier">str, optional</span></dt><dd><p>‘world’ (default) or ‘local’. World means native IFC engineering
+placements converted to metres, without GIS reprojection.</p>
+</dd>
+<dt><strong>verify</strong><span class="classifier">bool, optional</span></dt><dd><p>Verify closed cell incidence and genuinely shared native faces.</p>
+</dd>
+<dt><strong>progress</strong><span class="classifier">callable, optional</span></dt><dd><p>Receives the stage name and keyword details.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>object</dt><dd><p>A result with topology, cell_complexes, building_models, spaces,
+boundaries, boundary_patches, openings, editable_plan, fidelity,
+diagnostics, statistics, readiness and report(). Separate buildings
+have independent CellComplexes, including when they touch. Unusable
+buildings remain diagnostic entries while usable ones are retained.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>The implementation is included in IFC.py and requires no external
+reconstruction engine, registration file or IfcOpenShell. Numerical and
+planar operations use TopologicPy’s NumPy, SciPy and Shapely dependencies.
+Unsupported source conditions remain review items. Verified geometry is
+not certified IFC second-level boundary or energy-simulation readiness.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.IFC.IFC.AnalyticalModelByPlan">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AnalyticalModelByPlan</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">plan</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coordinateFrame</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'world'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verify</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.IFC.IFC.AnalyticalModelByPlan" title="Permalink to this definition"></a></dt>
+<dd><p>Rebuild an edited analytical plan, retaining its own calculation origin.</p>
+<p>plan may be a result.editable_plan dictionary or its saved JSON path.
+Returns the same result contract as AnalyticalModel. Building partitions
+in a site plan are preserved; geometric checks are applied independently.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.IFC.IFC.AnalyticalModelLoad">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AnalyticalModelLoad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">directory</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1e-05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coordinateFrame</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'world'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.IFC.IFC.AnalyticalModelLoad" title="Permalink to this definition"></a></dt>
+<dd><p>Restore a saved analytical result, with world coordinates by default.</p>
+<p>Restores room identities, apertures, boundary patches, editable plans and
+per-building results. Version-1 local BREP and version-2/3 world BREP
+metadata conventions are supported. The source IFC is not needed.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.IFC.IFC.AnalyticalModelSave">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AnalyticalModelSave</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">directory</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1e-05</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.IFC.IFC.AnalyticalModelSave" title="Permalink to this definition"></a></dt>
+<dd><p>Save world-metre BREP, coordinate/provenance metadata and editable plan.</p>
+<p>Each building in a site has its own independently verified directory.
+Returns True after saving and checking usable geometry and apertures.
+Unusable buildings remain reported entries. Raises ValueError if native
+verification fails; no simulation is performed.</p>
 </dd></dl>
 
 <dl class="py method">

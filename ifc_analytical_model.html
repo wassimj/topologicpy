@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Analytical spatial models from IFC &mdash; topologicpy 0.9.89 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="topologicpy.version module" href="topologicpy.version.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> topologicpy
+          </a>
+              <div class="version">
+                0.9.89
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="modules.html">topologicpy</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Analytical spatial models from IFC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#id1">Analytical spatial models from IFC</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#basic-use">Basic use</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#separate-buildings">Separate buildings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#coordinates-and-editing">Coordinates and editing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#settings">Settings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#exterior-fitting-and-boundaries">Exterior fitting and boundaries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#fidelity-and-limitations">Fidelity and limitations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#tests-and-real-file-validation">Tests and real-file validation</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">topologicpy</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Analytical spatial models from IFC</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/ifc_analytical_model.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast.container,
+.nboutput.nblast.container {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast.container + .nbinput.container {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<section id="analytical-spatial-models-from-ifc">
+<h1>Analytical spatial models from IFC<a class="headerlink" href="#analytical-spatial-models-from-ifc" title="Permalink to this heading"></a></h1>
+</section>
+<section id="id1">
+<h1>Analytical spatial models from IFC<a class="headerlink" href="#id1" title="Permalink to this heading"></a></h1>
+<p><code class="docutils literal notranslate"><span class="pre">IFC.AnalyticalModel</span></code> generates a reviewable spatial model using the native IFC
+parser and geometry interpreter. Its implementation is included in <code class="docutils literal notranslate"><span class="pre">IFC.py</span></code>.
+There is no separate reconstruction package, local source registration, project
+path or IfcOpenShell requirement. NumPy, SciPy and Shapely are already TopologicPy
+dependencies and load only when analytical reconstruction is requested.</p>
+<p>The feature is experimental. Closed, shared geometry is not a certification of
+IFC second-level boundaries, construction properties or energy predictions.</p>
+<section id="basic-use">
+<h2>Basic use<a class="headerlink" href="#basic-use" title="Permalink to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">topologicpy.IFC</span><span class="w"> </span><span class="kn">import</span> <span class="n">IFC</span>
+
+<span class="n">result</span> <span class="o">=</span> <span class="n">IFC</span><span class="o">.</span><span class="n">AnalyticalModel</span><span class="p">(</span>
+    <span class="s2">"building.ifc"</span><span class="p">,</span>
+    <span class="n">options</span><span class="o">=</span><span class="p">{</span><span class="s2">"geometry_tolerance"</span><span class="p">:</span> <span class="mf">0.02</span><span class="p">,</span> <span class="s2">"drafting_grid"</span><span class="p">:</span> <span class="mf">0.01</span><span class="p">},</span>
+    <span class="n">coordinateFrame</span><span class="o">=</span><span class="s2">"world"</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="k">for</span> <span class="n">building</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">building_models</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">building</span><span class="o">.</span><span class="n">building_id</span><span class="p">,</span> <span class="n">building</span><span class="o">.</span><span class="n">readiness</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">building</span><span class="o">.</span><span class="n">fidelity</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">diagnostic</span> <span class="ow">in</span> <span class="n">building</span><span class="o">.</span><span class="n">diagnostics</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">diagnostic</span><span class="o">.</span><span class="n">code</span><span class="p">,</span> <span class="n">diagnostic</span><span class="o">.</span><span class="n">message</span><span class="p">)</span>
+
+<span class="n">complexes</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">cell_complexes</span>
+<span class="n">IFC</span><span class="o">.</span><span class="n">AnalyticalModelSave</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="s2">"analytical-model"</span><span class="p">)</span>
+<span class="n">restored</span> <span class="o">=</span> <span class="n">IFC</span><span class="o">.</span><span class="n">AnalyticalModelLoad</span><span class="p">(</span><span class="s2">"analytical-model"</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The input can be a path or an existing <code class="docutils literal notranslate"><span class="pre">IFCModel</span></code>. Source entities are not
+modified. The result exposes:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">topology</span></code>: one building topology, or a Cluster of independent buildings.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cell_complexes</span></code>: actual CellComplexes only; an unconnected draft is not
+presented as a verified CellComplex.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">building_models</span></code>: individual results, including unusable building entries.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">spaces</span></code>, <code class="docutils literal notranslate"><span class="pre">boundaries</span></code>, <code class="docutils literal notranslate"><span class="pre">boundary_patches</span></code>, <code class="docutils literal notranslate"><span class="pre">openings</span></code>: geometry and provenance.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">editable_plan</span></code>: reconstruction geometry, reference contours and assumptions.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">fidelity</span></code>, <code class="docutils literal notranslate"><span class="pre">diagnostics</span></code>, <code class="docutils literal notranslate"><span class="pre">statistics</span></code>, <code class="docutils literal notranslate"><span class="pre">readiness</span></code> and <code class="docutils literal notranslate"><span class="pre">report()</span></code>.</p></li>
+</ul>
+</section>
+<section id="separate-buildings">
+<h2>Separate buildings<a class="headerlink" href="#separate-buildings" title="Permalink to this heading"></a></h2>
+<p>IFC building membership has priority. Where membership is missing, proximity
+and disconnected spatial components provide a recorded inference. Layouts are
+generated separately. Even touching declared buildings are not Boolean-unioned
+into one CellComplex. A failed building does not discard usable buildings, but
+coverage and readiness continue to report the failure.</p>
+<p>Site exports contain <code class="docutils literal notranslate"><span class="pre">buildings/001</span></code>, <code class="docutils literal notranslate"><span class="pre">buildings/002</span></code>, etc., with independent
+geometry, metadata, plans and reports. The root BREP is a convenience collection;
+it does not create cross-building shared faces.</p>
+</section>
+<section id="coordinates-and-editing">
+<h2>Coordinates and editing<a class="headerlink" href="#coordinates-and-editing" title="Permalink to this heading"></a></h2>
+<p>The public API defaults to IFC engineering/world coordinates in metres. Nested
+placements, rotations and declared length units are respected. This is the
+native importer’s coordinate convention; GIS/map-conversion reprojection is not
+performed. Use <code class="docutils literal notranslate"><span class="pre">coordinateFrame=&quot;local&quot;</span></code> for the calculation frame.</p>
+<p>The editable plan has its own <code class="docutils literal notranslate"><span class="pre">origin</span></code>, even when the returned topology is in
+world coordinates. Add that origin to plan coordinates to obtain IFC-world
+metres. Keep BREP and metadata together when exchanging a saved model.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">plan</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">editable_plan</span>
+<span class="c1"># Edit room footprints/heights, or edit the saved editable-plan.json file.</span>
+<span class="n">edited</span> <span class="o">=</span> <span class="n">IFC</span><span class="o">.</span><span class="n">AnalyticalModelByPlan</span><span class="p">(</span><span class="n">plan</span><span class="p">,</span> <span class="n">coordinateFrame</span><span class="o">=</span><span class="s2">"world"</span><span class="p">)</span>
+<span class="n">IFC</span><span class="o">.</span><span class="n">AnalyticalModelSave</span><span class="p">(</span><span class="n">edited</span><span class="p">,</span> <span class="s2">"edited-model"</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Rebuilding recomputes fidelity and checks common interfaces. Save/load verifies
+room identities, volumes, closed shell incidence, shared native faces and
+apertures. The loader also supports the earlier local-coordinate BREP sidecar
+convention. New exports are co-located with the IFC in world metres.</p>
+</section>
+<section id="settings">
+<h2>Settings<a class="headerlink" href="#settings" title="Permalink to this heading"></a></h2>
+<p>Settings are supplied as an <code class="docutils literal notranslate"><span class="pre">options</span></code> dictionary. Lengths are metres; areas are
+square metres.</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Setting</p></th>
+<th class="head"><p>Default</p></th>
+<th class="head"><p>Purpose</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">tolerance</span></code></p></td>
+<td><p>0.00001</p></td>
+<td><p>Native geometry tolerance</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">geometry_tolerance</span></code></p></td>
+<td><p>0.02</p></td>
+<td><p>Exterior curve approximation target</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">drafting_grid</span></code></p></td>
+<td><p>0.01</p></td>
+<td><p>Common planar arrangement resolution</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">minimum_cell_height</span></code></p></td>
+<td><p>0.4</p></td>
+<td><p>Reject collapsed/thin spatial regions</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">minimum_fragment_area</span></code></p></td>
+<td><p>0.03</p></td>
+<td><p>Exclude drafting fragments</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">include_outdoor</span></code></p></td>
+<td><p>False</p></td>
+<td><p>Include explicitly selected outdoor spaces</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">role_overrides</span></code></p></td>
+<td><p>{}</p></td>
+<td><p>Source-space GUID or uppercase label to role</p></td>
+</tr>
+</tbody>
+</table>
+<p>Roles include <code class="docutils literal notranslate"><span class="pre">room</span></code>, <code class="docutils literal notranslate"><span class="pre">atrium</span></code>, <code class="docutils literal notranslate"><span class="pre">shaft</span></code>, <code class="docutils literal notranslate"><span class="pre">stair</span></code>, <code class="docutils literal notranslate"><span class="pre">plenum</span></code>, <code class="docutils literal notranslate"><span class="pre">outdoor</span></code>, <code class="docutils literal notranslate"><span class="pre">void</span></code>,
+<code class="docutils literal notranslate"><span class="pre">roof</span></code> and <code class="docutils literal notranslate"><span class="pre">area_measurement</span></code>. Overrides precede structured IFC evidence, which
+precedes reviewable multilingual name rules. Roof-area, void and aggregate-area
+records are not automatically converted to rooms. Tiny closure pockets remain
+diagnostics, rather than extra spatial cells.</p>
+<p>Declared storeys anchor elevations. Exterior bottom floors use outer slab faces;
+internal slab levels use mid-surfaces. Missing construction evidence produces
+an explicitly inferred envelope. Ceilings constrain a separate prism estimate
+of room-air volume: analytical floor-to-floor volume is not silently labelled
+as conditioned air volume. Classified atria and shafts can span floors when
+their extents are consistent; conflicts remain review items.</p>
+</section>
+<section id="exterior-fitting-and-boundaries">
+<h2>Exterior fitting and boundaries<a class="headerlink" href="#exterior-fitting-and-boundaries" title="Permalink to this heading"></a></h2>
+<p>Roof skins are reconstructed as piecewise facets. Curved and mansard profiles,
+intersecting skins and roof steps are supported; steps create boundary faces,
+not interpolated ramps or additional cells. Supported leaning/irregular wall
+facets constrain common exterior vertices. Strictly coplanar faces with the same
+spatial owners are coalesced. A fit must preserve the designed cell count and
+minimum height/volume. Failed fits retain regularised rooms with a diagnostic.</p>
+<p>Existing space-boundary geometry constrains layouts and boundary classification.
+Analytical patches subdivide native face records by source construction and
+physical/virtual support; both owners use the same patch geometry. Patches
+retain source IDs, available material layers and their evidence basis. They are
+metadata subdivisions, not newly exported <code class="docutils literal notranslate"><span class="pre">IfcRelSpaceBoundary2ndLevel</span></code> entities.
+Curtain-wall assembly evidence uses available panel children. Openings are
+projected and clipped to host facets, including sloping hosts.</p>
+<p>Unknown ground/exterior exposure, unresolved openings and incomplete materials
+are reported. A material name/layer does not certify thermal properties.</p>
+</section>
+<section id="fidelity-and-limitations">
+<h2>Fidelity and limitations<a class="headerlink" href="#fidelity-and-limitations" title="Permalink to this heading"></a></h2>
+<p>Readiness distinguishes draft, verified geometry and supported boundary semantics.
+<code class="docutils literal notranslate"><span class="pre">simulation_ready</span></code> remains false. Loads, schedules, HVAC, thermophysical data and
+reviewed energy conversion remain separate requirements.</p>
+<p>Footprint, source coverage, opening placement and roof source-surface sample errors
+are reported separately. Confidence is a drafting heuristic, not a probability.
+Agreement with a source IFC is not independent physical ground truth. Curvature
+cannot be recovered more accurately than the source mesh, and the requested
+tolerance is a target rather than an accuracy guarantee.</p>
+<p>Re-entrant skins, occupied overhangs, very fine facade details and conflicting
+source geometry remain limitations. Wall-cap details below the configured spatial
+height do not trigger whole-building deformation. All approximations and fallback
+decisions require review before simulation.</p>
+</section>
+<section id="tests-and-real-file-validation">
+<h2>Tests and real-file validation<a class="headerlink" href="#tests-and-real-file-validation" title="Permalink to this heading"></a></h2>
+<p>Run the public API and native importer regressions:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>tests/test_IFCAnalyticalModel.py<span class="w"> </span>tests/test_IFC.py<span class="w"> </span>-o<span class="w"> </span><span class="nv">addopts</span><span class="o">=</span><span class="s2">""</span>
+</pre></div>
+</div>
+<p>Known-answer tests cover separate/touching buildings, partial failures, placement
+rotations and millimetres, persisted world/local coordinates, roofs and roof steps,
+curved/leaning facades, boundary patches, missing evidence and valid STEP strings.
+They explicitly block external-engine and IfcOpenShell imports.</p>
+<p>Four optional real-file cases are pinned in
+<code class="docutils literal notranslate"><span class="pre">tests/data/ifc_analytical_real_models.csv</span></code>, including source URLs and hashes.
+Download/extract the files separately and name them <code class="docutils literal notranslate"><span class="pre">&lt;id&gt;.ifc</span></code>, then run:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>tools/check_ifc_analytical_models.py<span class="w"> </span>--fixtures<span class="w"> </span>/path/to/ifc-files<span class="w"> </span>--output<span class="w"> </span>/path/to/results
+</pre></div>
+</div>
+<p>The runner is offline, isolates each conversion, enforces a timeout and verifies
+source integrity. It requires verified persistence and majority source coverage,
+and checks the Institute’s roof fit. The real files remain source-agreement cases;
+independent energy-model review is still required.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="topologicpy.version.html" class="btn btn-neutral float-left" title="topologicpy.version module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Wassim Jabi.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

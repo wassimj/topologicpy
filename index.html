@@ -45,6 +45,8 @@
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="modules.html">topologicpy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ifc_analytical_model.html">Analytical spatial models from IFC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ifc_analytical_model.html#id1">Analytical spatial models from IFC</a></li>
 </ul>
 
         </div>
@@ -315,11 +317,41 @@ visualization styling options.</p>
 <p>Use <code class="docutils literal notranslate"><span class="pre">from</span> <span class="pre">topologicpy.IDS</span> <span class="pre">import</span> <span class="pre">IDS</span></code> to assess IFC model information against
 IDS 1.0 without IfcOpenShell or IfcTester. Install the optional XML packages with
 <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">&quot;topologicpy[ids]&quot;</span></code>. See <a class="reference external" href="docs/IDS.md">IDS API and verification</a>.</p>
+</section>
+<section id="analytical-spatial-models-from-ifc">
+<h2>Analytical spatial models from IFC<a class="headerlink" href="#analytical-spatial-models-from-ifc" title="Permalink to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">IFC.AnalyticalModel</span></code> reconstructs reviewable room-only spatial geometry from IFC
+evidence, including independent CellComplexes for separate buildings. The engine
+is included in <code class="docutils literal notranslate"><span class="pre">IFC.py</span></code>; no external reconstruction package or IfcOpenShell is
+needed. World coordinates are the default. Curved/stepped roofs, boundary evidence,
+editable plans, fidelity reports and verified save/load are supported.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">topologicpy.IFC</span><span class="w"> </span><span class="kn">import</span> <span class="n">IFC</span>
+
+<span class="n">result</span> <span class="o">=</span> <span class="n">IFC</span><span class="o">.</span><span class="n">AnalyticalModel</span><span class="p">(</span><span class="s2">"building.ifc"</span><span class="p">)</span>
+<span class="n">complexes</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">cell_complexes</span>
+<span class="n">IFC</span><span class="o">.</span><span class="n">AnalyticalModelSave</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="s2">"analytical-model"</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This feature is experimental: verified geometry does not certify simulation
+readiness or full IFC second-level-boundary compliance. See the
+<a class="reference external" href="docs/IFC-AnalyticalModel.md">analytical IFC guide</a> for settings, coordinates,
+building separation, limitations and validation.</p>
 <div class="toctree-wrapper compound">
 <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="modules.html">topologicpy</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="topologicpy.html">topologicpy package</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="ifc_analytical_model.html">Analytical spatial models from IFC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ifc_analytical_model.html#id1">Analytical spatial models from IFC</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="ifc_analytical_model.html#basic-use">Basic use</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ifc_analytical_model.html#separate-buildings">Separate buildings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ifc_analytical_model.html#coordinates-and-editing">Coordinates and editing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ifc_analytical_model.html#settings">Settings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ifc_analytical_model.html#exterior-fitting-and-boundaries">Exterior fitting and boundaries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ifc_analytical_model.html#fidelity-and-limitations">Fidelity and limitations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ifc_analytical_model.html#tests-and-real-file-validation">Tests and real-file validation</a></li>
 </ul>
 </li>
 </ul>
