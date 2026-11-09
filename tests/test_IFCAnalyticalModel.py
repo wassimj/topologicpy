@@ -272,3 +272,31 @@ def test_literal_step_semicolon_and_role_override(tmp_path):
     assert result.valid
     assert "A" not in {s["source_space_id"] for s in result.spaces}
     assert any(e["source"] == "A" and e["role"] == "void" for e in result.fidelity["excluded_source_spaces"])
+
+def test_exterior_wall_gap_is_partitioned_between_adjacent_rooms():
+    from shapely.geometry import box
+    from shapely.ops import polygonize, unary_union
+    from shapely.strtree import STRtree
+    domain = box(0, 0, 6, 3)
+    members = [{'footprint': box(0, .15, 3, 3)}, {'footprint': box(3, .15, 6, 3)}]
+    lines = [domain.boundary] + [m['footprint'].boundary for m in members]
+    lines += IFC._Analytical_redraw_partition_wall_gaps(members, domain)
+    tree = STRtree([m['footprint'] for m in members])
+    owned = [[], []]
+    for region in polygonize(unary_union(lines)):
+        scores = [region.intersection(m['footprint']).area for m in members]
+        owner = max(range(2), key=lambda i: scores[i]) if max(scores) > 1e-8 else int(tree.nearest(region.representative_point()))
+        owned[owner].append(region)
+    fitted = [unary_union(pieces) for pieces in owned]
+    assert fitted[0].equals(box(0, 0, 3, 3))
+    assert fitted[1].equals(box(3, 0, 6, 3))
+    assert fitted[0].intersection(fitted[1]).area == 0
+    assert unary_union(fitted).equals(domain)
+
+
+def test_wall_gap_partitioning_accepts_disconnected_room_evidence():
+    from shapely.geometry import box, MultiPolygon
+    domain = box(0, 0, 6, 3)
+    rooms = [{'footprint': MultiPolygon([box(0, .15, 2, 3), box(4, .15, 6, 3)])}]
+    assert IFC._Analytical_redraw_partition_wall_gaps(rooms, domain)
+    assert not IFC._Analytical_redraw_partition_wall_gaps([{'footprint': domain}], domain)

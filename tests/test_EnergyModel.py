@@ -110,6 +110,8 @@ class FakeModelWithSQL:
 class FakeGbXMLTranslator:
     def modelToGbXML(self, model, path):
         model["gbxml_path"] = path
+        from pathlib import Path
+        Path(str(path).removeprefix("OSPATH:")).write_text("<gbXML/>", encoding="utf-8")
         return True
 
     def modelToGbXMLString(self, model):
@@ -342,3 +344,15 @@ def test_version_returns_openstudio_version_without_pypi_check(monkeypatch):
     fake_openstudio = types.SimpleNamespace(openStudioVersion=lambda: "3.9.0")
     monkeypatch.setattr(EnergyModel, "_ImportOpenStudio", staticmethod(lambda *args, **kwargs: fake_openstudio))
     assert EnergyModel.Version(check=False, silent=True) == "3.9.0"
+
+@pytest.mark.parametrize('dictionary,level,zs,nz,openings,expected',[
+    ({'exposure':'ground'},0,[4,5],0,False,'Ground'),
+    ({'analytical_record':'{"exposure":"ground"}'},0,[4,5],0,False,'Ground'),
+    ({'exposure':'unknown'},-5,[-5,-2],0,False,'Outdoors'),
+    ({'exposure':'unknown'},100,[100,100],-1,False,'Ground'),
+    ({'exposure':'unknown'},95,[99,99],-1,False,'Outdoors'),
+    ({'exposure':'outdoors'},100,[100,100],-1,False,'Outdoors'),
+    ({'exposure':'unknown'},100,[100,100],-1,True,'Outdoors'),
+])
+def test_shared_energy_exposure_policy(dictionary,level,zs,nz,openings,expected):
+    assert EnergyModel._ExteriorBoundaryCondition(dictionary,level,zs,nz,has_openings=openings)==expected

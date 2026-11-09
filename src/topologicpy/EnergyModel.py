@@ -206,7 +206,8 @@ class EnergyModel:
                 spaceNameKey : str = "TOPOLOGIC_name",
                 spaceTypeKey : str = "TOPOLOGIC_type",
                 mantissa : int = 6,
-                tolerance : float = 0.0001):
+                tolerance : float = 0.0001,
+                seamTolerance : float = 0.0):
         """
             Creates an EnergyModel from the input topology and parameters.
 
@@ -247,6 +248,11 @@ class EnergyModel:
             The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
+        seamTolerance : float , optional
+            Maximum vertical seam gap to reconcile in metres. Points keep their
+            XY coordinates and move by at most half this value. Default 0 disables
+            regularisation. A value of 0.001 can avoid fragmented OSM roof-end
+            surfaces. Adjustments are recorded in the building's additional properties.
 
         Returns
         -------
@@ -257,6 +263,7 @@ class EnergyModel:
         import math
         import os
         import warnings
+        import json
 
         from topologicpy.Vertex import Vertex
         from topologicpy.Face import Face
@@ -339,10 +346,31 @@ class EnergyModel:
                     openstudio.Point3d(
                         Vertex.X(v, mantissa=mantissa),
                         Vertex.Y(v, mantissa=mantissa),
-                        Vertex.Z(v, mantissa=mantissa)
+                        export_vertex_map.get((Vertex.X(v, mantissa=mantissa), Vertex.Y(v, mantissa=mantissa), Vertex.Z(v, mantissa=mantissa)), Vertex.Z(v, mantissa=mantissa))
                     )
                 )
-            return pts
+            coordinates = [(p.x(), p.y(), p.z()) for p in pts]
+            keep = list(range(len(pts)))
+            progress = True
+            while progress and len(keep) > 3:
+                progress = False
+                for k, index in enumerate(keep):
+                    a, p, b = coordinates[keep[k-1]], coordinates[index], coordinates[keep[(k+1) % len(keep)]]
+                    d = [b[i]-a[i] for i in range(3)]
+                    q = [p[i]-a[i] for i in range(3)]
+                    length2 = sum(v*v for v in d)
+                    t = sum(q[i]*d[i] for i in range(3))/length2 if length2 else 0
+                    if 0 <= t <= 1 and sum((q[i]-t*d[i])**2 for i in range(3)) <= 1e-16:
+                        keep.pop(k); progress = True
+                        break
+            def corner(k):
+                a, b, c = [coordinates[keep[(k+i) % len(keep)]] for i in range(3)]
+                u = [b[i]-a[i] for i in range(3)]
+                v = [c[i]-a[i] for i in range(3)]
+                return sum((u[i]*v[j]-u[j]*v[i])**2 for i, j in [(0, 1), (1, 2), (2, 0)])
+            start = max(range(len(keep)), key=corner)
+            keep = keep[start:]+keep[:start]
+            return [pts[i] for i in keep]
 
         def orient_surface_vertices(points, face_normal, surface_obj, openstudio):
             try:
@@ -374,6 +402,8 @@ class EnergyModel:
             except Exception:
                 return None
 
+        if not math.isfinite(seamTolerance) or seamTolerance < 0:
+            raise ValueError("EnergyModel.ByTopology - seamTolerance must be finite and non-negative.")
         openstudio = EnergyModel._ImportOpenStudio("EnergyModel.ByTopology")
         if openstudio is None:
             return None
@@ -535,6 +565,9 @@ class EnergyModel:
         else:
             building_cells = [building]
 
+        export_vertex_map, regularisation = EnergyModel._OSMVerticalSeams(
+            [Vertex.Coordinates(v, mantissa=mantissa) for v in Topology.Vertices(building)], seamTolerance)
+        export_triangulations = {}
         for spaceNumber, buildingCell in enumerate(building_cells):
             osSpace = openstudio.model.Space(osModel)
             osSpaceZ = Vertex.Z(Topology.CenterOfMass(buildingCell), mantissa=mantissa)
@@ -583,10 +616,46 @@ class EnergyModel:
             if chosenSpaceTypeObj is not None:
                 osSpace.setSpaceType(chosenSpaceTypeObj)
 
-            cellFaces = Topology.SubTopologies(buildingCell, "Face")
+            sourceFaces = Topology.SubTopologies(buildingCell, "Face") or []
+            cellFaces = []
+            for sourceFace in sourceFaces:
+                ring = Topology.SubTopologies(Face.ExternalBoundary(sourceFace), "Vertex") or []
+                coords = [tuple(Vertex.Coordinates(v, mantissa=9)) for v in ring]
+                area = Face.Area(sourceFace, mantissa=9)
+                # Preserve exact loops; split only polygons OpenStudio cannot
+                # render. Cache by geometry so both owners export identical
+                # triangles for a shared analytical boundary.
+                if len(ring) > 3 and area and not Topology.Apertures(sourceFace):
+                    key = tuple(sorted(coords))
+                    if key not in export_triangulations:
+                        points = vertices_to_point3d_list(ring, openstudio)
+                        exported_area = EnergyModel._OptionalGet(openstudio.getArea(points), area)
+                        if exported_area <= 1e-10:
+                            export_triangulations[key] = None
+                            continue
+                        local = openstudio.Transformation.alignFace(points).inverse()*points
+                        triangles = []
+                        if not openstudio.computeTriangulation(list(local)[::-1], []):
+                            triangles = Face.Triangulate(sourceFace, tolerance=min(tolerance, 1e-8), mantissa=9, silent=True) or []
+                            if not triangles or any(len(Topology.Vertices(f)) != 3 for f in triangles):
+                                triangles = []
+                                for i in range(1, len(ring)-1):
+                                    triangle = Face.ByVertices([ring[0], ring[i], ring[i+1]], tolerance=min(tolerance, 1e-9), silent=True)
+                                    if triangle is not None and Face.Area(triangle, mantissa=12) > 1e-10:
+                                        triangles.append(triangle)
+                            triangle_area = sum(EnergyModel._OptionalGet(openstudio.getArea(vertices_to_point3d_list(Topology.Vertices(f), openstudio)), 0.0) for f in triangles)
+                            if not triangles or abs(triangle_area-exported_area) > max(1e-8, exported_area*1e-4):
+                                raise ValueError(f"EnergyModel.ByTopology - Could not preserve an unrenderable surface by triangulation (area={exported_area}, triangle_area={triangle_area}, vertices={len(ring)}).")
+                        export_triangulations[key] = triangles
+                    if export_triangulations[key] is None:
+                        continue
+                    if export_triangulations[key]:
+                        cellFaces.extend((sourceFace, triangle) for triangle in export_triangulations[key])
+                        continue
+                cellFaces.append((sourceFace, sourceFace))
             if cellFaces:
-                for faceNumber, buildingFace in enumerate(cellFaces):
-                    boundary = Face.ExternalBoundary(buildingFace)
+                for faceNumber, (buildingFace, surfaceFace) in enumerate(cellFaces):
+                    boundary = Face.ExternalBoundary(surfaceFace)
                     if boundary is None:
                         continue
 
@@ -595,6 +664,8 @@ class EnergyModel:
                         continue
 
                     osFacePoints = vertices_to_point3d_list(faceVertices, openstudio)
+                    if EnergyModel._OptionalGet(openstudio.getArea(osFacePoints), 0.0) <= 1e-10:
+                        continue
                     osSurface = openstudio.model.Surface(osFacePoints, osModel)
 
                     faceNormal = Face.Normal(buildingFace, mantissa=mantissa)
@@ -608,23 +679,23 @@ class EnergyModel:
                     space_name = safe_name(osSpace, f"SPACE_{spaceNumber:04d}")
 
                     if len(faceCells) == 1:  # Exterior surfaces
-                        osSurface.setOutsideBoundaryCondition("Outdoors")
-                        if tilt > 135 or tilt < 45:
+                        native_dictionary = Topology.Dictionary(buildingFace)
+                        native_dictionary = native_dictionary if isinstance(native_dictionary, dict) else Dictionary.PythonDictionary(native_dictionary) or {}
+                        face_zs = [Vertex.Z(v) for v in Topology.SubTopologies(buildingFace, "Vertex")]
+                        condition = EnergyModel._ExteriorBoundaryCondition(native_dictionary, min(floorLevels), face_zs, osSurface.outwardNormal().z(), tolerance, bool(Topology.Apertures(buildingFace)))
+                        osSurface.setOutsideBoundaryCondition(condition)
+                        if tilt > 135:
+                            osSurface.setSurfaceType("Floor")
+                            osSurface.setName(space_name + "_BottomHorizontalSlab_" + str(faceNumber))
+                            # Elevated soffits/cantilevers are exposed floors.
+                            # The basal-floor assumption follows building levels,
+                            # not the arbitrary zero of the IFC coordinate frame.
+                        elif tilt < 45:
                             osSurface.setSurfaceType("RoofCeiling")
-                            osSurface.setOutsideBoundaryCondition("Outdoors")
                             osSurface.setName(space_name + "_TopHorizontalSlab_" + str(faceNumber))
 
-                            try:
-                                face_zs = [Vertex.Z(v) for v in Topology.SubTopologies(buildingFace, "Vertex")]
-                                if len(face_zs) > 0 and max(face_zs) < 1e-6:
-                                    osSurface.setSurfaceType("Floor")
-                                    osSurface.setOutsideBoundaryCondition("Ground")
-                                    osSurface.setName(space_name + "_BottomHorizontalSlab_" + str(faceNumber))
-                            except Exception:
-                                pass
                         else:
                             osSurface.setSurfaceType("Wall")
-                            osSurface.setOutsideBoundaryCondition("Outdoors")
                             osSurface.setName(space_name + "_ExternalVerticalFace_" + str(faceNumber))
 
                             faceDictionary = Topology.Dictionary(buildingFace)
@@ -641,7 +712,8 @@ class EnergyModel:
                                     osSubSurfacePoints = vertices_to_point3d_list(ap_vertices, openstudio)
                                     osSubSurface = openstudio.model.SubSurface(osSubSurfacePoints, osModel)
 
-                                    apertureFaceNormal = Face.Normal(apertureFace, mantissa=mantissa)
+                                    host_normal = osSurface.outwardNormal()
+                                    apertureFaceNormal = [host_normal.x(), host_normal.y(), host_normal.z()]
                                     orient_surface_vertices(osSubSurfacePoints, apertureFaceNormal, osSubSurface, openstudio)
 
                                     osSubSurface.setSubSurfaceType("FixedWindow")
@@ -704,7 +776,8 @@ class EnergyModel:
                                 osSubSurfacePoints = vertices_to_point3d_list(ap_vertices, openstudio)
                                 osSubSurface = openstudio.model.SubSurface(osSubSurfacePoints, osModel)
 
-                                apertureFaceNormal = Face.Normal(apertureFace, mantissa=mantissa)
+                                host_normal = osSurface.outwardNormal()
+                                apertureFaceNormal = [host_normal.x(), host_normal.y(), host_normal.z()]
                                 orient_surface_vertices(osSubSurfacePoints, apertureFaceNormal, osSubSurface, openstudio)
 
                                 osSubSurface.setSubSurfaceType("Door")
@@ -760,6 +833,15 @@ class EnergyModel:
                 aShadingSurface.setName("SHADINGSURFACE_" + str(faceIndex))
                 aShadingSurface.setShadingSurfaceGroup(osShadingGroup)
 
+        # Surface matching can change the orientation of paired geometry.
+        # OpenStudio's scene translator requires every sub-surface to use its
+        # host's outward normal; otherwise it may omit the whole host wall.
+        for surface in osModel.getSurfaces():
+            for sub_surface in surface.subSurfaces():
+                if sub_surface.outwardNormal().dot(surface.outwardNormal()) < 0:
+                    if not sub_surface.setVertices(list(reversed(sub_surface.vertices()))):
+                        raise ValueError("EnergyModel.ByTopology - Could not align an opening with its host surface.")
+        osModel.getBuilding().additionalProperties().setFeature('topologicpy_export_regularisation', json.dumps(regularisation))
         osModel.purgeUnusedResourceObjects()
         return osModel
 
@@ -800,6 +882,124 @@ class EnergyModel:
         return [sets, names]
     
     @staticmethod
+    def _OSMVerticalSeams(coordinates, tolerance=0.001):
+        """Reconcile only near-coincident vertical seams with shared coordinates."""
+        from collections import defaultdict
+        groups = defaultdict(set)
+        for x, y, z in coordinates:
+            groups[(x, y)].add(z)
+        result = {}; adjusted = 0; maximum = 0.0
+        for (x, y), values in groups.items():
+            clusters = []
+            for z in sorted(values):
+                if clusters and z-clusters[-1][0] <= tolerance:
+                    clusters[-1].append(z)
+                else:
+                    clusters.append([z])
+            for cluster in clusters:
+                if len(cluster) < 2:
+                    continue
+                target = (cluster[0]+cluster[-1])/2
+                for z in cluster:
+                    result[(x, y, z)] = target
+                    maximum = max(maximum, abs(target-z)); adjusted += 1
+        return result, {'method':'shared_vertical_seam_regularisation', 'tolerance_m':tolerance,
+                        'adjusted_vertices':adjusted,'maximum_displacement_m':maximum}
+
+    @staticmethod
+    def _ExteriorBoundaryCondition(dictionary, lowest_level, elevations, normal_z, tolerance=1e-5, has_openings=False):
+        """Use explicit exposure evidence, then the shared basal-floor assumption.
+
+        Negative IFC coordinates alone do not establish contact with ground.
+        Unknown wall exposure remains the existing outdoor assumption; the
+        analytical model retains its unresolved-exposure review information.
+        """
+        import json
+        record = dictionary.get('analytical_record', {})
+        if isinstance(record, str):
+            try:
+                record = json.loads(record)
+            except (ValueError, TypeError):
+                record = {}
+        exposure = str(record.get('exposure', dictionary.get('exposure', 'unknown'))).lower()
+        if exposure in {'ground', 'external_earth', 'earth'}:
+            return 'Ground'
+        if exposure in {'outdoors', 'external', 'air'}:
+            return 'Outdoors'
+        return 'Ground' if not has_openings and normal_z < -0.707 and elevations and max(elevations) <= lowest_level+tolerance else 'Outdoors'
+
+    @staticmethod
+    def _CleanGBXMLPolyLoops(xml, tolerance=1e-7):
+        """Remove only redundant points, preserving polygon geometry and winding.
+
+        Conforming CellComplex faces can contain many collinear seam vertices.
+        Some gbXML consumers derive a plane from the first three points, so
+        those seam vertices must not be carried into their polygon loops.
+        """
+        from xml.dom import minidom
+        document = minidom.parseString(xml)
+        changed = False
+        try:
+            for loop in document.getElementsByTagName('*'):
+                if loop.localName != 'PolyLoop':
+                    continue
+                nodes = [n for n in loop.childNodes if n.nodeType == n.ELEMENT_NODE and n.localName == 'CartesianPoint']
+                points = []
+                for node in nodes:
+                    values = [float(''.join(t.data for t in c.childNodes if t.nodeType == t.TEXT_NODE))
+                              for c in node.childNodes if c.nodeType == c.ELEMENT_NODE and c.localName == 'Coordinate']
+                    if len(values) not in (2, 3) or not all(math.isfinite(v) for v in values):
+                        raise ValueError('gbXML contains an invalid polygon coordinate.')
+                    points.append(tuple(values + [0.0] * (3-len(values))))
+                if len(points) < 3:
+                    raise ValueError('gbXML contains an incomplete polygon loop.')
+                keep = list(range(len(points)))
+                # Re-test neighbours after each removal. Only remove a point
+                # on the segment joining its neighbours, never a reversal or
+                # a genuine bend. Coordinates themselves are never rounded.
+                progress = True
+                while progress and len(keep) > 3:
+                    progress = False
+                    for k, index in enumerate(keep):
+                        a, p, b = points[keep[k-1]], points[index], points[keep[(k+1) % len(keep)]]
+                        d = tuple(b[i]-a[i] for i in range(3))
+                        q = tuple(p[i]-a[i] for i in range(3))
+                        length2 = sum(v*v for v in d)
+                        if length2 <= tolerance*tolerance:
+                            redundant = sum(v*v for v in q) <= tolerance*tolerance
+                        else:
+                            t = sum(q[i]*d[i] for i in range(3))/length2
+                            redundant = 0 <= t <= 1 and sum((q[i]-t*d[i])**2 for i in range(3)) <= tolerance*tolerance
+                        if redundant:
+                            keep.pop(k); progress = True; changed = True
+                            break
+                # Decimal gbXML coordinates can turn an exactly collinear
+                # seam into a tiny, almost-collinear bend. Preserve that bend,
+                # but start the loop at its strongest consecutive triangle so
+                # first-three-point plane calculations remain well conditioned.
+                def corner_area2(k):
+                    a, b, c = [points[keep[(k+j) % len(keep)]] for j in range(3)]
+                    u = [b[i]-a[i] for i in range(3)]
+                    v = [c[i]-a[i] for i in range(3)]
+                    return sum((u[i]*v[j]-u[j]*v[i])**2 for i, j in [(0, 1), (1, 2), (2, 0)])
+                start = max(range(len(keep)), key=corner_area2)
+                if corner_area2(start) == 0:
+                    raise ValueError('gbXML contains a degenerate polygon loop.')
+                if start:
+                    keep = keep[start:] + keep[:start]
+                    changed = True
+                retained = set(keep)
+                for index, node in enumerate(nodes):
+                    if index not in retained:
+                        loop.removeChild(node); node.unlink()
+                if start:
+                    for index in keep:
+                        loop.appendChild(nodes[index])
+            return document.toxml() if changed else xml
+        finally:
+            document.unlink()
+
+    @staticmethod
     def ExportToGBXML(model, path, overwrite=False):
         """
         Exports the input OSM model to a GBXML file.
@@ -818,9 +1018,17 @@ class EnergyModel:
         try:
             os_path = EnergyModel._OSPath(path, openstudio)
             try:
-                return openstudio.gbxml.GbXMLForwardTranslator().modelToGbXML(model, os_path)
+                result = openstudio.gbxml.GbXMLForwardTranslator().modelToGbXML(model, os_path)
             except TypeError:
-                return openstudio.gbxml.GbXMLForwardTranslator().modelToGbXML(model, path)
+                result = openstudio.gbxml.GbXMLForwardTranslator().modelToGbXML(model, path)
+            if result:
+                with open(path, 'r', encoding='utf-8') as source:
+                    xml = source.read()
+                cleaned = EnergyModel._CleanGBXMLPolyLoops(xml)
+                if cleaned != xml:
+                    with open(path, 'w', encoding='utf-8', newline='\n') as target:
+                        target.write(cleaned)
+            return result
         except Exception as e:
             warnings.warn(f"EnergyModel.ExportToGBXML - Error: Could not export GBXML ({e}). Returning None.")
             return None
@@ -860,7 +1068,8 @@ class EnergyModel:
         if openstudio is None:
             return None
         try:
-            return openstudio.gbxml.GbXMLForwardTranslator().modelToGbXMLString(model)
+            xml = openstudio.gbxml.GbXMLForwardTranslator().modelToGbXMLString(model)
+            return EnergyModel._CleanGBXMLPolyLoops(xml)
         except Exception as e:
             warnings.warn(f"EnergyModel.GBXMLString - Error: Could not create GBXML string ({e}). Returning None.")
             return None

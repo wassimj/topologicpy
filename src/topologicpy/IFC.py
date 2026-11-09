@@ -5765,6 +5765,7 @@ class IFC:
                 progress('generate_storey_layout', storey=number + 1, total=len(bands))
             members, domain = (band['members'], band['domain'])
             linework = [domain.boundary] + [r['footprint'].boundary for r in members]
+            linework.extend(IFC._Analytical_redraw_partition_wall_gaps(members, domain))
             for wall in band['walls']:
                 axis = IFC._Analytical_redraw_axis(wall)
                 if axis:
@@ -5836,6 +5837,37 @@ class IFC:
         fidelity['eligible_source_space_records'] = total_source or len(references)
         fidelity['source_geometry_availability'] = len(references) / max(total_source, len(references), 1)
         return {'format_version': 1, 'method': 'generative_redraw', 'origin': evidence.origin, 'modelling_config': {'geometry_tolerance': config.geometry_tolerance, 'drafting_grid': config.drafting_grid, 'minimum_cell_height': config.minimum_cell_height, 'minimum_fragment_area': config.minimum_fragment_area}, 'source_boundaries': [b for b in evidence.context.get('boundaries', []) if b['space'] in represented], 'construction_evidence': [{'id': r['source'], 'type': r['type'], 'footprint': mapping(r['footprint']), 'predefined_type': r.get('predefined_type'), 'bottom': r['z0'], 'top': r['z1'], 'materials': evidence.context.get('materials', {}).get(r['id'], []), 'points': r['points'].tolist(), 'faces': r.get('faces', [])} for r in records if r['type'] != 'IFCSPACE' and r['type'] != 'IFCOPENINGELEMENT'], 'rooms': generated, 'openings': [], 'fidelity': fidelity, 'warnings': warnings, 'reference_openings': [{'id': r['id'], 'source': r['source'], 'footprint': mapping(r['footprint']), 'points': r['points'].tolist(), 'bottom': r['z0'], 'top': r['z1']} for r in records if r['type'] == 'IFCOPENINGELEMENT'], 'fill_types': {str(IFC._Analytical_evidence_ref(e.args[4])): {'kind': 'window' if evidence.entities.get(IFC._Analytical_evidence_ref(e.args[5])) and evidence.entities[IFC._Analytical_evidence_ref(e.args[5])].type == 'IFCWINDOW' else 'door', 'source': evidence.entities[IFC._Analytical_evidence_ref(e.args[5])].args[0] if IFC._Analytical_evidence_ref(e.args[5]) in evidence.entities else None} for e in evidence.entities.values() if e.type == 'IFCRELFILLSELEMENT' and len(e.args) > 5}}
+
+    @staticmethod
+    def _Analytical_redraw_partition_wall_gaps(members, domain, reach=0.8):
+        """Continue room partitions through wall thickness to the envelope.
+
+        An unpartitioned exterior wall strip can wrap around many rooms and
+        be assigned wholesale to one distant space. Subdivide only the gaps;
+        room evidence remains unchanged and no wall-volume cells are created.
+        """
+        import math
+        from shapely.geometry import LineString
+        from shapely.ops import unary_union
+        gaps = domain.difference(unary_union([r['footprint'] for r in members]))
+        if gaps.is_empty:
+            return []
+        lines = []
+        for record in members:
+            polygons = list(IFC._Analytical_evidence_polygons(record['footprint']))
+            rings = [ring for polygon in polygons for ring in [polygon.exterior] + list(polygon.interiors)]
+            for ring in rings:
+                coordinates = list(ring.coords)
+                for a, b in zip(coordinates, coordinates[1:]):
+                    dx, dy = b[0]-a[0], b[1]-a[1]
+                    length = math.hypot(dx, dy)
+                    if length < 1e-8:
+                        continue
+                    dx, dy = reach*dx/length, reach*dy/length
+                    extension = LineString([(a[0]-dx, a[1]-dy), (b[0]+dx, b[1]+dy)]).intersection(gaps)
+                    if not extension.is_empty:
+                        lines.append(extension)
+        return lines
 
     @staticmethod
     def _Analytical_redraw_tall_spaces(rooms, warnings, config):

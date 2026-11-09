@@ -633,6 +633,31 @@ class Honeybee:
         return False
     
     @staticmethod
+    def _FitSubFaceGeometry(geometry, host, tolerance):
+        """Fit boundary-touching sub-faces by a recorded, area-preserving move."""
+        import math
+        from ladybug_geometry.geometry3d.pointvector import Vector3D
+        if geometry.normal.dot(host.normal) < 0:
+            geometry = geometry.flip()
+        if host.is_sub_face(geometry, tolerance, math.radians(1)):
+            return geometry, None
+        centre, target = geometry.centroid, host.centroid
+        direction = Vector3D(target.x-centre.x, target.y-centre.y, target.z-centre.z)
+        if direction.magnitude > 1e-12:
+            direction = direction.normalize()
+            for multiplier in (2, 4, 8, 16, 32, 64):
+                distance = tolerance*multiplier
+                if distance > 0.001:
+                    break
+                vector = direction*distance
+                candidate = geometry.move(vector)
+                if host.is_sub_face(candidate, tolerance, math.radians(1)):
+                    return candidate, {'method': 'area_preserving_translation', 'reason': 'opening touches host boundary',
+                        'translation_m': [vector.x, vector.y, vector.z], 'distance_m': distance,
+                        'original_area_m2': geometry.area, 'export_area_m2': candidate.area}
+        raise ValueError('Honeybee.ModelByTopology - Opening cannot fit its host within 1 mm without changing its area.')
+
+    @staticmethod
     def ModelByTopology(tpBuilding,
                 tpShadingFacesCluster = None,
                 buildingName: str = "Generic_Building",
@@ -646,7 +671,8 @@ class Honeybee:
                 roomTypeKey: str = "TOPOLOGIC_type",
                 apertureTypeKey: str = "TOPOLOGIC_type",
                 addSensorGrid: bool = False,
-                mantissa: int = 6):
+                mantissa: int = 6,
+                tolerance: float = 0.00001):
         """
         Creates an HB Model from the input Topology.
 
@@ -678,6 +704,9 @@ class Honeybee:
             If set to True a sensor grid is add to horizontal surfaces. Default is False.
         mantissa : int , optional
             The number of decimal places to round the result to. Default is 6.
+        tolerance : float , optional
+            Geometry and adjacency tolerance in metres. Default is 0.00001.
+            It must resolve the smallest retained analytical features.
         
         Returns
         -------
@@ -713,6 +742,10 @@ class Honeybee:
         from topologicpy.Aperture import Aperture
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
+        from topologicpy.EnergyModel import EnergyModel
+        import math
+        if not math.isfinite(tolerance) or tolerance <= 0:
+            raise ValueError('Honeybee.ModelByTopology - tolerance must be positive and finite.')
 
         def cellFloor(cell):
             faces = Topology.Faces(cell)
@@ -756,6 +789,7 @@ class Honeybee:
         from honeybee.typing import clean_string
         rooms = []
         tpCells = [tpBuilding] if Topology.IsInstance(tpBuilding, "Cell") else Topology.Cells(tpBuilding)
+        lowest_level = min(Vertex.Z(v, mantissa=mantissa) for v in Topology.Vertices(tpBuilding))
         # Sort cells by Z Levels
         tpCells.sort(key=lambda c: cellFloor(c), reverse=False)
         fl = floorLevels(tpCells, 2)
@@ -822,6 +856,8 @@ class Honeybee:
                     for tpVertex in tpFaceVertices:
                         hbRoomFacePoints.append(Point3D(Vertex.X(tpVertex, mantissa=mantissa), Vertex.Y(tpVertex, mantissa=mantissa), Vertex.Z(tpVertex, mantissa=mantissa)))
                     hbRoomFace = HBFace(tpCellName+'_Face_'+str(tpFaceNumber+1), Face3D(hbRoomFacePoints))
+                    from honeybee.boundarycondition import boundary_conditions
+                    hbRoomFace.boundary_condition = boundary_conditions.outdoors
                     tpFaceApertures = []
                     tpFaceApertures = Topology.Apertures(tpCellFace)
                     if tpFaceApertures:
@@ -838,13 +874,16 @@ class Honeybee:
                             tpFaceApertureVertices = Topology.Vertices(Face.ExternalBoundary(apertureTopology), silent=True)
                             for tpFaceApertureVertex in tpFaceApertureVertices:
                                 hbFaceAperturePoints.append(Point3D(Vertex.X(tpFaceApertureVertex, mantissa=mantissa), Vertex.Y(tpFaceApertureVertex, mantissa=mantissa), Vertex.Z(tpFaceApertureVertex, mantissa=mantissa)))
+                            aperture_geometry, correction = Honeybee._FitSubFaceGeometry(Face3D(hbFaceAperturePoints), hbRoomFace.geometry, tolerance)
                             if(tpFaceApertureType):
                                 if ("door" in tpFaceApertureType.lower()):
-                                    hbFaceAperture = HBDoor(tpCellName+'_Face_'+str(tpFaceNumber+1)+'_Door_'+str(tpFaceApertureNumber), Face3D(hbFaceAperturePoints))
+                                    hbFaceAperture = HBDoor(tpCellName+'_Face_'+str(tpFaceNumber+1)+'_Door_'+str(tpFaceApertureNumber), aperture_geometry)
                                 else:
-                                    hbFaceAperture = HBAperture(tpCellName+'_Face_'+str(tpFaceNumber+1)+'_Window_'+str(tpFaceApertureNumber), Face3D(hbFaceAperturePoints))
+                                    hbFaceAperture = HBAperture(tpCellName+'_Face_'+str(tpFaceNumber+1)+'_Window_'+str(tpFaceApertureNumber), aperture_geometry)
                             else:
-                                hbFaceAperture = HBAperture(tpCellName+'_Face_'+str(tpFaceNumber+1)+'_Window_'+str(tpFaceApertureNumber), Face3D(hbFaceAperturePoints))
+                                hbFaceAperture = HBAperture(tpCellName+'_Face_'+str(tpFaceNumber+1)+'_Window_'+str(tpFaceApertureNumber), aperture_geometry)
+                            if correction:
+                                hbFaceAperture.user_data = {'topologicpy_geometry_correction': correction}
                             if isinstance(hbFaceAperture, HBDoor):
                                 hbRoomFace.add_door(hbFaceAperture)
                             else:
@@ -858,7 +897,24 @@ class Honeybee:
                     fType = honeybee.facetype.get_type_from_normal(Vector3D(tpCellFaceNormal[0],tpCellFaceNormal[1],tpCellFaceNormal[2]), roof_angle=30, floor_angle=150)
                     hbRoomFace.type = fType
                     hbRoomFaces.append(hbRoomFace)
-                room = HBRoom(tpCellName, hbRoomFaces, 0.01, 1)
+                room = HBRoom(tpCellName, hbRoomFaces, tolerance, 1)
+                for hb_face, native_face in zip(room.faces, tpCellFaces):
+                    hb_face.type = honeybee.facetype.get_type_from_normal(hb_face.normal, roof_angle=30, floor_angle=150)
+                    d = Topology.Dictionary(native_face)
+                    d = d if isinstance(d, dict) else Dictionary.PythonDictionary(d) or {}
+                    levels = [Vertex.Z(v, mantissa=mantissa) for v in Topology.Vertices(native_face)]
+                    condition = EnergyModel._ExteriorBoundaryCondition(d, lowest_level, levels, hb_face.normal.z, tolerance, bool(hb_face.apertures or hb_face.doors))
+                    hb_face.boundary_condition = boundary_conditions.ground if condition == 'Ground' else boundary_conditions.outdoors
+                    record = d.get('analytical_record', {})
+                    if isinstance(record, str):
+                        try:
+                            record = json.loads(record)
+                        except (ValueError, TypeError):
+                            record = {}
+                    exposure = record.get('exposure', d.get('exposure', 'unknown'))
+                    hb_face.user_data = {'topologicpy_boundary_id': d.get('bim2bem_boundary_id'),
+                        'source_exposure': exposure,
+                        'boundary_condition_basis': 'explicit_exposure' if exposure in {'ground', 'external_earth', 'earth', 'outdoors', 'external', 'air'} else 'basal_floor_assumption' if condition == 'Ground' else 'outdoor_assumption'}
                 room.display_name = displayName
                 if addSensorGrid:
                     floor_mesh = room.generate_grid(0.5, 0.5, 1)
@@ -879,7 +935,11 @@ class Honeybee:
                 if tpCellStory:
                     room.story = tpCellStory
                 rooms.append(room)
-        HBRoom.solve_adjacency(rooms, 0.01)
+        HBRoom.solve_adjacency(rooms, tolerance)
+        for room in rooms:
+            for face in room.faces:
+                if face.boundary_condition.name == 'Surface':
+                    face.user_data['boundary_condition_basis'] = 'shared_geometry'
 
         hbShades = []
         if(tpShadingFacesCluster):
@@ -895,6 +955,7 @@ class Honeybee:
                 hbShade = HBShade("SHADINGSURFACE_" + str(faceIndex+1), hbShadingFace)
                 hbShades.append(hbShade)
         model = HBModel(buildingName, rooms, orphaned_shades=hbShades)
+        model.tolerance = tolerance
         if addSensorGrid:
             model.properties.radiance.sensor_grids = []
             model.properties.radiance.add_sensor_grids(sensorGrids)
