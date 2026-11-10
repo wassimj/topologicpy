@@ -494,19 +494,13 @@ def _brep_data(topology):
 
 
 def _same_topology(a, b):
-    from topologicpy.Topology import Topology
-
+    from topologicpy.Core import Core
     if a is b:
         return True
-
+    # Callers supply native topologies. Avoid repeating public API type
+    # dispatch for every pair, retaining the backend's exact identity test.
     try:
-        return bool(
-            Topology.IsSame(
-                a,
-                b,
-                silent=True,
-            )
-        )
+        return bool(Core.Topology.IsSame(a, b))
     except Exception:
         return False
 
@@ -534,42 +528,11 @@ def _subtopologies(topology):
             items = []
 
         unique = []
-
-        for item in items:
-            if not Topology.IsInstance(
-                item,
-                "Topology",
-            ):
+        for item in TPYCodec._UniqueNative(items, topology):
+            _, item_hash = _brep_data(item)
+            if root_hash is not None and item_hash == root_hash:
                 continue
-
-            if _same_topology(
-                item,
-                topology,
-            ):
-                continue
-
-            _, item_hash = _brep_data(
-                item
-            )
-
-            if (
-                root_hash is not None
-                and item_hash == root_hash
-            ):
-                continue
-
-            is_duplicate = False
-
-            for previous in unique:
-                if _same_topology(
-                    item,
-                    previous,
-                ):
-                    is_duplicate = True
-                    break
-
-            if not is_duplicate:
-                unique.append(item)
+            unique.append(item)
 
         for index, item in enumerate(unique):
             result.append(
@@ -609,7 +572,7 @@ def _candidate_brep_hash(topology):
     return value
 
 
-def _resolve_locator(topology, locator):
+def _resolve_locator(topology, locator, cache=None):
     from topologicpy.Topology import Topology
     if locator is None:
         return topology
@@ -632,12 +595,20 @@ def _resolve_locator(topology, locator):
     kind = str(locator.get("type", "")).lower()
     if kind not in _SUBTOPOLOGY_TYPES:
         return None
-    candidates = []
-    for item in Topology.SubTopologies(topology, subTopologyType=kind, silent=True) or []:
-        if Topology.IsInstance(item, "Topology") and not _same_topology(item, topology) and not any(_same_topology(item, old) for old in candidates):
-            candidates.append(item)
+    lookup = TPYCodec._LocatorIndex(topology, kind, cache)
+    candidates = lookup['candidates']
     index = locator.get("index", -1)
     index = index if type(index) is int else -1
+    # The stored occurrence wins when it validates, exactly as choose() below.
+    # Avoid serializing every candidate just to rediscover a valid occurrence.
+    if 0 <= index < len(candidates):
+        candidate = candidates[index]
+        checksum = locator.get('brepSha256')
+        signature = locator.get('signature', {}).get('hash')
+        if checksum and TPYCodec._LocatorValue(lookup, 'brep', candidate) == checksum:
+            return candidate
+        if not checksum and signature and TPYCodec._LocatorValue(lookup, 'signature', candidate) == signature:
+            return candidate
     def choose(matches):
         # Equal geometry does not imply equal native identity. Prefer the
         # stored occurrence when several distinct coincident shapes match.
@@ -646,12 +617,12 @@ def _resolve_locator(topology, locator):
         return matches[0] if len(matches) == 1 else None
     checksum = locator.get("brepSha256")
     if checksum:
-        matches = [item for item in candidates if _candidate_brep_hash(item) == checksum]
+        matches = TPYCodec._LocatorMatches(lookup, 'brep', checksum)
         if matches:
             return choose(matches)
     signature = locator.get("signature", {}).get("hash")
     if signature:
-        matches = [item for item in candidates if _signature(item).get("hash") == signature]
+        matches = TPYCodec._LocatorMatches(lookup, 'signature', signature)
         if matches:
             return choose(matches)
     return candidates[index] if not checksum and not signature and 0 <= index < len(candidates) else None
@@ -1165,6 +1136,129 @@ class TPYCodec:
     """Versioned native TopologicPy archive codec."""
 
     @staticmethod
+    def _IdentityBucket(topology):
+        # OCCT hashes ignore orientation, just like IsSame. A hash is only a
+        # bucket: every collision is still resolved by exact native identity.
+        from topologicpy.Topology import Topology
+        try:
+            native = Topology.OCCTShape(topology, silent=True)
+            if native is None or type(native).__module__.split('.')[0] not in ('OCC', 'OCP'):
+                return None
+            return hash(native)
+        except Exception:
+            return None
+
+    @staticmethod
+    def _UniqueNative(items, root):
+        from topologicpy.Topology import Topology
+        unique, buckets, unkeyed = [], {}, []
+        for item in items:
+            if not Topology.IsInstance(item, 'Topology') or _same_topology(item, root):
+                continue
+            key = TPYCodec._IdentityBucket(item)
+            previous = unique if key is None else buckets.get(key, []) + unkeyed
+            if any(_same_topology(item, old) for old in previous):
+                continue
+            unique.append(item)
+            if key is None:
+                unkeyed.append(item)
+            else:
+                buckets.setdefault(key, []).append(item)
+        return unique
+
+    @staticmethod
+    def _LocatorIndex(topology, kind, cache=None):
+        """Load-local candidates in their original native occurrence order."""
+        from topologicpy.Topology import Topology
+        key = (id(topology), kind)
+        if cache is not None and key in cache:
+            return cache[key]
+        candidates = TPYCodec._UniqueNative(
+            Topology.SubTopologies(topology, subTopologyType=kind, silent=True) or [], topology)
+        # Retain the root object, so Python cannot reuse its id during the load.
+        result = {'root': topology, 'candidates': candidates}
+        if cache is not None:
+            cache[key] = result
+        return result
+
+    @staticmethod
+    def _LocatorValue(lookup, kind, item):
+        values = lookup.setdefault(kind + '_values', {})
+        key = id(item)
+        if key not in values:
+            values[key] = _candidate_brep_hash(item) if kind == 'brep' else _signature(item).get('hash')
+        return values[key]
+
+    @staticmethod
+    def _LocatorMatches(lookup, kind, value):
+        """Index each checksum/signature once; collisions retain all matches."""
+        if kind not in lookup:
+            values = {}
+            for item in lookup['candidates']:
+                identifier = TPYCodec._LocatorValue(lookup, kind, item)
+                values.setdefault(identifier, []).append(item)
+            lookup[kind] = values
+        return lookup[kind].get(value, [])
+
+    @staticmethod
+    def _CanReadMetadataManifest(manifest):
+        if manifest.get('formatVersion') not in (1, 2) or manifest.get('relations'):
+            return False
+        objects = manifest.get('objects', [])
+        if any(record.get('type') in ('TGraph', 'Collection') for record in objects):
+            return False
+        def references(value):
+            if isinstance(value, dict):
+                if value.get('__tpy_type__') == 'reference':
+                    return True
+                return any(references(child) for child in value.values())
+            return isinstance(value, (list, tuple)) and any(references(child) for child in value)
+        return not any(references(record.get('dictionary', {})) or
+                       references(record.get('subtopologies', [])) for record in objects)
+
+    @staticmethod
+    def _ReadMetadataManifest(manifest, loaded):
+        """Read actual restored v1 metadata without rewriting native BREPs.
+
+        Geometry bytes/checksums have already been validated by load(). This
+        path is deliberately limited to native archives without relationships;
+        callers retain full archive verification for richer archive variants.
+        Every dictionary-bearing constituent is enumerated, including metadata
+        absent from the source manifest, so additions/losses are both detected.
+        """
+        from topologicpy.Topology import Topology
+        if not TPYCodec._CanReadMetadataManifest(manifest):
+            raise ValueError('This archive requires full relationship verification.')
+        objects = manifest.get('objects', [])
+        if len(loaded) != len(objects):
+            raise ValueError('Not all native objects were restored.')
+        records = []
+        cache = {}
+        for source in objects:
+            topology = loaded.get(source.get('id'))
+            if topology is None:
+                raise ValueError('Native object was not restored.')
+            record = dict(source)
+            record['type'] = Topology.TypeAsString(topology, silent=True)
+            record['dictionary'] = _encode_value(_python_dictionary(topology))
+            record['signature'] = _signature(topology)
+            records.append(record)
+            metadata = []
+            for kind in _SUBTOPOLOGY_TYPES:
+                lookup = TPYCodec._LocatorIndex(topology, kind, cache)
+                for index, shape in enumerate(lookup['candidates']):
+                    dictionary = _python_dictionary(shape)
+                    if not dictionary:
+                        continue
+                    metadata.append({'locator': {'type': kind, 'index': index,
+                                     'signature': _signature(shape)},
+                                     'dictionary': _encode_value(dictionary)})
+            record['subtopologies'] = metadata
+        result = dict(manifest)
+        result['objects'] = records
+        return result
+
+    @staticmethod
     def _EncodeValue(value, reference=None, active=None, depth=0):
         """Explicit data encodings only; never textualize unsupported objects."""
         if depth > 200:
@@ -1512,7 +1606,7 @@ class TPYCodec:
         return by_id
 
     @staticmethod
-    def _LoadGraphArchive(archive, manifest, tolerance, silent):
+    def _LoadGraphArchive(archive, manifest, tolerance, silent, _loaded=None):
         from topologicpy.TGraph import TGraph
         by_id = TPYCodec._ValidateGraphManifest(manifest, archive.namelist())
         loaded = {}
@@ -1527,13 +1621,14 @@ class TPYCodec:
         for identifier, record in by_id.items():
             if record['type'] == 'TGraph': loaded[identifier] = TGraph()
         resolved_refs = {}
+        locator_cache = {}
         def reference(item):
             identifier = item['object']
             if identifier not in loaded: raise ValueError('Unresolved TPY object reference.')
             locator = item.get('locator')
             key = (identifier, json.dumps(locator, sort_keys=True), item.get('orientation'))
             if key not in resolved_refs:
-                target = loaded[identifier] if locator is None else _resolve_locator(loaded[identifier], locator)
+                target = loaded[identifier] if locator is None else _resolve_locator(loaded[identifier], locator, cache=locator_cache)
                 if target is None: raise ValueError('Native subshape reference could not be restored.')
                 if item.get('orientation') is not None:
                     from topologicpy.Topology import Topology
@@ -1550,6 +1645,8 @@ class TPYCodec:
                 TGraph._RestoreTPYState(loaded[identifier], state)
         for identifier, record in by_id.items():
             if record['type'] == 'Collection': loaded[identifier] = TPYCodec._DecodeValue(record['value'], reference)
+        if _loaded is not None:
+            _loaded.update(loaded)
         return loaded[manifest['rootObject']]
 
     @staticmethod
@@ -1856,6 +1953,8 @@ class TPYCodec:
         from topologicpy.Core import Core
         from topologicpy.Topology import Topology
 
+        locator_cache = {}
+
         try:
             tolerance = abs(
                 float(tolerance)
@@ -1957,7 +2056,7 @@ class TPYCodec:
                 if manifest['formatVersion'] == 2:
                     if len(archive.namelist()) != len(names):
                         raise ValueError("Duplicate TPY archive members.")
-                    return TPYCodec._LoadGraphArchive(archive, manifest, tolerance, silent)
+                    return TPYCodec._LoadGraphArchive(archive, manifest, tolerance, silent, _loaded=_loaded)
 
                 object_records = manifest.get(
                     "objects",
@@ -2112,12 +2211,7 @@ class TPYCodec:
                         ):
                             continue
 
-                        target = _resolve_locator(
-                            topology,
-                            item.get(
-                                "locator"
-                            ),
-                        )
+                        target = _resolve_locator(topology, item.get('locator'), cache=locator_cache)
 
                         if target is None:
                             continue
@@ -2170,12 +2264,7 @@ class TPYCodec:
                     ):
                         continue
 
-                    host = _resolve_locator(
-                        host_object,
-                        relation.get(
-                            "hostLocator"
-                        ),
-                    )
+                    host = _resolve_locator(host_object, relation.get('hostLocator'), cache=locator_cache)
 
                     if host is None:
                         continue
