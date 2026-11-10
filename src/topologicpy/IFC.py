@@ -4627,7 +4627,7 @@ class IFC:
             if current is not None and current is not entity and (current.type not in {'IFCBOOLEANRESULT', 'IFCBOOLEANCLIPPINGRESULT'}):
                 gross[i] = IFCFastEntity(i, current.type, list(current.args))
                 approximated.add(i)
-        products = [e for e in model.entities.values() if e.type in IFC._AnalyticalRelevantTypes | {'IFCCOVERING', 'IFCPLATE'}]
+        products = [e for e in model.entities.values() if e.type in IFC._AnalyticalRelevantTypes | {'IFCCOVERING', 'IFCPLATE', 'IFCCOLUMN', 'IFCCOLUMNSTANDARDCASE'}]
         filled = {IFC._Analytical_evidence_ref(e.args[5]) for e in model.entities.values() if e.type == 'IFCRELFILLSELEMENT' and len(e.args) > 5}
         omitted_details = []
         missing = []
@@ -5671,7 +5671,7 @@ class IFC:
             if polygon.area < 0.05:
                 excluded.append({'source': record['source'], 'reason': 'negligible reference footprint'})
                 continue
-            references.append({**record, 'role': spatial_role, 'role_basis': role_basis, 'name': str(record['name']) + (' Ã‚Â· ' + str(record['long_name']) if record.get('long_name') else ''), 'footprint': polygon})
+            references.append({**record, 'role': spatial_role, 'role_basis': role_basis, 'name': str(record['name']) + (' · ' + str(record['long_name']) if record.get('long_name') else ''), 'footprint': polygon})
         inferred = not references
         if inferred:
             slabs = [r for r in records if r['type'].startswith('IFCSLAB') and r['footprint'].area > 5]
@@ -5765,7 +5765,6 @@ class IFC:
                 progress('generate_storey_layout', storey=number + 1, total=len(bands))
             members, domain = (band['members'], band['domain'])
             linework = [domain.boundary] + [r['footprint'].boundary for r in members]
-            linework.extend(IFC._Analytical_redraw_partition_wall_gaps(members, domain))
             for wall in band['walls']:
                 axis = IFC._Analytical_redraw_axis(wall)
                 if axis:
@@ -5793,6 +5792,13 @@ class IFC:
             for owner, pieces in sorted(owned.items(), key=lambda p: members[p[0]]['source']):
                 reference = members[owner]
                 fitted = make_valid(unary_union(pieces))
+                core = fitted.buffer(-0.075, join_style=2).buffer(0.075, join_style=2)
+                supported = unary_union([core, fitted.intersection(reference['footprint'])])
+                trimmed = make_valid(fitted.intersection(supported))
+                removed = fitted.area - trimmed.area
+                if removed > config.drafting_grid ** 2:
+                    warnings.append({'code': 'UNSUPPORTED_ROOM_BRANCH_OMITTED', 'message': f'Excluded {removed:.6f} square metres of narrow room extensions unsupported by source space geometry', 'sources': [reference['source']]})
+                fitted = trimmed
                 for part, polygon in enumerate(IFC._Analytical_evidence_polygons(fitted)):
                     if polygon.area < config.minimum_fragment_area:
                         warnings.append({'code': 'TINY_ROOM_FRAGMENT_OMITTED', 'message': 'Drafting fragment omitted from spatial cells', 'sources': [reference['source']]})
@@ -5809,11 +5815,12 @@ class IFC:
                     air_top = min([r['z0'] for r in ceilings], default=min(reference['z1'], band['top']))
                     generated.append({'id': identity, 'source_space_id': reference['source'], 'name': reference['name'] or identity, 'role': reference.get('role', 'room'), 'role_basis': reference.get('role_basis', 'geometric_inference'), 'air_top': air_top, 'air_volume': polygon.area * max(0.0, air_top - reference['z0']), 'air_volume_method': 'ceiling_or_source_height_prism_estimate', 'plenum_height': max(0.0, band['top'] - air_top), 'ceiling_sources': [r['source'] for r in ceilings], 'storey': number, 'footprint': mapping(polygon), 'bottom': band['bottom'], 'top': band['top'], 'reference_footprint': mapping(reference['footprint']), 'reference_bottom': reference['z0'], 'reference_top': reference['z1'], 'reference_method': reference['method'], 'envelope_method': band['envelope_method'], 'confidence': {'score': score, 'label': 'high' if score >= 0.85 else 'medium' if score >= 0.6 else 'low', 'footprint_iou': iou, 'height_agreement': height_agreement, 'meaning': 'heuristic agreement score; not a calibrated probability'}, 'reference_area': reference['footprint'].area, 'area': polygon.area, 'boundary_displacement_max_m': polygon.boundary.hausdorff_distance(reference['footprint'].boundary)})
         IFC._Analytical_redraw_tall_spaces(generated, warnings, config)
+        IFC._Analytical_redraw_merge_service_spaces(generated, warnings, excluded, records)
         IFC._Analytical_redraw_absorb_slivers(generated, warnings)
-        represented = {r['source_space_id'] for r in generated}
+        represented = {r['source_space_id'] for r in generated} | {s['source'] for r in generated for s in r.get('absorbed_source_spaces', [])}
         missing = [{'source': r['source'], 'reason': 'fully overlapped or unassigned source footprint'} for r in references if r['source'] not in represented]
         reference_area = sum((r['footprint'].area for r in references))
-        covered_area = sum((r['footprint'].intersection(unary_union([shape(g['footprint']) for g in generated if g['source_space_id'] == r['source']])).area for r in references if r['source'] in represented))
+        covered_area = sum((r['footprint'].intersection(unary_union([shape(g['footprint']) for g in generated if g['source_space_id'] == r['source'] or any((s['source'] == r['source'] for s in g.get('absorbed_source_spaces', [])))])).area for r in references if r['source'] in represented))
         fidelity = {'reference_spaces': len(references), 'represented_source_spaces': len(represented), 'source_space_coverage': len(represented) / len(references), 'source_area_coverage': covered_area / reference_area, 'excluded_source_spaces': excluded, 'unrepresented_source_spaces': missing, 'weighted_footprint_iou': sum((r['confidence']['footprint_iou'] * r['area'] for r in generated)) / max(sum((r['area'] for r in generated)), 1e-09), 'confidence_score': sum((r['confidence']['score'] * r['area'] for r in generated)) / max(sum((r['area'] for r in generated)), 1e-09), 'independent_ground_truth': False, 'prismatic_storey_approximation': True, 'drafting_grid_m': 0.01, 'notes': ['Roofs, split levels and tall spaces are regularised into storey prisms; review height changes.', 'Agreement is measured against usable IFC evidence, which may itself be inaccurate.', 'Construction-layer assignments and thermal exposure still require review.']}
         aliases = {}
         for reference in references:
@@ -5990,7 +5997,7 @@ class IFC:
                     Topology.SetDictionary(cell, {'bim2bem_space_id': room['id'], 'source_space_id': room['source_space_id'], 'TOPOLOGIC_name': room['name'] + ':' + str(index), 'confidence_score': room['confidence']['score']})
                 cells.append(cell)
                 result.spaces.append({'id': room['id'], 'name': room['name'] + ':' + str(index), 'source_space_id': room['source_space_id'], 'seed': [polygon.representative_point().x, polygon.representative_point().y, 0.5 * (room['bottom'] + room['top'])], 'analytical_volume': expected, 'source_volume': room['reference_area'] * (room['reference_top'] - room['reference_bottom']), 'confidence': room['confidence'], 'storey': room['storey']})
-                result.spaces[-1].update({k: room[k] for k in ('role', 'role_basis', 'air_volume', 'air_volume_method', 'air_top', 'plenum_height', 'ceiling_sources') if k in room})
+                result.spaces[-1].update({k: room[k] for k in ('role', 'role_basis', 'air_volume', 'air_volume_method', 'air_top', 'plenum_height', 'ceiling_sources', 'absorbed_source_spaces') if k in room})
             except (ValueError, RuntimeError, TypeError) as exc:
                 result.diagnostics.append(IFC._Analytical_model_Diagnostic('CELL_REQUIRES_REVIEW', str(exc), 'warning', [room['id']]))
         if not cells:
@@ -6084,7 +6091,8 @@ class IFC:
             covered += original.intersection(unary_union(grouped[identity])).area
         fidelity = plan['fidelity']
         aliases = fidelity.get('coincident_source_aliases', {})
-        represented_records = len(grouped) + sum((primary in grouped for primary in aliases.values()))
+        absorbed = {s['source'] for r in plan['rooms'] for s in r.get('absorbed_source_spaces', [])}
+        represented_records = len(grouped) + len(absorbed) + sum((primary in grouped for primary in aliases.values()))
         fidelity.update(weighted_footprint_iou=weighted_iou / max(total, 1e-09), confidence_score=weighted_score / max(total, 1e-09), source_area_coverage=covered / max(reference_area, 1e-09), represented_source_spaces=len(grouped), represented_source_records=represented_records, source_space_coverage=represented_records / max(fidelity.get('eligible_source_space_records', fidelity['reference_spaces']), 1), confidence_recomputed=True)
 
     @staticmethod
@@ -6209,13 +6217,35 @@ class IFC:
             host = Polygon(plane.project(points), [plane.project(h) for h in boundary.get('holes', [])])
             candidates.append((boundary, plane, host, horizontal, segment))
         tree = STRtree([row[4] for row in candidates]) if candidates else None
-        mapped, missing = (set(), [])
+        mapped, missing, removed_doors = (set(), [], [])
         occupied = defaultdict(list)
         for opening in plan.get('reference_openings', []):
             foot = shape(opening['footprint'])
+            fill = plan.get('fill_types', {}).get(str(opening['id']), {'kind': 'void', 'source': opening['source']})
+            is_door = fill['kind'] == 'door'
+            if is_door:
+                centre = foot.centroid
+                z = 0.5 * (opening['bottom'] + opening['top'])
+                orphan = False
+                for room in plan['rooms']:
+                    if not room['bottom'] < z < room['top']:
+                        continue
+                    polygon = shape(room['footprint'])
+                    if not polygon.covers(centre):
+                        continue
+                    if polygon.boundary.distance(centre) > 0.3 and any((shape(p).buffer(0.01).covers(centre) for p in room.get('absorbed_internal_footprints', []))):
+                        orphan = True
+                    if polygon.boundary.distance(centre) > 0.3 and any((s.get('footprint') and shape(s['footprint']).boundary.distance(foot) < 0.1 for s in room.get('absorbed_source_spaces', []))):
+                        orphan = True
+                if orphan:
+                    removed_doors.append({'source': opening['source'], 'door_id': fill['source'], 'reason': 'host_partition_removed'})
+                    continue
             points = np.array(foot.convex_hull.exterior.coords[:-1]) if foot.convex_hull.geom_type == 'Polygon' else None
             if points is None or tree is None or opening['top'] - opening['bottom'] < 0.05:
-                missing.append(opening['source'])
+                if is_door:
+                    removed_doors.append({'source': opening['source'], 'door_id': fill['source'], 'reason': 'no_analytical_host'})
+                else:
+                    missing.append(opening['source'])
                 continue
             rectangle = np.array(foot.minimum_rotated_rectangle.exterior.coords[:-1])
             vectors = np.roll(rectangle, -1, axis=0) - rectangle
@@ -6241,7 +6271,10 @@ class IFC:
                 score = distance + 0.05 * (1 - min(1.0, clipped.area / max(projected.area, 1e-09)))
                 matches.append((score, distance, int(index), clipped, projected.area))
             if not matches:
-                missing.append(opening['source'])
+                if is_door:
+                    removed_doors.append({'source': opening['source'], 'door_id': fill['source'], 'reason': 'no_analytical_host'})
+                else:
+                    missing.append(opening['source'])
                 continue
             best = min(matches, key=lambda m: m[0])
             best_plane = candidates[best[2]][1]
@@ -6270,7 +6303,16 @@ class IFC:
                     except (ValueError, RuntimeError, TypeError):
                         continue
             if opening['source'] not in mapped:
-                missing.append(opening['source'])
+                if is_door:
+                    removed_doors.append({'source': opening['source'], 'door_id': fill['source'], 'reason': 'no_analytical_host'})
+                else:
+                    missing.append(opening['source'])
+        removed_ids = {d['source'] for d in removed_doors}
+        plan['reference_openings'] = [o for o in plan.get('reference_openings', []) if o['source'] not in removed_ids]
+        previous = {d['source']: d for d in plan.get('removed_orphan_doors', [])}
+        previous.update({d['source']: d for d in removed_doors})
+        plan['removed_orphan_doors'] = list(previous.values())
+        plan['fidelity']['removed_orphan_doors'] = plan['removed_orphan_doors']
         plan['fidelity']['reference_openings'] = len(plan.get('reference_openings', []))
         plan['fidelity']['mapped_reference_openings'] = len(mapped)
         plan['fidelity']['opening_mapping_coverage'] = len(mapped) / max(len(plan.get('reference_openings', [])), 1)
@@ -13784,3 +13826,71 @@ class IFC:
             if objects[ident].is_a('IfcFurnishingElement') or objects[ident].is_a('IfcOpeningElement'):
                 meshes[ident] = IFC._NavigationBoxMesh(mesh['bounds'])
         return {'model': model, 'entities': entities, 'meshes': meshes, 'objects': objects, 'storeys': storeys, 'parents': parents, 'children': children, 'voids': voids, 'container': container, 'ancestor': ancestor, 'scale': scale, 'ref': ref, 'placement': placement, 'original_vertices': original_vertices, 'original_triangles': original_triangles}
+
+    @staticmethod
+    def _Analytical_redraw_merge_service_spaces(rooms, warnings, excluded=(), constructions=()):
+        """Close small internal pockets and absorb explicitly named service rooms."""
+        import numpy as np
+        from shapely.geometry import Polygon, LineString, mapping, shape
+        from shapely.ops import unary_union, polygonize
+        import re
+        for band in sorted({(r['storey'], r['bottom'], r['top']) for r in rooms}):
+            members = [r for r in rooms if (r['storey'], r['bottom'], r['top']) == band]
+            domain = unary_union([shape(r['footprint']) for r in members])
+            protected = unary_union([shape(e['footprint']) for e in excluded if e.get('role') in {'void', 'atrium', 'shaft', 'outdoor'} and e.get('footprint') and (e.get('bottom', 1000000000.0) < max((r['top'] for r in members))) and (e.get('top', -1000000000.0) > min((r['bottom'] for r in members)))])
+            for poly in IFC._Analytical_evidence_polygons(domain):
+                for ring in poly.interiors:
+                    gap = Polygon(ring)
+                    obstacles = [r['footprint'] for r in constructions if ('WALL' in r['type'] or 'COLUMN' in r['type']) and r['z0'] < band[2] and (r['z1'] > band[1]) and Polygon(poly.exterior).buffer(-0.01).covers(r['footprint']) and r['footprint'].intersects(gap)]
+                    construction_fill = bool(obstacles) and gap.intersection(unary_union(obstacles)).area >= 0.8 * gap.area
+                    if gap.area > 6 and (not construction_fill) or gap.intersection(protected).area > 1e-06:
+                        continue
+                    refs = [{'footprint': shape(r['footprint'])} for r in members]
+                    lines = [gap.boundary] + IFC._Analytical_redraw_gap_bisectors(refs, gap)
+                    reach = gap.length
+                    for ref_record in refs:
+                        for rp in IFC._Analytical_evidence_polygons(ref_record['footprint']):
+                            coords = np.asarray(rp.exterior.coords)
+                            for a, b in zip(coords, coords[1:]):
+                                length = np.linalg.norm(b - a)
+                                if length > 0.01:
+                                    d = (b - a) / length
+                                    lines.append(LineString([a - reach * d, b + reach * d]).intersection(gap))
+                    for piece in polygonize(unary_union(lines)):
+                        if not gap.covers(piece.representative_point()) or piece.area < 1e-10:
+                            continue
+                        target = max(members, key=lambda r: (shape(r['footprint']).boundary.intersection(piece.boundary).length, -shape(r['footprint']).distance(piece.representative_point()), r['id']))
+                        merged = unary_union([shape(target['footprint']), piece])
+                        target['footprint'] = mapping(merged)
+                        target['area'] = merged.area
+                        target.setdefault('absorbed_internal_footprints', []).append(mapping(piece))
+                    warnings.append({'code': 'INTERNAL_CONSTRUCTION_FOOTPRINT_ABSORBED' if construction_fill else 'INTERNAL_POCKET_ABSORBED', 'message': f'Assigned enclosed {gap.area:.6f} square metre pocket to adjacent rooms', 'sources': [r['source_space_id'] for r in members if shape(r['footprint']).distance(gap) < 0.001]})
+        tokens = {'CLOSET', 'STORAGE', 'STORE', 'STOREROOM', 'RISER', 'SHAFT', 'EQUIPMENT', 'KOTT', 'KLESKOTT', 'BOD', 'LAGER', 'SCHACHT', 'ABSTELLRAUM'}
+        for room in sorted(list(rooms), key=lambda r: (r['area'], r['id'])):
+            if room not in rooms or room['area'] > 6:
+                continue
+            words = set(re.findall('[A-Z]+', room.get('name', '').upper()))
+            if not words.intersection(tokens) and room.get('role') not in {'storage', 'closet', 'riser', 'equipment', 'shaft'}:
+                continue
+            polygon = shape(room['footprint'])
+            candidates = []
+            for other in rooms:
+                if other is room or other['storey'] != room['storey'] or other['area'] < 1.5 * room['area']:
+                    continue
+                if abs(other['bottom'] - room['bottom']) > 0.001 or abs(other['top'] - room['top']) > 0.001:
+                    continue
+                target = shape(other['footprint'])
+                shared = polygon.boundary.intersection(target.boundary).length
+                merged = polygon.union(target)
+                if shared > 0.1 and merged.geom_type == 'Polygon':
+                    candidates.append((shared, other['area'], other['id'], other, merged))
+            if not candidates:
+                continue
+            _, _, _, target, merged = max(candidates, key=lambda c: c[:3])
+            target['footprint'], target['area'] = (mapping(merged), merged.area)
+            original = unary_union([shape(target['reference_footprint']), shape(room['reference_footprint'])])
+            target['reference_footprint'], target['reference_area'] = (mapping(original), original.area)
+            target.setdefault('absorbed_source_spaces', []).extend([{'source': room['source_space_id'], 'name': room.get('name', ''), 'area': room['area'], 'footprint': room['footprint'], 'bottom': room['bottom'], 'top': room['top']}] + room.get('absorbed_source_spaces', []))
+            target.setdefault('absorbed_internal_footprints', []).extend(room.get('absorbed_internal_footprints', []))
+            rooms.remove(room)
+            warnings.append({'code': 'SERVICE_SPACE_ABSORBED', 'message': 'Merged small service space into adjacent larger room', 'sources': [room['source_space_id'], target['source_space_id']]})
