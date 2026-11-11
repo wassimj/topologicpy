@@ -546,6 +546,17 @@ def _subtopologies(topology):
     return result
 
 
+def _exact_geometry_key(topology):
+    # Exact coordinate/connectivity identity, independent of unstable numerical
+    # integrations used in centres, areas and volumes. BREP preserves doubles.
+    from topologicpy.Topology import Topology
+    from topologicpy.Vertex import Vertex
+    def point(v): return tuple(float(x).hex() for x in Vertex.Coordinates(v, mantissa=12))
+    vertices = sorted(point(v) for v in Topology.Vertices(topology, silent=True) or [])
+    edges = sorted(tuple(sorted(point(v) for v in Topology.Vertices(e, silent=True) or [])) for e in Topology.Edges(topology, silent=True) or [])
+    return hashlib.sha256(json.dumps([Topology.TypeAsString(topology), vertices, edges], separators=(',', ':')).encode()).hexdigest()
+
+
 def _make_locator(
     type_name,
     index,
@@ -559,6 +570,7 @@ def _make_locator(
         "type": type_name,
         "index": int(index),
         "brepSha256": brep_hash,
+        "exactGeometry": _exact_geometry_key(topology),
         "signature": _signature(
             topology
         ),
@@ -591,6 +603,17 @@ def _resolve_locator(topology, locator, cache=None):
             if expected and _signature(target).get('hash') != expected:
                 if _candidate_brep_hash(target) != locator.get('brepSha256'): return None
             return target
+        except ImportError:
+            # A producer backend may expose OCCT hierarchy paths while the
+            # reader provides native TopologicCore only. Restore only an
+            # unambiguous exact signature; never guess coincident subshapes.
+            kind = str(locator.get("type", "")).lower()
+            expected = locator.get("signature", {}).get("hash")
+            if kind not in _SUBTOPOLOGY_TYPES or not expected:
+                return None
+            lookup = TPYCodec._LocatorIndex(topology, kind, cache)
+            matches = TPYCodec._LocatorMatches(lookup, 'exact' if locator.get('exactGeometry') else 'signature', locator.get('exactGeometry') or expected)
+            return matches[0] if len(matches) == 1 else None
         except (AttributeError, IndexError, TypeError, ValueError): return None
     kind = str(locator.get("type", "")).lower()
     if kind not in _SUBTOPOLOGY_TYPES:
@@ -620,6 +643,10 @@ def _resolve_locator(topology, locator, cache=None):
         matches = TPYCodec._LocatorMatches(lookup, 'brep', checksum)
         if matches:
             return choose(matches)
+    exact = locator.get("exactGeometry")
+    if exact:
+        matches = TPYCodec._LocatorMatches(lookup, 'exact', exact)
+        return matches[0] if len(matches) == 1 else None
     signature = locator.get("signature", {}).get("hash")
     if signature:
         matches = TPYCodec._LocatorMatches(lookup, 'signature', signature)
@@ -878,6 +905,7 @@ class _ArchiveBuilder:
         self.relations = []
 
         self._object_by_python_id = {}
+        self._object_references = {}
         self._active_geometry = {}
 
     def _next_id(self):
@@ -928,6 +956,10 @@ class _ArchiveBuilder:
         self._object_by_python_id[
             python_id
         ] = object_id
+        # Keep wrappers alive while their Python ids are used as cache keys.
+        # Otherwise temporary aperture wrappers can be collected and their ids
+        # reused for an unrelated opening later in the archive.
+        self._object_references[python_id] = topology
 
         ancestry[
             brep_hash
@@ -1186,7 +1218,7 @@ class TPYCodec:
         values = lookup.setdefault(kind + '_values', {})
         key = id(item)
         if key not in values:
-            values[key] = _candidate_brep_hash(item) if kind == 'brep' else _signature(item).get('hash')
+            values[key] = _candidate_brep_hash(item) if kind == 'brep' else _exact_geometry_key(item) if kind == 'exact' else _signature(item).get('hash')
         return values[key]
 
     @staticmethod

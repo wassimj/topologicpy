@@ -5643,7 +5643,7 @@ class IFC:
         references = []
         excluded = []
         all_spaces = [r for r in records if r['type'] == 'IFCSPACE']
-        aggregate_names = {'BRA', 'BOA', 'BYA', 'BTA', 'GFA', 'NFA', 'GROSS FLOOR AREA', 'NET FLOOR AREA'}
+        aggregate_names = {'BRA', 'BOA', 'BYA', 'BTA', 'GFA', 'NFA', 'GEA', 'GIA', 'NIA', 'GROSS FLOOR AREA', 'NET FLOOR AREA'}
         for record in records:
             if record['type'] != 'IFCSPACE':
                 continue
@@ -5654,7 +5654,7 @@ class IFC:
             probable_outdoor = any((word in label for word in ('BALCONY', 'TERRACE', 'BALKONG', 'TERASSE', 'TERRASSE', 'MECH. YARD', 'MECHANICAL YARD')))
             non_spatial = label in {'ROOF', 'OPEN TO BELOW', 'OPEN TO ABOVE', 'VOID'}
             contained = [r for r in all_spaces if r is not record and abs(r['z0'] - record['z0']) < 0.25 and (r['footprint'].area < 0.5 * record['footprint'].area) and (r['footprint'].intersection(record['footprint']).area > 0.95 * r['footprint'].area)]
-            aggregate = label in aggregate_names and len(contained) >= 2 or (len(entity.args) > 8 and entity.args[8] == 'COMPLEX' and any((evidence.entities.get(i) and evidence.entities[i].type == 'IFCSPACE' for i in evidence.context.get('children', {}).get(record['id'], []))))
+            aggregate = (label in aggregate_names or label.split('_', 1)[0] in aggregate_names or str(record.get('name', '')).strip().upper().startswith('AREA:')) and len(contained) >= 2 or (len(entity.args) > 8 and entity.args[8] == 'COMPLEX' and any((evidence.entities.get(i) and evidence.entities[i].type == 'IFCSPACE' for i in evidence.context.get('children', {}).get(record['id'], []))))
             probable_outdoor = spatial_role == 'outdoor'
             non_spatial = spatial_role in {'roof', 'void', 'area_measurement'}
             if record['source'] in config.role_overrides or label in config.role_overrides:
@@ -5816,6 +5816,16 @@ class IFC:
                     generated.append({'id': identity, 'source_space_id': reference['source'], 'name': reference['name'] or identity, 'role': reference.get('role', 'room'), 'role_basis': reference.get('role_basis', 'geometric_inference'), 'air_top': air_top, 'air_volume': polygon.area * max(0.0, air_top - reference['z0']), 'air_volume_method': 'ceiling_or_source_height_prism_estimate', 'plenum_height': max(0.0, band['top'] - air_top), 'ceiling_sources': [r['source'] for r in ceilings], 'storey': number, 'footprint': mapping(polygon), 'bottom': band['bottom'], 'top': band['top'], 'reference_footprint': mapping(reference['footprint']), 'reference_bottom': reference['z0'], 'reference_top': reference['z1'], 'reference_method': reference['method'], 'envelope_method': band['envelope_method'], 'confidence': {'score': score, 'label': 'high' if score >= 0.85 else 'medium' if score >= 0.6 else 'low', 'footprint_iou': iou, 'height_agreement': height_agreement, 'meaning': 'heuristic agreement score; not a calibrated probability'}, 'reference_area': reference['footprint'].area, 'area': polygon.area, 'boundary_displacement_max_m': polygon.boundary.hausdorff_distance(reference['footprint'].boundary)})
         IFC._Analytical_redraw_tall_spaces(generated, warnings, config)
         IFC._Analytical_redraw_merge_service_spaces(generated, warnings, excluded, records)
+        for room in list(generated):
+            parts = sorted(IFC._Analytical_evidence_polygons(shape(room['footprint'])), key=lambda p: (-p.area, p.bounds))
+            if len(parts) <= 1:
+                continue
+            generated.remove(room)
+            for index, part in enumerate(parts):
+                if part.area < config.minimum_fragment_area:
+                    warnings.append({'code': 'TINY_ROOM_FRAGMENT_OMITTED', 'message': 'Disconnected numerical drafting fragment omitted', 'sources': [room['source_space_id']]})
+                    continue
+                generated.append({**room, 'id': room['id'] + (f':component{index + 1}' if index else ''), 'footprint': mapping(part), 'area': part.area, 'confidence': dict(room['confidence'])})
         IFC._Analytical_redraw_absorb_slivers(generated, warnings)
         represented = {r['source_space_id'] for r in generated} | {s['source'] for r in generated for s in r.get('absorbed_source_spaces', [])}
         missing = [{'source': r['source'], 'reason': 'fully overlapped or unassigned source footprint'} for r in references if r['source'] not in represented]
@@ -5976,7 +5986,7 @@ class IFC:
         IFC._Analytical_redraw_refresh_fidelity(plan)
         result = IFC._Analytical_model_Result(origin=plan.get('origin', [0.0, 0.0, 0.0]))
         cells = []
-        common_only = len(plan['rooms']) > 120 and plan.get('assembly_strategy') != 'native_cells_no_attributes'
+        common_only = (bool(plan.get('exterior_envelope') or plan.get('facade_envelope')) or len(plan['rooms']) > 1) and plan.get('assembly_strategy') != 'native_cells_no_attributes'
         by_level = defaultdict(list)
         for room in plan['rooms']:
             polygon = make_valid(shape(room['footprint']))
@@ -6027,9 +6037,9 @@ class IFC:
         elif plan.get('assembly_strategy') == 'native_cells_no_attributes':
             from topologicpy.Core import Core
             topology = Core.CellComplex.ByCells(cells, False)
-        elif len(cells) > 120 and len(cells) == len(plan['rooms']):
+        elif common_only and len(cells) == len(plan['rooms']):
             try:
-                topology = IFC._Analytical_cellular_shared_complex(plan['rooms'], config.tolerance, progress, grid=config.drafting_grid)
+                topology = IFC._Analytical_cellular_shared_complex(plan['rooms'], config.tolerance, progress, grid=0 if plan.get('modelling_config', {}).get('exact_shared_edges') else min(config.drafting_grid, 0.001))
             except (ValueError, RuntimeError) as exc:
                 topology = Cluster.ByTopologies(fallback_cells())
                 result.diagnostics.append(IFC._Analytical_model_Diagnostic('SHARED_ASSEMBLY_REQUIRES_REVIEW', str(exc), 'warning'))
@@ -6092,7 +6102,7 @@ class IFC:
         fidelity = plan['fidelity']
         aliases = fidelity.get('coincident_source_aliases', {})
         absorbed = {s['source'] for r in plan['rooms'] for s in r.get('absorbed_source_spaces', [])}
-        represented_records = len(grouped) + len(absorbed) + sum((primary in grouped for primary in aliases.values()))
+        represented_records = len(set(grouped) | absorbed | {source for source, primary in aliases.items() if primary in grouped})
         fidelity.update(weighted_footprint_iou=weighted_iou / max(total, 1e-09), confidence_score=weighted_score / max(total, 1e-09), source_area_coverage=covered / max(reference_area, 1e-09), represented_source_spaces=len(grouped), represented_source_records=represented_records, source_space_coverage=represented_records / max(fidelity.get('eligible_source_space_records', fidelity['reference_spaces']), 1), confidence_recomputed=True)
 
     @staticmethod
@@ -6100,7 +6110,8 @@ class IFC:
         """Reassign tiny drafting fragments across a shared edge, never leave holes."""
         from shapely.geometry import mapping, shape
         for room in sorted(list(rooms), key=lambda r: r['area']):
-            if room not in rooms or room['area'] >= 0.03:
+            drafting_fragment = room['area'] < 0.1 and room['reference_area'] > 20 * room['area']
+            if room not in rooms or (room['area'] >= 0.03 and (not drafting_fragment)):
                 continue
             polygon = shape(room['footprint'])
             candidates = []
@@ -6119,7 +6130,7 @@ class IFC:
                 target['area'] = merged.area
                 target.setdefault('absorbed_fragments', []).append({'source': room['source_space_id'], 'area': polygon.area})
                 rooms.remove(room)
-                warnings.append({'code': 'DRAFTING_SLIVER_REASSIGNED', 'message': f'Reassigned a {polygon.area:.6f} mÃ‚Â² fragment across its longest shared edge', 'sources': [room['source_space_id'], target['source_space_id']]})
+                warnings.append({'code': 'DRAFTING_SLIVER_REASSIGNED', 'message': f'Reassigned a {polygon.area:.6f} m² fragment across its longest shared edge', 'sources': [room['source_space_id'], target['source_space_id']]})
 
     @staticmethod
     def _Analytical_redraw_boundaries(result, plan, config, progress=None):
@@ -6219,6 +6230,7 @@ class IFC:
         tree = STRtree([row[4] for row in candidates]) if candidates else None
         mapped, missing, removed_doors = (set(), [], [])
         occupied = defaultdict(list)
+        written_apertures = []
         for opening in plan.get('reference_openings', []):
             foot = shape(opening['footprint'])
             fill = plan.get('fill_types', {}).get(str(opening['id']), {'kind': 'void', 'source': opening['source']})
@@ -6297,6 +6309,7 @@ class IFC:
                         fill = plan.get('fill_types', {}).get(str(opening['id']), {'kind': 'void', 'source': opening['source']})
                         Topology.SetDictionary(face, {'opening_id': fill['source'] or opening['source'], 'kind': fill['kind']})
                         result.openings.append({'id': fill['source'] or opening['source'], 'reference_opening_id': opening['source'], 'boundary_id': boundary['id'], 'vertices': vertices, 'area': polygon.area, 'kind': fill['kind'], 'owners': boundary['owners'], 'sources': [opening['source']], 'projection_distance_m': distance, 'area_retention': min(1.0, polygon.area / reference_area)})
+                        written_apertures.append((result.openings[-1], face))
                         boundary['net_opaque_area'] -= polygon.area
                         occupied[boundary['id']].append(polygon)
                         mapped.add(opening['source'])
@@ -6307,6 +6320,15 @@ class IFC:
                     removed_doors.append({'source': opening['source'], 'door_id': fill['source'], 'reason': 'no_analytical_host'})
                 else:
                     missing.append(opening['source'])
+        by_identity = defaultdict(list)
+        for record, face in written_apertures:
+            by_identity[record['id']].append((record, face))
+        for identity, entries in by_identity.items():
+            for index, (record, face) in enumerate(sorted(entries, key=lambda e: (e[0]['boundary_id'], e[0]['vertices']))):
+                record['source_element_id'] = identity
+                if len(entries) > 1:
+                    record['id'] = f'{identity}:fragment{index + 1}'
+                Topology.SetDictionary(face, {'opening_id': record['id'], 'source_element_id': identity, 'kind': record['kind']})
         removed_ids = {d['source'] for d in removed_doors}
         plan['reference_openings'] = [o for o in plan.get('reference_openings', []) if o['source'] not in removed_ids]
         previous = {d['source']: d for d in plan.get('removed_orphan_doors', [])}
@@ -13833,9 +13855,13 @@ class IFC:
         import numpy as np
         from shapely.geometry import Polygon, LineString, mapping, shape
         from shapely.ops import unary_union, polygonize
+        from shapely.strtree import STRtree
         import re
         for band in sorted({(r['storey'], r['bottom'], r['top']) for r in rooms}):
             members = [r for r in rooms if (r['storey'], r['bottom'], r['top']) == band]
+            original_shapes = {r['id']: shape(r['footprint']) for r in members}
+            reference_shapes = {r['id']: shape(r['reference_footprint']) for r in members}
+            reference_tree = STRtree([reference_shapes[r['id']] for r in members])
             domain = unary_union([shape(r['footprint']) for r in members])
             protected = unary_union([shape(e['footprint']) for e in excluded if e.get('role') in {'void', 'atrium', 'shaft', 'outdoor'} and e.get('footprint') and (e.get('bottom', 1000000000.0) < max((r['top'] for r in members))) and (e.get('top', -1000000000.0) > min((r['bottom'] for r in members)))])
             for poly in IFC._Analytical_evidence_polygons(domain):
@@ -13859,7 +13885,9 @@ class IFC:
                     for piece in polygonize(unary_union(lines)):
                         if not gap.covers(piece.representative_point()) or piece.area < 1e-10:
                             continue
-                        target = max(members, key=lambda r: (shape(r['footprint']).boundary.intersection(piece.boundary).length, -shape(r['footprint']).distance(piece.representative_point()), r['id']))
+                        point = piece.representative_point()
+                        nearest = [members[int(i)] for i in reference_tree.query_nearest(point, all_matches=True)]
+                        target = min(nearest, key=lambda r: (-original_shapes[r['id']].boundary.intersection(piece.boundary).length, r['id']))
                         merged = unary_union([shape(target['footprint']), piece])
                         target['footprint'] = mapping(merged)
                         target['area'] = merged.area

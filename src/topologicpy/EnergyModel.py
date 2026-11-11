@@ -260,12 +260,14 @@ class EnergyModel:
             The created OSM model.
 
         """
+        geometry_mantissa = max(9, int(mantissa))
         import math
         import os
         import warnings
         import json
 
         from topologicpy.Vertex import Vertex
+        from topologicpy.Wire import Wire
         from topologicpy.Face import Face
         from topologicpy.Cell import Cell
         from topologicpy.Topology import Topology
@@ -309,7 +311,7 @@ class EnergyModel:
                 hf = d['bottomHorizontalFaces'] + d['topHorizontalFaces']
             else:
                 return None
-            levels = [Vertex.Z(Topology.Centroid(f), mantissa=mantissa) for f in hf]
+            levels = [Vertex.Z(Topology.Centroid(f), mantissa=geometry_mantissa) for f in hf]
             levels = sorted(list(set(levels)))
             return levels
 
@@ -344,9 +346,9 @@ class EnergyModel:
             for v in vertices:
                 pts.append(
                     openstudio.Point3d(
-                        Vertex.X(v, mantissa=mantissa),
-                        Vertex.Y(v, mantissa=mantissa),
-                        export_vertex_map.get((Vertex.X(v, mantissa=mantissa), Vertex.Y(v, mantissa=mantissa), Vertex.Z(v, mantissa=mantissa)), Vertex.Z(v, mantissa=mantissa))
+                        Vertex.X(v, mantissa=geometry_mantissa),
+                        Vertex.Y(v, mantissa=geometry_mantissa),
+                        export_vertex_map.get((Vertex.X(v, mantissa=geometry_mantissa), Vertex.Y(v, mantissa=geometry_mantissa), Vertex.Z(v, mantissa=geometry_mantissa)), Vertex.Z(v, mantissa=geometry_mantissa))
                     )
                 )
             coordinates = [(p.x(), p.y(), p.z()) for p in pts]
@@ -566,11 +568,12 @@ class EnergyModel:
             building_cells = [building]
 
         export_vertex_map, regularisation = EnergyModel._OSMVerticalSeams(
-            [Vertex.Coordinates(v, mantissa=mantissa) for v in Topology.Vertices(building)], seamTolerance)
+            [Vertex.Coordinates(v, mantissa=geometry_mantissa) for v in Topology.Vertices(building)], seamTolerance)
         export_triangulations = {}
+        native_interfaces = {}
         for spaceNumber, buildingCell in enumerate(building_cells):
             osSpace = openstudio.model.Space(osModel)
-            osSpaceZ = Vertex.Z(Topology.CenterOfMass(buildingCell), mantissa=mantissa)
+            osSpaceZ = Vertex.Z(Topology.CenterOfMass(buildingCell), mantissa=geometry_mantissa)
 
             selectedStory = osBuildingStorys[0]
             for story in osBuildingStorys:
@@ -617,49 +620,54 @@ class EnergyModel:
                 osSpace.setSpaceType(chosenSpaceTypeObj)
 
             sourceFaces = Topology.SubTopologies(buildingCell, "Face") or []
+            face_normals = dict(zip([id(f) for f in sourceFaces], EnergyModel._ExportFaceNormals(sourceFaces)))
             cellFaces = []
             for sourceFace in sourceFaces:
-                ring = Topology.SubTopologies(Face.ExternalBoundary(sourceFace), "Vertex") or []
+                ring = Wire.Vertices(Face.ExternalBoundary(sourceFace)) or []
+                holes = Face.InternalBoundaries(sourceFace) or []
                 coords = [tuple(Vertex.Coordinates(v, mantissa=9)) for v in ring]
-                area = Face.Area(sourceFace, mantissa=9)
-                # Preserve exact loops; split only polygons OpenStudio cannot
-                # render. Cache by geometry so both owners export identical
-                # triangles for a shared analytical boundary.
-                if len(ring) > 3 and area and not Topology.Apertures(sourceFace):
-                    key = tuple(sorted(coords))
+                key = (tuple(sorted(coords)), tuple(sorted(tuple(sorted(tuple(Vertex.Coordinates(v, mantissa=9)) for v in Wire.Vertices(w))) for w in holes)))
+                needs_triangles = bool(holes)
+                if len(ring) > 3 and not Topology.Apertures(sourceFace):
+                    points = vertices_to_point3d_list(ring, openstudio)
+                    local = openstudio.Transformation.alignFace(points).inverse()*points
+                    needs_triangles = needs_triangles or not bool(openstudio.computeTriangulation(list(local)[::-1], []))
+                if needs_triangles:
+                    if Topology.Apertures(sourceFace):
+                        raise ValueError("A perforated host with aperture contents needs explicit opening subdivision.")
                     if key not in export_triangulations:
-                        points = vertices_to_point3d_list(ring, openstudio)
-                        exported_area = EnergyModel._OptionalGet(openstudio.getArea(points), area)
-                        if exported_area <= 1e-10:
-                            export_triangulations[key] = None
-                            continue
-                        local = openstudio.Transformation.alignFace(points).inverse()*points
-                        triangles = []
-                        if not openstudio.computeTriangulation(list(local)[::-1], []):
-                            triangles = Face.Triangulate(sourceFace, tolerance=min(tolerance, 1e-8), mantissa=9, silent=True) or []
-                            if not triangles or any(len(Topology.Vertices(f)) != 3 for f in triangles):
-                                triangles = []
-                                for i in range(1, len(ring)-1):
-                                    triangle = Face.ByVertices([ring[0], ring[i], ring[i+1]], tolerance=min(tolerance, 1e-9), silent=True)
-                                    if triangle is not None and Face.Area(triangle, mantissa=12) > 1e-10:
-                                        triangles.append(triangle)
-                            triangle_area = sum(EnergyModel._OptionalGet(openstudio.getArea(vertices_to_point3d_list(Topology.Vertices(f), openstudio)), 0.0) for f in triangles)
-                            if not triangles or abs(triangle_area-exported_area) > max(1e-8, exported_area*1e-4):
-                                raise ValueError(f"EnergyModel.ByTopology - Could not preserve an unrenderable surface by triangulation (area={exported_area}, triangle_area={triangle_area}, vertices={len(ring)}).")
+                        import numpy as np
+                        from shapely.geometry import Polygon
+                        from shapely.ops import unary_union
+                        centre = np.mean(coords, axis=0)
+                        _, _, axes = np.linalg.svd(np.asarray(coords)-centre)
+                        def project(points): return (np.asarray(points)-centre)@axes[:2].T
+                        region = Polygon(project(coords), [project([Vertex.Coordinates(v, mantissa=9) for v in Wire.Vertices(w)]) for w in holes])
+                        mesh = [[openstudio.Point3d(x, y, 0) for x, y in tri] for tri in EnergyModel._ExportTriangles2D(region)]
+                        triangles, patches = [], []
+                        for triangle_points in mesh:
+                            uv = np.array([[v.x(), v.y()] for v in triangle_points])
+                            p = (centre+uv@axes[:2]).tolist()
+                            patch = Polygon(uv)
+                            if patch.area < 1e-10: continue
+                            triangle = Face.ByVertices([Vertex.ByCoordinates(*v) for v in p], tolerance=min(tolerance, 1e-8), silent=True)
+                            if triangle is None: raise ValueError("Could not construct an export triangle.")
+                            triangles.append(triangle); patches.append(patch)
+                        merged = unary_union(patches)
+                        budget = max(1e-7, region.area*1e-7)
+                        if not triangles or merged.symmetric_difference(region).area > budget or sum(p.area for p in patches)-merged.area > budget:
+                            raise ValueError(f"Export triangulation changes the source surface or fills its holes (area={region.area}, triangles={sum(p.area for p in patches)}, difference={merged.symmetric_difference(region).area}, holes={len(holes)}, vertices={len(coords)}, valid={region.is_valid}).")
                         export_triangulations[key] = triangles
-                    if export_triangulations[key] is None:
-                        continue
-                    if export_triangulations[key]:
-                        cellFaces.extend((sourceFace, triangle) for triangle in export_triangulations[key])
-                        continue
-                cellFaces.append((sourceFace, sourceFace))
+                    cellFaces.extend((sourceFace, triangle) for triangle in export_triangulations[key])
+                else:
+                    cellFaces.append((sourceFace, sourceFace))
             if cellFaces:
                 for faceNumber, (buildingFace, surfaceFace) in enumerate(cellFaces):
                     boundary = Face.ExternalBoundary(surfaceFace)
                     if boundary is None:
                         continue
 
-                    faceVertices = Topology.SubTopologies(boundary, "Vertex")
+                    faceVertices = Wire.Vertices(boundary)
                     if not faceVertices or len(faceVertices) < 3:
                         continue
 
@@ -668,15 +676,27 @@ class EnergyModel:
                         continue
                     osSurface = openstudio.model.Surface(osFacePoints, osModel)
 
-                    faceNormal = Face.Normal(buildingFace, mantissa=mantissa)
+                    faceNormal = face_normals[id(buildingFace)]
                     orient_surface_vertices(osFacePoints, faceNormal, osSurface, openstudio)
                     osSurface.setSpace(osSpace)
 
-                    faceCells = Topology.AdjacentTopologies(buildingFace, building, topologyType="cell")
+                    fd = Topology.Dictionary(buildingFace)
+                    fd = fd if isinstance(fd, dict) else Dictionary.PythonDictionary(fd) or {}
+                    owners = fd.get('owners')
+                    if isinstance(owners, (list, tuple)) and len(owners) in (1, 2):
+                        faceCells = [None]*len(owners)
+                    elif Topology.IsInstance(building, 'Cell'):
+                        faceCells = [building]
+                    else:
+                        faceCells = Topology.AdjacentTopologies(buildingFace, building, topologyType="cell")
                     if not isinstance(faceCells, list):
                         faceCells = []
                     tilt = surface_tilt_degrees(osSurface, openstudio)
                     space_name = safe_name(osSpace, f"SPACE_{spaceNumber:04d}")
+
+                    if len(faceCells) == 2:
+                        key = (fd.get('bim2bem_boundary_id'), tuple(sorted(tuple(round(x,9) for x in (v.x(),v.y(),v.z())) for v in osSurface.vertices())))
+                        native_interfaces.setdefault(key, []).append(osSurface)
 
                     if len(faceCells) == 1:  # Exterior surfaces
                         native_dictionary = Topology.Dictionary(buildingFace)
@@ -705,7 +725,7 @@ class EnergyModel:
                                     ap_boundary = Face.ExternalBoundary(apertureFace)
                                     if ap_boundary is None:
                                         continue
-                                    ap_vertices = Topology.SubTopologies(ap_boundary, "Vertex")
+                                    ap_vertices = Wire.Vertices(ap_boundary)
                                     if not ap_vertices or len(ap_vertices) < 3:
                                         continue
 
@@ -716,7 +736,9 @@ class EnergyModel:
                                     apertureFaceNormal = [host_normal.x(), host_normal.y(), host_normal.z()]
                                     orient_surface_vertices(osSubSurfacePoints, apertureFaceNormal, osSubSurface, openstudio)
 
-                                    osSubSurface.setSubSurfaceType("FixedWindow")
+                                    ad = Topology.Dictionary(apertureFace)
+                                    ad = ad if isinstance(ad, dict) else Dictionary.PythonDictionary(ad) or {}
+                                    osSubSurface.setSubSurfaceType("Door" if ad.get('kind') == 'door' else "FixedWindow" if ad.get('kind') == 'window' else "FixedWindow")
                                     osSubSurface.setSurface(osSurface)
                             else:
                                 faceGlazingRatio = None
@@ -769,7 +791,7 @@ class EnergyModel:
                                 ap_boundary = Face.ExternalBoundary(apertureFace)
                                 if ap_boundary is None:
                                     continue
-                                ap_vertices = Topology.SubTopologies(ap_boundary, "Vertex")
+                                ap_vertices = Wire.Vertices(ap_boundary)
                                 if not ap_vertices or len(ap_vertices) < 3:
                                     continue
 
@@ -780,11 +802,13 @@ class EnergyModel:
                                 apertureFaceNormal = [host_normal.x(), host_normal.y(), host_normal.z()]
                                 orient_surface_vertices(osSubSurfacePoints, apertureFaceNormal, osSubSurface, openstudio)
 
-                                osSubSurface.setSubSurfaceType("Door")
+                                ad = Topology.Dictionary(apertureFace)
+                                ad = ad if isinstance(ad, dict) else Dictionary.PythonDictionary(ad) or {}
+                                osSubSurface.setSubSurfaceType("Door" if ad.get('kind') == 'door' else "FixedWindow" if ad.get('kind') == 'window' else "Door")
                                 osSubSurface.setSurface(osSurface)
 
             osThermalZone = openstudio.model.ThermalZone(osModel)
-            cellVolume = Cell.Volume(buildingCell, mantissa=mantissa)
+            cellVolume = Cell.Volume(buildingCell, mantissa=geometry_mantissa)
             if cellVolume is not None:
                 try:
                     osThermalZone.setVolume(cellVolume)
@@ -800,13 +824,20 @@ class EnergyModel:
             osThermalZone.setThermostatSetpointDualSetpoint(osThermostat)
             osSpace.setThermalZone(osThermalZone)
 
-            for x in osSpaces:
-                try:
-                    if osSpace.boundingBox().intersects(x.boundingBox()):
-                        osSpace.matchSurfaces(x)
-                except Exception:
-                    pass
             osSpaces.append(osSpace)
+
+        # Native shared interfaces already establish adjacency. Asking the SDK
+        # to intersect/rematch them can split valid boundaries and open shells.
+        EnergyModel._ConformExportEdges(osModel)
+        for pair in native_interfaces.values():
+            if len(pair) != 2 or not pair[0].setAdjacentSurface(pair[1]):
+                raise ValueError("Could not preserve a native shared surface pair.")
+            def subkey(sub): return tuple(sorted(tuple(round(x,9) for x in (v.x(),v.y(),v.z())) for v in sub.vertices()))
+            others = {subkey(sub):sub for sub in pair[1].subSurfaces()}
+            for sub in pair[0].subSurfaces():
+                other = others.get(subkey(sub))
+                if other is None or not sub.setAdjacentSubSurface(other):
+                    raise ValueError("Could not preserve a native internal opening pair.")
 
         if shadingSurfaces:
             osShadingGroup = openstudio.model.ShadingSurfaceGroup(osModel)
@@ -821,7 +852,7 @@ class EnergyModel:
                 facePoints = vertices_to_point3d_list(shadingVertices, openstudio)
                 aShadingSurface = openstudio.model.ShadingSurface(facePoints, osModel)
 
-                faceNormal = Face.Normal(shadingFace, mantissa=mantissa)
+                faceNormal = Face.Normal(shadingFace, mantissa=geometry_mantissa)
                 try:
                     osFaceNormal = openstudio.Vector3d(faceNormal[0], faceNormal[1], faceNormal[2])
                     osFaceNormal.normalize()
@@ -1024,7 +1055,8 @@ class EnergyModel:
             if result:
                 with open(path, 'r', encoding='utf-8') as source:
                     xml = source.read()
-                cleaned = EnergyModel._CleanGBXMLPolyLoops(xml)
+                conforming = model.getBuilding().additionalProperties().getFeatureAsBoolean('topologicpy_conforming_export')
+                cleaned = xml if conforming.is_initialized() and conforming.get() else EnergyModel._CleanGBXMLPolyLoops(xml)
                 if cleaned != xml:
                     with open(path, 'w', encoding='utf-8', newline='\n') as target:
                         target.write(cleaned)
@@ -1550,5 +1582,153 @@ class EnergyModel:
         if check is True:
             result = Helper.CheckVersion("openstudio", result, silent=silent)
         return result
+
+    @staticmethod
+    def _ExportTriangles2D(region):
+        """Constrained planar triangulation, preserving concavities and holes."""
+        from shapely.geometry import Polygon, Point
+        from shapely.ops import triangulate, unary_union
+        if not region.is_valid:
+            raise ValueError("Cannot triangulate an invalid export polygon.")
+        def simple(poly):
+            points = list(poly.simplify(1e-10, preserve_topology=True).exterior.coords)[:-1]
+            if not Polygon(points).exterior.is_ccw: points.reverse()
+            triangles = []
+            while len(points) > 3:
+                found = False
+                for i, b in enumerate(points):
+                    a, c = points[i-1], points[(i+1) % len(points)]
+                    cross = (b[0]-a[0])*(c[1]-b[1])-(b[1]-a[1])*(c[0]-b[0])
+                    if cross <= 1e-12: continue
+                    ear = Polygon([a, b, c])
+                    if not poly.buffer(1e-10).covers(ear): continue
+                    if any(ear.contains(Point(p)) for j, p in enumerate(points) if j not in {i, (i-1) % len(points), (i+1) % len(points)}): continue
+                    triangles.append([a, b, c]); points.pop(i); found = True; break
+                if not found:
+                    raise ValueError("No valid ear in an export polygon; unsafe fan triangulation refused.")
+            if len(points) == 3 and Polygon(points).area > 1e-12: triangles.append(points)
+            return triangles
+        result = []
+        if region.interiors:
+            openstudio = EnergyModel._ImportOpenStudio("EnergyModel._ExportTriangles2D")
+            def clockwise(ring):
+                uv = list(ring.coords)[:-1]
+                if sum(a[0]*b[1]-b[0]*a[1] for a,b in zip(uv,uv[1:]+uv[:1])) > 0: uv.reverse()
+                return [openstudio.Point3d(x,y,0) for x,y in uv]
+            clean = region.simplify(1e-10,preserve_topology=True)
+            mesh = openstudio.computeTriangulation(clockwise(clean.exterior),[clockwise(r) for r in clean.interiors])
+            candidate = [[(p.x(),p.y()) for p in tri] for tri in mesh]
+            if candidate:
+                patches = [Polygon(p) for p in candidate]
+                merged = unary_union(patches)
+                budget = max(1e-7,region.area*1e-7)
+                if merged.symmetric_difference(region).area <= budget and sum(p.area for p in patches)-merged.area <= budget:
+                    return candidate
+        if not region.interiors:
+            result = simple(region)
+        else:
+            # Clipping a Delaunay subdivision at the original boundary adds
+            # exact edge intersections. It never bridges an interior opening.
+            for triangle in triangulate(region):
+                clipped = triangle.intersection(region)
+                parts = [clipped] if clipped.geom_type == 'Polygon' else getattr(clipped, 'geoms', [])
+                for part in parts:
+                    if part.geom_type != 'Polygon' or part.area < 1e-12: continue
+                    if part.interiors: raise ValueError("Unexpected hole in a clipped export triangle.")
+                    result.extend(simple(part))
+        patches = [Polygon(p) for p in result]
+        merged = unary_union(patches)
+        budget = max(1e-7, region.area*1e-7)
+        if not result or merged.symmetric_difference(region).area > budget or sum(p.area for p in patches)-merged.area > budget:
+            raise ValueError("Export triangulation failed exact area/overlap validation.")
+        return result
+
+    @staticmethod
+    def _ExportFaceNormals(faces):
+        """Orient a closed shell using shared edge incidence and signed volume."""
+        import numpy as np
+        from topologicpy.Face import Face
+        from topologicpy.Wire import Wire
+        from topologicpy.Vertex import Vertex
+        loops, normals, incidences = [], [], {}
+        for index, face in enumerate(faces):
+            rings = []
+            for wire in [Face.ExternalBoundary(face)] + (Face.InternalBoundaries(face) or []):
+                ring = np.asarray([Vertex.Coordinates(v, mantissa=10) for v in Wire.Vertices(wire)], dtype=float)
+                normal = np.sum(np.cross(ring-ring.mean(0), np.roll(ring, -1, axis=0)-ring.mean(0)), axis=0)
+                if not rings:
+                    length = np.linalg.norm(normal)
+                    if length < 1e-12: raise ValueError("Degenerate export face normal.")
+                    normals.append(normal/length)
+                elif normal@normals[-1] > 0:
+                    ring = ring[::-1]
+                rings.append(ring)
+                keys = [tuple(round(float(v), 9) for v in p) for p in ring]
+                for a, b in zip(keys, keys[1:]+keys[:1]):
+                    if a == b: continue
+                    incidences.setdefault(tuple(sorted((a,b))), []).append((index, 1 if a < b else -1))
+            loops.append(rings)
+        neighbours = [[] for _ in faces]
+        for edge, owners in incidences.items():
+            if len(owners) != 2:
+                raise ValueError("Export shell has a non-conforming edge.")
+            (a, da), (b, db) = owners
+            neighbours[a].append((b, -da*db)); neighbours[b].append((a, -da*db))
+        signs = {}
+        origin = np.mean([p for rings in loops for p in rings[0]], axis=0)
+        for first in range(len(faces)):
+            if first in signs: continue
+            signs[first] = 1; pending = [first]; component = []
+            while pending:
+                current = pending.pop(); component.append(current)
+                for other, ratio in neighbours[current]:
+                    expected = signs[current]*ratio
+                    if other in signs:
+                        if signs[other] != expected: raise ValueError("Export shell is not consistently orientable.")
+                    else: signs[other] = expected; pending.append(other)
+            volume = 0.
+            for index in component:
+                for ring in loops[index]:
+                    p = ring-origin
+                    volume += signs[index]*sum(float(p[0]@np.cross(p[j],p[j+1])) for j in range(1,len(p)-1))/6
+            if abs(volume) < 1e-10: raise ValueError("Export shell has negligible signed volume.")
+            if volume < 0:
+                for index in component: signs[index] *= -1
+        return [(normals[i]*signs[i]).tolist() for i in range(len(faces))]
+
+    @staticmethod
+    def _ConformExportEdges(model):
+        """Retain common edge subdivisions after planar triangulation."""
+        import numpy as np
+        from scipy.spatial import cKDTree
+        openstudio = EnergyModel._ImportOpenStudio("EnergyModel._ConformExportEdges")
+        surfaces = list(model.getSurfaces())
+        points = np.unique(np.round(np.array([[v.x(),v.y(),v.z()] for s in surfaces for v in s.vertices()]),8),axis=0)
+        tree = cKDTree(points)
+        for surface in surfaces:
+            source = np.round(np.array([[v.x(),v.y(),v.z()] for v in surface.vertices()]),8)
+            ring = []
+            for a, b in zip(source, np.roll(source,-1,axis=0)):
+                d = b-a; length2 = float(d@d)
+                if length2 < 1e-18: continue
+                candidates = points[tree.query_ball_point((a+b)*.5, np.sqrt(length2)*.5+1e-7)]
+                t = ((candidates-a)@d)/length2
+                distance = np.linalg.norm(candidates-a-t[:,None]*d,axis=1)
+                keep = (t>1e-9)&(t<1-1e-9)&(distance<1e-7)
+                interior = candidates[keep]
+                ordered = interior[np.argsort(t[keep])] if len(interior) else []
+                for p in [a]+list(ordered):
+                    if not ring or not np.array_equal(p,ring[-1]): ring.append(p)
+            if len(ring)>1 and np.array_equal(ring[0],ring[-1]): ring.pop()
+            if len(ring)<3: raise ValueError("Edge conformity collapsed an export surface.")
+            def strength(i):
+                a,b,c=[ring[(i+j)%len(ring)] for j in range(3)]
+                return float(np.linalg.norm(np.cross(b-a,c-a)))
+            start=max(range(len(ring)),key=strength)
+            ring=ring[start:]+ring[:start]
+            if not surface.setVertices([openstudio.Point3d(*p.tolist()) for p in ring]):
+                raise ValueError("Could not preserve conforming export edges.")
+        model.getBuilding().additionalProperties().setFeature('topologicpy_conforming_export', True)
+
         
         
