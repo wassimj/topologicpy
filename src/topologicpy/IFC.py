@@ -6036,7 +6036,7 @@ class IFC:
                 plan['fidelity'].update({k: envelope[k] for k in ('faces_before_coalescing', 'faces_after_coalescing') if k in envelope})
         elif plan.get('assembly_strategy') == 'native_cells_no_attributes':
             from topologicpy.Core import Core
-            topology = Core.CellComplex.ByCells(cells, False)
+            topology = Core.CellComplex.ByCells(cells, tolerance=config.tolerance)
         elif common_only and len(cells) == len(plan['rooms']):
             try:
                 topology = IFC._Analytical_cellular_shared_complex(plan['rooms'], config.tolerance, progress, grid=0 if plan.get('modelling_config', {}).get('exact_shared_edges') else min(config.drafting_grid, 0.001))
@@ -6045,7 +6045,7 @@ class IFC:
                 result.diagnostics.append(IFC._Analytical_model_Diagnostic('SHARED_ASSEMBLY_REQUIRES_REVIEW', str(exc), 'warning'))
         else:
             from topologicpy.Core import Core
-            topology = Core.CellComplex.ByCells(cells, False) if len(cells) == 1 else CellComplex.ByCells(cells, tolerance=config.tolerance, silent=True)
+            topology = Core.CellComplex.ByCells(cells, tolerance=config.tolerance) if len(cells) == 1 else CellComplex.ByCells(cells, tolerance=config.tolerance, silent=True)
         if not Topology.IsInstance(topology, 'CellComplex') and len(cells) > 1:
             topology = Cluster.ByTopologies(fallback_cells())
             result.diagnostics.append(IFC._Analytical_model_Diagnostic('DISCONNECTED_CELL_COLLECTION', 'Generated closed cells retained as an editable collection; shared topology needs review', 'warning'))
@@ -6176,8 +6176,12 @@ class IFC:
         if unresolved_volume:
             from topologicpy.Core import Core
             selected = [cell for index, cell in enumerate(cells) if index in assigned]
-            result.topology = Core.CellComplex.ByCells(selected, False) if len(selected) > 1 else selected[0]
-            result.diagnostics.append(IFC._Analytical_model_Diagnostic('ADDITIONAL_NATIVE_REGIONS_OMITTED', f'{len(cells) - len(assigned)} residual regions ({unresolved_volume:.3f} mÃ‚Â³) excluded from spatial cells', 'warning'))
+            if not selected:
+                raise ValueError('Native assembly did not retain any cells identified by room seeds.')
+            result.topology = Core.CellComplex.ByCells(selected, tolerance=config.tolerance) if len(selected) > 1 else selected[0]
+            if not Topology.IsInstance(result.topology, 'CellComplex') and len(selected) > 1:
+                raise ValueError('PythonOCC could not rebuild the identified spatial cells with the configured tolerance.')
+            result.diagnostics.append(IFC._Analytical_model_Diagnostic('ADDITIONAL_NATIVE_REGIONS_OMITTED', f'{len(cells) - len(assigned)} residual regions ({unresolved_volume:.3f} m³) excluded from spatial cells', 'warning'))
         result.statistics['rooms'] = len(assigned)
         result.statistics['analytical_volume'] = sum((r['analytical_volume'] for r in result.spaces))
         plan['fidelity']['additional_native_regions'] = len(cells) - len(assigned)

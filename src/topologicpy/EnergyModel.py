@@ -1055,8 +1055,7 @@ class EnergyModel:
             if result:
                 with open(path, 'r', encoding='utf-8') as source:
                     xml = source.read()
-                conforming = model.getBuilding().additionalProperties().getFeatureAsBoolean('topologicpy_conforming_export')
-                cleaned = xml if conforming.is_initialized() and conforming.get() else EnergyModel._CleanGBXMLPolyLoops(xml)
+                cleaned = EnergyModel._CleanGBXMLForModel(model, xml)
                 if cleaned != xml:
                     with open(path, 'w', encoding='utf-8', newline='\n') as target:
                         target.write(cleaned)
@@ -1101,7 +1100,7 @@ class EnergyModel:
             return None
         try:
             xml = openstudio.gbxml.GbXMLForwardTranslator().modelToGbXMLString(model)
-            return EnergyModel._CleanGBXMLPolyLoops(xml)
+            return EnergyModel._CleanGBXMLForModel(model, xml)
         except Exception as e:
             warnings.warn(f"EnergyModel.GBXMLString - Error: Could not create GBXML string ({e}). Returning None.")
             return None
@@ -1729,6 +1728,21 @@ class EnergyModel:
             if not surface.setVertices([openstudio.Point3d(*p.tolist()) for p in ring]):
                 raise ValueError("Could not preserve conforming export edges.")
         model.getBuilding().additionalProperties().setFeature('topologicpy_conforming_export', True)
+
+    @staticmethod
+    def _CleanGBXMLForModel(model, xml):
+        """Keep conforming nodes only for explicitly marked native SDK models."""
+        get_building = getattr(model, 'getBuilding', None)
+        if callable(get_building):
+            properties = get_building().additionalProperties()
+            get_feature = getattr(properties, 'getFeatureAsBoolean', None)
+            if callable(get_feature):
+                feature = get_feature('topologicpy_conforming_export')
+                if feature.is_initialized() and feature.get():
+                    return xml
+        return EnergyModel._CleanGBXMLPolyLoops(xml)
+
+
 
         
         
