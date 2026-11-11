@@ -634,12 +634,22 @@ class Honeybee:
     
     @staticmethod
     def _FitSubFaceGeometry(geometry, host, tolerance):
-        """Fit boundary-touching sub-faces by a recorded, area-preserving move."""
+        """Fit boundary-touching sub-faces with recorded, bounded corrections."""
         import math
         from ladybug_geometry.geometry3d.pointvector import Vector3D
         if geometry.normal.dot(host.normal) < 0:
             geometry = geometry.flip()
-        if host.is_sub_face(geometry, tolerance, math.radians(1)):
+        from shapely.geometry import Polygon
+        def project(points):
+            return [(p.x,p.y) for p in (host.plane.xyz_to_xy(v) for v in points)]
+        outer=Polygon(project(host.boundary),[project(h) for h in host.holes] if host.holes else [])
+        aperture=Polygon(project(geometry.boundary))
+        clearance=max(2e-7,min(tolerance*.2,1e-5))
+        def robustly_inside(candidate):
+            polygon=Polygon(project(candidate.boundary))
+            return (outer.covers(polygon) and polygon.boundary.distance(outer.boundary)>=clearance*.5
+                    and host.is_sub_face(candidate,tolerance,math.radians(1)))
+        if robustly_inside(geometry):
             return geometry, None
         centre, target = geometry.centroid, host.centroid
         direction = Vector3D(target.x-centre.x, target.y-centre.y, target.z-centre.z)
@@ -651,11 +661,33 @@ class Honeybee:
                     break
                 vector = direction*distance
                 candidate = geometry.move(vector)
-                if host.is_sub_face(candidate, tolerance, math.radians(1)):
+                if robustly_inside(candidate):
                     return candidate, {'method': 'area_preserving_translation', 'reason': 'opening touches host boundary',
                         'translation_m': [vector.x, vector.y, vector.z], 'distance_m': distance,
                         'original_area_m2': geometry.area, 'export_area_m2': candidate.area}
-        raise ValueError('Honeybee.ModelByTopology - Opening cannot fit its host within 1 mm without changing its area.')
+        # A sub-face can touch opposing host edges, so no rigid translation
+        # can put it strictly inside. Apply only a micron-scale, audited inset
+        # when the original polygon is already covered by its coplanar host.
+        from shapely.geometry import Polygon
+        from ladybug_geometry.geometry2d.pointvector import Point2D
+        from ladybug_geometry.geometry3d.face import Face3D
+        def project(points):
+            return [(p.x,p.y) for p in (host.plane.xyz_to_xy(v) for v in points)]
+        outer=Polygon(project(host.boundary),[project(h) for h in host.holes] if host.holes else [])
+        aperture=Polygon(project(geometry.boundary))
+        if host.plane.is_coplanar_tolerance(geometry.plane,tolerance,math.radians(1)) and aperture.difference(outer.buffer(tolerance)).area <= 1e-10:
+            distance=max(2e-7,min(tolerance*.2,1e-5))
+            fitted=aperture.intersection(outer.buffer(-distance,join_style=2))
+            if fitted.geom_type=='Polygon' and not fitted.is_empty and not fitted.interiors:
+                loss=geometry.area-fitted.area
+                if 0 <= loss <= max(1e-9,geometry.area*.001):
+                    candidate=Face3D(tuple(host.plane.xy_to_xyz(Point2D(x,y)) for x,y in list(fitted.exterior.coords)[:-1]))
+                    if candidate.normal.dot(host.normal)<0:candidate=candidate.flip()
+                    if host.is_sub_face(candidate,tolerance,math.radians(1)):
+                        return candidate,{'method':'bounded_boundary_inset','distance_m':distance,
+                            'original_area_m2':geometry.area,'export_area_m2':candidate.area,
+                            'area_change_m2':candidate.area-geometry.area,'relative_area_change':abs(candidate.area-geometry.area)/geometry.area}
+        raise ValueError('Honeybee.ModelByTopology - Opening cannot fit its host within the bounded export correction budget.')
 
     @staticmethod
     def ModelByTopology(tpBuilding,
@@ -847,15 +879,19 @@ class Honeybee:
             spaceNames.append(tpCellName)
 
             tpCellFaces = Topology.Faces(tpCell)
+            export_normals = EnergyModel._ExportFaceNormals(tpCellFaces) if tpCellFaces else []
             if tpCellFaces:
                 hbRoomFaces = []
                 for tpFaceNumber, tpCellFace in enumerate(tpCellFaces):
-                    tpCellFaceNormal = Face.Normal(tpCellFace, mantissa=mantissa)
+                    tpCellFaceNormal = export_normals[tpFaceNumber]
                     hbRoomFacePoints = []
-                    tpFaceVertices = Topology.Vertices(Face.ExternalBoundary(tpCellFace))
+                    tpFaceVertices = Wire.Vertices(Face.ExternalBoundary(tpCellFace))
                     for tpVertex in tpFaceVertices:
                         hbRoomFacePoints.append(Point3D(Vertex.X(tpVertex, mantissa=mantissa), Vertex.Y(tpVertex, mantissa=mantissa), Vertex.Z(tpVertex, mantissa=mantissa)))
-                    hbRoomFace = HBFace(tpCellName+'_Face_'+str(tpFaceNumber+1), Face3D(hbRoomFacePoints))
+                    hb_holes = [[Point3D(*Vertex.Coordinates(v,mantissa=mantissa)) for v in Wire.Vertices(w)] for w in Face.InternalBoundaries(tpCellFace) or []]
+                    hb_geometry = Face3D(hbRoomFacePoints,holes=hb_holes or None)
+                    if hb_geometry.normal.dot(Vector3D(*tpCellFaceNormal))<0:hb_geometry=hb_geometry.flip()
+                    hbRoomFace = HBFace(tpCellName+'_Face_'+str(tpFaceNumber+1), hb_geometry)
                     from honeybee.boundarycondition import boundary_conditions
                     hbRoomFace.boundary_condition = boundary_conditions.outdoors
                     tpFaceApertures = []
@@ -871,7 +907,7 @@ class Honeybee:
                                 tpFaceApertureType = Dictionary.ValueAtKey(tpFaceApertureDictionary,apertureKeyName, silent=True) or Dictionary.ValueAtKey(tpFaceApertureDictionary, 'kind', silent=True)
                             hbFaceAperturePoints = []
                             tpFaceApertureVertices = []
-                            tpFaceApertureVertices = Topology.Vertices(Face.ExternalBoundary(apertureTopology), silent=True)
+                            tpFaceApertureVertices = Wire.Vertices(Face.ExternalBoundary(apertureTopology))
                             for tpFaceApertureVertex in tpFaceApertureVertices:
                                 hbFaceAperturePoints.append(Point3D(Vertex.X(tpFaceApertureVertex, mantissa=mantissa), Vertex.Y(tpFaceApertureVertex, mantissa=mantissa), Vertex.Z(tpFaceApertureVertex, mantissa=mantissa)))
                             aperture_geometry, correction = Honeybee._FitSubFaceGeometry(Face3D(hbFaceAperturePoints), hbRoomFace.geometry, tolerance)
@@ -882,8 +918,21 @@ class Honeybee:
                                     hbFaceAperture = HBAperture(tpCellName+'_Face_'+str(tpFaceNumber+1)+'_Window_'+str(tpFaceApertureNumber), aperture_geometry)
                             else:
                                 hbFaceAperture = HBAperture(tpCellName+'_Face_'+str(tpFaceNumber+1)+'_Window_'+str(tpFaceApertureNumber), aperture_geometry)
+                            aperture_data=tpFaceApertureDictionary if isinstance(tpFaceApertureDictionary,dict) else Dictionary.PythonDictionary(tpFaceApertureDictionary) or {}
+                            hbFaceAperture.user_data = {'bim2bem_opening_id':aperture_data.get('opening_id'),'topologicpy_dictionary':dict(aperture_data)}
                             if correction:
-                                hbFaceAperture.user_data = {'topologicpy_geometry_correction': correction}
+                                hbFaceAperture.user_data['topologicpy_geometry_correction'] = correction
+                            duplicate=next((existing for existing in list(hbRoomFace.apertures)+list(hbRoomFace.doors)
+                                if type(existing) is type(hbFaceAperture) and existing.geometry.is_geometrically_equivalent(hbFaceAperture.geometry,tolerance)),None)
+                            if duplicate is not None:
+                                data=duplicate.user_data or {}
+                                ids=set(data.get('coincident_source_opening_ids',[]))
+                                ids.update(i for i in [data.get('bim2bem_opening_id'),hbFaceAperture.user_data.get('bim2bem_opening_id')] if i)
+                                data['coincident_source_opening_ids']=sorted(ids)
+                                record=data.setdefault('topologicpy_geometry_correction',{'method':'coincident_source_opening_merge','original_area_m2':duplicate.area,'export_area_m2':duplicate.area})
+                                record['coincident_source_opening_ids']=sorted(ids)
+                                duplicate.user_data=data
+                                continue
                             if isinstance(hbFaceAperture, HBDoor):
                                 hbRoomFace.add_door(hbFaceAperture)
                             else:
@@ -915,6 +964,7 @@ class Honeybee:
                     hb_face.user_data = {'topologicpy_boundary_id': d.get('bim2bem_boundary_id'),
                         'source_exposure': exposure,
                         'boundary_condition_basis': 'explicit_exposure' if exposure in {'ground', 'external_earth', 'earth', 'outdoors', 'external', 'air'} else 'basal_floor_assumption' if condition == 'Ground' else 'outdoor_assumption'}
+                room.user_data={'bim2bem_space_id':Dictionary.ValueAtKey(tpDictionary,'bim2bem_space_id',silent=True)}
                 room.display_name = displayName
                 if addSensorGrid:
                     floor_mesh = room.generate_grid(0.5, 0.5, 1)
@@ -938,6 +988,7 @@ class Honeybee:
         HBRoom.solve_adjacency(rooms, tolerance)
         for room in rooms:
             for face in room.faces:
+                face.type = honeybee.facetype.get_type_from_normal(face.normal,roof_angle=30,floor_angle=150)
                 if face.boundary_condition.name == 'Surface':
                     face.user_data['boundary_condition_basis'] = 'shared_geometry'
 

@@ -590,6 +590,13 @@ def _resolve_locator(topology, locator, cache=None):
         return topology
     if not isinstance(locator, dict):
         return None
+    def exact_target():
+        kind=str(locator.get('type','')).lower()
+        exact=locator.get('exactGeometry')
+        if kind not in _SUBTOPOLOGY_TYPES or not exact:return None
+        lookup=TPYCodec._LocatorIndex(topology,kind,cache)
+        matches=TPYCodec._LocatorMatches(lookup,'exact',exact)
+        return matches[0] if len(matches)==1 else None
     if 'nativePath' in locator:
         path = locator['nativePath']
         if not isinstance(path, list) or len(path) > 100 or any(type(index) is not int or index < 0 for index in path): return None
@@ -598,10 +605,13 @@ def _resolve_locator(topology, locator, cache=None):
             for index in path: shape = TPYCodec._NativeChildren(shape)[index]
             target = Topology.ByOCCTShape(shape, silent=True)
             # The hierarchy path distinguishes independent coincident shapes.
-            if target is None or Topology.TypeAsString(target).lower() != str(locator.get('type', '')).lower(): return None
+            if target is None or Topology.TypeAsString(target).lower() != str(locator.get('type', '')).lower(): return exact_target()
+            exact=locator.get('exactGeometry')
+            if exact:
+                return target if _exact_geometry_key(target)==exact else exact_target()
             expected = locator.get('signature', {}).get('hash')
             if expected and _signature(target).get('hash') != expected:
-                if _candidate_brep_hash(target) != locator.get('brepSha256'): return None
+                if _candidate_brep_hash(target) != locator.get('brepSha256'): return exact_target()
             return target
         except ImportError:
             # A producer backend may expose OCCT hierarchy paths while the
@@ -614,7 +624,7 @@ def _resolve_locator(topology, locator, cache=None):
             lookup = TPYCodec._LocatorIndex(topology, kind, cache)
             matches = TPYCodec._LocatorMatches(lookup, 'exact' if locator.get('exactGeometry') else 'signature', locator.get('exactGeometry') or expected)
             return matches[0] if len(matches) == 1 else None
-        except (AttributeError, IndexError, TypeError, ValueError): return None
+        except (AttributeError, IndexError, TypeError, ValueError): return exact_target()
     kind = str(locator.get("type", "")).lower()
     if kind not in _SUBTOPOLOGY_TYPES:
         return None
