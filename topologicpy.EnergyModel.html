@@ -215,11 +215,17 @@ return None</p>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.EnergyModel.EnergyModel.ExportToGBXML" title="topologicpy.EnergyModel.EnergyModel.ExportToGBXML"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExportToGBXML</span></code></a>(model, path[, overwrite])</p></td>
 <td><p>Exports the input OSM model to a GBXML file.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.EnergyModel.EnergyModel.ExportToOSM" title="topologicpy.EnergyModel.EnergyModel.ExportToOSM"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExportToOSM</span></code></a>(model, path[, overwrite])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.EnergyModel.EnergyModel.ExportToGEM" title="topologicpy.EnergyModel.EnergyModel.ExportToGEM"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExportToGEM</span></code></a>(model, path[, overwrite, ...])</p></td>
+<td><p>Write validated IES geometry and an optional .gem.json provenance map.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.EnergyModel.EnergyModel.ExportToOSM" title="topologicpy.EnergyModel.EnergyModel.ExportToOSM"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExportToOSM</span></code></a>(model, path[, overwrite])</p></td>
 <td><p>Exports the input OSM model to an OSM file.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.EnergyModel.EnergyModel.GBXMLString" title="topologicpy.EnergyModel.EnergyModel.GBXMLString"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GBXMLString</span></code></a>(model)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.EnergyModel.EnergyModel.GBXMLString" title="topologicpy.EnergyModel.EnergyModel.GBXMLString"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GBXMLString</span></code></a>(model)</p></td>
 <td><p>Returns the GBXML string of the input OSM model.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.EnergyModel.EnergyModel.GEMString" title="topologicpy.EnergyModel.EnergyModel.GEMString"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GEMString</span></code></a>(model[, roomNameKey, roomIdKey, ...])</p></td>
+<td><p>Return IES GEM geometry from native cells or an OpenStudio model.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.EnergyModel.EnergyModel.Query" title="topologicpy.EnergyModel.EnergyModel.Query"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Query</span></code></a>(model[, reportName, reportForString, ...])</p></td>
 <td><p>Queries the model for values.</p></td>
@@ -257,7 +263,10 @@ return None</p>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.EnergyModel.EnergyModel.Units" title="topologicpy.EnergyModel.EnergyModel.Units"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Units</span></code></a>(model, reportName, tableName, columnName)</p></td>
 <td><p>Returns the units string found in the input OSM model, report name, table name, and column name.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.EnergyModel.EnergyModel.Version" title="topologicpy.EnergyModel.EnergyModel.Version"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Version</span></code></a>([check, silent])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.EnergyModel.EnergyModel.ValidateGEM" title="topologicpy.EnergyModel.EnergyModel.ValidateGEM"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ValidateGEM</span></code></a>(data[, model, roomNameKey, ...])</p></td>
+<td><p>Validate a GEM path or string; optionally compare with its source model.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.EnergyModel.EnergyModel.Version" title="topologicpy.EnergyModel.EnergyModel.Version"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Version</span></code></a>([check, silent])</p></td>
 <td><p>Returns the OpenStudio SDK version number.</p></td>
 </tr>
 </tbody>
@@ -353,6 +362,17 @@ surfaces. Adjustments are recorded in the building’s additional properties.</p
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.EnergyModel.EnergyModel.ExportToGEM">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ExportToGEM</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">roomNameKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'TOPOLOGIC_name'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">roomIdKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'bim2bem_space_id'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">apertureTypeKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'kind'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">12</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-07</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">writeMapping</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">raiseErrors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.EnergyModel.EnergyModel.ExportToGEM" title="Permalink to this definition"></a></dt>
+<dd><p>Write validated IES geometry and an optional .gem.json provenance map.</p>
+<p>Accepts native cells/CellComplexes or an OpenStudio model. Returns True
+on success and None on failure, matching other file exporters. Existing
+files are protected unless overwrite=True. Set raiseErrors=True for
+detailed failures. The source model and dictionaries are not modified.
+GEM is geometry-only and requires acceptance testing in IES VE.</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.EnergyModel.EnergyModel.ExportToOSM">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ExportToOSM</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.EnergyModel.EnergyModel.ExportToOSM" title="Permalink to this definition"></a></dt>
 <dd><p>Exports the input OSM model to an OSM file.</p>
@@ -362,6 +382,16 @@ surfaces. Adjustments are recorded in the building’s additional properties.</p
 <dt class="sig sig-object py" id="topologicpy.EnergyModel.EnergyModel.GBXMLString">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">GBXMLString</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.EnergyModel.EnergyModel.GBXMLString" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the GBXML string of the input OSM model.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.EnergyModel.EnergyModel.GEMString">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">GEMString</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">roomNameKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'TOPOLOGIC_name'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">roomIdKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'bim2bem_space_id'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">apertureTypeKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'kind'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">12</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-07</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.EnergyModel.EnergyModel.GEMString" title="Permalink to this definition"></a></dt>
+<dd><p>Return IES GEM geometry from native cells or an OpenStudio model.</p>
+<p>Coordinates must be in metres. Requires polygonal planar faces and closed
+rooms. Native export uses PythonOCC, NumPy and Shapely, without Honeybee
+or OpenStudio translation. Raises on unsupported or invalid geometry.
+No constructions, schedules, HVAC or simulation settings are transferred.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -434,6 +464,12 @@ surfaces. Adjustments are recorded in the building’s additional properties.</p
 <dt class="sig sig-object py" id="topologicpy.EnergyModel.EnergyModel.Units">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Units</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reportName</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tableName</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">columnName</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.EnergyModel.EnergyModel.Units" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the units string found in the input OSM model, report name, table name, and column name.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.EnergyModel.EnergyModel.ValidateGEM">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ValidateGEM</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">roomNameKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'TOPOLOGIC_name'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">roomIdKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'bim2bem_space_id'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">apertureTypeKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'kind'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">12</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-07</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.EnergyModel.EnergyModel.ValidateGEM" title="Permalink to this definition"></a></dt>
+<dd><p>Validate a GEM path or string; optionally compare with its source model.</p>
 </dd></dl>
 
 <dl class="py method">
