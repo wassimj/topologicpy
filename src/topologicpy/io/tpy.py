@@ -511,10 +511,6 @@ def _subtopologies(topology):
     """
     from topologicpy.Topology import Topology
 
-    root_brep, root_hash = _brep_data(
-        topology
-    )
-
     result = []
 
     for type_name in _SUBTOPOLOGY_TYPES:
@@ -529,8 +525,10 @@ def _subtopologies(topology):
 
         unique = []
         for item in TPYCodec._UniqueNative(items, topology):
-            _, item_hash = _brep_data(item)
-            if root_hash is not None and item_hash == root_hash:
+            # Native identity excludes the carrier without writing a BREP
+            # file for every edge/vertex. Large shading collections otherwise
+            # spend most persistence time on dictionary-free constituents.
+            if _same_topology(item, topology):
                 continue
             unique.append(item)
 
@@ -561,7 +559,9 @@ def _make_locator(
     type_name,
     index,
     topology,
+    native_path=None,
 ):
+    from topologicpy.Topology import Topology
     _, brep_hash = _brep_data(
         topology
     )
@@ -571,9 +571,8 @@ def _make_locator(
         "index": int(index),
         "brepSha256": brep_hash,
         "exactGeometry": _exact_geometry_key(topology),
-        "signature": _signature(
-            topology
-        ),
+        "signature": {"type": Topology.TypeAsString(topology,silent=True)} if native_path is not None else _signature(topology),
+        **({"nativePath":native_path} if native_path is not None else {}),
     }
 
 
@@ -602,13 +601,30 @@ def _resolve_locator(topology, locator, cache=None):
         if not isinstance(path, list) or len(path) > 100 or any(type(index) is not int or index < 0 for index in path): return None
         try:
             shape = Topology.OCCTShape(topology, silent=True)
-            for index in path: shape = TPYCodec._NativeChildren(shape)[index]
+            if cache is not None:cache.setdefault(('native_root',id(topology)),topology)
+            prefix=()
+            for index in path:
+                key=('native_children',id(topology),prefix)
+                children=cache.get(key) if cache is not None else None
+                if children is None:
+                    children=TPYCodec._NativeChildren(shape)
+                    if cache is not None:cache[key]=children
+                shape=children[index];prefix=prefix+(index,)
             target = Topology.ByOCCTShape(shape, silent=True)
             # The hierarchy path distinguishes independent coincident shapes.
             if target is None or Topology.TypeAsString(target).lower() != str(locator.get('type', '')).lower(): return exact_target()
+            # A checksum-verified BREP loaded without sewing preserves this
+            # occurrence path exactly, including coincident independent faces.
+            if cache is not None and cache.get(('verified_native_hierarchy',id(topology))) is topology:return target
             exact=locator.get('exactGeometry')
             if exact:
-                return target if _exact_geometry_key(target)==exact else exact_target()
+                if _exact_geometry_key(target)==exact:return target
+                # Writing/reading BREP can cross a decimal-rounding tie in the
+                # coordinate key. The path plus identical BREP bytes still
+                # establishes exact native identity without a spatial guess.
+                checksum=locator.get('brepSha256')
+                if checksum and _candidate_brep_hash(target)==checksum:return target
+                return exact_target()
             expected = locator.get('signature', {}).get('hash')
             if expected and _signature(target).get('hash') != expected:
                 if _candidate_brep_hash(target) != locator.get('brepSha256'): return exact_target()
@@ -619,7 +635,7 @@ def _resolve_locator(topology, locator, cache=None):
             # unambiguous exact signature; never guess coincident subshapes.
             kind = str(locator.get("type", "")).lower()
             expected = locator.get("signature", {}).get("hash")
-            if kind not in _SUBTOPOLOGY_TYPES or not expected:
+            if kind not in _SUBTOPOLOGY_TYPES or not (expected or locator.get('exactGeometry')):
                 return None
             lookup = TPYCodec._LocatorIndex(topology, kind, cache)
             matches = TPYCodec._LocatorMatches(lookup, 'exact' if locator.get('exactGeometry') else 'signature', locator.get('exactGeometry') or expected)
@@ -929,6 +945,7 @@ class _ArchiveBuilder:
         ancestry=None,
     ):
         from topologicpy.Topology import Topology
+        from topologicpy.Core import Core
 
         if not Topology.IsInstance(
             topology,
@@ -991,7 +1008,7 @@ class _ArchiveBuilder:
         record = {
             "id": object_id,
             "type": type_name,
-            "signature": _signature(topology),
+            "signature": {"type":type_name,"nativeBrepSha256":brep_hash} if type_name=='Cluster' and type(Core.Backend()).__module__.startswith('topologicpy.pythonocc_backend') else _signature(topology),
             "geometry": {
                 "path": geometry_path,
                 "sha256": brep_hash,
@@ -1018,21 +1035,26 @@ class _ArchiveBuilder:
         ]
 
         native_paths = TPYCodec._NativePaths(topology)
+        cached_contents={};cached_apertures={}
         for (
             sub_type,
             index,
             subtopology,
         ) in _subtopologies(topology):
+            dictionary=_python_dictionary(subtopology) if self.include_subtopology_dictionaries else {}
+            try:contents=Topology.Contents(subtopology,silent=True) or [] if self.include_contents else []
+            except Exception:contents=[]
+            apertures=_raw_apertures(subtopology) if self.include_apertures else []
+            if not dictionary and not contents and not apertures:continue
+            cached_contents[id(subtopology)]=contents;cached_apertures[id(subtopology)]=apertures
+            native = Topology.OCCTShape(subtopology, silent=True)
+            paths = [path for shape, path in native_paths.get(hash(native), []) if shape.IsSame(native)] if native is not None else []
             locator = _make_locator(
                 sub_type,
                 index,
                 subtopology,
+                native_path=paths[0] if len(paths)==1 else None,
             )
-
-            native = Topology.OCCTShape(subtopology, silent=True)
-            if native is not None:
-                paths = [path for shape, path in native_paths.get(hash(native), []) if shape.IsSame(native)]
-                if len(paths) == 1: locator['nativePath'] = paths[0]
             hosts.append(
                 (
                     locator,
@@ -1043,12 +1065,6 @@ class _ArchiveBuilder:
             if (
                 self.include_subtopology_dictionaries
             ):
-                dictionary = (
-                    _python_dictionary(
-                        subtopology
-                    )
-                )
-
                 if len(dictionary) > 0:
                     record[
                         "subtopologies"
@@ -1066,10 +1082,7 @@ class _ArchiveBuilder:
         for host_locator, host in hosts:
             if self.include_contents:
                 try:
-                    contents = Topology.Contents(
-                        host,
-                        silent=True,
-                    ) or []
+                    contents = cached_contents[id(host)] if id(host) in cached_contents else Topology.Contents(host,silent=True) or []
                 except Exception:
                     contents = []
 
@@ -1127,7 +1140,7 @@ class _ArchiveBuilder:
                     wrapper,
                     aperture_topology,
                     contexts,
-                ) in _raw_apertures(host):
+                ) in (cached_apertures[id(host)] if id(host) in cached_apertures else _raw_apertures(host)):
                     child_id = self.register(
                         aperture_topology,
                         ancestry=ancestry,
@@ -1283,7 +1296,7 @@ class TPYCodec:
             record = dict(source)
             record['type'] = Topology.TypeAsString(topology, silent=True)
             record['dictionary'] = _encode_value(_python_dictionary(topology))
-            record['signature'] = _signature(topology)
+            record['signature'] = {'type':record['type'],'nativeBrepSha256':_candidate_brep_hash(topology)} if 'nativeBrepSha256' in source.get('signature',{}) else _signature(topology)
             records.append(record)
             metadata = []
             for kind in _SUBTOPOLOGY_TYPES:
@@ -2200,10 +2213,25 @@ class TPYCodec:
                             )
                         return None
 
-                    topology = Topology.ByBREPString(
-                        brep_text,
-                        silent=True,
-                    )
+                    # Compound-to-Shell promotion in the general importer can
+                    # sew detached shading faces and replace native identities.
+                    # A TPY archive already records the exact hierarchy: retain
+                    # its compound containers and child faces without sewing.
+                    if record.get('type')=='Cluster' and type(Core.Backend()).__module__.startswith('topologicpy.pythonocc_backend'):
+                        from OCC.Core.TopAbs import TopAbs_COMPOUND
+                        def compound_wrapper(shape):
+                            if shape.ShapeType()!=TopAbs_COMPOUND:
+                                return Topology.ByOCCTShape(shape,silent=True)
+                            children=[compound_wrapper(child) for child in TPYCodec._NativeChildren(shape)]
+                            wrapper=Core.Cluster.ByTopologies(children,False)
+                            wrapper.shape=shape
+                            return wrapper
+                        from topologicpy.pythonocc_backend.topology import _shape_from_brep_text
+                        topology=compound_wrapper(_shape_from_brep_text(brep_text))
+                        if isinstance(expected_hash,str):locator_cache[('verified_native_hierarchy',id(topology))]=topology
+                    else:
+                        topology=Topology.ByBREPString(brep_text,silent=True)
+
 
                     if not Topology.IsInstance(
                         topology,
