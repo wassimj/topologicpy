@@ -1721,6 +1721,375 @@ class EnergyModel:
                     return xml
         return EnergyModel._CleanGBXMLPolyLoops(xml)
 
+    @staticmethod
+    def _GEMFrame(points):
+        """GEM panel frame: BHoM/IES_Toolkit CoordinateSystem convention.
+
+        Convention adapted from BHoM contributors, copyright 2015-2026,
+        LGPL-3.0-or-later, commit 3224b736d3a9fbab1b8cde6de2ef19949025f52f.
+        https://github.com/BHoM/IES_Toolkit/blob/develop/IES_Adapter/Query/CoordinateSystem.cs
+        """
+        import numpy as np
+        p=np.asarray(points,dtype=float)
+        if p.ndim!=2 or p.shape[1]!=3 or len(p)<3 or not np.isfinite(p).all():
+            raise ValueError('GEM requires finite polygon vertices.')
+        centre=p.mean(axis=0)
+        n=np.cross(p-centre,np.roll(p,-1,axis=0)-centre).sum(axis=0)
+        length=float(np.linalg.norm(n))
+        if length<1e-13:raise ValueError('Degenerate GEM panel.')
+        n/=length
+        if abs(n[2])>1-1e-12:
+            u=np.array([-1.,0.,0.]);v=np.cross(n,u)
+        else:
+            v=np.array([0.,0.,1.])-n[2]*n;v/=np.linalg.norm(v);u=np.cross(v,n)
+        coordinates=np.column_stack(((p-centre)@u,(p-centre)@v))
+        origin=centre+coordinates[:,0].min()*u+coordinates[:,1].min()*v
+        return origin,u,v,n
+
+    @staticmethod
+    def _GEMRooms(model,roomNameKey='TOPOLOGIC_name',roomIdKey='bim2bem_space_id',apertureTypeKey='kind'):
+        """Extract native cells directly, or spaces from an existing OpenStudio model."""
+        import hashlib
+        import numpy as np
+        from topologicpy.Topology import Topology
+        from topologicpy.Cell import Cell
+        from topologicpy.Face import Face
+        from topologicpy.Wire import Wire
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Dictionary import Dictionary
+        def dictionary(t):
+            d=Topology.Dictionary(t,silent=True)
+            return d if isinstance(d,dict) else Dictionary.PythonDictionary(d,silent=True) or {}
+        def ring(w):return [Vertex.Coordinates(v,mantissa=12) for v in Wire.Vertices(w)]
+        def identity(d,points):
+            return str(d.get(roomIdKey) or d.get('source_space_id') or 'space-'+hashlib.sha256(repr(sorted(tuple(p) for p in points)).encode()).hexdigest()[:16])
+        rooms=[]
+        if Topology.IsInstance(model,'Cell') or Topology.IsInstance(model,'CellComplex') or Topology.IsInstance(model,'Cluster'):
+            if not type(Core.Backend()).__module__.startswith('topologicpy.pythonocc_backend'):
+                raise ValueError('Direct GEM export requires PythonOCC.')
+            cells=[model] if Topology.IsInstance(model,'Cell') else Topology.Cells(model)
+            for cell in cells:
+                d=dictionary(cell);faces=Topology.Faces(cell)
+                normals=EnergyModel._ExportFaceNormals(faces);panels=[]
+                rid=identity(d,[Vertex.Coordinates(v,mantissa=12) for v in Topology.Vertices(cell)])
+                for i,(face,normal) in enumerate(zip(faces,normals)):
+                    attributes=dictionary(face);points=ring(Face.ExternalBoundary(face))
+                    if np.dot(EnergyModel._GEMFrame(points)[3],normal)<0:points.reverse()
+                    openings=[]
+                    for j,aperture in enumerate(Topology.Apertures(face) or []):
+                        ad=dictionary(aperture)
+                        if Face.InternalBoundaries(aperture):raise ValueError('GEM opening polygons must not contain holes.')
+                        kind=str(ad.get(apertureTypeKey,'window')).lower()
+                        if kind not in {'window','aperture','door','hole','airboundary','air','void','opening'}:
+                            raise ValueError('Unsupported GEM opening kind: '+kind)
+                        openings.append(dict(id=str(ad.get('opening_id') or f'{rid}:face{i}:opening{j}'),
+                            type=1 if kind=='door' else 2 if kind in {'hole','airboundary','air','void','opening'} else 0,
+                            vertices=ring(Face.ExternalBoundary(aperture)),dictionary=ad))
+                    panels.append(dict(id=str(attributes.get('bim2bem_boundary_id') or f'{rid}:face{i}'),
+                        vertices=points,holes=[ring(w) for w in Face.InternalBoundaries(face) or []],
+                        area=abs(Face.Area(face,mantissa=12)),openings=openings,dictionary=attributes))
+                rooms.append(dict(id=rid,name=str(d.get(roomNameKey) or rid),dictionary=d,
+                    volume=Cell.Volume(cell,mantissa=12),faces=panels))
+        elif hasattr(model,'getSpaces'):
+            if model.getShadingSurfaces():raise ValueError('GEM v1 does not export standalone shading surfaces.')
+            def coordinates(vertices,transform):
+                return [[p.x(),p.y(),p.z()] for p in (transform*v for v in vertices)]
+            def properties(item):
+                prop=item.additionalProperties();value=prop.getFeatureAsString('topologicpy_dictionary')
+                if value.is_initialized():
+                    import json
+                    return json.loads(value.get())
+                return {}
+            for space in model.getSpaces():
+                d=properties(space);sid=space.additionalProperties().getFeatureAsString(roomIdKey)
+                rid=sid.get() if sid.is_initialized() else str(space.handle())
+                transform=space.transformation();panels=[]
+                for surface in space.surfaces():
+                    sd=properties(surface);bid=surface.additionalProperties().getFeatureAsString('bim2bem_boundary_id')
+                    openings=[]
+                    for opening in surface.subSurfaces():
+                        ad=properties(opening);aid=opening.additionalProperties().getFeatureAsString('bim2bem_opening_id')
+                        openings.append(dict(id=aid.get() if aid.is_initialized() else str(opening.handle()),
+                            type=1 if 'Door' in opening.subSurfaceType() else 0,
+                            vertices=coordinates(opening.vertices(),transform),dictionary=ad))
+                    panels.append(dict(id=bid.get() if bid.is_initialized() else str(surface.handle()),
+                        vertices=coordinates(surface.vertices(),transform),holes=[],openings=openings,dictionary=sd))
+                rooms.append(dict(id=rid,name=space.nameString(),dictionary=d,volume=float(space.volume()),faces=panels))
+        else:raise TypeError('GEM export expects a Cell, CellComplex, Cluster of cells, or OpenStudio model.')
+        if not rooms:raise ValueError('GEM export contains no rooms.')
+        if len({r['id'] for r in rooms})!=len(rooms):raise ValueError('GEM export has duplicate room identifiers.')
+        return sorted(rooms,key=lambda r:r['id'])
+
+    @staticmethod
+    def _GEMEncode(rooms,mantissa=12,tolerance=1e-7):
+        """Serialize polygonal rooms without geometry repair or AGPL dependencies."""
+        import math
+        import unicodedata
+        import numpy as np
+        from shapely.geometry import Polygon
+        from shapely.geometry.polygon import orient
+        from shapely.ops import unary_union
+        if not isinstance(mantissa,int) or not 9<=mantissa<=15 or not math.isfinite(tolerance) or tolerance<=0:
+            raise ValueError('Use mantissa 9-15 and a finite positive GEM tolerance in metres.')
+        def parts(shape):
+            if shape.is_empty:return []
+            if shape.geom_type=='Polygon':return [shape]
+            return [p for child in getattr(shape,'geoms',[]) for p in parts(child)]
+        def number(x):return f'{float(x):.{mantissa}f}'
+        lines=['COM GEM data file exported by TopologicPy','ANT'];mapping=[];prepared=[]
+        for index,room in enumerate(rooms,1):
+            gid=f'TP{index:06d}'
+            name=' '.join(unicodedata.normalize('NFKD',room['name']).encode('ascii','ignore').decode().split())[:180] or 'Space'
+            label=gid+' '+name;panels=[];panel_map=[]
+            for face in room['faces']:
+                origin,u,v,n=EnergyModel._GEMFrame(face['vertices'])
+                def project(points):
+                    p=np.asarray(points,dtype=float)
+                    if not np.isfinite(p).all() or np.max(np.abs((p-origin)@n))>tolerance:
+                        raise ValueError('Non-planar or misplaced GEM geometry: '+face['id'])
+                    return np.column_stack(((p-origin)@u,(p-origin)@v))
+                def lift(points):
+                    p=np.asarray(points,dtype=float)
+                    return (origin+p[:,:1]*u+p[:,1:2]*v).tolist()
+                host=Polygon(project(face['vertices']),[project(h) for h in face.get('holes',[])])
+                if not host.is_valid or host.area<=1e-13:raise ValueError('Invalid GEM host polygon: '+face['id'])
+                if 'area' in face and abs(host.area-face['area'])>max(1e-7,host.area*1e-8):
+                    raise ValueError('GEM requires polygonal planar faces; tessellate curves explicitly before export.')
+                pieces=[Polygon(p) for p in EnergyModel._ExportTriangles2D(host)] if host.interiors else [host]
+                pieces=[orient(p,sign=1) for p in pieces]
+                source_openings=[]
+                for opening in face['openings']:
+                    polygon=Polygon(project(opening['vertices']))
+                    if not polygon.is_valid or polygon.area<=1e-13:raise ValueError('Invalid GEM opening: '+opening['id'])
+                    if polygon.difference(host).area>max(1e-8,polygon.area*1e-8):
+                        raise ValueError('GEM opening extends outside its parent face: '+opening['id'])
+                    source_openings.append((opening,polygon))
+                if sum(p.area for _,p in source_openings)-unary_union([p for _,p in source_openings]).area>max(1e-8,tolerance*sum(p.length for _,p in source_openings)):
+                    raise ValueError('GEM parent has overlapping openings: '+face['id'])
+                assigned={i:[] for i in range(len(source_openings))}
+                for piece in pieces:
+                    boundary=lift(list(piece.exterior.coords)[:-1]);subfaces=[];submap=[]
+                    for i,(opening,polygon) in enumerate(source_openings):
+                        for fragment in parts(polygon.intersection(piece)):
+                            if fragment.area<=1e-14:continue
+                            if fragment.interiors:raise ValueError('GEM opening fragment contains a hole.')
+                            fragment=orient(fragment,sign=1);vertices=lift(list(fragment.exterior.coords)[:-1])
+                            subfaces.append(dict(type=opening['type'],vertices=vertices))
+                            submap.append(dict(id=opening['id'],dictionary=opening['dictionary'],area_m2=fragment.area))
+                            assigned[i].append(fragment)
+                    # Virtual partitions retain a closed gross boundary and an air opening.
+                    fd=face['dictionary']
+                    if not subfaces and str(fd.get('physical_or_virtual','')).upper()=='VIRTUAL':
+                        subfaces.append(dict(type=2,vertices=boundary));submap.append(dict(id=face['id']+':air',dictionary=fd,area_m2=piece.area))
+                    panels.append(dict(vertices=boundary,openings=subfaces))
+                    panel_map.append(dict(id=face['id'],dictionary=fd,area_m2=piece.area,openings=submap))
+                for i,(opening,polygon) in enumerate(source_openings):
+                    if polygon.symmetric_difference(unary_union(assigned[i])).area>max(1e-8,polygon.area*1e-8):
+                        raise ValueError('GEM decomposition lost aperture area: '+opening['id'])
+            vertices=[];lookup={};indices=[]
+            for face in panels:
+                ids=[]
+                for point in face['vertices']:
+                    key=tuple(round(float(x),mantissa) for x in point)
+                    if key not in lookup:lookup[key]=len(vertices)+1;vertices.append(key)
+                    ids.append(lookup[key])
+                indices.append(ids)
+            lines+=['LAYER','1','COLOUR','0','CATEGORY','1','TYPE','1','SUBTYPE','2001','COLOURRGB','16711690','IES '+label,f'{len(vertices)} {len(panels)}']
+            lines+=[' '.join(number(x) for x in p) for p in vertices]
+            for panel,ids in zip(panels,indices):
+                lines+=[' '.join(map(str,[len(ids)]+ids)),str(len(panel['openings']))]
+                origin,u,v,n=EnergyModel._GEMFrame([vertices[i-1] for i in ids])
+                for opening in panel['openings']:
+                    p=np.asarray(opening['vertices'])-origin
+                    xy=np.column_stack((p@u,p@v))
+                    lines.append(f"{len(xy)} {opening['type']}")
+                    lines+=[' '.join(number(x) for x in q) for q in xy]
+            mapping.append(dict(id=room['id'],gem_id=gid,gem_name=label,name=room['name'],
+                dictionary=room['dictionary'],volume_m3=room['volume'],faces=panel_map))
+            prepared.append(dict(name=label,faces=panels,volume=room['volume'],source_opening_sides=sum(len(f['openings']) for f in room['faces'])))
+        return '\n'.join(lines)+'\n',mapping,prepared
+
+    @staticmethod
+    def _GEMRead(text):
+        """Read the polygonal GEM subset used by this exporter; no model reconstruction."""
+        import numpy as np
+        lines=[line.strip() for line in text.splitlines() if line.strip()];i=0;rooms=[]
+        def numbers(line):
+            values=[float(x) for x in line.split()]
+            if not np.isfinite(values).all():raise ValueError('Non-finite GEM coordinate.')
+            return values
+        tags={'LAYER','COLOUR','CATEGORY','TYPE','SUBTYPE','COLOURRGB'}
+        while i<len(lines):
+            line=lines[i]
+            if line.startswith('COM ') or line in {'ANT','CAT'}:i+=1;continue
+            if line=='SITE':i+=2;continue
+            while i<len(lines) and lines[i] in tags:i+=2
+            if i==len(lines):break
+            if not lines[i].startswith('IES '):raise ValueError('Unsupported GEM record: '+lines[i])
+            name=lines[i][4:];i+=1
+            nv,nf=map(int,lines[i].split());i+=1
+            if nv<4 or nf<4:raise ValueError('GEM room is not a volumetric shell.')
+            points=np.asarray([numbers(line) for line in lines[i:i+nv]]);i+=nv
+            if points.shape!=(nv,3):raise ValueError('Invalid GEM vertex table.')
+            faces=[]
+            for _ in range(nf):
+                indices=list(map(int,lines[i].split()));i+=1
+                if indices[0]<3 or indices[0]!=len(indices)-1 or any(j<1 or j>nv for j in indices[1:]):raise ValueError('Invalid GEM panel indices.')
+                boundary=points[np.array(indices[1:])-1];origin,u,v,n=EnergyModel._GEMFrame(boundary)
+                count=int(lines[i]);i+=1;openings=[]
+                if count<0:raise ValueError('Invalid GEM opening count.')
+                for _ in range(count):
+                    vertices,kind=map(int,lines[i].split());i+=1
+                    if vertices<3 or kind not in {0,1,2}:raise ValueError('Invalid GEM opening type or vertex count.')
+                    xy=np.asarray([numbers(line) for line in lines[i:i+vertices]]);i+=vertices
+                    if xy.shape!=(vertices,2):raise ValueError('Invalid GEM opening coordinates.')
+                    openings.append(dict(type=kind,vertices=(origin+xy[:,:1]*u+xy[:,1:2]*v).tolist()))
+                faces.append(dict(vertices=boundary.tolist(),openings=openings))
+            rooms.append(dict(name=name,faces=faces))
+        if not rooms:raise ValueError('No GEM rooms were found.')
+        return rooms
+
+    @staticmethod
+    def _GEMCheck(actual,expected=None,tolerance=1e-7):
+        """Validate saved loops, closure, volumes, host coverage and opening geometry."""
+        import numpy as np
+        from shapely.geometry import Polygon
+        from shapely.ops import unary_union
+        if expected is not None and len(actual)!=len(expected):raise ValueError('GEM room count changed.')
+        maximum_volume_error=0.;maximum_opening_area_error=0.;maximum_opening_overlap=0.;open_count=0;face_count=0;volumes=[]
+        for ri,room in enumerate(actual):
+            vertices=np.unique(np.round([p for f in room['faces'] for p in f['vertices']],12),axis=0)
+            centre=vertices.mean(axis=0);edges={};volume=0.
+            for fi,face in enumerate(room['faces']):
+                p=np.asarray(face['vertices']);o,u,v,n=EnergyModel._GEMFrame(p)
+                if np.max(np.abs((p-o)@n))>tolerance:raise ValueError('Saved GEM panel is non-planar.')
+                polygon=Polygon(np.column_stack(((p-o)@u,(p-o)@v)))
+                if not polygon.is_valid or polygon.area<1e-13:raise ValueError('Saved GEM panel is invalid.')
+                # Split edge incidences at existing collinear vertices, without moving geometry.
+                for a,b in zip(p,np.roll(p,-1,axis=0)):
+                    direction=b-a;length=float(direction@direction)
+                    if length<1e-24:raise ValueError('Saved GEM panel has a collapsed edge.')
+                    t=(vertices-a)@direction/length
+                    mask=(t>=-1e-10)&(t<=1+1e-10)&(np.linalg.norm(vertices-a-t[:,None]*direction,axis=1)<=min(tolerance,1e-8))
+                    chain=vertices[mask][np.argsort(t[mask])]
+                    for x,y in zip(chain,chain[1:]):
+                        x=tuple(np.round(x,9));y=tuple(np.round(y,9))
+                        if x==y:continue
+                        edges.setdefault(tuple(sorted((x,y))),[]).append(1 if x<y else -1)
+                q=p-centre
+                volume+=sum(float(q[0]@np.cross(q[j],q[j+1])) for j in range(1,len(q)-1))/6
+                subpolygons=[]
+                for opening in face['openings']:
+                    a=np.asarray(opening['vertices']);sub=Polygon(np.column_stack(((a-o)@u,(a-o)@v)))
+                    if not sub.is_valid or sub.area<1e-13 or np.max(np.abs((a-o)@n))>tolerance or sub.difference(polygon).area>max(1e-8,sub.area*1e-8):
+                        raise ValueError('Saved GEM opening is invalid or outside its host.')
+                    subpolygons.append(sub)
+                overlap=sum(s.area for s in subpolygons)-unary_union(subpolygons).area
+                maximum_opening_overlap=max(maximum_opening_overlap,overlap)
+                if overlap>max(1e-8,tolerance*sum(s.length for s in subpolygons)):raise ValueError('Saved GEM openings overlap beyond export tolerance.')
+                face_count+=1;open_count+=len(face['openings'])
+                if expected is not None:
+                    source=expected[ri]['faces'][fi]
+                    if len(source['vertices'])!=len(p) or np.max(np.abs(np.asarray(source['vertices'])-p))>tolerance:raise ValueError('GEM panel coordinates changed.')
+                    if len(source['openings'])!=len(face['openings']):raise ValueError('GEM lost an opening.')
+                    for source_opening,opening in zip(source['openings'],face['openings']):
+                        if source_opening['type']!=opening['type'] or np.shape(source_opening['vertices'])!=np.shape(opening['vertices']) or np.max(np.abs(np.asarray(source_opening['vertices'])-opening['vertices']))>tolerance:
+                            raise ValueError('GEM opening type or placement changed.')
+                        original=np.asarray(source_opening['vertices'])-o
+                        original=Polygon(np.column_stack((original@u,original@v)))
+                        delivered=np.asarray(opening['vertices'])-o
+                        delivered=Polygon(np.column_stack((delivered@u,delivered@v)))
+                        error=original.symmetric_difference(delivered).area
+                        maximum_opening_area_error=max(maximum_opening_area_error,error)
+                        if error>max(1e-8,original.area*1e-8):raise ValueError('GEM changed an opening area.')
+            if any(len(values)!=2 or sum(values)!=0 for values in edges.values()):raise ValueError('Saved GEM room shell is not closed and consistently oriented.')
+            if volume<=1e-10:raise ValueError('Saved GEM room has non-positive volume.')
+            if expected is not None:
+                if room['name']!=expected[ri]['name'] or len(room['faces'])!=len(expected[ri]['faces']):raise ValueError('GEM room identity or face count changed.')
+                error=abs(volume-expected[ri]['volume'])
+                maximum_volume_error=max(maximum_volume_error,error)
+                if error>max(1e-5,expected[ri]['volume']*1e-8):raise ValueError('GEM changed the source room volume.')
+            volumes.append(volume)
+        return dict(passed=True,validator='TopologicPy direct GEM loop validation',spaces=len(actual),
+            surfaces=face_count,openings=open_count,volume_m3=sum(volumes),maximum_volume_error_m3=maximum_volume_error,
+            maximum_opening_area_error_m2=maximum_opening_area_error,source_opening_sides=sum(r['source_opening_sides'] for r in expected) if expected else None,
+            tolerance_m=tolerance,maximum_opening_overlap_area_m2=maximum_opening_overlap,source_compared=expected is not None,ies_import_verified=False,scope='Serialized geometry, shell closure, volumes, hosted openings and source coverage; no IES simulation certification.')
+
+    @staticmethod
+    def GEMString(model,roomNameKey='TOPOLOGIC_name',roomIdKey='bim2bem_space_id',apertureTypeKey='kind',mantissa=12,tolerance=1e-7):
+        """Return IES GEM geometry from native cells or an OpenStudio model.
+
+        Coordinates must be in metres. Requires polygonal planar faces and closed
+        rooms. Native export uses PythonOCC, NumPy and Shapely, without Honeybee
+        or OpenStudio translation. Raises on unsupported or invalid geometry.
+        No constructions, schedules, HVAC or simulation settings are transferred.
+        """
+        rooms=EnergyModel._GEMRooms(model,roomNameKey,roomIdKey,apertureTypeKey)
+        text,_,_=EnergyModel._GEMEncode(rooms,mantissa,tolerance)
+        # Readback is also performed by ExportToGEM on the actual saved bytes.
+        EnergyModel.ValidateGEM(text,model,roomNameKey,roomIdKey,apertureTypeKey,mantissa,tolerance)
+        return text
+
+    @staticmethod
+    def ValidateGEM(data,model=None,roomNameKey='TOPOLOGIC_name',roomIdKey='bim2bem_space_id',apertureTypeKey='kind',mantissa=12,tolerance=1e-7):
+        """Validate a GEM path or string; optionally compare with its source model."""
+        from pathlib import Path
+        text=Path(data).read_text(encoding='utf-8') if isinstance(data,Path) or isinstance(data,str) and '\n' not in data else data
+        actual=EnergyModel._GEMRead(text)
+        expected=None
+        if model is not None:
+            rooms=EnergyModel._GEMRooms(model,roomNameKey,roomIdKey,apertureTypeKey)
+            original,mapping,expected=EnergyModel._GEMEncode(rooms,mantissa,tolerance)
+        return EnergyModel._GEMCheck(actual,expected,tolerance)
+
+    @staticmethod
+    def ExportToGEM(model,path,overwrite=False,roomNameKey='TOPOLOGIC_name',roomIdKey='bim2bem_space_id',apertureTypeKey='kind',mantissa=12,tolerance=1e-7,writeMapping=True,silent=False,raiseErrors=False):
+        """Write validated IES geometry and an optional .gem.json provenance map.
+
+        Accepts native cells/CellComplexes or an OpenStudio model. Returns True
+        on success and None on failure, matching other file exporters. Existing
+        files are protected unless overwrite=True. Set raiseErrors=True for
+        detailed failures. The source model and dictionaries are not modified.
+        GEM is geometry-only and requires acceptance testing in IES VE.
+        """
+        import json
+        import tempfile
+        from pathlib import Path
+        pending=[];committed=[];backups={}
+        try:
+            target=Path(path)
+            if not str(path):raise ValueError('Provide a GEM output path.')
+            if target.suffix.lower()!='.gem':target=Path(str(target)+'.gem')
+            sidecar=Path(str(target)+'.json');targets=[target]+([sidecar] if writeMapping else [])
+            if not overwrite and any(p.exists() for p in targets):raise FileExistsError('GEM or mapping file already exists; use overwrite=True.')
+            rooms=EnergyModel._GEMRooms(model,roomNameKey,roomIdKey,apertureTypeKey)
+            text,mapping,expected=EnergyModel._GEMEncode(rooms,mantissa,tolerance)
+            with tempfile.NamedTemporaryFile(mode='w',encoding='utf-8',dir=target.parent,suffix='.gem',delete=False) as stream:
+                pending.append(Path(stream.name));stream.write(text)
+            reopened=EnergyModel._GEMRead(pending[0].read_text(encoding='utf-8'))
+            validation=EnergyModel._GEMCheck(reopened,expected,tolerance)
+            validation.update(reopened=True,source_geometry_preserved=True)
+            if writeMapping:
+                data=dict(format='TopologicPy GEM mapping',version=1,geometry_only=True,
+                    units='metres',validation=validation,rooms=mapping)
+                with tempfile.NamedTemporaryFile(mode='w',encoding='utf-8',dir=target.parent,suffix='.json',delete=False) as stream:
+                    pending.append(Path(stream.name));json.dump(data,stream,ensure_ascii=False,indent=2)
+            for p in targets:backups[p]=p.read_bytes() if p.exists() else None
+            for source,destination in zip(pending,targets):
+                if not overwrite and destination.exists():raise FileExistsError('GEM output appeared during export.')
+                source.replace(destination);committed.append(destination)
+            return True
+        except Exception as error:
+            for destination in reversed(committed):
+                if backups[destination] is None:destination.unlink(missing_ok=True)
+                else:destination.write_bytes(backups[destination])
+            if raiseErrors:raise
+            if not silent:warnings.warn('EnergyModel.ExportToGEM - '+str(error))
+            return None
+        finally:
+            for temporary in pending:temporary.unlink(missing_ok=True)
+
+
 
 
         
