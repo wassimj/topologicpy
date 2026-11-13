@@ -309,6 +309,11 @@ class EnergyModel:
             elif Topology.IsInstance(building, "Cell"):
                 d = Cell.Decompose(building)
                 hf = d['bottomHorizontalFaces'] + d['topHorizontalFaces']
+            elif Topology.IsInstance(building, "Cluster"):
+                hf = []
+                for cell in Topology.Cells(building):
+                    d = Cell.Decompose(cell)
+                    hf.extend(d['bottomHorizontalFaces'] + d['topHorizontalFaces'])
             else:
                 return None
             levels = [Vertex.Z(Topology.Centroid(f), mantissa=geometry_mantissa) for f in hf]
@@ -424,8 +429,8 @@ class EnergyModel:
         if not os.path.exists(designDayFilePath):
             raise FileNotFoundError(f"EnergyModel.ByTopology - Design day file not found: {designDayFilePath}")
 
-        if not Topology.IsInstance(building, "CellComplex") and not Topology.IsInstance(building, "Cell"):
-            warnings.warn("EnergyModel.ByTopology - Error: The input building is not a valid Cell or CellComplex. Returning None.")
+        if not any(Topology.IsInstance(building, kind) for kind in ("CellComplex", "Cell", "Cluster")) or (Topology.IsInstance(building, "Cluster") and not Topology.Cells(building)):
+            warnings.warn("EnergyModel.ByTopology - Error: The input building has no valid closed cells. Returning None.")
             return None
 
         # Load OSM safely
@@ -562,7 +567,7 @@ class EnergyModel:
         osSpaces = []
         spaceNames = []
 
-        if Topology.IsInstance(building, "CellComplex"):
+        if Topology.IsInstance(building, "CellComplex") or Topology.IsInstance(building, "Cluster"):
             building_cells = Topology.SubTopologies(building, "Cell")
         else:
             building_cells = [building]
@@ -1680,6 +1685,7 @@ class EnergyModel:
         import numpy as np
         from scipy.spatial import cKDTree
         openstudio = EnergyModel._ImportOpenStudio("EnergyModel._ConformExportEdges")
+        tolerance = 1e-9
         surfaces = list(model.getSurfaces())
         points = np.unique(np.round(np.array([[v.x(),v.y(),v.z()] for s in surfaces for v in s.vertices()]),12),axis=0)
         tree = cKDTree(points)
@@ -1696,8 +1702,8 @@ class EnergyModel:
                 interior = candidates[keep]
                 ordered = interior[np.argsort(t[keep])] if len(interior) else []
                 for p in [a]+list(ordered):
-                    if not ring or not np.array_equal(p,ring[-1]): ring.append(p)
-            if len(ring)>1 and np.array_equal(ring[0],ring[-1]): ring.pop()
+                    if not ring or np.linalg.norm(p-ring[-1]) > tolerance: ring.append(p)
+            if len(ring)>1 and np.linalg.norm(ring[0]-ring[-1]) <= tolerance: ring.pop()
             if len(ring)<3: raise ValueError("Edge conformity collapsed an export surface.")
             def strength(i):
                 a,b,c=[ring[(i+j)%len(ring)] for j in range(3)]
@@ -1880,7 +1886,7 @@ class EnergyModel:
                     if abs(decomposed.area-host.area)>max(1e-8,abs(host.area)*1e-8):raise ValueError('Invalid GEM shading linework: '+face['id'])
                     host=decomposed
                 if not host.is_valid or host.area<=1e-13:raise ValueError('Invalid GEM host polygon: '+face['id'])
-                if 'area' in face and abs(host.area-face['area'])>max(1e-7,host.area*1e-8):
+                if 'area' in face and abs(host.area-face['area'])>max(1e-5,host.area*1e-7):
                     raise ValueError('GEM requires polygonal planar faces; tessellate curves explicitly before export.')
                 pieces=[piece for part in parts(host) for piece in ([Polygon(p) for p in EnergyModel._ExportTriangles2D(part)] if part.interiors else [part])]
                 if is_shade:

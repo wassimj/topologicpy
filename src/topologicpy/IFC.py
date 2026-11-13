@@ -4565,21 +4565,41 @@ class IFC:
 
     @staticmethod
     def _Analytical_evidence_footprint(points, faces):
-        """Project usable faces; preserve non-convex gross footprints and voids."""
+        """Project faces without duplicate overlay; condition GEOS in a local frame."""
+        import numpy as np
         from shapely.geometry import MultiPoint, Polygon
-        from shapely import make_valid
+        from shapely import make_valid, normalize
+        from shapely.affinity import translate
+        from shapely.errors import GEOSException
         from shapely.ops import unary_union
-        pieces = []
-        for ids in faces:
-            if len(ids) < 3:
-                continue
-            polygon = Polygon(points[ids, :2])
-            if polygon.area > 1e-08:
-                pieces.extend(IFC._Analytical_evidence_polygons(make_valid(polygon)))
-        if pieces:
-            shape = make_valid(unary_union(pieces))
-            if not shape.is_empty and shape.area > 0.001:
-                return (shape, 'projected_faces')
+
+        def projected(origin):
+            xy = np.asarray(points)[:, :2] - origin
+            pieces = {}
+            for ids in faces:
+                if len(ids) < 3:
+                    continue
+                polygon = Polygon(xy[ids])
+                if polygon.area > 1e-08:
+                    for part in IFC._Analytical_evidence_polygons(make_valid(polygon)):
+                        # Canonical WKB removes exact duplicates, including
+                        # opposite winding, without changing any coordinates.
+                        pieces.setdefault(normalize(part).wkb, part)
+            return make_valid(unary_union(list(pieces.values()))) if pieces else None
+
+        method = 'projected_faces'
+        try:
+            shape = projected(np.zeros(2))
+        except GEOSException:
+            # Near-coincident mesh edges can fail noding in world coordinates.
+            # Translate this product only; do not snap, buffer or convexify it.
+            origin = np.asarray(points)[0, :2]
+            shape = projected(origin)
+            if shape is not None:
+                shape = make_valid(translate(shape, xoff=float(origin[0]), yoff=float(origin[1])))
+            method = 'projected_faces_local_frame'
+        if shape is not None and not shape.is_empty and shape.area > 0.001:
+            return (shape, method)
         shape = MultiPoint(points[:, :2]).convex_hull
         return (shape, 'convex_hull_fallback')
 
@@ -5627,6 +5647,38 @@ class IFC:
         return (LineString([centre - direction * half, centre + direction * half]), width)
 
     @staticmethod
+    def _Analytical_redraw_opening_evidence(records, entities):
+        """Prefer explicit openings; use unassociated source window/door geometry."""
+        from shapely.geometry import mapping
+        explicit = {r['id'] for r in records if r['type'] == 'IFCOPENINGELEMENT'}
+        represented_fills = set()
+        fills = {}
+        for entity in entities.values():
+            if entity.type != 'IFCRELFILLSELEMENT' or len(entity.args) <= 5:
+                continue
+            opening = IFC._Analytical_evidence_ref(entity.args[4])
+            fill_id = IFC._Analytical_evidence_ref(entity.args[5])
+            fill = entities.get(fill_id)
+            fills[str(opening)] = {'kind': 'window' if fill and fill.type == 'IFCWINDOW' else 'door', 'source': fill.args[0] if fill else None}
+            if opening in explicit:
+                represented_fills.add(fill_id)
+        openings = []
+        for record in records:
+            direct = record['type'] == 'IFCOPENINGELEMENT'
+            inferred = record['type'] in {'IFCWINDOW', 'IFCDOOR'} and record['id'] not in represented_fills
+            if not direct and not inferred:
+                continue
+            points = record['points']
+            openings.append({'id': record['id'], 'source': record['source'],
+                'footprint': mapping(record['footprint']),
+                'points': points.tolist() if hasattr(points, 'tolist') else points,
+                'bottom': record['z0'], 'top': record['z1'],
+                'evidence_method': 'ifc_opening_element' if direct else 'source_fill_geometry'})
+            if inferred:
+                fills[str(record['id'])] = {'kind': 'window' if record['type'] == 'IFCWINDOW' else 'door', 'source': record['source']}
+        return openings, fills
+
+    @staticmethod
     def _Analytical_redraw_fit_layout(evidence, progress=None, config=None):
         from collections import defaultdict
         import numpy as np
@@ -5695,7 +5747,7 @@ class IFC:
                             lines.append(axis[0].intersection(slab['footprint']))
                 rooms = [p for p in polygonize(unary_union(lines)) if slab['footprint'].covers(p.representative_point()) and p.area > 1]
                 for number, room in enumerate(rooms):
-                    references.append({'id': -1000 - index * 1000 - number, 'source': f'inferred-{index}-{number}', 'name': f'Inferred room {index + 1}.{number + 1}', 'footprint': clean(room), 'z0': slab['z0'], 'z1': roof, 'type': 'INFERRED', 'method': 'wall_partition_inference'})
+                    references.append({'id': -1000 - index * 1000 - number, 'source': f"inferred-{index}-{number}:{slab['source']}", 'name': f'Inferred room {index + 1}.{number + 1}', 'footprint': clean(room), 'z0': slab['z0'], 'z1': roof, 'type': 'INFERRED', 'method': 'wall_partition_inference'})
             warnings.append({'code': 'ROOMS_INFERRED', 'message': 'No usable IfcSpace footprints; rooms inferred from wall/slab evidence'})
         if not references:
             raise ValueError('Reference evidence did not yield any usable room footprints')
@@ -5816,8 +5868,27 @@ class IFC:
                     generated.append({'id': identity, 'source_space_id': reference['source'], 'name': reference['name'] or identity, 'role': reference.get('role', 'room'), 'role_basis': reference.get('role_basis', 'geometric_inference'), 'air_top': air_top, 'air_volume': polygon.area * max(0.0, air_top - reference['z0']), 'air_volume_method': 'ceiling_or_source_height_prism_estimate', 'plenum_height': max(0.0, band['top'] - air_top), 'ceiling_sources': [r['source'] for r in ceilings], 'storey': number, 'footprint': mapping(polygon), 'bottom': band['bottom'], 'top': band['top'], 'reference_footprint': mapping(reference['footprint']), 'reference_bottom': reference['z0'], 'reference_top': reference['z1'], 'reference_method': reference['method'], 'envelope_method': band['envelope_method'], 'confidence': {'score': score, 'label': 'high' if score >= 0.85 else 'medium' if score >= 0.6 else 'low', 'footprint_iou': iou, 'height_agreement': height_agreement, 'meaning': 'heuristic agreement score; not a calibrated probability'}, 'reference_area': reference['footprint'].area, 'area': polygon.area, 'boundary_displacement_max_m': polygon.boundary.hausdorff_distance(reference['footprint'].boundary)})
         IFC._Analytical_redraw_tall_spaces(generated, warnings, config)
         IFC._Analytical_redraw_merge_service_spaces(generated, warnings, excluded, records)
+        from shapely.geometry import Polygon
+        occupied_storeys = {}
+        repair_distance = min(0.005, config.geometry_tolerance / 4, config.drafting_grid / 2)
         for room in list(generated):
-            parts = sorted(IFC._Analytical_evidence_polygons(shape(room['footprint'])), key=lambda p: (-p.area, p.bounds))
+            original = shape(room['footprint'])
+            repaired, repair = IFC._Analytical_redraw_remove_numerical_holes(original)
+            repaired = repaired.simplify(repair_distance, preserve_topology=True)
+            level = (room['bottom'], room['top'])
+            occupied = occupied_storeys.get(level, Polygon())
+            repaired = repaired.difference(occupied)
+            occupied_storeys[level] = occupied.union(repaired)
+            room['footprint'] = mapping(repaired)
+            room['area'] = repaired.area
+            if repair['holes_removed']:
+                warnings.append({'code': 'NUMERICAL_FOOTPRINT_HOLES_REMOVED', 'message': f"Removed {repair['holes_removed']} numerical footprint holes totalling {repair['area_m2']:.12g} square metres", 'sources': [room['source_space_id']], **repair})
+            changed_area = original.symmetric_difference(repaired).area
+            if changed_area > 1e-9:
+                warnings.append({'code': 'FOOTPRINT_REGULARISED_FOR_NATIVE_EXPORT', 'message': f'Building-scale footprint repair changed {changed_area:.9f} square metres', 'sources': [room['source_space_id']], 'changed_area_m2': changed_area, 'simplification_distance_m': repair_distance})
+            parts = sorted(IFC._Analytical_evidence_polygons(repaired), key=lambda p: (-p.area, p.bounds))
+            if not parts:
+                raise ValueError('Footprint repair removed a room: ' + room['id'])
             if len(parts) <= 1:
                 continue
             generated.remove(room)
@@ -5853,7 +5924,12 @@ class IFC:
         total_source = sum((r['type'] == 'IFCSPACE' and r['source'] not in excluded_ids for r in records))
         fidelity['eligible_source_space_records'] = total_source or len(references)
         fidelity['source_geometry_availability'] = len(references) / max(total_source, len(references), 1)
-        return {'format_version': 1, 'method': 'generative_redraw', 'origin': evidence.origin, 'modelling_config': {'geometry_tolerance': config.geometry_tolerance, 'drafting_grid': config.drafting_grid, 'minimum_cell_height': config.minimum_cell_height, 'minimum_fragment_area': config.minimum_fragment_area}, 'source_boundaries': [b for b in evidence.context.get('boundaries', []) if b['space'] in represented], 'construction_evidence': [{'id': r['source'], 'type': r['type'], 'footprint': mapping(r['footprint']), 'predefined_type': r.get('predefined_type'), 'bottom': r['z0'], 'top': r['z1'], 'materials': evidence.context.get('materials', {}).get(r['id'], []), 'points': r['points'].tolist(), 'faces': r.get('faces', [])} for r in records if r['type'] != 'IFCSPACE' and r['type'] != 'IFCOPENINGELEMENT'], 'rooms': generated, 'openings': [], 'fidelity': fidelity, 'warnings': warnings, 'reference_openings': [{'id': r['id'], 'source': r['source'], 'footprint': mapping(r['footprint']), 'points': r['points'].tolist(), 'bottom': r['z0'], 'top': r['z1']} for r in records if r['type'] == 'IFCOPENINGELEMENT'], 'fill_types': {str(IFC._Analytical_evidence_ref(e.args[4])): {'kind': 'window' if evidence.entities.get(IFC._Analytical_evidence_ref(e.args[5])) and evidence.entities[IFC._Analytical_evidence_ref(e.args[5])].type == 'IFCWINDOW' else 'door', 'source': evidence.entities[IFC._Analytical_evidence_ref(e.args[5])].args[0] if IFC._Analytical_evidence_ref(e.args[5]) in evidence.entities else None} for e in evidence.entities.values() if e.type == 'IFCRELFILLSELEMENT' and len(e.args) > 5}}
+        opening_evidence, fill_types = IFC._Analytical_redraw_opening_evidence(records, evidence.entities)
+        inferred_openings = sum(r['evidence_method'] == 'source_fill_geometry' for r in opening_evidence)
+        fidelity['opening_evidence_from_fill_geometry'] = inferred_openings
+        if inferred_openings:
+            warnings.append({'code': 'OPENINGS_FROM_SOURCE_FILL_GEOMETRY', 'message': f'{inferred_openings} window/door objects provide aperture evidence without usable IfcOpeningElement geometry'})
+        return {'format_version': 1, 'method': 'generative_redraw', 'origin': evidence.origin, 'modelling_config': {'geometry_tolerance': config.geometry_tolerance, 'drafting_grid': config.drafting_grid, 'minimum_cell_height': config.minimum_cell_height, 'minimum_fragment_area': config.minimum_fragment_area}, 'source_boundaries': [b for b in evidence.context.get('boundaries', []) if b['space'] in represented], 'construction_evidence': [{'id': r['source'], 'type': r['type'], 'footprint': mapping(r['footprint']), 'predefined_type': r.get('predefined_type'), 'bottom': r['z0'], 'top': r['z1'], 'materials': evidence.context.get('materials', {}).get(r['id'], []), 'points': r['points'].tolist(), 'faces': r.get('faces', [])} for r in records if r['type'] != 'IFCSPACE' and r['type'] != 'IFCOPENINGELEMENT'], 'rooms': generated, 'openings': [], 'fidelity': fidelity, 'warnings': warnings, 'reference_openings': opening_evidence, 'fill_types': fill_types}
 
     @staticmethod
     def _Analytical_redraw_partition_wall_gaps(members, domain, reach=0.8):
@@ -5949,20 +6025,207 @@ class IFC:
         return lines
 
     @staticmethod
+    def _Analytical_redraw_remove_numerical_holes(geometry, area_tolerance=0.1):
+        """Remove building-scale footprint voids below the usable-area threshold."""
+        from shapely.geometry import Polygon
+        from shapely.ops import unary_union
+        parts = []
+        count = 0
+        area = 0.0
+        for polygon in IFC._Analytical_evidence_polygons(geometry):
+            holes = []
+            for ring in polygon.interiors:
+                hole_area = Polygon(ring).area
+                if hole_area < area_tolerance:
+                    count += 1
+                    area += hole_area
+                else:
+                    holes.append(ring)
+            parts.append(Polygon(polygon.exterior, holes))
+        return unary_union(parts), {'holes_removed': count, 'area_m2': area, 'maximum_hole_area_m2': area_tolerance}
+
+    @staticmethod
     def _Analytical_redraw_prism(polygon, bottom, top, tolerance):
+        """Extrude the validated footprint without dropping holes or short edges."""
+        from topologicpy.Core import Core
         from topologicpy.Vertex import Vertex
         from topologicpy.Wire import Wire
         from topologicpy.Face import Face
         from topologicpy.Cell import Cell
+        from topologicpy.Topology import Topology
+        # Drafting/sewing tolerance must not delete short, designed ring edges.
+        construction_tolerance = min(abs(tolerance), 1e-7)
+        polygon = polygon.simplify(construction_tolerance, preserve_topology=True)
+        def wire(ring):
+            return Wire.ByVertices([Vertex.ByCoordinates(x, y, bottom) for x, y in list(ring.coords)[:-1]], close=True, tolerance=construction_tolerance)
+        face = Core.Face.ByExternalInternalBoundaries(wire(polygon.exterior), [wire(r) for r in polygon.interiors], construction_tolerance)
+        if not Topology.IsInstance(face, 'Face') or abs(Face.Area(face, mantissa=10) - polygon.area) > max(1e-6, polygon.area * 1e-8):
+            raise ValueError('Native footprint construction did not preserve its designed area and holes')
+        cell = Cell.ByThickenedFace(face, thickness=top-bottom, bothSides=False, reverse=Face.Normal(face)[2] < 0, polyhedron=False, tolerance=construction_tolerance, silent=True)
+        expected = polygon.area * (top-bottom)
+        if not Topology.IsInstance(cell, 'Cell') or abs(Cell.Volume(cell, mantissa=10) - expected) > max(0.001, expected * 1e-5):
+            raise ValueError('Native prism construction did not preserve its designed volume')
+        return cell
 
-        def wire(ring, z):
-            return Wire.ByVertices([Vertex.ByCoordinates(x, y, z) for x, y in list(ring.coords)[:-1]], close=True, tolerance=tolerance)
-        faces = [Face.ByWires(wire(polygon.exterior, z), [wire(r, z) for r in polygon.interiors], tolerance=tolerance) for z in (bottom, top)]
-        for ring in [polygon.exterior] + list(polygon.interiors):
-            p = list(ring.coords)
-            for a, b in zip(p, p[1:]):
-                faces.append(Face.ByVertices([Vertex.ByCoordinates(*a, bottom), Vertex.ByCoordinates(*b, bottom), Vertex.ByCoordinates(*b, top), Vertex.ByCoordinates(*a, top)], tolerance=tolerance, silent=True))
-        return Cell.ByFaces(faces, tolerance=tolerance, silent=True)
+    @staticmethod
+    def _Analytical_native_cell_collection(cells):
+        """Group native solids by shared face identity into genuine CellComplexes."""
+        from topologicpy.Topology import Topology
+        from topologicpy.Cluster import Cluster
+        from OCC.Core.TopTools import TopTools_IndexedMapOfShape
+        from OCC.Core.TopExp import TopExp_Explorer
+        from OCC.Core.TopAbs import TopAbs_FACE
+        from OCC.Core.TopoDS import TopoDS_CompSolid, topods
+        from OCC.Core.BRep import BRep_Builder
+        faces = TopTools_IndexedMapOfShape()
+        owners = {}
+        neighbours = [set() for _ in cells]
+        for index, cell in enumerate(cells):
+            explorer = TopExp_Explorer(cell.shape, TopAbs_FACE)
+            while explorer.More():
+                key = faces.Add(explorer.Current())
+                explorer.Next()
+                for other in owners.setdefault(key, set()):
+                    if other != index:
+                        neighbours[index].add(other)
+                        neighbours[other].add(index)
+                owners[key].add(index)
+        remaining = set(range(len(cells)))
+        parts = []
+        while remaining:
+            first = min(remaining)
+            remaining.remove(first)
+            pending = [first]
+            component = []
+            while pending:
+                index = pending.pop()
+                component.append(index)
+                more = neighbours[index] & remaining
+                remaining.difference_update(more)
+                pending.extend(sorted(more))
+            if len(component) == 1:
+                parts.append(cells[component[0]])
+            else:
+                builder = BRep_Builder()
+                solid = TopoDS_CompSolid()
+                builder.MakeCompSolid(solid)
+                for index in sorted(component):
+                    builder.Add(solid, topods.Solid(cells[index].shape))
+                parts.append(Topology.ByOCCTShape(solid, silent=True))
+        return parts[0] if len(parts) == 1 else Cluster.ByTopologies(parts)
+
+    @staticmethod
+    def _Analytical_native_remove_internal_partitions(cell):
+        """Remove opposite coincident faces enclosing no volume inside a room."""
+        import numpy as np
+        from collections import defaultdict
+        from topologicpy.Topology import Topology
+        from topologicpy.Face import Face
+        from topologicpy.Wire import Wire
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Cell import Cell
+        faces = Topology.Faces(cell)
+        groups = defaultdict(list)
+        def ring_key(wire):
+            return tuple(sorted(tuple(round(x, 8) for x in Vertex.Coordinates(v, mantissa=12)) for v in Wire.Vertices(wire)))
+        for index, face in enumerate(faces):
+            key = (ring_key(Face.ExternalBoundary(face)), tuple(sorted(ring_key(w) for w in Face.InternalBoundaries(face) or [])))
+            groups[key].append(index)
+        removed = set()
+        for indices in groups.values():
+            if len(indices) == 2:
+                first, second = indices
+                if float(np.dot(Face.Normal(faces[first]), Face.Normal(faces[second]))) < -0.999999:
+                    removed.update(indices)
+        if not removed:
+            return cell, 0
+        repaired = Cell.ByFaces([face for index, face in enumerate(faces) if index not in removed], tolerance=1e-6, silent=True)
+        volume = Cell.Volume(cell, mantissa=12)
+        if repaired is None or abs(Cell.Volume(repaired, mantissa=12) - volume) > max(0.001, abs(volume) * 1e-6):
+            raise ValueError('Could not remove a zero-volume internal partition without changing its room')
+        return repaired, len(removed)
+
+    @staticmethod
+    def _Analytical_redraw_sew_cells(cells, tolerance):
+        """Partition closed rooms once, retaining disconnected native components."""
+        from OCC.Core.BOPAlgo import BOPAlgo_CellsBuilder
+        from OCC.Core.TopTools import TopTools_ListOfShape, TopTools_IndexedMapOfShape
+        from OCC.Core.TopExp import TopExp_Explorer
+        from OCC.Core.TopAbs import TopAbs_SOLID
+        from topologicpy.Topology import Topology
+        arguments = TopTools_ListOfShape()
+        for cell in cells:
+            arguments.Append(cell.shape)
+        builder = BOPAlgo_CellsBuilder()
+        builder.SetArguments(arguments)
+        builder.SetFuzzyValue(min(tolerance, 1e-5))
+        builder.SetRunParallel(False)
+        builder.Perform()
+        if builder.HasErrors():
+            raise ValueError('Native shared-cell assembly failed')
+        builder.AddAllToResult()
+        builder.MakeContainers()
+        from OCC.Core.BRepTools import BRepTools_ReShape, breptools
+        from OCC.Core.BRep import BRep_Tool
+        from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakeFace
+        from OCC.Core.BRepGProp import brepgprop
+        from OCC.Core.GProp import GProp_GProps
+        from OCC.Core.TopAbs import TopAbs_FACE, TopAbs_WIRE
+        from OCC.Core.TopoDS import topods
+        reshape = BRepTools_ReShape()
+        seen_faces = TopTools_IndexedMapOfShape()
+        explorer = TopExp_Explorer(builder.Shape(), TopAbs_FACE)
+        while explorer.More():
+            face = topods.Face(explorer.Current())
+            explorer.Next()
+            if seen_faces.Contains(face):
+                continue
+            seen_faces.Add(face)
+            outside = breptools.OuterWire(face)
+            surface = BRep_Tool.Surface(face)
+            wires = TopExp_Explorer(face, TopAbs_WIRE)
+            retained = []
+            removed = False
+            while wires.More():
+                wire = topods.Wire(wires.Current())
+                wires.Next()
+                if wire.IsSame(outside):
+                    continue
+                hole = BRepBuilderAPI_MakeFace(surface, wire, True).Face()
+                properties = GProp_GProps()
+                brepgprop.SurfaceProperties(hole, properties)
+                if abs(properties.Mass()) < 0.1:
+                    removed = True
+                else:
+                    retained.append(wire)
+            if removed:
+                maker = BRepBuilderAPI_MakeFace(surface, outside, True)
+                for wire in retained:
+                    maker.Add(wire)
+                replacement = maker.Face()
+                replacement.Orientation(face.Orientation())
+                reshape.Replace(face, replacement)
+        shared_shape = reshape.Apply(builder.Shape())
+        solids = TopTools_IndexedMapOfShape()
+        explorer = TopExp_Explorer(shared_shape, TopAbs_SOLID)
+        result = []
+        while explorer.More():
+            solid = explorer.Current()
+            explorer.Next()
+            if not solids.Contains(solid):
+                solids.Add(solid)
+                result.append(Topology.ByOCCTShape(solid, silent=True))
+        if len(result) < len(cells):
+            raise ValueError('Native shared-cell assembly lost rooms')
+        repaired = []
+        removed_faces = 0
+        for cell in result:
+            cell, removed = IFC._Analytical_native_remove_internal_partitions(cell)
+            repaired.append(cell)
+            removed_faces += removed
+        topology = IFC._Analytical_native_cell_collection(repaired)
+        Topology.SetDictionary(topology, {'removed_zero_volume_internal_faces': removed_faces})
+        return topology
 
     @staticmethod
     def _Analytical_redraw_assemble(plan, config=None, progress=None):
@@ -6041,16 +6304,21 @@ class IFC:
             try:
                 topology = IFC._Analytical_cellular_shared_complex(plan['rooms'], config.tolerance, progress, grid=0 if plan.get('modelling_config', {}).get('exact_shared_edges') else min(config.drafting_grid, 0.001))
             except (ValueError, RuntimeError) as exc:
-                topology = Cluster.ByTopologies(fallback_cells())
+                topology = IFC._Analytical_redraw_sew_cells(fallback_cells(), config.tolerance)
                 result.diagnostics.append(IFC._Analytical_model_Diagnostic('SHARED_ASSEMBLY_REQUIRES_REVIEW', str(exc), 'warning'))
         else:
             from topologicpy.Core import Core
             topology = Core.CellComplex.ByCells(cells, tolerance=config.tolerance) if len(cells) == 1 else CellComplex.ByCells(cells, tolerance=config.tolerance, silent=True)
         if not Topology.IsInstance(topology, 'CellComplex') and len(cells) > 1:
-            topology = Cluster.ByTopologies(fallback_cells())
-            result.diagnostics.append(IFC._Analytical_model_Diagnostic('DISCONNECTED_CELL_COLLECTION', 'Generated closed cells retained as an editable collection; shared topology needs review', 'warning'))
+            if not Topology.IsInstance(topology, 'Cluster') or not Topology.Cells(topology):
+                topology = IFC._Analytical_redraw_sew_cells(fallback_cells(), config.tolerance)
+            result.diagnostics.append(IFC._Analytical_model_Diagnostic('DISCONNECTED_CELL_COLLECTION', 'Connected native CellComplexes and isolated closed cells retained as an editable collection', 'warning'))
         result.topology = topology
         result.statistics.update(rooms=len(cells), generated_rooms=len(plan['rooms']), analytical_volume=sum((r['analytical_volume'] for r in result.spaces)), topology_type=Topology.TypeAsString(topology), method='generative_redraw')
+        removed_faces = Dictionary.ValueAtKey(Topology.Dictionary(topology), 'removed_zero_volume_internal_faces') or 0
+        if removed_faces:
+            result.statistics['removed_zero_volume_internal_faces'] = removed_faces
+            result.diagnostics.append(IFC._Analytical_model_Diagnostic('ZERO_VOLUME_INTERNAL_PARTITIONS_REMOVED', f'Removed {removed_faces} opposite coincident internal faces; closed-room volumes retained', 'warning'))
         if progress:
             progress('identify_spatial_cells')
         IFC._Analytical_redraw_boundaries(result, plan, config, progress)
@@ -6156,18 +6424,21 @@ class IFC:
         for index, cell in enumerate(cells):
             if index in assigned:
                 continue
-            seed = Cell.InternalVertex(cell, tolerance=config.tolerance, silent=True)
-            coordinates = Vertex.Coordinates(seed, mantissa=10)
             volume = Cell.Volume(cell, mantissa=8)
             unresolved_volume += volume
+            points = np.array([Vertex.Coordinates(v, mantissa=10) for v in Topology.Vertices(cell)])
+            height = float(points[:, 2].max() - points[:, 2].min())
+            if height > config.tolerance and volume / height < 0.1:
+                continue
             identity = f'review-native-region-{index:04d}'
             name = f'Review additional native region {index}'
             Topology.SetDictionary(cell, {'bim2bem_space_id': identity, 'TOPOLOGIC_name': name, 'source_space_id': '', 'role': 'unresolved_volume', 'confidence_score': 0.2})
-            points = np.array([Vertex.Coordinates(v, mantissa=10) for v in Topology.Vertices(cell)])
             pieces = []
             for face in Topology.Faces(cell):
                 if abs(Face.Normal(face)[2]) > 0.99:
                     p = [Vertex.Coordinates(v, mantissa=10)[:2] for v in Wire.Vertices(Face.ExternalBoundary(face))]
+                    if len(p) < 3:
+                        continue
                     polygon = make_valid(Polygon(p))
                     if polygon.area > 1e-06:
                         pieces.append(polygon)
@@ -6178,9 +6449,7 @@ class IFC:
             selected = [cell for index, cell in enumerate(cells) if index in assigned]
             if not selected:
                 raise ValueError('Native assembly did not retain any cells identified by room seeds.')
-            result.topology = Core.CellComplex.ByCells(selected, tolerance=config.tolerance) if len(selected) > 1 else selected[0]
-            if not Topology.IsInstance(result.topology, 'CellComplex') and len(selected) > 1:
-                raise ValueError('PythonOCC could not rebuild the identified spatial cells with the configured tolerance.')
+            result.topology = IFC._Analytical_native_cell_collection(selected) if len(selected) > 1 else selected[0]
             result.diagnostics.append(IFC._Analytical_model_Diagnostic('ADDITIONAL_NATIVE_REGIONS_OMITTED', f'{len(cells) - len(assigned)} residual regions ({unresolved_volume:.3f} m³) excluded from spatial cells', 'warning'))
         result.statistics['rooms'] = len(assigned)
         result.statistics['analytical_volume'] = sum((r['analytical_volume'] for r in result.spaces))
@@ -6188,11 +6457,23 @@ class IFC:
         plan['fidelity']['unresolved_native_volume_m3'] = unresolved_volume
         plan['fidelity']['unresolved_native_volume_fraction'] = unresolved_volume / max(result.statistics['analytical_volume'], 1e-09)
         native_faces = {}
+        # A collection of independent native cells has no indexed host graph.
+        # Build exact face incidence once instead of invoking repeated searches.
+        native_incidence = {}
+        native_shapes = all(getattr(cell, 'shape', None) is not None for cell in cells)
+        if native_shapes:
+            retained_cells = [result.topology] if Topology.IsInstance(result.topology, 'Cell') else Topology.Cells(result.topology)
+            for cell in retained_cells:
+                for member in Topology.Faces(cell):
+                    native_incidence.setdefault(hash(member.shape), []).append((member.shape, cell))
         if progress:
             progress('derive_native_boundaries', cells=len(cells))
         for face in Topology.Faces(result.topology):
             points = [Vertex.Coordinates(v, mantissa=10) for v in Wire.Vertices(Face.ExternalBoundary(face))]
-            adjacent = Topology.AdjacentTopologies(face, result.topology, topologyType='cell') or []
+            if native_shapes:
+                adjacent = [cell for member, cell in native_incidence.get(hash(face.shape), []) if member.IsSame(face.shape)]
+            else:
+                adjacent = Topology.AdjacentTopologies(face, result.topology, topologyType='cell') or []
             if not adjacent and len(cells) == 1:
                 adjacent = cells
             owners = [Dictionary.ValueAtKey(Topology.Dictionary(c), 'bim2bem_space_id') for c in adjacent]
@@ -6306,7 +6587,7 @@ class IFC:
                         continue
                     try:
                         vertices = plane.lift(np.array(polygon.exterior.coords[:-1])).tolist()
-                        face = Face.ByVertices([Vertex.ByCoordinates(*p) for p in vertices], tolerance=config.tolerance, silent=True)
+                        face = Face.ByVertices([Vertex.ByCoordinates(*p) for p in vertices], tolerance=min(config.tolerance, 1e-7), silent=True)
                         context = Context.ByTopologyParameters(native_faces[boundary['id']], 0.5, 0.5, 0.5)
                         if face is None or Aperture.ByTopologyContext(face, context) is None:
                             continue
