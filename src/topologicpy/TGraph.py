@@ -17132,53 +17132,17 @@ class TGraph:
 
             c_cellcomplexes = _cellcomplexes(topology)
 
-            try:
-                c_cells = Cluster.FreeCells(
-                    topology,
-                    tolerance=tolerance,
-                ) or []
-            except Exception:
-                c_cells = []
-
-            try:
-                c_shells = Cluster.FreeShells(
-                    topology,
-                    tolerance=tolerance,
-                ) or []
-            except Exception:
-                c_shells = []
-
-            try:
-                c_faces = Cluster.FreeFaces(
-                    topology,
-                    tolerance=tolerance,
-                ) or []
-            except Exception:
-                c_faces = []
-
-            try:
-                c_wires = Cluster.FreeWires(
-                    topology,
-                    tolerance=tolerance,
-                ) or []
-            except Exception:
-                c_wires = []
-
-            try:
-                c_edges = Cluster.FreeEdges(
-                    topology,
-                    tolerance=tolerance,
-                ) or []
-            except Exception:
-                c_edges = []
-
-            try:
-                c_vertices = Cluster.FreeVertices(
-                    topology,
-                    tolerance=tolerance,
-                ) or []
-            except Exception:
-                c_vertices = []
+            # Decompose once: all six Free* queries share this same operation.
+            constituents = Cluster.Topologies(topology, tolerance=tolerance) or []
+            by_type = {}
+            for constituent in constituents:
+                by_type.setdefault(_type_name(constituent), []).append(constituent)
+            c_cells = by_type.get("cell", [])
+            c_shells = by_type.get("shell", [])
+            c_faces = by_type.get("face", [])
+            c_wires = by_type.get("wire", [])
+            c_edges = by_type.get("edge", [])
+            c_vertices = by_type.get("vertex", [])
 
             for t in c_cellcomplexes:
                 _process_collection(

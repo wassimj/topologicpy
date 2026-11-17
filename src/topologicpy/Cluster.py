@@ -1693,8 +1693,8 @@ class Cluster():
         """
         Returns the direct, top-level constituent Topologies of a Cluster.
 
-        The method compares the backend's direct query with a hierarchy-only
-        reconstruction and keeps the more complete valid result. This avoids
+        PythonOCC uses its explicit direct hierarchy without descendant scans.
+        Other backends retain the compatibility hierarchy reconstruction. This avoids
         Boolean reconstruction and protects heterogeneous Clusters containing
         intersecting but independent members.
         """
@@ -1704,6 +1704,31 @@ class Cluster():
             if not silent:
                 print("Cluster.Topologies - Error: The input cluster parameter is not a valid Cluster. Returning None.")
             return None
+
+        # PythonOCC stores the direct hierarchy explicitly. Its native compound
+        # iterator also provides complete direct membership for shape-only loads.
+        # Do not reconstruct every descendant merely to validate this query.
+        try:
+            from topologicpy.pythonocc_backend.cluster import Cluster as OCCCluster
+        except ImportError:
+            OCCCluster = ()
+        if isinstance(cluster, OCCCluster):
+            direct = list(cluster.Topologies())
+            if not direct and cluster.shape is not None:
+                from OCC.Core.TopoDS import TopoDS_Iterator
+                from topologicpy.pythonocc_backend.topology import Topology as OCCTopology
+                iterator = TopoDS_Iterator(cluster.shape)
+                while iterator.More():
+                    member = OCCTopology.ByOcctShape(iterator.Value())
+                    if member is None:
+                        raise RuntimeError("Cluster.Topologies: could not wrap a direct constituent.")
+                    direct.append(member)
+                    iterator.Next()
+            unique = []
+            for member in direct:
+                if not any(Cluster._IsSame(member, other) for other in unique):
+                    unique.append(member)
+            return unique
 
         direct_candidates = []
 

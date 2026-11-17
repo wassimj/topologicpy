@@ -1718,7 +1718,7 @@ class TPYCodec:
             # Backend enumeration may repeat the same native vertex before a
             # BREP round-trip. Compare geometry independently of wrapper counts.
             if not isinstance(value, dict): return None
-            result = {key: item for key, item in value.items() if key not in ('hash', 'counts', 'vertexCount')}
+            result = {key: item for key, item in value.items() if key not in ('hash', 'counts', 'vertexCount', 'nativeBrepSha256')}
             if 'vertices' in result:
                 result['vertices'] = sorted({tuple(point) for point in result['vertices']})
             def canonical(item):

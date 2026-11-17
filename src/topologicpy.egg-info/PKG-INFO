@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: topologicpy
-Version: 0.9.74
+Version: 0.9.91
 Summary: An AI-Powered Spatial Modelling and Analysis Software Library for Architecture, Engineering, and Construction.
 Author-email: Wassim Jabi <wassim.jabi@gmail.com>
 License: GNU LESSER GENERAL PUBLIC LICENSE
@@ -79,14 +79,48 @@ License-File: COPYING
 Requires-Dist: numpy>=1.18.0
 Requires-Dist: scipy>=1.4.1
 Requires-Dist: pandas
-Requires-Dist: shapely
-Requires-Dist: plotly
+Requires-Dist: shapely>=2.0
+Requires-Dist: plotly>=5.0
 Requires-Dist: lark
 Requires-Dist: webcolors
 Requires-Dist: nbformat
 Requires-Dist: requests
 Requires-Dist: packaging
+Provides-Extra: pyg
+Requires-Dist: torch; extra == "pyg"
+Requires-Dist: torch-geometric; extra == "pyg"
+Requires-Dist: scikit-learn; extra == "pyg"
+Provides-Extra: cfd
+Requires-Dist: meshio; extra == "cfd"
+Requires-Dist: google-crc32c; extra == "cfd"
+Provides-Extra: sun
+Requires-Dist: ephem; extra == "sun"
+Provides-Extra: graph
+Requires-Dist: networkx; extra == "graph"
+Requires-Dist: igraph; extra == "graph"
+Requires-Dist: graphviz; extra == "graph"
+Requires-Dist: pyvis; extra == "graph"
+Requires-Dist: rdflib>=6.0.0; extra == "graph"
+Provides-Extra: ifc
+Requires-Dist: ifcopenshell; extra == "ifc"
+Provides-Extra: ids
+Requires-Dist: defusedxml>=0.7.1; extra == "ids"
+Requires-Dist: xmlschema<5,>=4.3.2; extra == "ids"
+Requires-Dist: elementpath<6,>=5.1.4; extra == "ids"
+Provides-Extra: honeybee
+Requires-Dist: honeybee-core; extra == "honeybee"
+Requires-Dist: honeybee-energy[standards]; extra == "honeybee"
+Requires-Dist: honeybee-radiance; extra == "honeybee"
+Requires-Dist: ladybug-core; extra == "honeybee"
+Requires-Dist: ladybug-geometry; extra == "honeybee"
+Provides-Extra: kuzu
+Requires-Dist: kuzu; extra == "kuzu"
+Provides-Extra: ladybugdb
+Requires-Dist: real_ladybug; extra == "ladybugdb"
 Provides-Extra: test
+Requires-Dist: defusedxml>=0.7.1; extra == "test"
+Requires-Dist: xmlschema<5,>=4.3.2; extra == "test"
+Requires-Dist: elementpath<6,>=5.1.4; extra == "test"
 Requires-Dist: pytest-xdist>=2.4.0; extra == "test"
 Requires-Dist: rdflib>=6.0.0; extra == "test"
 Requires-Dist: pyshacl>=0.20.0; extra == "test"
@@ -138,6 +172,7 @@ TopologicPy can also be installed from PyPI:
 ```bash
 pip install topologicpy --upgrade
 ```
+Note:  pip install falls back to topologic_core when pythonOCC is absent. topologic_core is much slower, faulty in places, and is not recommended. It will be deprecated soon.
 
 ## Prerequisites
 
@@ -175,6 +210,31 @@ When TopologicPy is installed from **conda-forge**, the recommended
 conda create -n topologicpy -c conda-forge topologicpy
 conda activate topologicpy
 ```
+
+### Optional features
+
+TopologicPy never installs packages during import or a method call. Install
+optional features explicitly in the Python environment running your application:
+
+```bash
+python -m pip install "topologicpy[sun]"
+python -m pip install "topologicpy[graph]"
+python -m pip install "topologicpy[honeybee]"
+python -m pip install "topologicpy[kuzu]"
+python -m pip install "topologicpy[ladybugdb]"
+python -m pip install "topologicpy[ifc]"
+```
+
+The `sun` extra provides PyEphem; `graph` provides NetworkX, igraph, Graphviz,
+PyVis and RDFLib; `honeybee` provides the Honeybee and Ladybug Tools packages.
+The database extras provide their respective drivers, and `ifc` provides
+IfcOpenShell. Extras can be combined, for example `topologicpy[sun,graph]`.
+Graphviz rendering also requires the Graphviz application to be installed.
+
+Optional dependencies are imported when their feature is used. A missing
+dependency raises `ImportError` with an installation hint instead of modifying
+the environment or returning an unexplained empty result. NumPy, SciPy and
+webcolors remain required dependencies and are installed by the package manager.
 
 ## How to start using TopologicPy
 1. Open your favourite python editor ([jupyter notebook](https://jupyter.org/) is highly recommended)
@@ -252,6 +312,26 @@ print(ttl)
 ```
 
 
+
+### TGraph graph API
+
+Graph-producing library methods now return `TGraph`. Navigation, database
+retrieval, GQL, GraphRAG, plotting, and topology utilities no longer depend on
+`Graph.py` or either geometry backend's native Graph class.
+
+Use `TGraph.Vertices(graph)` and `TGraph.Edges(graph)` for records. Request
+`asTopologic=True` when geometry objects are needed. `TGraph.ShortestPath`
+returns vertex indices by default, and `TGraph.Dictionary` returns a Python
+dictionary.
+
+The older `graphType="graph"` and `asTGraph=False` selector spellings are retained
+for call compatibility, but they also produce `TGraph`. `Plotly.DataByGraph`
+delegates to `Plotly.DataByTGraph`.
+
+See the [TGraph capability guide](docs/TGraph_Capability_Parity.md) for graph
+overlays, alternative routes, total depth, weighted analysis, flow details and
+visualization styling options.
+
 ## API Documentation
 API documentation can be found at [https://topologicpy.readthedocs.io](https://topologicpy.readthedocs.io)
 
@@ -292,3 +372,30 @@ Or you can import the following .bib formatted references into your favourite re
 ```
 
 topologicpy: © 2026 Wassim Jabi
+
+## IDS assessment
+
+Use `from topologicpy.IDS import IDS` to assess IFC model information against
+IDS 1.0 without IfcOpenShell or IfcTester. Install the optional XML packages with
+`pip install "topologicpy[ids]"`. See [IDS API and verification](docs/IDS.md).
+
+## Analytical spatial models from IFC
+
+`IFC.AnalyticalModel` reconstructs reviewable room-only spatial geometry from IFC
+evidence, including independent CellComplexes for separate buildings. The engine
+is included in `IFC.py`; no external reconstruction package or IfcOpenShell is
+needed. World coordinates are the default. Curved/stepped roofs, boundary evidence,
+editable plans, fidelity reports and verified save/load are supported.
+
+```python
+from topologicpy.IFC import IFC
+
+result = IFC.AnalyticalModel("building.ifc")
+complexes = result.cell_complexes
+IFC.AnalyticalModelSave(result, "analytical-model")
+```
+
+This feature is experimental: verified geometry does not certify simulation
+readiness or full IFC second-level-boundary compliance. See the
+[analytical IFC guide](docs/IFC-AnalyticalModel.md) for settings, coordinates,
+building separation, limitations and validation.
