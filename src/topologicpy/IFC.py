@@ -6426,7 +6426,13 @@ class IFC:
                     atom_points = list(atom.exterior.coords[:-1])
                     atom_points.extend(point for ring in atom.interiors
                                        for point in ring.coords[:-1])
-                    if min(float(cap @ [x, y, 1.0]) for x, y in atom_points) < room['top'] + tolerance:
+                    cap_heights = [float(cap @ [x, y, 1.0]) for x, y in atom_points]
+                    # Collapse only a cap that is coincident with the nominal
+                    # top.  A genuinely lower roof must remain lower.  The
+                    # previous one-sided test treated every lower roof as a
+                    # seam and incorrectly inflated it to room['top'].
+                    cap_tolerance = max(tolerance, settings.get('drafting_grid', tolerance))
+                    if cap_heights and max(abs(height - room['top']) for height in cap_heights) <= cap_tolerance:
                         cap = np.array([0.0, 0.0, room['top']])
                 caps[j, i] = cap
         edges = defaultdict(list)
