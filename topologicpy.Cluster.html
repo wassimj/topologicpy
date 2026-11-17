@@ -744,8 +744,8 @@ geometric coincidence. A multi-member Cluster is returned unchanged.</p>
 <dt class="sig sig-object py" id="topologicpy.Cluster.Cluster.Topologies">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Topologies</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cluster</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="headerlink" href="#topologicpy.Cluster.Cluster.Topologies" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the direct, top-level constituent Topologies of a Cluster.</p>
-<p>The method compares the backend’s direct query with a hierarchy-only
-reconstruction and keeps the more complete valid result. This avoids
+<p>PythonOCC uses its explicit direct hierarchy without descendant scans.
+Other backends retain the compatibility hierarchy reconstruction. This avoids
 Boolean reconstruction and protects heterogeneous Clusters containing
 intersecting but independent members.</p>
 </dd></dl>
