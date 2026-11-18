@@ -81,6 +81,7 @@ def test_sewing_retains_small_real_room_void():
 
 
 @pytest.mark.parametrize('protect_tiny_room',[False,True])
+@pytest.mark.pythonocc_only
 def test_sewing_filters_only_unowned_microscopic_residuals(monkeypatch,protect_tiny_room):
     from topologicpy.Cell import Cell
     from topologicpy.Vertex import Vertex
@@ -109,6 +110,7 @@ def test_sewing_filters_only_unowned_microscopic_residuals(monkeypatch,protect_t
     assert sum(Cell.Volume(c,mantissa=12) for c in Topology.Cells(result))==pytest.approx(sum(Cell.Volume(c,mantissa=12) for c in inputs),abs=1e-10)
 
 
+@pytest.mark.pythonocc_only
 def test_native_cleanup_removes_empty_wire_without_filling_real_hole():
     from topologicpy.Cell import Cell
     from topologicpy.Face import Face
@@ -164,6 +166,7 @@ def test_coincident_inferred_bands_are_combined_without_discarding_references():
     assert warnings[0]['code']=='INFERRED_FLOOR_LAYERS_COMBINED'
 
 
+@pytest.mark.pythonocc_only
 def test_owned_faces_share_nonmatching_floor_and_wall_partitions():
     from shapely.geometry import mapping
     from topologicpy.Cell import Cell
