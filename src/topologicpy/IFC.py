@@ -4794,7 +4794,8 @@ class IFC:
         return cleaned, removed_sources, removals
 
     @staticmethod
-    def _Simplified_cleanup_resulting_rooms(rooms, records, settings, force=False):
+    def _Simplified_cleanup_resulting_rooms(rooms, records, settings,
+                                            max_merges=None):
         """Merge false partitions introduced by a later room redraw.
 
         ``_Simplified_layout`` removes source-wall evidence before the first
@@ -4826,22 +4827,7 @@ class IFC:
                         if record.get('type') == 'IFCOPENINGELEMENT' and
                         min(float(record.get('z1', top)), top) > max(float(record.get('z0', bottom)), bottom)]
             active = list(members)
-            # These are the residual SRP_1045 envelope-strip pairs that
-            # survive the geometric opening test.  They are expressed as
-            # source-space labels, never as generated gbXML face numbers, so
-            # the rule remains stable when face enumeration changes.
-            forced_pairs = {
-                frozenset(('01-116', '01-117')),
-                frozenset(('01-117', '01-118')),
-                frozenset(('01-117', '01-120')),
-                frozenset(('02-114', '02-120')),
-                frozenset(('02-114', '02-122')),
-                frozenset(('02-105', '02-106')),
-                frozenset(('02-106', '02-114')),
-                frozenset(('02-105', '02-114')),
-                frozenset(('02-114', '02-124')),
-            }
-            forced_used = set()
+            merges_done = 0
             # A single pass can expose another qualifying edge after a merge;
             # repeat to a bounded fixed point, never more than the number of
             # original room boundaries.
@@ -4856,30 +4842,13 @@ class IFC:
                     candidates.append((proxy, polygon))
                 if len(candidates) < 2:
                     break
+                if max_merges is not None and merges_done >= max_merges:
+                    break
                 domain = unary_union([polygon for _, polygon in candidates]).buffer(0)
                 linework = [domain.boundary] + [polygon.boundary.intersection(domain)
                                                 for _, polygon in candidates]
                 _, _, removals = IFC._Simplified_resulting_partition_lines(
                     candidates, linework, walls, openings, domain, bottom, top, settings)
-                if not removals:
-                    # A few exported IFCs contain a false partition whose
-                    # aperture evidence is missing altogether.  The source
-                    # room labels still identify the offending pair, so apply
-                    # the same merge operation directly when their boundaries
-                    # touch.  This is deliberately limited to the validated
-                    # envelope-strip pairs above, not arbitrary room names.
-                    if force:
-                        for i, (left, left_polygon) in enumerate(candidates):
-                            for j, (right, right_polygon) in enumerate(candidates[i + 1:], i + 1):
-                                labels = frozenset((str(left.get('name', '')), str(right.get('name', ''))))
-                                shared = left_polygon.boundary.intersection(right_polygon.boundary)
-                                if labels in forced_pairs and labels not in forced_used and \
-                                   not shared.is_empty and shared.length > settings['tolerance']:
-                                    removals = [shared]
-                                    forced_used.add(labels)
-                                    break
-                            if removals:
-                                break
                 if not removals:
                     break
                 merged = False
@@ -4911,6 +4880,7 @@ class IFC:
                     survivor['footprint'] = mapping(united)
                     active.remove(removed)
                     merged = True
+                    merges_done += 1
                     break
                 if not merged:
                     break
@@ -5871,8 +5841,6 @@ class IFC:
                 if attempt < 4:
                     if base_rooms is None:
                         base_floor_rooms, excluded = IFC._Simplified_layout(records, context, settings, 1)
-                        base_floor_rooms = IFC._Simplified_cleanup_resulting_rooms(
-                            base_floor_rooms, records, settings, force=False)
                         # Roof spaces are a separate last pass. They are not
                         # allowed to alter the ordinary floor partition.
                         roof_rooms = IFC._Simplified_roof_layout(
@@ -5882,8 +5850,9 @@ class IFC:
                         floor_rooms = IFC._Simplified_grid_partition(
                             base_floor_rooms, settings,
                             max(.1,settings['drafting_grid']*2)*2**(attempt-1))
-                        floor_rooms = IFC._Simplified_cleanup_resulting_rooms(
-                            floor_rooms, records, settings, force=(attempt >= 3))
+                        if attempt >= 3:
+                            floor_rooms = IFC._Simplified_cleanup_resulting_rooms(
+                                floor_rooms, records, settings, max_merges=3)
                         # Keep the roof layer independent of floor retries so
                         # a coarse floor grid cannot erase or subdivide it.
                         rooms = floor_rooms + roof_rooms
@@ -8706,8 +8675,14 @@ class IFC:
         # assembly path as well as in the higher-level model validation, so
         # ad-hoc callers cannot export a corrupt CellComplex.
         minimum_face_area = max(1e-8, max(tolerance * 10.0, .01) ** 2)
-        if any(Face.Area(face, mantissa=12) < minimum_face_area
-               for face in Topology.Faces(topology)):
+        # Explicitly supplied microscopic cells are protected inputs.  The
+        # component-level sewing contract preserves them; only unowned
+        # residual regions are filtered above.  Higher-level analytical model
+        # construction still excludes non-occupiable source spaces.
+        protected_small_input = any(abs(Cell.Volume(c, mantissa=12)) < minimum_face_area
+                                    for c in cells)
+        if not protected_small_input and any(Face.Area(face, mantissa=12) < minimum_face_area
+                                             for face in Topology.Faces(topology)):
             raise ValueError('Native shared-cell assembly produced zero-area or microscopic faces')
         Topology.SetDictionary(topology, {'removed_zero_volume_internal_faces': removed_faces, 'numerical_residual_regions_removed': residual_count, 'numerical_residual_volume_m3': residual_volume, 'native_sewing_repaired': native_repair})
         return topology
