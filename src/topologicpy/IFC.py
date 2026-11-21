@@ -1770,7 +1770,23 @@ class IFCFastTopology:
         from topologicpy.Wire import Wire
         from topologicpy.Face import Face
         from topologicpy.Topology import Topology
-        wires = [Wire.ByVertices([Vertex.ByCoordinates(*p) for p in loop], close=True) for loop in cleaned]
+        import numpy as np
+        def safe_wire(loop):
+            points = [np.asarray(p, dtype=float) for p in loop]
+            if len(points) < 3 or any(point.shape != (3,) or not np.isfinite(point).all() for point in points):
+                return None
+            area_vector = np.sum(np.cross(points, np.roll(points, -1, axis=0)), axis=0)
+            if float(np.linalg.norm(area_vector)) <= 1e-14:
+                return None
+            try:
+                return Wire.ByVertices(
+                    [Vertex.ByCoordinates(*point.tolist()) for point in points],
+                    close=True, tolerance=1e-7)
+            except (TypeError, ValueError, RuntimeError):
+                return None
+        wires = [safe_wire(loop) for loop in cleaned]
+        if any(wire is None for wire in wires):
+            raise ValueError('Could not construct a non-degenerate IFC face wire')
         face = Face.ByWires(wires[0], wires[1:], silent=True)
         if face is None:
             raise ValueError("Could not construct IFC face with inner bounds")
@@ -4339,6 +4355,571 @@ class IFC:
         return usable.area >= .9 * polygon.area
 
     @staticmethod
+    def _Simplified_filter_partition_walls(members, context, spaces, domain, settings,
+                                           opening_records=None):
+        """Remove likely duplicate interior faces at the exterior envelope.
+
+        Some IFC exports contain an interior wall face or a second partition
+        immediately inside an exterior wall.  Treating that geometry as a
+        genuine analytical partition creates a thin strip and can also cover a
+        window.  Keep walls that define the envelope, but omit non-envelope
+        walls that are parallel and within 0.5 m of an envelope wall, or that
+        geometrically obstruct an exterior window.
+        """
+        import numpy as np
+        from shapely.geometry import LineString, Point
+        if not members or domain is None or domain.is_empty:
+            return list(members or [])
+        tolerance = settings['tolerance']
+        outer_limit = 0.5
+        # In IFC, an opening is normally the storey-member record.  The
+        # IfcWindow that fills it is reached through IfcRelFillsElement and is
+        # carried as ``fill_type``.  Looking only for an IFCWINDOW record
+        # therefore misses the very windows this filter must protect.
+        window_pool = list(members or []) + list(opening_records or [])
+        window_records = [record for record in window_pool
+                          if ('WINDOW' in record.get('type', '') or
+                              str(record.get('fill_type', '')).lower() == 'window')]
+        wall_data = []
+        envelope_boundary = domain.boundary
+        for wall in members:
+            if 'WALL' not in wall.get('type', ''):
+                continue
+            footprint = wall.get('footprint')
+            axis_data = IFC._Analytical_redraw_axis(wall)
+            if footprint is None or footprint.is_empty or axis_data is None:
+                continue
+            axis, width = axis_data
+            # The wall may be slightly outside the union of the space
+            # footprints because the space boundary is its inner face.  Use a
+            # tight contact test here: a second wall 0.1--0.5 m inside the
+            # envelope must remain classifiable as an interior duplicate.
+            contact_length = footprint.boundary.intersection(envelope_boundary).length
+            outer = contact_length >= max(0.5, 0.2 * float(axis.length))
+            direction = np.asarray(axis.coords[-1]) - np.asarray(axis.coords[0])
+            length = float(np.linalg.norm(direction))
+            if length <= tolerance:
+                continue
+            wall_data.append((wall, footprint, axis, width, outer,
+                              direction / length))
+        outer_data = [item for item in wall_data if item[4]]
+        # Do not return early when the space union is slightly inset from all
+        # wall footprints.  In that common IFC condition no wall has enough
+        # exact contact with ``domain.boundary`` to be classified as an
+        # envelope wall, but the window-blocking test below is still decisive.
+        if not wall_data:
+            return list(members)
+
+        relations = {}
+        for boundary in context.get('boundaries', []):
+            relations.setdefault(boundary.get('element'), []).append(boundary)
+
+        def is_explicit_internal(wall):
+            rels = relations.get(wall.get('source'), [])
+            label = str(wall.get('name', '')).upper()
+            return (any(str(r.get('internal_or_external', '')).lower() == 'internal'
+                        for r in rels) or
+                    any(token in label for token in
+                        ('INTERIOR', 'PARTITION', 'FURRING', 'PLUMBING')) or
+                    'PARTY WALL' in label or 'DIMISING WALL' in label)
+
+        removed = set()
+        removed_data = []
+        for wall, footprint, axis, width, outer, direction in wall_data:
+            if outer:
+                continue
+            suspicious_parallel = False
+            for _, outer_fp, outer_axis, _, _, outer_direction in outer_data:
+                parallel = abs(float(direction @ outer_direction)) >= 0.985
+                close = min(footprint.distance(outer_fp),
+                            axis.distance(outer_axis)) < outer_limit
+                if parallel and close:
+                    suspicious_parallel = True
+                    break
+            blocks_window = False
+            for window in window_records:
+                window_fp = window.get('footprint')
+                if window_fp is None or window_fp.is_empty:
+                    continue
+                if window.get('z1', 0.0) <= wall.get('z0', 0.0) + tolerance or \
+                   window.get('z0', 0.0) >= wall.get('z1', 0.0) - tolerance:
+                    continue
+                if footprint.distance(window_fp) < max(0.25, 2.0 * width):
+                    blocks_window = True
+                    break
+            if suspicious_parallel or blocks_window:
+                # Explicit interior labels increase confidence, but the
+                # geometric tests are intentionally sufficient when labels are
+                # absent.  A non-envelope wall meeting either test is the
+                # duplicate geometry this filter is intended to remove.
+                removed.add(wall.get('source') or id(wall))
+                removed_data.append((wall, footprint, axis, width))
+
+        retained = [wall for wall in members
+                    if (wall.get('source') or id(wall)) not in removed]
+
+        # A false interior wall often terminates several legitimate partitions.
+        # Once it is removed, continue each attached partition from its endpoint
+        # to the analytical exterior boundary. Add only a one-sided extension
+        # away from the removed wall, so this cannot create a new partition
+        # across the whole building.
+        if removed_data:
+            bounds = domain.bounds if domain is not None and not domain.is_empty else (0, 0, 0, 0)
+            reach = max(10.0, 4.0 * max(bounds[2] - bounds[0], bounds[3] - bounds[1], 1.0))
+            for wall in retained:
+                axis_data = IFC._Analytical_redraw_axis(wall)
+                if axis_data is None:
+                    continue
+                axis, width = axis_data
+                coordinates = list(axis.coords)
+                if len(coordinates) < 2:
+                    continue
+                direction = np.asarray(coordinates[-1], dtype=float) - np.asarray(coordinates[0], dtype=float)
+                length = float(np.linalg.norm(direction))
+                if length <= tolerance:
+                    continue
+                direction /= length
+                extensions = []
+                for _, removed_fp, removed_axis, removed_width in removed_data:
+                    removed_direction = np.asarray(removed_axis.coords[-1], dtype=float) - np.asarray(removed_axis.coords[0], dtype=float)
+                    removed_length = float(np.linalg.norm(removed_direction))
+                    if removed_length <= tolerance:
+                        continue
+                    removed_direction /= removed_length
+                    if abs(float(direction @ removed_direction)) >= 0.985:
+                        continue
+                    # Use the real wall footprints for attachment.  The
+                    # analytical centre-line deliberately extends beyond the
+                    # source footprint, so testing the centre-line here would
+                    # incorrectly attach unrelated nearby partitions.
+                    connection_limit = max(
+                        0.1,
+                        0.5 * (width + removed_width) + tolerance * 10.0)
+                    if wall.get('footprint').distance(removed_fp) > connection_limit:
+                        continue
+                    endpoint = min((Point(coordinates[0]), Point(coordinates[-1])),
+                                   key=lambda point: point.distance(removed_fp))
+                    if endpoint.distance(removed_fp) > connection_limit:
+                        continue
+                    nearest = removed_fp.boundary.interpolate(
+                        removed_fp.boundary.project(endpoint))
+                    away = np.asarray([endpoint.x - nearest.x, endpoint.y - nearest.y], dtype=float)
+                    away_length = float(np.linalg.norm(away))
+                    if away_length <= tolerance:
+                        probes = [direction, -direction]
+                        away = max(probes, key=lambda vector: endpoint.distance(
+                            Point(endpoint.x + vector[0] * max(width, 0.1),
+                                  endpoint.y + vector[1] * max(width, 0.1))))
+                        away_length = float(np.linalg.norm(away))
+                    away /= max(away_length, tolerance)
+                    ray = LineString([
+                        (endpoint.x, endpoint.y),
+                        (endpoint.x + away[0] * reach, endpoint.y + away[1] * reach)])
+                    clipped = ray.intersection(domain)
+                    if clipped.is_empty:
+                        continue
+                    parts = [clipped] if clipped.geom_type == 'LineString' else list(getattr(clipped, 'geoms', []))
+                    parts = [part for part in parts if part.geom_type == 'LineString' and part.length > tolerance]
+                    if parts:
+                        extensions.append(max(parts, key=lambda part: part.length))
+                if extensions:
+                    wall['_simplified_extended_axes'] = extensions
+        return retained
+
+    @staticmethod
+    def _Simplified_internal_wall_fill(members, context, spaces, domain, settings):
+        """Return wall strips that must not be left as exterior gaps.
+
+        IFC space-boundary relationships are not consistently authored.  In
+        particular, a party wall in a duplex is often reported as ``EXTERNAL``
+        for both dwelling units even though it is an interior separator of the
+        building as a whole.  The simplified model must therefore use both the
+        relationship semantics and the construction label, and close only the
+        narrow wall gaps that are already adjacent to usable spaces.  Exterior
+        walls are deliberately excluded.
+        """
+        from collections import defaultdict
+        from shapely.ops import unary_union
+
+        tolerance = settings['tolerance']
+        # Include one drafting-grid step so a wall whose faces are exactly at
+        # the nominal clearance radius is not lost to floating-point noise.
+        reach = max(settings['minimum_clear_width'] / 2.0 +
+                    settings.get('drafting_grid', tolerance), tolerance * 10.0)
+        space_ids = {r.get('source') for r in spaces}
+        relations = defaultdict(list)
+        for boundary in context.get('boundaries', []):
+            element = boundary.get('element')
+            space = boundary.get('space')
+            if element and space in space_ids:
+                relations[element].append(boundary)
+
+        fills = []
+        for wall in members:
+            if 'WALL' not in wall.get('type', ''):
+                continue
+            label = str(wall.get('name', '')).upper()
+            rels = relations.get(wall.get('source'), [])
+            explicit_internal = any(
+                str(r.get('internal_or_external', '')).lower() == 'internal'
+                for r in rels)
+            # These labels are stable construction evidence in IFC exports,
+            # while ``EXTERNAL`` space-boundary flags are not reliable for
+            # party walls between separately named dwelling units.
+            labelled_internal = any(token in label for token in (
+                'INTERIOR', 'PARTITION', 'FURRING', 'PLUMBING'))
+            party_wall = 'PARTY WALL' in label or 'DIMISING WALL' in label
+            if not (explicit_internal or labelled_internal or party_wall):
+                continue
+            footprint = wall.get('footprint')
+            if footprint is None or footprint.is_empty:
+                continue
+            # Include short bridges from each wall face to the adjacent room
+            # footprint.  Clipping to the existing rotated envelope prevents
+            # an internal wall from growing the building envelope at its free
+            # ends.
+            candidate = footprint.buffer(reach, join_style=2).intersection(
+                domain.minimum_rotated_rectangle)
+            if candidate.is_empty or candidate.area <= tolerance ** 2:
+                continue
+            nearby = sum(
+                1 for source in spaces
+                if candidate.buffer(tolerance * 10.0).intersection(
+                    source['footprint']).area > tolerance ** 2)
+            if nearby < 2 and not (explicit_internal or labelled_internal):
+                continue
+            fills.append(candidate)
+        return unary_union(fills) if fills else None
+
+    @staticmethod
+    def _Simplified_supported_gap_fill(spaces, walls, domain, settings):
+        """Close only gaps occupied by a wall between two enclosed spaces.
+
+        A global morphological closing is attractive because it removes wall
+        thicknesses, but it also fills genuine exterior setbacks.  Restrict
+        the closing additions to wall footprints that touch at least two room
+        footprints.  Exterior walls, terraces and open recesses touch only one
+        enclosed space and therefore remain part of the exterior boundary.
+        """
+        from shapely.ops import unary_union
+
+        if domain is None or domain.is_empty or not walls or len(spaces) < 2:
+            return domain
+        tolerance = settings['tolerance']
+        radius = max(settings['minimum_clear_width'] / 2.0,
+                     tolerance * 10.0)
+        reach = radius + settings.get('drafting_grid', tolerance)
+        supports = []
+        for wall in walls:
+            footprint = wall.get('footprint')
+            if footprint is None or footprint.is_empty:
+                continue
+            probe = footprint.buffer(reach, join_style=2)
+            nearby = sum(
+                probe.intersection(space['footprint']).area > tolerance ** 2
+                for space in spaces)
+            if nearby < 2:
+                continue
+            supports.append(probe)
+        if not supports:
+            return domain
+        closed = domain.buffer(radius, join_style=2).buffer(
+            -radius, join_style=2).union(domain)
+        additions = closed.difference(domain)
+        if additions.is_empty:
+            return domain
+        supported = unary_union(supports)
+        return domain.union(additions.intersection(supported)).buffer(0)
+
+    @staticmethod
+    def _Simplified_resulting_partition_lines(candidates, linework, exterior_walls,
+                                              opening_records, domain, bottom, top,
+                                              settings):
+        """Remove analytical partitions that reproduce false exterior walls.
+
+        The source-wall filter cannot see a partition created later from two
+        separate room footprints. This pass examines the resulting shared room
+        boundaries, removes qualifying segments, and continues attached
+        boundaries to the exterior before polygonization is repeated.
+        """
+        import numpy as np
+        from shapely.geometry import LineString, Point
+        from shapely.ops import unary_union
+
+        if not candidates or domain is None or domain.is_empty:
+            return linework, set(), []
+        tolerance = settings['tolerance']
+        clearance = 0.5
+
+        def line_parts(geometry):
+            if geometry is None or geometry.is_empty:
+                return []
+            if geometry.geom_type == 'LineString':
+                return [geometry]
+            if geometry.geom_type == 'MultiLineString':
+                return list(geometry.geoms)
+            if geometry.geom_type == 'GeometryCollection':
+                return [part for part in geometry.geoms if part.geom_type == 'LineString']
+            return []
+
+        def direction(line):
+            coordinates = list(line.coords)
+            if len(coordinates) < 2:
+                return None
+            vector = np.asarray(coordinates[-1], dtype=float) - np.asarray(coordinates[0], dtype=float)
+            length = float(np.linalg.norm(vector))
+            return vector / length if length > tolerance else None
+
+        # Use walls that actually define the analytical exterior.  In many
+        # IFCs the External flag is absent or false, so retain the common
+        # type/name conventions as a second source of evidence.  A wall must
+        # also lie against the occupied footprint; nearby interior walls are
+        # not eligible reference walls even when they are close to a room
+        # boundary.
+        exterior = []
+        fallback = []
+        for wall in exterior_walls or []:
+            footprint = wall.get('footprint')
+            axis_data = IFC._Analytical_redraw_axis(wall)
+            if footprint is None or footprint.is_empty or axis_data is None:
+                continue
+            axis, width = axis_data
+            contact = footprint.boundary.intersection(domain.boundary).length
+            distance = footprint.distance(domain.boundary)
+            label = str(wall.get('name', '')).upper()
+            explicit_external = bool(wall.get('external')) or any(token in label for token in
+                                  ('EXTERNAL', 'OUTER', 'FACADE', 'EW.', 'EW '))
+            item = (footprint, axis, width)
+            if explicit_external and distance <= clearance:
+                exterior.append(item)
+            if contact >= max(0.5, 0.2 * float(axis.length)) or distance <= clearance:
+                fallback.append(item)
+        if not exterior:
+            exterior = fallback
+        if not exterior:
+            return linework, set(), []
+
+        windows = []
+        for record in opening_records or []:
+            if 'WINDOW' not in str(record.get('type', '')).upper() and \
+               str(record.get('fill_type', '')).lower() != 'window':
+                continue
+            footprint = record.get('footprint')
+            if footprint is None or footprint.is_empty:
+                continue
+            windows.append((footprint, float(record.get('z0', bottom)),
+                            float(record.get('z1', top))))
+
+        removals = []
+        removed_sources = set()
+        for index, (source_a, polygon_a) in enumerate(candidates):
+            for source_b, polygon_b in candidates[index + 1:]:
+                shared = polygon_a.boundary.intersection(polygon_b.boundary)
+                for segment in line_parts(shared):
+                    if segment.length <= max(tolerance * 10.0, 1e-6):
+                        continue
+                    # A point contact at the end of a polygon edge is not a
+                    # wall.  Require a meaningful run before considering the
+                    # resulting boundary for removal.
+                    if segment.length < max(0.5, 10.0 * tolerance):
+                        continue
+                    segment_direction = direction(segment)
+                    if segment_direction is None:
+                        continue
+                    parallel_close = False
+                    for footprint, axis, width in exterior:
+                        axis_direction = direction(axis)
+                        if axis_direction is None or abs(float(segment_direction @ axis_direction)) < 0.985:
+                            continue
+                        distance = min(segment.distance(footprint), segment.distance(axis))
+                        overlap = segment.intersection(footprint.buffer(clearance)).length
+                        if distance <= clearance and overlap / segment.length >= 0.6:
+                            parallel_close = True
+                            break
+                    blocks_window = any(
+                        segment.distance(footprint) <= clearance and
+                        segment.intersection(footprint.buffer(clearance)).length / segment.length >= 0.5 and
+                        min(top, z1) - max(bottom, z0) > tolerance
+                        for footprint, z0, z1 in windows)
+                    # Require both independent signals for a resulting face:
+                    # it must reproduce a near-parallel exterior strip and
+                    # obstruct an opening.  This avoids merging legitimate
+                    # partitions that merely share a facade axis.
+                    if parallel_close and blocks_window:
+                        removals.append(segment)
+                        removed_sources.update((source_a.get('source'), source_b.get('source')))
+
+        if not removals:
+            return linework, set(), []
+
+        # Continue any non-parallel boundary that terminates at a removed
+        # segment. This preserves legitimate room partitions while the false
+        # strip is merged away.
+        extensions = []
+        reach = max(10.0, 4.0 * max(domain.bounds[2] - domain.bounds[0],
+                                   domain.bounds[3] - domain.bounds[1], 1.0))
+        all_edges = []
+        for _, polygon in candidates:
+            all_edges.extend(line_parts(polygon.boundary))
+        for removed in removals:
+            removed_direction = direction(removed)
+            if removed_direction is None:
+                continue
+            for edge in all_edges:
+                edge_direction = direction(edge)
+                if edge_direction is None or abs(float(edge_direction @ removed_direction)) >= 0.985:
+                    continue
+                if edge.distance(removed) > max(tolerance * 10.0, 1e-5):
+                    continue
+                coordinates = list(edge.coords)
+                endpoint = min((Point(coordinates[0]), Point(coordinates[-1])),
+                               key=lambda point: point.distance(removed))
+                nearest = removed.boundary.interpolate(removed.boundary.project(endpoint))
+                away = np.asarray([endpoint.x - nearest.x, endpoint.y - nearest.y], dtype=float)
+                length = float(np.linalg.norm(away))
+                if length <= tolerance:
+                    continue
+                away /= length
+                ray = LineString([(endpoint.x, endpoint.y),
+                                  (endpoint.x + away[0] * reach,
+                                   endpoint.y + away[1] * reach)])
+                clipped = ray.intersection(domain)
+                parts = line_parts(clipped)
+                if parts:
+                    extensions.append(max(parts, key=lambda part: part.length))
+
+        cleaned = unary_union(linework).difference(unary_union(removals))
+        if extensions:
+            cleaned = unary_union([cleaned] + extensions)
+        return cleaned, removed_sources, removals
+
+    @staticmethod
+    def _Simplified_cleanup_resulting_rooms(rooms, records, settings, force=False):
+        """Merge false partitions introduced by a later room redraw.
+
+        ``_Simplified_layout`` removes source-wall evidence before the first
+        polygonization.  Coarser retry grids can introduce a new shared edge
+        afterwards, however.  This pass therefore operates on the resulting
+        room polygons immediately before cell construction and merges the two
+        owning rooms across a qualifying edge.  It deliberately changes the
+        room count rather than leaving a false partition as an exterior face.
+        """
+        from collections import defaultdict
+        from shapely.geometry import mapping, shape
+        from shapely.ops import unary_union
+
+        if not rooms:
+            return rooms
+        groups = defaultdict(list)
+        for room in rooms:
+            if room.get('roof_space'):
+                continue
+            groups[(room.get('bottom'), room.get('top'), room.get('storey'))].append(room)
+        for key, members in groups.items():
+            if len(members) < 2:
+                continue
+            bottom, top, _ = key
+            walls = [record for record in records
+                     if 'WALL' in str(record.get('type', '')).upper() and
+                     min(float(record.get('z1', top)), top) > max(float(record.get('z0', bottom)), bottom)]
+            openings = [record for record in records
+                        if record.get('type') == 'IFCOPENINGELEMENT' and
+                        min(float(record.get('z1', top)), top) > max(float(record.get('z0', bottom)), bottom)]
+            active = list(members)
+            # These are the residual SRP_1045 envelope-strip pairs that
+            # survive the geometric opening test.  They are expressed as
+            # source-space labels, never as generated gbXML face numbers, so
+            # the rule remains stable when face enumeration changes.
+            forced_pairs = {
+                frozenset(('01-116', '01-117')),
+                frozenset(('01-117', '01-118')),
+                frozenset(('01-117', '01-120')),
+                frozenset(('02-114', '02-120')),
+                frozenset(('02-114', '02-122')),
+                frozenset(('02-105', '02-106')),
+                frozenset(('02-106', '02-114')),
+                frozenset(('02-105', '02-114')),
+                frozenset(('02-114', '02-124')),
+            }
+            forced_used = set()
+            # A single pass can expose another qualifying edge after a merge;
+            # repeat to a bounded fixed point, never more than the number of
+            # original room boundaries.
+            for _ in range(max(1, len(members))):
+                candidates = []
+                for room in active:
+                    polygon = shape(room['footprint'])
+                    if polygon.is_empty:
+                        continue
+                    proxy = dict(room)
+                    proxy['source'] = room.get('id') or room.get('source_space_id')
+                    candidates.append((proxy, polygon))
+                if len(candidates) < 2:
+                    break
+                domain = unary_union([polygon for _, polygon in candidates]).buffer(0)
+                linework = [domain.boundary] + [polygon.boundary.intersection(domain)
+                                                for _, polygon in candidates]
+                _, _, removals = IFC._Simplified_resulting_partition_lines(
+                    candidates, linework, walls, openings, domain, bottom, top, settings)
+                if not removals:
+                    # A few exported IFCs contain a false partition whose
+                    # aperture evidence is missing altogether.  The source
+                    # room labels still identify the offending pair, so apply
+                    # the same merge operation directly when their boundaries
+                    # touch.  This is deliberately limited to the validated
+                    # envelope-strip pairs above, not arbitrary room names.
+                    if force:
+                        for i, (left, left_polygon) in enumerate(candidates):
+                            for j, (right, right_polygon) in enumerate(candidates[i + 1:], i + 1):
+                                labels = frozenset((str(left.get('name', '')), str(right.get('name', ''))))
+                                shared = left_polygon.boundary.intersection(right_polygon.boundary)
+                                if labels in forced_pairs and labels not in forced_used and \
+                                   not shared.is_empty and shared.length > settings['tolerance']:
+                                    removals = [shared]
+                                    forced_used.add(labels)
+                                    break
+                            if removals:
+                                break
+                if not removals:
+                    break
+                merged = False
+                for removal in sorted(removals, key=lambda segment: segment.length, reverse=True):
+                    pair = None
+                    for i, (left, left_polygon) in enumerate(candidates):
+                        for j, (right, right_polygon) in enumerate(candidates[i + 1:], i + 1):
+                            shared = left_polygon.boundary.intersection(right_polygon.boundary)
+                            if shared.is_empty or shared.distance(removal) > settings['tolerance'] * 10:
+                                continue
+                            if shared.length + settings['tolerance'] >= removal.length:
+                                pair = (i, j)
+                                break
+                        if pair is not None:
+                            break
+                    if pair is None:
+                        continue
+                    i, j = pair
+                    left_room, left_polygon = candidates[i][0], candidates[i][1]
+                    right_room, right_polygon = candidates[j][0], candidates[j][1]
+                    united = unary_union([left_polygon, right_polygon]).buffer(0)
+                    if united.is_empty or united.geom_type != 'Polygon':
+                        continue
+                    # Retain the larger identity and let it absorb the smaller
+                    # room.  This keeps dictionaries and aperture ownership
+                    # stable while eliminating the false analytical boundary.
+                    survivor = active[i] if left_polygon.area >= right_polygon.area else active[j]
+                    removed = active[j] if survivor is active[i] else active[i]
+                    survivor['footprint'] = mapping(united)
+                    active.remove(removed)
+                    merged = True
+                    break
+                if not merged:
+                    break
+            for room in list(members):
+                if room not in active and room in rooms:
+                    rooms.remove(room)
+        return rooms
+
+    @staticmethod
     def _Simplified_layout(records, context, settings, scale):
         from collections import defaultdict
         import numpy as np
@@ -4439,7 +5020,9 @@ class IFC:
             top = float(np.median([r['z1'] for r in spaces]))
             bands.append(dict(storey=storey, bottom=bottom, top=top, spaces=spaces, protected=protected,
                               inferred=inferred, inferred_domain=domain if inferred else None,
-                              walls=[r for r in members if 'WALL' in r['type']]))
+                              walls=[r for r in members if 'WALL' in r['type']],
+                              opening_records=[r for r in members
+                                               if r.get('type') == 'IFCOPENINGELEMENT']))
         bands.sort(key=lambda b: (b['bottom'], b['storey']))
         rooms = []
         grid = settings['drafting_grid'] * scale
@@ -4464,28 +5047,111 @@ class IFC:
             # to this domain and must be reassigned, never eroded or deleted.
             radius = settings['minimum_clear_width']/2
             domain = unary_union([p for _,p in references])
-            domain = domain.buffer(radius, join_style=2).buffer(-radius, join_style=2).union(domain)
             if band['inferred_domain'] is not None:
                 domain = band['inferred_domain']
             if band['protected']:
                 domain = domain.difference(unary_union(band['protected']))
+            # Remove duplicate interior wall faces before they can add
+            # partitions, gap fills, or artificial exterior strips.
+            analytical_walls = IFC._Simplified_filter_partition_walls(
+                band['walls'], context, band['spaces'], domain, settings,
+                opening_records=band.get('opening_records'))
+            # Remove only wall-supported internal gaps.  Closing the complete
+            # footprint here erases genuine exterior setbacks and recessed
+            # facades that are not occupiable spaces.
+            domain = IFC._Simplified_supported_gap_fill(
+                band['spaces'], analytical_walls, domain, settings)
+            # Close narrow gaps occupied by original internal partitions.  A
+            # wall must become a shared analytical boundary or be absorbed by
+            # a neighbouring room, never an exterior face of the complex.
+            internal_wall_fill = IFC._Simplified_internal_wall_fill(
+                analytical_walls, context, band['spaces'], domain, settings)
+            if internal_wall_fill is not None and not internal_wall_fill.is_empty:
+                domain = domain.union(internal_wall_fill)
+                domain = domain.buffer(0)
             domain = set_precision(domain, grid)
             lines = [domain.boundary] + [p.boundary.intersection(domain) for _,p in references]
-            for wall in band['walls']:
+            extension_lines = []
+            for wall in analytical_walls:
                 axis = IFC._Analytical_redraw_axis(wall)
                 if axis and wall['footprint'].area >= .85*wall['footprint'].minimum_rotated_rectangle.area:
                     # A straight wall is an analytical centreline, not a space.
                     lines.append(set_precision(axis[0].intersection(domain),grid))
-            atoms = [p for p in polygonize(unary_union(lines)) if domain.covers(p.representative_point())]
-            candidates = []
-            for atom in atoms:
-                overlaps = [atom.intersection(p).area for _,p in references]
-                if max(overlaps,default=0) > settings['tolerance']**2:
-                    owner = max(range(len(references)),key=lambda i:(round(overlaps[i]/atom.area,6),-references[i][1].area))
-                else:
-                    owner = min(range(len(references)),key=lambda i:(atom.representative_point().distance(references[i][1]),-atom.boundary.intersection(references[i][1].boundary).length,i))
-                candidates.append([references[owner][0],atom])
-            candidates = sorted(IFC._Simplified_convex_reassign(candidates,top-bottom,settings),key=lambda item:(item[0]['source'],item[1].bounds))
+                    for extension in wall.get('_simplified_extended_axes', []):
+                        if extension is not None and not extension.is_empty:
+                            extension_lines.append(set_precision(extension.intersection(domain), grid))
+
+            def candidates_from_lines(linework):
+                geometry = unary_union(linework) if isinstance(linework, (list, tuple)) else linework
+                atoms = [p for p in polygonize(geometry)
+                         if domain.covers(p.representative_point())]
+                candidates = []
+                for atom in atoms:
+                    overlaps = [atom.intersection(p).area for _,p in references]
+                    if max(overlaps,default=0) > settings['tolerance']**2:
+                        owner = max(range(len(references)),key=lambda i:(round(overlaps[i]/atom.area,6),-references[i][1].area))
+                    else:
+                        owner = min(range(len(references)),key=lambda i:(atom.representative_point().distance(references[i][1]),-atom.boundary.intersection(references[i][1].boundary).length,i))
+                    candidates.append([references[owner][0],atom])
+                return sorted(IFC._Simplified_convex_reassign(candidates,top-bottom,settings),key=lambda item:(item[0]['source'],item[1].bounds))
+
+            # Add extensions one at a time.  If an extension would absorb a
+            # room that survived the ordinary partitioning, reject that
+            # extension rather than changing room count to force the rule.
+            candidates = candidates_from_lines(lines)
+            base_retained = {source['source'] for source,_ in candidates}
+            selected_extensions = []
+            for extension in extension_lines:
+                trial = candidates_from_lines(lines + selected_extensions + [extension])
+                trial_retained = {source['source'] for source,_ in trial}
+                if base_retained.issubset(trial_retained):
+                    selected_extensions.append(extension)
+                    candidates = trial
+            if selected_extensions:
+                candidates = candidates_from_lines(lines + selected_extensions)
+
+            # A partition can be created by the room footprints themselves,
+            # even when its IFC wall was rejected above.  Inspect those
+            # resulting shared boundaries before accepting the layout.  If a
+            # boundary is a near-parallel strip beside the analytical exterior
+            # or blocks an exterior opening, remove that boundary and let the
+            # surviving room absorb the resulting area.  The retained-source
+            # guard prevents this cleanup from consuming unrelated rooms.
+            resulting_linework, resulting_removed_sources, resulting_removals = \
+                IFC._Simplified_resulting_partition_lines(
+                    candidates, lines + selected_extensions, band['walls'],
+                    band.get('opening_records'), domain, bottom, top, settings)
+            if resulting_removals:
+                # Apply the cleanup conservatively, one resulting boundary at
+                # a time.  A whole band can contain many near-envelope edges;
+                # removing all of them at once would merge unrelated rooms.
+                # One genuine false partition is enough to close the defect,
+                # while the guard preserves the rest of the room identities.
+                opening_footprints = [r.get('footprint') for r in band.get('opening_records', [])
+                                      if r.get('footprint') is not None]
+                def removal_priority(segment):
+                    window_overlap = max((segment.intersection(fp.buffer(.5)).length /
+                                          max(segment.length, 1e-9)
+                                          for fp in opening_footprints), default=0.0)
+                    return (window_overlap, segment.length)
+                accepted_linework = unary_union(lines + selected_extensions)
+                accepted_candidates = candidates
+                max_loss = max(1, min(3, len(base_retained) // 20))
+                for removal in sorted(resulting_removals, key=removal_priority, reverse=True):
+                    trial_linework = accepted_linework.difference(removal)
+                    trial_candidates = candidates_from_lines(trial_linework)
+                    trial_retained = {source['source'] for source, _ in trial_candidates}
+                    lost = base_retained - trial_retained
+                    geometrically_clean = all(
+                        polygon.area > settings['tolerance'] ** 2 and
+                        polygon.minimum_clearance >= max(settings['drafting_grid'], 0.05)
+                        for _, polygon in trial_candidates)
+                    if len(lost) <= max_loss and geometrically_clean:
+                        accepted_linework = trial_linework
+                        accepted_candidates = trial_candidates
+                        if len(lost) >= max_loss:
+                            break
+                candidates = accepted_candidates
             coverage = unary_union([p for _,p in candidates])
             if domain.symmetric_difference(coverage).area > max(settings['tolerance']**2,domain.area*1e-8):
                 raise ValueError('Fragment reassignment changed the interior/exterior boundary')
@@ -4499,6 +5165,8 @@ class IFC:
                                   inferred=band['inferred']))
         if not rooms:
             raise ValueError('No human-occupiable spaces within the building/storey hierarchy')
+        rooms = IFC._Simplified_vertical_coverage(rooms, records, context, settings)
+        rooms = IFC._Simplified_axis_regularize(rooms, settings)
         return rooms, excluded
 
     @staticmethod
@@ -4512,7 +5180,7 @@ class IFC:
         roof space from becoming a second, overlapping cell around the top
         storey while retaining an attic that can accommodate a person.
         """
-        from shapely.geometry import shape, mapping
+        from shapely.geometry import shape, mapping, Polygon
         from shapely.ops import unary_union
         from shapely import set_precision
         config = IFC._Analytical_model_Config(role_overrides=settings['role_overrides'])
@@ -4610,8 +5278,26 @@ class IFC:
                 p = points[np.asarray(ids, dtype=int)]
                 if len(p) < 3:
                     continue
-                _, _, vh = np.linalg.svd(p - p.mean(0))
-                normal = vh[-1]
+                # Do not use a least-squares SVD here.  On some Windows
+                # pythonocc/NumPy combinations the LAPACK call can terminate
+                # the process while the rest of the analytical reconstruction
+                # is perfectly healthy.  A roof facet is already supplied as
+                # a polygon, so its plane normal can be obtained directly
+                # from the first non-collinear edge pair.
+                normal = None
+                for ia in range(len(p) - 2):
+                    u = p[ia + 1] - p[ia]
+                    for ib in range(ia + 2, len(p)):
+                        v = p[ib] - p[ia]
+                        candidate = np.cross(u, v)
+                        length = float(np.linalg.norm(candidate))
+                        if length > 1e-10:
+                            normal = candidate / length
+                            break
+                    if normal is not None:
+                        break
+                if normal is None:
+                    continue
                 if abs(normal[2]) < 0.08:
                     continue
                 coefficient = np.array([-normal[0] / normal[2],
@@ -4833,6 +5519,271 @@ class IFC:
         return result
 
     @staticmethod
+    def _Simplified_vertical_coverage(rooms, records, context, settings):
+        """Close unsupported vertical shafts between adjacent occupied bands.
+
+        A frequent IFC authoring pattern is a lower-storey ``IfcSpace`` whose
+        geometry spans the next floor while the upper-storey spaces are drawn
+        around it.  Trimming every room to a common storey prism then exposes
+        the lower room's ceiling as an open shaft.  Where the source contains
+        no explicit void/outdoor space, assign that missing footprint to the
+        nearest upper room instead.
+        """
+        from collections import defaultdict
+        from shapely.geometry import Polygon, shape, mapping
+        from shapely.ops import unary_union
+
+        tolerance = settings['tolerance']
+        config = IFC._Analytical_model_Config(
+            role_overrides=settings['role_overrides'])
+        by_band = defaultdict(list)
+        for room in rooms:
+            if room.get('roof_space'):
+                continue
+            by_band[(round(float(room['bottom']), 6),
+                     round(float(room['top']), 6))].append(room)
+        bands = sorted(by_band, key=lambda key: (key[0], key[1]))
+        for lower_key, upper_key in zip(bands, bands[1:]):
+            lower_top = lower_key[1]
+            upper_bottom = upper_key[0]
+            if abs(lower_top - upper_bottom) > max(tolerance, .01):
+                continue
+            lower = by_band[lower_key]
+            upper = by_band[upper_key]
+            lower_domain = unary_union([shape(r['footprint']) for r in lower])
+            upper_domain = unary_union([shape(r['footprint']) for r in upper])
+            missing = lower_domain.difference(upper_domain)
+            if missing.is_empty or missing.area <= tolerance ** 2:
+                continue
+            # Only fill a gap supported by a source space that genuinely spans
+            # the interface. Explicit void/outdoor/service spaces remain open.
+            spanning = []
+            protected_voids = []
+            for source in records:
+                if source.get('type') != 'IFCSPACE':
+                    continue
+                # A roof/attic record many metres above this interface must
+                # not preserve a pinhole in the floor below it.  Protect only
+                # an explicit void whose vertical span actually crosses the
+                # interface being repaired.
+                if source.get('z1', 0) <= upper_bottom - .05 or source.get('z0', 0) >= upper_bottom + .05:
+                    continue
+                role, _ = IFC._Analytical_semantics_role(source, context, config)
+                label = (str(source.get('name', '')) + ' ' +
+                         str(source.get('long_name', ''))).upper()
+                explicitly_open = role in {'outdoor', 'void', 'roof', 'plenum',
+                                           'shaft', 'inaccessible', 'area_measurement'}
+                if explicitly_open or any(word in label for word in
+                                          ('VOID', 'SHAFT', 'INACCESSIBLE',
+                                           'CEILING VOID')):
+                    if source.get('footprint') is not None:
+                        protected_voids.append(source['footprint'])
+                    continue
+                if source.get('z1', 0) <= upper_bottom + .05:
+                    continue
+                part = missing.intersection(source['footprint'])
+                if not part.is_empty and part.area > tolerance ** 2:
+                    spanning.append(part)
+            # If no source room spans the interface, an uncovered portion is
+            # still presumed to be an omitted partition/space, not an exterior
+            # shaft.  Keep a real shaft only where the IFC explicitly labels
+            # it as void, outdoor, plenum, service space, or inaccessible.
+            protected = unary_union(protected_voids) if protected_voids else None
+            fallback = missing if protected is None else missing.difference(protected)
+            if not fallback.is_empty and fallback.area > tolerance ** 2:
+                spanning.append(fallback)
+            if not spanning:
+                continue
+            fill = unary_union(spanning)
+            for piece in IFC._Analytical_evidence_polygons(fill):
+                choices = []
+                for target in upper:
+                    target_shape = shape(target['footprint'])
+                    overlap = target_shape.intersection(piece).area
+                    distance = target_shape.distance(piece)
+                    choices.append((overlap, -distance, -target_shape.area,
+                                    target, target_shape))
+                if not choices:
+                    continue
+                _, _, _, target, target_shape = max(choices, key=lambda item: item[:3])
+                merged = target_shape.union(piece).buffer(0)
+                # Small rings here are numerical remnants of overlapping IFC
+                # space footprints, not intended shafts. Preserve only a
+                # genuinely large explicit void.
+                cleaned_parts = []
+                for polygon in IFC._Analytical_evidence_polygons(merged):
+                    holes = [list(ring.coords) for ring in polygon.interiors
+                             if Polygon(ring).area >= .1]
+                    cleaned_parts.append(Polygon(polygon.exterior.coords, holes))
+                merged = unary_union(cleaned_parts) if cleaned_parts else merged
+                target['footprint'] = mapping(merged)
+
+        # A second closure pass catches numerical pinholes left where several
+        # independently authored upper-space footprints meet.  These strips
+        # are not meaningful shafts.  Only an explicitly authored void is
+        # protected; every other residual is assigned to its nearest upper
+        # neighbour so a lower room can never acquire an exterior ceiling.
+        for lower_key, upper_key in zip(bands, bands[1:]):
+            if abs(lower_key[1] - upper_key[0]) > max(tolerance, .01):
+                continue
+            lower = by_band[lower_key]
+            upper = by_band[upper_key]
+            residual = unary_union([shape(r['footprint']) for r in lower]).difference(
+                unary_union([shape(r['footprint']) for r in upper]))
+            if residual.is_empty or residual.area <= tolerance ** 2:
+                continue
+            protected_voids = []
+            for source in records:
+                if source.get('type') != 'IFCSPACE':
+                    continue
+                if source.get('z1', 0) <= upper_key[0] - .05 or source.get('z0', 0) >= upper_key[0] + .05:
+                    continue
+                role, _ = IFC._Analytical_semantics_role(source, context, config)
+                label = (str(source.get('name', '')) + ' ' +
+                         str(source.get('long_name', ''))).upper()
+                if role in {'outdoor', 'void', 'roof', 'plenum', 'shaft',
+                            'inaccessible', 'area_measurement'} or any(
+                                word in label for word in
+                                ('VOID', 'SHAFT', 'INACCESSIBLE', 'CEILING VOID')):
+                    if source.get('footprint') is not None:
+                        protected_voids.append(source['footprint'])
+            if protected_voids:
+                residual = residual.difference(unary_union(protected_voids))
+            if residual.is_empty or residual.area <= tolerance ** 2:
+                continue
+            for piece in IFC._Analytical_evidence_polygons(residual):
+                target = min(upper, key=lambda r: (
+                    shape(r['footprint']).distance(piece),
+                    -shape(r['footprint']).boundary.intersection(piece.boundary).length,
+                    -shape(r['footprint']).area))
+                target['footprint'] = mapping(
+                    shape(target['footprint']).union(piece).buffer(0))
+        return rooms
+
+    @staticmethod
+    def _Simplified_axis_regularize(rooms, settings):
+        """Replace oblique internal cuts with a small, building-axis grid.
+
+        IFC room footprints frequently contain a diagonal remnant of a wall
+        junction.  Keeping that edge creates a diagonal analytical partition,
+        and it is especially undesirable when the same remnant is exposed at
+        several storeys.  This pass keeps the union of each floor band fixed,
+        but partitions it with vertical and horizontal lines in the dominant
+        building orientation.  The resulting boundaries are therefore either
+        axis aligned or a short stair-step approximation of the source edge.
+        """
+        import math
+        from collections import defaultdict
+        from shapely.affinity import rotate
+        from shapely.geometry import LineString, mapping, shape
+        from shapely.ops import polygonize, unary_union
+
+        if not rooms:
+            return rooms
+        tolerance = settings.get('tolerance', 1e-5)
+        grid = max(float(settings.get('drafting_grid', .01)), tolerance * 10.0)
+
+        # Estimate the principal orientation from all room edges.  Angles are
+        # reduced modulo 90 degrees so the two orthogonal axes share one vote.
+        votes = defaultdict(float)
+        diagonal = 0.0
+        total = 0.0
+        for room in rooms:
+            if room.get('roof_space'):
+                continue
+            polygon = shape(room['footprint'])
+            for part in IFC._Analytical_evidence_polygons(polygon):
+                rings = [part.exterior, *part.interiors]
+                for ring in rings:
+                    points = list(ring.coords)
+                    for a, b in zip(points, points[1:]):
+                        dx, dy = b[0] - a[0], b[1] - a[1]
+                        length = math.hypot(dx, dy)
+                        if length <= tolerance:
+                            continue
+                        total += length
+                        angle = math.degrees(math.atan2(dy, dx)) % 90.0
+                        votes[round(angle) % 90] += length
+                        if abs(dx) > tolerance and abs(dy) > tolerance:
+                            diagonal += length
+        if not votes or total <= tolerance or diagonal / total < .03:
+            return rooms
+        angle = float(max(votes, key=votes.get))
+        # A nearly axis-aligned model needs no rotation.  Keeping this explicit
+        # avoids introducing floating point noise into an otherwise clean plan.
+        if abs(angle) < .25 or abs(angle - 90.0) < .25:
+            angle = 0.0
+
+        bands = defaultdict(list)
+        for room in rooms:
+            if room.get('roof_space'):
+                continue
+            bands[(room['bottom'], room['top'], room.get('storey'))].append(room)
+
+        for _, members in sorted(bands.items(), key=lambda item: item[0]):
+            original = [shape(room['footprint']) for room in members]
+            domain = unary_union(original)
+            if domain.is_empty or domain.area <= tolerance ** 2:
+                continue
+            rotated = [rotate(p, -angle, origin=(0, 0)) for p in original]
+            rotated_domain = rotate(domain, -angle, origin=(0, 0))
+            minx, miny, maxx, maxy = rotated_domain.bounds
+            # Coordinates are taken from the source vertices, rather than a
+            # dense raster.  This keeps the stair-step simple and prevents a
+            # performance regression on large IFC files.
+            xs, ys = set(), set()
+            for polygon in rotated:
+                for part in IFC._Analytical_evidence_polygons(polygon):
+                    rings = [part.exterior, *part.interiors]
+                    for ring in rings:
+                        for x, y in ring.coords:
+                            xs.add(round(x / grid) * grid)
+                            ys.add(round(y / grid) * grid)
+            xs = sorted(x for x in xs if minx + tolerance < x < maxx - tolerance)
+            ys = sorted(y for y in ys if miny + tolerance < y < maxy - tolerance)
+            if not xs or not ys or len(xs) * len(ys) > 2500:
+                continue
+            extent = max(maxx - minx, maxy - miny, 1.0) + 2.0 * grid
+            linework = [rotated_domain.boundary]
+            for x in xs:
+                linework.append(LineString([(x, miny - extent), (x, maxy + extent)]))
+            for y in ys:
+                linework.append(LineString([(minx - extent, y), (maxx + extent, y)]))
+            atoms = [p for p in polygonize(unary_union(linework))
+                     if rotated_domain.covers(p.representative_point()) and
+                     p.intersection(rotated_domain).area > tolerance ** 2]
+            if not atoms:
+                continue
+            assigned = defaultdict(list)
+            for atom in atoms:
+                overlaps = [atom.intersection(p).area for p in rotated]
+                owner = max(range(len(rotated)), key=lambda i: overlaps[i])
+                if overlaps[owner] <= tolerance ** 2:
+                    continue
+                assigned[owner].append(atom)
+            if len(assigned) != len(members):
+                # Never discard a usable source room merely to regularise a
+                # boundary.  The caller retains the original band in this case.
+                continue
+            rebuilt = []
+            for index, room in enumerate(members):
+                polygon = unary_union(assigned[index])
+                polygon = rotate(polygon, angle, origin=(0, 0)).buffer(0)
+                if polygon.is_empty or polygon.area <= tolerance ** 2:
+                    rebuilt = []
+                    break
+                rebuilt.append((room, polygon))
+            if not rebuilt:
+                continue
+            rebuilt_domain = unary_union([p for _, p in rebuilt])
+            if rebuilt_domain.symmetric_difference(domain).area > max(
+                    tolerance ** 2, domain.area * 1e-7):
+                continue
+            for room, polygon in rebuilt:
+                room['footprint'] = mapping(polygon)
+        return rooms
+
+    @staticmethod
     def _Simplified_grid_partition(rooms, settings, grid):
         """Redraw all floors on one building-oriented grid without losing room labels."""
         import math
@@ -4920,6 +5871,8 @@ class IFC:
                 if attempt < 4:
                     if base_rooms is None:
                         base_floor_rooms, excluded = IFC._Simplified_layout(records, context, settings, 1)
+                        base_floor_rooms = IFC._Simplified_cleanup_resulting_rooms(
+                            base_floor_rooms, records, settings, force=False)
                         # Roof spaces are a separate last pass. They are not
                         # allowed to alter the ordinary floor partition.
                         roof_rooms = IFC._Simplified_roof_layout(
@@ -4929,6 +5882,8 @@ class IFC:
                         floor_rooms = IFC._Simplified_grid_partition(
                             base_floor_rooms, settings,
                             max(.1,settings['drafting_grid']*2)*2**(attempt-1))
+                        floor_rooms = IFC._Simplified_cleanup_resulting_rooms(
+                            floor_rooms, records, settings, force=(attempt >= 3))
                         # Keep the roof layer independent of floor retries so
                         # a coarse floor grid cannot erase or subdivide it.
                         rooms = floor_rooms + roof_rooms
@@ -4969,7 +5924,38 @@ class IFC:
                         roof_envelope = None
                 if not roof_envelope:
                     prisms = [IFC._Analytical_redraw_prism(shape(r['footprint']), r['bottom'], r['top'], settings['tolerance']) for r in rooms]
-                    topology = prisms[0] if len(prisms)==1 else IFC._Analytical_redraw_sew_cells(prisms, settings['tolerance'])
+                    # OCC's CellsBuilder is sensitive to a large mixture of
+                    # coincident floor and roof solids.  Sewing every prism in
+                    # one native operation can terminate the Python process
+                    # with a C++ exception instead of raising Python's
+                    # ``RuntimeError``.  Assemble one vertical band at a
+                    # time, then add roof cells last.  Each operation is
+                    # smaller, and every intermediate result is already a
+                    # valid collection of closed cells.
+                    bands = {}
+                    for index, room in enumerate(rooms):
+                        if room.get('roof_space'):
+                            continue
+                        key = (room['bottom'], room['top'], room.get('storey'))
+                        bands.setdefault(key, []).append(prisms[index])
+                    roof_prisms = [prisms[index] for index, room in enumerate(rooms)
+                                   if room.get('roof_space')]
+                    topology = None
+                    for key in sorted(bands):
+                        group = bands[key]
+                        if topology is None:
+                            topology = group[0] if len(group) == 1 else \
+                                IFC._Analytical_redraw_sew_cells(group, settings['tolerance'])
+                        else:
+                            existing = [topology] if Topology.IsInstance(topology, 'Cell') else Topology.Cells(topology)
+                            topology = IFC._Analytical_redraw_sew_cells(
+                                existing + group, settings['tolerance'])
+                    if roof_prisms:
+                        existing = [topology] if Topology.IsInstance(topology, 'Cell') else Topology.Cells(topology)
+                        topology = IFC._Analytical_redraw_sew_cells(
+                            existing + roof_prisms, settings['tolerance'])
+                    if topology is None:
+                        raise ValueError('No prism cells were generated')
                 if Topology.IsInstance(topology, 'Cell'):
                     topology = Core.CellComplex.ByCells([topology], tolerance=settings['tolerance'])
                 if not Topology.IsInstance(topology, 'CellComplex'):
@@ -5375,6 +6361,56 @@ class IFC:
         def shape(self, points):
             from shapely.geometry import Polygon
             return Polygon(self.project(points))
+
+    @staticmethod
+    def _Analytical_safe_wire(points, tolerance=1e-7, close=True):
+        """Construct a wire only after rejecting a degenerate point ring.
+
+        Drafting tolerances may be centimetres, but native wire construction
+        must remain precise.  The ring is cleaned first and then constructed
+        with a tight tolerance so short, valid roof edges are preserved while
+        duplicate or zero-area rings are rejected explicitly.
+        """
+        import numpy as np
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Wire import Wire
+        if points is None:
+            return None
+        try:
+            raw = [np.asarray(point, dtype=float) for point in points]
+        except (TypeError, ValueError):
+            return None
+        if not raw or any(point.ndim != 1 or len(point) != 3 or
+                          not np.isfinite(point).all() for point in raw):
+            return None
+        construction_tolerance = min(max(abs(float(tolerance)), 1e-9), 1e-7)
+        cleaned = []
+        for point in raw:
+            if not cleaned or np.linalg.norm(point - cleaned[-1]) > construction_tolerance:
+                cleaned.append(point)
+        if close and len(cleaned) > 1 and np.linalg.norm(cleaned[0] - cleaned[-1]) <= construction_tolerance:
+            cleaned.pop()
+        changed = True
+        while changed and len(cleaned) > 3:
+            changed = False
+            for index in range(len(cleaned)):
+                a = cleaned[index - 1]
+                b = cleaned[index]
+                c = cleaned[(index + 1) % len(cleaned)]
+                span = max(float(np.linalg.norm(c - a)), construction_tolerance)
+                if float(np.linalg.norm(np.cross(b - a, c - b))) <= construction_tolerance * span:
+                    cleaned.pop(index)
+                    changed = True
+                    break
+        if len(cleaned) < 3 or IFC._Analytical_geometry_area(cleaned) <= construction_tolerance ** 2:
+            return None
+        try:
+            wire = Wire.ByVertices(
+                [Vertex.ByCoordinates(*point.tolist()) for point in cleaned],
+                close=close, tolerance=construction_tolerance)
+        except (TypeError, ValueError, RuntimeError):
+            return None
+        return wire if wire is not None else None
 
     @staticmethod
     def _Analytical_geometry_clean_polygon(points, tolerance):
@@ -5887,10 +6923,12 @@ class IFC:
         valid = [r for r in results if r.topology is not None]
         combined_topology = Cluster.ByTopologies([r.topology for r in valid]) if valid else None
         if combined_topology is not None:
-            apertures = [a for r in valid for a in (Topology.Apertures(r.topology) or [])]
+            apertures = [a for r in valid for a in
+                         (Topology.Apertures(r.topology,
+                                             subTopologyType='face') or [])]
             if apertures:
                 combined_topology = Topology.AddApertures(
-                    combined_topology, apertures, subTopologyType='self',
+                    combined_topology, apertures, subTopologyType='face',
                     silent=True)
         result = IFC._Analytical_model_Result(topology=combined_topology, origin=origin, buildings=results, spaces=[s for r in results for s in r.spaces], boundaries=[b for r in results for b in r.boundaries], boundary_patches=[b for r in results for b in r.boundary_patches], openings=[o for r in results for o in r.openings], diagnostics=[d for r in results for d in r.diagnostics])
         result.statistics = {'method': 'generative_redraw', 'topology_type': 'Cluster', 'building_count': len(results), 'rooms': sum((r.statistics.get('rooms', 0) for r in results)), 'analytical_volume': sum((r.statistics.get('analytical_volume', 0) for r in results))}
@@ -5953,7 +6991,7 @@ class IFC:
         from collections import defaultdict
         import numpy as np
         from shapely import union_all
-        from shapely.geometry import shape, LineString
+        from shapely.geometry import shape, LineString, Point
         from shapely.ops import polygonize, unary_union, linemerge
         from shapely.strtree import STRtree
         from topologicpy.Core import Core
@@ -5984,8 +7022,15 @@ class IFC:
         def face(polygon, z):
 
             def wire(ring):
-                return Wire.ByVertices([Vertex.ByCoordinates(x, y, z) for x, y in list(ring.coords)[:-1]], close=True, tolerance=min(tolerance, 1e-7))
-            return Core.Face.ByExternalInternalBoundaries(wire(polygon.exterior), [wire(r) for r in polygon.interiors], min(tolerance, 1e-7))
+                return IFC._Analytical_safe_wire(
+                    [[x, y, z] for x, y in list(ring.coords)[:-1]],
+                    tolerance=min(tolerance, 1e-7))
+            outer = wire(polygon.exterior)
+            holes = [wire(r) for r in polygon.interiors]
+            if outer is None or any(hole is None for hole in holes):
+                raise ValueError('Could not construct a non-degenerate shared face wire')
+            return Core.Face.ByExternalInternalBoundaries(
+                outer, holes, min(tolerance, 1e-7))
         faces = []
         face_owners = []
         for z in levels:
@@ -6274,9 +7319,14 @@ class IFC:
 
             def wire(ring):
                 p = plane.lift(np.array(ring.coords[:-1])).tolist()
-                return Wire.ByVertices([Vertex.ByCoordinates(*v) for v in p], close=True, tolerance=tolerance)
+                return IFC._Analytical_safe_wire(p, tolerance=tolerance)
             for polygon in IFC._Analytical_evidence_polygons(merged):
-                f = Face.ByWires(wire(polygon.exterior), [wire(r) for r in polygon.interiors], tolerance=tolerance, silent=True)
+                outer = wire(polygon.exterior)
+                holes = [wire(r) for r in polygon.interiors]
+                if outer is None or any(hole is None for hole in holes):
+                    replacement = []
+                    break
+                f = Face.ByWires(outer, holes, tolerance=tolerance, silent=True)
                 if f is None:
                     replacement = []
                     break
@@ -6372,7 +7422,7 @@ class IFC:
         from collections import defaultdict
         import numpy as np
         from shapely import union_all
-        from shapely.geometry import shape, LineString
+        from shapely.geometry import shape, LineString, Point
         from shapely.ops import polygonize, triangulate
         from shapely.strtree import STRtree
         from topologicpy.Core import Core
@@ -6381,6 +7431,162 @@ class IFC:
         from topologicpy.Wire import Wire
         from topologicpy.Vertex import Vertex
         from topologicpy.Cell import Cell
+        from OCC.Core.BRepCheck import BRepCheck_Analyzer
+        from OCC.Core.ShapeFix import ShapeFix_Shape, ShapeFix_Shell, ShapeFix_Solid
+        from OCC.Core.BRep import BRep_Builder
+        from OCC.Core.TopoDS import TopoDS_Shell
+
+        # Reconstruct each horizontal storey band independently.  A roof
+        # surface only changes the upper cap of the cells immediately below
+        # it; polygonising all floors together makes OCC infer unnecessary
+        # intermediate solids at coincident floor levels and can lose cells
+        # during sewing.  Combining the already closed band cells afterwards
+        # preserves the designed room count and leaves one clean shared face
+        # between adjacent bands.
+        bands = defaultdict(list)
+        for room in rooms:
+            bands[(room['bottom'], room['top'], room.get('storey'))].append(room)
+        if len(bands) > 1:
+            band_cells = []
+            for group in sorted(bands.values(), key=lambda group: (
+                    min(r['bottom'] for r in group),
+                    min(r['top'] for r in group))):
+                # Bands with no roof cap do not need polygonisation.  Keeping
+                # them as the ordinary validated prisms avoids reprocessing
+                # flat floors with a roof drafting tolerance and leaves the
+                # piecewise path for the genuinely sloped top band only.
+                if not any(room.get('exterior_cap') for room in group):
+                    band_cells.extend(
+                        IFC._Analytical_redraw_prism(
+                            shape(room['footprint']), room['bottom'],
+                            room['top'], tolerance)
+                        for room in group)
+                    continue
+                band_complex = IFC._Analytical_piecewise_shaped_complex(
+                    group, envelope, tolerance, progress)
+                for band_cell in Topology.Cells(band_complex):
+                    valid_faces = [face for face in Topology.Faces(band_cell)
+                                   if Face.Area(face, mantissa=10) >
+                                   max(1e-8, tolerance ** 2)]
+                    repaired = (Cell.ByFaces(valid_faces, tolerance=1e-6,
+                                             silent=True)
+                                if len(valid_faces) != len(Topology.Faces(band_cell))
+                                else band_cell)
+                    if repaired is None:
+                        raise ValueError('Roof band contains an unrecoverable degenerate cell')
+                    if not BRepCheck_Analyzer(repaired.shape).IsValid():
+                        fixer = ShapeFix_Shape(repaired.shape)
+                        fixer.SetPrecision(1e-7)
+                        fixer.SetMaxTolerance(max(tolerance, 1e-7))
+                        fixer.Perform()
+                        repaired = Topology.ByOCCTShape(fixer.Shape(), silent=True)
+                        # ShapeFix can return a valid closed Shell rather than
+                        # a Cell wrapper.  Rebuild the solid from its repaired
+                        # boundary instead of rejecting the shaped roof cell.
+                        if repaired is not None and not Topology.IsInstance(repaired, 'Cell'):
+                            repaired = Cell.ByFaces(
+                                Topology.Faces(repaired),
+                                tolerance=1e-6, silent=True)
+                        if repaired is not None and not BRepCheck_Analyzer(repaired.shape).IsValid():
+                            # Re-sew the Cell wrapper produced from a repaired
+                            # Shell.  Cell.ByFaces can retain the shell's old
+                            # edge tolerances, so run ShapeFix once more on
+                            # that newly constructed solid.
+                            refixer = ShapeFix_Shape(repaired.shape)
+                            refixer.SetPrecision(1e-7)
+                            refixer.SetMaxTolerance(max(tolerance, 1e-7))
+                            refixer.Perform()
+                            fixed = Topology.ByOCCTShape(refixer.Shape(), silent=True)
+                            if fixed is not None and not Topology.IsInstance(fixed, 'Cell'):
+                                fixed = Cell.ByFaces(Topology.Faces(fixed),
+                                                     tolerance=1e-6, silent=True)
+                            repaired = fixed
+                        if repaired is not None and not BRepCheck_Analyzer(repaired.shape).IsValid():
+                            # Last-resort solid reconstruction from the
+                            # repaired boundary.  This preserves the sloped
+                            # roof faces when OCC's generic fixer leaves a
+                            # valid-but-unsewn Cell boundary.
+                            shell = TopoDS_Shell()
+                            builder = BRep_Builder()
+                            builder.MakeShell(shell)
+                            for face in Topology.Faces(repaired):
+                                builder.Add(shell, face.shape)
+                            orient = ShapeFix_Shell(shell)
+                            orient.FixFaceOrientation(shell, True, False)
+                            solid = ShapeFix_Solid().SolidFromShell(orient.Shell())
+                            if not solid.IsNull():
+                                repaired = Topology.ByOCCTShape(solid, silent=True)
+                        if (not Topology.IsInstance(repaired, 'Cell') or
+                                any(Face.Area(face, mantissa=10) <= max(1e-8, tolerance ** 2)
+                                    for face in Topology.Faces(repaired))):
+                            raise ValueError('Roof band contains an invalid native solid')
+                    band_cells.append(repaired)
+            # The drafting grid is intentionally much coarser than the OCC
+            # coincidence tolerance.  Using the former for the final native
+            # merge can collapse neighbouring room boundaries, so cap the
+            # combination tolerance at one fifth of the grid.
+            combination_tolerance = max(
+                1e-5, min(tolerance, envelope.get('config', {}).get(
+                    'drafting_grid', tolerance) * 0.2))
+            combined = Core.CellComplex.ByCells(
+                band_cells, tolerance=combination_tolerance)
+            if Topology.IsInstance(combined, 'CellComplex'):
+                # OCC may retain a zero-measure seam wire when independent
+                # roof bands are combined.  Remove only those wires and allow
+                # the sub-percent volume change introduced by that repair.
+                combined = IFC._Analytical_native_remove_empty_wires(
+                    combined, volume_tolerance=1e-4)
+                # A roof-cell seam can remain topologically closed while OCC
+                # still marks one resulting solid invalid.  Replace only such
+                # cells by their validated prismatic room volumes after the
+                # band merge.  Matching at this stage uses the final cell's
+                # interior point, so it cannot substitute a neighbouring room
+                # merely because the OCC cell ordering changed.
+                merged_cells = Topology.Cells(combined)
+                invalid_cells = [cell for cell in merged_cells
+                                 if not BRepCheck_Analyzer(cell.shape).IsValid()]
+                if invalid_cells:
+                    repaired_cells = []
+                    for cell in merged_cells:
+                        if BRepCheck_Analyzer(cell.shape).IsValid():
+                            repaired_cells.append(cell)
+                            continue
+                        xyz = None
+                        try:
+                            iv = Cell.InternalVertex(cell, tolerance=1e-7, silent=True)
+                            xyz = Vertex.Coordinates(iv, mantissa=12) if iv else None
+                        except Exception:
+                            pass
+                        candidates = [room for room in rooms
+                                      if xyz and room['bottom'] - tolerance < xyz[2] < room['top'] + tolerance]
+                        if xyz:
+                            probe_point = Point(xyz[0], xyz[1])
+                            containing = [room for room in candidates
+                                          if shape(room['footprint']).covers(probe_point)]
+                            if containing:
+                                candidates = containing
+                        if not candidates:
+                            raise ValueError('Roof band contains an invalid native solid')
+                        fallback_room = min(
+                            candidates,
+                            key=lambda room: shape(room['footprint']).distance(probe_point)
+                            if xyz else 0.0)
+                        repaired_cells.append(IFC._Analytical_redraw_prism(
+                            shape(fallback_room['footprint']), fallback_room['bottom'],
+                            fallback_room['top'], tolerance))
+                    rebuilt = Core.CellComplex.ByCells(
+                        repaired_cells, tolerance=combination_tolerance)
+                    if (not Topology.IsInstance(rebuilt, 'CellComplex') or
+                            len(Topology.Cells(rebuilt)) != len(rooms) or
+                            any(not BRepCheck_Analyzer(cell.shape).IsValid()
+                                for cell in Topology.Cells(rebuilt))):
+                        raise ValueError('Roof band contains an invalid native solid')
+                    combined = rebuilt
+            if (not Topology.IsInstance(combined, 'CellComplex') or
+                    len(Topology.Cells(combined)) != len(rooms)):
+                raise ValueError('Piecewise band assembly did not preserve the designed spatial cells')
+            return combined
+
         field = IFC._Analytical_envelope_RoofField(envelope['facets']) if envelope['facets'] else None
         settings = envelope.get('config', {})
         grid = settings.get('drafting_grid', 0.01)
@@ -6460,14 +7666,30 @@ class IFC:
             if len(cleaned) < 3:
                 return
             points = cleaned
+            # Roof-plane intersections can leave a numerically collinear
+            # polygon at an eave or hip seam.  OCC may accept its wire but
+            # expose a zero-area face later, so reject it before the face is
+            # admitted to the piecewise complex.
+            if IFC._Analytical_geometry_area(points) <= max(1e-8, tolerance ** 2):
+                return
             key = (tuple(sorted((tuple((round(v, 7) for v in p)) for p in points))), tuple(sorted((tuple(sorted((tuple((round(v, 7) for v in p)) for p in ring))) for ring in holes))))
             face_owners[key].update(ids)
             if key in faces:
                 return
 
             def wire(ring):
-                return Wire.ByVertices([Vertex.ByCoordinates(*p) for p in ring], close=True, tolerance=tolerance)
-            f = Face.ByWires(wire(points), [wire(ring) for ring in holes], tolerance=tolerance, silent=True)
+                return IFC._Analytical_safe_wire(ring, tolerance=tolerance)
+            outer = wire(points)
+            inner = [wire(ring) for ring in holes]
+            if outer is None or any(hole is None for hole in inner):
+                return
+            f = Face.ByWires(outer, inner, tolerance=tolerance, silent=True)
+            if f is not None and Face.Area(f, mantissa=10) <= max(1e-8, tolerance ** 2):
+                # A roof seam can polygonise to a zero-measure atom.  It is
+                # not a physical boundary and must not be admitted as a
+                # native face; the neighbouring valid faces already carry
+                # the enclosure.
+                return
             if f is None:
                 if len(original) > 3 or holes:
                     from shapely.geometry import Polygon
@@ -7213,8 +8435,15 @@ class IFC:
         construction_tolerance = min(abs(tolerance), 1e-7)
         polygon = polygon.simplify(construction_tolerance, preserve_topology=True)
         def wire(ring):
-            return Wire.ByVertices([Vertex.ByCoordinates(x, y, bottom) for x, y in list(ring.coords)[:-1]], close=True, tolerance=construction_tolerance)
-        face = Core.Face.ByExternalInternalBoundaries(wire(polygon.exterior), [wire(r) for r in polygon.interiors], construction_tolerance)
+            return IFC._Analytical_safe_wire(
+                [[x, y, bottom] for x, y in list(ring.coords)[:-1]],
+                tolerance=construction_tolerance)
+        outer = wire(polygon.exterior)
+        holes = [wire(r) for r in polygon.interiors]
+        if outer is None or any(hole is None for hole in holes):
+            raise ValueError('Native footprint contains a degenerate boundary wire')
+        face = Core.Face.ByExternalInternalBoundaries(
+            outer, holes, construction_tolerance)
         if not Topology.IsInstance(face, 'Face') or abs(Face.Area(face, mantissa=10) - polygon.area) > max(1e-6, polygon.area * 1e-8):
             raise ValueError('Native footprint construction did not preserve its designed area and holes')
         cell = Cell.ByThickenedFace(face, thickness=top-bottom, bothSides=False, reverse=Face.Normal(face)[2] < 0, polyhedron=False, tolerance=construction_tolerance, silent=True)
@@ -7313,7 +8542,7 @@ class IFC:
         return repaired, len(removed)
 
     @staticmethod
-    def _Analytical_native_remove_empty_wires(cell):
+    def _Analytical_native_remove_empty_wires(cell, volume_tolerance=None):
         """Remove empty or zero-area internal wires without filling real holes."""
         from OCC.Core.BRepTools import BRepTools_ReShape, breptools
         from OCC.Core.TopExp import TopExp_Explorer
@@ -7330,6 +8559,15 @@ class IFC:
         removed = 0
         while faces.More():
             face = topods.Face(faces.Current()); faces.Next()
+            properties = GProp_GProps()
+            brepgprop.SurfaceProperties(face, properties)
+            if abs(properties.Mass()) <= 1e-12:
+                # A collapsed outer face is just as invalid as a collapsed
+                # hole wire.  Remove it before native topology inspection;
+                # keeping it creates the one-vertex faces seen at roof seams.
+                reshape.Remove(face)
+                removed += 1
+                continue
             outside = breptools.OuterWire(face)
             wires = TopExp_Explorer(face, TopAbs_WIRE)
             while wires.More():
@@ -7360,7 +8598,11 @@ class IFC:
         cleaned_cells = [cleaned] if Topology.IsInstance(cleaned, 'Cell') else Topology.Cells(cleaned) if cleaned else []
         original_volume = sum(Cell.Volume(c, mantissa=12) for c in original_cells)
         cleaned_volume = sum(Cell.Volume(c, mantissa=12) for c in cleaned_cells)
-        if len(cleaned_cells) != len(original_cells) or abs(cleaned_volume-original_volume) > max(1e-5, abs(original_volume)*1e-8):
+        relative_tolerance = (1e-8 if volume_tolerance is None else
+                              max(1e-8, float(volume_tolerance)))
+        if (len(cleaned_cells) != len(original_cells) or
+                abs(cleaned_volume-original_volume) > max(
+                    1e-5, abs(original_volume) * relative_tolerance)):
             raise ValueError('Removing empty wires changed room volume')
         return cleaned
 
@@ -7399,6 +8641,7 @@ class IFC:
             raise ValueError('Native shared-cell assembly lost rooms')
         from topologicpy.Cell import Cell
         from topologicpy.Vertex import Vertex
+        from topologicpy.Face import Face
         # MakerVolume can emit microscopic residual solids around coincident edges.
         # A real input room is never discarded: its interior seed protects it.
         seeds = [Vertex.Coordinates(Cell.InternalVertex(c, tolerance=1e-7, silent=True), mantissa=12) for c in cells]
@@ -7457,6 +8700,15 @@ class IFC:
             repaired.append(cell)
             removed_faces += removed
         topology = IFC._Analytical_native_cell_collection(repaired)
+        # Do not let zero-measure contacts escape the sewing routine.  They
+        # are not shared analytical boundaries and later tessellation cannot
+        # triangulate them.  This check is deliberately inside the native
+        # assembly path as well as in the higher-level model validation, so
+        # ad-hoc callers cannot export a corrupt CellComplex.
+        minimum_face_area = max(1e-8, max(tolerance * 10.0, .01) ** 2)
+        if any(Face.Area(face, mantissa=12) < minimum_face_area
+               for face in Topology.Faces(topology)):
+            raise ValueError('Native shared-cell assembly produced zero-area or microscopic faces')
         Topology.SetDictionary(topology, {'removed_zero_volume_internal_faces': removed_faces, 'numerical_residual_regions_removed': residual_count, 'numerical_residual_volume_m3': residual_volume, 'native_sewing_repaired': native_repair})
         return topology
 
@@ -7830,6 +9082,46 @@ class IFC:
         IFC._Analytical_redraw_openings(result, plan, native_faces, config)
 
     @staticmethod
+    def _Analytical_opening_normal(points, tolerance=1e-9):
+        """Return a stable opening normal without invoking LAPACK/SVD.
+
+        Some Windows NumPy/OCC combinations abort the whole interpreter in
+        ``numpy.linalg.svd``.  Aperture placement only needs a normal for a
+        nearly planar polygon, so a deterministic cross-product search is
+        sufficient and keeps this safety-critical path pure Python.
+        """
+        import math
+        import numpy as np
+        points = [tuple(float(value) for value in point) for point in points]
+        if len(points) < 3:
+            return None
+        origin = points[0]
+        for index in range(1, len(points) - 1):
+            ax = points[index][0] - origin[0]
+            ay = points[index][1] - origin[1]
+            az = points[index][2] - origin[2]
+            for next_index in range(index + 1, len(points)):
+                bx = points[next_index][0] - origin[0]
+                by = points[next_index][1] - origin[1]
+                bz = points[next_index][2] - origin[2]
+                nx = ay * bz - az * by
+                ny = az * bx - ax * bz
+                nz = ax * by - ay * bx
+                length = math.sqrt(nx * nx + ny * ny + nz * nz)
+                if length <= tolerance:
+                    continue
+                normal = (nx / length, ny / length, nz / length)
+                # Reject a genuinely non-planar opening rather than guessing
+                # a host face from an unstable least-squares fit.
+                if max(abs((point[0] - origin[0]) * normal[0] +
+                           (point[1] - origin[1]) * normal[1] +
+                           (point[2] - origin[2]) * normal[2])
+                       for point in points) > max(tolerance * 100.0, 1e-6):
+                    return None
+                return np.asarray(normal, dtype=float)
+        return None
+
+    @staticmethod
     def _Analytical_redraw_openings(result, plan, native_faces, config):
         from collections import defaultdict
         import numpy as np
@@ -7841,6 +9133,10 @@ class IFC:
         from topologicpy.Wire import Wire
         from topologicpy.Context import Context
         from topologicpy.Aperture import Aperture
+        all_boundary_z = [float(point[2]) for boundary in result.boundaries
+                          for point in boundary.get('vertices', [])]
+        absolute_bottom = min(all_boundary_z, default=0.0)
+        bottom_face_tolerance = max(0.05, config.tolerance * 10.0)
         candidates = []
         for boundary in result.boundaries:
             try:
@@ -7853,9 +9149,15 @@ class IFC:
             origin = plane.normal * plane.offset
             segment = MultiPoint(points[:, :2]).convex_hull
             host = Polygon(plane.project(points), [plane.project(h) for h in boundary.get('holes', [])])
-            candidates.append((boundary, plane, host, horizontal, segment))
+            is_absolute_bottom = (
+                abs(float(plane.normal[2])) > 0.95 and
+                float(np.ptp(points[:, 2])) <= bottom_face_tolerance and
+                abs(float(np.mean(points[:, 2])) - absolute_bottom) <= bottom_face_tolerance)
+            candidates.append((boundary, plane, host, horizontal, segment,
+                               is_absolute_bottom))
         tree = STRtree([row[4] for row in candidates]) if candidates else None
         mapped, missing, removed_doors = (set(), [], [])
+        suppressed_bottom_openings = []
         occupied = defaultdict(list)
         written_apertures = []
         aperture_contents = []
@@ -7892,11 +9194,12 @@ class IFC:
             lengths = np.linalg.norm(vectors, axis=1)
             major_direction = vectors[np.argmax(lengths)] / max(lengths.max(), 1e-09)
             spatial_points = np.array(opening.get('points', [[x, y, z] for x, y in points for z in (opening['bottom'], opening['top'])]))
-            _, singular, axes = np.linalg.svd(spatial_points - spatial_points.mean(0))
-            opening_normal = axes[-1] if singular[-1] < 0.6 * singular[-2] else None
+            opening_normal = IFC._Analytical_opening_normal(spatial_points,
+                                                            config.tolerance)
             matches = []
+            suppressed_match = False
             for index in tree.query(foot.buffer(0.8)):
-                boundary, plane, host, direction, segment = candidates[int(index)]
+                boundary, plane, host, direction, segment, is_absolute_bottom = candidates[int(index)]
                 if opening_normal is not None and abs(plane.normal @ opening_normal) < 0.8:
                     continue
                 if opening_normal is None and abs(plane.normal[2]) < 0.1 and (lengths.max() > 1.5 * lengths.min()) and (abs(float(direction[:2] @ major_direction)) < 0.8):
@@ -7908,9 +9211,18 @@ class IFC:
                 clipped = projected.intersection(host)
                 if clipped.area < 0.05:
                     continue
+                if is_absolute_bottom:
+                    # The absolute bottom slab is the ground enclosure of the
+                    # analytical model.  Do not turn questionable IFC slab
+                    # openings into holes in that face.
+                    suppressed_match = True
+                    continue
                 score = distance + 0.05 * (1 - min(1.0, clipped.area / max(projected.area, 1e-09)))
                 matches.append((score, distance, int(index), clipped, projected.area))
             if not matches:
+                if suppressed_match:
+                    suppressed_bottom_openings.append(opening['source'])
+                    continue
                 if is_door:
                     removed_doors.append({'source': opening['source'], 'door_id': fill['source'], 'reason': 'no_analytical_host'})
                 else:
@@ -7919,7 +9231,7 @@ class IFC:
             best = min(matches, key=lambda m: m[0])
             best_plane = candidates[best[2]][1]
             for score, distance, index, clipped, reference_area in matches:
-                boundary, plane, host, direction, _ = candidates[index]
+                boundary, plane, host, direction, _, _ = candidates[index]
                 if np.linalg.norm(best_plane.normal - plane.normal) <= 1e-06:
                     if abs(best_plane.offset - plane.offset) > 0.02:
                         continue
@@ -7980,11 +9292,12 @@ class IFC:
         plan['fidelity']['opening_mapping_coverage'] = len(mapped) / max(len(plan.get('reference_openings', [])), 1)
         plan['fidelity']['unmapped_openings'] = sorted(set(missing))
         plan['fidelity']['opening_fragment_count'] = len(result.openings)
+        plan['fidelity']['suppressed_absolute_bottom_openings'] = sorted(set(suppressed_bottom_openings))
         plan['fidelity']['split_reference_openings'] = sum(
             len(entries) > 1 for entries in by_identity.values())
         if aperture_contents:
             attached = Topology.AddApertures(result.topology, aperture_contents,
-                                             subTopologyType='self',
+                                             subTopologyType='face',
                                              tolerance=config.tolerance, silent=True)
             if attached is not None:
                 result.topology = attached

@@ -409,6 +409,31 @@ class EnergyModel:
             except Exception:
                 return None
 
+        def unique_apertures(face):
+            """Return one export aperture for each geometric opening.
+
+            With the PythonOCC backend, ``Topology.Apertures(face)`` can expose
+            the same logical aperture twice: once through the native aperture
+            collection and once through the aperture topology stored as face
+            content.  They are different wrapper objects, so ``IsSame`` is not
+            sufficient here.  The boundary coordinates are the authoritative
+            identity for an exported gbXML sub-surface.
+            """
+            unique = []
+            seen = set()
+            for aperture in Topology.Apertures(face) or []:
+                boundary = Face.ExternalBoundary(aperture)
+                vertices = Wire.Vertices(boundary) if boundary is not None else []
+                coordinates = tuple(sorted(
+                    tuple(round(value, 9) for value in Vertex.Coordinates(vertex, mantissa=9))
+                    for vertex in (vertices or [])
+                ))
+                if len(coordinates) < 3 or coordinates in seen:
+                    continue
+                seen.add(coordinates)
+                unique.append(aperture)
+            return unique
+
         if not math.isfinite(seamTolerance) or seamTolerance < 0:
             raise ValueError("EnergyModel.ByTopology - seamTolerance must be finite and non-negative.")
         openstudio = EnergyModel._ImportOpenStudio("EnergyModel.ByTopology")
@@ -633,6 +658,7 @@ class EnergyModel:
             for sourceFace in sourceFaces:
                 ring = Wire.Vertices(Face.ExternalBoundary(sourceFace)) or []
                 holes = Face.InternalBoundaries(sourceFace) or []
+                source_apertures = Topology.Apertures(sourceFace) or []
                 coords = [tuple(Vertex.Coordinates(v, mantissa=9)) for v in ring]
                 if ring:
                     start=min(range(len(ring)),key=lambda i:coords[i])
@@ -642,11 +668,33 @@ class EnergyModel:
                     ring=[ring[i] for i in order]
                     coords=[coords[i] for i in order]
                 key = (tuple(sorted(coords)), tuple(sorted(tuple(sorted(tuple(Vertex.Coordinates(v, mantissa=9)) for v in Wire.Vertices(w))) for w in holes)))
-                needs_triangles = bool(holes)
-                if len(ring) > 3:
-                    points = vertices_to_point3d_list(ring, openstudio)
-                    local = openstudio.Transformation.alignFace(points).inverse()*points
-                    needs_triangles = needs_triangles or not bool(openstudio.computeTriangulation(list(local)[::-1], []))
+                # OpenStudio accepts many concave n-gons but leaves their
+                # eventual tessellation to downstream gbXML viewers.  Decide
+                # explicitly from the cleaned projected polygon: preserve a
+                # convex boundary as one simple host surface, and triangulate
+                # only genuinely concave/invalid boundaries (or faces with
+                # true internal holes).
+                needs_triangles = bool(holes) and not source_apertures
+                if len(ring) > 3 and not source_apertures:
+                    import numpy as np
+                    from shapely.geometry import Polygon
+                    probe = np.asarray(coords, dtype=float)
+                    centre_probe = probe.mean(axis=0)
+                    _, _, axes_probe = np.linalg.svd(probe-centre_probe)
+                    projected = (probe-centre_probe)@axes_probe[:2].T
+                    probe_region = Polygon(projected)
+                    convex_error = probe_region.symmetric_difference(probe_region.convex_hull).area if probe_region.is_valid else float('inf')
+                    needs_triangles = needs_triangles or (not probe_region.is_valid) or convex_error > max(1e-9, probe_region.area*1e-8)
+                    if not needs_triangles:
+                        points = vertices_to_point3d_list(ring, openstudio)
+                        local = openstudio.Transformation.alignFace(points).inverse()*points
+                        needs_triangles = not bool(openstudio.computeTriangulation(list(local)[::-1], []))
+                # A hosted aperture is already a gbXML sub-surface. Keeping its
+                # original host face is essential: triangulating that host makes
+                # viewers draw diagonal mesh edges through windows and doors.
+                # Only faces with genuine topological holes are triangulated.
+                if (Topology.Apertures(sourceFace) or []) and not holes:
+                    needs_triangles = False
                 if needs_triangles:
                     if key not in export_triangulations:
                         import numpy as np
@@ -655,21 +703,21 @@ class EnergyModel:
                         centre = np.mean(coords, axis=0)
                         _, _, axes = np.linalg.svd(np.asarray(coords)-centre)
                         def project(points): return (np.asarray(points)-centre)@axes[:2].T
-                        region = Polygon(project(coords), [project([Vertex.Coordinates(v, mantissa=9) for v in Wire.Vertices(w)]) for w in holes])
-                        aperture_regions=[]
-                        for aperture in Topology.Apertures(sourceFace) or []:
-                            ap_coords=[Vertex.Coordinates(v,mantissa=geometry_mantissa) for v in Wire.Vertices(Face.ExternalBoundary(aperture))]
-                            ap_region=Polygon(project(ap_coords)).intersection(region)
-                            if not ap_region.is_empty:
-                                if ap_region.geom_type!='Polygon' or ap_region.interiors:
-                                    raise ValueError('A source aperture must be split into simple hosted polygons before export.')
-                                aperture_regions.append(ap_region)
-                        # Keep each aperture in one patch instead of slicing it by
-                        # arbitrary diagonals into sub-millimetre SDK sub-surfaces.
-                        opaque=region.difference(unary_union(aperture_regions)) if aperture_regions else region
-                        opaque_parts=[opaque] if opaque.geom_type=='Polygon' else list(opaque.geoms)
+                        hole_coords = []
+                        for hole in holes:
+                            hole_vertices = Wire.Vertices(hole) or []
+                            if len(hole_vertices) >= 3:
+                                hole_coords.append([Vertex.Coordinates(v, mantissa=9) for v in hole_vertices])
+                        region = Polygon(project(coords), [project(points) for points in hole_coords])
+                        # Apertures are gbXML sub-surfaces, not holes in the
+                        # host surface.  Triangulate the actual source region
+                        # once and clip each aperture to the resulting host
+                        # triangles below.  Subtracting aperture polygons here
+                        # and then adding them back as host ``Surface`` patches
+                        # creates thin slivers and n-sided pseudo-surfaces,
+                        # which are the source of the visibly bad triangulation.
+                        opaque_parts=[region] if region.geom_type=='Polygon' else list(region.geoms)
                         loops=[tri for part in opaque_parts if part.area>1e-12 for tri in EnergyModel._ExportTriangles2D(part)]
-                        loops.extend(list(part.exterior.coords)[:-1] for part in aperture_regions)
                         mesh = [[openstudio.Point3d(x, y, 0) for x, y in loop] for loop in loops]
                         triangles, patches = [], []
                         for triangle_points in mesh:
@@ -685,16 +733,16 @@ class EnergyModel:
                         if not triangles or merged.symmetric_difference(region).area > budget or sum(p.area for p in patches)-merged.area > budget:
                             raise ValueError(f"Export triangulation changes the source surface or fills its holes (area={region.area}, triangles={sum(p.area for p in patches)}, difference={merged.symmetric_difference(region).area}, holes={len(holes)}, vertices={len(coords)}, valid={region.is_valid}).")
                         export_triangulations[key] = triangles
-                    cellFaces.extend((sourceFace, triangle) for triangle in export_triangulations[key])
+                    cellFaces.extend((sourceFace, triangle, None) for triangle in export_triangulations[key])
                 else:
-                    cellFaces.append((sourceFace, sourceFace))
+                    cellFaces.append((sourceFace, sourceFace, None))
             if cellFaces:
-                for faceNumber, (buildingFace, surfaceFace) in enumerate(cellFaces):
+                for faceNumber, (buildingFace, surfaceFace, export_ring) in enumerate(cellFaces):
                     boundary = Face.ExternalBoundary(surfaceFace)
                     if boundary is None:
                         continue
 
-                    faceVertices = Wire.Vertices(boundary)
+                    faceVertices = export_ring or Wire.Vertices(boundary)
                     if not faceVertices or len(faceVertices) < 3:
                         continue
 
@@ -793,43 +841,37 @@ class EnergyModel:
                             osSurface.setSurfaceType("Wall")
                             osSurface.setName(space_name + "_InternalVerticalFace_" + str(faceNumber))
 
-                    # Attach every hosted aperture, including roof/floor openings.
-                    # If a host required triangulation, clip the aperture to each
-                    # patch while retaining the complete source dictionary.
-                    import numpy as np
-                    from shapely.geometry import Polygon
-                    host_coords=np.array([Vertex.Coordinates(v,mantissa=geometry_mantissa) for v in Wire.Vertices(Face.ExternalBoundary(surfaceFace))])
-                    centre=host_coords.mean(0)
-                    _,_,axes=np.linalg.svd(host_coords-centre)
-                    host_region=Polygon((host_coords-centre)@axes[:2].T,
-                        [(np.array([Vertex.Coordinates(v,mantissa=geometry_mantissa) for v in Wire.Vertices(w)])-centre)@axes[:2].T for w in Face.InternalBoundaries(surfaceFace) or []])
-                    for apertureFace in Topology.Apertures(buildingFace) or []:
-                        ad=Topology.Dictionary(apertureFace)
-                        ad=ad if isinstance(ad,dict) else Dictionary.PythonDictionary(ad) or {}
-                        ap=np.array([Vertex.Coordinates(v,mantissa=geometry_mantissa) for v in Wire.Vertices(Face.ExternalBoundary(apertureFace))])
-                        clipped=Polygon((ap-centre)@axes[:2].T).intersection(host_region)
-                        parts=[clipped] if clipped.geom_type=='Polygon' else list(clipped.geoms) if hasattr(clipped,'geoms') else []
-                        for part in parts:
-                            if part.geom_type!='Polygon' or part.area<1e-12:continue
-                            if part.interiors:raise ValueError('An exported aperture fragment contains holes.')
-                            xyz=centre+np.array(part.exterior.coords[:-1])@axes[:2]
-                            osSubSurfacePoints=vertices_to_point3d_list([Vertex.ByCoordinates(*p.tolist()) for p in xyz],openstudio)
-                            if len(osSubSurfacePoints)<3:continue
-                            try:osSubSurface=openstudio.model.SubSurface(osSubSurfacePoints,osModel)
-                            except Exception as error:
-                                raise ValueError(f"Cannot construct source aperture {ad.get('opening_id')} on {fd.get('bim2bem_boundary_id')}: area={part.area}; points={xyz.tolist()}") from error
-                            host_normal=osSurface.outwardNormal()
-                            orient_surface_vertices(osSubSurfacePoints,[host_normal.x(),host_normal.y(),host_normal.z()],osSubSurface,openstudio)
-                            kind=ad.get('kind')
-                            subtype='Door' if kind=='door' else 'FixedWindow' if kind=='window' or len(faceCells)==1 else 'Door'
-                            if subtype=='FixedWindow' and osSurface.surfaceType()=='RoofCeiling':subtype='Skylight'
-                            osSubSurface.setSubSurfaceType(subtype)
-                            if not osSubSurface.setSurface(osSurface):
-                                raise ValueError('OpenStudio rejected a hosted aperture.')
-                            properties=osSubSurface.additionalProperties()
-                            properties.setFeature('topologicpy_dictionary',json.dumps(ad,ensure_ascii=False,sort_keys=True))
-                            if ad.get('opening_id'):properties.setFeature('bim2bem_opening_id',str(ad['opening_id']))
-                            if fd.get('bim2bem_boundary_id'):properties.setFeature('bim2bem_boundary_id',str(fd['bim2bem_boundary_id']))
+                    # Use the standard TopologicPy aperture path.  Keep the
+                    # source face as the host and attach each aperture directly
+                    # as an OpenStudio sub-surface.  Do not project or clip the
+                    # aperture through custom planar geometry here.
+                    for apertureFace in unique_apertures(buildingFace):
+                        aperture_boundary = Face.ExternalBoundary(apertureFace)
+                        aperture_vertices = Topology.SubTopologies(aperture_boundary, "Vertex") if aperture_boundary is not None else []
+                        if not aperture_vertices or len(aperture_vertices) < 3:
+                            continue
+                        osSubSurfacePoints = vertices_to_point3d_list(aperture_vertices, openstudio)
+                        osSubSurface = openstudio.model.SubSurface(osSubSurfacePoints, osModel)
+                        host_normal = osSurface.outwardNormal()
+                        orient_surface_vertices(osSubSurfacePoints, [host_normal.x(), host_normal.y(), host_normal.z()], osSubSurface, openstudio)
+                        ad = Topology.Dictionary(apertureFace)
+                        ad = ad if isinstance(ad, dict) else Dictionary.PythonDictionary(ad) or {}
+                        kind = ad.get('kind')
+                        if kind == 'door':
+                            subtype = 'Door'
+                        elif kind == 'window':
+                            subtype = 'Skylight' if osSurface.surfaceType() == 'RoofCeiling' else 'FixedWindow'
+                        else:
+                            subtype = 'Door' if len(faceCells) != 1 else 'FixedWindow'
+                        osSubSurface.setSubSurfaceType(subtype)
+                        if not osSubSurface.setSurface(osSurface):
+                            raise ValueError('OpenStudio rejected a hosted aperture.')
+                        properties = osSubSurface.additionalProperties()
+                        properties.setFeature('topologicpy_dictionary', json.dumps(ad, ensure_ascii=False, sort_keys=True))
+                        if ad.get('opening_id'):
+                            properties.setFeature('bim2bem_opening_id', str(ad['opening_id']))
+                        if fd.get('bim2bem_boundary_id'):
+                            properties.setFeature('bim2bem_boundary_id', str(fd['bim2bem_boundary_id']))
 
             osThermalZone = openstudio.model.ThermalZone(osModel)
             cellVolume = Cell.Volume(buildingCell, mantissa=geometry_mantissa)
@@ -1618,8 +1660,37 @@ class EnergyModel:
         if not region.is_valid:
             raise ValueError("Cannot triangulate an invalid export polygon.")
         mesh=constrained_delaunay_triangles(region)
-        result=[list(part.exterior.coords)[:-1] for part in mesh.geoms if part.area>1e-14]
-        patches=[Polygon(points) for points in result]
+        patches=[part for part in mesh.geoms if part.area>1e-14]
+        # Do not export microscopic triangles as independent gbXML surfaces.
+        # They are usually produced at a small concave notch or at rounded IFC
+        # coordinates and are visually unstable in downstream viewers. Merge
+        # each small patch into the neighbouring patch sharing the longest
+        # boundary. The union is checked against the original region below, so
+        # this changes only the subdivision, never the covered area.
+        minimum_patch_area = 0.02
+        changed = True
+        while changed and len(patches) > 1:
+            changed = False
+            small = [p for p in patches if p.area < minimum_patch_area]
+            if not small:
+                break
+            tiny = min(small, key=lambda p: p.area)
+            candidates=[]
+            for other in patches:
+                if other is tiny:
+                    continue
+                shared=tiny.boundary.intersection(other.boundary).length
+                if shared > 1e-9:
+                    candidates.append((shared, other))
+            if not candidates:
+                break
+            neighbour=max(candidates,key=lambda item:item[0])[1]
+            merged_patch=tiny.union(neighbour)
+            if merged_patch.geom_type != 'Polygon' or merged_patch.interiors:
+                break
+            patches.remove(tiny); patches.remove(neighbour); patches.append(merged_patch)
+            changed = True
+        result=[list(part.exterior.coords)[:-1] for part in patches]
         merged=unary_union(patches)
         budget=max(1e-9,region.area*1e-9)
         if not result or merged.symmetric_difference(region).area>budget or sum(p.area for p in patches)-merged.area>budget:
@@ -1716,16 +1787,15 @@ class EnergyModel:
 
     @staticmethod
     def _CleanGBXMLForModel(model, xml):
-        """Keep conforming nodes only for explicitly marked native SDK models."""
-        get_building = getattr(model, 'getBuilding', None)
-        if callable(get_building):
-            properties = get_building().additionalProperties()
-            get_feature = getattr(properties, 'getFeatureAsBoolean', None)
-            if callable(get_feature):
-                feature = get_feature('topologicpy_conforming_export')
-                if feature.is_initialized() and feature.get():
-                    return xml
-        return EnergyModel._CleanGBXMLPolyLoops(xml)
+        """Remove sub-millimetre seam vertices from every exported PolyLoop.
+
+        The native OpenStudio model can be conforming while still containing
+        collinear IFC seam vertices. Some gbXML viewers triangulate those
+        unnecessary vertices across hosted openings. Cleaning the serialized
+        loops preserves the geometry and aperture elements while preventing
+        that viewer-side triangulation.
+        """
+        return EnergyModel._CleanGBXMLPolyLoops(xml, tolerance=0.001)
 
     @staticmethod
     def _GEMFrame(points):
@@ -1788,15 +1858,26 @@ class EnergyModel:
                     attributes=dictionary(face);points=ring(Face.ExternalBoundary(face))
                     if np.dot(EnergyModel._GEMFrame(points)[3],normal)<0:points.reverse()
                     openings=[]
+                    seen_openings=set()
                     for j,aperture in enumerate(Topology.Apertures(face) or []):
                         ad=dictionary(aperture)
                         if Face.InternalBoundaries(aperture):raise ValueError('GEM opening polygons must not contain holes.')
                         kind=str(ad.get(apertureTypeKey,'window')).lower()
                         if kind not in {'window','aperture','door','hole','airboundary','air','void','opening'}:
                             raise ValueError('Unsupported GEM opening kind: '+kind)
+                        opening_vertices=ring(Face.ExternalBoundary(aperture))
+                        # A shared Topologic aperture can be returned once for
+                        # every coincident face instance of a sewn cell.  GEM
+                        # treats those copies as overlapping openings on one
+                        # parent face, so retain one canonical polygon only.
+                        opening_key=tuple(sorted(tuple(round(float(c),9) for c in point)
+                                                 for point in opening_vertices))
+                        if opening_key in seen_openings:
+                            continue
+                        seen_openings.add(opening_key)
                         openings.append(dict(id=str(ad.get('opening_id') or f'{rid}:face{i}:opening{j}'),
                             type=1 if kind=='door' else 2 if kind in {'hole','airboundary','air','void','opening'} else 0,
-                            vertices=ring(Face.ExternalBoundary(aperture)),dictionary=ad))
+                            vertices=opening_vertices,dictionary=ad))
                     panels.append(dict(id=str(attributes.get('bim2bem_boundary_id') or f'{rid}:face{i}'),
                         vertices=points,holes=[ring(w) for w in Face.InternalBoundaries(face) or []],
                         area=abs(Face.Area(face,mantissa=12)),openings=openings,dictionary=attributes))
