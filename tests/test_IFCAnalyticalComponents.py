@@ -48,6 +48,7 @@ def test_triangulation_preserves_concavity_and_holes(region,legacy,monkeypatch):
     assert all(len(t.exterior.coords)==4 for t in triangles)
 
 
+@pytest.mark.pythonocc_only
 def test_failed_exterior_and_shared_assembly_retain_native_rooms(monkeypatch):
     source=IFC.AnalyticalModel(str(SOURCE),coordinateFrame='local',verify=False)
     assert source.spaces
@@ -64,6 +65,7 @@ def test_failed_exterior_and_shared_assembly_retain_native_rooms(monkeypatch):
     assert {'EXTERIOR_FIT_REQUIRES_REVIEW','SHARED_ASSEMBLY_REQUIRES_REVIEW'} <= {d.code for d in result.diagnostics}
 
 
+@pytest.mark.pythonocc_only
 def test_sewing_retains_small_real_room_void():
     from topologicpy.Cell import Cell
     from topologicpy.Vertex import Vertex
@@ -188,6 +190,7 @@ def test_owned_faces_share_nonmatching_floor_and_wall_partitions():
     assert max(incidence.values())==2
 
 
+@pytest.mark.pythonocc_only
 def test_native_incidence_does_not_merge_nearby_edges_by_coordinate_rounding():
     cell=IFC._Analytical_redraw_prism(box(0,0,1,.000001),0.,1.,1e-7)
     Topology.SetDictionary(cell,{'bim2bem_space_id':'thin-valid-cell'})
@@ -196,6 +199,7 @@ def test_native_incidence_does_not_merge_nearby_edges_by_coordinate_rounding():
     assert shared==0
 
 
+@pytest.mark.pythonocc_only
 def test_point_contact_repair_preserves_neighbours_and_manifold_shells():
     from shapely.geometry import mapping,shape
     from shapely.ops import unary_union
@@ -216,6 +220,7 @@ def test_point_contact_repair_preserves_neighbours_and_manifold_shells():
         assert IFC._Analytical_persistence_geometry_signature(cell)[0]
 
 
+@pytest.mark.pythonocc_only
 def test_persistence_preserves_aperture_host_on_nearby_distinct_faces():
     import numpy as np
     from topologicpy.Face import Face
@@ -244,6 +249,7 @@ def test_persistence_preserves_aperture_host_on_nearby_distinct_faces():
     assert all(abs(Vertex.X(v)-.5)<1e-9 for v in Topology.Vertices(hosts[0]))
 
 
+@pytest.mark.pythonocc_only
 def test_real_ifc_space_coverage_keeps_its_authoritative_meaning():
     result=IFC.AnalyticalModel(str(SOURCE),coordinateFrame='local',verify=False)
     assert result.fidelity['source_space_coverage_applicable'] is True
@@ -279,6 +285,7 @@ def test_exterior_ledge_alignment_retains_large_setback_and_shaft():
     assert warnings==[]
 
 
+@pytest.mark.pythonocc_only
 def test_unsafe_ledge_cleanup_rolls_back_without_losing_rooms(monkeypatch):
     def propose(rooms,warnings,tolerance):
         warnings.append(dict(code='EXTERIOR_LEDGES_REMOVED',message='Proposed test correction'))

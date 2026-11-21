@@ -29,6 +29,7 @@ def test_hierarchy_requires_storey_under_building_and_accepts_nested_spaces():
     assert m[4] == (1,2) and m[3] == (1,2)
     assert 5 not in m and 7 not in m
 
+@pytest.mark.pythonocc_only
 def test_shared_partition_reassigns_sliver_and_excludes_plenum():
     records = [record(1,box(0,0,4,4)), record(2,box(4.02,0,8,4)),
                record(3,box(4,0,4.02,4)), record(4,box(0,0,8,4),3,3.5,'Plenum')]
@@ -39,6 +40,7 @@ def test_shared_partition_reassigns_sliver_and_excludes_plenum():
     assert all(IFC._Simplified_occupiable(shape(r['footprint']),r['top']-r['bottom'],SETTINGS) for r in result.spaces)
     assert {'3','4'} <= set(result.fidelity['excluded_source_spaces'])
 
+@pytest.mark.pythonocc_only
 def test_grid_retry_preserves_room_count(monkeypatch):
     original = IFC._Analytical_redraw_sew_cells
     attempts=[]
@@ -54,6 +56,7 @@ def test_grid_retry_preserves_room_count(monkeypatch):
     assert Topology.IsInstance(result.topology,'CellComplex')
     assert result.statistics['geometry_verified']
 
+@pytest.mark.pythonocc_only
 def test_assembly_failure_never_collapses_source_rooms(monkeypatch):
     attempts=[]
     def fail_detailed(cells, *args, **kwargs):
@@ -71,6 +74,7 @@ def test_overlapping_area_record_does_not_swallow_rooms():
                                     record(3,box(0,0,8,4),name='Gross area')],{},SETTINGS,1)
     assert {r['source_space_id'] for r in rooms}=={'1','2'}
 
+@pytest.mark.pythonocc_only
 @pytest.mark.parametrize('path', FILES, ids=lambda p:p.name)
 def test_bimdata_all_files(path):
     result=IFC.AnalyticalModel_Simplified(str(path),coordinateFrame='local')
@@ -109,6 +113,7 @@ def test_bimdata_all_files(path):
 def test_bimdata_corpus_present():
     assert FILES, 'Set TOPOLOGICPY_BIMDATA to the BIMData IFC fixture directory'
 
+@pytest.mark.pythonocc_only
 @pytest.mark.parametrize('two_rooms',[False,True])
 def test_public_world_coordinates_and_hierarchy_filter(monkeypatch,two_rooms):
     from types import SimpleNamespace

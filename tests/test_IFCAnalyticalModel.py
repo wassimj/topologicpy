@@ -69,6 +69,7 @@ def _plan(outlines=None):
     return plan
 
 
+@pytest.mark.pythonocc_only
 def test_self_contained_reconstruction_and_readiness(tmp_path, monkeypatch):
     original = builtins.__import__
     def guard(name, *args, **kwargs):
@@ -91,6 +92,7 @@ def test_self_contained_reconstruction_and_readiness(tmp_path, monkeypatch):
     assert _bounds(result.topology)[1] == pytest.approx([10., 6., 3.2])
 
 
+@pytest.mark.pythonocc_only
 @pytest.mark.parametrize("offset,declared", [(40., True), (10., True), (40., False)])
 def test_independent_buildings_even_when_touching(tmp_path, offset, declared):
     result = IFC.AnalyticalModel(_site(offset, declared))
@@ -105,6 +107,7 @@ def test_independent_buildings_even_when_touching(tmp_path, offset, declared):
     assert local.origin == pytest.approx(result.editable_plan["origin"] if any(result.origin) else result.building_models[0].editable_plan["origin"])
 
 
+@pytest.mark.pythonocc_only
 def test_saved_world_geometry_and_local_editing_frame(tmp_path):
     result = IFC.AnalyticalModel(str(SOURCE))
     IFC.AnalyticalModelSave(result, tmp_path)
@@ -120,6 +123,7 @@ def test_saved_world_geometry_and_local_editing_frame(tmp_path):
     assert _bounds(reread.topology)[0] == pytest.approx([0., 0., 0.])
 
 
+@pytest.mark.pythonocc_only
 def test_rotated_placements_and_millimetres():
     model = IFC.Model(str(DATA/"analytical-three-rooms-mm.ifc"), silent=True)
     e, i = model.entities, max(model.entities)+1
@@ -137,6 +141,7 @@ def test_rotated_placements_and_millimetres():
     assert _bounds(result.topology)[1] == pytest.approx([100., 210., 6.2], abs=.02)
 
 
+@pytest.mark.pythonocc_only
 @pytest.mark.parametrize("curved", [False, True])
 def test_mansard_and_curved_facade_preserve_spatial_volume(curved):
     outlines = [box(0, 0, 5, 8), box(5, 0, 10, 8)]
@@ -159,6 +164,7 @@ def test_mansard_and_curved_facade_preserve_spatial_volume(curved):
     assert sorted(s["analytical_volume"] for s in result.spaces) == pytest.approx(sorted(expected), abs=.001)
 
 
+@pytest.mark.pythonocc_only
 def test_step_is_not_blended_or_split_into_extra_cells():
     plan = _plan()
     plan["exterior_envelope"] = {"facets": [{"footprint": mapping(box(0, 0, 5, 8)), "plane": [0, 0, 3]},
@@ -169,6 +175,7 @@ def test_step_is_not_blended_or_split_into_extra_cells():
     assert sorted(s["analytical_volume"] for s in result.spaces) == pytest.approx([120., 200.])
 
 
+@pytest.mark.pythonocc_only
 def test_leaning_facade_preserves_full_cells():
     plan = _plan([box(0, 0, 5, 8), box(5, 0, 11, 8)])
     for r in plan["rooms"]:
@@ -189,6 +196,7 @@ def test_invalid_inputs_are_explicit():
         IFC.AnalyticalModelByPlan(42)
 
 
+@pytest.mark.pythonocc_only
 def test_shared_boundary_has_common_physical_and_virtual_patches():
     plan = _plan()
     plan["source_boundaries"] = []
@@ -205,6 +213,7 @@ def test_shared_boundary_has_common_physical_and_virtual_patches():
     assert all(p["semantics_verified"] for p in patches)
 
 
+@pytest.mark.pythonocc_only
 def test_partial_building_failure_preserves_the_usable_building(monkeypatch, tmp_path):
     original = IFC._Analytical_redraw_generate_building
     def partial(evidence, *args, **kwargs):
@@ -240,6 +249,7 @@ assert callable(IFC.AnalyticalModel)
     assert result.returncode == 0, result.stderr
 
 
+@pytest.mark.pythonocc_only
 def test_missing_space_records_produce_an_explicitly_inferred_draft():
     model = IFC.Model(str(SOURCE), silent=True)
     model.entities = {i: e for i, e in model.entities.items() if e.type != "IFCSPACE"}
@@ -249,6 +259,7 @@ def test_missing_space_records_produce_an_explicitly_inferred_draft():
     assert not result.readiness["simulation_ready"]
 
 
+@pytest.mark.pythonocc_only
 def test_missing_construction_does_not_discard_rooms(monkeypatch):
     from topologicpy.IFC import IFCFastTopology
     original = IFCFastTopology.MeshDataByProduct
@@ -262,6 +273,7 @@ def test_missing_construction_does_not_discard_rooms(monkeypatch):
     assert any(d.code == "PARTIAL_REFERENCE_EVIDENCE" for d in result.diagnostics)
 
 
+@pytest.mark.pythonocc_only
 def test_literal_step_semicolon_and_role_override(tmp_path):
     text = SOURCE.read_text()
     position = text.rfind("ENDSEC;")

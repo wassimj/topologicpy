@@ -9,6 +9,7 @@ from topologicpy.TGraph import TGraph
 from topologicpy.Core import Core
 
 
+@pytest.mark.pythonocc_only
 def test_direct_members_preserve_intersecting_independent_cell():
     cc = CellComplex.Prism(uSides=2, vSides=1, wSides=1)
     independent = Cell.Prism(width=.5, length=.5, height=.5)
@@ -20,6 +21,7 @@ def test_direct_members_preserve_intersecting_independent_cell():
         assert Cluster.FreeFaces(cluster) == []
 
 
+@pytest.mark.pythonocc_only
 def test_shape_only_cluster_recovers_direct_members():
     from topologicpy.pythonocc_backend.cluster import Cluster as NativeCluster
     a = Cell.Prism()
@@ -31,6 +33,7 @@ def test_shape_only_cluster_recovers_direct_members():
     assert sorted(Topology.TypeAsString(x) for x in members) == ['Cell', 'Vertex']
 
 
+@pytest.mark.pythonocc_only
 def test_nested_cluster_preserves_hierarchy():
     inner = Core.Cluster.ByTopologies([Cell.Prism()], False)
     outer = Core.Cluster.ByTopologies([inner, Vertex.ByCoordinates(10, 0, 0)], False)
@@ -38,6 +41,7 @@ def test_nested_cluster_preserves_hierarchy():
     assert Cluster.FreeCells(outer) == []
 
 
+@pytest.mark.pythonocc_only
 @pytest.mark.parametrize('roundtrip', [False, True])
 def test_graph_single_decomposition_preserves_adjacency(tmp_path, roundtrip):
     cc = CellComplex.Prism(uSides=3, vSides=2, wSides=1)
