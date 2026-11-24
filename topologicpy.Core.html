@@ -157,10 +157,7 @@
 <dt class="sig sig-object py" id="topologicpy.Core.Core">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">topologicpy.Core.</span></span><span class="sig-name descname"><span class="pre">Core</span></span><a class="headerlink" href="#topologicpy.Core.Core" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>Thin facade over the active topology kernel backend.</p>
-<p>The preferred backend is <code class="docutils literal notranslate"><span class="pre">PythonOCCBackend</span></code>. If PythonOCC is unavailable,
-Core falls back to <code class="docutils literal notranslate"><span class="pre">TopologicCoreBackend</span></code>. Use <code class="docutils literal notranslate"><span class="pre">Core.SetBackend</span></code> to replace
-it with another backend object that exposes the same namespace shape.</p>
+<p>Thin facade over the PythonOCC topology kernel.</p>
 <p class="rubric">Methods</p>
 <table class="autosummary longtable docutils align-default">
 <colgroup>
@@ -196,10 +193,10 @@ it with another backend object that exposes the same namespace shape.</p>
 <td><p>Returns the raw module of the active backend if available.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Core.Core.ResetBackend" title="topologicpy.Core.Core.ResetBackend"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ResetBackend</span></code></a>()</p></td>
-<td><p>Resets the active backend according to the default backend policy.</p></td>
+<td><p>Resets the facade to PythonOCC.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Core.Core.SetBackend" title="topologicpy.Core.Core.SetBackend"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetBackend</span></code></a>(backend)</p></td>
-<td><p>Sets the active Core backend.</p></td>
+<td><p>Injects a namespace provider for testing; PythonOCC is the only supported runtime.</p></td>
 </tr>
 </tbody>
 </table>
@@ -301,10 +298,7 @@ it with another backend object that exposes the same namespace shape.</p>
 <dt class="sig sig-object py" id="topologicpy.Core.Core.Backend">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Backend</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Any</span></span></span><a class="headerlink" href="#topologicpy.Core.Core.Backend" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the active backend.</p>
-<p>If no backend has been explicitly set, PythonOCCBackend is attempted
-first. If PythonOCC is unavailable, TopologicCoreBackend is used as the
-fallback. The TOPOLOGICPY_CORE_BACKEND environment variable can be used
-to explicitly select a backend.</p>
+<p>PythonOCC is loaded on first use.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -444,19 +438,17 @@ attribute.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Core.Core.ResetBackend">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ResetBackend</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Any</span></span></span><a class="headerlink" href="#topologicpy.Core.Core.ResetBackend" title="Permalink to this definition"></a></dt>
-<dd><p>Resets the active backend according to the default backend policy.</p>
-<p>PythonOCCBackend is preferred, with TopologicCoreBackend used as the
-automatic fallback when PythonOCC is unavailable.</p>
+<dd><p>Resets the facade to PythonOCC.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Core.Core.SetBackend">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SetBackend</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">backend</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Any</span></span></span><a class="headerlink" href="#topologicpy.Core.Core.SetBackend" title="Permalink to this definition"></a></dt>
-<dd><p>Sets the active Core backend.</p>
+<dd><p>Injects a namespace provider for testing; PythonOCC is the only supported runtime.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>backend</strong><span class="classifier">object</span></dt><dd><p>A backend object exposing topologic_core-like namespaces such as
+<dt><strong>backend</strong><span class="classifier">object</span></dt><dd><p>A test double exposing the kernel namespaces such as
 <code class="docutils literal notranslate"><span class="pre">Vertex</span></code>, <code class="docutils literal notranslate"><span class="pre">Edge</span></code>, <code class="docutils literal notranslate"><span class="pre">Wire</span></code>, <code class="docutils literal notranslate"><span class="pre">Face</span></code>, <code class="docutils literal notranslate"><span class="pre">TopologyUtility</span></code>, etc.</p>
 </dd>
 </dl>
@@ -514,43 +506,6 @@ automatic fallback when PythonOCC is unavailable.</p>
 <dt class="sig sig-object py" id="topologicpy.Core.Core.WireUtility">
 <span class="sig-name descname"><span class="pre">WireUtility</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;Core</span> <span class="pre">namespace</span> <span class="pre">proxy:</span> <span class="pre">WireUtility&gt;</span></em><a class="headerlink" href="#topologicpy.Core.Core.WireUtility" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="topologicpy.Core.TopologicCoreBackend">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">topologicpy.Core.</span></span><span class="sig-name descname"><span class="pre">TopologicCoreBackend</span></span><a class="headerlink" href="#topologicpy.Core.TopologicCoreBackend" title="Permalink to this definition"></a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>Fallback backend that exposes the <code class="docutils literal notranslate"><span class="pre">topologic_core</span></code> namespaces directly.</p>
-<p>This class deliberately mirrors <code class="docutils literal notranslate"><span class="pre">topologic_core</span></code> as closely as possible.
-Any missing namespaces are set to <code class="docutils literal notranslate"><span class="pre">None</span></code> so that Core can fail gracefully
-with a clear message when accessed.</p>
-<p class="rubric">Methods</p>
-<table class="autosummary longtable docutils align-default">
-<colgroup>
-<col style="width: 10%" />
-<col style="width: 90%" />
-</colgroup>
-<tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Core.TopologicCoreBackend.Namespaces" title="topologicpy.Core.TopologicCoreBackend.Namespaces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Namespaces</span></code></a>()</p></td>
-<td><p>Returns the public namespace names exposed by this backend.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Core.TopologicCoreBackend.RawModule" title="topologicpy.Core.TopologicCoreBackend.RawModule"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RawModule</span></code></a>()</p></td>
-<td><p>Returns the raw imported <code class="docutils literal notranslate"><span class="pre">topologic_core</span></code> module.</p></td>
-</tr>
-</tbody>
-</table>
-<dl class="py method">
-<dt class="sig sig-object py" id="topologicpy.Core.TopologicCoreBackend.Namespaces">
-<span class="sig-name descname"><span class="pre">Namespaces</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#topologicpy.Core.TopologicCoreBackend.Namespaces" title="Permalink to this definition"></a></dt>
-<dd><p>Returns the public namespace names exposed by this backend.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="topologicpy.Core.TopologicCoreBackend.RawModule">
-<span class="sig-name descname"><span class="pre">RawModule</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Any</span></span></span><a class="headerlink" href="#topologicpy.Core.TopologicCoreBackend.RawModule" title="Permalink to this definition"></a></dt>
-<dd><p>Returns the raw imported <code class="docutils literal notranslate"><span class="pre">topologic_core</span></code> module.</p>
-</dd></dl>
 
 </dd></dl>
 

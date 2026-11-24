@@ -311,7 +311,7 @@ no valid numeric values, the corresponding coordinate is left unchanged.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>vertex</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The input vertex.</p>
+<dt><strong>vertex</strong><span class="classifier">Vertex</span></dt><dd><p>The input vertex.</p>
 </dd>
 <dt><strong>xList</strong><span class="classifier">list , optional</span></dt><dd><p>The input numerical list of x-coordinates. Default is None.</p>
 </dd>
@@ -336,7 +336,7 @@ Default is False.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Vertex</dt><dd><p>The created vertex aligned to the input coordinate lists.</p>
+<dt>Vertex</dt><dd><p>The created vertex aligned to the input coordinate lists.</p>
 </dd>
 </dl>
 </dd>
@@ -403,7 +403,7 @@ Returns False otherwise.</p>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>vertices</strong><span class="classifier">list</span></dt><dd><p>The input list of vertices.</p>
 </dd>
-<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input face</p>
+<dt><strong>face</strong><span class="classifier">Face</span></dt><dd><p>The input face</p>
 </dd>
 </dl>
 </dd>
@@ -423,9 +423,9 @@ Returns False otherwise.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>cluster</strong><span class="classifier">topologic_core.Cluster</span></dt><dd><p>The input list of vertices.</p>
+<dt><strong>cluster</strong><span class="classifier">Cluster</span></dt><dd><p>The input list of vertices.</p>
 </dd>
-<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input face</p>
+<dt><strong>face</strong><span class="classifier">Face</span></dt><dd><p>The input face</p>
 </dd>
 </dl>
 </dd>
@@ -447,7 +447,7 @@ Returns False otherwise.</p>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>vertices</strong><span class="classifier">list</span></dt><dd><p>The input list of vertices.</p>
 </dd>
-<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input face</p>
+<dt><strong>face</strong><span class="classifier">Face</span></dt><dd><p>The input face</p>
 </dd>
 </dl>
 </dd>
@@ -467,9 +467,9 @@ Returns False otherwise.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>cluster</strong><span class="classifier">topologic_core.Cluster</span></dt><dd><p>The input list of vertices.</p>
+<dt><strong>cluster</strong><span class="classifier">Cluster</span></dt><dd><p>The input list of vertices.</p>
 </dd>
-<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input face</p>
+<dt><strong>face</strong><span class="classifier">Face</span></dt><dd><p>The input face</p>
 </dd>
 </dl>
 </dd>
@@ -503,7 +503,7 @@ v = Vertex.ByCoordinates(x=3.4, y=5.7, z=2.8)</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Vertex</dt><dd><p>The created vertex.</p>
+<dt>Vertex</dt><dd><p>The created vertex.</p>
 </dd>
 </dl>
 </dd>
@@ -518,9 +518,9 @@ using the 2D left-hand normal direction of the input edge.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>vertex</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The vertex to offset.</p>
+<dt><strong>vertex</strong><span class="classifier">Vertex</span></dt><dd><p>The vertex to offset.</p>
 </dd>
-<dt><strong>edge</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The reference edge used to compute the perpendicular direction.</p>
+<dt><strong>edge</strong><span class="classifier">Edge</span></dt><dd><p>The reference edge used to compute the perpendicular direction.</p>
 </dd>
 <dt><strong>offset</strong><span class="classifier">float , optional</span></dt><dd><p>The offset distance. Default is 1.0.</p>
 </dd>
@@ -530,7 +530,7 @@ using the 2D left-hand normal direction of the input edge.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Vertex</dt><dd><p>The offset vertex.</p>
+<dt>Vertex</dt><dd><p>The offset vertex.</p>
 </dd>
 </dl>
 </dd>
@@ -552,7 +552,7 @@ using the 2D left-hand normal direction of the input edge.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Vertex</dt><dd><p>The computed centroid of the input list of vertices</p>
+<dt>Vertex</dt><dd><p>The computed centroid of the input list of vertices</p>
 </dd>
 </dl>
 </dd>
@@ -586,7 +586,7 @@ using the 2D left-hand normal direction of the input edge.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>vertex</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The input vertex.</p>
+<dt><strong>vertex</strong><span class="classifier">Vertex</span></dt><dd><p>The input vertex.</p>
 </dd>
 <dt><strong>outputType</strong><span class="classifier">string, optional</span></dt><dd><p>The desired output type. Could be any permutation or substring of “xyz” or the string “matrix”. Default is “xyz”. The input is case insensitive and the coordinates will be returned in the specified order.</p>
 </dd>
@@ -632,9 +632,9 @@ using the 2D left-hand normal direction of the input edge.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>vertex</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The input vertex.</p>
+<dt><strong>vertex</strong><span class="classifier">Vertex</span></dt><dd><p>The input vertex.</p>
 </dd>
-<dt><strong>hostTopology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input host topology in which to search for the connected super topologies.</p>
+<dt><strong>hostTopology</strong><span class="classifier">Topology</span></dt><dd><p>The input host topology in which to search for the connected super topologies.</p>
 </dd>
 <dt><strong>topologyType</strong><span class="classifier">str , optional</span></dt><dd><p>The topology type to search for. This can be any of “edge”, “wire”, “face”, “shell”, “cell”, “cellcomplex”, “cluster”. It is case insensitive. If set to None, the immediate supertopology type is searched for. Default is None.</p>
 </dd>
@@ -656,9 +656,9 @@ using the 2D left-hand normal direction of the input edge.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>vertex</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The input vertex.</p>
+<dt><strong>vertex</strong><span class="classifier">Vertex</span></dt><dd><p>The input vertex.</p>
 </dd>
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
+<dt><strong>topology</strong><span class="classifier">Topology</span></dt><dd><p>The input topology.</p>
 </dd>
 <dt><strong>includeCentroid</strong><span class="classifier">bool</span></dt><dd><p>If set to True, the centroid of the input topology will be considered in finding the nearest subTopology to the input vertex. Default is True.</p>
 </dd>
@@ -682,9 +682,9 @@ using the 2D left-hand normal direction of the input edge.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>vertex</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The input vertex.</p>
+<dt><strong>vertex</strong><span class="classifier">Vertex</span></dt><dd><p>The input vertex.</p>
 </dd>
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
+<dt><strong>topology</strong><span class="classifier">Topology</span></dt><dd><p>The input topology.</p>
 </dd>
 <dt><strong>exclusive</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, return only the first found enclosing cell. Default is True.</p>
 </dd>
@@ -712,9 +712,9 @@ using the 2D left-hand normal direction of the input edge.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>vertex</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The input vertex.</p>
+<dt><strong>vertex</strong><span class="classifier">Vertex</span></dt><dd><p>The input vertex.</p>
 </dd>
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
+<dt><strong>topology</strong><span class="classifier">Topology</span></dt><dd><p>The input topology.</p>
 </dd>
 <dt><strong>exclusive</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, return only the first found enclosing face. Default is True.</p>
 </dd>
@@ -742,9 +742,9 @@ using the 2D left-hand normal direction of the input edge.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>vertex</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The input vertex.</p>
+<dt><strong>vertex</strong><span class="classifier">Vertex</span></dt><dd><p>The input vertex.</p>
 </dd>
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
+<dt><strong>topology</strong><span class="classifier">Topology</span></dt><dd><p>The input topology.</p>
 </dd>
 <dt><strong>exclusive</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, return only the first found enclosing face. Default is True.</p>
 </dd>
@@ -772,7 +772,7 @@ using the 2D left-hand normal direction of the input edge.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>vertex</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The input vertex.</p>
+<dt><strong>vertex</strong><span class="classifier">Vertex</span></dt><dd><p>The input vertex.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
@@ -782,7 +782,7 @@ using the 2D left-hand normal direction of the input edge.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Vertex</dt><dd><p>The external boundary of the input vertex. This is the input vertex itself.</p>
+<dt>Vertex</dt><dd><p>The external boundary of the input vertex. This is the input vertex itself.</p>
 </dd>
 </dl>
 </dd>
@@ -822,9 +822,9 @@ coincident with the input vertex.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>vertex</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The input vertex.</p>
+<dt><strong>vertex</strong><span class="classifier">Vertex</span></dt><dd><p>The input vertex.</p>
 </dd>
-<dt><strong>hostTopology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input host topology to which the vertex belongs.</p>
+<dt><strong>hostTopology</strong><span class="classifier">Topology</span></dt><dd><p>The input host topology to which the vertex belongs.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
@@ -849,7 +849,7 @@ Vertex.Distance.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>vertex</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The input vertex.</p>
+<dt><strong>vertex</strong><span class="classifier">Vertex</span></dt><dd><p>The input vertex.</p>
 </dd>
 <dt><strong>vertices</strong><span class="classifier">list</span></dt><dd><p>The input list of vertices.</p>
 </dd>
@@ -875,13 +875,13 @@ from the list. Default is 0.0001.</p>
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">InterpolateValue</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vertex</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertices</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'intensity'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Vertex.Vertex.InterpolateValue" title="Permalink to this definition"></a></dt>
 <dd><p>Interpolates the value of the input vertex based on the values of the n nearest vertices.</p>
 <p>The input vertex and the vertices in the input list can be either:
-- topologic_core.Vertex objects, or
+- Vertex objects, or
 - TGraph vertex records of the form:
 {“index”: …, “dictionary”: {“x”: …, “y”: …, “z”: …, key: …}, …}</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>vertex</strong><span class="classifier">topologic_core.Vertex or dict</span></dt><dd><p>The input vertex. This can be a Topologic vertex or a TGraph vertex record.</p>
+<dt><strong>vertex</strong><span class="classifier">Vertex or dict</span></dt><dd><p>The input vertex. This can be a Topologic vertex or a TGraph vertex record.</p>
 </dd>
 <dt><strong>vertices</strong><span class="classifier">list</span></dt><dd><p>The input list of vertices. The list can contain Topologic vertices, TGraph
 vertex records, or a mixture of both.</p>
@@ -900,7 +900,7 @@ vertex in the input list. Default is 0.0001.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Vertex or dict or None</dt><dd><p>The input vertex with the interpolated value stored in its dictionary at
+<dt>Vertex or dict or None</dt><dd><p>The input vertex with the interpolated value stored in its dictionary at
 the specified key. Other keys and values are preserved. If the input vertex
 is a TGraph vertex record, the record is updated in place and returned.</p>
 </dd>
@@ -916,9 +916,9 @@ is a TGraph vertex record, the record is updated in place and returned.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>vertexA</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The first input vertex.</p>
+<dt><strong>vertexA</strong><span class="classifier">Vertex</span></dt><dd><p>The first input vertex.</p>
 </dd>
-<dt><strong>vertexB</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The second input vertex.</p>
+<dt><strong>vertexB</strong><span class="classifier">Vertex</span></dt><dd><p>The second input vertex.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The tolerance for computing if the input vertexA is coincident with the input vertexB. Default is 0.0001.</p>
 </dd>
@@ -940,9 +940,9 @@ is a TGraph vertex record, the record is updated in place and returned.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>vertex</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The input vertex.</p>
+<dt><strong>vertex</strong><span class="classifier">Vertex</span></dt><dd><p>The input vertex.</p>
 </dd>
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
+<dt><strong>topology</strong><span class="classifier">Topology</span></dt><dd><p>The input topology.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The tolerance for computing if the input vertex is external to the input topology. Default is 0.0001.</p>
 </dd>
@@ -966,9 +966,9 @@ is a TGraph vertex record, the record is updated in place and returned.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>vertex</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The input vertex.</p>
+<dt><strong>vertex</strong><span class="classifier">Vertex</span></dt><dd><p>The input vertex.</p>
 </dd>
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
+<dt><strong>topology</strong><span class="classifier">Topology</span></dt><dd><p>The input topology.</p>
 </dd>
 <dt><strong>maxLeafSize: int , optional</strong></dt><dd><p>Retained for backward compatibility. This implementation avoids building
 a BVH for every call because that is expensive for single-point queries.
@@ -999,9 +999,9 @@ returned (e.g. (True, edge)). Default is False.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>Input face (may have holes). Assumes planar and evaluated in XY.</p>
+<dt><strong>face</strong><span class="classifier">Face</span></dt><dd><p>Input face (may have holes). Assumes planar and evaluated in XY.</p>
 </dd>
-<dt><strong>vertices</strong><span class="classifier">topologic_core.Vertex or list[topologic_core.Vertex]</span></dt><dd><p>Query vertex/vertices.</p>
+<dt><strong>vertices</strong><span class="classifier">Vertex or list[Vertex]</span></dt><dd><p>Query vertex/vertices.</p>
 </dd>
 <dt><strong>includeBoundary</strong><span class="classifier">bool, optional</span></dt><dd><p>If True, points on the <em>outer</em> boundary are counted as inside.
 Points on hole boundaries are always treated as outside. Default is True.</p>
@@ -1031,9 +1031,9 @@ If a list is supplied, returns a list of bools of the same length.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>vertex</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The input vertex.</p>
+<dt><strong>vertex</strong><span class="classifier">Vertex</span></dt><dd><p>The input vertex.</p>
 </dd>
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
+<dt><strong>topology</strong><span class="classifier">Topology</span></dt><dd><p>The input topology.</p>
 </dd>
 <dt><strong>maxLeafSize: int , optional</strong></dt><dd><p>The maximum number of primitives (topologies) that can be stored in a single leaf node of the BVH.
 Smaller values result in deeper trees with finer spatial subdivision (potentially faster queries but slower build times),
@@ -1074,9 +1074,9 @@ A vertex is said to be peripheral to the input topology if:
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>vertex</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The input vertex.</p>
+<dt><strong>vertex</strong><span class="classifier">Vertex</span></dt><dd><p>The input vertex.</p>
 </dd>
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
+<dt><strong>topology</strong><span class="classifier">Topology</span></dt><dd><p>The input topology.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The tolerance for computing if the input vertex is peripheral to the input topology. Default is 0.0001.</p>
 </dd>
@@ -1100,9 +1100,9 @@ A vertex is said to be peripheral to the input topology if:
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>vertex</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The input vertex.</p>
+<dt><strong>vertex</strong><span class="classifier">Vertex</span></dt><dd><p>The input vertex.</p>
 </dd>
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology to be searched for the nearest vertex.</p>
+<dt><strong>topology</strong><span class="classifier">Topology</span></dt><dd><p>The input topology to be searched for the nearest vertex.</p>
 </dd>
 <dt><strong>useKDTree</strong><span class="classifier">bool , optional</span></dt><dd><p>if set to True, the algorithm will use a KDTree method to search for the nearest vertex. Default is True.</p>
 </dd>
@@ -1112,7 +1112,7 @@ A vertex is said to be peripheral to the input topology if:
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Vertex</dt><dd><p>The nearest vertex.</p>
+<dt>Vertex</dt><dd><p>The nearest vertex.</p>
 </dd>
 </dl>
 </dd>
@@ -1157,7 +1157,7 @@ Depending on the order of the vertices, the normal can be flipped 180 degrees.</
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Vertex</dt><dd></dd>
+<dt>Vertex</dt><dd></dd>
 </dl>
 </dd>
 </dl>
@@ -1171,9 +1171,9 @@ coincident with the input vertex.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>vertex</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The input vertex.</p>
+<dt><strong>vertex</strong><span class="classifier">Vertex</span></dt><dd><p>The input vertex.</p>
 </dd>
-<dt><strong>hostTopology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input host topology to which the vertex belongs.</p>
+<dt><strong>hostTopology</strong><span class="classifier">Topology</span></dt><dd><p>The input host topology to which the vertex belongs.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
@@ -1195,9 +1195,9 @@ coincident with the input vertex.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>vertex</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The input vertex.</p>
+<dt><strong>vertex</strong><span class="classifier">Vertex</span></dt><dd><p>The input vertex.</p>
 </dd>
-<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input face.</p>
+<dt><strong>face</strong><span class="classifier">Face</span></dt><dd><p>The input face.</p>
 </dd>
 <dt><strong>mantissa: int , optional</strong></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
@@ -1252,7 +1252,7 @@ The keys in the dictionary are [“a”, “b”, “c”. “d”]</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Vertex</dt><dd></dd>
+<dt>Vertex</dt><dd></dd>
 </dl>
 </dd>
 </dl>
@@ -1266,9 +1266,9 @@ the input face. On the PythonOCC backend this operation is delegated to OCCT.</p
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>vertex</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The input vertex to project.</p>
+<dt><strong>vertex</strong><span class="classifier">Vertex</span></dt><dd><p>The input vertex to project.</p>
 </dd>
-<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input face receiving the projection.</p>
+<dt><strong>face</strong><span class="classifier">Face</span></dt><dd><p>The input face receiving the projection.</p>
 </dd>
 <dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>The projection direction. If None, normal/nearest-surface projection is
 used. For a planar face an explicit direction intersects the infinite
@@ -1284,7 +1284,7 @@ supporting plane. Default is None.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Vertex</dt><dd><p>The projected vertex, or None if the projection cannot be computed.</p>
+<dt>Vertex</dt><dd><p>The projected vertex, or None if the projection cannot be computed.</p>
 </dd>
 </dl>
 </dd>
@@ -1300,9 +1300,9 @@ to the closest sub-topology in the input topology, optionally including its cent
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>vertex</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The input vertex.</p>
+<dt><strong>vertex</strong><span class="classifier">Vertex</span></dt><dd><p>The input vertex.</p>
 </dd>
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
+<dt><strong>topology</strong><span class="classifier">Topology</span></dt><dd><p>The input topology.</p>
 </dd>
 <dt><strong>includeCentroid</strong><span class="classifier">bool</span></dt><dd><p>If set to True, the centroid of the input topology will be considered in finding
 the nearest subTopology to the input vertex. Default is True.</p>
@@ -1349,7 +1349,7 @@ The default is 1000.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Vertex or None</dt><dd><p>A random vertex within the bounding box of the input vertices that is not
+<dt>Vertex or None</dt><dd><p>A random vertex within the bounding box of the input vertices that is not
 coincident with any of them. Returns None on failure.</p>
 </dd>
 </dl>
@@ -1394,7 +1394,7 @@ coincident with any of them. Returns None on failure.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>vertex</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The input vertex</p>
+<dt><strong>vertex</strong><span class="classifier">Vertex</span></dt><dd><p>The input vertex</p>
 </dd>
 <dt><strong>matrix</strong><span class="classifier">list</span></dt><dd><p>The 4x4 transformation matrix.</p>
 </dd>
@@ -1406,7 +1406,7 @@ coincident with any of them. Returns None on failure.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Vertex</dt><dd><p>The transformed vertex.</p>
+<dt>Vertex</dt><dd><p>The transformed vertex.</p>
 </dd>
 </dl>
 </dd>
@@ -1445,7 +1445,7 @@ of these vertices have now been modified so that they are exactly the same with 
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>vertex</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The input vertex</p>
+<dt><strong>vertex</strong><span class="classifier">Vertex</span></dt><dd><p>The input vertex</p>
 </dd>
 <dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa for retrieving vertex coordinates. None means no rounding. Default is None.</p>
 </dd>
@@ -1469,7 +1469,7 @@ of these vertices have now been modified so that they are exactly the same with 
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>vertex</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The input vertex</p>
+<dt><strong>vertex</strong><span class="classifier">Vertex</span></dt><dd><p>The input vertex</p>
 </dd>
 <dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa for retrieving vertex coordinates. None means no rounding. Default is None.</p>
 </dd>
@@ -1493,7 +1493,7 @@ of these vertices have now been modified so that they are exactly the same with 
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>vertex</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The input vertex</p>
+<dt><strong>vertex</strong><span class="classifier">Vertex</span></dt><dd><p>The input vertex</p>
 </dd>
 <dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa for retrieving vertex coordinates. None means no rounding. Default is None.</p>
 </dd>

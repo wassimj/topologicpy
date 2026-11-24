@@ -257,7 +257,7 @@
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin location of the box. Default is None which results in the box being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">Vertex , optional</span></dt><dd><p>The origin location of the box. Default is None which results in the box being placed at (0, 0, 0).</p>
 </dd>
 <dt><strong>width</strong><span class="classifier">float , optional</span></dt><dd><p>The width of the box. Default is 1.</p>
 </dd>
@@ -281,7 +281,7 @@
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.CellComplex</dt><dd><p>The created box.</p>
+<dt>CellComplex</dt><dd><p>The created box.</p>
 </dd>
 </dl>
 </dd>
@@ -312,7 +312,7 @@ corresponding Cells in the result. Default is False.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.CellComplex</dt><dd><p>The created CellComplex, or None on failure.</p>
+<dt>CellComplex</dt><dd><p>The created CellComplex, or None on failure.</p>
 </dd>
 </dl>
 </dd>
@@ -326,7 +326,7 @@ corresponding Cells in the result. Default is False.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>cluster</strong><span class="classifier">topologic_core.Cluster</span></dt><dd><p>The input cluster of cells.</p>
+<dt><strong>cluster</strong><span class="classifier">Cluster</span></dt><dd><p>The input cluster of cells.</p>
 </dd>
 <dt><strong>transferDictionaries</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, any dictionaries in the faces are transferred to the faces of the created CellComplex.
 Otherwise, they are not. Default is False.</p>
@@ -339,7 +339,7 @@ Otherwise, they are not. Default is False.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.CellComplex</dt><dd><p>The created cellcomplex.</p>
+<dt>CellComplex</dt><dd><p>The created cellcomplex.</p>
 </dd>
 </dl>
 </dd>
@@ -353,7 +353,7 @@ Otherwise, they are not. Default is False.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>faces</strong><span class="classifier">list of topologic_core.Face</span></dt><dd><p>The linput ist of faces.</p>
+<dt><strong>faces</strong><span class="classifier">list of Face</span></dt><dd><p>The linput ist of faces.</p>
 </dd>
 <dt><strong>minOffset</strong><span class="classifier">float , optional</span></dt><dd><p>The minimum initial face offset to try. Default is 0.</p>
 </dd>
@@ -379,7 +379,7 @@ Otherwise, they are not. Default is False.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.CellComplex</dt><dd><p>The created CellComplex</p>
+<dt>CellComplex</dt><dd><p>The created CellComplex</p>
 </dd>
 </dl>
 </dd>
@@ -414,7 +414,7 @@ corresponding Faces of the resulting CellComplex. Default is False.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.CellComplex</dt><dd><p>The created CellComplex, or None if construction fails.</p>
+<dt>CellComplex</dt><dd><p>The created CellComplex, or None if construction fails.</p>
 </dd>
 </dl>
 </dd>
@@ -428,7 +428,7 @@ corresponding Faces of the resulting CellComplex. Default is False.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>cluster</strong><span class="classifier">topologic_core.Cluster</span></dt><dd><p>The input cluster of faces.</p>
+<dt><strong>cluster</strong><span class="classifier">Cluster</span></dt><dd><p>The input cluster of faces.</p>
 </dd>
 <dt><strong>transferDictionaries</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, any dictionaries in the faces are transferred to the faces of the created CellComplex.
 Otherwise, they are not. Default is False.</p>
@@ -441,7 +441,7 @@ Otherwise, they are not. Default is False.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.CellComplex</dt><dd><p>The created cellcomplex.</p>
+<dt>CellComplex</dt><dd><p>The created cellcomplex.</p>
 </dd>
 </dl>
 </dd>
@@ -474,7 +474,7 @@ an exact curve-preserving PythonOCC CellComplex. Default is True.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.CellComplex</dt><dd><p>The created CellComplex, or None on failure.</p>
+<dt>CellComplex</dt><dd><p>The created CellComplex, or None on failure.</p>
 </dd>
 </dl>
 </dd>
@@ -494,7 +494,7 @@ an exact curve-preserving PythonOCC CellComplex. Default is True.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>cellComplex</strong><span class="classifier">topologic_core.CellComplex</span></dt><dd><p>The input cellComplex.</p>
+<dt><strong>cellComplex</strong><span class="classifier">CellComplex</span></dt><dd><p>The input cellComplex.</p>
 </dd>
 </dl>
 </dd>
@@ -514,7 +514,7 @@ an exact curve-preserving PythonOCC CellComplex. Default is True.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin location of the cube. Default is None which results in the cube being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">Vertex , optional</span></dt><dd><p>The origin location of the cube. Default is None which results in the cube being placed at (0, 0, 0).</p>
 </dd>
 <dt><strong>size</strong><span class="classifier">float , optional</span></dt><dd><p>The size of the cube. Default is 1.</p>
 </dd>
@@ -534,7 +534,7 @@ an exact curve-preserving PythonOCC CellComplex. Default is True.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.CellComplex</dt><dd><p>The created cube.</p>
+<dt>CellComplex</dt><dd><p>The created cube.</p>
 </dd>
 </dl>
 </dd>
@@ -548,7 +548,7 @@ an exact curve-preserving PythonOCC CellComplex. Default is True.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>cellComplex</strong><span class="classifier">topologic_core.CellComplex</span></dt><dd><p>the input cellComplex.</p>
+<dt><strong>cellComplex</strong><span class="classifier">CellComplex</span></dt><dd><p>the input cellComplex.</p>
 </dd>
 <dt><strong>tiltAngle</strong><span class="classifier">float , optional</span></dt><dd><p>The threshold tilt angle in degrees to determine if a face is vertical, horizontal, or tilted. The tilt angle is measured from the nearest cardinal direction. Default is 10.</p>
 </dd>
@@ -596,7 +596,7 @@ if both are set to none, a unit cube centered around the origin is used.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.CellComplex</dt><dd><p>The created delaunay cellComplex.</p>
+<dt>CellComplex</dt><dd><p>The created delaunay cellComplex.</p>
 </dd>
 </dl>
 </dd>
@@ -610,7 +610,7 @@ if both are set to none, a unit cube centered around the origin is used.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>cellComplex</strong><span class="classifier">topologic_core.CellComplex</span></dt><dd><p>The input cellComplex.</p>
+<dt><strong>cellComplex</strong><span class="classifier">CellComplex</span></dt><dd><p>The input cellComplex.</p>
 </dd>
 <dt><strong>silent: bool , optional</strong></dt><dd><p>if set to True, no error or warning messages are printed. Default is False.</p>
 </dd>
@@ -632,7 +632,7 @@ if both are set to none, a unit cube centered around the origin is used.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>cellComplex</strong><span class="classifier">topologic_core.CellComplex</span></dt><dd><p>The input cellComplex.</p>
+<dt><strong>cellComplex</strong><span class="classifier">CellComplex</span></dt><dd><p>The input cellComplex.</p>
 </dd>
 <dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
@@ -640,7 +640,7 @@ if both are set to none, a unit cube centered around the origin is used.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Cell</dt><dd><p>The external boundary of the input cellComplex.</p>
+<dt>Cell</dt><dd><p>The external boundary of the input cellComplex.</p>
 </dd>
 </dl>
 </dd>
@@ -654,7 +654,7 @@ if both are set to none, a unit cube centered around the origin is used.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>cellComplex</strong><span class="classifier">topologic_core.CellComplex</span></dt><dd><p>The input cellComplex.</p>
+<dt><strong>cellComplex</strong><span class="classifier">CellComplex</span></dt><dd><p>The input cellComplex.</p>
 </dd>
 </dl>
 </dd>
@@ -674,7 +674,7 @@ if both are set to none, a unit cube centered around the origin is used.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>cellComplex</strong><span class="classifier">topologic_core.CellComplex</span></dt><dd><p>The input cellComplex.</p>
+<dt><strong>cellComplex</strong><span class="classifier">CellComplex</span></dt><dd><p>The input cellComplex.</p>
 </dd>
 </dl>
 </dd>
@@ -694,7 +694,7 @@ if both are set to none, a unit cube centered around the origin is used.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>cellComplex</strong><span class="classifier">topologic_core.CellComplex</span></dt><dd><p>The input cellComplex.</p>
+<dt><strong>cellComplex</strong><span class="classifier">CellComplex</span></dt><dd><p>The input cellComplex.</p>
 </dd>
 </dl>
 </dd>
@@ -714,7 +714,7 @@ if both are set to none, a unit cube centered around the origin is used.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>cellComplex</strong><span class="classifier">topologic_core.CellComplex</span></dt><dd><p>The input cellComplex.</p>
+<dt><strong>cellComplex</strong><span class="classifier">CellComplex</span></dt><dd><p>The input cellComplex.</p>
 </dd>
 </dl>
 </dd>
@@ -741,7 +741,7 @@ the equatorial Face.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin location of the prism. Default is None which results in the prism being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">Vertex , optional</span></dt><dd><p>The origin location of the prism. Default is None which results in the prism being placed at (0, 0, 0).</p>
 </dd>
 <dt><strong>width</strong><span class="classifier">float , optional</span></dt><dd><p>The width of the prism. Default is 1.</p>
 </dd>
@@ -769,7 +769,7 @@ the equatorial Face.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.CellComplex</dt><dd><p>The created prism.</p>
+<dt>CellComplex</dt><dd><p>The created prism.</p>
 </dd>
 </dl>
 </dd>
@@ -783,7 +783,7 @@ the equatorial Face.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>cellComplex</strong><span class="classifier">topologic_core.CellComplex</span></dt><dd><p>The input cellComplex.</p>
+<dt><strong>cellComplex</strong><span class="classifier">CellComplex</span></dt><dd><p>The input cellComplex.</p>
 </dd>
 <dt><strong>angTolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired angular tolerance. Default is 0.1.</p>
 </dd>
@@ -795,7 +795,7 @@ the equatorial Face.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.CellComplex</dt><dd><p>The created cellComplex without any collinear edges.</p>
+<dt>CellComplex</dt><dd><p>The created cellComplex without any collinear edges.</p>
 </dd>
 </dl>
 </dd>
@@ -809,7 +809,7 @@ the equatorial Face.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>cellComplex</strong><span class="classifier">topologic_core.CellComplex</span></dt><dd><p>The input cellComplex.</p>
+<dt><strong>cellComplex</strong><span class="classifier">CellComplex</span></dt><dd><p>The input cellComplex.</p>
 </dd>
 </dl>
 </dd>
@@ -847,7 +847,7 @@ tetrahedron without overlaps or voids.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>cellComplex</strong><span class="classifier">topologic_core.CellComplex</span></dt><dd><p>The input cellComplex.</p>
+<dt><strong>cellComplex</strong><span class="classifier">CellComplex</span></dt><dd><p>The input cellComplex.</p>
 </dd>
 </dl>
 </dd>
@@ -876,7 +876,7 @@ tetrahedron without overlaps or voids.</p>
 <dt><strong>vertices: list , optional</strong></dt><dd><p>The input list of vertices to use for voronoi partitioning. If set to None, the algorithm uses the vertices of the input cell parameter.
 if both are set to none, a unit cube centered around the origin is used.</p>
 </dd>
-<dt><strong>cell</strong><span class="classifier">topologic_core.Cell , optional</span></dt><dd><p>The input bounding cell. If set to None, an axes-aligned bounding cell is created from the list of vertices. Default is None.</p>
+<dt><strong>cell</strong><span class="classifier">Cell , optional</span></dt><dd><p>The input bounding cell. If set to None, an axes-aligned bounding cell is created from the list of vertices. Default is None.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>the desired tolerance. Default is 0.0001.</p>
 </dd>
@@ -884,7 +884,7 @@ if both are set to none, a unit cube centered around the origin is used.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.CellComplex</dt><dd><p>The created voronoi cellComplex.</p>
+<dt>CellComplex</dt><dd><p>The created voronoi cellComplex.</p>
 </dd>
 </dl>
 </dd>
@@ -898,7 +898,7 @@ if both are set to none, a unit cube centered around the origin is used.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>cellComplex</strong><span class="classifier">topologic_core.CellComplex</span></dt><dd><p>The input cellComplex.</p>
+<dt><strong>cellComplex</strong><span class="classifier">CellComplex</span></dt><dd><p>The input cellComplex.</p>
 </dd>
 </dl>
 </dd>

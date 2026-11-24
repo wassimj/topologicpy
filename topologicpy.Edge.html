@@ -351,7 +351,7 @@ edge2 (Edge): The target 2D edge.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>edgeA</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The first input edge.</p>
+<dt><strong>edgeA</strong><span class="classifier">Edge</span></dt><dd><p>The first input edge.</p>
 </dd>
 <dt><strong>edgeB</strong><span class="classifier">topologic Edge</span></dt><dd><p>The second input edge.</p>
 </dd>
@@ -383,7 +383,7 @@ circle cannot be created using this method.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The placement origin of the arc. If None, the global origin is used.
+<dt><strong>origin</strong><span class="classifier">Vertex , optional</span></dt><dd><p>The placement origin of the arc. If None, the global origin is used.
 The interpretation of the origin depends on the input placement
 parameter. Default is None.</p>
 </dd>
@@ -415,7 +415,7 @@ Default is False.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Edge</dt><dd><p>The created open circular arc.</p>
+<dt>Edge</dt><dd><p>The created open circular arc.</p>
 </dd>
 </dl>
 </dd>
@@ -429,11 +429,11 @@ Default is False.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>startVertex</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The start vertex of the arc.</p>
+<dt><strong>startVertex</strong><span class="classifier">Vertex</span></dt><dd><p>The start vertex of the arc.</p>
 </dd>
-<dt><strong>middleVertex</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>A vertex that lies on the desired arc between start and end.</p>
+<dt><strong>middleVertex</strong><span class="classifier">Vertex</span></dt><dd><p>A vertex that lies on the desired arc between start and end.</p>
 </dd>
-<dt><strong>endVertex</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The end vertex of the arc.</p>
+<dt><strong>endVertex</strong><span class="classifier">Vertex</span></dt><dd><p>The end vertex of the arc.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
@@ -443,7 +443,7 @@ Default is False.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Edge</dt><dd><p>The exact circular arc Edge, or None if the three vertices are invalid or collinear.</p>
+<dt>Edge</dt><dd><p>The exact circular arc Edge, or None if the three vertices are invalid or collinear.</p>
 </dd>
 </dl>
 </dd>
@@ -476,7 +476,7 @@ Default is False.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Edge</dt><dd><p>The created Bezier Edge, or None if the curve cannot be created.</p>
+<dt>Edge</dt><dd><p>The created Bezier Edge, or None if the curve cannot be created.</p>
 </dd>
 </dl>
 </dd>
@@ -490,7 +490,7 @@ Default is False.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>edgeA</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The first topologic Edge.</p>
+<dt><strong>edgeA</strong><span class="classifier">Edge</span></dt><dd><p>The first topologic Edge.</p>
 </dd>
 <dt><strong>edgeB</strong><span class="classifier">topologic Edge</span></dt><dd><p>The second topologic Edge.</p>
 </dd>
@@ -510,7 +510,7 @@ If set to any number other than 0, 1, or 2, the bisecting edge centroid will be 
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Edge</dt><dd><p>The created bisecting edge.</p>
+<dt>Edge</dt><dd><p>The created bisecting edge.</p>
 </dd>
 </dl>
 </dd>
@@ -533,9 +533,9 @@ one continuous B-spline curve.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input face</p>
+<dt><strong>face</strong><span class="classifier">Face</span></dt><dd><p>The input face</p>
 </dd>
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The desired origin of the edge. If set to None, the centroid of the face is chosen as the origin of the edge. Default is None.</p>
+<dt><strong>origin</strong><span class="classifier">Vertex , optional</span></dt><dd><p>The desired origin of the edge. If set to None, the centroid of the face is chosen as the origin of the edge. Default is None.</p>
 </dd>
 <dt><strong>length</strong><span class="classifier">float , optional</span></dt><dd><p>The desired length of the edge. Default is 1.</p>
 </dd>
@@ -545,7 +545,7 @@ one continuous B-spline curve.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt><strong>edge</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The created edge.</p>
+<dt><strong>edge</strong><span class="classifier">Edge</span></dt><dd><p>The created edge.</p>
 </dd>
 </dl>
 </dd>
@@ -580,7 +580,7 @@ the list. If None, a uniform expanded knot vector is generated.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Edge</dt><dd><p>The created edge, or None on failure.</p>
+<dt>Edge</dt><dd><p>The created edge, or None on failure.</p>
 </dd>
 </dl>
 </dd>
@@ -599,7 +599,7 @@ by a backend-native offset operation when available.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>edge</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The input Edge.</p>
+<dt><strong>edge</strong><span class="classifier">Edge</span></dt><dd><p>The input Edge.</p>
 </dd>
 <dt><strong>offset</strong><span class="classifier">float , optional</span></dt><dd><p>The desired signed offset distance. Positive values offset to the left
 of the Edge direction and negative values offset to the right.
@@ -613,7 +613,7 @@ Default is 1.0.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Edge</dt><dd><p>A single offset Edge.</p>
+<dt>Edge</dt><dd><p>A single offset Edge.</p>
 </dd>
 </dl>
 </dd>
@@ -627,7 +627,7 @@ Default is 1.0.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The origin (start vertex) of the edge.</p>
+<dt><strong>origin</strong><span class="classifier">Vertex</span></dt><dd><p>The origin (start vertex) of the edge.</p>
 </dd>
 <dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>The desired direction vector of the edge. Default is [0,0,1] (pointing up in the Z direction)</p>
 </dd>
@@ -641,7 +641,7 @@ Default is 1.0.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Edge</dt><dd><p>The created edge.</p>
+<dt>Edge</dt><dd><p>The created edge.</p>
 </dd>
 </dl>
 </dd>
@@ -655,9 +655,9 @@ Default is 1.0.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>vertexA</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The first input vertex. This is considered the start vertex.</p>
+<dt><strong>vertexA</strong><span class="classifier">Vertex</span></dt><dd><p>The first input vertex. This is considered the start vertex.</p>
 </dd>
-<dt><strong>vertexB</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The second input vertex. This is considered the end vertex.</p>
+<dt><strong>vertexB</strong><span class="classifier">Vertex</span></dt><dd><p>The second input vertex. This is considered the end vertex.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance to decide if an Edge can be created. Default is 0.0001.</p>
 </dd>
@@ -667,7 +667,7 @@ Default is 1.0.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt><strong>edge</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The created edge.</p>
+<dt><strong>edge</strong><span class="classifier">Edge</span></dt><dd><p>The created edge.</p>
 </dd>
 </dl>
 </dd>
@@ -691,7 +691,7 @@ Default is 1.0.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Edge</dt><dd><p>The created edge.</p>
+<dt>Edge</dt><dd><p>The created edge.</p>
 </dd>
 </dl>
 </dd>
@@ -705,7 +705,7 @@ Default is 1.0.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>cluster</strong><span class="classifier">topologic_core.Cluster</span></dt><dd><p>The input cluster of vertices. The first item is considered the start vertex and the last item is considered the end vertex.</p>
+<dt><strong>cluster</strong><span class="classifier">Cluster</span></dt><dd><p>The input cluster of vertices. The first item is considered the start vertex and the last item is considered the end vertex.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance to decide if an edge can be created. Default is 0.0001.</p>
 </dd>
@@ -713,7 +713,7 @@ Default is 1.0.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Edge</dt><dd><p>The created edge.</p>
+<dt>Edge</dt><dd><p>The created edge.</p>
 </dd>
 </dl>
 </dd>
@@ -732,7 +732,7 @@ direction.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The placement origin of the circle. If None, the global origin is
+<dt><strong>origin</strong><span class="classifier">Vertex , optional</span></dt><dd><p>The placement origin of the circle. If None, the global origin is
 used. The interpretation of this origin depends on the input
 placement parameter. Default is None.</p>
 </dd>
@@ -756,7 +756,7 @@ Default is False.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Edge</dt><dd><p>The created closed circular Edge.</p>
+<dt>Edge</dt><dd><p>The created closed circular Edge.</p>
 </dd>
 </dl>
 </dd>
@@ -775,9 +775,9 @@ closest-endpoint construction is retained as a compatibility fallback.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>edgeA</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The first input edge.</p>
+<dt><strong>edgeA</strong><span class="classifier">Edge</span></dt><dd><p>The first input edge.</p>
 </dd>
-<dt><strong>edgeB</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The second input edge.</p>
+<dt><strong>edgeB</strong><span class="classifier">Edge</span></dt><dd><p>The second input edge.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. If the minimum separation is less than or equal
 to this value, None is returned. Default is 0.0001.</p>
@@ -789,7 +789,7 @@ Default is False.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Edge</dt><dd><p>The shortest connecting Edge, or None if the input Edges intersect,
+<dt>Edge</dt><dd><p>The shortest connecting Edge, or None if the input Edges intersect,
 touch within tolerance, or a connection cannot be created.</p>
 </dd>
 </dl>
@@ -807,7 +807,7 @@ a degenerate chord and therefore has no global chord direction.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>edge</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The input edge.</p>
+<dt><strong>edge</strong><span class="classifier">Edge</span></dt><dd><p>The input edge.</p>
 </dd>
 <dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. If None, full
 available precision is returned. Default is 6.</p>
@@ -838,7 +838,7 @@ X-axis.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The placement origin. Default is the global origin.</p>
+<dt><strong>origin</strong><span class="classifier">Vertex , optional</span></dt><dd><p>The placement origin. Default is the global origin.</p>
 </dd>
 <dt><strong>inputMode</strong><span class="classifier">int , optional</span></dt><dd><p>1 = width/length, 2 = focalLength/eccentricity,
 3 = focalLength/minorAxisLength, 4 = majorAxisLength/minorAxisLength.</p>
@@ -872,7 +872,7 @@ The sweep must be greater than zero and no greater than 360 degrees.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Edge</dt><dd><p>The exact elliptical Edge.</p>
+<dt>Edge</dt><dd><p>The exact elliptical Edge.</p>
 </dd>
 </dl>
 </dd>
@@ -886,7 +886,7 @@ The sweep must be greater than zero and no greater than 360 degrees.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>edge</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The input edge.</p>
+<dt><strong>edge</strong><span class="classifier">Edge</span></dt><dd><p>The input edge.</p>
 </dd>
 <dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
@@ -894,7 +894,7 @@ The sweep must be greater than zero and no greater than 360 degrees.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Vertex</dt><dd><p>The end vertex of the input edge.</p>
+<dt>Vertex</dt><dd><p>The end vertex of the input edge.</p>
 </dd>
 </dl>
 </dd>
@@ -908,7 +908,7 @@ The sweep must be greater than zero and no greater than 360 degrees.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>edge</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The input edge.</p>
+<dt><strong>edge</strong><span class="classifier">Edge</span></dt><dd><p>The input edge.</p>
 </dd>
 <dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
@@ -939,7 +939,7 @@ is transferred to the returned edge.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>edge</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The input edge.</p>
+<dt><strong>edge</strong><span class="classifier">Edge</span></dt><dd><p>The input edge.</p>
 </dd>
 <dt><strong>distance</strong><span class="classifier">float , optional</span></dt><dd><p>The total distance by which to extend the edge. Default is 1.0.</p>
 </dd>
@@ -957,7 +957,7 @@ Default is False.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Edge</dt><dd><p>The extended edge, or None if the operation cannot be completed.</p>
+<dt>Edge</dt><dd><p>The extended edge, or None if the operation cannot be completed.</p>
 </dd>
 </dl>
 </dd>
@@ -980,9 +980,9 @@ corresponding endpoint of edgeA is selected.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>edgeA</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The Edge to extend.</p>
+<dt><strong>edgeA</strong><span class="classifier">Edge</span></dt><dd><p>The Edge to extend.</p>
 </dd>
-<dt><strong>edgeB</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The target Edge.</p>
+<dt><strong>edgeB</strong><span class="classifier">Edge</span></dt><dd><p>The target Edge.</p>
 </dd>
 <dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>Retained for backward API compatibility. Default is 6.</p>
 </dd>
@@ -996,7 +996,7 @@ corresponding endpoint of edgeA is selected.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Edge</dt><dd><p>One extended Edge, or None if the operation cannot be completed.</p>
+<dt>Edge</dt><dd><p>One extended Edge, or None if the operation cannot be completed.</p>
 </dd>
 </dl>
 </dd>
@@ -1010,7 +1010,7 @@ corresponding endpoint of edgeA is selected.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>edge</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The input edge.</p>
+<dt><strong>edge</strong><span class="classifier">Edge</span></dt><dd><p>The input edge.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
@@ -1020,7 +1020,7 @@ corresponding endpoint of edgeA is selected.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Cluster</dt><dd><p>The external boundary of the input edge. This is a cluster of the edge’s end vertices.</p>
+<dt>Cluster</dt><dd><p>The external boundary of the input edge. This is a cluster of the edge’s end vertices.</p>
 </dd>
 </dl>
 </dd>
@@ -1051,7 +1051,7 @@ Z-axis and starts at (radius, 0, 0).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The placement origin. If None, the global origin is used.
+<dt><strong>origin</strong><span class="classifier">Vertex , optional</span></dt><dd><p>The placement origin. If None, the global origin is used.
 Default is None.</p>
 </dd>
 <dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The radius of the helix. Default is 0.5.</p>
@@ -1086,7 +1086,7 @@ Default is False.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Edge</dt><dd><p>The created helical Edge, or None if it cannot be created.</p>
+<dt>Edge</dt><dd><p>The created helical Edge, or None if it cannot be created.</p>
 </dd>
 </dl>
 </dd>
@@ -1113,7 +1113,7 @@ Bezier/NURBS curve.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The placement origin. If None, the global origin is used.
+<dt><strong>origin</strong><span class="classifier">Vertex , optional</span></dt><dd><p>The placement origin. If None, the global origin is used.
 Default is None.</p>
 </dd>
 <dt><strong>a</strong><span class="classifier">float , optional</span></dt><dd><p>The semi-transverse axis length. Default is 1.0.</p>
@@ -1143,7 +1143,7 @@ Default is False.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Edge</dt><dd><p>The created exact hyperbolic Edge, or None if it cannot be created.</p>
+<dt>Edge</dt><dd><p>The created exact hyperbolic Edge, or None if it cannot be created.</p>
 </dd>
 </dl>
 </dd>
@@ -1157,7 +1157,7 @@ Default is False.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>edge</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The input edge.</p>
+<dt><strong>edge</strong><span class="classifier">Edge</span></dt><dd><p>The input edge.</p>
 </dd>
 <dt><strong>edges</strong><span class="classifier">list</span></dt><dd><p>The input list of edges.</p>
 </dd>
@@ -1184,9 +1184,9 @@ The intersection vertex does not necessarily fall within the extents of either e
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>edgeA</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The first input edge.</p>
+<dt><strong>edgeA</strong><span class="classifier">Edge</span></dt><dd><p>The first input edge.</p>
 </dd>
-<dt><strong>edgeB</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The second input edge.</p>
+<dt><strong>edgeB</strong><span class="classifier">Edge</span></dt><dd><p>The second input edge.</p>
 </dd>
 <dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
@@ -1196,7 +1196,7 @@ The intersection vertex does not necessarily fall within the extents of either e
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Vertex</dt><dd><p>The intersection vertex or None if the edges are parallel or collinear.</p>
+<dt>Vertex</dt><dd><p>The intersection vertex or None if the edges are parallel or collinear.</p>
 </dd>
 </dl>
 </dd>
@@ -1214,7 +1214,7 @@ and end vertices.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>edge</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The input edge.</p>
+<dt><strong>edge</strong><span class="classifier">Edge</span></dt><dd><p>The input edge.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance used by the fallback closure test. Default is 0.0001.</p>
 </dd>
@@ -1239,9 +1239,9 @@ This code is based on a contribution by <a class="reference external" href="http
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>edgeA</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The first input edge.</p>
+<dt><strong>edgeA</strong><span class="classifier">Edge</span></dt><dd><p>The first input edge.</p>
 </dd>
-<dt><strong>edgeB</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The second input edge.</p>
+<dt><strong>edgeB</strong><span class="classifier">Edge</span></dt><dd><p>The second input edge.</p>
 </dd>
 <dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
@@ -1265,9 +1265,9 @@ This code is based on a contribution by <a class="reference external" href="http
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>edgeA</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The first input edge.</p>
+<dt><strong>edgeA</strong><span class="classifier">Edge</span></dt><dd><p>The first input edge.</p>
 </dd>
-<dt><strong>edgeB</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The second input edge.</p>
+<dt><strong>edgeB</strong><span class="classifier">Edge</span></dt><dd><p>The second input edge.</p>
 </dd>
 <dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
@@ -1295,7 +1295,7 @@ the Euclidean distance between its endpoints.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>edge</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The input edge.</p>
+<dt><strong>edge</strong><span class="classifier">Edge</span></dt><dd><p>The input edge.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance used to determine if the edge is geometrically
 linear. Default is 0.0001.</p>
@@ -1320,9 +1320,9 @@ linear. Default is 0.0001.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>edgeA</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The first input edge.</p>
+<dt><strong>edgeA</strong><span class="classifier">Edge</span></dt><dd><p>The first input edge.</p>
 </dd>
-<dt><strong>edgeB</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The second input edge.</p>
+<dt><strong>edgeB</strong><span class="classifier">Edge</span></dt><dd><p>The second input edge.</p>
 </dd>
 <dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
@@ -1348,7 +1348,7 @@ not from the start-to-end chord.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>edge</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The input edge.</p>
+<dt><strong>edge</strong><span class="classifier">Edge</span></dt><dd><p>The input edge.</p>
 </dd>
 <dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. If None, full
 available precision is returned. Default is 6.</p>
@@ -1375,7 +1375,7 @@ available precision is returned. Default is 6.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin location of the box. Default is None which results in the edge being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">Vertex , optional</span></dt><dd><p>The origin location of the box. Default is None which results in the edge being placed at (0, 0, 0).</p>
 </dd>
 <dt><strong>length</strong><span class="classifier">float , optional</span></dt><dd><p>The desired length of the edge. Default is 1.0.</p>
 </dd>
@@ -1391,7 +1391,7 @@ The default is “center”. It is case insensitive.</p>
 </dd>
 <dt><strong>Returns</strong></dt><dd></dd>
 <dt><strong>——-</strong></dt><dd></dd>
-<dt><strong>topologic_core.Edge</strong></dt><dd><p>The created edge</p>
+<dt><strong>Edge</strong></dt><dd><p>The created edge</p>
 </dd>
 </dl>
 </dd>
@@ -1432,7 +1432,7 @@ useEndVertex is True, the end vertex remains fixed instead.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>edge</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The input edge.</p>
+<dt><strong>edge</strong><span class="classifier">Edge</span></dt><dd><p>The input edge.</p>
 </dd>
 <dt><strong>useEndVertex</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to False, the start vertex remains fixed. If set to True, the
 end vertex remains fixed. Default is False.</p>
@@ -1446,7 +1446,7 @@ Default is False.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Edge</dt><dd><p>A unit-length edge, or None if the input edge is curved or the
+<dt>Edge</dt><dd><p>A unit-length edge, or None if the input edge is curved or the
 operation cannot be completed.</p>
 </dd>
 </dl>
@@ -1470,7 +1470,7 @@ y = f*t^2</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The placement origin of the parabola. If None, the global origin is
+<dt><strong>origin</strong><span class="classifier">Vertex , optional</span></dt><dd><p>The placement origin of the parabola. If None, the global origin is
 used. Default is None.</p>
 </dd>
 <dt><strong>focalLength</strong><span class="classifier">float , optional</span></dt><dd><p>The focal length of the parabola. Default is 0.5.</p>
@@ -1494,7 +1494,7 @@ Default is False.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Edge</dt><dd><p>The created exact parabolic Edge, or None if it cannot be created.</p>
+<dt>Edge</dt><dd><p>The created exact parabolic Edge, or None if it cannot be created.</p>
 </dd>
 </dl>
 </dd>
@@ -1508,9 +1508,9 @@ Default is False.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>edge</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The input edge.</p>
+<dt><strong>edge</strong><span class="classifier">Edge</span></dt><dd><p>The input edge.</p>
 </dd>
-<dt><strong>vertex</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The input vertex.</p>
+<dt><strong>vertex</strong><span class="classifier">Vertex</span></dt><dd><p>The input vertex.</p>
 </dd>
 <dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
@@ -1536,7 +1536,7 @@ Default is False.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>edge</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The input edge.</p>
+<dt><strong>edge</strong><span class="classifier">Edge</span></dt><dd><p>The input edge.</p>
 </dd>
 <dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
@@ -1561,7 +1561,7 @@ linear edge when no native reversal exists. The input dictionary is retained.</p
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>edge</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The input edge.</p>
+<dt><strong>edge</strong><span class="classifier">Edge</span></dt><dd><p>The input edge.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
@@ -1571,7 +1571,7 @@ linear edge when no native reversal exists. The input dictionary is retained.</p
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Edge</dt><dd><p>The reversed edge, or None if reversal cannot be performed without
+<dt>Edge</dt><dd><p>The reversed edge, or None if reversal cannot be performed without
 altering its geometry.</p>
 </dd>
 </dl>
@@ -1589,7 +1589,7 @@ dictionary is transferred to the returned edge.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>edge</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The input edge.</p>
+<dt><strong>edge</strong><span class="classifier">Edge</span></dt><dd><p>The input edge.</p>
 </dd>
 <dt><strong>length</strong><span class="classifier">float , optional</span></dt><dd><p>The desired length of the returned edge. Default is 1.0.</p>
 </dd>
@@ -1606,7 +1606,7 @@ otherwise preserve the start vertex. Default is False.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Edge</dt><dd><p>The resized edge, or None if the operation cannot be completed.</p>
+<dt>Edge</dt><dd><p>The resized edge, or None if the operation cannot be completed.</p>
 </dd>
 </dl>
 </dd>
@@ -1638,9 +1638,9 @@ create multiple topological Edges; the result is always one Edge.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>edgeA</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The first input edge.</p>
+<dt><strong>edgeA</strong><span class="classifier">Edge</span></dt><dd><p>The first input edge.</p>
 </dd>
-<dt><strong>edgeB</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The second input edge.</p>
+<dt><strong>edgeB</strong><span class="classifier">Edge</span></dt><dd><p>The second input edge.</p>
 </dd>
 <dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
@@ -1674,7 +1674,7 @@ returned instead.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>edge</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The input edge.</p>
+<dt><strong>edge</strong><span class="classifier">Edge</span></dt><dd><p>The input edge.</p>
 </dd>
 <dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
@@ -1682,7 +1682,7 @@ returned instead.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Vertex</dt><dd><p>The start vertex of the input edge.</p>
+<dt>Vertex</dt><dd><p>The start vertex of the input edge.</p>
 </dd>
 </dl>
 </dd>
@@ -1696,7 +1696,7 @@ returned instead.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>edge</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The input edge.</p>
+<dt><strong>edge</strong><span class="classifier">Edge</span></dt><dd><p>The input edge.</p>
 </dd>
 <dt><strong>u</strong><span class="classifier">float , optional</span></dt><dd><p>The normalized parameter along the edge. Default is 0.5.</p>
 </dd>
@@ -1732,7 +1732,7 @@ returned rather than replacing or approximating the curve.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>edge</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The input edge.</p>
+<dt><strong>edge</strong><span class="classifier">Edge</span></dt><dd><p>The input edge.</p>
 </dd>
 <dt><strong>distance</strong><span class="classifier">float , optional</span></dt><dd><p>The total geometric distance to remove from the edge. Negative values
 are treated as positive. Default is 0.0.</p>
@@ -1752,7 +1752,7 @@ Default is False.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Edge</dt><dd><p>The trimmed edge, or None if the operation cannot be completed without
+<dt>Edge</dt><dd><p>The trimmed edge, or None if the operation cannot be completed without
 altering the curve geometry.</p>
 </dd>
 </dl>
@@ -1774,9 +1774,9 @@ never reconstructed from endpoint vertices.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>edgeA</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The Edge to trim.</p>
+<dt><strong>edgeA</strong><span class="classifier">Edge</span></dt><dd><p>The Edge to trim.</p>
 </dd>
-<dt><strong>edgeB</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The Edge used as the trimming geometry.</p>
+<dt><strong>edgeB</strong><span class="classifier">Edge</span></dt><dd><p>The Edge used as the trimming geometry.</p>
 </dd>
 <dt><strong>reverse</strong><span class="classifier">bool , optional</span></dt><dd><p>If False, retains the portion of edgeA from its start to the first
 intersection with edgeB. If True, retains the portion from the last
@@ -1793,7 +1793,7 @@ original direction of edgeA is preserved. Default is False.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Edge</dt><dd><p>The trimmed Edge. If no usable internal intersection exists, the
+<dt>Edge</dt><dd><p>The trimmed Edge. If no usable internal intersection exists, the
 original edgeA is returned.</p>
 </dd>
 </dl>
@@ -1816,7 +1816,7 @@ approximated by this method.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>edge</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The input edge.</p>
+<dt><strong>edge</strong><span class="classifier">Edge</span></dt><dd><p>The input edge.</p>
 </dd>
 <dt><strong>uA</strong><span class="classifier">float , optional</span></dt><dd><p>The normalized parameter corresponding to the start of the returned
 edge. Default is 0.0.</p>
@@ -1832,7 +1832,7 @@ edge. Default is 1.0.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Edge</dt><dd><p>The trimmed edge, or None if the operation fails.</p>
+<dt>Edge</dt><dd><p>The trimmed edge, or None if the operation fails.</p>
 </dd>
 </dl>
 </dd>
@@ -1849,12 +1849,12 @@ actual finite domain. Closed edges wrap around their closed path.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>edge</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The input edge.</p>
+<dt><strong>edge</strong><span class="classifier">Edge</span></dt><dd><p>The input edge.</p>
 </dd>
 <dt><strong>distance</strong><span class="classifier">float , optional</span></dt><dd><p>Signed curvilinear distance measured in the orientation of the edge.
 Default is 0.0.</p>
 </dd>
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>A vertex lying on the edge from which distance is measured. If None,
+<dt><strong>origin</strong><span class="classifier">Vertex , optional</span></dt><dd><p>A vertex lying on the edge from which distance is measured. If None,
 the start vertex is used. Default is None.</p>
 </dd>
 <dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round returned coordinates to. If None,
@@ -1868,7 +1868,7 @@ full available precision is returned. Default is 6.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Vertex</dt><dd><p>The resulting vertex, or None if the requested position cannot be
+<dt>Vertex</dt><dd><p>The resulting vertex, or None if the requested position cannot be
 evaluated without extrapolating an open curved edge.</p>
 </dd>
 </dl>
@@ -1883,7 +1883,7 @@ evaluated without extrapolating an open curved edge.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>edge</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The input edge.</p>
+<dt><strong>edge</strong><span class="classifier">Edge</span></dt><dd><p>The input edge.</p>
 </dd>
 <dt><strong>u</strong><span class="classifier">float , optional</span></dt><dd><p>The normalized parameter along the edge. A parameter of 0 returns the start vertex and 1 returns the end vertex. Default is 0.</p>
 </dd>
@@ -1895,7 +1895,7 @@ evaluated without extrapolating an open curved edge.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Vertex</dt><dd><p>The created vertex, or None if the parameter cannot be evaluated.</p>
+<dt>Vertex</dt><dd><p>The created vertex, or None if the parameter cannot be evaluated.</p>
 </dd>
 </dl>
 </dd>
@@ -1909,7 +1909,7 @@ evaluated without extrapolating an open curved edge.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>edge</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The input edge.</p>
+<dt><strong>edge</strong><span class="classifier">Edge</span></dt><dd><p>The input edge.</p>
 </dd>
 <dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>

@@ -277,7 +277,7 @@
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>externalBoundary</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input external boundary of the faces. This resembles a ribbon (face with hole) where its interior boundary touches the edges of the input list of faces.</p>
+<dt><strong>externalBoundary</strong><span class="classifier">Face</span></dt><dd><p>The input external boundary of the faces. This resembles a ribbon (face with hole) where its interior boundary touches the edges of the input list of faces.</p>
 </dd>
 <dt><strong>faces</strong><span class="classifier">list</span></dt><dd><p>The input list of faces.</p>
 </dd>
@@ -301,7 +301,7 @@
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Shell</dt><dd><p>The created Shell.</p>
+<dt>Shell</dt><dd><p>The created Shell.</p>
 </dd>
 </dl>
 </dd>
@@ -328,7 +328,7 @@ corresponding Faces of the created Shell. Default is False.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Shell</dt><dd><p>The created Shell, or None if construction fails.</p>
+<dt>Shell</dt><dd><p>The created Shell, or None if construction fails.</p>
 </dd>
 </dl>
 </dd>
@@ -342,7 +342,7 @@ corresponding Faces of the created Shell. Default is False.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>cluster</strong><span class="classifier">topologic_core.Cluster</span></dt><dd><p>The input cluster of faces.</p>
+<dt><strong>cluster</strong><span class="classifier">Cluster</span></dt><dd><p>The input cluster of faces.</p>
 </dd>
 <dt><strong>transferDictionaries</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, any dictionaries in the faces are transferred to the faces of the created Shell.
 Otherwise, they are not. Default is False.</p>
@@ -355,7 +355,7 @@ Otherwise, they are not. Default is False.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Shell</dt><dd><p>The created shell.</p>
+<dt>Shell</dt><dd><p>The created shell.</p>
 </dd>
 </dl>
 </dd>
@@ -369,7 +369,7 @@ Otherwise, they are not. Default is False.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>wire</strong><span class="classifier">topologic_core.Wire</span></dt><dd><p>The input wire to be thickened.</p>
+<dt><strong>wire</strong><span class="classifier">Wire</span></dt><dd><p>The input wire to be thickened.</p>
 </dd>
 <dt><strong>offsetA</strong><span class="classifier">float , optional</span></dt><dd><p>The desired offset to the exterior of the wire. Default is 1.0.</p>
 </dd>
@@ -381,7 +381,7 @@ Otherwise, they are not. Default is False.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Shell</dt><dd><p>The created shell.</p>
+<dt>Shell</dt><dd><p>The created shell.</p>
 </dd>
 </dl>
 </dd>
@@ -419,7 +419,7 @@ construct a curve-preserving ruled Shell. Default is True.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Shell</dt><dd><p>The created Shell, or None when construction fails or exact lofting
+<dt>Shell</dt><dd><p>The created Shell, or None when construction fails or exact lofting
 is requested on an unsupported backend.</p>
 </dd>
 </dl>
@@ -434,7 +434,7 @@ is requested on an unsupported backend.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>cluster</strong><span class="classifier">topologic_core.Cluster</span></dt><dd><p>The input cluster of wires.</p>
+<dt><strong>cluster</strong><span class="classifier">Cluster</span></dt><dd><p>The input cluster of wires.</p>
 </dd>
 <dt><strong>triangulate</strong><span class="classifier">bool , optional</span></dt><dd><p>If <code class="docutils literal notranslate"><span class="pre">polyhedron</span></code> is True, specifies whether the side faces are
 triangulated. Default is True.</p>
@@ -451,7 +451,7 @@ backend. Default is True.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Shell</dt><dd><p>The created shell.</p>
+<dt>Shell</dt><dd><p>The created shell.</p>
 </dd>
 </dl>
 </dd>
@@ -465,7 +465,7 @@ backend. Default is True.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The location of the origin of the circle. Default is None which results in the circle being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">Vertex , optional</span></dt><dd><p>The location of the origin of the circle. Default is None which results in the circle being placed at (0, 0, 0).</p>
 </dd>
 <dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The  radius of the circle. Default is 0.5.</p>
 </dd>
@@ -485,7 +485,7 @@ backend. Default is True.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Shell</dt><dd><p>The created circle.</p>
+<dt>Shell</dt><dd><p>The created circle.</p>
 </dd>
 </dl>
 </dd>
@@ -504,7 +504,7 @@ backend. Default is True.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>shell</strong><span class="classifier">topologic_core.Shell</span></dt><dd><p>The input shell.</p>
+<dt><strong>shell</strong><span class="classifier">Shell</span></dt><dd><p>The input shell.</p>
 </dd>
 </dl>
 </dd>
@@ -530,7 +530,7 @@ backend. Default is True.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>shell</strong><span class="classifier">topologic_core.Shell</span></dt><dd><p>The input shell.</p>
+<dt><strong>shell</strong><span class="classifier">Shell</span></dt><dd><p>The input shell.</p>
 </dd>
 </dl>
 </dd>
@@ -564,7 +564,7 @@ Notes: If you set sides to be equal to maxIterations, you get the diagonals.
 It is best if the number of sides is a multiple of maxIterations.
 Default is 96.</p>
 </dd>
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex, optional</span></dt><dd><p>The location of the origin of the rectangle. Default is None which results in the rectangle being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">Vertex, optional</span></dt><dd><p>The location of the origin of the rectangle. Default is None which results in the rectangle being placed at (0, 0, 0).</p>
 </dd>
 <dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>The vector representing the up direction of the rectangle. Default is [0, 0, 1].</p>
 </dd>
@@ -580,7 +580,7 @@ Default is 96.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Shell</dt><dd><p>A shell made from the faces of all subdivision squares (multiple loops).</p>
+<dt>Shell</dt><dd><p>A shell made from the faces of all subdivision squares (multiple loops).</p>
 </dd>
 </dl>
 </dd>
@@ -594,7 +594,7 @@ Default is 96.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin of the hyperbolic parabolid. If set to None, it will be placed at the (0, 0, 0) origin. Default is None.</p>
+<dt><strong>origin</strong><span class="classifier">Vertex , optional</span></dt><dd><p>The origin of the hyperbolic parabolid. If set to None, it will be placed at the (0, 0, 0) origin. Default is None.</p>
 </dd>
 <dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The desired radius of the hyperbolic paraboloid. Default is 0.5.</p>
 </dd>
@@ -618,7 +618,7 @@ Default is 96.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Shell</dt><dd><p>The created hyperbolic paraboloid.</p>
+<dt>Shell</dt><dd><p>The created hyperbolic paraboloid.</p>
 </dd>
 </dl>
 </dd>
@@ -632,15 +632,15 @@ Default is 96.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin of the hyperbolic paraboloid. If set to None, it will be placed at the (0, 0, 0) origin. Default is None.</p>
+<dt><strong>origin</strong><span class="classifier">Vertex , optional</span></dt><dd><p>The origin of the hyperbolic paraboloid. If set to None, it will be placed at the (0, 0, 0) origin. Default is None.</p>
 </dd>
-<dt><strong>llVertex</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The lower left corner of the hyperbolic paraboloid. If set to None, it will be set to (-0.5, -0.5, -0.5).</p>
+<dt><strong>llVertex</strong><span class="classifier">Vertex , optional</span></dt><dd><p>The lower left corner of the hyperbolic paraboloid. If set to None, it will be set to (-0.5, -0.5, -0.5).</p>
 </dd>
-<dt><strong>lrVertex</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The lower right corner of the hyperbolic paraboloid. If set to None, it will be set to (0.5, -0.5, 0.5).</p>
+<dt><strong>lrVertex</strong><span class="classifier">Vertex , optional</span></dt><dd><p>The lower right corner of the hyperbolic paraboloid. If set to None, it will be set to (0.5, -0.5, 0.5).</p>
 </dd>
-<dt><strong>ulVertex</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The upper left corner of the hyperbolic paraboloid. If set to None, it will be set to (-0.5, 0.5, 0.5).</p>
+<dt><strong>ulVertex</strong><span class="classifier">Vertex , optional</span></dt><dd><p>The upper left corner of the hyperbolic paraboloid. If set to None, it will be set to (-0.5, 0.5, 0.5).</p>
 </dd>
-<dt><strong>urVertex</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The upper right corner of the hyperbolic paraboloid. If set to None, it will be set to (0.5, 0.5, -0.5).</p>
+<dt><strong>urVertex</strong><span class="classifier">Vertex , optional</span></dt><dd><p>The upper right corner of the hyperbolic paraboloid. If set to None, it will be set to (0.5, 0.5, -0.5).</p>
 </dd>
 <dt><strong>uSides</strong><span class="classifier">int , optional</span></dt><dd><p>The number of segments along the X axis. Default is 10.</p>
 </dd>
@@ -658,7 +658,7 @@ Default is 96.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Shell</dt><dd><p>The created hyperbolic paraboloid.</p>
+<dt>Shell</dt><dd><p>The created hyperbolic paraboloid.</p>
 </dd>
 </dl>
 </dd>
@@ -672,7 +672,7 @@ Default is 96.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>shell</strong><span class="classifier">topologic_core.Shell</span></dt><dd><p>The input shell.</p>
+<dt><strong>shell</strong><span class="classifier">Shell</span></dt><dd><p>The input shell.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
@@ -698,7 +698,7 @@ separate the same set of faces are grouped together and self-merged.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>shell</strong><span class="classifier">topologic_core.Shell</span></dt><dd><p>The input shell.</p>
+<dt><strong>shell</strong><span class="classifier">Shell</span></dt><dd><p>The input shell.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
@@ -723,7 +723,7 @@ Wire, Cluster, or another valid topology returned by Topology.SelfMerge.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>shell</strong><span class="classifier">topologic_core.Shell</span></dt><dd><p>The input shell.</p>
+<dt><strong>shell</strong><span class="classifier">Shell</span></dt><dd><p>The input shell.</p>
 </dd>
 </dl>
 </dd>
@@ -743,9 +743,9 @@ Wire, Cluster, or another valid topology returned by Topology.SelfMerge.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>shell</strong><span class="classifier">topologic_core.Shell</span></dt><dd><p>The input shell.</p>
+<dt><strong>shell</strong><span class="classifier">Shell</span></dt><dd><p>The input shell.</p>
 </dd>
-<dt><strong>vertex</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The input vertex.</p>
+<dt><strong>vertex</strong><span class="classifier">Vertex</span></dt><dd><p>The input vertex.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
@@ -767,7 +767,7 @@ Wire, Cluster, or another valid topology returned by Topology.SelfMerge.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The location of the origin of the Möbius strip. Default is None which results in the Möbius strip being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">Vertex , optional</span></dt><dd><p>The location of the origin of the Möbius strip. Default is None which results in the Möbius strip being placed at (0, 0, 0).</p>
 </dd>
 <dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The radius of the Möbius strip. Default is 0.5.</p>
 </dd>
@@ -791,7 +791,7 @@ Wire, Cluster, or another valid topology returned by Topology.SelfMerge.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Cell</dt><dd><p>The created cell.</p>
+<dt>Cell</dt><dd><p>The created cell.</p>
 </dd>
 </dl>
 </dd>
@@ -805,7 +805,7 @@ Wire, Cluster, or another valid topology returned by Topology.SelfMerge.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin location of the parabolic surface. Default is None which results in the parabolic surface being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">Vertex , optional</span></dt><dd><p>The origin location of the parabolic surface. Default is None which results in the parabolic surface being placed at (0, 0, 0).</p>
 </dd>
 <dt><strong>focalLength</strong><span class="classifier">float , optional</span></dt><dd><p>The focal length of the parabola. Default is 1.</p>
 </dd>
@@ -831,7 +831,7 @@ Wire, Cluster, or another valid topology returned by Topology.SelfMerge.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Shell</dt><dd><p>The created paraboloid.</p>
+<dt>Shell</dt><dd><p>The created paraboloid.</p>
 </dd>
 </dl>
 </dd>
@@ -845,7 +845,7 @@ Wire, Cluster, or another valid topology returned by Topology.SelfMerge.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The location of the origin of the pie. Default is None which results in the pie being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">Vertex , optional</span></dt><dd><p>The location of the origin of the pie. Default is None which results in the pie being placed at (0, 0, 0).</p>
 </dd>
 <dt><strong>radiusA</strong><span class="classifier">float , optional</span></dt><dd><p>The outer radius of the pie. Default is 0.5.</p>
 </dd>
@@ -869,7 +869,7 @@ Wire, Cluster, or another valid topology returned by Topology.SelfMerge.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Shell</dt><dd><p>The created pie.</p>
+<dt>Shell</dt><dd><p>The created pie.</p>
 </dd>
 </dl>
 </dd>
@@ -888,9 +888,9 @@ some geometry backends.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>shell</strong><span class="classifier">topologic_core.Shell</span></dt><dd><p>The input Shell.</p>
+<dt><strong>shell</strong><span class="classifier">Shell</span></dt><dd><p>The input Shell.</p>
 </dd>
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The desired origin of the target plane. If None, the centroid of the
+<dt><strong>origin</strong><span class="classifier">Vertex , optional</span></dt><dd><p>The desired origin of the target plane. If None, the centroid of the
 input Shell is used. Default is None.</p>
 </dd>
 <dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places used when deriving the best-fit plane.
@@ -904,7 +904,7 @@ Default is 6.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Shell</dt><dd><p>The planarized Shell, or None if the operation cannot be completed
+<dt>Shell</dt><dd><p>The planarized Shell, or None if the operation cannot be completed
 without approximating curved geometry.</p>
 </dd>
 </dl>
@@ -919,7 +919,7 @@ without approximating curved geometry.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The location of the origin of the rectangle. Default is None which results in the rectangle being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">Vertex , optional</span></dt><dd><p>The location of the origin of the rectangle. Default is None which results in the rectangle being placed at (0, 0, 0).</p>
 </dd>
 <dt><strong>width</strong><span class="classifier">float , optional</span></dt><dd><p>The width of the rectangle. Default is 1.0.</p>
 </dd>
@@ -939,7 +939,7 @@ without approximating curved geometry.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Shell</dt><dd><p>The created shell.</p>
+<dt>Shell</dt><dd><p>The created shell.</p>
 </dd>
 </dl>
 </dd>
@@ -962,7 +962,7 @@ This algorithm depends on the polyskel code which is included in the library. Po
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input face.</p>
+<dt><strong>face</strong><span class="classifier">Face</span></dt><dd><p>The input face.</p>
 </dd>
 <dt><strong>angle</strong><span class="classifier">float , optioal</span></dt><dd><p>The desired angle in degrees of the roof. Default is 45.</p>
 </dd>
@@ -976,7 +976,7 @@ This algorithm depends on the polyskel code which is included in the library. Po
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Shell</dt><dd><p>The created roof.</p>
+<dt>Shell</dt><dd><p>The created roof.</p>
 </dd>
 </dl>
 </dd>
@@ -990,7 +990,7 @@ This algorithm depends on the polyskel code which is included in the library. Po
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>shell</strong><span class="classifier">topologic_core.Shell</span></dt><dd><p>The input shell.</p>
+<dt><strong>shell</strong><span class="classifier">Shell</span></dt><dd><p>The input shell.</p>
 </dd>
 <dt><strong>angTolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired angular tolerance. Default is 0.1.</p>
 </dd>
@@ -1000,7 +1000,7 @@ This algorithm depends on the polyskel code which is included in the library. Po
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Face</dt><dd><p>The created face.</p>
+<dt>Face</dt><dd><p>The created face.</p>
 </dd>
 </dl>
 </dd>
@@ -1026,7 +1026,7 @@ This algorithm depends on the polyskel code which is included in the library. Po
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input face.</p>
+<dt><strong>face</strong><span class="classifier">Face</span></dt><dd><p>The input face.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.001. (This is set to a larger number as it was found to work better)</p>
 </dd>
@@ -1034,7 +1034,7 @@ This algorithm depends on the polyskel code which is included in the library. Po
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Shell</dt><dd><p>The created straight skeleton.</p>
+<dt>Shell</dt><dd><p>The created straight skeleton.</p>
 </dd>
 </dl>
 </dd>
@@ -1048,7 +1048,7 @@ This algorithm depends on the polyskel code which is included in the library. Po
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The location of the origin of the square. Default is None which results in the square being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">Vertex , optional</span></dt><dd><p>The location of the origin of the square. Default is None which results in the square being placed at (0, 0, 0).</p>
 </dd>
 <dt><strong>size</strong><span class="classifier">float , optional</span></dt><dd><p>The size of the square. Default is 1.0.</p>
 </dd>
@@ -1068,7 +1068,7 @@ This algorithm depends on the polyskel code which is included in the library. Po
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Shell</dt><dd><p>The created shell square.</p>
+<dt>Shell</dt><dd><p>The created shell square.</p>
 </dd>
 </dl>
 </dd>
@@ -1082,7 +1082,7 @@ This algorithm depends on the polyskel code which is included in the library. Po
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>shell</strong><span class="classifier">topologic_core.Shell</span></dt><dd><p>The input shell.</p>
+<dt><strong>shell</strong><span class="classifier">Shell</span></dt><dd><p>The input shell.</p>
 </dd>
 </dl>
 </dd>
@@ -1121,7 +1121,7 @@ intrinsic metric.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>shell</strong><span class="classifier">topologic_core.Shell</span></dt><dd><p>The input shell.</p>
+<dt><strong>shell</strong><span class="classifier">Shell</span></dt><dd><p>The input shell.</p>
 </dd>
 </dl>
 </dd>

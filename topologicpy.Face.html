@@ -511,7 +511,7 @@ is not reconstructed from its external and internal boundary Wires.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input Face.</p>
+<dt><strong>face</strong><span class="classifier">Face</span></dt><dd><p>The input Face.</p>
 </dd>
 <dt><strong>wires</strong><span class="classifier">list</span></dt><dd><p>The input list of closed Wires to add as internal boundaries.</p>
 </dd>
@@ -523,7 +523,7 @@ is not reconstructed from its external and internal boundary Wires.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Face</dt><dd><p>The Face with the additional internal boundaries, or None if the
+<dt>Face</dt><dd><p>The Face with the additional internal boundaries, or None if the
 active backend cannot perform the operation while preserving the
 original support surface.</p>
 </dd>
@@ -539,15 +539,15 @@ original support surface.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input face.</p>
+<dt><strong>face</strong><span class="classifier">Face</span></dt><dd><p>The input face.</p>
 </dd>
-<dt><strong>cluster</strong><span class="classifier">topologic_core.Cluster</span></dt><dd><p>The input cluster of internal boundaries (topologic wires).</p>
+<dt><strong>cluster</strong><span class="classifier">Cluster</span></dt><dd><p>The input cluster of internal boundaries (topologic wires).</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Face</dt><dd><p>The created face with internal boundaries added to it.</p>
+<dt>Face</dt><dd><p>The created face with internal boundaries added to it.</p>
 </dd>
 </dl>
 </dd>
@@ -561,9 +561,9 @@ original support surface.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>faceA</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The first input face.</p>
+<dt><strong>faceA</strong><span class="classifier">Face</span></dt><dd><p>The first input face.</p>
 </dd>
-<dt><strong>faceB</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The second input face.</p>
+<dt><strong>faceB</strong><span class="classifier">Face</span></dt><dd><p>The second input face.</p>
 </dd>
 <dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
@@ -585,7 +585,7 @@ original support surface.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input face.</p>
+<dt><strong>face</strong><span class="classifier">Face</span></dt><dd><p>The input face.</p>
 </dd>
 <dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. If None, the
 value is returned without rounding. Default is 6.</p>
@@ -665,7 +665,7 @@ Output edges have edge_id/uuid, source_face_id and axial_index dictionaries.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
+<dt><strong>topology</strong><span class="classifier">Topology</span></dt><dd><p>The input topology.</p>
 </dd>
 <dt><strong>optimize</strong><span class="classifier">int , optional</span></dt><dd><p>If set to an integer from 1 (low optimization) to 10 (high optimization), the method will attempt to optimize the bounding rectangle so that it reduces its surface area. Default is 0 which will result in an axis-aligned bounding rectangle. Default is 0.</p>
 </dd>
@@ -678,7 +678,7 @@ Default is False.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Face</dt><dd><p>The bounding rectangle of the input topology.</p>
+<dt>Face</dt><dd><p>The bounding rectangle of the input topology.</p>
 </dd>
 </dl>
 </dd>
@@ -702,7 +702,7 @@ Default is False.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The created face.</p>
+<dt><strong>face</strong><span class="classifier">Face</span></dt><dd><p>The created face.</p>
 </dd>
 </dl>
 </dd>
@@ -716,7 +716,7 @@ Default is False.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>cluster</strong><span class="classifier">topologic_core.Cluster</span></dt><dd><p>The input cluster of edges.</p>
+<dt><strong>cluster</strong><span class="classifier">Cluster</span></dt><dd><p>The input cluster of edges.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
@@ -726,7 +726,7 @@ Default is False.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The created face.</p>
+<dt><strong>face</strong><span class="classifier">Face</span></dt><dd><p>The created face.</p>
 </dd>
 </dl>
 </dd>
@@ -828,7 +828,7 @@ Default is False.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Face</dt><dd><p>The created NURBS/B-spline Face, or None if construction fails.</p>
+<dt>Face</dt><dd><p>The created NURBS/B-spline Face, or None if construction fails.</p>
 </dd>
 </dl>
 </dd>
@@ -860,7 +860,7 @@ Edge/Vertex dictionary transfer behaviour.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input Face. The Face must be planar.</p>
+<dt><strong>face</strong><span class="classifier">Face</span></dt><dd><p>The input Face. The Face must be planar.</p>
 </dd>
 <dt><strong>offset</strong><span class="classifier">float , optional</span></dt><dd><p>The default signed offset distance. For the external boundary, positive
 values move toward the interior of a counter-clockwise boundary. For
@@ -906,7 +906,7 @@ source Edge/Vertex correspondences. Default is False.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Face or topologic_core.Cluster or None</dt><dd><p>One offset Face, a Cluster containing all surviving Faces, or None.
+<dt>Face or Cluster or None</dt><dd><p>One offset Face, a Cluster containing all surviving Faces, or None.
 Use Topology.Faces(result) to obtain regions from either return type.</p>
 </dd>
 </dl>
@@ -921,7 +921,7 @@ Use Topology.Faces(result) to obtain regions from either return type.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input face.</p>
+<dt><strong>face</strong><span class="classifier">Face</span></dt><dd><p>The input face.</p>
 </dd>
 <dt><strong>area</strong><span class="classifier">float</span></dt><dd><p>The desired area of the created face.</p>
 </dd>
@@ -948,7 +948,7 @@ The default is None which causes the algorithm to use twice the number of cpu co
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Face or topologic_core.Cluster</dt><dd><p>The created region(s). Multiple regions use their combined area and
+<dt>Face or Cluster</dt><dd><p>The created region(s). Multiple regions use their combined area and
 return a Cluster, following Face.ByOffset.</p>
 </dd>
 </dl>
@@ -989,7 +989,7 @@ Features smaller than the backend tolerance may fail conversion.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Face or None</dt><dd><p>A Face with the exterior and every interior ring, or None if input
+<dt>Face or None</dt><dd><p>A Face with the exterior and every interior ring, or None if input
 validation or construction fails. Coordinates are not rounded.
 Ring closure coordinates are removed before building closed Wires.</p>
 </dd>
@@ -1013,9 +1013,9 @@ rather than creating a planar approximation.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>shell</strong><span class="classifier">topologic_core.Shell</span></dt><dd><p>The input Shell.</p>
+<dt><strong>shell</strong><span class="classifier">Shell</span></dt><dd><p>The input Shell.</p>
 </dd>
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>Retained for backward compatibility. It is not used because this method
+<dt><strong>origin</strong><span class="classifier">Vertex , optional</span></dt><dd><p>Retained for backward compatibility. It is not used because this method
 does not flatten or planarize the input Shell.</p>
 </dd>
 <dt><strong>angTolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The angular tolerance in degrees. Retained for API compatibility.
@@ -1029,7 +1029,7 @@ Default is 0.1.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Face</dt><dd><p>The unified Face, or None if the Shell cannot be represented as one
+<dt>Face</dt><dd><p>The unified Face, or None if the Shell cannot be represented as one
 Face without replacing its native geometry.</p>
 </dd>
 </dl>
@@ -1051,7 +1051,7 @@ boundary and the smaller offset loop as the internal boundary.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>wire</strong><span class="classifier">topologic_core.Wire</span></dt><dd><p>The input manifold planar Wire.</p>
+<dt><strong>wire</strong><span class="classifier">Wire</span></dt><dd><p>The input manifold planar Wire.</p>
 </dd>
 <dt><strong>offsetA</strong><span class="classifier">float , optional</span></dt><dd><p>The desired offset distance on one side of the Wire. For a closed
 Wire this is intended to represent the exterior offset.
@@ -1069,7 +1069,7 @@ Default is 0.0.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Face</dt><dd><p>The thickened Face, or None if the operation fails.</p>
+<dt>Face</dt><dd><p>The thickened Face, or None if the operation fails.</p>
 </dd>
 </dl>
 </dd>
@@ -1093,7 +1093,7 @@ Default is 0.0.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Face</dt><dd><p>The created face.</p>
+<dt>Face</dt><dd><p>The created face.</p>
 </dd>
 </dl>
 </dd>
@@ -1107,7 +1107,7 @@ Default is 0.0.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>cluster</strong><span class="classifier">topologic_core.Cluster</span></dt><dd><p>The input cluster of vertices.</p>
+<dt><strong>cluster</strong><span class="classifier">Cluster</span></dt><dd><p>The input cluster of vertices.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
@@ -1117,7 +1117,7 @@ Default is 0.0.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Face</dt><dd><p>The created face.</p>
+<dt>Face</dt><dd><p>The created face.</p>
 </dd>
 </dl>
 </dd>
@@ -1138,7 +1138,7 @@ poorly joined straight Edges.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>wire</strong><span class="classifier">topologic_core.Wire</span></dt><dd><p>The input Wire.</p>
+<dt><strong>wire</strong><span class="classifier">Wire</span></dt><dd><p>The input Wire.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
@@ -1148,7 +1148,7 @@ poorly joined straight Edges.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Face</dt><dd><p>The created Face, or None if a valid Face cannot be constructed.</p>
+<dt>Face</dt><dd><p>The created Face, or None if a valid Face cannot be constructed.</p>
 </dd>
 </dl>
 </dd>
@@ -1164,7 +1164,7 @@ the active backend. Invalid or non-contained internal Wires are ignored.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>externalBoundary</strong><span class="classifier">topologic_core.Wire</span></dt><dd><p>The external closed boundary Wire.</p>
+<dt><strong>externalBoundary</strong><span class="classifier">Wire</span></dt><dd><p>The external closed boundary Wire.</p>
 </dd>
 <dt><strong>internalBoundaries</strong><span class="classifier">list , optional</span></dt><dd><p>Internal closed boundary Wires representing holes. Default is an empty list.</p>
 </dd>
@@ -1176,7 +1176,7 @@ the active backend. Invalid or non-contained internal Wires are ignored.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Face</dt><dd><p>The created Face, or None on failure.</p>
+<dt>Face</dt><dd><p>The created Face, or None on failure.</p>
 </dd>
 </dl>
 </dd>
@@ -1190,9 +1190,9 @@ the active backend. Invalid or non-contained internal Wires are ignored.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>externalBoundary topologic_core.Wire</strong></dt><dd><p>The input external boundary (closed wire).</p>
+<dt><strong>externalBoundary Wire</strong></dt><dd><p>The input external boundary (closed wire).</p>
 </dd>
-<dt><strong>internalBoundariesCluster</strong><span class="classifier">topologic_core.Cluster</span></dt><dd><p>The input cluster of internal boundaries (closed wires). Default is None.</p>
+<dt><strong>internalBoundariesCluster</strong><span class="classifier">Cluster</span></dt><dd><p>The input cluster of internal boundaries (closed wires). Default is None.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
@@ -1202,7 +1202,7 @@ the active backend. Invalid or non-contained internal Wires are ignored.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Face</dt><dd><p>The created face.</p>
+<dt>Face</dt><dd><p>The created face.</p>
 </dd>
 </dl>
 </dd>
@@ -1216,7 +1216,7 @@ the active backend. Invalid or non-contained internal Wires are ignored.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex, optional</span></dt><dd><p>The location of the origin of the CHS. Default is None which results in the CHS being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">Vertex, optional</span></dt><dd><p>The location of the origin of the CHS. Default is None which results in the CHS being placed at (0, 0, 0).</p>
 </dd>
 <dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The outer radius of the CHS. Default is 0.5.</p>
 </dd>
@@ -1234,7 +1234,7 @@ the active backend. Invalid or non-contained internal Wires are ignored.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Face</dt><dd><p>The created face.</p>
+<dt>Face</dt><dd><p>The created face.</p>
 </dd>
 </dl>
 </dd>
@@ -1248,7 +1248,7 @@ the active backend. Invalid or non-contained internal Wires are ignored.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The location of the origin of the C-shape. Default is None which results in the C-shape being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">Vertex , optional</span></dt><dd><p>The location of the origin of the C-shape. Default is None which results in the C-shape being placed at (0, 0, 0).</p>
 </dd>
 <dt><strong>width</strong><span class="classifier">float , optional</span></dt><dd><p>The overall width of the C-shape. Default is 1.0.</p>
 </dd>
@@ -1272,7 +1272,7 @@ the active backend. Invalid or non-contained internal Wires are ignored.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Face</dt><dd><p>The created C-shape.</p>
+<dt>Face</dt><dd><p>The created C-shape.</p>
 </dd>
 </dl>
 </dd>
@@ -1292,7 +1292,7 @@ the active backend. Invalid or non-contained internal Wires are ignored.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex, optional</span></dt><dd><p>The location of the origin of the circle. Default is None.</p>
+<dt><strong>origin</strong><span class="classifier">Vertex, optional</span></dt><dd><p>The location of the origin of the circle. Default is None.</p>
 </dd>
 <dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The radius of the circle. Default is 0.5.</p>
 </dd>
@@ -1317,7 +1317,7 @@ the number of exact circular-arc Edge subtopologies. Default is 16.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Face</dt><dd><p>The created circular Face.</p>
+<dt>Face</dt><dd><p>The created circular Face.</p>
 </dd>
 </dl>
 </dd>
@@ -1331,7 +1331,7 @@ the number of exact circular-arc Edge subtopologies. Default is 16.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input face.</p>
+<dt><strong>face</strong><span class="classifier">Face</span></dt><dd><p>The input face.</p>
 </dd>
 <dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
@@ -1360,7 +1360,7 @@ Both use the external-boundary perimeter and net face area. Default is “depthm
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input face.</p>
+<dt><strong>face</strong><span class="classifier">Face</span></dt><dd><p>The input face.</p>
 </dd>
 <dt><strong>north</strong><span class="classifier">list , optional</span></dt><dd><p>The second vector representing the north direction. Default is the positive YAxis ([0,1,0]).</p>
 </dd>
@@ -1392,7 +1392,7 @@ a rectangular hole contributes concave corners.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input face.</p>
+<dt><strong>face</strong><span class="classifier">Face</span></dt><dd><p>The input face.</p>
 </dd>
 <dt><strong>includeInternalBoundaries</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, internal boundary vertices are also checked using their
 face-material angles. Default is False.</p>
@@ -1436,7 +1436,7 @@ a rectangular hole contributes concave corners, not convex corners.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input face.</p>
+<dt><strong>face</strong><span class="classifier">Face</span></dt><dd><p>The input face.</p>
 </dd>
 <dt><strong>includeInternalBoundaries</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, internal boundary vertices are also checked using their
 face-material angles. Default is False.</p>
@@ -1468,7 +1468,7 @@ Default is 0.0001.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The location of the origin of the T-shape. Default is None which results in the Cross-shape being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">Vertex , optional</span></dt><dd><p>The location of the origin of the T-shape. Default is None which results in the Cross-shape being placed at (0, 0, 0).</p>
 </dd>
 <dt><strong>width</strong><span class="classifier">float , optional</span></dt><dd><p>The overall width of the Cross-shape. Default is 1.0.</p>
 </dd>
@@ -1494,7 +1494,7 @@ Default is 0.0001.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Face</dt><dd><p>The created Cross-shape.</p>
+<dt>Face</dt><dd><p>The created Cross-shape.</p>
 </dd>
 </dl>
 </dd>
@@ -1512,7 +1512,7 @@ mean curvatures while leaving Gaussian curvature unchanged.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input face.</p>
+<dt><strong>face</strong><span class="classifier">Face</span></dt><dd><p>The input face.</p>
 </dd>
 <dt><strong>u</strong><span class="classifier">float , optional</span></dt><dd><p>The normalized U parameter. Default is 0.5.</p>
 </dd>
@@ -1553,7 +1553,7 @@ Default is False.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input face.</p>
+<dt><strong>face</strong><span class="classifier">Face</span></dt><dd><p>The input face.</p>
 </dd>
 <dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
@@ -1575,7 +1575,7 @@ Default is False.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The location of the origin of the tile. Default is None which results in the tiles first vertex being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">Vertex , optional</span></dt><dd><p>The location of the origin of the tile. Default is None which results in the tiles first vertex being placed at (0, 0, 0).</p>
 </dd>
 <dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The radius of the hexagon determining the size of the tile. Default is 0.5.</p>
 </dd>
@@ -1589,7 +1589,7 @@ Default is False.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Face</dt><dd><p>The created Einstein tile.</p>
+<dt>Face</dt><dd><p>The created Einstein tile.</p>
 </dd>
 </dl>
 </dd>
@@ -1603,7 +1603,7 @@ Default is False.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The location of the origin of the ellipse. Default is None.</p>
+<dt><strong>origin</strong><span class="classifier">Vertex , optional</span></dt><dd><p>The location of the origin of the ellipse. Default is None.</p>
 </dd>
 <dt><strong>inputMode</strong><span class="classifier">int , optional</span></dt><dd><p>Ellipse definition mode. Default is 1.</p>
 </dd>
@@ -1643,7 +1643,7 @@ creates the historical straight-segment approximation. Default is False.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Face</dt><dd><p>The created elliptical Face.</p>
+<dt>Face</dt><dd><p>The created elliptical Face.</p>
 </dd>
 </dl>
 </dd>
@@ -1657,7 +1657,7 @@ creates the historical straight-segment approximation. Default is False.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input face.</p>
+<dt><strong>face</strong><span class="classifier">Face</span></dt><dd><p>The input face.</p>
 </dd>
 <dt><strong>includeInternalBoundaries</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True and if the face has internal boundaries (holes), the returned list will be a nested list where the first list is the list
 of exterior angles of the external boundary and the second list will contain lists of the exterior angles of each of the
@@ -1683,7 +1683,7 @@ internal boundaries are considered to be those interior to the original face. Th
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input face.</p>
+<dt><strong>face</strong><span class="classifier">Face</span></dt><dd><p>The input face.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
@@ -1693,7 +1693,7 @@ internal boundaries are considered to be those interior to the original face. Th
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Wire</dt><dd><p>The external boundary of the input face.</p>
+<dt>Wire</dt><dd><p>The external boundary of the input face.</p>
 </dd>
 </dl>
 </dd>
@@ -1707,7 +1707,7 @@ internal boundaries are considered to be those interior to the original face. Th
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input face.</p>
+<dt><strong>face</strong><span class="classifier">Face</span></dt><dd><p>The input face.</p>
 </dd>
 <dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>The input direction. Default is [0,0,-1].</p>
 </dd>
@@ -1742,7 +1742,7 @@ curve configurations fail cleanly rather than being approximated.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input planar Face.</p>
+<dt><strong>face</strong><span class="classifier">Face</span></dt><dd><p>The input planar Face.</p>
 </dd>
 <dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The default fillet radius. Default is 0.</p>
 </dd>
@@ -1761,7 +1761,7 @@ Vertex. Default is None.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Face</dt><dd><p>The filleted Face, or None if the operation fails.</p>
+<dt>Face</dt><dd><p>The filleted Face, or None if the operation fails.</p>
 </dd>
 </dl>
 </dd>
@@ -1787,7 +1787,7 @@ Vertex. Default is None.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The location of the origin of the I-shape. Default is None which results in the I-shape being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">Vertex , optional</span></dt><dd><p>The location of the origin of the I-shape. Default is None which results in the I-shape being placed at (0, 0, 0).</p>
 </dd>
 <dt><strong>width</strong><span class="classifier">float , optional</span></dt><dd><p>The overall width of the I-shape. Default is 1.0.</p>
 </dd>
@@ -1815,7 +1815,7 @@ Vertex. Default is None.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Face</dt><dd><p>The created I-shape.</p>
+<dt>Face</dt><dd><p>The created I-shape.</p>
 </dd>
 </dl>
 </dd>
@@ -1829,7 +1829,7 @@ Vertex. Default is None.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input face.</p>
+<dt><strong>face</strong><span class="classifier">Face</span></dt><dd><p>The input face.</p>
 </dd>
 <dt><strong>includeInternalBoundaries</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True and if the face has internal boundaries (holes), the returned list will be a nested list where the first list is the list
 of interior angles of the external boundary and the second list will contain lists of the interior angles of each of the
@@ -1855,7 +1855,7 @@ internal boundaries are considered to be those interior to the original face. Th
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input face.</p>
+<dt><strong>face</strong><span class="classifier">Face</span></dt><dd><p>The input face.</p>
 </dd>
 </dl>
 </dd>
@@ -1875,7 +1875,7 @@ internal boundaries are considered to be those interior to the original face. Th
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input face.</p>
+<dt><strong>face</strong><span class="classifier">Face</span></dt><dd><p>The input face.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
@@ -1885,7 +1885,7 @@ internal boundaries are considered to be those interior to the original face. Th
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Vertex</dt><dd><p>The created vertex.</p>
+<dt>Vertex</dt><dd><p>The created vertex.</p>
 </dd>
 </dl>
 </dd>
@@ -1904,7 +1904,7 @@ rather than rebuilding them from vertices.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input Face.</p>
+<dt><strong>face</strong><span class="classifier">Face</span></dt><dd><p>The input Face.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
@@ -1914,7 +1914,7 @@ rather than rebuilding them from vertices.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Face</dt><dd><p>The orientation-reversed Face, or None on failure.</p>
+<dt>Face</dt><dd><p>The orientation-reversed Face, or None on failure.</p>
 </dd>
 </dl>
 </dd>
@@ -1928,7 +1928,7 @@ rather than rebuilding them from vertices.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input face.</p>
+<dt><strong>face</strong><span class="classifier">Face</span></dt><dd><p>The input face.</p>
 </dd>
 <dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The length of the desired mantissa. Default is 6.</p>
 </dd>
@@ -1952,9 +1952,9 @@ rather than rebuilding them from vertices.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>faceA</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The first input face.</p>
+<dt><strong>faceA</strong><span class="classifier">Face</span></dt><dd><p>The first input face.</p>
 </dd>
-<dt><strong>faceB</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The second input face</p>
+<dt><strong>faceB</strong><span class="classifier">Face</span></dt><dd><p>The second input face</p>
 </dd>
 <dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The length of the desired mantissa. Default is 6.</p>
 </dd>
@@ -1983,7 +1983,7 @@ whether the boundary vertices happen to be coplanar.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input face.</p>
+<dt><strong>face</strong><span class="classifier">Face</span></dt><dd><p>The input face.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired geometric tolerance. Default is 0.0001.</p>
 </dd>
@@ -2024,9 +2024,9 @@ unflattened before return.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The face representing the boundary of the isovist.</p>
+<dt><strong>face</strong><span class="classifier">Face</span></dt><dd><p>The face representing the boundary of the isovist.</p>
 </dd>
-<dt><strong>vertex</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The vertex representing the viewpoint.</p>
+<dt><strong>vertex</strong><span class="classifier">Vertex</span></dt><dd><p>The vertex representing the viewpoint.</p>
 </dd>
 <dt><strong>obstacles</strong><span class="classifier">list , optional</span></dt><dd><p>Additional closed Wires representing opaque obstacles. Their interiors
 and boundaries reject viewpoints and block sightlines. Wire dictionary
@@ -2099,7 +2099,7 @@ occlusivity/closed-perimeter classification.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Face</dt><dd><p>The face representing the isovist projection from the input viewpoint.</p>
+<dt>Face</dt><dd><p>The face representing the isovist projection from the input viewpoint.</p>
 </dd>
 </dl>
 </dd>
@@ -2113,7 +2113,7 @@ occlusivity/closed-perimeter classification.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The location of the origin of the L-shape. Default is None which results in the L-shape being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">Vertex , optional</span></dt><dd><p>The location of the origin of the L-shape. Default is None which results in the L-shape being placed at (0, 0, 0).</p>
 </dd>
 <dt><strong>width</strong><span class="classifier">float , optional</span></dt><dd><p>The overall width of the L-shape. Default is 1.0.</p>
 </dd>
@@ -2135,7 +2135,7 @@ occlusivity/closed-perimeter classification.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Face</dt><dd><p>The created L-shape.</p>
+<dt>Face</dt><dd><p>The created L-shape.</p>
 </dd>
 </dl>
 </dd>
@@ -2149,7 +2149,7 @@ occlusivity/closed-perimeter classification.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input face.</p>
+<dt><strong>face</strong><span class="classifier">Face</span></dt><dd><p>The input face.</p>
 </dd>
 <dt><strong>resolution</strong><span class="classifier">int , optional</span></dt><dd><p>The desired resolution of the solution (range is 0: standard resolution to 10: high resolution). This determines the density of the sampling along each edge. Default is 0.</p>
 </dd>
@@ -2169,7 +2169,7 @@ occlusivity/closed-perimeter classification.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Wire</dt><dd><p>The medial axis of the input face.</p>
+<dt>Wire</dt><dd><p>The medial axis of the input face.</p>
 </dd>
 </dl>
 </dd>
@@ -2183,7 +2183,7 @@ occlusivity/closed-perimeter classification.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input face.</p>
+<dt><strong>face</strong><span class="classifier">Face</span></dt><dd><p>The input face.</p>
 </dd>
 <dt><strong>outputType</strong><span class="classifier">string , optional</span></dt><dd><p>The string defining the desired output. This can be any subset or permutation of “xyz”. It is case insensitive. Default is “xyz”.</p>
 </dd>
@@ -2210,7 +2210,7 @@ planar, analytic, B-spline, and NURBS surfaces.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input face.</p>
+<dt><strong>face</strong><span class="classifier">Face</span></dt><dd><p>The input face.</p>
 </dd>
 <dt><strong>u</strong><span class="classifier">float , optional</span></dt><dd><p>The normalized U parameter in the range 0 to 1. Default is 0.5.</p>
 </dd>
@@ -2247,7 +2247,7 @@ actual surface normal at that point.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input face.</p>
+<dt><strong>face</strong><span class="classifier">Face</span></dt><dd><p>The input face.</p>
 </dd>
 <dt><strong>length</strong><span class="classifier">float , optional</span></dt><dd><p>The desired length of the normal edge. Default is 1.0.</p>
 </dd>
@@ -2260,7 +2260,7 @@ Default is False.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Edge</dt><dd><p>The created normal Edge, or None if it cannot be created.</p>
+<dt>Edge</dt><dd><p>The created normal Edge, or None if it cannot be created.</p>
 </dd>
 </dl>
 </dd>
@@ -2277,7 +2277,7 @@ origin, and finally oriented to the requested direction.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex, optional</span></dt><dd><p>The location of the origin of the north arrow. Default is None.</p>
+<dt><strong>origin</strong><span class="classifier">Vertex, optional</span></dt><dd><p>The location of the origin of the north arrow. Default is None.</p>
 </dd>
 <dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The radius of the circular body. Default is 0.5.</p>
 </dd>
@@ -2297,7 +2297,7 @@ Default is 0.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Face</dt><dd><p>The created north-arrow Face, or None on failure.</p>
+<dt>Face</dt><dd><p>The created north-arrow Face, or None on failure.</p>
 </dd>
 </dl>
 </dd>
@@ -2317,9 +2317,9 @@ Default is 0.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input face.</p>
+<dt><strong>face</strong><span class="classifier">Face</span></dt><dd><p>The input face.</p>
 </dd>
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The desired vertex to use as the origin of the plane to project the face unto. If set to None, the centroidof the input face is used. Default is None.</p>
+<dt><strong>origin</strong><span class="classifier">Vertex , optional</span></dt><dd><p>The desired vertex to use as the origin of the plane to project the face unto. If set to None, the centroidof the input face is used. Default is None.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
@@ -2327,7 +2327,7 @@ Default is 0.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Face</dt><dd><p>The planarized face.</p>
+<dt>Face</dt><dd><p>The planarized face.</p>
 </dd>
 </dl>
 </dd>
@@ -2341,7 +2341,7 @@ Default is 0.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input face.</p>
+<dt><strong>face</strong><span class="classifier">Face</span></dt><dd><p>The input face.</p>
 </dd>
 </dl>
 </dd>
@@ -2366,9 +2366,9 @@ Native projected curve geometry is likewise retained.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>faceA</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The face to be projected.</p>
+<dt><strong>faceA</strong><span class="classifier">Face</span></dt><dd><p>The face to be projected.</p>
 </dd>
-<dt><strong>faceB</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The face unto which the first input face will be projected.</p>
+<dt><strong>faceB</strong><span class="classifier">Face</span></dt><dd><p>The face unto which the first input face will be projected.</p>
 </dd>
 <dt><strong>direction</strong><span class="classifier">list, optional</span></dt><dd><p>The vector direction of the projection. If None, the reverse vector of the receiving face normal will be used. Default is None.</p>
 </dd>
@@ -2383,7 +2383,7 @@ is False.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Face</dt><dd><p>The projected Face.</p>
+<dt>Face</dt><dd><p>The projected Face.</p>
 </dd>
 </dl>
 </dd>
@@ -2397,7 +2397,7 @@ is False.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex, optional</span></dt><dd><p>The location of the origin of the RHS. Default is None.</p>
+<dt><strong>origin</strong><span class="classifier">Vertex, optional</span></dt><dd><p>The location of the origin of the RHS. Default is None.</p>
 </dd>
 <dt><strong>width</strong><span class="classifier">float , optional</span></dt><dd><p>The width of the RHS. Default is 1.0.</p>
 </dd>
@@ -2424,7 +2424,7 @@ is False.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Face</dt><dd><p>The created RHS Face, or None on failure.</p>
+<dt>Face</dt><dd><p>The created RHS Face, or None on failure.</p>
 </dd>
 </dl>
 </dd>
@@ -2438,7 +2438,7 @@ is False.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex, optional</span></dt><dd><p>The location of the origin of the rectangle. Default is None which results in the rectangle being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">Vertex, optional</span></dt><dd><p>The location of the origin of the rectangle. Default is None which results in the rectangle being placed at (0, 0, 0).</p>
 </dd>
 <dt><strong>width</strong><span class="classifier">float , optional</span></dt><dd><p>The width of the rectangle. Default is 1.0.</p>
 </dd>
@@ -2456,7 +2456,7 @@ is False.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Face</dt><dd><p>The created face.</p>
+<dt>Face</dt><dd><p>The created face.</p>
 </dd>
 </dl>
 </dd>
@@ -2480,7 +2480,7 @@ NURBS Edges remain unchanged.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input Face.</p>
+<dt><strong>face</strong><span class="classifier">Face</span></dt><dd><p>The input Face.</p>
 </dd>
 <dt><strong>angTolerance</strong><span class="classifier">float , optional</span></dt><dd><p>Maximum angular deviation in degrees for adjacent linear Edges to be
 considered collinear. Default is 0.1.</p>
@@ -2493,7 +2493,7 @@ considered collinear. Default is 0.1.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Face</dt><dd><p>The simplified Face, or None if the active backend cannot perform the
+<dt>Face</dt><dd><p>The simplified Face, or None if the active backend cannot perform the
 operation while preserving the original support surface.</p>
 </dd>
 </dl>
@@ -2508,7 +2508,7 @@ operation while preserving the original support surface.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex, optional</span></dt><dd><p>The location of the origin of the ring. Default is None which results in the ring being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">Vertex, optional</span></dt><dd><p>The location of the origin of the ring. Default is None which results in the ring being placed at (0, 0, 0).</p>
 </dd>
 <dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The outer radius of the ring. Default is 0.5.</p>
 </dd>
@@ -2526,7 +2526,7 @@ operation while preserving the original support surface.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Face</dt><dd><p>The created face.</p>
+<dt>Face</dt><dd><p>The created face.</p>
 </dd>
 </dl>
 </dd>
@@ -2540,7 +2540,7 @@ operation while preserving the original support surface.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex, optional</span></dt><dd><p>The location of the origin of the SHS. Default is None which results in the SHS being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">Vertex, optional</span></dt><dd><p>The location of the origin of the SHS. Default is None which results in the SHS being placed at (0, 0, 0).</p>
 </dd>
 <dt><strong>size</strong><span class="classifier">float , optional</span></dt><dd><p>The outer size of the SHS. Default is 1.0.</p>
 </dd>
@@ -2564,7 +2564,7 @@ operation while preserving the original support surface.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Face</dt><dd><p>The created face.</p>
+<dt>Face</dt><dd><p>The created face.</p>
 </dd>
 </dl>
 </dd>
@@ -2588,7 +2588,7 @@ contiguous linear portions of mixed boundaries are simplified using
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input Face.</p>
+<dt><strong>face</strong><span class="classifier">Face</span></dt><dd><p>The input Face.</p>
 </dd>
 <dt><strong>method</strong><span class="classifier">str , optional</span></dt><dd><p>The simplification method. Supported values are
 “douglas-peucker”, “visvalingam-whyatt”, and “reumann-witkam”.
@@ -2605,7 +2605,7 @@ Default is 0.0001.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Face</dt><dd><p>The simplified Face.</p>
+<dt>Face</dt><dd><p>The simplified Face.</p>
 </dd>
 </dl>
 </dd>
@@ -2622,7 +2622,7 @@ This algorithm depends on the polyskel code which is included in the library. Po
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input face.</p>
+<dt><strong>face</strong><span class="classifier">Face</span></dt><dd><p>The input face.</p>
 </dd>
 <dt><strong>boundary</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the original boundary is returned as part of the roof. Otherwise it is not. Default is True.</p>
 </dd>
@@ -2632,7 +2632,7 @@ This algorithm depends on the polyskel code which is included in the library. Po
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Wire</dt><dd><p>The created straight skeleton.</p>
+<dt>Wire</dt><dd><p>The created straight skeleton.</p>
 </dd>
 </dl>
 </dd>
@@ -2646,7 +2646,7 @@ This algorithm depends on the polyskel code which is included in the library. Po
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The location of the origin of the square. Default is None which results in the square being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">Vertex , optional</span></dt><dd><p>The location of the origin of the square. Default is None which results in the square being placed at (0, 0, 0).</p>
 </dd>
 <dt><strong>size</strong><span class="classifier">float , optional</span></dt><dd><p>The size of the square. Default is 1.0.</p>
 </dd>
@@ -2660,7 +2660,7 @@ This algorithm depends on the polyskel code which is included in the library. Po
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Face</dt><dd><p>The created square.</p>
+<dt>Face</dt><dd><p>The created square.</p>
 </dd>
 </dl>
 </dd>
@@ -2674,7 +2674,7 @@ This algorithm depends on the polyskel code which is included in the library. Po
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The location of the origin of the squircle. Default is None which results in the squircle being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">Vertex , optional</span></dt><dd><p>The location of the origin of the squircle. Default is None which results in the squircle being placed at (0, 0, 0).</p>
 </dd>
 <dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The desired radius of the squircle. Default is 0.5.</p>
 </dd>
@@ -2698,7 +2698,7 @@ A value of 1 will create a circle. Higher values will create a more square-like 
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Face</dt><dd><p>The created squircle.</p>
+<dt>Face</dt><dd><p>The created squircle.</p>
 </dd>
 </dl>
 </dd>
@@ -2712,7 +2712,7 @@ A value of 1 will create a circle. Higher values will create a more square-like 
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex, optional</span></dt><dd><p>The location of the origin of the star. Default is None which results in the star being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">Vertex, optional</span></dt><dd><p>The location of the origin of the star. Default is None which results in the star being placed at (0, 0, 0).</p>
 </dd>
 <dt><strong>radiusA</strong><span class="classifier">float , optional</span></dt><dd><p>The outer radius of the star. Default is 1.0.</p>
 </dd>
@@ -2730,7 +2730,7 @@ A value of 1 will create a circle. Higher values will create a more square-like 
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Face</dt><dd><p>The created face.</p>
+<dt>Face</dt><dd><p>The created face.</p>
 </dd>
 </dl>
 </dd>
@@ -2744,7 +2744,7 @@ A value of 1 will create a circle. Higher values will create a more square-like 
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The location of the origin of the T-shape. Default is None which results in the T-shape being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">Vertex , optional</span></dt><dd><p>The location of the origin of the T-shape. Default is None which results in the T-shape being placed at (0, 0, 0).</p>
 </dd>
 <dt><strong>width</strong><span class="classifier">float , optional</span></dt><dd><p>The overall width of the T-shape. Default is 1.0.</p>
 </dd>
@@ -2766,7 +2766,7 @@ A value of 1 will create a circle. Higher values will create a more square-like 
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Face</dt><dd><p>The created T-shape.</p>
+<dt>Face</dt><dd><p>The created T-shape.</p>
 </dd>
 </dl>
 </dd>
@@ -2781,7 +2781,7 @@ normalized parameters.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input face.</p>
+<dt><strong>face</strong><span class="classifier">Face</span></dt><dd><p>The input face.</p>
 </dd>
 <dt><strong>u</strong><span class="classifier">float , optional</span></dt><dd><p>The normalized U parameter. Default is 0.5.</p>
 </dd>
@@ -2824,7 +2824,7 @@ orientation of a Face does not reverse its U or V parameter directions.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input face.</p>
+<dt><strong>face</strong><span class="classifier">Face</span></dt><dd><p>The input face.</p>
 </dd>
 <dt><strong>u</strong><span class="classifier">float , optional</span></dt><dd><p>The normalized U parameter. Default is 0.5.</p>
 </dd>
@@ -2859,7 +2859,7 @@ unit tangent directions.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input face.</p>
+<dt><strong>face</strong><span class="classifier">Face</span></dt><dd><p>The input face.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
@@ -2869,7 +2869,7 @@ unit tangent directions.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Face</dt><dd><p>The created face.</p>
+<dt>Face</dt><dd><p>The created face.</p>
 </dd>
 </dl>
 </dd>
@@ -2883,7 +2883,7 @@ unit tangent directions.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex, optional</span></dt><dd><p>The location of the origin of the trapezoid. Default is None which results in the trapezoid being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">Vertex, optional</span></dt><dd><p>The location of the origin of the trapezoid. Default is None which results in the trapezoid being placed at (0, 0, 0).</p>
 </dd>
 <dt><strong>widthA</strong><span class="classifier">float , optional</span></dt><dd><p>The width of the bottom edge of the trapezoid. Default is 1.0.</p>
 </dd>
@@ -2905,7 +2905,7 @@ unit tangent directions.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Face</dt><dd><p>The created trapezoid.</p>
+<dt>Face</dt><dd><p>The created trapezoid.</p>
 </dd>
 </dl>
 </dd>
@@ -2923,7 +2923,7 @@ is provided separately by <code class="xref py py-meth docutils literal notransl
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input Face.</p>
+<dt><strong>face</strong><span class="classifier">Face</span></dt><dd><p>The input Face.</p>
 </dd>
 <dt><strong>mode</strong><span class="classifier">int , optional</span></dt><dd><p>Deprecated compatibility parameter. It is ignored. Historical gmsh
 algorithm selection has moved to <code class="docutils literal notranslate"><span class="pre">Topology.Mesh</span></code>. Default is 0.</p>
@@ -2956,9 +2956,9 @@ Default is 6.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input face.</p>
+<dt><strong>face</strong><span class="classifier">Face</span></dt><dd><p>The input face.</p>
 </dd>
-<dt><strong>wire</strong><span class="classifier">topologic_core.Wire</span></dt><dd><p>The trimming wire.</p>
+<dt><strong>wire</strong><span class="classifier">Wire</span></dt><dd><p>The trimming wire.</p>
 </dd>
 <dt><strong>reverse</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, the complementary part of the face is returned. Default is False.</p>
 </dd>
@@ -2970,7 +2970,7 @@ Default is 6.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Face</dt><dd><p>The resulting trimmed face.</p>
+<dt>Face</dt><dd><p>The resulting trimmed face.</p>
 </dd>
 </dl>
 </dd>
@@ -2984,7 +2984,7 @@ Default is 6.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input face.</p>
+<dt><strong>face</strong><span class="classifier">Face</span></dt><dd><p>The input face.</p>
 </dd>
 <dt><strong>u</strong><span class="classifier">float , optional</span></dt><dd><p>The normalized u parameter. Default is 0.5.</p>
 </dd>
@@ -2998,7 +2998,7 @@ Default is 6.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Vertex</dt><dd><p>The created vertex.</p>
+<dt>Vertex</dt><dd><p>The created vertex.</p>
 </dd>
 </dl>
 </dd>
@@ -3012,9 +3012,9 @@ Default is 6.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input face.</p>
+<dt><strong>face</strong><span class="classifier">Face</span></dt><dd><p>The input face.</p>
 </dd>
-<dt><strong>vertex</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The input vertex.</p>
+<dt><strong>vertex</strong><span class="classifier">Vertex</span></dt><dd><p>The input vertex.</p>
 </dd>
 <dt><strong>outputType</strong><span class="classifier">str , optional</span></dt><dd><p>Any subset or permutation of “uv”. Default is “uv”.</p>
 </dd>
@@ -3042,7 +3042,7 @@ Default is 6.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input face.</p>
+<dt><strong>face</strong><span class="classifier">Face</span></dt><dd><p>The input face.</p>
 </dd>
 </dl>
 </dd>
@@ -3062,13 +3062,13 @@ Default is 6.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input face.</p>
+<dt><strong>face</strong><span class="classifier">Face</span></dt><dd><p>The input face.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Wire</dt><dd><p>The external boundary of the input face.</p>
+<dt>Wire</dt><dd><p>The external boundary of the input face.</p>
 </dd>
 </dl>
 </dd>
@@ -3082,7 +3082,7 @@ Default is 6.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input face.</p>
+<dt><strong>face</strong><span class="classifier">Face</span></dt><dd><p>The input face.</p>
 </dd>
 </dl>
 </dd>

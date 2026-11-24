@@ -427,7 +427,7 @@ curve construction.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>wire</strong><span class="classifier">topologic_core.Wire</span></dt><dd><p>The input wire.</p>
+<dt><strong>wire</strong><span class="classifier">Wire</span></dt><dd><p>The input wire.</p>
 </dd>
 <dt><strong>offset</strong><span class="classifier">float , optional</span></dt><dd><p>The desired offset distance. Default is 1.0.</p>
 </dd>
@@ -458,7 +458,7 @@ The default is None which causes the algorithm to use twice the number of cpu co
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Wire</dt><dd><p>The created wire.</p>
+<dt>Wire</dt><dd><p>The created wire.</p>
 </dd>
 </dl>
 </dd>
@@ -475,7 +475,7 @@ axis-aligned.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
+<dt><strong>topology</strong><span class="classifier">Topology</span></dt><dd><p>The input topology.</p>
 </dd>
 <dt><strong>optimize</strong><span class="classifier">int , optional</span></dt><dd><p>If set to an integer from 1 (low optimization) to 10 (high optimization),
 the method will attempt to optimize the bounding rectangle so that it
@@ -495,7 +495,7 @@ rectangle’s area by 50%. Default is 0.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Wire</dt><dd><p>The bounding rectangle of the input topology.</p>
+<dt>Wire</dt><dd><p>The bounding rectangle of the input topology.</p>
 </dd>
 </dl>
 </dd>
@@ -527,7 +527,7 @@ at least three sides. Open Edges accept any <code class="docutils literal notran
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>cluster</strong><span class="classifier">topologic_core.Cluster</span></dt><dd><p>The input cluster of edges.</p>
+<dt><strong>cluster</strong><span class="classifier">Cluster</span></dt><dd><p>The input cluster of edges.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
@@ -535,7 +535,7 @@ at least three sides. Open Edges accept any <code class="docutils literal notran
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Wire</dt><dd><p>The created wire.</p>
+<dt>Wire</dt><dd><p>The created wire.</p>
 </dd>
 </dl>
 </dd>
@@ -576,12 +576,10 @@ overall character. Regular exact curved offsets remain exact. If <code class="do
 is False, the mathematically exact offset is retained even when singular.
 If neither trimming nor tangent extension can resolve a joint, the existing
 step-transition semantics are used.</p>
-<p>On TopologicCore, exact curved variable offsets remain unsupported and
-return None rather than silently approximating the source curves.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>wire</strong><span class="classifier">topologic_core.Wire</span></dt><dd><p>The input Wire. It must be planar when it contains curved Edges.</p>
+<dt><strong>wire</strong><span class="classifier">Wire</span></dt><dd><p>The input Wire. It must be planar when it contains curved Edges.</p>
 </dd>
 <dt><strong>offset</strong><span class="classifier">float , optional</span></dt><dd><p>Default signed offset distance. Default is 1.0.</p>
 </dd>
@@ -633,7 +631,7 @@ is available. Default is False.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Wire</dt><dd><p>The offset Wire, or None if the requested exact operation cannot be
+<dt>Wire</dt><dd><p>The offset Wire, or None if the requested exact operation cannot be
 constructed.</p>
 </dd>
 </dl>
@@ -648,7 +646,7 @@ constructed.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>wire</strong><span class="classifier">topologic_core.Wire</span></dt><dd><p>The input wire.</p>
+<dt><strong>wire</strong><span class="classifier">Wire</span></dt><dd><p>The input wire.</p>
 </dd>
 <dt><strong>area</strong><span class="classifier">float</span></dt><dd><p>The desired area of the created wire.</p>
 </dd>
@@ -675,7 +673,7 @@ The default is None which causes the algorithm to use twice the number of cpu co
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Wire</dt><dd><p>The created wire.</p>
+<dt>Wire</dt><dd><p>The created wire.</p>
 </dd>
 </dl>
 </dd>
@@ -707,7 +705,7 @@ first vertex. Default is False.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Wire</dt><dd><p>The created Wire. Returns None if the input is invalid or if the Wire
+<dt>Wire</dt><dd><p>The created Wire. Returns None if the input is invalid or if the Wire
 cannot be constructed.</p>
 </dd>
 </dl>
@@ -735,7 +733,7 @@ the wire. Default is True.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Wire</dt><dd><p>The created wire.</p>
+<dt>Wire</dt><dd><p>The created wire.</p>
 </dd>
 </dl>
 </dd>
@@ -749,7 +747,7 @@ the wire. Default is True.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>cluster</strong><span class="classifier">topologic_core.cluster</span></dt><dd><p>the input cluster of vertices.</p>
+<dt><strong>cluster</strong><span class="classifier">cluster</span></dt><dd><p>the input cluster of vertices.</p>
 </dd>
 <dt><strong>close</strong><span class="classifier">bool , optional</span></dt><dd><p>If True the last vertex will be connected to the first vertex to close the wire. Default is True.</p>
 </dd>
@@ -761,7 +759,7 @@ the wire. Default is True.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Wire</dt><dd><p>The created wire.</p>
+<dt>Wire</dt><dd><p>The created wire.</p>
 </dd>
 </dl>
 </dd>
@@ -775,7 +773,7 @@ the wire. Default is True.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The location of the origin of the C-shape. Default is None which results in the C-shape being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">Vertex , optional</span></dt><dd><p>The location of the origin of the C-shape. Default is None which results in the C-shape being placed at (0, 0, 0).</p>
 </dd>
 <dt><strong>width</strong><span class="classifier">float , optional</span></dt><dd><p>The overall width of the C-shape. Default is 1.0.</p>
 </dd>
@@ -799,7 +797,7 @@ the wire. Default is True.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Wire</dt><dd><p>The created C-shape.</p>
+<dt>Wire</dt><dd><p>The created C-shape.</p>
 </dd>
 </dl>
 </dd>
@@ -814,7 +812,7 @@ surfaces of the volume (no interior lines).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The placement origin of the cage:
+<dt><strong>origin</strong><span class="classifier">Vertex , optional</span></dt><dd><p>The placement origin of the cage:
 - If placement == “center”: the geometric center of the cage
 is placed at this origin.
 - If placement == “corner”: the minimum corner of the cage
@@ -848,7 +846,7 @@ Default is 2.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Wire or None</dt><dd><p>The resulting cage Wire, or None if inputs are invalid.</p>
+<dt>Wire or None</dt><dd><p>The resulting cage Wire, or None if inputs are invalid.</p>
 </dd>
 </dl>
 </dd>
@@ -869,7 +867,7 @@ than by sampling the parameter space of an exact circular Edge.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>Placement origin. If None, the global origin is used. Default is None.</p>
+<dt><strong>origin</strong><span class="classifier">Vertex , optional</span></dt><dd><p>Placement origin. If None, the global origin is used. Default is None.</p>
 </dd>
 <dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>Circle radius. Default is 0.5.</p>
 </dd>
@@ -903,7 +901,7 @@ Default is False.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Wire</dt><dd><p>The created circular Wire.</p>
+<dt>Wire</dt><dd><p>The created circular Wire.</p>
 </dd>
 </dl>
 </dd>
@@ -921,7 +919,7 @@ B-Spline, and NURBS Edges remain unchanged.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>wire</strong><span class="classifier">topologic_core.Wire</span></dt><dd><p>The input Wire.</p>
+<dt><strong>wire</strong><span class="classifier">Wire</span></dt><dd><p>The input Wire.</p>
 </dd>
 <dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>Retained for backward compatibility. It is not used because no
 coordinate reconstruction or rounding is performed. Default is 6.</p>
@@ -934,7 +932,7 @@ coordinate reconstruction or rounding is performed. Default is 6.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Wire</dt><dd><p>The closed Wire.</p>
+<dt>Wire</dt><dd><p>The closed Wire.</p>
 </dd>
 </dl>
 </dd>
@@ -952,7 +950,7 @@ vertices close to 180 degrees are not returned.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>wire</strong><span class="classifier">topologic_core.Wire</span></dt><dd><p>The input wire.</p>
+<dt><strong>wire</strong><span class="classifier">Wire</span></dt><dd><p>The input wire.</p>
 </dd>
 <dt><strong>angTolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The angular tolerance in degrees. Default is 0.01.</p>
 </dd>
@@ -982,7 +980,7 @@ GRAPP 2007 - International Conference on Computer Graphics Theory and Applicatio
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
+<dt><strong>topology</strong><span class="classifier">Topology</span></dt><dd><p>The input topology.</p>
 </dd>
 <dt><strong>k</strong><span class="classifier">int, optional</span></dt><dd><p>The number of nearest neighbors to consider for each point when building the hull. 
 Must be at least 3 for the algorithm to function correctly. Increasing <cite>k</cite> will produce a smoother, 
@@ -998,7 +996,7 @@ less concave hull, while decreasing <cite>k</cite> may yield a more detailed, co
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Wire</dt><dd><p>The concave hull of the input topology.</p>
+<dt>Wire</dt><dd><p>The concave hull of the input topology.</p>
 </dd>
 </dl>
 </dd>
@@ -1016,7 +1014,7 @@ vertices close to 180 degrees are not returned.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>wire</strong><span class="classifier">topologic_core.Wire</span></dt><dd><p>The input wire.</p>
+<dt><strong>wire</strong><span class="classifier">Wire</span></dt><dd><p>The input wire.</p>
 </dd>
 <dt><strong>angTolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The angular tolerance in degrees. Default is 0.01.</p>
 </dd>
@@ -1044,7 +1042,7 @@ vertices close to 180 degrees are not returned.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
+<dt><strong>topology</strong><span class="classifier">Topology</span></dt><dd><p>The input topology.</p>
 </dd>
 <dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
@@ -1054,7 +1052,7 @@ vertices close to 180 degrees are not returned.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Wire</dt><dd><p>The convex hull of the input topology.</p>
+<dt>Wire</dt><dd><p>The convex hull of the input topology.</p>
 </dd>
 </dl>
 </dd>
@@ -1068,7 +1066,7 @@ vertices close to 180 degrees are not returned.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The location of the origin of the T-shape. Default is None which results in the Cross-shape being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">Vertex , optional</span></dt><dd><p>The location of the origin of the T-shape. Default is None which results in the Cross-shape being placed at (0, 0, 0).</p>
 </dd>
 <dt><strong>width</strong><span class="classifier">float , optional</span></dt><dd><p>The overall width of the Cross-shape. Default is 1.0.</p>
 </dd>
@@ -1094,7 +1092,7 @@ vertices close to 180 degrees are not returned.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Wire</dt><dd><p>The created Cross-shape.</p>
+<dt>Wire</dt><dd><p>The created Cross-shape.</p>
 </dd>
 </dl>
 </dd>
@@ -1122,7 +1120,7 @@ only once, without post-processing duplicate detection.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>wire</strong><span class="classifier">topologic_core.Wire</span></dt><dd><p>The input Wire.</p>
+<dt><strong>wire</strong><span class="classifier">Wire</span></dt><dd><p>The input Wire.</p>
 </dd>
 <dt><strong>maxVertices</strong><span class="classifier">int , optional</span></dt><dd><p>The maximum number of vertices permitted in a returned cycle.
 Default is 4.</p>
@@ -1150,7 +1148,7 @@ cycle Wires. Default is False.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>wire</strong><span class="classifier">topologic_core.Wire</span></dt><dd><p>The input wire.</p>
+<dt><strong>wire</strong><span class="classifier">Wire</span></dt><dd><p>The input wire.</p>
 </dd>
 <dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
@@ -1172,7 +1170,7 @@ cycle Wires. Default is False.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The location of the origin of the tile. Default is None which results in the tiles first vertex being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">Vertex , optional</span></dt><dd><p>The location of the origin of the tile. Default is None which results in the tiles first vertex being placed at (0, 0, 0).</p>
 </dd>
 <dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The radius of the hexagon determining the size of the tile. Default is 0.5.</p>
 </dd>
@@ -1186,7 +1184,7 @@ cycle Wires. Default is False.</p>
 </dd>
 <dt><strong>Returns</strong></dt><dd></dd>
 <dt><strong>——-</strong></dt><dd></dd>
-<dt><strong>topologic_core.Wire</strong></dt><dd><p>The created wire.</p>
+<dt><strong>Wire</strong></dt><dd><p>The created wire.</p>
 </dd>
 </dl>
 </dd>
@@ -1212,7 +1210,7 @@ cycle Wires. Default is False.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>wire</strong><span class="classifier">topologic_core.Wire</span></dt><dd><p>The input wire</p>
+<dt><strong>wire</strong><span class="classifier">Wire</span></dt><dd><p>The input wire</p>
 </dd>
 <dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
@@ -1220,7 +1218,7 @@ cycle Wires. Default is False.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Vertex</dt><dd><p>The end vertex of the input wire.</p>
+<dt>Vertex</dt><dd><p>The end vertex of the input wire.</p>
 </dd>
 </dl>
 </dd>
@@ -1234,7 +1232,7 @@ cycle Wires. Default is False.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>wire</strong><span class="classifier">topologic_core.Wire</span></dt><dd><p>The input wire.</p>
+<dt><strong>wire</strong><span class="classifier">Wire</span></dt><dd><p>The input wire.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
@@ -1258,7 +1256,7 @@ cycle Wires. Default is False.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>wire</strong><span class="classifier">topologic_core.Wire</span></dt><dd><p>The input wire.</p>
+<dt><strong>wire</strong><span class="classifier">Wire</span></dt><dd><p>The input wire.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
@@ -1268,7 +1266,7 @@ cycle Wires. Default is False.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Cluster</dt><dd><p>The external boundary of the input wire. This is a cluster of vertices of degree == 1.</p>
+<dt>Cluster</dt><dd><p>The external boundary of the input wire. This is a cluster of vertices of degree == 1.</p>
 </dd>
 </dl>
 </dd>
@@ -1288,7 +1286,7 @@ linear Edges.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>wire</strong><span class="classifier">topologic_core.Wire</span></dt><dd><p>The input Wire.</p>
+<dt><strong>wire</strong><span class="classifier">Wire</span></dt><dd><p>The input Wire.</p>
 </dd>
 <dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The default fillet radius. Default is 0.</p>
 </dd>
@@ -1312,7 +1310,7 @@ Default is False.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Wire</dt><dd><p>The filleted Wire.</p>
+<dt>Wire</dt><dd><p>The filleted Wire.</p>
 </dd>
 </dl>
 </dd>
@@ -1330,12 +1328,12 @@ on the face between the start and end locations.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The planar face on which navigation occurs. All vertices must lie
+<dt><strong>face</strong><span class="classifier">Face</span></dt><dd><p>The planar face on which navigation occurs. All vertices must lie
 on this face.</p>
 </dd>
-<dt><strong>vertexA</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The start point of the path.</p>
+<dt><strong>vertexA</strong><span class="classifier">Vertex</span></dt><dd><p>The start point of the path.</p>
 </dd>
-<dt><strong>vertexB</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The end point of the path.</p>
+<dt><strong>vertexB</strong><span class="classifier">Vertex</span></dt><dd><p>The end point of the path.</p>
 </dd>
 <dt><strong>portals</strong><span class="classifier">list of tuple(Vertex, Vertex)</span></dt><dd><p>Ordered list of corridor edges. Each item is (leftVertex, rightVertex)
 describing the visible “portal” between two consecutive regions along
@@ -1350,7 +1348,7 @@ Default is 0.0001.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt><strong>wire</strong><span class="classifier">topologic_core.Wire</span></dt><dd><p>A Wire representing the smoothed path from startVertex to endVertex
+<dt><strong>wire</strong><span class="classifier">Wire</span></dt><dd><p>A Wire representing the smoothed path from startVertex to endVertex
 that stays inside the navigation corridor on the face.</p>
 </dd>
 </dl>
@@ -1372,7 +1370,7 @@ that stays inside the navigation corridor on the face.</p>
 <dt><strong>clockwise</strong><span class="classifier">bool , optional</span></dt><dd><p>Controls the square “peel” progression (affects which side each next square
 is taken from). Default is False.</p>
 </dd>
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex, optional</span></dt><dd><p>The location of the origin of the rectangle. Default is None which results in the rectangle being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">Vertex, optional</span></dt><dd><p>The location of the origin of the rectangle. Default is None which results in the rectangle being placed at (0, 0, 0).</p>
 </dd>
 <dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>The vector representing the up direction of the rectangle. Default is [0, 0, 1].</p>
 </dd>
@@ -1388,7 +1386,7 @@ is taken from). Default is False.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Wire</dt><dd><p>The created golden rectangle wire.</p>
+<dt>Wire</dt><dd><p>The created golden rectangle wire.</p>
 </dd>
 </dl>
 </dd>
@@ -1420,7 +1418,7 @@ is taken from). Default is False.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The location of the origin of the I-shape. Default is None which results in the I-shape being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">Vertex , optional</span></dt><dd><p>The location of the origin of the I-shape. Default is None which results in the I-shape being placed at (0, 0, 0).</p>
 </dd>
 <dt><strong>width</strong><span class="classifier">float , optional</span></dt><dd><p>The overall width of the I-shape. Default is 1.0.</p>
 </dd>
@@ -1448,7 +1446,7 @@ is taken from). Default is False.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Wire</dt><dd><p>The created I-shape.</p>
+<dt>Wire</dt><dd><p>The created I-shape.</p>
 </dd>
 </dl>
 </dd>
@@ -1466,7 +1464,7 @@ directly in 3D.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>wire</strong><span class="classifier">topologic_core.Wire</span></dt><dd><p>The input wire.</p>
+<dt><strong>wire</strong><span class="classifier">Wire</span></dt><dd><p>The input wire.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
@@ -1514,7 +1512,7 @@ Default is <code class="docutils literal notranslate"><span class="pre">&quot;de
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Topology</dt><dd><p>The interpolated contours and optional connecting ridges.</p>
+<dt>Topology</dt><dd><p>The interpolated contours and optional connecting ridges.</p>
 </dd>
 </dl>
 </dd>
@@ -1532,7 +1530,7 @@ from endpoint chords.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>wire</strong><span class="classifier">topologic_core.Wire</span></dt><dd><p>The input Wire.</p>
+<dt><strong>wire</strong><span class="classifier">Wire</span></dt><dd><p>The input Wire.</p>
 </dd>
 <dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
@@ -1542,7 +1540,7 @@ from endpoint chords.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Wire</dt><dd><p>The reversed Wire.</p>
+<dt>Wire</dt><dd><p>The reversed Wire.</p>
 </dd>
 </dl>
 </dd>
@@ -1574,9 +1572,9 @@ from endpoint chords.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>wireA</strong><span class="classifier">topologic_core.Wire</span></dt><dd><p>The first input wire.</p>
+<dt><strong>wireA</strong><span class="classifier">Wire</span></dt><dd><p>The first input wire.</p>
 </dd>
-<dt><strong>wireB</strong><span class="classifier">topologic_core.Wire</span></dt><dd><p>The second input wire.</p>
+<dt><strong>wireB</strong><span class="classifier">Wire</span></dt><dd><p>The second input wire.</p>
 </dd>
 <dt><strong>angTolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired angular tolerance. Default is 0.1.</p>
 </dd>
@@ -1600,7 +1598,7 @@ from endpoint chords.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The location of the origin of the L-shape. Default is None which results in the L-shape being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">Vertex , optional</span></dt><dd><p>The location of the origin of the L-shape. Default is None which results in the L-shape being placed at (0, 0, 0).</p>
 </dd>
 <dt><strong>width</strong><span class="classifier">float , optional</span></dt><dd><p>The overall width of the L-shape. Default is 1.0.</p>
 </dd>
@@ -1622,7 +1620,7 @@ from endpoint chords.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Wire</dt><dd><p>The created L-shape.</p>
+<dt>Wire</dt><dd><p>The created L-shape.</p>
 </dd>
 </dl>
 </dd>
@@ -1636,7 +1634,7 @@ from endpoint chords.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>Placement origin.</p>
+<dt><strong>origin</strong><span class="classifier">Vertex , optional</span></dt><dd><p>Placement origin.</p>
 </dd>
 <dt><strong>width, length, height</strong><span class="classifier">float</span></dt><dd><p>Lattice extents.</p>
 </dd>
@@ -1654,7 +1652,7 @@ from endpoint chords.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Wire</dt><dd></dd>
+<dt>Wire</dt><dd></dd>
 </dl>
 </dd>
 </dl>
@@ -1681,7 +1679,7 @@ rejected rather than silently replaced by endpoint chords.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>wire</strong><span class="classifier">topologic_core.Wire</span></dt><dd><p>The input Wire.</p>
+<dt><strong>wire</strong><span class="classifier">Wire</span></dt><dd><p>The input Wire.</p>
 </dd>
 <dt><strong>offset</strong><span class="classifier">float</span></dt><dd><p>The desired trim distance along each adjacent Edge.</p>
 </dd>
@@ -1696,7 +1694,7 @@ A valid non-negative numerical value overrides <code class="docutils literal not
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Wire</dt><dd><p>The mitered polyline Wire.</p>
+<dt>Wire</dt><dd><p>The mitered polyline Wire.</p>
 </dd>
 </dl>
 </dd>
@@ -1710,7 +1708,7 @@ A valid non-negative numerical value overrides <code class="docutils literal not
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>wire</strong><span class="classifier">topologic_core.Wire</span></dt><dd><p>The input wire.</p>
+<dt><strong>wire</strong><span class="classifier">Wire</span></dt><dd><p>The input wire.</p>
 </dd>
 <dt><strong>outputType</strong><span class="classifier">string , optional</span></dt><dd><p>The string defining the desired output. This can be any subset or permutation of “xyz”. It is case insensitive. Default is “xyz”.</p>
 </dd>
@@ -1758,9 +1756,9 @@ is used only for polylines.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>wire</strong><span class="classifier">topologic_core.Wire</span></dt><dd><p>The input Wire.</p>
+<dt><strong>wire</strong><span class="classifier">Wire</span></dt><dd><p>The input Wire.</p>
 </dd>
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin of the receiving plane. If None, the centroid of the input
+<dt><strong>origin</strong><span class="classifier">Vertex , optional</span></dt><dd><p>The origin of the receiving plane. If None, the centroid of the input
 Wire is used. Default is None.</p>
 </dd>
 <dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places used to derive the plane equation.
@@ -1774,7 +1772,7 @@ Default is 6.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Wire</dt><dd><p>The planarized Wire, or None if exact curve preservation is unavailable.</p>
+<dt>Wire</dt><dd><p>The planarized Wire, or None if exact curve preservation is unavailable.</p>
 </dd>
 </dl>
 </dd>
@@ -1794,9 +1792,9 @@ that case projecting each linear Edge by its endpoints is exact.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>wire</strong><span class="classifier">topologic_core.Wire</span></dt><dd><p>The input Wire.</p>
+<dt><strong>wire</strong><span class="classifier">Wire</span></dt><dd><p>The input Wire.</p>
 </dd>
-<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The receiving Face.</p>
+<dt><strong>face</strong><span class="classifier">Face</span></dt><dd><p>The receiving Face.</p>
 </dd>
 <dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>Projection direction. If None, the reverse of the receiving Face
 normal is used. Default is None.</p>
@@ -1811,7 +1809,7 @@ normal is used. Default is None.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Wire</dt><dd><p>The projected Wire, or None if an exact curve-preserving projection
+<dt>Wire</dt><dd><p>The projected Wire, or None if an exact curve-preserving projection
 cannot be constructed.</p>
 </dd>
 </dl>
@@ -1826,7 +1824,7 @@ cannot be constructed.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The location of the origin of the rectangle. Default is None which results in the rectangle being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">Vertex , optional</span></dt><dd><p>The location of the origin of the rectangle. Default is None which results in the rectangle being placed at (0, 0, 0).</p>
 </dd>
 <dt><strong>width</strong><span class="classifier">float , optional</span></dt><dd><p>The width of the rectangle. Default is 1.0.</p>
 </dd>
@@ -1848,7 +1846,7 @@ cannot be constructed.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Wire</dt><dd><p>The created rectangle.</p>
+<dt>Wire</dt><dd><p>The created rectangle.</p>
 </dd>
 </dl>
 </dd>
@@ -1865,7 +1863,7 @@ traversal direction are merged into one linear Edge.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>wire</strong><span class="classifier">topologic_core.Wire or topologic_core.Cluster</span></dt><dd><p>The input Wire, or a Cluster containing Wires.</p>
+<dt><strong>wire</strong><span class="classifier">Wire or Cluster</span></dt><dd><p>The input Wire, or a Cluster containing Wires.</p>
 </dd>
 <dt><strong>angTolerance</strong><span class="classifier">float , optional</span></dt><dd><p>Maximum angular deviation in degrees for two consecutive linear Edges
 to be treated as a continuation. Default is 0.1.</p>
@@ -1878,7 +1876,7 @@ to be treated as a continuation. Default is 0.1.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Topology</dt><dd><p>The simplified Wire, or a merged topology if a Cluster/non-manifold
+<dt>Topology</dt><dd><p>The simplified Wire, or a merged topology if a Cluster/non-manifold
 input produces multiple components.</p>
 </dd>
 </dl>
@@ -1893,7 +1891,7 @@ input produces multiple components.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>wire</strong><span class="classifier">topologic_core.Wire</span></dt><dd><p>The input wire.</p>
+<dt><strong>wire</strong><span class="classifier">Wire</span></dt><dd><p>The input wire.</p>
 </dd>
 <dt><strong>normalize</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the edge lengths are normalized such that the shortest
 edge has a length of 1. Default is True.</p>
@@ -1940,7 +1938,7 @@ returned.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>wire</strong><span class="classifier">topologic_core.Wire</span></dt><dd><p>The input planar manifold Wire.</p>
+<dt><strong>wire</strong><span class="classifier">Wire</span></dt><dd><p>The input planar manifold Wire.</p>
 </dd>
 <dt><strong>thickness</strong><span class="classifier">float , optional</span></dt><dd><p>The ribbon width. Default is 1.0.</p>
 </dd>
@@ -1980,7 +1978,7 @@ Default is False.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Face or topologic_core.Shell</dt><dd><p>The created ribbon.</p>
+<dt>Face or Shell</dt><dd><p>The created ribbon.</p>
 </dd>
 </dl>
 </dd>
@@ -1997,7 +1995,7 @@ This algorithm depends on the polyskel code which is included in the library. Po
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input face.</p>
+<dt><strong>face</strong><span class="classifier">Face</span></dt><dd><p>The input face.</p>
 </dd>
 <dt><strong>angle</strong><span class="classifier">float , optioal</span></dt><dd><p>The desired angle in degrees of the roof. Default is 45.</p>
 </dd>
@@ -2009,7 +2007,7 @@ This algorithm depends on the polyskel code which is included in the library. Po
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Wire</dt><dd><p>The created roof. This method returns the roof as a set of edges. No faces are created.</p>
+<dt>Wire</dt><dd><p>The created roof. This method returns the roof as a set of edges. No faces are created.</p>
 </dd>
 </dl>
 </dd>
@@ -2028,7 +2026,7 @@ retained unchanged.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>wire</strong><span class="classifier">topologic_core.Wire</span></dt><dd><p>The input Wire.</p>
+<dt><strong>wire</strong><span class="classifier">Wire</span></dt><dd><p>The input Wire.</p>
 </dd>
 <dt><strong>method</strong><span class="classifier">str , optional</span></dt><dd><p>The simplification method. Supported values are
 “douglas-peucker”, “visvalingam-whyatt”, and “reumann-witkam”.
@@ -2047,7 +2045,7 @@ Default is 0.0001.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Wire</dt><dd><p>The simplified Wire.</p>
+<dt>Wire</dt><dd><p>The simplified Wire.</p>
 </dd>
 </dl>
 </dd>
@@ -2062,7 +2060,7 @@ This algorithm depends on the polyskel code which is included in the library. Po
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input face.</p>
+<dt><strong>face</strong><span class="classifier">Face</span></dt><dd><p>The input face.</p>
 </dd>
 <dt><strong>boundary</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the original boundary is returned as part of the roof. Otherwise it is not. Default is True.</p>
 </dd>
@@ -2072,7 +2070,7 @@ This algorithm depends on the polyskel code which is included in the library. Po
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Wire</dt><dd><p>The created straight skeleton.</p>
+<dt>Wire</dt><dd><p>The created straight skeleton.</p>
 </dd>
 </dl>
 </dd>
@@ -2092,7 +2090,7 @@ This algorithm depends on the polyskel code which is included in the library. Po
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>wire</strong><span class="classifier">topologic_core.Wire</span></dt><dd><p>The input wire.</p>
+<dt><strong>wire</strong><span class="classifier">Wire</span></dt><dd><p>The input wire.</p>
 </dd>
 </dl>
 </dd>
@@ -2112,7 +2110,7 @@ This algorithm depends on the polyskel code which is included in the library. Po
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The location of the origin of the square. Default is None which results in the square being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">Vertex , optional</span></dt><dd><p>The location of the origin of the square. Default is None which results in the square being placed at (0, 0, 0).</p>
 </dd>
 <dt><strong>size</strong><span class="classifier">float , optional</span></dt><dd><p>The size of the square. Default is 1.0.</p>
 </dd>
@@ -2128,7 +2126,7 @@ This algorithm depends on the polyskel code which is included in the library. Po
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Wire</dt><dd><p>The created square.</p>
+<dt>Wire</dt><dd><p>The created square.</p>
 </dd>
 </dl>
 </dd>
@@ -2148,7 +2146,7 @@ This algorithm depends on the polyskel code which is included in the library. Po
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The location of the origin of the star. Default is None which results in the star being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">Vertex , optional</span></dt><dd><p>The location of the origin of the star. Default is None which results in the star being placed at (0, 0, 0).</p>
 </dd>
 <dt><strong>radiusA</strong><span class="classifier">float , optional</span></dt><dd><p>The outer radius of the star. Default is 1.0.</p>
 </dd>
@@ -2166,7 +2164,7 @@ This algorithm depends on the polyskel code which is included in the library. Po
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Wire</dt><dd><p>The created star.</p>
+<dt>Wire</dt><dd><p>The created star.</p>
 </dd>
 </dl>
 </dd>
@@ -2180,7 +2178,7 @@ This algorithm depends on the polyskel code which is included in the library. Po
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>wire</strong><span class="classifier">topologic_core.Wire</span></dt><dd><p>The input wire</p>
+<dt><strong>wire</strong><span class="classifier">Wire</span></dt><dd><p>The input wire</p>
 </dd>
 <dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
@@ -2202,7 +2200,7 @@ This algorithm depends on the polyskel code which is included in the library. Po
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>wire</strong><span class="classifier">topologic_core.Wire</span></dt><dd><p>The input wire</p>
+<dt><strong>wire</strong><span class="classifier">Wire</span></dt><dd><p>The input wire</p>
 </dd>
 <dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
@@ -2210,7 +2208,7 @@ This algorithm depends on the polyskel code which is included in the library. Po
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Vertex</dt><dd><p>The start vertex of the input wire.</p>
+<dt>Vertex</dt><dd><p>The start vertex of the input wire.</p>
 </dd>
 </dl>
 </dd>
@@ -2229,10 +2227,10 @@ topologies that the original input wire intersects.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>wire</strong><span class="classifier">topologic_core.Wire</span></dt><dd><p>The input path wire whose vertices define the route to be
+<dt><strong>wire</strong><span class="classifier">Wire</span></dt><dd><p>The input path wire whose vertices define the route to be
 straightened.</p>
 </dd>
-<dt><strong>host</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The host within which the straightened edges must lie.</p>
+<dt><strong>host</strong><span class="classifier">Topology</span></dt><dd><p>The host within which the straightened edges must lie.</p>
 </dd>
 <dt><strong>obstacles</strong><span class="classifier">list, optional</span></dt><dd><p>The list of topologies with which the straightened edges must not intersect.</p>
 </dd>
@@ -2247,7 +2245,7 @@ Portals with which the original wire does NOT intersect are ignored.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt><strong>wire</strong><span class="classifier">topologic_core.Wire</span></dt><dd><p>A new Wire whose vertices define the recursively straightened path.</p>
+<dt><strong>wire</strong><span class="classifier">Wire</span></dt><dd><p>A new Wire whose vertices define the recursively straightened path.</p>
 </dd>
 </dl>
 </dd>
@@ -2261,7 +2259,7 @@ Portals with which the original wire does NOT intersect are ignored.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The location of the origin of the T-shape. Default is None which results in the T-shape being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">Vertex , optional</span></dt><dd><p>The location of the origin of the T-shape. Default is None which results in the T-shape being placed at (0, 0, 0).</p>
 </dd>
 <dt><strong>width</strong><span class="classifier">float , optional</span></dt><dd><p>The overall width of the T-shape. Default is 1.0.</p>
 </dd>
@@ -2283,7 +2281,7 @@ Portals with which the original wire does NOT intersect are ignored.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Wire</dt><dd><p>The created T-shape.</p>
+<dt>Wire</dt><dd><p>The created T-shape.</p>
 </dd>
 </dl>
 </dd>
@@ -2297,7 +2295,7 @@ Portals with which the original wire does NOT intersect are ignored.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The location of the origin of the trapezoid. Default is None which results in the trapezoid being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">Vertex , optional</span></dt><dd><p>The location of the origin of the trapezoid. Default is None which results in the trapezoid being placed at (0, 0, 0).</p>
 </dd>
 <dt><strong>widthA</strong><span class="classifier">float , optional</span></dt><dd><p>The width of the bottom edge of the trapezoid. Default is 1.0.</p>
 </dd>
@@ -2319,7 +2317,7 @@ Portals with which the original wire does NOT intersect are ignored.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Wire</dt><dd><p>The created trapezoid.</p>
+<dt>Wire</dt><dd><p>The created trapezoid.</p>
 </dd>
 </dl>
 </dd>
@@ -2351,7 +2349,7 @@ Portals with which the original wire does NOT intersect are ignored.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>wire</strong><span class="classifier">topologic_core.Wire</span></dt><dd><p>The input wire.</p>
+<dt><strong>wire</strong><span class="classifier">Wire</span></dt><dd><p>The input wire.</p>
 </dd>
 </dl>
 </dd>

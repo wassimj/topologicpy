@@ -156,8 +156,7 @@
 <p><code class="docutils literal notranslate"><span class="pre">Grid.Vertices(grid)</span></code> returns unique endpoints and intersections of grid
 Edges, including crossings that have not been split into separate Edges.
 It accepts the topology returned by <code class="docutils literal notranslate"><span class="pre">Grid.OnFace</span></code> or a list of Edges.
-PythonOCC processes curved Edges in a single native batch; straight
-TopologicCore Edges use analytical 3D intersections with bounding-box pruning.
+PythonOCC processes straight and curved Edges in a single native batch.
 Coincident points are deduplicated using the model-unit <code class="docutils literal notranslate"><span class="pre">tolerance</span></code>.</p>
 <section id="clearance">
 <h2>Clearance<a class="headerlink" href="#clearance" title="Permalink to this heading"></a></h2>
@@ -346,7 +345,7 @@ Explicit patterns require a planar Face. Default is None.</p>
 <dt><strong>output</strong><span class="classifier">str , optional</span></dt><dd><p>“edges” returns a Cluster, “vertices” a list of unique Vertices,
 and “faces” a list of partition Faces. Default is “edges”.</p>
 </dd>
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex or list , optional</span></dt><dd><p>Pattern origin as a Vertex or three coordinates, projected onto the
+<dt><strong>origin</strong><span class="classifier">Vertex or list , optional</span></dt><dd><p>Pattern origin as a Vertex or three coordinates, projected onto the
 face plane. Defaults to the face parameter centre. The original
 origin is retained when applying clearance.</p>
 </dd>
@@ -367,7 +366,7 @@ line family. Default is 45.</p>
 Default is 30. Circles are exact when supported by the backend;
 approximate=True permits sampled rings otherwise.</p>
 </dd>
-<dt><strong>centre</strong><span class="classifier">topologic_core.Vertex or list , optional</span></dt><dd><p>Polar centre, projected onto the face plane. Overrides origin
+<dt><strong>centre</strong><span class="classifier">Vertex or list , optional</span></dt><dd><p>Polar centre, projected onto the face plane. Overrides origin
 for polar patterns. Default is None.</p>
 </dd>
 <dt><strong>projection</strong><span class="classifier">str , optional</span></dt><dd><p>“local” measures pattern dimensions within the face plane.
@@ -378,7 +377,7 @@ Default is “local”.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Cluster or list</dt><dd><p>Cluster of Edges, list of unique Vertices, or list of Faces.
+<dt>Cluster or list</dt><dd><p>Cluster of Edges, list of unique Vertices, or list of Faces.
 Invalid input returns None. Empty grids return None for Edges
 and an empty list for Vertices/Faces.</p>
 </dd>
@@ -425,7 +424,7 @@ Default is “rectangular”.</p>
 </dd>
 <dt><strong>output</strong><span class="classifier">str , optional</span></dt><dd><p>“vertices”, “edges”, or “faces”. Default is “edges”.</p>
 </dd>
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex or list , optional</span></dt><dd><p>Centre of the clipping rectangle and grid origin, as a Vertex or
+<dt><strong>origin</strong><span class="classifier">Vertex or list , optional</span></dt><dd><p>Centre of the clipping rectangle and grid origin, as a Vertex or
 three coordinates. Default is the world origin.</p>
 </dd>
 <dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>Plane normal. Default is [0, 0, 1].</p>
@@ -445,7 +444,7 @@ Must be between 0 and 90 degrees. Default is 45.</p>
 <dt><strong>angularSpacing</strong><span class="classifier">float , optional</span></dt><dd><p>Polar ray spacing in degrees, dividing 360 exactly, at most 180.
 Only complete circular patterns are supported. Default is 30.</p>
 </dd>
-<dt><strong>centre</strong><span class="classifier">topologic_core.Vertex or list , optional</span></dt><dd><p>Polar centre. Defaults to origin.</p>
+<dt><strong>centre</strong><span class="classifier">Vertex or list , optional</span></dt><dd><p>Polar centre. Defaults to origin.</p>
 </dd>
 <dt><strong>includeBoundary</strong><span class="classifier">bool , optional</span></dt><dd><p>Include clipping boundary Edges. Default is False.</p>
 </dd>
@@ -465,7 +464,7 @@ Default is 128.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Cluster or list</dt><dd><p>Cluster of Edges, list of unique Vertices, or list of Faces.
+<dt>Cluster or list</dt><dd><p>Cluster of Edges, list of unique Vertices, or list of Faces.
 Invalid input returns None. Empty grids return None for Edges
 and an empty list for Vertices/Faces.</p>
 </dd>
@@ -481,7 +480,7 @@ and an empty list for Vertices/Faces.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>grid</strong><span class="classifier">topologic_core.Topology or list</span></dt><dd><p>A grid topology (such as the Cluster returned by Grid.OnFace),
+<dt><strong>grid</strong><span class="classifier">Topology or list</span></dt><dd><p>A grid topology (such as the Cluster returned by Grid.OnFace),
 or a list of Edges. Edges need not have been split at crossings.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float, optional</span></dt><dd><p>Model-unit distance used for intersections and deduplication.
@@ -502,8 +501,7 @@ failed native intersection operation returns None.</p>
 </dl>
 <p class="rubric">Notes</p>
 <p>PythonOCC splits all Edges in one native operation, supporting exact
-curved Edges as well as straight Edges. TopologicCore uses analytical
-3D segment intersections with bounding-box pruning. Spatial hashing
+curved Edges as well as straight Edges. Spatial hashing
 deduplicates the output without comparing every pair of Vertices.
 Overlapping Edges contribute their endpoints; an overlap is not
 sampled into an infinite set of intersection points. Input geometry

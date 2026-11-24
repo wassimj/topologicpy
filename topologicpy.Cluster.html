@@ -280,7 +280,7 @@ If the yRange is set to None or not specified:
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Cluster</dt><dd><p>The created cluster of vertices.</p>
+<dt>Cluster</dt><dd><p>The created cluster of vertices.</p>
 </dd>
 </dl>
 </dd>
@@ -343,7 +343,7 @@ contains only one valid topology.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>*topologies</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>One or more topologies, or a list of topologies, to be processed.</p>
+<dt><strong>*topologies</strong><span class="classifier">Topology</span></dt><dd><p>One or more topologies, or a list of topologies, to be processed.</p>
 </dd>
 <dt><strong>transferDictionaries</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the dictionaries from the input topologies are merged
 and transferred to the resulting Cluster. Default is False.</p>
@@ -355,7 +355,7 @@ Default is False.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Topology</dt><dd><p>The created Cluster, or the original topology if a single topology
+<dt>Topology</dt><dd><p>The created Cluster, or the original topology if a single topology
 was supplied directly. Returns None if no valid topologies are found.</p>
 </dd>
 </dl>
@@ -370,7 +370,7 @@ was supplied directly. Returns None if no valid topologies are found.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>cluster</strong><span class="classifier">topologic_core.Cluster</span></dt><dd><p>The input cluster.</p>
+<dt><strong>cluster</strong><span class="classifier">Cluster</span></dt><dd><p>The input cluster.</p>
 </dd>
 <dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
@@ -392,7 +392,7 @@ was supplied directly. Returns None if no valid topologies are found.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>cluster</strong><span class="classifier">topologic_core.Cluster</span></dt><dd><p>The input cluster.</p>
+<dt><strong>cluster</strong><span class="classifier">Cluster</span></dt><dd><p>The input cluster.</p>
 </dd>
 <dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
@@ -444,7 +444,7 @@ make sure the keys list includes “X”, “Y”, and/or “Z” (case insensit
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>cluster</strong><span class="classifier">topologic_core.Cluster</span></dt><dd><p>The input cluster.</p>
+<dt><strong>cluster</strong><span class="classifier">Cluster</span></dt><dd><p>The input cluster.</p>
 </dd>
 <dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
@@ -474,7 +474,7 @@ make sure the keys list includes “X”, “Y”, and/or “Z” (case insensit
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Cluster</dt><dd><p>The external boundary of the input cluster.</p>
+<dt>Cluster</dt><dd><p>The external boundary of the input cluster.</p>
 </dd>
 </dl>
 </dd>
@@ -488,7 +488,7 @@ make sure the keys list includes “X”, “Y”, and/or “Z” (case insensit
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>cluster</strong><span class="classifier">topologic_core.Cluster</span></dt><dd><p>The input cluster.</p>
+<dt><strong>cluster</strong><span class="classifier">Cluster</span></dt><dd><p>The input cluster.</p>
 </dd>
 <dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
@@ -553,7 +553,7 @@ make sure the keys list includes “X”, “Y”, and/or “Z” (case insensit
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>cluster</strong><span class="classifier">topologic_core.Cluster</span></dt><dd><p>The input cluster.</p>
+<dt><strong>cluster</strong><span class="classifier">Cluster</span></dt><dd><p>The input cluster.</p>
 </dd>
 </dl>
 </dd>
@@ -639,7 +639,7 @@ If None, topologies must be vertices.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>list</dt><dd><p>The created list of clusters (topologic_core.Cluster), each with centroidKey stored in its dictionary.</p>
+<dt>list</dt><dd><p>The created list of clusters (Cluster), each with centroidKey stored in its dictionary.</p>
 </dd>
 </dl>
 </dd>
@@ -663,9 +663,9 @@ coincident Cells.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>wire</strong><span class="classifier">topologic_core.Wire , optional</span></dt><dd><p>The input Wire. if set to None, a circle with the input parameters is created. Otherwise, the input parameters are ignored.</p>
+<dt><strong>wire</strong><span class="classifier">Wire , optional</span></dt><dd><p>The input Wire. if set to None, a circle with the input parameters is created. Otherwise, the input parameters are ignored.</p>
 </dd>
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The location of the origin of the circle. Default is None which results in the circle being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">Vertex , optional</span></dt><dd><p>The location of the origin of the circle. Default is None which results in the circle being placed at (0, 0, 0).</p>
 </dd>
 <dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The radius of the mystic rose. Default is 1.</p>
 </dd>
@@ -685,7 +685,7 @@ coincident Cells.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Cluster</dt><dd><p>The created mystic rose (cluster of edges).</p>
+<dt>Cluster</dt><dd><p>The created mystic rose (cluster of edges).</p>
 </dd>
 </dl>
 </dd>
@@ -699,7 +699,7 @@ coincident Cells.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>cluster</strong><span class="classifier">topologic_core.Cluster</span></dt><dd><p>The input cluster.</p>
+<dt><strong>cluster</strong><span class="classifier">Cluster</span></dt><dd><p>The input cluster.</p>
 </dd>
 <dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
@@ -723,7 +723,7 @@ geometric coincidence. A multi-member Cluster is returned unchanged.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>cluster</strong><span class="classifier">topologic_core.Cluster</span></dt><dd><p>The input Cluster.</p>
+<dt><strong>cluster</strong><span class="classifier">Cluster</span></dt><dd><p>The input Cluster.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float, optional</span></dt><dd><p>Reserved for backend-neutral hierarchy queries. Default is 0.0001.</p>
 </dd>
@@ -733,7 +733,7 @@ geometric coincidence. A multi-member Cluster is returned unchanged.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Topology or None</dt><dd><p>The sole constituent when there is exactly one; otherwise the input Cluster.</p>
+<dt>Topology or None</dt><dd><p>The sole constituent when there is exactly one; otherwise the input Cluster.</p>
 </dd>
 </dl>
 </dd>
@@ -777,7 +777,7 @@ intersecting but independent members.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Cluster</dt><dd><p>The created tripod</p>
+<dt>Cluster</dt><dd><p>The created tripod</p>
 </dd>
 </dl>
 </dd>
@@ -791,7 +791,7 @@ intersecting but independent members.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>cluster</strong><span class="classifier">topologic_core.Cluster</span></dt><dd><p>The input cluster.</p>
+<dt><strong>cluster</strong><span class="classifier">Cluster</span></dt><dd><p>The input cluster.</p>
 </dd>
 <dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
@@ -813,7 +813,7 @@ intersecting but independent members.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>cluster</strong><span class="classifier">topologic_core.Cluster</span></dt><dd><p>The input cluster.</p>
+<dt><strong>cluster</strong><span class="classifier">Cluster</span></dt><dd><p>The input cluster.</p>
 </dd>
 <dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>

@@ -338,7 +338,7 @@
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>cell</strong><span class="classifier">topologic_core.Cell</span></dt><dd><p>The cell.</p>
+<dt><strong>cell</strong><span class="classifier">Cell</span></dt><dd><p>The cell.</p>
 </dd>
 <dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
@@ -360,7 +360,7 @@
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin location of the box. Default is None which results in the box being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">Vertex , optional</span></dt><dd><p>The origin location of the box. Default is None which results in the box being placed at (0, 0, 0).</p>
 </dd>
 <dt><strong>width</strong><span class="classifier">float , optional</span></dt><dd><p>The width of the box. Default is 1.</p>
 </dd>
@@ -386,7 +386,7 @@
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Cell</dt><dd><p>The created box.</p>
+<dt>Cell</dt><dd><p>The created box.</p>
 </dd>
 </dl>
 </dd>
@@ -422,7 +422,7 @@ corresponding Faces of the created Cell. Default is False.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Cell</dt><dd><p>The created Cell, or None if construction fails.</p>
+<dt>Cell</dt><dd><p>The created Cell, or None if construction fails.</p>
 </dd>
 </dl>
 </dd>
@@ -436,7 +436,7 @@ corresponding Faces of the created Cell. Default is False.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>cluster</strong><span class="classifier">topologic_core.Cluster</span></dt><dd><p>The input cluster of faces.</p>
+<dt><strong>cluster</strong><span class="classifier">Cluster</span></dt><dd><p>The input cluster of faces.</p>
 </dd>
 <dt><strong>planarize</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True, the input faces are planarized before building the cell. Otherwise, they are not.
 Default is False.</p>
@@ -452,7 +452,7 @@ Otherwise, they are not. Default is False.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Cell</dt><dd><p>The created cell.</p>
+<dt>Cell</dt><dd><p>The created cell.</p>
 </dd>
 </dl>
 </dd>
@@ -472,7 +472,7 @@ supporting surfaces.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>cell</strong><span class="classifier">topologic_core.Cell</span></dt><dd><p>The input Cell.</p>
+<dt><strong>cell</strong><span class="classifier">Cell</span></dt><dd><p>The input Cell.</p>
 </dd>
 <dt><strong>offset</strong><span class="classifier">float , optional</span></dt><dd><p>The desired offset distance. Positive and negative values are accepted.
 Default is 1.0.</p>
@@ -488,7 +488,7 @@ native backend offset operation. Default is True.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Topology</dt><dd><p>The created offset topology. The result may fail to be a Cell if the
+<dt>Topology</dt><dd><p>The created offset topology. The result may fail to be a Cell if the
 offset produces degenerate or self-intersecting Faces.</p>
 </dd>
 </dl>
@@ -503,7 +503,7 @@ offset produces degenerate or self-intersecting Faces.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>shell</strong><span class="classifier">topologic_core.Shell</span></dt><dd><p>The input shell. The shell must be closed for this method to succeed.</p>
+<dt><strong>shell</strong><span class="classifier">Shell</span></dt><dd><p>The input shell. The shell must be closed for this method to succeed.</p>
 </dd>
 <dt><strong>planarize</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True, the input faces of the input shell are planarized before building the cell. Otherwise, they are not. Default is False.</p>
 </dd>
@@ -515,7 +515,7 @@ offset produces degenerate or self-intersecting Faces.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Cell</dt><dd><p>The created cell.</p>
+<dt>Cell</dt><dd><p>The created cell.</p>
 </dd>
 </dl>
 </dd>
@@ -529,7 +529,7 @@ offset produces degenerate or self-intersecting Faces.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>externalBoundary</strong><span class="classifier">topologic_core.Shell</span></dt><dd><p>The input external boundary.</p>
+<dt><strong>externalBoundary</strong><span class="classifier">Shell</span></dt><dd><p>The input external boundary.</p>
 </dd>
 <dt><strong>internalBoundaries</strong><span class="classifier">list , optional</span></dt><dd><p>The input list of internal boundaries (closed shells). Default is an empty list.</p>
 </dd>
@@ -541,7 +541,7 @@ offset produces degenerate or self-intersecting Faces.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Cell</dt><dd><p>The created cell.</p>
+<dt>Cell</dt><dd><p>The created cell.</p>
 </dd>
 </dl>
 </dd>
@@ -599,7 +599,7 @@ them. Default is True.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>shell</strong><span class="classifier">topologic_core.Shell</span></dt><dd><p>The input shell to be thickened.</p>
+<dt><strong>shell</strong><span class="classifier">Shell</span></dt><dd><p>The input shell to be thickened.</p>
 </dd>
 <dt><strong>thickness</strong><span class="classifier">float , optional</span></dt><dd><p>The desired thickness. Default is 1.0.</p>
 </dd>
@@ -617,7 +617,7 @@ them. Default is True.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Cell</dt><dd><p>The created cell.</p>
+<dt>Cell</dt><dd><p>The created cell.</p>
 </dd>
 </dl>
 </dd>
@@ -656,7 +656,7 @@ the cell. Otherwise, they are not. Default is False.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Cell</dt><dd><p>The created cell.</p>
+<dt>Cell</dt><dd><p>The created cell.</p>
 </dd>
 </dl>
 </dd>
@@ -682,7 +682,7 @@ the cell. Otherwise, they are not. Default is False.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Cell</dt><dd><p>The created cell.</p>
+<dt>Cell</dt><dd><p>The created cell.</p>
 </dd>
 </dl>
 </dd>
@@ -702,7 +702,7 @@ the cell. Otherwise, they are not. Default is False.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex, optional</span></dt><dd><p>The location of the origin of the CHS. Default is None which results in the CHS being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">Vertex, optional</span></dt><dd><p>The location of the origin of the CHS. Default is None which results in the CHS being placed at (0, 0, 0).</p>
 </dd>
 <dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The outer radius of the CHS. Default is 1.0.</p>
 </dd>
@@ -724,7 +724,7 @@ the cell. Otherwise, they are not. Default is False.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Cell</dt><dd><p>The created cell.</p>
+<dt>Cell</dt><dd><p>The created cell.</p>
 </dd>
 </dl>
 </dd>
@@ -738,7 +738,7 @@ the cell. Otherwise, they are not. Default is False.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The location of the origin of the C-shape. Default is None which results in the C-shape being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">Vertex , optional</span></dt><dd><p>The location of the origin of the C-shape. Default is None which results in the C-shape being placed at (0, 0, 0).</p>
 </dd>
 <dt><strong>width</strong><span class="classifier">float , optional</span></dt><dd><p>The overall width of the C-shape. Default is 1.0.</p>
 </dd>
@@ -772,7 +772,7 @@ the cell. Otherwise, they are not. Default is False.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Cell</dt><dd><p>The created C-shape cell.</p>
+<dt>Cell</dt><dd><p>The created C-shape cell.</p>
 </dd>
 </dl>
 </dd>
@@ -786,7 +786,7 @@ the cell. Otherwise, they are not. Default is False.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The location of the origin of the capsule. Default is None which results
+<dt><strong>origin</strong><span class="classifier">Vertex , optional</span></dt><dd><p>The location of the origin of the capsule. Default is None which results
 in the capsule being placed at (0, 0, 0).</p>
 </dd>
 <dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The radius of the capsule. Default is 0.25.</p>
@@ -813,7 +813,7 @@ is “center”.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Cell</dt><dd><p>The created cell.</p>
+<dt>Cell</dt><dd><p>The created cell.</p>
 </dd>
 </dl>
 </dd>
@@ -827,7 +827,7 @@ is “center”.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>cell</strong><span class="classifier">topologic_core.Cell</span></dt><dd><p>The input cell.</p>
+<dt><strong>cell</strong><span class="classifier">Cell</span></dt><dd><p>The input cell.</p>
 </dd>
 <dt><strong>reference</strong><span class="classifier">str , optional</span></dt><dd><p>The desired reference to which to compare this compactness. The options are “sphere” and “cube”. It is case insensitive. Default is “sphere”.</p>
 </dd>
@@ -851,7 +851,7 @@ is “center”.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The location of the origin of the cone. Default is None which results in the cone being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">Vertex , optional</span></dt><dd><p>The location of the origin of the cone. Default is None which results in the cone being placed at (0, 0, 0).</p>
 </dd>
 <dt><strong>baseRadius</strong><span class="classifier">float , optional</span></dt><dd><p>The radius of the base circle of the cone. Default is 0.5.</p>
 </dd>
@@ -875,7 +875,7 @@ is “center”.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Cell</dt><dd><p>The created cone.</p>
+<dt>Cell</dt><dd><p>The created cone.</p>
 </dd>
 </dl>
 </dd>
@@ -889,9 +889,9 @@ is “center”.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>cell</strong><span class="classifier">topologic_core.Cell</span></dt><dd><p>The input cell.</p>
+<dt><strong>cell</strong><span class="classifier">Cell</span></dt><dd><p>The input cell.</p>
 </dd>
-<dt><strong>vertex</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The input vertex.</p>
+<dt><strong>vertex</strong><span class="classifier">Vertex</span></dt><dd><p>The input vertex.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
@@ -913,7 +913,7 @@ is “center”.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The location of the origin of the T-shape. Default is None which results in the Cross-shape being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">Vertex , optional</span></dt><dd><p>The location of the origin of the T-shape. Default is None which results in the Cross-shape being placed at (0, 0, 0).</p>
 </dd>
 <dt><strong>width</strong><span class="classifier">float , optional</span></dt><dd><p>The overall width of the Cross-shape. Default is 1.0.</p>
 </dd>
@@ -941,7 +941,7 @@ is “center”.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Cell</dt><dd><p>The created Cross-shape cell.</p>
+<dt>Cell</dt><dd><p>The created Cross-shape cell.</p>
 </dd>
 </dl>
 </dd>
@@ -955,7 +955,7 @@ is “center”.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin location of the cube. Default is None which results in the cube being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">Vertex , optional</span></dt><dd><p>The origin location of the cube. Default is None which results in the cube being placed at (0, 0, 0).</p>
 </dd>
 <dt><strong>size</strong><span class="classifier">float , optional</span></dt><dd><p>The size of the cube. Default is 1.</p>
 </dd>
@@ -977,7 +977,7 @@ is “center”.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Cell</dt><dd><p>The created cube.</p>
+<dt>Cell</dt><dd><p>The created cube.</p>
 </dd>
 </dl>
 </dd>
@@ -991,7 +991,7 @@ is “center”.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The location of the origin of the cylinder.</p>
+<dt><strong>origin</strong><span class="classifier">Vertex , optional</span></dt><dd><p>The location of the origin of the cylinder.</p>
 </dd>
 <dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The radius of the cylinder. Default is 0.5.</p>
 </dd>
@@ -1018,7 +1018,7 @@ curved cylinder on the PythonOCC backend. Default is True.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Cell</dt><dd><p>The created Cell.</p>
+<dt>Cell</dt><dd><p>The created Cell.</p>
 </dd>
 </dl>
 </dd>
@@ -1032,7 +1032,7 @@ curved cylinder on the PythonOCC backend. Default is True.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>cell</strong><span class="classifier">topologic_core.Cell</span></dt><dd><p>the input cell.</p>
+<dt><strong>cell</strong><span class="classifier">Cell</span></dt><dd><p>the input cell.</p>
 </dd>
 <dt><strong>tiltAngle</strong><span class="classifier">float , optional</span></dt><dd><p>The threshold tilt angle in degrees to determine if a face is vertical, horizontal, or tilted. The tilt angle is measured from the nearest cardinal direction. Default is 10.</p>
 </dd>
@@ -1064,7 +1064,7 @@ curved cylinder on the PythonOCC backend. Default is True.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin location of the dodecahedron. Default is None which results in the dodecahedron being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">Vertex , optional</span></dt><dd><p>The origin location of the dodecahedron. Default is None which results in the dodecahedron being placed at (0, 0, 0).</p>
 </dd>
 <dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The radius of the dodecahedron’s circumscribed sphere. Default is 0.5.</p>
 </dd>
@@ -1080,7 +1080,7 @@ curved cylinder on the PythonOCC backend. Default is True.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Cell</dt><dd><p>The created dodecahedron.</p>
+<dt>Cell</dt><dd><p>The created dodecahedron.</p>
 </dd>
 </dl>
 </dd>
@@ -1094,7 +1094,7 @@ curved cylinder on the PythonOCC backend. Default is True.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>cell</strong><span class="classifier">topologic_core.Cell</span></dt><dd><p>The input cell.</p>
+<dt><strong>cell</strong><span class="classifier">Cell</span></dt><dd><p>The input cell.</p>
 </dd>
 </dl>
 </dd>
@@ -1114,7 +1114,7 @@ curved cylinder on the PythonOCC backend. Default is True.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin location of the sphere. Default is None which results in the egg-shaped cell being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">Vertex , optional</span></dt><dd><p>The origin location of the sphere. Default is None which results in the egg-shaped cell being placed at (0, 0, 0).</p>
 </dd>
 <dt><strong>height</strong><span class="classifier">float , optional</span></dt><dd><p>The desired height of of the egg-shaped cell. Default is 1.0.</p>
 </dd>
@@ -1134,7 +1134,7 @@ curved cylinder on the PythonOCC backend. Default is True.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Cell</dt><dd><p>The created egg-shaped cell.</p>
+<dt>Cell</dt><dd><p>The created egg-shaped cell.</p>
 </dd>
 </dl>
 </dd>
@@ -1148,7 +1148,7 @@ curved cylinder on the PythonOCC backend. Default is True.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>cell</strong><span class="classifier">topologic_core.Cell</span></dt><dd><p>The input cell.</p>
+<dt><strong>cell</strong><span class="classifier">Cell</span></dt><dd><p>The input cell.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
@@ -1158,7 +1158,7 @@ curved cylinder on the PythonOCC backend. Default is True.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Shell</dt><dd><p>The external boundary of the input cell.</p>
+<dt>Shell</dt><dd><p>The external boundary of the input cell.</p>
 </dd>
 </dl>
 </dd>
@@ -1172,7 +1172,7 @@ curved cylinder on the PythonOCC backend. Default is True.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>cell</strong><span class="classifier">topologic_core.Cell</span></dt><dd><p>The input cell.</p>
+<dt><strong>cell</strong><span class="classifier">Cell</span></dt><dd><p>The input cell.</p>
 </dd>
 <dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
@@ -1194,7 +1194,7 @@ curved cylinder on the PythonOCC backend. Default is True.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The location of the origin of the hyperboloid. Default is None which results in the hyperboloid being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">Vertex , optional</span></dt><dd><p>The location of the origin of the hyperboloid. Default is None which results in the hyperboloid being placed at (0, 0, 0).</p>
 </dd>
 <dt><strong>baseRadius</strong><span class="classifier">float , optional</span></dt><dd><p>The radius of the base circle of the hyperboloid. Default is 0.5.</p>
 </dd>
@@ -1220,7 +1220,7 @@ curved cylinder on the PythonOCC backend. Default is True.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Cell</dt><dd><p>The created hyperboloid.</p>
+<dt>Cell</dt><dd><p>The created hyperboloid.</p>
 </dd>
 </dl>
 </dd>
@@ -1234,7 +1234,7 @@ curved cylinder on the PythonOCC backend. Default is True.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The location of the origin of the I-shape. Default is None which results in the I-shape being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">Vertex , optional</span></dt><dd><p>The location of the origin of the I-shape. Default is None which results in the I-shape being placed at (0, 0, 0).</p>
 </dd>
 <dt><strong>width</strong><span class="classifier">float , optional</span></dt><dd><p>The overall width of the I-shape. Default is 1.0.</p>
 </dd>
@@ -1268,7 +1268,7 @@ curved cylinder on the PythonOCC backend. Default is True.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Cell</dt><dd><p>The created I-shape cell.</p>
+<dt>Cell</dt><dd><p>The created I-shape cell.</p>
 </dd>
 </dl>
 </dd>
@@ -1282,7 +1282,7 @@ curved cylinder on the PythonOCC backend. Default is True.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin location of the icosahedron. Default is None which results in the icosahedron being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">Vertex , optional</span></dt><dd><p>The origin location of the icosahedron. Default is None which results in the icosahedron being placed at (0, 0, 0).</p>
 </dd>
 <dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The radius of the icosahedron’s circumscribed sphere. Default is 0.5.</p>
 </dd>
@@ -1298,7 +1298,7 @@ curved cylinder on the PythonOCC backend. Default is True.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Cell</dt><dd><p>The created icosahedron.</p>
+<dt>Cell</dt><dd><p>The created icosahedron.</p>
 </dd>
 </dl>
 </dd>
@@ -1330,7 +1330,7 @@ vertex is defined by three independent incident face planes.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>cell</strong><span class="classifier">topologic_core.Cell</span></dt><dd><p>The input cell.</p>
+<dt><strong>cell</strong><span class="classifier">Cell</span></dt><dd><p>The input cell.</p>
 </dd>
 <dt><strong>faces</strong><span class="classifier">list</span></dt><dd><p>The list of limiting analytical faces.</p>
 </dd>
@@ -1355,7 +1355,7 @@ Default is False.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Topology</dt><dd><p>The inflated topology. This is normally a Cell, but it may be a Cluster
+<dt>Topology</dt><dd><p>The inflated topology. This is normally a Cell, but it may be a Cluster
 when the rebuilt faces cannot be self-merged into a Cell.</p>
 </dd>
 </dl>
@@ -1383,13 +1383,13 @@ than relying on generic subtopology enumeration, which is not ordered.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>cell</strong><span class="classifier">topologic_core.Cell</span></dt><dd><p>The input cell.</p>
+<dt><strong>cell</strong><span class="classifier">Cell</span></dt><dd><p>The input cell.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>list</dt><dd><p>The list of internal boundaries ([topologic_core.Shell]).</p>
+<dt>list</dt><dd><p>The list of internal boundaries ([Shell]).</p>
 </dd>
 </dl>
 </dd>
@@ -1403,7 +1403,7 @@ than relying on generic subtopology enumeration, which is not ordered.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>cell</strong><span class="classifier">topologic_core.Cell</span></dt><dd><p>The input cell.</p>
+<dt><strong>cell</strong><span class="classifier">Cell</span></dt><dd><p>The input cell.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
@@ -1413,7 +1413,7 @@ than relying on generic subtopology enumeration, which is not ordered.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Vertex</dt><dd><p>The internal vertex.</p>
+<dt>Vertex</dt><dd><p>The internal vertex.</p>
 </dd>
 </dl>
 </dd>
@@ -1427,9 +1427,9 @@ than relying on generic subtopology enumeration, which is not ordered.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>cell</strong><span class="classifier">topologic_core.Cell</span></dt><dd><p>The input cell.</p>
+<dt><strong>cell</strong><span class="classifier">Cell</span></dt><dd><p>The input cell.</p>
 </dd>
-<dt><strong>vertex</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The input vertex.</p>
+<dt><strong>vertex</strong><span class="classifier">Vertex</span></dt><dd><p>The input vertex.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
@@ -1451,7 +1451,7 @@ than relying on generic subtopology enumeration, which is not ordered.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The location of the origin of the L-shape. Default is None which results in the L-shape being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">Vertex , optional</span></dt><dd><p>The location of the origin of the L-shape. Default is None which results in the L-shape being placed at (0, 0, 0).</p>
 </dd>
 <dt><strong>width</strong><span class="classifier">float , optional</span></dt><dd><p>The overall width of the L-shape. Default is 1.0.</p>
 </dd>
@@ -1483,7 +1483,7 @@ than relying on generic subtopology enumeration, which is not ordered.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Cell</dt><dd><p>The created L-shape cell.</p>
+<dt>Cell</dt><dd><p>The created L-shape cell.</p>
 </dd>
 </dl>
 </dd>
@@ -1497,7 +1497,7 @@ than relying on generic subtopology enumeration, which is not ordered.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin location of the sphere. Default is None which results in the sphere being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">Vertex , optional</span></dt><dd><p>The origin location of the sphere. Default is None which results in the sphere being placed at (0, 0, 0).</p>
 </dd>
 <dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The radius of the sphere. Default is 0.5.</p>
 </dd>
@@ -1517,7 +1517,7 @@ than relying on generic subtopology enumeration, which is not ordered.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Cell</dt><dd><p>The created Noperthedron polyhedron.</p>
+<dt>Cell</dt><dd><p>The created Noperthedron polyhedron.</p>
 </dd>
 </dl>
 </dd>
@@ -1531,7 +1531,7 @@ than relying on generic subtopology enumeration, which is not ordered.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin location of the octahedron. Default is None which results in the octahedron being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">Vertex , optional</span></dt><dd><p>The origin location of the octahedron. Default is None which results in the octahedron being placed at (0, 0, 0).</p>
 </dd>
 <dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The radius of the octahedron’s circumscribed sphere. Default is 0.5.</p>
 </dd>
@@ -1547,7 +1547,7 @@ than relying on generic subtopology enumeration, which is not ordered.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Cell</dt><dd><p>The created octahedron.</p>
+<dt>Cell</dt><dd><p>The created octahedron.</p>
 </dd>
 </dl>
 </dd>
@@ -1561,7 +1561,7 @@ than relying on generic subtopology enumeration, which is not ordered.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin location of the parabolic surface. Default is None which results in the parabolic surface being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">Vertex , optional</span></dt><dd><p>The origin location of the parabolic surface. Default is None which results in the parabolic surface being placed at (0, 0, 0).</p>
 </dd>
 <dt><strong>focalLength</strong><span class="classifier">float , optional</span></dt><dd><p>The focal length of the parabola. Default is 0.125.</p>
 </dd>
@@ -1589,7 +1589,7 @@ than relying on generic subtopology enumeration, which is not ordered.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Shell</dt><dd><p>The created paraboloid.</p>
+<dt>Shell</dt><dd><p>The created paraboloid.</p>
 </dd>
 </dl>
 </dd>
@@ -1603,9 +1603,9 @@ than relying on generic subtopology enumeration, which is not ordered.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>edge</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The centerline of the pipe.</p>
+<dt><strong>edge</strong><span class="classifier">Edge</span></dt><dd><p>The centerline of the pipe.</p>
 </dd>
-<dt><strong>profile</strong><span class="classifier">topologic_core.Wire , optional</span></dt><dd><p>The profile of the pipe. It is assumed that the profile is in the XY plane. If set to None, a circle of radius 0.5 will be used. Default is None.</p>
+<dt><strong>profile</strong><span class="classifier">Wire , optional</span></dt><dd><p>The profile of the pipe. It is assumed that the profile is in the XY plane. If set to None, a circle of radius 0.5 will be used. Default is None.</p>
 </dd>
 <dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The radius of the pipe. Default is 0.5.</p>
 </dd>
@@ -1642,7 +1642,7 @@ than relying on generic subtopology enumeration, which is not ordered.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin location of the prism. Default is None which results in the prism being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">Vertex , optional</span></dt><dd><p>The origin location of the prism. Default is None which results in the prism being placed at (0, 0, 0).</p>
 </dd>
 <dt><strong>width</strong><span class="classifier">float , optional</span></dt><dd><p>The width of the prism. Default is 1.</p>
 </dd>
@@ -1670,7 +1670,7 @@ than relying on generic subtopology enumeration, which is not ordered.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Cell</dt><dd><p>The created prism.</p>
+<dt>Cell</dt><dd><p>The created prism.</p>
 </dd>
 </dl>
 </dd>
@@ -1684,7 +1684,7 @@ than relying on generic subtopology enumeration, which is not ordered.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex, optional</span></dt><dd><p>The location of the origin of the RHS. Default is None which results in the RHS being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">Vertex, optional</span></dt><dd><p>The location of the origin of the RHS. Default is None which results in the RHS being placed at (0, 0, 0).</p>
 </dd>
 <dt><strong>width</strong><span class="classifier">float , optional</span></dt><dd><p>The width of the RHS. Default is 1.0.</p>
 </dd>
@@ -1712,7 +1712,7 @@ than relying on generic subtopology enumeration, which is not ordered.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Cell</dt><dd><p>The created cell.</p>
+<dt>Cell</dt><dd><p>The created cell.</p>
 </dd>
 </dl>
 </dd>
@@ -1726,7 +1726,7 @@ than relying on generic subtopology enumeration, which is not ordered.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>cell</strong><span class="classifier">topologic_core.Cell</span></dt><dd><p>The input cell.</p>
+<dt><strong>cell</strong><span class="classifier">Cell</span></dt><dd><p>The input cell.</p>
 </dd>
 <dt><strong>angTolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired angular tolerance. Default is 0.1.</p>
 </dd>
@@ -1738,7 +1738,7 @@ than relying on generic subtopology enumeration, which is not ordered.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Cell</dt><dd><p>The created cell without any collinear edges.</p>
+<dt>Cell</dt><dd><p>The created cell without any collinear edges.</p>
 </dd>
 </dl>
 </dd>
@@ -1755,7 +1755,7 @@ This algorithm depends on the polyskel code which is included in the library. Po
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input face.</p>
+<dt><strong>face</strong><span class="classifier">Face</span></dt><dd><p>The input face.</p>
 </dd>
 <dt><strong>angle</strong><span class="classifier">float , optional</span></dt><dd><p>The desired angle in degrees of the roof. Default is 45.</p>
 </dd>
@@ -1781,7 +1781,7 @@ This algorithm depends on the polyskel code which is included in the library. Po
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex, optional</span></dt><dd><p>The location of the origin of the SHS. Default is None which results in the SHS being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">Vertex, optional</span></dt><dd><p>The location of the origin of the SHS. Default is None which results in the SHS being placed at (0, 0, 0).</p>
 </dd>
 <dt><strong>size</strong><span class="classifier">float , optional</span></dt><dd><p>The size of the SHS. Default is 1.0.</p>
 </dd>
@@ -1809,7 +1809,7 @@ This algorithm depends on the polyskel code which is included in the library. Po
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Cell</dt><dd><p>The created cell.</p>
+<dt>Cell</dt><dd><p>The created cell.</p>
 </dd>
 </dl>
 </dd>
@@ -1849,7 +1849,7 @@ This algorithm depends on the polyskel code which is included in the library. Po
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>cell</strong><span class="classifier">topologic_core.Cell</span></dt><dd><p>The input cell.</p>
+<dt><strong>cell</strong><span class="classifier">Cell</span></dt><dd><p>The input cell.</p>
 </dd>
 </dl>
 </dd>
@@ -1869,7 +1869,7 @@ This algorithm depends on the polyskel code which is included in the library. Po
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin location of the sphere. Default is None which results in the sphere being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">Vertex , optional</span></dt><dd><p>The origin location of the sphere. Default is None which results in the sphere being placed at (0, 0, 0).</p>
 </dd>
 <dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The radius of the sphere. Default is 0.5.</p>
 </dd>
@@ -1889,7 +1889,7 @@ This algorithm depends on the polyskel code which is included in the library. Po
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Cell</dt><dd><p>The created sphere.</p>
+<dt>Cell</dt><dd><p>The created sphere.</p>
 </dd>
 </dl>
 </dd>
@@ -1903,7 +1903,7 @@ This algorithm depends on the polyskel code which is included in the library. Po
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>cell</strong><span class="classifier">topologic_core.Cell</span></dt><dd><p>The cell.</p>
+<dt><strong>cell</strong><span class="classifier">Cell</span></dt><dd><p>The cell.</p>
 </dd>
 <dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
@@ -1925,7 +1925,7 @@ This algorithm depends on the polyskel code which is included in the library. Po
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The location of the origin of the T-shape. Default is None which results in the T-shape being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">Vertex , optional</span></dt><dd><p>The location of the origin of the T-shape. Default is None which results in the T-shape being placed at (0, 0, 0).</p>
 </dd>
 <dt><strong>width</strong><span class="classifier">float , optional</span></dt><dd><p>The overall width of the T-shape. Default is 1.0.</p>
 </dd>
@@ -1957,7 +1957,7 @@ This algorithm depends on the polyskel code which is included in the library. Po
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Face</dt><dd><p>The created T-shape.</p>
+<dt>Face</dt><dd><p>The created T-shape.</p>
 </dd>
 </dl>
 </dd>
@@ -1971,7 +1971,7 @@ This algorithm depends on the polyskel code which is included in the library. Po
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin location of the tetrahedron. Default is None which results in the tetrahedron being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">Vertex , optional</span></dt><dd><p>The origin location of the tetrahedron. Default is None which results in the tetrahedron being placed at (0, 0, 0).</p>
 </dd>
 <dt><strong>length</strong><span class="classifier">float , optional</span></dt><dd><p>The length of the edge of the tetrahedron. Default is 1.</p>
 </dd>
@@ -1991,7 +1991,7 @@ This algorithm depends on the polyskel code which is included in the library. Po
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.CellComplex</dt><dd><p>The created tetrahedron.</p>
+<dt>CellComplex</dt><dd><p>The created tetrahedron.</p>
 </dd>
 </dl>
 </dd>
@@ -2005,7 +2005,7 @@ This algorithm depends on the polyskel code which is included in the library. Po
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin location of the torus. Default is None which results in the torus being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">Vertex , optional</span></dt><dd><p>The origin location of the torus. Default is None which results in the torus being placed at (0, 0, 0).</p>
 </dd>
 <dt><strong>majorRadius</strong><span class="classifier">float , optional</span></dt><dd><p>The major radius of the torus. Default is 0.5.</p>
 </dd>
@@ -2031,7 +2031,7 @@ Comparison is case-insensitive.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Cell</dt><dd><p>The created torus.</p>
+<dt>Cell</dt><dd><p>The created torus.</p>
 </dd>
 </dl>
 </dd>
@@ -2045,7 +2045,7 @@ Comparison is case-insensitive.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex, optional</span></dt><dd><p>The location of the origin of the CHS. Default is None which results in the CHS being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">Vertex, optional</span></dt><dd><p>The location of the origin of the CHS. Default is None which results in the CHS being placed at (0, 0, 0).</p>
 </dd>
 <dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The outer radius of the CHS. Default is 1.0.</p>
 </dd>
@@ -2067,7 +2067,7 @@ Comparison is case-insensitive.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Cell</dt><dd><p>The created cell.</p>
+<dt>Cell</dt><dd><p>The created cell.</p>
 </dd>
 </dl>
 </dd>
@@ -2081,7 +2081,7 @@ Comparison is case-insensitive.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>cell</strong><span class="classifier">topologic_core.Cell</span></dt><dd><p>The input cell.</p>
+<dt><strong>cell</strong><span class="classifier">Cell</span></dt><dd><p>The input cell.</p>
 </dd>
 </dl>
 </dd>
@@ -2101,7 +2101,7 @@ Comparison is case-insensitive.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>cell</strong><span class="classifier">topologic_core.Cell</span></dt><dd><p>The input cell.</p>
+<dt><strong>cell</strong><span class="classifier">Cell</span></dt><dd><p>The input cell.</p>
 </dd>
 <dt><strong>manitssa: int , optional</strong></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
@@ -2125,7 +2125,7 @@ Comparison is case-insensitive.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The location of the origin of the Wedge. Default is None which results in the Wedge being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">Vertex , optional</span></dt><dd><p>The location of the origin of the Wedge. Default is None which results in the Wedge being placed at (0, 0, 0).</p>
 </dd>
 <dt><strong>width</strong><span class="classifier">float , optional</span></dt><dd><p>The overall width of the Wedge. Default is 1.0.</p>
 </dd>
@@ -2145,7 +2145,7 @@ Comparison is case-insensitive.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Cell</dt><dd><p>The created Wedge.</p>
+<dt>Cell</dt><dd><p>The created Wedge.</p>
 </dd>
 </dl>
 </dd>
@@ -2159,7 +2159,7 @@ Comparison is case-insensitive.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>cell</strong><span class="classifier">topologic_core.Cell</span></dt><dd><p>The input cell.</p>
+<dt><strong>cell</strong><span class="classifier">Cell</span></dt><dd><p>The input cell.</p>
 </dd>
 </dl>
 </dd>

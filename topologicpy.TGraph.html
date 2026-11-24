@@ -2967,7 +2967,7 @@ vectorized planar batch; omitted host preserves existing behavior.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input Topologic topology.</p>
+<dt><strong>topology</strong><span class="classifier">Topology</span></dt><dd><p>The input Topologic topology.</p>
 </dd>
 <dt><strong>direct</strong><span class="classifier">bool, optional</span></dt><dd><p>If True, direct topological relationships are included.</p>
 </dd>
@@ -5394,7 +5394,7 @@ occurs. asObject needs the optional graphviz Python package.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
+<dt><strong>topology</strong><span class="classifier">Topology</span></dt><dd><p>The input topology.</p>
 </dd>
 <dt><strong>types</strong><span class="classifier">list , optional</span></dt><dd><p>Subtopology types to include. Default is vertex, edge, wire, face, shell,
 cell, and cellComplex.</p>
@@ -6776,7 +6776,7 @@ Default is False.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>dict or topologic_core.Vertex or None</dt><dd><p>The nearest TGraph vertex record, or a Topologic vertex if asTopologic
+<dt>dict or Vertex or None</dt><dd><p>The nearest TGraph vertex record, or a Topologic vertex if asTopologic
 is True.</p>
 </dd>
 </dl>
@@ -8471,7 +8471,7 @@ True.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Edge or None</dt><dd><p>The converted Topologic edge.</p>
+<dt>Edge or None</dt><dd><p>The converted Topologic edge.</p>
 </dd>
 </dl>
 </dd>
@@ -8503,7 +8503,7 @@ True.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Vertex or None</dt><dd><p>The converted Topologic vertex.</p>
+<dt>Vertex or None</dt><dd><p>The converted Topologic vertex.</p>
 </dd>
 </dl>
 </dd>
@@ -9331,7 +9331,7 @@ corresponding Topologic edges. Default is False.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Wire or None</dt><dd><p>The resulting directed Topologic Wire, or None if it cannot be created.</p>
+<dt>Wire or None</dt><dd><p>The resulting directed Topologic Wire, or None if it cannot be created.</p>
 </dd>
 </dl>
 </dd>
