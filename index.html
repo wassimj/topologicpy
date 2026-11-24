@@ -109,33 +109,178 @@
 <p>TopologicPy supports <strong>mixed-dimensional models</strong> naturally. For example, lines may represent beams, columns, circulation paths, or network connections; surfaces may represent walls, slabs, zones, or analytical boundaries; and volumes may represent rooms, buildings, or other spatial regions. These entities can coexist within the same topological structure and carry associated dictionaries and semantic information. This provides a flexible foundation for translating between geometric models, Building Information Models (BIM), analytical models, and graph-based representations.</p>
 <p>A major strength of TopologicPy is its ability to transform spatial and topological models into <strong>graphs</strong>. Buildings and other spatial systems can be represented through nodes and edges describing adjacency, accessibility, containment, visibility, connectivity, or other relationships. TopologicPy provides graph algorithms for path finding, centrality, community detection, spatial analysis, and related operations, while also supporting integration with <strong>Graph Machine Learning (GML)</strong> workflows. These capabilities make it possible to investigate spatial configurations computationally and to apply machine-learning techniques to problems such as classification, prediction, pattern recognition, and inference over connected spatial data.</p>
 <p>TopologicPy also supports <strong>semantic and knowledge-based representations</strong>. Its graph and ontology capabilities can be used to construct knowledge graphs, represent relationships derived from BIM and IFC data, perform reasoning, and connect spatial models with broader semantic information. This provides a foundation for workflows involving knowledge graphs, rule-based reasoning, graph databases, and emerging approaches such as GraphRAG and AI-assisted spatial analysis.</p>
-<p>TopologicPy provides a comprehensive Python <strong>Application Programming Interface (API)</strong> designed for scripting, Jupyter notebooks, computational design workflows, research applications, and integration into larger software systems. Its geometry and topology capabilities are currently powered primarily by <strong>PythonOCC/OpenCASCADE</strong>, providing access to the mature Open CASCADE geometric modelling kernel through Python. TopologicPy also maintains support for alternative topology backends, allowing the Python API to remain increasingly independent of any single underlying geometry engine.</p>
+<p>TopologicPy provides a comprehensive Python <strong>Application Programming Interface (API)</strong> designed for scripting, Jupyter notebooks, computational design workflows, research applications, and integration into larger software systems. Its geometry and topology capabilities are powered by <strong>PythonOCC/OpenCASCADE</strong>, providing access to the mature Open CASCADE Technology (OCCT) geometric modelling kernel through Python.</p>
 <p>Interoperability is an important part of the library. TopologicPy supports widely used formats and workflows including <strong>IFC, BREP, OBJ, STL, DXF, JSON, CSV, RDF/TTL, and HBJSON</strong>, among others. Its IFC capabilities enable geometric, topological, spatial, and semantic information to be extracted from Building Information Models and transformed into structures suitable for analysis, graph generation, reasoning, and downstream computational workflows.</p>
 <p>TopologicPy is distributed as open-source software under the <strong>`GNU Lesser General Public License (LGPL) &lt;https://opensource.org/license/lgpl-3-0&gt;`_</strong>. This allows it to be used, extended, embedded, and integrated into both research and professional workflows without dependence on proprietary subscription-based platforms. The library is designed to provide an extensible computational foundation on which researchers, designers, engineers, educators, and software developers can build their own spatial analysis and design tools.</p>
 <p>TopologicPy can be used interactively in Python and Jupyter environments, incorporated into automated analysis pipelines, or embedded within larger applications. By bringing together <strong>geometry, non-manifold topology, graph computation, semantics, and artificial intelligence</strong>, TopologicPy provides a flexible platform for computationally understanding and working with the spatial relationships that underpin the built environment.</p>
 </section>
 <section id="installation">
 <h2>Installation<a class="headerlink" href="#installation" title="Permalink to this heading"></a></h2>
+<p>TopologicPy uses <a class="reference external" href="https://github.com/tpaviot/pythonocc-core">PythonOCC</a> for geometry and topology. PythonOCC includes compiled bindings to Open CASCADE Technology (OCCT), so it must be installed in the same Python environment as TopologicPy.</p>
+<p><strong>Python 3.12 is recommended.</strong> The examples below use the PythonOCC 8.0.1 release series. Choose one of the following installation routes:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Installation route</p></th>
+<th class="head"><p>Recommended for</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Conda / conda-forge</p></td>
+<td><p>Most users; installs TopologicPy and native dependencies together.</p></td>
+</tr>
+<tr class="row-odd"><td><p>Conda + pip</p></td>
+<td><p>Users who want the latest TopologicPy release from PyPI.</p></td>
+</tr>
+<tr class="row-even"><td><p>Pixi (no Conda application required)</p></td>
+<td><p>Users who prefer a lightweight, standalone environment manager.</p></td>
+</tr>
+<tr class="row-odd"><td><p>Build PythonOCC from source + pip</p></td>
+<td><p>Advanced users who cannot use conda-forge packages or need their own Python installation.</p></td>
+</tr>
+</tbody>
+</table>
 <section id="recommended-conda">
-<h3>Recommended: Conda<a class="headerlink" href="#recommended-conda" title="Permalink to this heading"></a></h3>
-<p>TopologicPy can be installed from conda-forge:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>create<span class="w"> </span>-n<span class="w"> </span>topologicpy<span class="w"> </span>-c<span class="w"> </span>conda-forge<span class="w"> </span>topologicpy
+<h3>1. Recommended: Conda<a class="headerlink" href="#recommended-conda" title="Permalink to this heading"></a></h3>
+<p>If Conda is not already installed, install <a class="reference external" href="https://github.com/conda-forge/miniforge#download">Miniforge</a> for your operating system and processor architecture. Miniforge uses conda-forge by default. Existing Miniconda or Anaconda installations can also be used.</p>
+<p>Open a terminal (on Windows, use the Miniforge or Anaconda Prompt, or a PowerShell session configured for Conda). Check that Conda is available:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>--version
+</pre></div>
+</div>
+<p>Create a dedicated environment with TopologicPy and PythonOCC:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>create<span class="w"> </span>-n<span class="w"> </span>topologicpy<span class="w"> </span>--override-channels<span class="w"> </span>-c<span class="w"> </span>conda-forge<span class="w"> </span><span class="nv">python</span><span class="o">=</span><span class="m">3</span>.12<span class="w"> </span><span class="s2">"pythonocc-core=8.0.1*"</span><span class="w"> </span>topologicpy
 conda<span class="w"> </span>activate<span class="w"> </span>topologicpy
 </pre></div>
 </div>
-</section>
-<section id="pip">
-<h3>Pip<a class="headerlink" href="#pip" title="Permalink to this heading"></a></h3>
-<p>TopologicPy can also be installed from PyPI:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>topologicpy<span class="w"> </span>--upgrade
+<p>The package manager installs the native OCCT libraries and Python dependencies automatically. Do not install PythonOCC separately with pip.</p>
+<p>To update TopologicPy within this environment:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>activate<span class="w"> </span>topologicpy
+conda<span class="w"> </span>update<span class="w"> </span>--override-channels<span class="w"> </span>-c<span class="w"> </span>conda-forge<span class="w"> </span>topologicpy
 </pre></div>
 </div>
-<p>Note:  pip install falls back to topologic_core when pythonOCC is absent. topologic_core is much slower, faulty in places, and is not recommended. It will be deprecated soon.</p>
+</section>
+<section id="conda-pip-install-the-latest-topologicpy-from-pypi">
+<h3>2. Conda + pip: Install the latest TopologicPy from PyPI<a class="headerlink" href="#conda-pip-install-the-latest-topologicpy-from-pypi" title="Permalink to this heading"></a></h3>
+<p>The PyPI release may be newer than the conda-forge release. To use it, first create a fresh environment containing PythonOCC, then install TopologicPy with pip:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>create<span class="w"> </span>-n<span class="w"> </span>topologicpy-pip<span class="w"> </span>--override-channels<span class="w"> </span>-c<span class="w"> </span>conda-forge<span class="w"> </span><span class="nv">python</span><span class="o">=</span><span class="m">3</span>.12<span class="w"> </span><span class="s2">"pythonocc-core=8.0.1*"</span><span class="w"> </span>pip
+conda<span class="w"> </span>activate<span class="w"> </span>topologicpy-pip
+python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>--upgrade<span class="w"> </span>topologicpy
+</pre></div>
+</div>
+<p>If you already have a suitable Conda environment, activate it and install PythonOCC before installing TopologicPy. A new environment is preferred to avoid dependency conflicts.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>install<span class="w"> </span>--override-channels<span class="w"> </span>-c<span class="w"> </span>conda-forge<span class="w"> </span><span class="s2">"pythonocc-core=8.0.1*"</span><span class="w"> </span>pip
+python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>--upgrade<span class="w"> </span>topologicpy
+</pre></div>
+</div>
+<p>Use <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span> <span class="pre">pip</span></code> rather than a standalone <code class="docutils literal notranslate"><span class="pre">pip</span></code> command to ensure that TopologicPy is installed into the active interpreter. Keep native dependencies managed by Conda; use pip to update TopologicPy in this environment.</p>
+</section>
+<section id="without-conda-pixi">
+<h3>3. Without Conda: Pixi<a class="headerlink" href="#without-conda-pixi" title="Permalink to this heading"></a></h3>
+<p><a class="reference external" href="https://pixi.prefix.dev/latest/">Pixi</a> is a standalone package and environment manager. It does not require Conda, Miniconda, Anaconda or an existing Python installation. It can install the same precompiled PythonOCC and OCCT packages from conda-forge.</p>
+<section id="install-pixi">
+<h4>Install Pixi<a class="headerlink" href="#install-pixi" title="Permalink to this heading"></a></h4>
+<p>Follow the <a class="reference external" href="https://pixi.prefix.dev/latest/installation/">official Pixi installation instructions</a> for Windows, macOS or Linux. Open a new terminal after installation and check:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pixi<span class="w"> </span>--version
+</pre></div>
+</div>
+</section>
+<section id="create-a-topologicpy-workspace">
+<h4>Create a TopologicPy workspace<a class="headerlink" href="#create-a-topologicpy-workspace" title="Permalink to this heading"></a></h4>
+<p>Run these commands in a terminal from a directory where you want to keep your project:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pixi<span class="w"> </span>init<span class="w"> </span>--channel<span class="w"> </span>conda-forge<span class="w"> </span>topologicpy-project
+<span class="nb">cd</span><span class="w"> </span>topologicpy-project
+pixi<span class="w"> </span>add<span class="w"> </span><span class="nv">python</span><span class="o">=</span><span class="m">3</span>.12<span class="w"> </span><span class="s2">"pythonocc-core=8.0.1*"</span><span class="w"> </span>topologicpy
+</pre></div>
+</div>
+<p>To use the latest PyPI release instead, start with a fresh workspace and use the following commands in place of the previous block:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pixi<span class="w"> </span>init<span class="w"> </span>--channel<span class="w"> </span>conda-forge<span class="w"> </span>topologicpy-pypi
+<span class="nb">cd</span><span class="w"> </span>topologicpy-pypi
+pixi<span class="w"> </span>add<span class="w"> </span><span class="nv">python</span><span class="o">=</span><span class="m">3</span>.12<span class="w"> </span><span class="s2">"pythonocc-core=8.0.1*"</span>
+pixi<span class="w"> </span>add<span class="w"> </span>--pypi<span class="w"> </span>topologicpy
+</pre></div>
+</div>
+<p>Run Python in the workspace:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pixi<span class="w"> </span>run<span class="w"> </span>python
+</pre></div>
+</div>
+<p>To run an existing script:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pixi<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </span>my_script.py
+</pre></div>
+</div>
+<p>To work interactively in the managed environment, run <code class="docutils literal notranslate"><span class="pre">pixi</span> <span class="pre">shell</span></code>. To update the workspace dependencies, run <code class="docutils literal notranslate"><span class="pre">pixi</span> <span class="pre">update</span></code>. Pixi records the package requirements and resolved versions in its manifest and lock file.</p>
+<p>Although Pixi uses conda-forge packages, it does not install or invoke the Conda application. It manages its own Python interpreter; it does not install PythonOCC into your existing system Python or virtual environment.</p>
+</section>
+</section>
+<section id="without-conda-or-conda-forge-packages-build-pythonocc-from-source">
+<h3>4. Without Conda or conda-forge packages: Build PythonOCC from source<a class="headerlink" href="#without-conda-or-conda-forge-packages-build-pythonocc-from-source" title="Permalink to this heading"></a></h3>
+<p>If you need to use an existing standard Python installation and cannot use precompiled conda-forge packages, build PythonOCC against a compatible OCCT release using the <a class="reference external" href="https://github.com/tpaviot/pythonocc-core/blob/master/INSTALL.md">official PythonOCC build guide</a>. This is an advanced installation route, not a pip-only installation.</p>
+<ol class="arabic">
+<li><p>Install Python 3.12 and create a virtual environment:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>.venv
+</pre></div>
+</div>
+<p>Activate it on Windows (PowerShell):</p>
+<div class="highlight-powershell notranslate"><div class="highlight"><pre><span></span><span class="p">.\.</span><span class="n">venv</span><span class="p">\</span><span class="n">Scripts</span><span class="p">\</span><span class="n">Activate</span><span class="p">.</span><span class="n">ps1</span>
+</pre></div>
+</div>
+<p>On macOS or Linux:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">source</span><span class="w"> </span>.venv/bin/activate
+</pre></div>
+</div>
+</li>
+<li><p>Install the platform-specific C++ compiler, CMake, SWIG and other native build dependencies specified in the upstream guide.</p></li>
+<li><p>Obtain or compile a compatible OCCT 8.0.1 release and the corresponding PythonOCC source release. Use the matching tagged source and its build instructions rather than mixing arbitrary versions.</p></li>
+<li><p>Configure and compile PythonOCC using the Python interpreter in your virtual environment. Ensure its installed <code class="docutils literal notranslate"><span class="pre">OCC</span></code> package is on that interpreter’s module search path and that the matching OCCT shared libraries are discoverable at runtime. The upstream guide gives platform-specific CMake options and native library configuration for Linux and Windows; other platforms may require additional build work.</p></li>
+<li><p>Once the PythonOCC verification command below succeeds, install TopologicPy:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>--upgrade<span class="w"> </span>topologicpy
+</pre></div>
+</div>
+</li>
+</ol>
+<section id="why-not-pip-install-pythonocc">
+<h4>Why not <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">pythonocc</span></code>?<a class="headerlink" href="#why-not-pip-install-pythonocc" title="Permalink to this heading"></a></h4>
+<p>The modern PythonOCC releases are not officially published as PyPI wheels. The historical package named <code class="docutils literal notranslate"><span class="pre">pythonocc-core</span></code> on PyPI is not a current release and must not be used for this installation. The supported binary distribution is <a class="reference external" href="https://anaconda.org/conda-forge/pythonocc-core">pythonocc-core on conda-forge</a>. Third-party repackaged wheels are not an upstream-supported distribution and are not recommended for this installation.</p>
+</section>
+</section>
+<section id="verify-the-installation">
+<h3>5. Verify the installation<a class="headerlink" href="#verify-the-installation" title="Permalink to this heading"></a></h3>
+<p>In the activated Conda environment, the Pixi shell, or the virtual environment with a successful native build, run:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">"import sys; print(sys.executable); from OCC.Core.gp import gp_Pnt; print(gp_Pnt(1., 2., 3.).X())"</span>
+</pre></div>
+</div>
+<p>The last line should be <code class="docutils literal notranslate"><span class="pre">1.0</span></code>. This checks that the native bindings can load, not just that a package is listed as installed.</p>
+<p>Next, test TopologicPy’s geometry construction:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">"from topologicpy.Cell import Cell; from topologicpy.Topology import Topology; c = Cell.Prism(); assert Topology.IsInstance(c, 'Cell'); assert len(Topology.Faces(c)) == 6; print('TopologicPy geometry OK')"</span>
+</pre></div>
+</div>
+<p>If using Pixi without opening <code class="docutils literal notranslate"><span class="pre">pixi</span> <span class="pre">shell</span></code>, prefix these commands with <code class="docutils literal notranslate"><span class="pre">pixi</span> <span class="pre">run</span></code>.</p>
+</section>
+<section id="jupyter-notebooks-optional">
+<h3>6. Jupyter notebooks (optional)<a class="headerlink" href="#jupyter-notebooks-optional" title="Permalink to this heading"></a></h3>
+<p>In an activated Conda or source-build environment:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>jupyterlab<span class="w"> </span>ipykernel
+python<span class="w"> </span>-m<span class="w"> </span>ipykernel<span class="w"> </span>install<span class="w"> </span>--user<span class="w"> </span>--name<span class="w"> </span>topologicpy<span class="w"> </span>--display-name<span class="w"> </span><span class="s2">"Python (TopologicPy)"</span>
+python<span class="w"> </span>-m<span class="w"> </span>jupyterlab
+</pre></div>
+</div>
+<p>Select <strong>Python (TopologicPy)</strong> as the notebook kernel. For Pixi, use <code class="docutils literal notranslate"><span class="pre">pixi</span> <span class="pre">add</span> <span class="pre">jupyterlab</span> <span class="pre">ipykernel</span></code> and <code class="docutils literal notranslate"><span class="pre">pixi</span> <span class="pre">run</span> <span class="pre">jupyter</span> <span class="pre">lab</span></code> from the workspace, selecting its Python kernel.</p>
+</section>
+<section id="troubleshooting">
+<h3>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permalink to this heading"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">ModuleNotFoundError:</span> <span class="pre">No</span> <span class="pre">module</span> <span class="pre">named</span> <span class="pre">'OCC'</span></code>: PythonOCC is absent from the interpreter you are running. Check <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-c</span> <span class="pre">&quot;import</span> <span class="pre">sys;</span> <span class="pre">print(sys.executable)&quot;</span></code> and activate the correct environment.</p></li>
+<li><p>DLL load failures or missing shared libraries: ensure the correct environment is activated and that OCCT and PythonOCC were installed together for the same platform and Python version. Avoid copying compiled modules between environments.</p></li>
+<li><p>Package resolution fails: use a fresh Python 3.12 environment and check the <a class="reference external" href="https://anaconda.org/conda-forge/pythonocc-core/files">available PythonOCC builds</a> for your platform.</p></li>
+<li><p>Imports work in a terminal but not in Jupyter: select the kernel associated with the environment in which PythonOCC was installed.</p></li>
+</ul>
 </section>
 </section>
 <section id="prerequisites">
 <h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Permalink to this heading"></a></h2>
-<p>TopologicPy requires Python 3.8 or newer and currently supports Python versions below 3.15.</p>
+<p>Use Python 3.12 for the installation examples above. The usable Python versions depend on the intersection of TopologicPy’s package requirements and the available PythonOCC builds. Check the <a class="reference external" href="https://pypi.org/project/topologicpy/">TopologicPy PyPI metadata</a> and <a class="reference external" href="https://anaconda.org/conda-forge/pythonocc-core/files">PythonOCC package builds</a> if selecting another Python version.</p>
 <section id="core-dependencies">
 <h3>Core Dependencies<a class="headerlink" href="#core-dependencies" title="Permalink to this heading"></a></h3>
 <p>TopologicPy depends on the following Python libraries:</p>
@@ -149,17 +294,11 @@ conda<span class="w"> </span>activate<span class="w"> </span>topologicpy
 <li><p><a class="reference external" href="https://pypi.org/project/webcolors/">webcolors</a></p></li>
 <li><p><a class="reference external" href="https://nbformat.readthedocs.io/">nbformat</a></p></li>
 </ul>
-</details><p>These dependencies are installed automatically when TopologicPy is installed.</p>
+</details><p>These Python dependencies are installed automatically by the package manager when TopologicPy is installed. PythonOCC must be available through one of the installation routes above.</p>
 </section>
 <section id="geometry-and-topology-backend">
 <h3>Geometry and Topology Backend<a class="headerlink" href="#geometry-and-topology-backend" title="Permalink to this heading"></a></h3>
-<p>TopologicPy requires a geometry and topology backend.</p>
-<p>When TopologicPy is installed from <strong>conda-forge</strong>, the recommended
-<a class="reference external" href="https://github.com/tpaviot/pythonocc-core">pythonocc-core</a> backend is installed automatically:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>create<span class="w"> </span>-n<span class="w"> </span>topologicpy<span class="w"> </span>-c<span class="w"> </span>conda-forge<span class="w"> </span>topologicpy
-conda<span class="w"> </span>activate<span class="w"> </span>topologicpy
-</pre></div>
-</div>
+<p><a class="reference external" href="https://github.com/tpaviot/pythonocc-core">PythonOCC</a> provides the native geometry and topology implementation. Follow one of the installation routes above to install it before using TopologicPy. The distribution package is named <code class="docutils literal notranslate"><span class="pre">pythonocc-core</span></code>; its Python import namespace is <code class="docutils literal notranslate"><span class="pre">OCC</span></code>.</p>
 </section>
 <section id="optional-features">
 <h3>Optional features<a class="headerlink" href="#optional-features" title="Permalink to this heading"></a></h3>
@@ -261,7 +400,7 @@ webcolors remain required dependencies and are installed by the package manager.
 <h3>TGraph graph API<a class="headerlink" href="#tgraph-graph-api" title="Permalink to this heading"></a></h3>
 <p>Graph-producing library methods now return <code class="docutils literal notranslate"><span class="pre">TGraph</span></code>. Navigation, database
 retrieval, GQL, GraphRAG, plotting, and topology utilities no longer depend on
-<code class="docutils literal notranslate"><span class="pre">Graph.py</span></code> or either geometry backend’s native Graph class.</p>
+<code class="docutils literal notranslate"><span class="pre">Graph.py</span></code> or a native geometry Graph class.</p>
 <p>Use <code class="docutils literal notranslate"><span class="pre">TGraph.Vertices(graph)</span></code> and <code class="docutils literal notranslate"><span class="pre">TGraph.Edges(graph)</span></code> for records. Request
 <code class="docutils literal notranslate"><span class="pre">asTopologic=True</span></code> when geometry objects are needed. <code class="docutils literal notranslate"><span class="pre">TGraph.ShortestPath</span></code>
 returns vertex indices by default, and <code class="docutils literal notranslate"><span class="pre">TGraph.Dictionary</span></code> returns a Python
