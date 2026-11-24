@@ -22,19 +22,21 @@ SOURCE = DATA/"analytical-three-rooms.ifc"
 
 
 def _plan(outlines=None):
-    source = IFC.AnalyticalModel(str(SOURCE), coordinateFrame="local", verify=False)
-    plan = deepcopy(source.editable_plan)
+    # This tests manual plan assembly. Its input must not depend on the
+    # source reconstruction strategy used by IFC.AnalyticalModel.
     outlines = outlines or [box(0, 0, 5, 8), box(5, 0, 10, 8)]
-    template = plan["rooms"][0]
-    plan["rooms"] = []
+    rooms = []
     for i, polygon in enumerate(outlines):
-        plan["rooms"].append({**deepcopy(template), "id": f"room-{i}", "source_space_id": f"room-{i}", "name": f"Room {i}",
-            "footprint": mapping(polygon), "reference_footprint": mapping(polygon), "reference_area": polygon.area,
-            "area": polygon.area, "bottom": 0., "top": 4., "reference_bottom": 0., "reference_top": 4., "air_top": 4.,
-            "exterior_cap": True, "storey": 0})
-    plan.update(origin=[0., 0., 0.], reference_openings=[], source_boundaries=[], construction_evidence=[], fill_types={})
-    plan["fidelity"].update(reference_spaces=2, eligible_source_space_records=2, coincident_source_aliases={})
-    return plan
+        rooms.append(dict(id=f"room-{i}", source_space_id=f"room-{i}",
+            name=f"Room {i}", footprint=mapping(polygon),
+            reference_footprint=mapping(polygon), reference_area=polygon.area,
+            reference_method="explicit_space", confidence={"score": 1.0},
+            area=polygon.area, bottom=0., top=4., reference_bottom=0.,
+            reference_top=4., air_top=4., exterior_cap=True, storey=0))
+    return dict(rooms=rooms, origin=[0., 0., 0.], reference_openings=[],
+        source_boundaries=[], construction_evidence=[], fill_types={},
+        fidelity=dict(reference_spaces=2, eligible_source_space_records=2,
+            coincident_source_aliases={}), warnings=[])
 
 
 @pytest.mark.pythonocc_only

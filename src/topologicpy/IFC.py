@@ -6011,7 +6011,9 @@ class IFC:
                     f'grid={grid:.3f}')
             pieces=IFC._Simplified_convex_reassign(pieces,top-bottom,settings)
             for room,p in pieces:
-                if bridge_gaps:p=shapely.set_precision(p,grid)
+                # Grid snapping can close a protected shaft narrower than
+                # the retry grid; subtraction above must survive the export.
+                if bridge_gaps and not protected:p=shapely.set_precision(p,grid)
                 # Gap area is diagnostic only. Independently rotated and
                 # snapped rings can make GEOS reject a difference even when
                 # the accepted room partition and its exterior are valid.
@@ -6581,6 +6583,15 @@ class IFC:
             from dataclasses import asdict
             return {'format_version': 1, 'readiness': self.readiness, 'building_id': self.building_id, 'buildings': [{'id': b.building_id, 'statistics': b.statistics, 'readiness': b.readiness, 'fidelity': b.fidelity, 'diagnostics': [asdict(d) for d in b.diagnostics]} for b in self.building_models], 'valid': self.valid, 'coordinate_frame': {'units': 'metres', 'world_origin': self.origin, 'metadata': self.statistics.get('topology_coordinate_frame', 'local_metres'), 'brep': self.statistics.get('brep_coordinate_frame')}, 'diagnostics': [asdict(d) for d in self.diagnostics], 'spaces': self.spaces, 'boundaries': self.boundaries, 'boundary_patches': self.boundary_patches, 'openings': self.openings, 'statistics': self.statistics, 'energy': self.energy, 'usable_model': self.topology is not None, 'fidelity': self.fidelity}
 
+
+    @staticmethod
+    def _Analytical_geometry_unit(v):
+        import numpy as np
+        v = np.asarray(v, dtype=float)
+        length = np.linalg.norm(v)
+        if not np.isfinite(length) or length < 1e-12:
+            raise ValueError('Degenerate direction')
+        return v / length
 
     @dataclass
     class _Analytical_geometry_Plane:
@@ -8981,12 +8992,26 @@ class IFC:
             if len(matches) != 1:
                 raise ValueError(f"Could not restore native room identity {room['id']}")
             Topology.SetDictionary(matches[0], {'bim2bem_space_id': room['id'], 'TOPOLOGIC_name': room['name'], 'source_space_id': room.get('source_space_id', room['id']), 'role': room.get('role', 'room'), 'confidence_score': room.get('confidence', {}).get('score', 0.0)})
-        boundary_records = {IFC._Analytical_geometry_face_key(b['vertices'], max(tolerance, 1e-6)): b for b in metadata['boundaries']}
+        boundary_records = {}
+        for record in metadata['boundaries']:
+            key = IFC._Analytical_geometry_face_key(record['vertices'], max(tolerance, 1e-6))
+            boundary_records.setdefault(key, []).append(record)
         faces = {}
         for face in Topology.Faces(topology):
             points = [Vertex.Coordinates(v, mantissa=10) for v in Wire.Vertices(Face.ExternalBoundary(face))]
-            record = boundary_records.get(IFC._Analytical_geometry_face_key(points, max(tolerance, 1e-6)))
-            if record:
+            key = IFC._Analytical_geometry_face_key(points, max(tolerance, 1e-6))
+            candidates = [r for r in boundary_records.get(key, []) if r['id'] not in faces]
+            if not candidates:
+                continue
+            actual = np.asarray(points, dtype=float)
+            def discrepancy(record):
+                expected = np.asarray(record['vertices'], dtype=float)
+                if len(expected) != len(actual):
+                    return float('inf')
+                distances = np.linalg.norm(actual[:, None, :] - expected[None, :, :], axis=2)
+                return max(float(distances.min(axis=0).max()), float(distances.min(axis=1).max()))
+            record = min(candidates, key=discrepancy)
+            if discrepancy(record) <= tolerance:
                 faces[record['id']] = face
                 Topology.SetDictionary(face, {'bim2bem_boundary_id': record['id'], 'owners': record['owners']})
         restored_openings = 0
