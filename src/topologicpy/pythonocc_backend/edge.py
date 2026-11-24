@@ -285,22 +285,14 @@ class Edge(Topology):
     # ---------------------------------------------------------------------
 
     @staticmethod
-    def ByStartVertexEndVertex(startVertex, endVertex):
-        if not isinstance(startVertex, Vertex) or not isinstance(endVertex, Vertex):
-            return None
-        if same_vertex(startVertex, endVertex):
-            return None
-        return Edge(
-            shape=make_occ_edge(startVertex, endVertex),
-            start=startVertex,
-            end=endVertex,
-        )
+    def ByStartVertexEndVertex(startVertex, endVertex, tolerance=0.0001):
+        return Edge.ByStartVertexEndVertexTolerance(startVertex, endVertex, tolerance)
 
     @staticmethod
-    def ByVertices(vertices):
+    def ByVertices(vertices, tolerance=0.0001):
         if vertices is None or len(vertices) < 2:
             return None
-        return Edge.ByStartVertexEndVertex(vertices[0], vertices[-1])
+        return Edge.ByStartVertexEndVertex(vertices[0], vertices[-1], tolerance=tolerance)
 
     @staticmethod
     def ByStartVertexEndVertexTolerance(
@@ -318,10 +310,15 @@ class Edge(Topology):
         """
         if not isinstance(startVertex, Vertex) or not isinstance(endVertex, Vertex):
             return None
-        if same_vertex(startVertex, endVertex, tolerance=tolerance):
+        from .occ_utils import _positive_tolerance
+        tolerance = _positive_tolerance(tolerance)
+        if tolerance is None or same_vertex(startVertex, endVertex, tolerance=tolerance):
+            return None
+        shape = make_occ_edge(startVertex, endVertex)
+        if shape is None or shape.IsNull():
             return None
         return Edge(
-            shape=make_occ_edge(startVertex, endVertex),
+            shape=shape,
             start=startVertex,
             end=endVertex,
         )

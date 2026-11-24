@@ -826,7 +826,7 @@ class Face():
             if not silent:
                 print("Face.BoundingRectangle - Warning: Could not create base wire. Returning None.")
             return None
-        br_face = Face.ByWire(br_wire)
+        br_face = Face.ByWire(br_wire, tolerance=tolerance)
         if not Topology.IsInstance(br_face, "Face"):
             if not silent:
                 print("Face.BoundingRectangle - Warning: Could not create face from base wire. Returning None.")
@@ -2814,6 +2814,7 @@ class Face():
         outer_region = Face.ByWire(
             offset_external,
             silent=True,
+            tolerance=tolerance,
         )
 
         if not Topology.IsInstance(
@@ -2844,6 +2845,7 @@ class Face():
             hole_region = Face.ByWire(
                 wire,
                 silent=True,
+                tolerance=tolerance,
             )
 
             if not Topology.IsInstance(
@@ -2963,6 +2965,7 @@ class Face():
         result = Face.ByWires(
             externalBoundary=offset_external,
             internalBoundaries=offset_internals,
+            tolerance=tolerance,
         )
 
         if not Topology.IsInstance(
@@ -3212,7 +3215,7 @@ class Face():
                     edge = Topology.SetDictionary(edge, d)
                 
                 # Offset the wire
-                new_face = Face.ByOffset(face, offsetKey=offsetKey, silent=True, numWorkers=numWorkers)
+                new_face = Face.ByOffset(face, offsetKey=offsetKey, silent=True, numWorkers=numWorkers, tolerance=tolerance)
                 # Check for an illegal wire. In that case, return a very large loss value.
                 if new_face is None:
                     return float("inf")
@@ -3282,7 +3285,7 @@ class Face():
             edge = Topology.SetDictionary(edge, d)
                 
         # Offset the face
-        return_face = Face.ByOffset(face, offsetKey=offsetKey, silent=silent, numWorkers=numWorkers)
+        return_face = Face.ByOffset(face, offsetKey=offsetKey, silent=silent, numWorkers=numWorkers, tolerance=tolerance)
         if return_face is None:
             if not silent:
                 print("Face.OffsetByArea - Error: Could not create the offset face. Returning None.")
@@ -4436,7 +4439,7 @@ class Face():
 
         def _build(candidate):
             try:
-                result = Core.Face.ByExternalBoundary(candidate)
+                result = Core.Face.ByExternalBoundary(candidate, tolerance=tolerance)
             except Exception:
                 result = None
             return result if Topology.IsInstance(result, "Face") else None
@@ -4709,7 +4712,7 @@ class Face():
         
         outer_wire = Wire.Circle(origin=Vertex.Origin(), radius=radius, sides=sides, polyline=True, direction=[0,0,1], placement="center", tolerance=tolerance)
         inner_wire = Wire.Circle(origin=Vertex.Origin(), radius=radius-thickness, polyline=True, sides=sides, direction=[0,0,1], placement="center", tolerance=tolerance)
-        return_face = Face.ByWires(outer_wire, [inner_wire])
+        return_face = Face.ByWires(outer_wire, [inner_wire], tolerance=tolerance)
         return_face = Face._EnsurePrimitivePositiveZ(return_face, tolerance=tolerance, silent=silent)
         if not Topology.IsInstance(return_face, "face"):
             if not silent:
@@ -7274,7 +7277,7 @@ class Face():
         candidates = []
 
         try:
-            shell = Topology.Triangulate(face)
+            shell = Topology.Triangulate(face, tolerance=tolerance)
             tri_faces = Topology.Faces(shell)
 
             for tri_face in tri_faces:
@@ -8910,9 +8913,9 @@ class Face():
                         internal_wires.append(ib)
 
             if len(internal_wires) > 0:
-                result = Face.ByWires(eb, internal_wires)
+                result = Face.ByWires(eb, internal_wires, tolerance=tolerance)
             else:
-                result = Face.ByWire(eb, silent=True)
+                result = Face.ByWire(eb, silent=True, tolerance=tolerance)
 
             if not Topology.IsInstance(result, "Face"):
                 return None
@@ -9681,10 +9684,10 @@ class Face():
                 if not Topology.IsInstance(e1, "Edge") or not Topology.IsInstance(e2, "Edge"):
                     continue
 
-                tri_wire = Topology.SelfMerge(Cluster.ByTopologies([edge, e1, e2]))
+                tri_wire = Topology.SelfMerge(Cluster.ByTopologies([edge, e1, e2]), tolerance=tolerance)
 
                 if Topology.IsInstance(tri_wire, "Wire") and Wire.IsClosed(tri_wire):
-                    tri_face = Face.ByWire(tri_wire, silent=True)
+                    tri_face = Face.ByWire(tri_wire, silent=True, tolerance=tolerance)
 
                     if Topology.IsInstance(tri_face, "Face"):
                         if transferDictionaries:
@@ -10750,12 +10753,12 @@ class Face():
         if not Topology.IsInstance(origin, "Vertex"):
             origin = Topology.Centroid(face)
         eb = Face.ExternalBoundary(face)
-        plan_eb = Wire.Planarize(eb, origin=origin)
+        plan_eb = Wire.Planarize(eb, origin=origin, tolerance=tolerance)
         ib_list = Face.InternalBoundaries(face)
         plan_ib_list = []
         for ib in ib_list:
-            plan_ib_list.append(Wire.Planarize(ib, origin=origin))
-        plan_face = Face.ByWires(plan_eb, plan_ib_list)
+            plan_ib_list.append(Wire.Planarize(ib, origin=origin, tolerance=tolerance))
+        plan_face = Face.ByWires(plan_eb, plan_ib_list, tolerance=tolerance)
         return plan_face
 
     # @staticmethod

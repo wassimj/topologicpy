@@ -54,13 +54,39 @@ def round_coord(value: float, tolerance: float = 0.0001) -> float:
 
 
 def vertex_key(v, tolerance: float = 0.0001):
-    return (round_coord(v.x, tolerance), round_coord(v.y, tolerance), round_coord(v.z, tolerance))
+    if not is_vertex(v):
+        return None
+
+    try:
+        coords = (float(v.x), float(v.y), float(v.z))
+
+        if not all(math.isfinite(c) for c in coords):
+            return None
+
+        return tuple(round_coord(c, tolerance)
+                     for c in coords)
+
+    except (AttributeError, TypeError, ValueError,
+            OverflowError, RuntimeError):
+        return None
 
 
 def edge_key(edge, tolerance: float = 0.0001):
-    a = vertex_key(edge.start, tolerance)
-    b = vertex_key(edge.end, tolerance)
-    return tuple(sorted([a, b]))
+    if edge is None:
+        return None
+
+    try:
+        a = vertex_key(edge.start, tolerance)
+        b = vertex_key(edge.end, tolerance)
+
+        if a is None or b is None:
+            return None
+
+        return tuple(sorted((a, b)))
+
+    except (AttributeError, TypeError, ValueError,
+            RuntimeError):
+        return None
 
 
 def dedupe_vertices_by_distance(vertices: Iterable[Any], tolerance: float = 0.0001) -> list:

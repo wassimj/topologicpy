@@ -110,7 +110,10 @@ class CellComplex():
                 print("CellComplex.ByCells - Error: The input cells parameter is not a valid list. Returning None.")
             return None
 
-        cells = [cell for cell in cells if Topology.IsInstance(cell, "Cell")]
+        if any(not Topology.IsInstance(cell, "Cell") for cell in cells):
+            if not silent:
+                print("CellComplex.ByCells - Error: Invalid input Cell. Returning None.")
+            return None
         if len(cells) < 1:
             if not silent:
                 print("CellComplex.ByCells - Error: The input cells parameter does not contain any valid Cells. Returning None.")
@@ -328,7 +331,7 @@ class CellComplex():
         offset = minOffset
         
         while attempts < maxAttempts:
-            expanded_results = [Face.ByOffset(f, offset=-offset, silent=silent) for f in faces]
+            expanded_results = [Face.ByOffset(f, offset=-offset, silent=silent, tolerance=tolerance) for f in faces]
             expanded_faces = []
             for result in expanded_results:
                 if result is None:
@@ -338,7 +341,7 @@ class CellComplex():
                     break
                 expanded_faces.extend([result] if Topology.IsInstance(result, "Face") else (Topology.Faces(result, silent=True) or []))
             try:
-                cc = CellComplex.ByFaces(expanded_faces, silent=True)
+                cc = CellComplex.ByFaces(expanded_faces, silent=True, tolerance=tolerance)
                 if Topology.IsInstance(cc, "cellComplex"):
                     cells = Topology.Cells(cc)
                     n_cells = len(cells)
@@ -347,7 +350,7 @@ class CellComplex():
                     elif n_cells > maxCells:
                         cells = trim(cells, maxCells)
                         try:
-                            new_cc = CellComplex.ByCells(cells)
+                            new_cc = CellComplex.ByCells(cells, tolerance=tolerance)
                             if Topology.IsInstance(new_cc, "CellComplex"):
                                 cellComplexes.append(new_cc)
                         except:
@@ -1036,6 +1039,10 @@ class CellComplex():
             if Topology.IsInstance(face, "Face")
         ]
 
+        if len(source_faces) != len(faces):
+            if not silent:
+                print("CellComplex.ByFaces - Error: Invalid input Face. Returning None.")
+            return None
         if len(source_faces) == 0:
             if not silent:
                 print(
@@ -2282,7 +2289,7 @@ class CellComplex():
                 f_clus = Cluster.ByTopologies(uFaces+vFaces+wFaces)
                 return Topology.Slice(topology, f_clus, tolerance=tolerance, silent=silent)
             else:
-                return CellComplex.ByCells([topology])
+                return CellComplex.ByCells([topology], tolerance=tolerance)
         if not Topology.IsInstance(origin, "Vertex"):
             origin = Vertex.ByCoordinates(0, 0, 0)
 
@@ -2655,12 +2662,12 @@ class CellComplex():
 
         # Historical v0.9.68 faceted construction (kept intentionally intact).
         c = Wire.Circle(origin=Vertex.Origin(), radius=minorRadius, sides=vSides, polyline=polyhedron, fromAngle=0, toAngle=360, close=False, direction=[0, 1, 0], placement="center")
-        c = Face.ByWire(c)
+        c = Face.ByWire(c, tolerance=tolerance)
         c = Topology.Translate(c, abs(majorRadius-minorRadius), 0, 0)
         torus = Topology.Spin(c, origin=Vertex.Origin(), triangulate=False, direction=[0, 0, 1], angle=360, sides=uSides, tolerance=tolerance)
         if Topology.Type(torus) == Topology.TypeID("Shell"):
             faces = Topology.Faces(torus)
-            torus = CellComplex.ByFaces(faces)
+            torus = CellComplex.ByFaces(faces, tolerance=tolerance)
 
         xOffset = 0
         yOffset = 0
@@ -2787,7 +2794,7 @@ class CellComplex():
                 if -1 not in region and len(region) > 0:
                     for item in region:
                         temp_list.append(verts[item])
-                    f = Face.ByVertices(temp_list)
+                    f = Face.ByVertices(temp_list, tolerance=tolerance)
                     if Topology.IsInstance(f, "Face"):
                         faces.append(f)
             if len(faces) < 1:
@@ -2822,7 +2829,7 @@ class CellComplex():
         if cluster == None:
             print("CellComplex.Voronoi - Error: the operation failed. Returning None.")
             return None
-        cellComplex = Topology.Slice(cell, cluster)
+        cellComplex = Topology.Slice(cell, cluster, tolerance=tolerance)
         if not Topology.IsInstance(cellComplex, "CellComplex"):
             print("CellComplex.Voronoi - Error: the operation failed. Returning None.")
             return None

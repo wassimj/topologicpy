@@ -50,7 +50,7 @@ class Cell(Topology):
                 )
             return None
 
-        occ_cell = make_occ_cell(shell)
+        occ_cell = make_occ_cell(shell, tolerance=tolerance)
         if occ_cell is None or _is_null_shape(occ_cell):
             if not silent:
                 print(
@@ -59,7 +59,7 @@ class Cell(Topology):
                 )
             return None
 
-        return Cell(shape=occ_cell, shells=[shell])
+        return Topology.ByOcctShape(occ_cell)
 
     @staticmethod
     def ByFaces(

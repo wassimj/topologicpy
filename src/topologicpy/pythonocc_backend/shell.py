@@ -74,14 +74,20 @@ class Shell(Topology):
             if not silent:
                 print("Shell.ByFaces - Error: The input faces parameter is None. Returning None.")
             return None
-        if not isinstance(faces, list):
+        if isinstance(faces, tuple):
+            faces = list(faces)
+        elif not isinstance(faces, list):
             faces = [faces]
         valid_faces = [face for face in faces if Topology.IsInstance(face, "Face")]
+        if len(valid_faces) != len(faces):
+            if not silent:
+                print("Shell.ByFaces - Error: Invalid input face; refusing partial shell.")
+            return None
         if len(valid_faces) == 0:
             if not silent:
                 print("Shell.ByFaces - Error: The input faces list does not contain any valid faces. Returning None.")
             return None
-        occ_shell = make_occ_shell(valid_faces)
+        occ_shell = make_occ_shell(valid_faces, tolerance=tolerance)
         if occ_shell is None:
             if not silent:
                 print("Shell.ByFaces - Error: Could not create an OpenCascade shell. Returning None.")
@@ -102,8 +108,11 @@ class Shell(Topology):
         sewn_faces = [Topology.ByOcctShape(f) for f in _iter_occ_subshapes(occ_shell, TopAbs_FACE)]
         sewn_faces = [f for f in sewn_faces if isinstance(f, Face)]
         sewn = len(sewn_faces) == len(valid_faces)
-        if sewn:
-            valid_faces = sewn_faces
+        if not sewn:
+            if not silent:
+                print("Shell.ByFaces - Error: Native shell face count differs from input.")
+            return None
+        valid_faces = sewn_faces
         shell = Shell(shape=occ_shell, faces=valid_faces)
         Shell._patch_edge_face_membership(shell, valid_faces, tolerance=tolerance, sewn=sewn)
         return shell
@@ -290,25 +299,25 @@ class Shell(Topology):
                         edge_a.start,
                         edge_a.end,
                         edge_b.end,
-                    ])
+                    ], tolerance=tolerance)
                     tri2 = Face.ByVertices([
                         edge_a.start,
                         edge_b.end,
                         edge_b.start,
-                    ])
-                    if tri1 is not None:
-                        faces.append(tri1)
-                    if tri2 is not None:
-                        faces.append(tri2)
+                    ], tolerance=tolerance)
+                    if tri1 is None or tri2 is None:
+                        return None
+                    faces.extend([tri1, tri2])
                 else:
                     quad = Face.ByVertices([
                         edge_a.start,
                         edge_a.end,
                         edge_b.end,
                         edge_b.start,
-                    ])
-                    if quad is not None:
-                        faces.append(quad)
+                    ], tolerance=tolerance)
+                    if quad is None:
+                        return None
+                    faces.append(quad)
 
         if not faces:
             if not silent:
@@ -3691,7 +3700,7 @@ class Shell(Topology):
                 result_faces.append(f)
 
         if result_faces:
-            new_shell = Shell.ByFaces(result_faces, silent=True)
+            new_shell = Shell.ByFaces(result_faces, tolerance=tolerance, silent=True)
             if new_shell is not None:
                 new_shell.dictionary = result_dictionary
                 return new_shell

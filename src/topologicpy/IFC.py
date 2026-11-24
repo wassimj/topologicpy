@@ -29,7 +29,7 @@ import os
 import re
 import time
 import uuid
-from numbers import Real
+from numbers import Real, Integral
 from dataclasses import dataclass, field
 from typing import Any, Dict, Iterable, Iterator, List, Optional, Sequence, Tuple
 
@@ -1564,10 +1564,34 @@ class IFCFastTopology:
 
 
     @staticmethod
+    def _validate_import_mesh(mesh):
+        """Reject malformed mesh data without modifying coordinates or indices."""
+        if not isinstance(mesh, dict):
+            raise ValueError("Invalid IFC mesh data")
+        vertices = mesh.get("vertices", [])
+        if vertices is None:
+            raise ValueError("Missing IFC mesh vertices")
+        for index, point in enumerate(vertices):
+            if (point is None or len(point) != 3 or
+                    not all(isinstance(c, Real) and math.isfinite(c) for c in point)):
+                raise ValueError(f"Invalid IFC mesh vertex {index}")
+        for kind, minimum in (("edges", 2), ("faces", 3)):
+            for index, item in enumerate(mesh.get(kind) or []):
+                if (item is None or len(item) < minimum or
+                        (kind == "edges" and len(item) != 2) or
+                        any(not isinstance(i, Integral) or isinstance(i, bool) or
+                            not 0 <= i < len(vertices) for i in item)):
+                    raise ValueError(f"Invalid IFC mesh {kind}[{index}] indices")
+                if len({tuple(vertices[i]) for i in item}) < minimum:
+                    raise ValueError(f"Degenerate IFC mesh {kind}[{index}]")
+
+    @staticmethod
     def _boolean_mesh(a: dict, b: dict, operation: str) -> dict:
         from topologicpy.Topology import Topology
         if a is None or b is None:
             raise ValueError("Unsupported IFC Boolean operand geometry")
+        IFCFastTopology._validate_import_mesh(a)
+        IFCFastTopology._validate_import_mesh(b)
         empty = {"vertices": [], "edges": [], "faces": []}
         if not a.get("vertices"):
             return b if operation == "UNION" else empty
@@ -1581,7 +1605,7 @@ class IFCFastTopology:
             if columns is not None:
                 return columns
         solids = [Topology.ByGeometry(vertices=m["vertices"], faces=m["faces"], topologyType="cell", silent=True) for m in (a,b)]
-        if any(solid is None for solid in solids):
+        if any(solid is None or not Topology.IsInstance(solid, "Cell") for solid in solids):
             raise ValueError("Could not construct IFC Boolean operand solid")
         methods = {"DIFFERENCE": Topology.Difference, "UNION": Topology.Union, "INTERSECTION": Topology.Intersect}
         if operation not in methods:
@@ -1779,9 +1803,10 @@ class IFCFastTopology:
             if float(np.linalg.norm(area_vector)) <= 1e-14:
                 return None
             try:
-                return Wire.ByVertices(
-                    [Vertex.ByCoordinates(*point.tolist()) for point in points],
-                    close=True, tolerance=1e-7)
+                vertices = [Vertex.ByCoordinates(*point.tolist()) for point in points]
+                if any(v is None or not Topology.IsInstance(v, "Vertex") for v in vertices):
+                    return None
+                return Wire.ByVertices(vertices, close=True, tolerance=1e-7)
             except (TypeError, ValueError, RuntimeError):
                 return None
         wires = [safe_wire(loop) for loop in cleaned]
@@ -10780,50 +10805,53 @@ class IFC:
         )
         topology = model.topologyCache.get(key)
         if topology is None and key not in model.topologyCache:
-            mesh = IFC._model_mesh_data(
-                model,
-                entity,
-                circleSides=circleSides,
-                scale=scale,
-            )
-            if not mesh or not mesh.get("vertices"):
-                model.topologyCache[key] = None
-                return None
             try:
-                topology = Topology.ByGeometry(
-                    vertices=mesh.get("vertices") or [],
-                    edges=mesh.get("edges") or [],
-                    faces=mesh.get("faces") or [],
-                    topologyType=topologyType,
-                    tolerance=tolerance,
-                    silent=True,
+                mesh = IFC._model_mesh_data(
+                    model,
+                    entity,
+                    circleSides=circleSides,
+                    scale=scale,
                 )
-            except TypeError:
-                topology = Topology.ByGeometry(
-                    vertices=mesh.get("vertices") or [],
-                    edges=mesh.get("edges") or [],
-                    faces=mesh.get("faces") or [],
-                    tolerance=tolerance,
-                    silent=True,
-                )
-            except Exception:
-                topology = None
-
-            if topology is not None and clean:
-                topology = IFCFastTopology._clean_topology(
-                    topology,
-                    epsilon,
-                    angTolerance,
-                    tolerance,
-                    silent,
-                )
+                if not mesh or not mesh.get("vertices"):
+                    model.topologyCache[key] = None
+                    return None
+                IFCFastTopology._validate_import_mesh(mesh)
+                try:
+                    topology = Topology.ByGeometry(
+                        vertices=mesh.get("vertices") or [],
+                        edges=mesh.get("edges") or [],
+                        faces=mesh.get("faces") or [],
+                        topologyType=topologyType,
+                        tolerance=tolerance,
+                        silent=True,
+                    )
+                except TypeError:
+                    topology = Topology.ByGeometry(
+                        vertices=mesh.get("vertices") or [],
+                        edges=mesh.get("edges") or [],
+                        faces=mesh.get("faces") or [],
+                        tolerance=tolerance,
+                        silent=True,
+                    )
+                if topology is not None and not Topology.IsInstance(topology, "Topology"):
+                    raise ValueError("Native construction returned an invalid topology")
+                if topology is not None and clean:
+                    cleaned = IFCFastTopology._clean_topology(
+                        topology, epsilon, angTolerance, tolerance, silent)
+                    if Topology.IsInstance(cleaned, "Topology"):
+                        topology = cleaned
+            except Exception as error:
+                if not silent:
+                    print(f"IFC._model_topology - Warning: #{entity.id} ({entity.type}): "
+                          f"{type(error).__name__}: {error}")
+                return None
             model.topologyCache[key] = topology
 
         if topology is None or not copyTopology:
             return topology
         try:
             copied = Topology.Copy(topology)
-            return copied if copied is not None else topology
+            return copied if Topology.IsInstance(copied, "Topology") else topology
         except Exception:
             return topology
 
@@ -12056,45 +12084,78 @@ class IFC:
         result = []
 
         for product in products:
-            topology = IFC._model_topology(
-                model,
-                product,
-                circleSides=circleSides,
-                scale=scale,
-                topologyType=topologyType,
-                clean=clean,
-                epsilon=epsilon,
-                angTolerance=angTolerance,
-                tolerance=tolerance,
-                copyTopology=True,
-                silent=silent,
-            )
-            if topology is None or not Topology.IsInstance(topology, "Topology"):
+            try:
+                topology = IFC._model_topology(
+                    model,
+                    product,
+                    circleSides=circleSides,
+                    scale=scale,
+                    topologyType=topologyType,
+                    clean=clean,
+                    epsilon=epsilon,
+                    angTolerance=angTolerance,
+                    tolerance=tolerance,
+                    copyTopology=True,
+                    silent=silent,
+                )
+                if topology is None or not Topology.IsInstance(topology, "Topology"):
+                    if not silent:
+                        print(f"IFC.Topologies - Warning: Skipping #{product.id} "
+                              f"({product.type}): No valid topology constructed.")
+                    continue
+            except Exception as error:
+                if not silent:
+                    print(f"IFC.Topologies - Warning: Skipping #{product.id} "
+                          f"({product.type}): {type(error).__name__}: {error}")
                 continue
 
-            dictionary = IFCFastTopology._entity_dictionary(
-                product,
-                dictionaryMode=dictionaryMode,
-                metadataCache=metadata_cache,
-                ontology=ontology,
-                source=source,
-                generatedBy="IFC.Topologies",
-            )
-            if dictionary is not None:
-                try:
-                    topology = Topology.SetDictionary(topology, dictionary, silent=True)
-                except Exception:
-                    pass
-
-            if ontology:
-                topology = IFCFastTopology._annotate_topology_with_ontology(
-                    topology,
-                    entity=product,
+            try:
+                dictionary = IFCFastTopology._entity_dictionary(
+                    product,
+                    dictionaryMode=dictionaryMode,
+                    metadataCache=metadata_cache,
+                    ontology=ontology,
                     source=source,
                     generatedBy="IFC.Topologies",
-                    silent=True,
                 )
-            result.append(topology)
+                if dictionary is not None:
+                    annotated = Topology.SetDictionary(topology, dictionary, silent=True)
+                    if Topology.IsInstance(annotated, "Topology"):
+                        topology = annotated
+                    else:
+                        raise ValueError("Dictionary assignment returned an invalid topology")
+            except Exception as error:
+                if not silent:
+                    print(f"IFC.Topologies - Warning: #{product.id} ({product.type}): "
+                          f"Dictionary assignment failed: {type(error).__name__}: {error}")
+
+            if ontology:
+                try:
+                    annotated = IFCFastTopology._annotate_topology_with_ontology(
+                        topology,
+                        entity=product,
+                        source=source,
+                        generatedBy="IFC.Topologies",
+                        silent=True,
+                    )
+                    if Topology.IsInstance(annotated, "Topology"):
+                        topology = annotated
+                    else:
+                        raise ValueError("Ontology annotation returned an invalid topology")
+                except Exception as error:
+                    if not silent:
+                        print(f"IFC.Topologies - Warning: #{product.id} ({product.type}): "
+                              f"Ontology annotation failed: {type(error).__name__}: {error}")
+            try:
+                if Topology.IsInstance(topology, "Topology"):
+                    result.append(topology)
+                elif not silent:
+                    print(f"IFC.Topologies - Warning: Skipping #{product.id} "
+                          f"({product.type}): Invalid final topology.")
+            except Exception as error:
+                if not silent:
+                    print(f"IFC.Topologies - Warning: Skipping #{product.id} "
+                          f"({product.type}): {type(error).__name__}: {error}")
         return result
 
     @staticmethod

@@ -7,12 +7,12 @@ from dataclasses import dataclass, field
 from .topology import Topology
 from .vertex import Vertex
 from .edge import Edge
-from .occ_utils import make_occ_wire
+from .occ_utils import make_occ_wire, _positive_tolerance, _copy_with_tolerance
 from .helpers import same_vertex, unique_by_uuid
 
 
 
-def _make_occ_wire_batch(edges):
+def _make_occ_wire_batch(edges, tolerance=0.0001):
     """
     Builds an OCCT wire from a connected collection of edges in one batch.
 
@@ -33,67 +33,34 @@ def _make_occ_wire_batch(edges):
     except Exception:
         return None
 
-    edge_shapes = TopTools_ListOfShape()
-    expected_count = 0
-
-    for edge in edges:
-        if not isinstance(edge, Edge):
-            continue
-
-        shape = getattr(edge, "shape", None)
-        if shape is None:
-            continue
-
-        try:
-            if shape.IsNull():
-                continue
-        except Exception:
-            pass
-
-        try:
-            edge_shapes.Append(topods.Edge(shape))
-            expected_count += 1
-        except Exception:
-            continue
-
-    if expected_count == 0:
+    tolerance = _positive_tolerance(tolerance)
+    if tolerance is None:
         return None
-
     try:
-        maker = BRepBuilderAPI_MakeWire()
-        maker.Add(edge_shapes)
-
-        if not maker.IsDone():
+        shapes = [getattr(edge, "shape", None) for edge in edges]
+        if any(shape is None or shape.IsNull() for shape in shapes):
             return None
-
-        wire_shape = maker.Wire()
-
-        if wire_shape is None:
-            return None
-
-        try:
-            if wire_shape.IsNull():
-                return None
-        except Exception:
-            pass
-
-        # BRepBuilderAPI_MakeWire can report Done even if only the connected
-        # subset containing the first edge was accepted. Reject such a partial
-        # wire rather than silently losing edges.
-        actual_count = 0
-        explorer = TopExp_Explorer(wire_shape, TopAbs_EDGE)
-
-        while explorer.More():
-            actual_count += 1
-            explorer.Next()
-
-        if actual_count != expected_count:
-            return None
-
-        return wire_shape
-
+        for repair in (False, True):
+            edge_shapes = TopTools_ListOfShape()
+            for shape in shapes:
+                if repair:
+                    shape = _copy_with_tolerance(shape, tolerance, vertices_only=True)
+                edge_shapes.Append(topods.Edge(shape))
+            maker = BRepBuilderAPI_MakeWire()
+            maker.Add(edge_shapes)
+            if not maker.IsDone():
+                continue
+            wire_shape = maker.Wire()
+            explorer = TopExp_Explorer(wire_shape, TopAbs_EDGE)
+            actual_count = 0
+            while explorer.More():
+                actual_count += 1
+                explorer.Next()
+            if actual_count == len(shapes):
+                return wire_shape
     except Exception:
-        return None
+        pass
+    return None
 
 
 @dataclass(eq=False)
@@ -105,7 +72,10 @@ class Wire(Topology):
         if edges is None:
             return None
 
-        edges = [e for e in edges if isinstance(e, Edge)]
+        tolerance = _positive_tolerance(tolerance)
+        edges = list(edges)
+        if tolerance is None or not all(isinstance(e, Edge) for e in edges):
+            return None
 
         if not edges:
             return None
@@ -118,7 +88,7 @@ class Wire(Topology):
         )
 
         if ordered is not None:
-            shape = make_occ_wire(ordered)
+            shape = make_occ_wire(ordered, tolerance=tolerance)
 
             if shape is None:
                 return None
@@ -137,7 +107,7 @@ class Wire(Topology):
         # A connected non-manifold wire may have branch vertices and therefore
         # cannot necessarily be represented by one head-to-tail edge ordering.
         # Build all edges in one OCCT MakeWire batch instead.
-        shape = _make_occ_wire_batch(edges)
+        shape = _make_occ_wire_batch(edges, tolerance=tolerance)
 
         if shape is None:
             return None
@@ -431,7 +401,7 @@ class Wire(Topology):
             return result
 
         wire = Wire.ByEdges(
-            result_edges
+            result_edges, tolerance=tolerance
         )
 
         if wire is None:
@@ -483,19 +453,24 @@ class Wire(Topology):
     def ByVertices(vertices, close=False, tolerance=0.0001):
         if vertices is None:
             return None
-        vertices = [v for v in vertices if isinstance(v, Vertex)]
+        tolerance = _positive_tolerance(tolerance)
+        vertices = list(vertices)
+        if tolerance is None or not all(isinstance(v, Vertex) for v in vertices):
+            return None
         if len(vertices) < 2:
             return None
         edges = []
         for a, b in zip(vertices[:-1], vertices[1:]):
             if not same_vertex(a, b, tolerance):
                 e = Edge.ByStartVertexEndVertexTolerance(a, b, tolerance)
-                if e is not None:
-                    edges.append(e)
+                if e is None:
+                    return None
+                edges.append(e)
         if close and len(vertices) > 2 and not same_vertex(vertices[-1], vertices[0], tolerance):
             e = Edge.ByStartVertexEndVertexTolerance(vertices[-1], vertices[0], tolerance)
-            if e is not None:
-                edges.append(e)
+            if e is None:
+                return None
+            edges.append(e)
         if not edges:
             return None
         return Wire.ByEdges(edges, tolerance=tolerance)
@@ -530,7 +505,7 @@ class Wire(Topology):
                     except Exception:
                         found_edge = None
                     if found_edge is None:
-                        found_edge = Edge.ByStartVertexEndVertex(edge.end, edge.start)
+                        found_edge = Edge.ByStartVertexEndVertex(edge.end, edge.start, tolerance=tolerance)
                     if found_edge is not None:
                         found_edge.dictionary = edge.dictionary
                     break
@@ -581,6 +556,15 @@ class Wire(Topology):
         return result
 
     def IsClosed(self, tolerance=0.0001):
+        tolerance = _positive_tolerance(tolerance)
+        if tolerance is None:
+            return False
+        try:
+            from OCC.Core.BRep import BRep_Tool
+            if self.shape is not None and BRep_Tool.IsClosed(self.shape):
+                return True
+        except Exception:
+            pass
         edges = getattr(self, "edges", []) or []
         if not edges:
             return False
@@ -664,13 +648,13 @@ class Wire(Topology):
         for e in reversed(edges):
             if not isinstance(e, Edge):
                 return None
-            new_edge = Edge.ByStartVertexEndVertex(e.end, e.start)
+            new_edge = Edge.ByStartVertexEndVertex(e.end, e.start, tolerance=tolerance)
             if new_edge is None:
                 return None
             if transferDictionaries:
                 new_edge.dictionary = e.dictionary
             reversed_edges.append(new_edge)
-        result = Wire(shape=make_occ_wire(reversed_edges), edges=reversed_edges)
+        result = Wire(shape=make_occ_wire(reversed_edges, tolerance=tolerance), edges=reversed_edges)
         if transferDictionaries:
             result.dictionary = self.dictionary
         return result
@@ -891,7 +875,7 @@ class WireUtility:
                             except Exception:
                                 flipped = None
                             if flipped is None:
-                                flipped = Edge.ByStartVertexEndVertex(e.end, e.start)
+                                flipped = Edge.ByStartVertexEndVertex(e.end, e.start, tolerance=tolerance)
                             if flipped is not None:
                                 run.append(flipped)
                                 remaining.remove(e)
@@ -915,7 +899,7 @@ class WireUtility:
                             except Exception:
                                 flipped = None
                             if flipped is None:
-                                flipped = Edge.ByStartVertexEndVertex(e.end, e.start)
+                                flipped = Edge.ByStartVertexEndVertex(e.end, e.start, tolerance=tolerance)
                             if flipped is not None:
                                 run.insert(0, flipped)
                                 remaining.remove(e)

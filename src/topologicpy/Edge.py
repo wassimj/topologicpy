@@ -1351,7 +1351,7 @@ class Edge():
                 print('caller name:', calframe[1][3])
             return None
         try:
-            edge = Core.Edge.ByStartVertexEndVertex(vertexA, vertexB)
+            edge = Core.Edge.ByStartVertexEndVertex(vertexA, vertexB, tolerance=tolerance)
         except:
             if not silent:
                 print("Edge.ByStartVertexEndVertex - Error: Could not create an edge. Returning None.")

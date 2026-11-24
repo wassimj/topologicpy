@@ -153,7 +153,8 @@ def _drop_open_shells(shape):
             brepgprop.VolumeProperties(shell, props)
         except Exception:
             continue
-        if abs(props.Mass()) > 1e-9:
+        from OCC.Core.BRep import BRep_Tool
+        if BRep_Tool.IsClosed(shell) or abs(props.Mass()) > 1e-9:
             shells.append(shell)
 
     if not shells:
@@ -173,7 +174,13 @@ def _drop_open_shells(shape):
         builder.MakeSolid(solid)
         for shell in shells:
             builder.Add(solid, shell)
-        return solid
+        from .occ_utils import _orient_valid_solid
+        repaired = _orient_valid_solid(solid)
+        if repaired is not None:
+            import warnings
+            warnings.warn("CellComplex: removed open zero-volume auxiliary shell during recovery.", RuntimeWarning, stacklevel=2)
+            return repaired
+        return shape
     except Exception:
         return shape
 
@@ -330,8 +337,12 @@ class CellComplex(Topology):
         fallback for cases CellsBuilder cannot assemble. In multi-cell results,
         every cell must share at least one face with another cell.
         """
-        cells = [c for c in (cells or []) if isinstance(c, Cell)]
-        shapes = [c.shape for c in cells if not _is_null_shape(getattr(c, "shape", None))]
+        from .occ_utils import is_valid_occ_solid, _positive_tolerance
+        cells = list(cells or [])
+        tolerance = _positive_tolerance(tolerance)
+        if tolerance is None or not all(isinstance(c, Cell) and is_valid_occ_solid(getattr(c, "shape", None)) for c in cells):
+            return None
+        shapes = [c.shape for c in cells]
         if len(shapes) < 1:
             return None
         if len(shapes) == 1:
@@ -411,8 +422,12 @@ class CellComplex(Topology):
     @staticmethod
     def ByFaces(faces, tolerance=0.0001, copyAttributes=False):
         from .face import Face
-        faces = [f for f in (faces or []) if isinstance(f, Face)]
-        shapes = [f.shape for f in faces if not _is_null_shape(getattr(f, "shape", None))]
+        from .occ_utils import _positive_tolerance
+        tolerance = _positive_tolerance(tolerance)
+        faces = list(faces or [])
+        if tolerance is None or not all(isinstance(f, Face) and not _is_null_shape(getattr(f, "shape", None)) for f in faces):
+            return None
+        shapes = [f.shape for f in faces]
         if len(shapes) < 1:
             return None
         result = CellComplex._build_from_shapes(shapes, tolerance)

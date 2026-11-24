@@ -320,7 +320,7 @@ class Wire():
         bisectors = True
         origin = Topology.Centroid(wire)
         temp_vertices = [Topology.Vertices(wire)[0], Topology.Vertices(wire)[1], Topology.Centroid(wire)]
-        temp_face = Face.ByWire(Wire.ByVertices(temp_vertices, close=True, tolerance=tolerance), silent=silent)
+        temp_face = Face.ByWire(Wire.ByVertices(temp_vertices, close=True, tolerance=tolerance), silent=silent, tolerance=tolerance)
         normal = Face.Normal(temp_face)
         flat_wire = Topology.Flatten(wire, direction=normal, origin=origin)
         original_edges = Topology.Edges(wire)
@@ -335,7 +335,7 @@ class Wire():
             d_offset = Dictionary.ValueAtKey(d, key=offsetKey, defaultValue=offset)
             d_offset = d_offset*fac
             offsets.append(d_offset)
-            offset_edge = Edge.ByOffset2D(edge, d_offset)
+            offset_edge = Edge.ByOffset2D(edge, d_offset, tolerance=tolerance)
             offset_edges.append(offset_edge)
         for i in range(len(edges)):
             o_edge_a = offset_edges[i]
@@ -1225,10 +1225,12 @@ class Wire():
             try:
                 result = Core.Wire.ByEdges(source_edges, tol)
             except TypeError:
-                try:
-                    result = Core.Wire.ByEdges(source_edges)
-                except Exception:
-                    result = None
+                result = None
+                if Topology._IsTopologicCoreBackend():
+                    try:
+                        result = Core.Wire.ByEdges(source_edges)
+                    except Exception:
+                        pass
             except Exception:
                 result = None
             if Topology.IsInstance(result, "Wire"):
@@ -1918,7 +1920,7 @@ class Wire():
                 if normal[dominant] < 0.0:
                     normal = [-component for component in normal]
 
-                plane_tolerance = max(tolerance * 10.0, 1.0e-8)
+                plane_tolerance = tolerance
                 for point in points:
                     if abs(dot(sub(point, origin), normal)) > plane_tolerance:
                         return None
@@ -2458,7 +2460,7 @@ class Wire():
                     or not Vertex.IsCoincident(
                         previous_joint,
                         current_joint,
-                        tolerance=tolerance * 10.0,
+                        tolerance=tolerance,
                         silent=True,
                     )
                 ):
@@ -2488,7 +2490,7 @@ class Wire():
                 if Vertex.IsCoincident(
                     previous_end,
                     current_start,
-                    tolerance=tolerance * 10.0,
+                    tolerance=tolerance,
                     silent=True,
                 ):
                     return previous_end
@@ -3017,7 +3019,7 @@ class Wire():
             result = Wire.ByEdges(
                 result_edges,
                 orient=True,
-                tolerance=tolerance * 10.0,
+                tolerance=tolerance,
                 silent=True,
             )
             if not Topology.IsInstance(result, "Wire"):
@@ -3061,7 +3063,7 @@ class Wire():
             fac = 1
         origin = Topology.Centroid(wire)
         temp_vertices = [Topology.Vertices(wire)[0], Topology.Vertices(wire)[1], Topology.Centroid(wire)]
-        temp_face = Face.ByWire(Wire.ByVertices(temp_vertices, close=True, tolerance=tolerance, silent=True), silent=True)
+        temp_face = Face.ByWire(Wire.ByVertices(temp_vertices, close=True, tolerance=tolerance, silent=True), silent=True, tolerance=tolerance)
         if not temp_face:
             if not silent:
                 print("Wire.Offset - Error: The input wire has errors. Returning None.")
@@ -3080,7 +3082,7 @@ class Wire():
             d_offset = Dictionary.ValueAtKey(d, key=offsetKey, defaultValue=offset)
             d_offset = d_offset*fac
             offsets.append(d_offset)
-            offset_edge = Edge.ByOffset2D(edge, d_offset)
+            offset_edge = Edge.ByOffset2D(edge, d_offset, tolerance=tolerance)
             offset_edges.append(offset_edge)
         for i in range(len(edges)):
             o_edge_a = offset_edges[i]
@@ -3093,13 +3095,13 @@ class Wire():
                         edge_dictionaries.append(Topology.Dictionary(edges[i]))
                     final_vertices.append(v1)
                     if bisectors == True:
-                        bisectors_list.append(Edge.ByVertices(v_a, v1))
+                        bisectors_list.append(Edge.ByVertices(v_a, v1, tolerance=tolerance))
                 else:
                     prev_edge = offset_edges[-1]
                     v1 = Edge.Intersect2D(prev_edge, o_edge_a, silent=True)
                     if Topology.IsInstance(v1, "Vertex"):
                         if bisectors == True:
-                            bisectors_list.append(Edge.ByVertices(v_a, v1))
+                            bisectors_list.append(Edge.ByVertices(v_a, v1, tolerance=tolerance))
                         if transferDictionaries == True:
                             v1 = Topology.SetDictionary(v1, Topology.Dictionary(v_a), silent=True)
                             edge_dictionaries.append(Topology.Dictionary(edges[i]))
@@ -3121,8 +3123,8 @@ class Wire():
                             v1_2 = Topology.TranslateByDirectionDistance(Edge.StartVertex(o_edge_a),
                                                                         direction = Edge.Direction(o_edge_a),
                                                                         distance = d_stepOffsetB)
-                            bisectors_list.append(Edge.ByVertices(v_a, v1_1))
-                            bisectors_list.append(Edge.ByVertices(v_a, v1_2))
+                            bisectors_list.append(Edge.ByVertices(v_a, v1_1, tolerance=tolerance))
+                            bisectors_list.append(Edge.ByVertices(v_a, v1_2, tolerance=tolerance))
                             final_vertices.append(v1_1)
                             final_vertices.append(v1_2)
                             if transferDictionaries == True:
@@ -3135,7 +3137,7 @@ class Wire():
                 v1 = Edge.Intersect2D(prev_edge, o_edge_a, silent=True)
                 if Topology.IsInstance(v1, "Vertex"):
                     if bisectors == True:
-                        bisectors_list.append(Edge.ByVertices(v_a, v1))
+                        bisectors_list.append(Edge.ByVertices(v_a, v1, tolerance=tolerance))
                     if transferDictionaries == True:
                         d_temp = Topology.Dictionary(v_a)
                         v1 = Topology.SetDictionary(v1, Topology.Dictionary(v_a), silent=True)
@@ -3163,10 +3165,10 @@ class Wire():
                             v1_2 = Topology.SetDictionary(v1_2, Topology.Dictionary(v_a), silent=True)
                             edge_dictionaries.append(Topology.Dictionary(v_a))
                             edge_dictionaries.append(Topology.Dictionary(edges[i]))
-                        b_e = Edge.ByVertices(v_a, v1_1, silent=True)
+                        b_e = Edge.ByVertices(v_a, v1_1, silent=True, tolerance=tolerance)
                         if b_e:
                             bisectors_list.append(b_e)
-                        b_e = Edge.ByVertices(v_a, v1_2, silent=True)
+                        b_e = Edge.ByVertices(v_a, v1_2, silent=True, tolerance=tolerance)
                         if b_e:
                             bisectors_list.append(b_e)
                         final_vertices.append(v1_1)
@@ -3178,7 +3180,7 @@ class Wire():
             if transferDictionaries == True:
                 v1 = Topology.SetDictionary(v1, Topology.Dictionary(v_a), silent=True)
             if bisectors == True:
-                b_e = Edge.ByVertices(v_a, v1, silent=True)
+                b_e = Edge.ByVertices(v_a, v1, silent=True, tolerance=tolerance)
                 if b_e:
                     bisectors_list.append(b_e)
         return_wire = Wire.ByVertices(final_vertices, close=Wire.IsClosed(wire), tolerance=tolerance, silent=silent)
@@ -3197,9 +3199,9 @@ class Wire():
                     return_wire_edges[i] = Topology.SetDictionary(return_wire_edges[i], temp_dictionary, silent=True)
         if bisectors == True:
             i = 0
-            temp_return_wire = Topology.SelfMerge(Cluster.ByTopologies(wire_edges+bisectors_list))
+            temp_return_wire = Topology.SelfMerge(Cluster.ByTopologies(wire_edges+bisectors_list), tolerance=tolerance)
             while not Topology.IsInstance(temp_return_wire, "wire") and i < 9:
-                merge_tolerance = tolerance * (i + 1) * 10
+                merge_tolerance = tolerance
                 temp_edges = Topology.Edges(temp_return_wire, silent=True) or []
                 if not temp_edges:
                     break
@@ -3234,7 +3236,7 @@ class Wire():
                     print("Wire.ByOffset - Warning: The resulting wire is non-manifold, please check your offsets.")
                     print("Wire.ByOffset - Warning: Pursuing a workaround, but it might take longer to complete.")
 
-                temp_wire = Topology.SelfMerge(Cluster.ByTopologies(wire_edges))
+                temp_wire = Topology.SelfMerge(Cluster.ByTopologies(wire_edges), tolerance=tolerance)
                 cycles = Wire.Cycles(temp_wire, maxVertices = len(final_vertices))
                 if len(cycles) > 0:
                     distances = []
@@ -3245,7 +3247,7 @@ class Wire():
                     cycles = Helper.Sort(cycles, distances)
                     # Get the top three or less
                     cycles = cycles[:min(3, len(cycles))]
-                    areas = [Face.Area(Face.ByWire(cycle)) for cycle in cycles]
+                    areas = [Face.Area(Face.ByWire(cycle, tolerance=tolerance)) for cycle in cycles]
                     cycles = Helper.Sort(cycles, areas)
                     return_cycle = Wire.Reverse(cycles[-1])
                     test_cycle = Wire.Simplify(return_cycle, tolerance=epsilon)
@@ -3351,7 +3353,7 @@ class Wire():
                     edge = Topology.SetDictionary(edge, d)
                 
                 # Offset the wire
-                new_wire = Wire.ByOffset(wire, offsetKey=offsetKey, silent=silent, numWorkers=numWorkers)
+                new_wire = Wire.ByOffset(wire, offsetKey=offsetKey, silent=silent, numWorkers=numWorkers, tolerance=tolerance)
                 # Check for an illegal wire. In that case, return a very large loss value.
                 if not Topology.IsInstance(new_wire, "Wire"):
                     return (float("inf"))
@@ -3359,7 +3361,7 @@ class Wire():
                     return (float("inf"))
                 if not Wire.IsClosed(new_wire):
                     return (float("inf"))
-                new_face = Face.ByWire(new_wire)
+                new_face = Face.ByWire(new_wire, tolerance=tolerance)
                 # Calculate the area of the new wire/face
                 new_area = Face.Area(new_face)
                 
@@ -3423,7 +3425,7 @@ class Wire():
             edge = Topology.SetDictionary(edge, d)
                 
         # Offset the wire
-        return_wire = Wire.ByOffset(wire, offsetKey=offsetKey, silent=silent, numWorkers=numWorkers)
+        return_wire = Wire.ByOffset(wire, offsetKey=offsetKey, silent=silent, numWorkers=numWorkers, tolerance=tolerance)
         if not Topology.IsInstance(wire, "Wire"):
             if not silent:
                 print("Wire.OffsetByArea - Error: Could not create the offset wire. Returning None.")
@@ -3688,7 +3690,7 @@ class Wire():
             try:
                 e = Edge.ByStartVertexEndVertex(start_vertex, end_vertex, tolerance=tolerance)
             except TypeError:
-                e = Edge.ByStartVertexEndVertex(start_vertex, end_vertex)
+                e = Edge.ByStartVertexEndVertex(start_vertex, end_vertex, tolerance=tolerance)
             except Exception:
                 return None
 
@@ -3716,7 +3718,7 @@ class Wire():
         try:
             return Wire.ByEdges(edges, tolerance=tolerance)
         except TypeError:
-            return Wire.ByEdges(edges)
+            return Wire.ByEdges(edges, tolerance=tolerance)
         except Exception:
             return None
 
@@ -7995,7 +7997,7 @@ class Wire():
         # ------------------------------------------------------------
         # 4. Build and return the Topologic wire
         # ------------------------------------------------------------
-        return_wire = Wire.ByVertices(path_vertices, close=False, silent=True)
+        return_wire = Wire.ByVertices(path_vertices, close=False, silent=True, tolerance=tolerance)
         bb = Wire.BoundingRectangle(face)
         d = Topology.Dictionary(bb)
         width = Dictionary.ValueAtKey(d, "width")
@@ -9662,7 +9664,7 @@ class Wire():
 
         edges = []
         for i in range(sides):
-            edge = Edge.ByStartVertexEndVertex(vertices[i], vertices[i + 1])
+            edge = Edge.ByStartVertexEndVertex(vertices[i], vertices[i + 1], tolerance=tolerance)
             if not Topology.IsInstance(edge, "Edge"):
                 return None
             edges.append(edge)
@@ -10668,7 +10670,7 @@ class Wire():
             e2 = Edge.ByVertices(origin, vb3)
             e3 = Edge.ByVertices(vb2, origin)
             e4 = Edge.ByVertices(origin, vb4)
-            baseWire = Wire.ByEdges([e1, e2, e3, e4]+base_edges)
+            baseWire = Wire.ByEdges([e1, e2, e3, e4]+base_edges, tolerance=tolerance)
         if direction != [0, 0, 1]:
             baseWire = Topology.Orient(baseWire, origin=origin, dirA=[0, 0, 1], dirB=direction)
         return baseWire

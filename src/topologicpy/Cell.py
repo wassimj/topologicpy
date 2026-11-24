@@ -368,8 +368,7 @@ class Cell():
 
         The supplied Faces are passed directly to the active backend so their
         supporting surfaces and boundary curves are preserved. If construction
-        fails, the method may retry sewing with a slightly larger tolerance and
-        may self-merge the original Faces. It never reconstructs Faces from their
+        fails, the method may self-merge the original Faces at the supplied tolerance. It never reconstructs Faces from their
         Wires, Edges, or Vertices.
 
         If ``planarize`` is True, the Faces are explicitly planarized before Cell
@@ -418,6 +417,9 @@ class Cell():
             face for face in faces
             if Topology.IsInstance(face, "Face")
         ]
+
+        if len(source_faces) != len(faces):
+            return _fail("Cell.ByFaces - Error: One or more input Faces are invalid. Returning None.")
 
         if len(source_faces) < 3:
             return _fail(
@@ -479,11 +481,6 @@ class Cell():
         # First attempt: pass the Faces directly to the backend.
         cell = _build(construction_faces, tolerance)
 
-        # Second attempt: increase only the sewing tolerance. The supplied Faces,
-        # their native curves, and their supporting surfaces remain unchanged.
-        if not Topology.IsInstance(cell, "Cell"):
-            cell = _build(construction_faces, tolerance * 10.0)
-
         # Final repair attempt: sew/self-merge the original Face topology without
         # reconstructing any Face from Wires, Edges, or Vertices.
         if not Topology.IsInstance(cell, "Cell"):
@@ -516,8 +513,6 @@ class Cell():
 
                 if isinstance(merged_faces, list) and len(merged_faces) >= 3:
                     cell = _build(merged_faces, tolerance)
-                    if not Topology.IsInstance(cell, "Cell"):
-                        cell = _build(merged_faces, tolerance * 10.0)
 
         if not Topology.IsInstance(cell, "Cell"):
             return _fail(
@@ -1101,7 +1096,7 @@ class Cell():
                 print("Cell.ByShell - Error: The input shell parameter is not a valid topologic shell. Returning None.")
             return None
         faces = Topology.SubTopologies(shell, subTopologyType="face")
-        return Cell.ByFaces(faces, planarize=planarize, tolerance=tolerance)
+        return Cell.ByFaces(faces, planarize=planarize, tolerance=tolerance, silent=silent)
     
     
     @staticmethod
@@ -1138,11 +1133,22 @@ class Cell():
             if not silent:
                 print("Cell.ByShells - Error: The input externalBoundary parameter is not a closed topologic shell. Returning None.")
             return None
-        ibList = [Cell.ByShell(s) for s in internalBoundaries if Topology.IsInstance(s, "Shell") and Shell.IsClosed(s)]
-        cell = Cell.ByShell(externalBoundary)
+        ibList = []
+        for s in internalBoundaries:
+            if not Topology.IsInstance(s, "Shell") or not Shell.IsClosed(s, silent=silent):
+                if not silent:
+                    print("Cell.ByShells - Error: Invalid or open internal shell. Returning None.")
+                return None
+            inner = Cell.ByShell(s, tolerance=tolerance, silent=silent)
+            if not Topology.IsInstance(inner, "Cell"):
+                return None
+            ibList.append(inner)
+        cell = Cell.ByShell(externalBoundary, tolerance=tolerance, silent=silent)
+        if not Topology.IsInstance(cell, "Cell"):
+            return None
         if len(ibList) > 0:
             inner_cluster =Cluster.ByTopologies(ibList)
-            cell = Topology.Difference(cell, inner_cluster)
+            cell = Topology.Difference(cell, inner_cluster, tolerance=tolerance)
             if not Topology.IsInstance(cell, "Cell"):
                 if not silent:
                     print("Cell.ByShells - Error: Could not create cell. Returning None.")
@@ -2075,7 +2081,7 @@ class Cell():
             shell = Shell.ByFaces(faces, tolerance=tolerance)
             if Topology.IsInstance(shell, "Shell"):
                 geom = Topology.Geometry(shell, mantissa=mantissa)
-                cell = Topology.ByGeometry(geom['vertices'], geom['edges'], geom['faces'])
+                cell = Topology.ByGeometry(geom['vertices'], geom['edges'], geom['faces'], tolerance=tolerance)
 
             if not Topology.IsInstance(cell, "Cell"):
                 if not silent:
@@ -2471,14 +2477,14 @@ class Cell():
                 apex = topVertex
                 wire = baseWire
             else:
-                return Cell.ByWires([baseWire, topWire])
+                return Cell.ByWires([baseWire, topWire], tolerance=tolerance)
             vertices = Topology.Vertices(wire)
             faces = [Face.ByWire(wire, tolerance=tolerance)]
             for i in range(0, len(vertices)-1):
-                w = Wire.ByVertices([apex, vertices[i], vertices[i+1]])
+                w = Wire.ByVertices([apex, vertices[i], vertices[i+1]], tolerance=tolerance)
                 f = Face.ByWire(w, tolerance=tolerance)
                 faces.append(f)
-            w = Wire.ByVertices([apex, vertices[-1], vertices[0]])
+            w = Wire.ByVertices([apex, vertices[-1], vertices[0]], tolerance=tolerance)
             f = Face.ByWire(w, tolerance=tolerance)
             faces.append(f)
             return Cell.ByFaces(faces, tolerance=tolerance)
@@ -2515,11 +2521,11 @@ class Cell():
                 topY = math.sin(angle)*topRadius + Vertex.Y(origin, mantissa=mantissa) + yOffset
                 topV.append(Vertex.ByCoordinates(topX,topY,topZ))
         if baseRadius > 0:
-            baseWire = Wire.ByVertices(baseV)
+            baseWire = Wire.ByVertices(baseV, tolerance=tolerance)
         else:
             baseWire = None
         if topRadius > 0:
-            topWire = Wire.ByVertices(topV)
+            topWire = Wire.ByVertices(topV, tolerance=tolerance)
         else:
             topWire = None
         baseVertex = Vertex.ByCoordinates(Vertex.X(origin, mantissa=mantissa)+xOffset, Vertex.Y(origin, mantissa=mantissa)+yOffset, Vertex.Z(origin, mantissa=mantissa)+zOffset)
@@ -2540,8 +2546,8 @@ class Cell():
                 cutting_planes.append(Face.ByWire(Wire.Rectangle(origin=tool_origin, width=size, length=size), tolerance=tolerance))
             cutting_planes_cluster = Cluster.ByTopologies(cutting_planes)
             shell = Cell.Shells(cone)[0]
-            shell = Topology.Slice(shell,cutting_planes_cluster)
-            cone = Cell.ByShell(shell)
+            shell = Topology.Slice(shell,cutting_planes_cluster, tolerance=tolerance)
+            cone = Cell.ByShell(shell, tolerance=tolerance)
         cone = Topology.Orient(cone, origin=origin, dirA=[0, 0, 1], dirB=direction)
         return cone
   
@@ -3241,7 +3247,7 @@ class Cell():
 
                 sliced = Topology.Slice(
                     cylinder,
-                    cutters,
+                    cutters, tolerance=tolerance,
                 )
 
                 if sliced is not None:
@@ -3567,16 +3573,16 @@ class Cell():
                  [0.05547, 0.0, 0.491784],
                  [0.0, 0.0, 0.5]]
         verts = [Vertex.ByCoordinates(coord) for coord in coords]
-        c = Wire.ByVertices(verts, close=False)
+        c = Wire.ByVertices(verts, close=False, tolerance=tolerance)
         new_verts = []
         for i in range(vSides+1):
             new_verts.append(Wire.VertexByParameter(c, i/vSides))
-        c = Wire.ByVertices(new_verts, close=False)
+        c = Wire.ByVertices(new_verts, close=False, tolerance=tolerance)
         egg = Topology.Spin(c, origin=Vertex.Origin(), triangulate=False, direction=[0, 0, 1], angle=360, sides=uSides, tolerance=tolerance)
         if Topology.IsInstance(egg, "CellComplex"):
             egg = CellComplex.ExternalBoundary(egg)
         if Topology.IsInstance(egg, "Shell"):
-            egg = Cell.ByShell(egg)
+            egg = Cell.ByShell(egg, tolerance=tolerance)
         egg = Topology.Scale(egg, origin=Vertex.Origin(), x=height, y=height, z=height)
         xOffset = 0
         yOffset = 0
@@ -3636,7 +3642,7 @@ class Cell():
         temp_cells = []
         for shell in shells:
             try:
-                temp_cell = Cell.ByShell(shell, silent=True)
+                temp_cell = Cell.ByShell(shell, silent=True, tolerance=tolerance)
                 if Topology.IsInstance(temp_cell, "cell"):
                     closed_shells.append(shell)
                     temp_cells.append(temp_cell)
@@ -3727,22 +3733,22 @@ class Cell():
         import math
 
         def createHyperboloid(baseVertices, topVertices, tolerance=0.0001):
-            baseWire = Wire.ByVertices(baseVertices, close=True)
-            topWire = Wire.ByVertices(topVertices, close=True)
+            baseWire = Wire.ByVertices(baseVertices, close=True, tolerance=tolerance)
+            topWire = Wire.ByVertices(topVertices, close=True, tolerance=tolerance)
             baseFace = Face.ByWire(baseWire, tolerance=tolerance)
             topFace = Face.ByWire(topWire, tolerance=tolerance)
             faces = [baseFace, topFace]
             for i in range(0, len(baseVertices)-1):
-                w = Wire.ByVertices([baseVertices[i], topVertices[i], topVertices[i+1]], close=True)
+                w = Wire.ByVertices([baseVertices[i], topVertices[i], topVertices[i+1]], close=True, tolerance=tolerance)
                 f = Face.ByWire(w, tolerance=tolerance)
                 faces.append(f)
-                w = Wire.ByVertices([baseVertices[i+1], baseVertices[i], topVertices[i+1]], close=True)
+                w = Wire.ByVertices([baseVertices[i+1], baseVertices[i], topVertices[i+1]], close=True, tolerance=tolerance)
                 f = Face.ByWire(w, tolerance=tolerance)
                 faces.append(f)
-            w = Wire.ByVertices([baseVertices[-1], topVertices[-1], topVertices[0]], close=True)
+            w = Wire.ByVertices([baseVertices[-1], topVertices[-1], topVertices[0]], close=True, tolerance=tolerance)
             f = Face.ByWire(w, tolerance=tolerance)
             faces.append(f)
-            w = Wire.ByVertices([baseVertices[0], baseVertices[-1], topVertices[0]], close=True)
+            w = Wire.ByVertices([baseVertices[0], baseVertices[-1], topVertices[0]], close=True, tolerance=tolerance)
             f = Face.ByWire(w, tolerance=tolerance)
             faces.append(f)
             returnTopology = Cell.ByFaces(faces, tolerance=tolerance)
@@ -3851,26 +3857,26 @@ class Cell():
         v5, v6, v7, v8 = vertices
         vertices = Topology.Vertices(rect3)
         v9, v10, v11, v12 = vertices
-        f1 = Face.ByVertices([v1,v8,v4])
-        f2 = Face.ByVertices([v1,v4,v5])
-        f3 = Face.ByVertices([v3,v2,v6])
-        f4 = Face.ByVertices([v2,v3,v7])
-        f5 = Face.ByVertices([v10,v9,v2])
-        f6 = Face.ByVertices([v10,v9,v1])
-        f7 = Face.ByVertices([v12,v11,v4])
-        f8 = Face.ByVertices([v12,v11,v3])
-        f9 = Face.ByVertices([v8,v7,v9])
-        f10 = Face.ByVertices([v8,v7,v12])
-        f11 = Face.ByVertices([v5,v6,v10])
-        f12 = Face.ByVertices([v5,v6,v11])
-        f13 = Face.ByVertices([v8,v1,v9])
-        f14 = Face.ByVertices([v9,v2,v7])
-        f15 = Face.ByVertices([v7,v3,v12])
-        f16 = Face.ByVertices([v8,v12,v4])
-        f17 = Face.ByVertices([v1,v5,v10])
-        f18 = Face.ByVertices([v10,v2,v6])
-        f19 = Face.ByVertices([v6,v3,v11])
-        f20 = Face.ByVertices([v11,v4,v5])
+        f1 = Face.ByVertices([v1,v8,v4], tolerance=tolerance)
+        f2 = Face.ByVertices([v1,v4,v5], tolerance=tolerance)
+        f3 = Face.ByVertices([v3,v2,v6], tolerance=tolerance)
+        f4 = Face.ByVertices([v2,v3,v7], tolerance=tolerance)
+        f5 = Face.ByVertices([v10,v9,v2], tolerance=tolerance)
+        f6 = Face.ByVertices([v10,v9,v1], tolerance=tolerance)
+        f7 = Face.ByVertices([v12,v11,v4], tolerance=tolerance)
+        f8 = Face.ByVertices([v12,v11,v3], tolerance=tolerance)
+        f9 = Face.ByVertices([v8,v7,v9], tolerance=tolerance)
+        f10 = Face.ByVertices([v8,v7,v12], tolerance=tolerance)
+        f11 = Face.ByVertices([v5,v6,v10], tolerance=tolerance)
+        f12 = Face.ByVertices([v5,v6,v11], tolerance=tolerance)
+        f13 = Face.ByVertices([v8,v1,v9], tolerance=tolerance)
+        f14 = Face.ByVertices([v9,v2,v7], tolerance=tolerance)
+        f15 = Face.ByVertices([v7,v3,v12], tolerance=tolerance)
+        f16 = Face.ByVertices([v8,v12,v4], tolerance=tolerance)
+        f17 = Face.ByVertices([v1,v5,v10], tolerance=tolerance)
+        f18 = Face.ByVertices([v10,v2,v6], tolerance=tolerance)
+        f19 = Face.ByVertices([v6,v3,v11], tolerance=tolerance)
+        f20 = Face.ByVertices([v11,v4,v5], tolerance=tolerance)
 
         icosahedron = Cell.ByFaces([f1,f2,f3,f4,f5,f6,f7,f8,f9,f10,
                         f11,f12,f13,f14,f15,f16,f17,f18,f19,f20], tolerance=tolerance)
@@ -5761,8 +5767,8 @@ class Cell():
         cell_dict = Cell.Decompose(hull)
         h_faces = Helper.Flatten([cell_dict['topHorizontalFaces'] + cell_dict['bottomHorizontalFaces']])
         other_faces = [cell_dict['verticalFaces']+ cell_dict['inclinedFaces']]
-        caps_cluster = Topology.SelfMerge(Cluster.ByTopologies(h_faces))
-        caps_cluster = Topology.RemoveCoplanarFaces(caps_cluster)
+        caps_cluster = Topology.SelfMerge(Cluster.ByTopologies(h_faces), tolerance=tolerance)
+        caps_cluster = Topology.RemoveCoplanarFaces(caps_cluster, tolerance=tolerance)
         all_faces = other_faces + Topology.Faces(caps_cluster)
         all_faces = Helper.Flatten(all_faces)
         
@@ -5855,14 +5861,14 @@ class Cell():
         vb4 = Vertex.ByCoordinates(0, 0.5, 0)
         top = Vertex.ByCoordinates(0, 0, 0.5)
         bottom = Vertex.ByCoordinates(0, 0, -0.5)
-        f1 = Face.ByVertices([top, vb1, vb2])
-        f2 = Face.ByVertices([top, vb2, vb3])
-        f3 = Face.ByVertices([top, vb3, vb4])
-        f4 = Face.ByVertices([top, vb4, vb1])
-        f5 = Face.ByVertices([bottom, vb1, vb2])
-        f6 = Face.ByVertices([bottom, vb2, vb3])
-        f7 = Face.ByVertices([bottom, vb3, vb4])
-        f8 = Face.ByVertices([bottom, vb4, vb1])
+        f1 = Face.ByVertices([top, vb1, vb2], tolerance=tolerance)
+        f2 = Face.ByVertices([top, vb2, vb3], tolerance=tolerance)
+        f3 = Face.ByVertices([top, vb3, vb4], tolerance=tolerance)
+        f4 = Face.ByVertices([top, vb4, vb1], tolerance=tolerance)
+        f5 = Face.ByVertices([bottom, vb1, vb2], tolerance=tolerance)
+        f6 = Face.ByVertices([bottom, vb2, vb3], tolerance=tolerance)
+        f7 = Face.ByVertices([bottom, vb3, vb4], tolerance=tolerance)
+        f8 = Face.ByVertices([bottom, vb4, vb1], tolerance=tolerance)
 
         octahedron = Cell.ByFaces([f1, f2, f3, f4, f5, f6, f7, f8], tolerance=tolerance, silent=silent)
         if not Topology.IsInstance(octahedron, "cell"):
@@ -5968,8 +5974,8 @@ class Cell():
         proj_vertices = []
         for v in vertices:
             proj_vertices.append(Vertex.Project(v, f))
-        w = Wire.ByVertices(proj_vertices, close=True)
-        sleeve = Shell.ByWires([eb, w], triangulate=False, silent=True)
+        w = Wire.ByVertices(proj_vertices, close=True, tolerance=tolerance)
+        sleeve = Shell.ByWires([eb, w], triangulate=False, silent=True, tolerance=tolerance)
         if sleeve == None:
             if not silent:
                 print("Cell.Paraboloid - Error: Could not create paraboloid. Returning None.")
@@ -6220,7 +6226,7 @@ class Cell():
             if len(sliceFaces) > 0:
                 sliceCluster = Cluster.ByTopologies(sliceFaces)
                 shell = Topology.Slice(topologyA=shell, topologyB=sliceCluster, tranDict=False, tolerance=tolerance)
-                return Cell.ByShell(shell)
+                return Cell.ByShell(shell, tolerance=tolerance)
             return cell
         
         from topologicpy.Vertex import Vertex
@@ -6247,10 +6253,10 @@ class Cell():
         vb3 = Vertex.ByCoordinates(Vertex.X(origin, mantissa=mantissa)+width*0.5+xOffset,Vertex.Y(origin, mantissa=mantissa)-length*0.5+yOffset,Vertex.Z(origin, mantissa=mantissa)+zOffset)
         vb4 = Vertex.ByCoordinates(Vertex.X(origin, mantissa=mantissa)-width*0.5+xOffset,Vertex.Y(origin, mantissa=mantissa)-length*0.5+yOffset,Vertex.Z(origin, mantissa=mantissa)+zOffset)
 
-        baseWire = Wire.ByVertices([vb1, vb2, vb3, vb4], close=True)
+        baseWire = Wire.ByVertices([vb1, vb2, vb3, vb4], close=True, tolerance=tolerance)
         baseFace = Face.ByWire(baseWire, tolerance=tolerance)
 
-        prism = Cell.ByThickenedFace(baseFace, thickness=height, bothSides = False, reverse=True)
+        prism = Cell.ByThickenedFace(baseFace, thickness=height, bothSides = False, reverse=True, tolerance=tolerance)
         if not Topology.IsInstance(prism, "Cell"):
             if not silent:
                 print("Cell.Prism - Error: Could not create the cell. Returning None.")
@@ -6491,7 +6497,7 @@ class Cell():
             cluster = cells[0]
             for i in range(1, len(cells)):
                 oldCluster = cluster
-                cluster = Topology.Union(cluster, cells[i])
+                cluster = Topology.Union(cluster, cells[i], tolerance=tolerance)
                 del oldCluster
             superCells = Topology.Cells(cluster)
         unused = []
@@ -6847,29 +6853,29 @@ class Cell():
             # Create smaller tetrahedra
             tetrahedra = [
                 Cell.ByFaces([
-                    Face.ByVertices([v0, m01, m02]),
-                    Face.ByVertices([v0, m01, m03]),
-                    Face.ByVertices([v0, m02, m03]),
-                    Face.ByVertices([m01, m02, m03])
-                ]),
+                    Face.ByVertices([v0, m01, m02], tolerance=tolerance),
+                    Face.ByVertices([v0, m01, m03], tolerance=tolerance),
+                    Face.ByVertices([v0, m02, m03], tolerance=tolerance),
+                    Face.ByVertices([m01, m02, m03], tolerance=tolerance)
+                ], tolerance=tolerance),
                 Cell.ByFaces([
-                    Face.ByVertices([m01, v1, m12]),
-                    Face.ByVertices([m01, v1, m13]),
-                    Face.ByVertices([m01, m12, m13]),
-                    Face.ByVertices([v1, m12, m13])
-                ]),
+                    Face.ByVertices([m01, v1, m12], tolerance=tolerance),
+                    Face.ByVertices([m01, v1, m13], tolerance=tolerance),
+                    Face.ByVertices([m01, m12, m13], tolerance=tolerance),
+                    Face.ByVertices([v1, m12, m13], tolerance=tolerance)
+                ], tolerance=tolerance),
                 Cell.ByFaces([
-                    Face.ByVertices([m02, m12, v2]),
-                    Face.ByVertices([m02, m12, m23]),
-                    Face.ByVertices([m02, v2, m23]),
-                    Face.ByVertices([m12, v2, m23])
-                ]),
+                    Face.ByVertices([m02, m12, v2], tolerance=tolerance),
+                    Face.ByVertices([m02, m12, m23], tolerance=tolerance),
+                    Face.ByVertices([m02, v2, m23], tolerance=tolerance),
+                    Face.ByVertices([m12, v2, m23], tolerance=tolerance)
+                ], tolerance=tolerance),
                 Cell.ByFaces([
-                    Face.ByVertices([m03, m13, m23]),
-                    Face.ByVertices([m03, v3, m13]),
-                    Face.ByVertices([m03, v3, m23]),
-                    Face.ByVertices([m13, v3, m23])
-                ])
+                    Face.ByVertices([m03, m13, m23], tolerance=tolerance),
+                    Face.ByVertices([m03, v3, m13], tolerance=tolerance),
+                    Face.ByVertices([m03, v3, m23], tolerance=tolerance),
+                    Face.ByVertices([m13, v3, m23], tolerance=tolerance)
+                ], tolerance=tolerance)
             ]
 
             # Recursively subdivide the smaller tetrahedra
@@ -6889,11 +6895,11 @@ class Cell():
 
         # Create the initial tetrahedron
         tetrahedron = Cell.ByFaces([
-            Face.ByVertices([v0, v1, v2]),
-            Face.ByVertices([v0, v1, v3]),
-            Face.ByVertices([v1, v2, v3]),
-            Face.ByVertices([v2, v0, v3]),
-        ])
+            Face.ByVertices([v0, v1, v2], tolerance=tolerance),
+            Face.ByVertices([v0, v1, v3], tolerance=tolerance),
+            Face.ByVertices([v1, v2, v3], tolerance=tolerance),
+            Face.ByVertices([v2, v0, v3], tolerance=tolerance),
+        ], tolerance=tolerance)
 
         bbox = Topology.BoundingBox(tetrahedron)
         d = Topology.Dictionary(bbox)
@@ -6943,7 +6949,7 @@ class Cell():
             # Recursively subdivide the tetrahedron
             subdivided_tetrahedra = subdivide_tetrahedron(tetrahedron, depth)
             # Create a cell complex from the subdivided tetrahedra
-            return CellComplex.ExternalBoundary(CellComplex.ByCells([tetrahedron]+subdivided_tetrahedra))
+            return CellComplex.ExternalBoundary(CellComplex.ByCells([tetrahedron]+subdivided_tetrahedra, tolerance=tolerance))
 
     @staticmethod
     def Torus(origin=None,
@@ -7196,38 +7202,13 @@ class Cell():
                 faces.append(f2)
 
         # --- Stitch into a closed shell, then a cell ---
-        shell = Shell.ByFaces(faces, tolerance)
-        if shell is None:
-            # As a fallback, try slight relaxation on tolerance (if environment is finicky)
-            shell = Shell.ByFaces(faces, tolerance * 10.0)
+        shell = Shell.ByFaces(faces, tolerance=tolerance, silent=silent)
         if shell is None:
             raise RuntimeError("Failed to stitch torus shell from facets.")
 
-        # Try common constructors to obtain a solid Cell
-        cell = None
-        # 1) Common signature: Cell.ByShell(shell)
-        try:
-            cell = Cell.ByShell(shell)
-        except Exception:
-            cell = None
-        # 2) Sometimes requires tolerance
+        cell = Cell.ByShell(shell, tolerance=tolerance, silent=silent)
         if cell is None:
-            try:
-                cell = Cell.ByShell(shell, tolerance)
-            except Exception:
-                cell = None
-        # 3) Some builds expect a list of shells (external only)
-        if cell is None:
-            try:
-                cell = Cell.ByShells([shell], tolerance)
-            except Exception:
-                cell = None
-        # 4) Rare builds: stitch directly from faces
-        if cell is None:
-            try:
-                cell = Cell.ByFaces(faces, tolerance, silent=silent)
-            except Exception:
-                cell = None
+            cell = Cell.ByFaces(faces, tolerance=tolerance, silent=silent)
 
         if cell is None:
             # As a last resort, return the stitched shell so the caller still gets usable geometry.
@@ -7621,7 +7602,7 @@ class Cell():
         f3 = Face.ByVertices([v4, v5, v3], tolerance=tolerance)
         f4 = Face.ByVertices([v1, v6, v5, v4], tolerance=tolerance)
         f5 = Face.ByVertices([v2, v3, v5, v6], tolerance=tolerance)
-        cell = Cell.ByFaces([f1, f2, f3, f4, f5])
+        cell = Cell.ByFaces([f1, f2, f3, f4, f5], tolerance=tolerance)
         cell = Topology.Translate(cell, -width/2, -length/2, -height/2)
         cell = Topology.Translate(cell, Vertex.X(origin), Vertex.Y(origin), Vertex.Z(origin))
         if flipHorizontal == True:

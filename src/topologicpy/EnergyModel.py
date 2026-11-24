@@ -346,38 +346,26 @@ class EnergyModel:
             except Exception:
                 return 90.0
 
+        def vertex_coordinates(vertices):
+            return [tuple(Vertex.Coordinates(v, mantissa=geometry_mantissa)) for v in vertices]
+
+        def coordinates_to_point3d_list(coordinates, openstudio):
+            return [openstudio.Point3d(*p) for p in EnergyModel._OSMCleanRing(coordinates)]
+
         def vertices_to_point3d_list(vertices, openstudio):
-            pts = []
-            for v in vertices:
-                pts.append(
-                    openstudio.Point3d(
-                        Vertex.X(v, mantissa=geometry_mantissa),
-                        Vertex.Y(v, mantissa=geometry_mantissa),
-                        export_vertex_map.get((Vertex.X(v, mantissa=geometry_mantissa), Vertex.Y(v, mantissa=geometry_mantissa), Vertex.Z(v, mantissa=geometry_mantissa)), Vertex.Z(v, mantissa=geometry_mantissa))
-                    )
-                )
-            coordinates = [(p.x(), p.y(), p.z()) for p in pts]
-            keep = list(range(len(pts)))
-            progress = True
-            while progress and len(keep) > 3:
-                progress = False
-                for k, index in enumerate(keep):
-                    a, p, b = coordinates[keep[k-1]], coordinates[index], coordinates[keep[(k+1) % len(keep)]]
-                    d = [b[i]-a[i] for i in range(3)]
-                    q = [p[i]-a[i] for i in range(3)]
-                    length2 = sum(v*v for v in d)
-                    t = sum(q[i]*d[i] for i in range(3))/length2 if length2 else 0
-                    if 0 <= t <= 1 and sum((q[i]-t*d[i])**2 for i in range(3)) <= 1e-24:
-                        keep.pop(k); progress = True
-                        break
-            def corner(k):
-                a, b, c = [coordinates[keep[(k+i) % len(keep)]] for i in range(3)]
-                u = [b[i]-a[i] for i in range(3)]
-                v = [c[i]-a[i] for i in range(3)]
-                return sum((u[i]*v[j]-u[j]*v[i])**2 for i, j in [(0, 1), (1, 2), (2, 0)])
-            start = max(range(len(keep)), key=corner)
-            keep = keep[start:]+keep[:start]
-            return [pts[i] for i in keep]
+            coordinates = [(x, y, export_vertex_map.get((x, y, z), z))
+                           for x, y, z in vertex_coordinates(vertices)]
+            return coordinates_to_point3d_list(coordinates, openstudio)
+
+        def can_triangulate(coordinates):
+            points = coordinates_to_point3d_list(coordinates, openstudio)
+            if len(points) < 3:
+                return False
+            try:
+                local = openstudio.Transformation.alignFace(points).inverse()*points
+                return bool(openstudio.computeTriangulation(list(local)[::-1], []))
+            except (RuntimeError, ValueError):
+                return False
 
         def orient_surface_vertices(points, face_normal, surface_obj, openstudio):
             try:
@@ -659,96 +647,29 @@ class EnergyModel:
                 ring = Wire.Vertices(Face.ExternalBoundary(sourceFace)) or []
                 holes = Face.InternalBoundaries(sourceFace) or []
                 source_apertures = Topology.Apertures(sourceFace) or []
-                coords = [tuple(Vertex.Coordinates(v, mantissa=9)) for v in ring]
-                if ring:
-                    start=min(range(len(ring)),key=lambda i:coords[i])
-                    forward=[(start+i)%len(ring) for i in range(len(ring))]
-                    reverse=[(start-i)%len(ring) for i in range(len(ring))]
-                    order=min((forward,reverse),key=lambda order:[coords[i] for i in order])
-                    ring=[ring[i] for i in order]
-                    coords=[coords[i] for i in order]
-                key = (tuple(sorted(coords)), tuple(sorted(tuple(sorted(tuple(Vertex.Coordinates(v, mantissa=9)) for v in Wire.Vertices(w))) for w in holes)))
-                # OpenStudio accepts many concave n-gons but leaves their
-                # eventual tessellation to downstream gbXML viewers.  Decide
-                # explicitly from the cleaned projected polygon: preserve a
-                # convex boundary as one simple host surface, and triangulate
-                # only genuinely concave/invalid boundaries (or faces with
-                # true internal holes).
-                needs_triangles = bool(holes) and not source_apertures
-                if len(ring) > 3 and not source_apertures:
-                    import numpy as np
-                    from shapely.geometry import Polygon
-                    probe = np.asarray(coords, dtype=float)
-                    centre_probe = probe.mean(axis=0)
-                    _, _, axes_probe = np.linalg.svd(probe-centre_probe)
-                    projected = (probe-centre_probe)@axes_probe[:2].T
-                    probe_region = Polygon(projected)
-                    convex_error = probe_region.symmetric_difference(probe_region.convex_hull).area if probe_region.is_valid else float('inf')
-                    needs_triangles = needs_triangles or (not probe_region.is_valid) or convex_error > max(1e-9, probe_region.area*1e-8)
-                    if not needs_triangles:
-                        points = vertices_to_point3d_list(ring, openstudio)
-                        local = openstudio.Transformation.alignFace(points).inverse()*points
-                        needs_triangles = not bool(openstudio.computeTriangulation(list(local)[::-1], []))
-                # A hosted aperture is already a gbXML sub-surface. Keeping its
-                # original host face is essential: triangulating that host makes
-                # viewers draw diagonal mesh edges through windows and doors.
-                # Only faces with genuine topological holes are triangulated.
-                if (Topology.Apertures(sourceFace) or []) and not holes:
-                    needs_triangles = False
-                if needs_triangles:
-                    if key not in export_triangulations:
-                        import numpy as np
-                        from shapely.geometry import Polygon
-                        from shapely.ops import unary_union
-                        centre = np.mean(coords, axis=0)
-                        _, _, axes = np.linalg.svd(np.asarray(coords)-centre)
-                        def project(points): return (np.asarray(points)-centre)@axes[:2].T
-                        hole_coords = []
-                        for hole in holes:
-                            hole_vertices = Wire.Vertices(hole) or []
-                            if len(hole_vertices) >= 3:
-                                hole_coords.append([Vertex.Coordinates(v, mantissa=9) for v in hole_vertices])
-                        region = Polygon(project(coords), [project(points) for points in hole_coords])
-                        # Apertures are gbXML sub-surfaces, not holes in the
-                        # host surface.  Triangulate the actual source region
-                        # once and clip each aperture to the resulting host
-                        # triangles below.  Subtracting aperture polygons here
-                        # and then adding them back as host ``Surface`` patches
-                        # creates thin slivers and n-sided pseudo-surfaces,
-                        # which are the source of the visibly bad triangulation.
-                        opaque_parts=[region] if region.geom_type=='Polygon' else list(region.geoms)
-                        loops=[tri for part in opaque_parts if part.area>1e-12 for tri in EnergyModel._ExportTriangles2D(part)]
-                        mesh = [[openstudio.Point3d(x, y, 0) for x, y in loop] for loop in loops]
-                        triangles, patches = [], []
-                        for triangle_points in mesh:
-                            uv = np.array([[v.x(), v.y()] for v in triangle_points])
-                            p = (centre+uv@axes[:2]).tolist()
-                            patch = Polygon(uv)
-                            if patch.area < 1e-10: continue
-                            triangle = Face.ByVertices([Vertex.ByCoordinates(*v) for v in p], tolerance=min(tolerance, 1e-8), silent=True)
-                            if triangle is None: raise ValueError("Could not construct an export triangle.")
-                            triangles.append(triangle); patches.append(patch)
-                        merged = unary_union(patches)
-                        budget = max(1e-7, region.area*1e-7)
-                        if not triangles or merged.symmetric_difference(region).area > budget or sum(p.area for p in patches)-merged.area > budget:
-                            raise ValueError(f"Export triangulation changes the source surface or fills its holes (area={region.area}, triangles={sum(p.area for p in patches)}, difference={merged.symmetric_difference(region).area}, holes={len(holes)}, vertices={len(coords)}, valid={region.is_valid}).")
-                        export_triangulations[key] = triangles
-                    cellFaces.extend((sourceFace, triangle, None) for triangle in export_triangulations[key])
-                else:
-                    cellFaces.append((sourceFace, sourceFace, None))
+                coords = vertex_coordinates(ring)
+                hole_coords = [vertex_coordinates(Wire.Vertices(w) or []) for w in holes]
+                # Canonicalize the outer boundary so the two owners of an
+                # internal face reuse the same export subdivision.
+                if coords:
+                    start = min(range(len(coords)), key=lambda i: coords[i])
+                    forward = [coords[(start+i)%len(coords)] for i in range(len(coords))]
+                    reverse = [coords[(start-i)%len(coords)] for i in range(len(coords))]
+                    coords = min(forward, reverse)
+                key = (tuple(sorted(coords)), tuple(sorted(tuple(sorted(h)) for h in hole_coords)), bool(source_apertures))
+                if key not in export_triangulations:
+                    export_triangulations[key] = EnergyModel._OSMExportLoops(
+                        coords, hole_coords, export_vertex_map,
+                        bool(source_apertures), can_triangulate)
+                loops, collapsed = export_triangulations[key]
+                if collapsed:
+                    regularisation['collapsed_surfaces'] = regularisation.get('collapsed_surfaces', 0) + 1
+                cellFaces.extend((sourceFace, loop) for loop in loops)
             if cellFaces:
-                for faceNumber, (buildingFace, surfaceFace, export_ring) in enumerate(cellFaces):
-                    boundary = Face.ExternalBoundary(surfaceFace)
-                    if boundary is None:
-                        continue
-
-                    faceVertices = export_ring or Wire.Vertices(boundary)
-                    if not faceVertices or len(faceVertices) < 3:
-                        continue
-
-                    osFacePoints = vertices_to_point3d_list(faceVertices, openstudio)
-                    if EnergyModel._OptionalGet(openstudio.getArea(osFacePoints), 0.0) <= 1e-10:
-                        continue
+                for faceNumber, (buildingFace, export_ring) in enumerate(cellFaces):
+                    osFacePoints = coordinates_to_point3d_list(export_ring, openstudio)
+                    if len(osFacePoints) < 3 or EnergyModel._OptionalGet(openstudio.getArea(osFacePoints), 0.0) <= 1e-10:
+                        raise ValueError("EnergyModel.ByTopology - Degenerate non-collapsed export surface.")
                     osSurface = openstudio.model.Surface(osFacePoints, osModel)
 
                     faceNormal = face_normals[id(buildingFace)]
@@ -771,7 +692,7 @@ class EnergyModel:
                     space_name = safe_name(osSpace, f"SPACE_{spaceNumber:04d}")
 
                     if len(faceCells) == 2:
-                        key = (fd.get('bim2bem_boundary_id'), tuple(sorted(tuple(Vertex.Coordinates(v,mantissa=geometry_mantissa)) for v in faceVertices)))
+                        key = (fd.get('bim2bem_boundary_id'), tuple(sorted(tuple(round(v, geometry_mantissa) for v in p) for p in export_ring)))
                         native_interfaces.setdefault(key, []).append(osSurface)
 
                     if len(faceCells) == 1:  # Exterior surfaces
@@ -981,6 +902,147 @@ class EnergyModel:
         names = [EnergyModel._ObjectName(aSet, "") for aSet in sets]
         return [sets, names]
     
+    @staticmethod
+    def _OSMCleanRing(coordinates, remove_collinear=True):
+        """Clean only exact duplicates/collinear points, without moving vertices.
+
+        The optional raw ring retains collinear constraints for triangulation
+        and shared-boundary bookkeeping. A snapped, collapsed ring may contain
+        fewer than three vertices; its caller decides whether it can be omitted.
+        """
+        ring = []
+        for point in coordinates:
+            p = tuple(float(v) for v in point)
+            if not ring or p != ring[-1]:
+                ring.append(p)
+        if len(ring) > 1 and ring[0] == ring[-1]:
+            ring.pop()
+        if not remove_collinear or len(ring) < 3:
+            return ring
+        keep = list(range(len(ring)))
+        progress = True
+        while progress and len(keep) > 3:
+            progress = False
+            for k, index in enumerate(keep):
+                a, p, b = ring[keep[k-1]], ring[index], ring[keep[(k+1) % len(keep)]]
+                d = [b[i]-a[i] for i in range(3)]
+                q = [p[i]-a[i] for i in range(3)]
+                length2 = sum(v*v for v in d)
+                t = sum(q[i]*d[i] for i in range(3))/length2 if length2 else 0
+                if 0 <= t <= 1 and sum((q[i]-t*d[i])**2 for i in range(3)) <= 1e-24:
+                    keep.pop(k)
+                    progress = True
+                    break
+        def corner(k):
+            a, b, c = [ring[keep[(k+i) % len(keep)]] for i in range(3)]
+            u = [b[i]-a[i] for i in range(3)]
+            v = [c[i]-a[i] for i in range(3)]
+            return sum((u[i]*v[j]-u[j]*v[i])**2 for i, j in [(0, 1), (1, 2), (2, 0)])
+        start = max(range(len(keep)), key=corner)
+        return [ring[i] for i in keep[start:]+keep[:start]]
+
+    @staticmethod
+    def _OSMExportLoops(coordinates, holes, vertex_map, has_apertures, can_triangulate):
+        """Return export polygons after applying the shared vertical seam map.
+
+        Keep source coordinates in exact mode. In regularised mode choose the
+        subdivision from the *regularised* polygon, and omit only faces that
+        genuinely collapse under the requested seam adjustment. No native
+        TopologicPy geometry is changed by this export operation.
+        """
+        import numpy as np
+        from shapely.geometry import Polygon
+        from shapely.ops import unary_union
+
+        def mapped(points):
+            return [(x, y, vertex_map.get((x, y, z), z)) for x, y, z in points]
+        raw = mapped(coordinates)
+        mapped_holes = [mapped(h) for h in holes]
+        changed = raw != list(coordinates) or any(a != b for a, b in zip(mapped_holes, holes))
+        ring = EnergyModel._OSMCleanRing(raw, remove_collinear=False)
+        hole_rings = [EnergyModel._OSMCleanRing(h, remove_collinear=False) for h in mapped_holes]
+        if len(set(ring)) < 3:
+            if changed and not has_apertures:
+                return [], True
+            raise ValueError("EnergyModel.ByTopology - Export face has fewer than three distinct points.")
+        # Hosted apertures remain child surfaces of their original host.
+        if has_apertures and not holes:
+            return [ring], False
+
+        xyz = np.asarray(ring, dtype=float)
+        centre = xyz.mean(axis=0)
+        _, _, axes = np.linalg.svd(xyz-centre, full_matrices=False)
+        def project(points):
+            return (np.asarray(points, dtype=float)-centre)@axes[:2].T
+        projected = project(ring)
+        outer = Polygon(projected)
+        if outer.area <= 1e-10:
+            # A vertical step can collapse to a line when both endpoints are
+            # mapped to exactly the same position. This is an intentional
+            # export-only consequence of seam regularisation, not lost input.
+            if changed and not has_apertures and np.linalg.matrix_rank(xyz-centre, tol=1e-12) < 2:
+                return [], True
+            raise ValueError("EnergyModel.ByTopology - Degenerate non-collapsed export face.")
+        if not outer.is_valid:
+            raise ValueError("EnergyModel.ByTopology - Invalid export polygon.")
+        valid_holes = []
+        for h in hole_rings:
+            if len(set(h)) < 3:
+                raise ValueError("EnergyModel.ByTopology - Seam adjustment collapsed an internal boundary.")
+            valid_holes.append(h)
+        region = Polygon(projected, [project(h) for h in valid_holes])
+        if not region.is_valid:
+            raise ValueError("EnergyModel.ByTopology - Invalid export region with internal boundaries.")
+        if has_apertures:
+            # Preserve the existing hosted-aperture path, including legacy
+            # inputs carrying both aperture metadata and interior wires.
+            return [ring], False
+
+        # This is the OpenStudio triangulator's own point-coincidence
+        # threshold (metres), not a relaxation of TopologicPy's tolerance.
+        # Exact mode retains these short edges. Do not merge their triangles
+        # into n-gons that the downstream triangulator may collapse.
+        sdk_tolerance = 0.001
+        def short_edge(points):
+            p = np.asarray(points, dtype=float)
+            return bool(np.any(np.linalg.norm(np.roll(p, -1, axis=0)-p, axis=1) < sdk_tolerance))
+        has_short_edges = any(short_edge(p) for p in [ring]+valid_holes)
+        convex_error = outer.symmetric_difference(outer.convex_hull).area
+        is_concave = convex_error > max(1e-9, outer.area*1e-8)
+        # Preserve regularised, simple end walls if the SDK accepts them;
+        # exact-mode concave boundaries retain the previous gbXML partition
+        # policy. Test the same cleaned coordinates that will be exported.
+        needs_triangles = bool(valid_holes)
+        if len(ring) > 3:
+            needs_triangles = (needs_triangles or has_short_edges or
+                               (is_concave and not changed) or not can_triangulate(ring))
+        if not needs_triangles:
+            return [ring], False
+
+        # Constrained triangulation uses boundary vertices. Reuse the exact
+        # original (or explicitly snapped) 3D points rather than round-trip
+        # through a newly constructed native Face and its tolerances.
+        source_points = {}
+        for points in [ring]+valid_holes:
+            for uv, p in zip(project(points), points):
+                source_points[tuple(uv)] = tuple(p)
+        def unproject(loop):
+            return [source_points.get(tuple(uv), tuple(centre+np.asarray(uv)@axes[:2])) for uv in loop]
+        def partition(merge_small):
+            return [unproject(loop) for loop in EnergyModel._ExportTriangles2D(region, merge_small=merge_small)]
+        loops = partition(not has_short_edges)
+        # The former tiny-triangle merge could recreate a polygon that the
+        # SDK cannot triangulate. Fall back to the original exact subdivision
+        # instead of exporting that polygon or moving its vertices.
+        if any(len(loop)>3 and (short_edge(loop) or not can_triangulate(loop)) for loop in loops):
+            loops = partition(False)
+        patches = [Polygon(project(loop)) for loop in loops]
+        merged = unary_union(patches)
+        budget = max(1e-7, region.area*1e-7)
+        if not loops or merged.symmetric_difference(region).area > budget or sum(p.area for p in patches)-merged.area > budget:
+            raise ValueError("EnergyModel.ByTopology - Export subdivision changes the surface area or fills its holes.")
+        return loops, False
+
     @staticmethod
     def _OSMVerticalSeams(coordinates, tolerance=0.001):
         """Reconcile only near-coincident vertical seams with shared coordinates."""
@@ -1652,7 +1714,7 @@ class EnergyModel:
         return result
 
     @staticmethod
-    def _ExportTriangles2D(region):
+    def _ExportTriangles2D(region, merge_small=True):
         """Constrained triangulation with exact boundary, hole and overlap checks."""
         from shapely import constrained_delaunay_triangles
         from shapely.geometry import Polygon
@@ -1669,7 +1731,7 @@ class EnergyModel:
         # this changes only the subdivision, never the covered area.
         minimum_patch_area = 0.02
         changed = True
-        while changed and len(patches) > 1:
+        while merge_small and changed and len(patches) > 1:
             changed = False
             small = [p for p in patches if p.area < minimum_patch_area]
             if not small:

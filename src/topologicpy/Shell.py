@@ -279,6 +279,10 @@ class Shell():
             return None
 
         face_list = [face for face in faces if Topology.IsInstance(face, "Face")]
+        if len(face_list) != len(faces):
+            if not silent:
+                print("Shell.ByFaces - Error: Invalid input Face. Returning None.")
+            return None
         if len(face_list) == 0:
             if not silent:
                 print("Shell.ByFaces - Error: The input faces list does not contain any valid Faces. Returning None.")
@@ -399,12 +403,12 @@ class Shell():
         f = Face.ByThickenedWire(wire, offsetA=offsetA, offsetB=offsetB, tolerance=tolerance)
         outside_wire = Wire.ByOffset(wire, offset=abs(offsetA)*-1, bisectors = False, tolerance=tolerance)
         inside_wire = Wire.ByOffset(wire, offset=abs(offsetB), bisectors = False, tolerance=tolerance)
-        border = Topology.Merge(outside_wire, inside_wire)
+        border = Topology.Merge(outside_wire, inside_wire, tolerance=tolerance)
         outside_wire = Wire.ByOffset(wire, offset=abs(offsetA)*-1, bisectors = True, tolerance=tolerance)
         inside_wire = Wire.ByOffset(wire, offset=abs(offsetB), bisectors = True, tolerance=tolerance)
-        grid = Topology.Merge(outside_wire, inside_wire)
-        bisectors = Topology.Difference(grid, border)
-        return_shell = Topology.Slice(f, bisectors)
+        grid = Topology.Merge(outside_wire, inside_wire, tolerance=tolerance)
+        bisectors = Topology.Difference(grid, border, tolerance=tolerance)
+        return_shell = Topology.Slice(f, bisectors, tolerance=tolerance)
         if not Topology.IsInstance(return_shell, "Shell"):
             # The offset/slice path can fail under the pythonOCC backend when the
             # input wire is non-rectangular. Fall back to a single thickened face
@@ -1262,8 +1266,8 @@ class Shell():
                 v2 = Edge.VertexByParameter(edges[i], float(j+1)/float(vSides))
                 v3 = Edge.VertexByParameter(edges[i+1], float(j+1)/float(vSides))
                 v4 = Edge.VertexByParameter(edges[i+1], float(j)/float(vSides))
-                faces.append(Face.ByVertices([v1, v2, v4]))
-                faces.append(Face.ByVertices([v4, v2, v3]))
+                faces.append(Face.ByVertices([v1, v2, v4], tolerance=tolerance))
+                faces.append(Face.ByVertices([v4, v2, v3], tolerance=tolerance))
         returnTopology = Shell.ByFaces(faces, tolerance=tolerance)
         if not returnTopology:
             returnTopology = None
@@ -1362,8 +1366,8 @@ class Shell():
                 v2 = Vertex.ByCoordinates(x2,y2,z2)
                 v3 = Vertex.ByCoordinates(x3,y3,z3)
                 v4 = Vertex.ByCoordinates(x4,y4,z4)
-                f1 = Face.ByVertices([v1,v2,v4])
-                f2 = Face.ByVertices([v4,v2,v3])
+                f1 = Face.ByVertices([v1,v2,v4], tolerance=tolerance)
+                f2 = Face.ByVertices([v4,v2,v3], tolerance=tolerance)
                 faces.append(f1)
                 faces.append(f2)
             a1 = math.radians(uOffset)*(sides-1)
@@ -1384,8 +1388,8 @@ class Shell():
             v2 = Vertex.ByCoordinates(x2,y2,z2)
             v3 = Vertex.ByCoordinates(x3,y3,z3)
             v4 = Vertex.ByCoordinates(x4,y4,z4)
-            f1 = Face.ByVertices([v1,v2,v4])
-            f2 = Face.ByVertices([v4,v2,v3])
+            f1 = Face.ByVertices([v1,v2,v4], tolerance=tolerance)
+            f2 = Face.ByVertices([v4,v2,v3], tolerance=tolerance)
             faces.append(f1)
             faces.append(f2)
         # Special Case: Center triangles
@@ -1407,7 +1411,7 @@ class Shell():
                 #z3 = 0
                 v2 = Vertex.ByCoordinates(x2,y2,z2)
                 v3 = Vertex.ByCoordinates(x3,y3,z3)
-                f1 = Face.ByVertices([v2,v1,v3])
+                f1 = Face.ByVertices([v2,v1,v3], tolerance=tolerance)
                 faces.append(f1)
         a1 = math.radians(uOffset)*(sides-1)
         a2 = math.radians(360)
@@ -1419,7 +1423,7 @@ class Shell():
         z3 = A*x3*x3 + B*y3*y3
         v2 = Vertex.ByCoordinates(x2,y2,z2)
         v3 = Vertex.ByCoordinates(x3,y3,z3)
-        f1 = Face.ByVertices([v2,v1,v3])
+        f1 = Face.ByVertices([v2,v1,v3], tolerance=tolerance)
         faces.append(f1)
         returnTopology = Shell.ByFaces(faces, tolerance=tolerance)
         if not returnTopology:
@@ -1831,7 +1835,7 @@ class Shell():
             for j in range(vSides+1):
                 vp = Edge.VertexByParameter(e, float(j)/float(vSides))
                 verts.append(vp)
-            w = Wire.ByVertices(verts, close=False, silent=True)
+            w = Wire.ByVertices(verts, close=False, silent=True, tolerance=tolerance)
             wires.append(w)
             # Create the last wire
             if i == 0:
@@ -1841,7 +1845,7 @@ class Shell():
                 for j in range(vSides+1):
                     vp = Edge.VertexByParameter(e, float(j)/float(vSides))
                     verts.append(vp)
-                last_wire = Wire.ByVertices(verts, close=False, silent=True)
+                last_wire = Wire.ByVertices(verts, close=False, silent=True, tolerance=tolerance)
 
         wires.append(last_wire)
         m = Shell.ByWires(wires, silent=silent, tolerance=tolerance)
@@ -1909,17 +1913,17 @@ class Shell():
 
                     # Create two triangles for each grid cell
                     # Triangle 1: (v1, v2, v3)
-                    wire1 = Wire.ByVertices([v1, v2, v3])
-                    face1 = Face.ByWire(wire1)
+                    wire1 = Wire.ByVertices([v1, v2, v3], tolerance=tolerance)
+                    face1 = Face.ByWire(wire1, tolerance=tolerance)
                     faces.append(face1)
 
                     # Triangle 2: (v3, v2, v4)
-                    wire2 = Wire.ByVertices([v3, v2, v4])
-                    face2 = Face.ByWire(wire2)
+                    wire2 = Wire.ByVertices([v3, v2, v4], tolerance=tolerance)
+                    face2 = Face.ByWire(wire2, tolerance=tolerance)
                     faces.append(face2)
 
             # Create the mesh (Shell) from the list of faces
-            mesh = Shell.ByFaces(faces)
+            mesh = Shell.ByFaces(faces, tolerance=tolerance)
             return mesh
         
         if not Topology.IsInstance(origin, "Vertex"):
@@ -2054,7 +2058,7 @@ class Shell():
                     v2 = Vertex.ByCoordinates(x2,y2,z2)
                     v3 = Vertex.ByCoordinates(x3,y3,z3)
                     v4 = Vertex.ByCoordinates(x4,y4,z4)
-                    f1 = Face.ByVertices([v1,v2,v3,v4])
+                    f1 = Face.ByVertices([v1,v2,v3,v4], tolerance=tolerance)
                     faces.append(f1)
         else:
             x1 = 0
@@ -2072,7 +2076,7 @@ class Shell():
                 z3 = 0
                 v2 = Vertex.ByCoordinates(x2,y2,z2)
                 v3 = Vertex.ByCoordinates(x3,y3,z3)
-                f1 = Face.ByVertices([v2,v1,v3])
+                f1 = Face.ByVertices([v2,v1,v3], tolerance=tolerance)
                 faces.append(f1)
 
         shell = Shell.ByFaces(faces, tolerance=tolerance)
@@ -2617,7 +2621,7 @@ class Shell():
                     top_vertices.append(temp)
                 else:
                     top_vertices.append(sv)
-            tri_face = Face.ByVertices(top_vertices)
+            tri_face = Face.ByVertices(top_vertices, tolerance=tolerance)
             final_faces.append(tri_face)
 
         shell = Shell.ByFaces(final_faces, tolerance=tolerance)
@@ -2667,13 +2671,13 @@ class Shell():
         def planarizeList(wireList):
             returnList = []
             for aWire in wireList:
-                returnList.append(Wire.Planarize(aWire))
+                returnList.append(Wire.Planarize(aWire, tolerance=tolerance))
             return returnList
         if not Topology.IsInstance(shell, "Shell"):
             return None
         ext_boundary = Shell.ExternalBoundary(shell, tolerance=tolerance)
         if Topology.IsInstance(ext_boundary, "Wire"):
-            f = Face.ByWire(Topology.RemoveCollinearEdges(ext_boundary, angTolerance=angTolerance, polyhedron=False, tolerance=tolerance, silent=True), tolerance=tolerance) or Face.ByWire(Wire.Planarize(Topology.RemoveCollinearEdges(ext_boundary, angTolerance=angTolerance, polyhedron=False, tolerance=tolerance, silent=True), tolerance=tolerance))
+            f = Face.ByWire(Topology.RemoveCollinearEdges(ext_boundary, angTolerance=angTolerance, polyhedron=False, tolerance=tolerance, silent=True), tolerance=tolerance) or Face.ByWire(Wire.Planarize(Topology.RemoveCollinearEdges(ext_boundary, angTolerance=angTolerance, polyhedron=False, tolerance=tolerance, silent=True), tolerance=tolerance), tolerance=tolerance)
             if not f:
                 print("FaceByPlanarShell - Error: The input Wire is not planar and could not be fixed. Returning None.")
                 return None
@@ -2685,9 +2689,9 @@ class Shell():
             areas = []
             for aWire in wires:
                 try:
-                    aFace = Face.ByWire(Topology.RemoveCollinearEdges(aWire, angTolerance=angTolerance, polyhedron=False, tolerance=tolerance, silent=True))
+                    aFace = Face.ByWire(Topology.RemoveCollinearEdges(aWire, angTolerance=angTolerance, polyhedron=False, tolerance=tolerance, silent=True), tolerance=tolerance)
                 except:
-                    aFace = Face.ByWire(Wire.Planarize(Topology.RemoveCollinearEdges(aWire, angTolerance=angTolerance, polyhedron=False, tolerance=tolerance, silent=True)))
+                    aFace = Face.ByWire(Wire.Planarize(Topology.RemoveCollinearEdges(aWire, angTolerance=angTolerance, polyhedron=False, tolerance=tolerance, silent=True), tolerance=tolerance), tolerance=tolerance)
                 anArea = Face.Area(aFace)
                 faces.append(aFace)
                 areas.append(anArea)
@@ -2703,7 +2707,7 @@ class Shell():
             try:
                 return Face.ByWires(ext_wire, int_wires, tolerance=tolerance)
             except:
-                return Face.ByWires(Wire.Planarize(ext_wire), planarizeList(int_wires), tolerance=tolerance)
+                return Face.ByWires(Wire.Planarize(ext_wire, tolerance=tolerance), planarizeList(int_wires), tolerance=tolerance)
         else:
             return None
 

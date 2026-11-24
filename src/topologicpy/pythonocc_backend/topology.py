@@ -906,57 +906,11 @@ def _wrap_shape_as_topology(shape: Any, dictionary=None, contents=None, contexts
             pass
         return Shell(shape=topods_Shell(shape), faces=faces, dictionary=dictionary or {}, contents=contents or [], contexts=contexts or [], apertures=apertures or [])
 
-    if shape_type == TopAbs_SOLID:
-        from .cell import Cell
-        shells = [Topology.ByOcctShape(s) for s in _iter_occ_subshapes(shape, TopAbs_SHELL)]
-        shells = [s for s in shells if s is not None]
-        try:
-            if hasattr(Cell, "ByShell") and shells:
-                c = Cell.ByShell(shells[0])
-                if c is not None:
-                    c.shape = topods_Solid(shape)
-                    c.shells = shells
-                    c.dictionary = dictionary or {}
-                    c.contents = contents or []
-                    c.contexts = contexts or []
-                    c.apertures = apertures or []
-                    return c
-        except Exception:
-            pass
-        return Cell(shape=topods_Solid(shape), shells=shells, dictionary=dictionary or {}, contents=contents or [], contexts=contexts or [], apertures=apertures or [])
-
-    if shape_type == TopAbs_COMPSOLID:
-        # A COMPSOLID is a non-manifold complex of Solids sharing Faces:
-        # exactly what CellComplex represents. Wrap it as such rather than as
-        # a generic Cluster, so Cells()/Faces()/etc. traverse from the direct
-        # Solid sub-shapes (each already reconstructed as a proper Cell with
-        # its own Shells) rather than a flattened grab-bag of every sub-type.
-        try:
-            from .cell_complex import CellComplex
-            cells = [Topology.ByOcctShape(s) for s in _iter_occ_subshapes(shape, TopAbs_SOLID)]
-            cells = [c for c in cells if c is not None]
-            if len(cells) == 1:
-                # A COMPSOLID wrapping exactly one Solid isn't a genuine
-                # non-manifold complex -- e.g. BRepAlgoAPI_Fuse of two
-                # COMPSOLID operands that fully merge into one Solid still
-                # preserves a COMPSOLID container around that single Solid.
-                # Unwrap to the plain Cell directly, matching
-                # topologic_core's own behavior (verified: Union of two
-                # touching/overlapping boxes is a plain Cell).
-                only = cells[0]
-                only.dictionary = dictionary or {}
-                if contents:
-                    only.contents = list(contents)
-                if contexts:
-                    only.contexts = list(contexts)
-                if apertures:
-                    only.apertures = list(apertures)
-                return only
-            cc = CellComplex(shape=shape, cells=cells, dictionary=dictionary or {},
-                              contents=contents or [], contexts=contexts or [], apertures=apertures or [])
-            return cc
-        except Exception:
-            return None
+    if shape_type in (TopAbs_SOLID, TopAbs_COMPSOLID):
+        # Keep validation and invalid-solid recovery in one entry point.
+        return Topology.ByOcctShape(shape, dictionary=dictionary,
+                                    contents=contents, contexts=contexts,
+                                    apertures=apertures)
 
     if shape_type == TopAbs_COMPOUND:
         # Prefer Cluster as the safest aggregate wrapper for a heterogeneous
@@ -971,11 +925,17 @@ def _wrap_shape_as_topology(shape: Any, dictionary=None, contents=None, contexts
             # as a COMPSOLID and again as that same nested SOLID, double
             # counting it and defeating the single-child unwrap below.
             children = []
+            native_children_changed = False
             it = TopoDS_Iterator(shape)
             while it.More():
-                child = Topology.ByOcctShape(it.Value())
-                if child is not None:
-                    children.append(child)
+                original_child = it.Value()
+                child = Topology.ByOcctShape(original_child)
+                if child is None:
+                    return None
+                children.append(child)
+                native_child = _shape_from_topology(child)
+                if not _is_null_shape(native_child) and not native_child.IsSame(original_child):
+                    native_children_changed = True
                 it.Next()
             if len(children) == 1:
                 # OCCT boolean ops (BRepAlgoAPI_Fuse/Cut/Common/...) always
@@ -1074,6 +1034,8 @@ def _wrap_shape_as_topology(shape: Any, dictionary=None, contents=None, contexts
                             w.apertures = list(apertures)
 
                         return w
+            if native_children_changed:
+                shape = _compound_of_shapes([_ensure_compound_shape(c) for c in children])
             if hasattr(Cluster, "ByTopologies"):
                 cl = Cluster.ByTopologies(children)
                 if cl is not None:
@@ -1641,7 +1603,7 @@ def _make_occ_union(
             and len(edges) == len(edge_shapes)
         ):
             wire_result = Wire.ByEdges(
-                edges
+                edges, tolerance=tolerance
             )
 
             if (
@@ -2072,53 +2034,48 @@ class Topology:
         # ------------------------------------------------------------------
         if shape_type == TopAbs_SOLID:
             from .cell import Cell
-            return _finalize(
-                Cell(
-                    shape=topods_Solid(shape),
-                    shells=[],
-                    dictionary=dictionary,
-                    contents=contents,
-                    contexts=contexts,
-                    apertures=apertures,
-                )
-            )
+            from .occ_utils import is_valid_occ_solid
+            if is_valid_occ_solid(shape):
+                return _finalize(Cell(shape=topods_Solid(shape), shells=[],
+                                      dictionary=dictionary, contents=contents,
+                                      contexts=contexts, apertures=apertures))
+            # An imported Solid container is not proof of a closed volume.
+            # Preserve all recoverable shells, rather than pretending they
+            # enclose a Cell or fabricating a missing boundary.
+            import warnings
+            warnings.warn("Topology.ByOcctShape: invalid solid; preserving boundary geometry instead of a Cell.",
+                          RuntimeWarning, stacklevel=2)
+            from .cluster import Cluster
+            shells = _iter_occ_subshapes_unique(shape, TopAbs_SHELL)
+            if not shells:
+                return None
+            recovered = [Topology.ByOcctShape(s) for s in shells]
+            if any(s is None for s in recovered):
+                return None
+            if len(recovered) == 1:
+                return _finalize(recovered[0])
+            return _finalize(Cluster(shape=_compound_of_shapes(shells), topologies=recovered))
 
         # ------------------------------------------------------------------
-        # CompSolid -> CellComplex
+        # CompSolid -> CellComplex, only if every member is a valid Cell.
         # ------------------------------------------------------------------
         if shape_type == TopAbs_COMPSOLID:
             from .cell import Cell
             from .cell_complex import CellComplex
-
-            solids = _iter_occ_subshapes_unique(
-                shape,
-                TopAbs_SOLID
-            )
-
-            # Preserve the existing backend behaviour of unwrapping a
-            # one-solid CompSolid to a Cell.
-            if len(solids) == 1:
-                return _finalize(
-                    Cell(
-                        shape=topods_Solid(solids[0]),
-                        shells=[],
-                        dictionary=dictionary,
-                        contents=contents,
-                        contexts=contexts,
-                        apertures=apertures,
-                    )
-                )
-
-            return _finalize(
-                CellComplex(
-                    shape=shape,
-                    cells=[],
-                    dictionary=dictionary,
-                    contents=contents,
-                    contexts=contexts,
-                    apertures=apertures,
-                )
-            )
+            from .cluster import Cluster
+            solids = _iter_occ_subshapes_unique(shape, TopAbs_SOLID)
+            if not solids:
+                return None
+            wrapped = [Topology.ByOcctShape(s) for s in solids]
+            if any(c is None for c in wrapped):
+                return None
+            if len(wrapped) == 1:
+                return _finalize(wrapped[0])
+            if not all(isinstance(c, Cell) for c in wrapped):
+                return _finalize(Cluster(shape=_compound_of_shapes([_shape_from_topology(c) for c in wrapped]),
+                                         topologies=wrapped))
+            return _finalize(CellComplex(shape=shape, cells=[], dictionary=dictionary,
+                                         contents=contents, contexts=contexts, apertures=apertures))
 
         # ------------------------------------------------------------------
         # Compound
@@ -4599,7 +4556,7 @@ class Topology:
                 result_edges = result.Edges() or []
 
                 if result_edges:
-                    wire = Wire.ByEdges(result_edges)
+                    wire = Wire.ByEdges(result_edges, tolerance=tolerance)
 
                     if (
                         wire is not None
@@ -7456,9 +7413,6 @@ class Topology:
         cluster = Cluster.ByTopologies(members)
         if cluster is None: return None
         try: return cluster.SelfMerge(tolerance=tolerance)
-        except TypeError:
-            try: return cluster.SelfMerge()
-            except Exception: return cluster
         except Exception: return cluster
 
     def _NativeMatchingShapes(
@@ -8161,11 +8115,6 @@ class Topology:
 
             try:
                 result = cluster.SelfMerge(tolerance=tolerance)
-            except TypeError:
-                try:
-                    result = cluster.SelfMerge()
-                except Exception:
-                    result = cluster
             except Exception:
                 result = cluster
 
@@ -10937,6 +10886,7 @@ class Topology:
                 args1.Append(s)
             cb1 = BOPAlgo_CellsBuilder()
             cb1.SetArguments(args1)
+            cb1.SetFuzzyValue(tolerance)
             cb1.Perform()
             if cb1.HasErrors() or cb1.HasWarnings():
                 return None
@@ -10962,7 +10912,7 @@ class Topology:
             volume_maker.SetArguments(args2)
             volume_maker.SetRunParallel(False)
             volume_maker.SetIntersect(True)
-            volume_maker.SetFuzzyValue(0.0)
+            volume_maker.SetFuzzyValue(tolerance)
             volume_maker.Perform()
             volume_maker_ok = not (volume_maker.HasErrors() or volume_maker.HasWarnings())
             if volume_maker_ok:
@@ -10984,6 +10934,7 @@ class Topology:
                 args3.Append(s)
             cb2 = BOPAlgo_CellsBuilder()
             cb2.SetArguments(args3)
+            cb2.SetFuzzyValue(tolerance)
             cb2.Perform()
             if cb2.HasErrors():
                 return None

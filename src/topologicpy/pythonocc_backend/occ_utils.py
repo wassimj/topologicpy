@@ -34,244 +34,243 @@ def make_occ_edge(start, end):
         return None
 
 
-def make_occ_wire(edges: list):
-    if BRepBuilderAPI_MakeWire is None:
+def _positive_tolerance(value):
+    import math
+    try:
+        value = float(value)
+        return value if math.isfinite(value) and value > 0 else None
+    except (TypeError, ValueError, OverflowError):
+        return None
+
+
+def _native_subshapes(shape, kind):
+    from OCC.Core.TopExp import TopExp_Explorer
+    from OCC.Core.TopTools import TopTools_IndexedMapOfShape
+    seen = TopTools_IndexedMapOfShape()
+    result = []
+    explorer = TopExp_Explorer(shape, kind)
+    while explorer.More():
+        sub = explorer.Current()
+        if not seen.Contains(sub):
+            seen.Add(sub)
+            result.append(sub)
+        explorer.Next()
+    return result
+
+
+def _copy_with_tolerance(shape, tolerance, *, vertices_only=False):
+    """Raise tolerances only on a private copy, preserving exact 3D curves."""
+    from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_Copy
+    from OCC.Core.BRep import BRep_Builder
+    from OCC.Core.TopAbs import TopAbs_EDGE, TopAbs_VERTEX
+    from OCC.Core.TopoDS import topods
+    copied = BRepBuilderAPI_Copy(shape, True, False).Shape()
+    builder = BRep_Builder()
+    if not vertices_only:
+        for edge in _native_subshapes(copied, TopAbs_EDGE):
+            builder.UpdateEdge(topods.Edge(edge), tolerance)
+    for vertex in _native_subshapes(copied, TopAbs_VERTEX):
+        builder.UpdateVertex(topods.Vertex(vertex), tolerance)
+    return copied
+
+
+def make_occ_wire(edges: list, tolerance=0.0001):
+    tolerance = _positive_tolerance(tolerance)
+    if BRepBuilderAPI_MakeWire is None or tolerance is None or not edges:
         return None
     try:
-        maker = BRepBuilderAPI_MakeWire()
-        for edge in edges:
-            if getattr(edge, "shape", None) is not None:
-                maker.Add(edge.shape)
-        if maker.IsDone():
-            return maker.Wire()
+        from OCC.Core.TopAbs import TopAbs_EDGE
+        from OCC.Core.TopExp import TopExp_Explorer
+        from OCC.Core.TopoDS import topods
+        shapes = [getattr(edge, "shape", None) for edge in edges]
+        if any(s is None or s.IsNull() for s in shapes):
+            return None
+        for repair in (False, True):
+            maker = BRepBuilderAPI_MakeWire()
+            for shape in shapes:
+                if repair:
+                    shape = _copy_with_tolerance(shape, tolerance, vertices_only=True)
+                maker.Add(topods.Edge(shape))
+                if not maker.IsDone():
+                    break
+            else:
+                wire = maker.Wire()
+                explorer = TopExp_Explorer(wire, TopAbs_EDGE)
+                count = 0
+                while explorer.More():
+                    count += 1
+                    explorer.Next()
+                if count == len(shapes):
+                    return wire
     except Exception:
         pass
     return None
 
 
-def make_occ_face(wire):
-    if BRepBuilderAPI_MakeFace is None:
+def make_occ_face(wire, tolerance=0.0001, only_plane=False):
+    return make_occ_face_from_wire(getattr(wire, "shape", None), tolerance, only_plane)
+
+
+def make_occ_face_from_wire(shape, tolerance=0.0001, only_plane=False):
+    """Keep exact construction first; recover near-planar wires within tolerance.
+
+    No triangulation or coordinate projection. The original input is never
+    modified by the tolerance-recovery path. FindSurface independently bounds
+    the deviation of the full 3D curves, not just their endpoints.
+    """
+    tolerance = _positive_tolerance(tolerance)
+    if BRepBuilderAPI_MakeFace is None or tolerance is None or shape is None:
         return None
     try:
-        if getattr(wire, "shape", None) is not None:
-            maker = BRepBuilderAPI_MakeFace(wire.shape)
-            if maker.IsDone():
-                return maker.Face()
+        from OCC.Core.TopoDS import topods
+        from OCC.Core.BRepLib import BRepLib_FindSurface
+        from OCC.Core.BRepCheck import BRepCheck_Analyzer
+        if shape.IsNull():
+            return None
+        wire = topods.Wire(shape)
+        maker = BRepBuilderAPI_MakeFace(wire, only_plane)
+        exact = maker.Face() if maker.IsDone() else None
+        if exact is not None and BRepCheck_Analyzer(exact).IsValid():
+            return exact
+        finder = BRepLib_FindSurface(wire, tolerance, True)
+        if finder.Found():
+            reached = float(finder.ToleranceReached())
+            if 0.0 <= reached <= tolerance:
+                # Allow enough tolerance for native p-curves, but never more
+                # than the requested modelling tolerance on this recovery path.
+                applied = min(tolerance, max(1.e-7, 2.0 * reached))
+                copied = topods.Wire(_copy_with_tolerance(wire, applied))
+                repaired = BRepBuilderAPI_MakeFace(copied, True)
+                if repaired.IsDone():
+                    candidate = repaired.Face()
+                    if BRepCheck_Analyzer(candidate).IsValid():
+                        return candidate
+        # Preserve the pre-existing face-healing path for exact curved wires.
+        return exact
     except Exception:
-        pass
-    return None
+        return None
 
 
-def make_occ_shell(faces: list):
-    """
-    Build a watertight Shell from independently built faces: their coincident edges and
-    vertices don't share OCCT identity, so a bare BRep_Builder shell is invalid and breaks
-    downstream booleans. BRepBuilderAPI_Sewing fuses the coincident boundaries.
-    """
-    if not faces:
+def make_occ_shell(faces: list, tolerance=0.0001):
+    """Sew all faces at the caller's tolerance; never discard a face."""
+    tolerance = _positive_tolerance(tolerance)
+    if not faces or tolerance is None:
         return None
     try:
         from OCC.Core.BRep import BRep_Builder
         from OCC.Core.TopoDS import TopoDS_Shell, topods
         from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_Sewing
+        from OCC.Core.TopAbs import TopAbs_SHELL, TopAbs_FACE
         from OCC.Core.BRepCheck import BRepCheck_Analyzer
-    except Exception:
-        return None
-
-    occ_faces = []
-    for face in faces:
-        occ_face = getattr(face, "shape", None)
-        if occ_face is None:
-            continue
-        try:
-            occ_faces.append(topods.Face(occ_face))
-        except Exception:
-            continue
-
-    if not occ_faces:
-        return None
-
-    try:
-        sewer = BRepBuilderAPI_Sewing(0.0001)
-        for occ_face in occ_faces:
-            sewer.Add(occ_face)
+        occ_faces = []
+        for face in faces:
+            shape = getattr(face, "shape", None)
+            if shape is None or shape.IsNull():
+                return None
+            shape = topods.Face(shape)
+            if not BRepCheck_Analyzer(shape).IsValid():
+                return None
+            occ_faces.append(shape)
+        sewer = BRepBuilderAPI_Sewing(tolerance)
+        for face in occ_faces:
+            sewer.Add(face)
         sewer.Perform()
         sewn = sewer.SewedShape()
-    except Exception:
-        sewn = None
-
-    if sewn is not None and not sewn.IsNull():
-        # Keep EVERY sewn shell. Returning only the first shell silently drops
-        # the other half's faces when a face soup sews into two closed shells
-        # (e.g. the Dodecahedron's two half-clusters that never weld into one
-        # shell): the wrapper then reports more faces than the shape actually
-        # carries, which corrupts transforms and geometry-based rebuilds.
-        try:
-            from OCC.Core.TopExp import TopExp_Explorer
-            from OCC.Core.TopAbs import TopAbs_SHELL
-            shells = []
-            explorer = TopExp_Explorer(sewn, TopAbs_SHELL)
-            while explorer.More():
-                shells.append(explorer.Current())
-                explorer.Next()
-            if shells:
-                if sewn.ShapeType() == 3 and len(shells) == 1:
+        if sewn is not None and not sewn.IsNull():
+            if len(_native_subshapes(sewn, TopAbs_FACE)) == len(occ_faces):
+                if sewn.ShapeType() == TopAbs_SHELL:
                     return topods.Shell(sewn)
-                if len(shells) == 1:
+                shells = _native_subshapes(sewn, TopAbs_SHELL)
+                if len(shells) == 1 and len(_native_subshapes(shells[0], TopAbs_FACE)) == len(occ_faces):
                     return topods.Shell(shells[0])
-                # Multiple shells: return the whole compound so make_occ_cell
-                # can build a solid retaining every shell.
-                return sewn
-        except Exception:
-            pass
-
-    # Fallback: bare unsewn shell (may be topologically leaky, but still
-    # geometrically usable for traversal/visualization purposes).
-    builder = BRep_Builder()
-    occ_shell = TopoDS_Shell()
-    builder.MakeShell(occ_shell)
-    added = 0
-    for occ_face in occ_faces:
-        try:
-            builder.Add(occ_shell, occ_face)
-            added += 1
-        except Exception:
-            continue
-    if added == 0:
+                if shells:
+                    # Preserve disconnected shells and any remaining faces.
+                    # Solid construction independently checks closure and validity.
+                    return sewn
+        # Keep the historical open-shell fallback for visualization/traversal.
+        # It cannot be promoted to a Cell unless genuinely closed and valid.
+        builder = BRep_Builder()
+        shell = TopoDS_Shell()
+        builder.MakeShell(shell)
+        for face in occ_faces:
+            builder.Add(shell, face)
+        return shell
+    except Exception:
         return None
-    return occ_shell
 
+
+def is_valid_occ_solid(shape):
+    """Validate native type, every boundary shell and the entire solid."""
+    try:
+        from OCC.Core.TopAbs import TopAbs_SOLID, TopAbs_SHELL
+        from OCC.Core.BRep import BRep_Tool
+        from OCC.Core.BRepCheck import BRepCheck_Analyzer
+        if shape is None or shape.IsNull() or shape.ShapeType() != TopAbs_SOLID:
+            return False
+        shells = _native_subshapes(shape, TopAbs_SHELL)
+        return bool(shells) and all(BRep_Tool.IsClosed(s) for s in shells) and bool(BRepCheck_Analyzer(shape).IsValid())
+    except Exception:
+        return False
+
+
+def _orient_valid_solid(solid):
+    try:
+        from OCC.Core.BRepLib import breplib
+        from OCC.Core.TopoDS import topods
+        solid = topods.Solid(solid)
+        if not breplib.OrientClosedSolid(solid):
+            return None
+        return solid if is_valid_occ_solid(solid) else None
+    except Exception:
+        return None
 
 
 def _build_solid_from_shells(shape):
+    """Build one solid only if all shells form a valid closed boundary.
+
+    An outer shell plus legitimate cavity shells is supported. Disconnected
+    exterior shells or a leaky shell must not be mislabeled as a Cell.
     """
-    Build a single TopoDS_Solid retaining EVERY Shell sub-shape of ``shape``,
-    oriented for a positive volume. Used when a face soup sews into several
-    closed shells (e.g. the Dodecahedron's two half-clusters that never weld
-    into one shell): dropping all but the first shell loses half the cell's
-    faces and corrupts everything downstream (transforms, Geometry, rebuilds).
-    """
-    if shape is None:
-        return None
     try:
-        from OCC.Core.TopExp import TopExp_Explorer
-        from OCC.Core.TopAbs import TopAbs_SHELL
-        from OCC.Core.TopoDS import TopoDS_Solid
-        from OCC.Core.BRep import BRep_Builder
-        from OCC.Core.BRepLib import breplib
-        shells = []
-        explorer = TopExp_Explorer(shape, TopAbs_SHELL)
-        while explorer.More():
-            shells.append(explorer.Current())
-            explorer.Next()
-        if len(shells) < 2:
+        from OCC.Core.TopAbs import TopAbs_SHELL, TopAbs_FACE
+        from OCC.Core.TopoDS import TopoDS_Solid, topods
+        from OCC.Core.BRep import BRep_Builder, BRep_Tool
+        shells = _native_subshapes(shape, TopAbs_SHELL)
+        if len(shells) < 2 or not all(BRep_Tool.IsClosed(s) for s in shells):
             return None
         builder = BRep_Builder()
         solid = TopoDS_Solid()
         builder.MakeSolid(solid)
         for shell in shells:
-            try:
-                builder.Add(solid, shell)
-            except Exception:
-                continue
-        try:
-            breplib.OrientClosedSolid(solid)
-        except Exception:
-            pass
-        return solid
+            builder.Add(solid, topods.Shell(shell))
+        if len(_native_subshapes(solid, TopAbs_FACE)) != len(_native_subshapes(shape, TopAbs_FACE)):
+            return None
+        return _orient_valid_solid(solid)
     except Exception:
         return None
 
 
-def make_occ_cell(shell):
-    if shell is None:
+def make_occ_cell(shell, tolerance=0.0001):
+    tolerance = _positive_tolerance(tolerance)
+    if shell is None or tolerance is None:
         return None
     try:
-        from OCC.Core.TopoDS import TopoDS_Shell, topods
+        from OCC.Core.TopAbs import TopAbs_SHELL
+        from OCC.Core.BRep import BRep_Tool
+        from OCC.Core.TopoDS import topods
         from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakeSolid
-        from OCC.Core.BRepCheck import BRepCheck_Analyzer
-        from OCC.Core.BRepLib import breplib
-        from OCC.Core.BOPAlgo import BOPAlgo_MakerVolume
-        from OCC.Core.TopTools import TopTools_ListOfShape
+        shape = getattr(shell, "shape", None)
+        if shape is None or shape.IsNull():
+            shape = make_occ_shell(getattr(shell, "faces", None), tolerance=tolerance)
+        if shape is None or shape.IsNull():
+            return None
+        if shape.ShapeType() != TopAbs_SHELL:
+            return _build_solid_from_shells(shape)
+        if not BRep_Tool.IsClosed(shape):
+            return None
+        maker = BRepBuilderAPI_MakeSolid(topods.Shell(shape))
+        if not maker.IsDone():
+            return None
+        return _orient_valid_solid(maker.Solid())
     except Exception:
-        BOPAlgo_MakerVolume = None
-
-    occ_shell = getattr(shell, "shape", None)
-    if occ_shell is None:
-        faces = getattr(shell, "faces", None)
-        occ_shell = make_occ_shell(faces) if faces else None
-    if occ_shell is None:
         return None
-
-    # Multi-shell shape, before the single-shell coercion below: keep every
-    # shell's faces (see _build_solid_from_shells docstring).
-    multi_solid = _build_solid_from_shells(occ_shell)
-    if multi_solid is not None:
-        return multi_solid
-
-    try:
-        occ_shell = topods.Shell(occ_shell)
-    except Exception:
-        try:
-            tmp_shell = TopoDS_Shell()
-            tmp_shell = occ_shell
-            occ_shell = tmp_shell
-        except Exception:
-            return None
-
-    def _solid_from(solid):
-        try:
-            breplib.OrientClosedSolid(solid)
-        except Exception:
-            pass
-        # BOPAlgo_MakerVolume / MakeSolid can yield an inside-out solid
-        # (negative volume). Flip the orientation if needed so the
-        # backend Cell reports a positive volume.
-        try:
-            from OCC.Core.TopAbs import TopAbs_REVERSED
-            from OCC.Core.GProp import GProp_GProps
-            from OCC.Core.BRepGProp import brepgprop
-            props = GProp_GProps()
-            brepgprop.VolumeProperties(solid, props)
-            if props.Mass() < 0.0:
-                solid.Orientation(TopAbs_REVERSED)
-                breplib.OrientClosedSolid(solid)
-        except Exception:
-            pass
-        try:
-            analyzer = BRepCheck_Analyzer(solid)
-            if not analyzer.IsValid():
-                return solid
-        except Exception:
-            pass
-        return solid
-
-
-    try:
-        solid_maker = BRepBuilderAPI_MakeSolid(occ_shell)
-        if solid_maker.IsDone():
-            occ_solid = solid_maker.Solid()
-            return _solid_from(occ_solid)
-    except Exception:
-        pass
-
-    # Fallback: BOPAlgo_MakerVolume builds a solid from a (possibly
-    # non-closed) shell by thickening — robust for polyhedra like the
-    # dodecahedron whose pentagonal faces don't sew perfectly closed.
-    if BOPAlgo_MakerVolume is not None:
-        try:
-            args = TopTools_ListOfShape()
-            args.Append(occ_shell)
-            maker = BOPAlgo_MakerVolume()
-            maker.SetArgs(args)
-            maker.SetRunParallel(False)
-            maker.Perform()
-            if not maker.IsDone():
-                return None
-            occ_solid = maker.GetResult()
-            if occ_solid is None or (hasattr(occ_solid, "IsNull") and occ_solid.IsNull()):
-                return None
-            return _solid_from(occ_solid)
-        except Exception:
-            return None
-    return None

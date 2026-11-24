@@ -14,7 +14,7 @@ from .topology import (
 from .wire import Wire
 from .vertex import Vertex
 from .edge import Edge
-from .occ_utils import make_occ_face
+from .occ_utils import make_occ_face, make_occ_face_from_wire, _positive_tolerance
 from .helpers import unique_by_uuid, edge_key
 
 
@@ -100,7 +100,7 @@ def _as_occ_wire(wire):
         return None
 
 
-def _wire_area(occ_wire):
+def _wire_area(occ_wire, tolerance=0.0001):
     """Return the unsigned planar area enclosed by an OCCT wire when possible."""
     if occ_wire is None:
         return None
@@ -108,11 +108,11 @@ def _wire_area(occ_wire):
         from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakeFace
         from OCC.Core.GProp import GProp_GProps
         from OCC.Core.BRepGProp import brepgprop
-        maker = BRepBuilderAPI_MakeFace(occ_wire, True)
-        if not maker.IsDone():
+        shape = make_occ_face_from_wire(occ_wire, tolerance, only_plane=True)
+        if shape is None:
             return None
         props = GProp_GProps()
-        brepgprop.SurfaceProperties(maker.Face(), props)
+        brepgprop.SurfaceProperties(shape, props)
         value = abs(float(props.Mass()))
         return value if math.isfinite(value) else None
     except Exception:
@@ -662,18 +662,19 @@ class Face(Topology):
         return result
 
     @staticmethod
-    def ByExternalBoundary(wire):
+    def ByExternalBoundary(wire, tolerance=0.0001):
         """Create an exact Face from a closed Wire without chordalising curves."""
-        if not isinstance(wire, Wire):
+        tolerance = _positive_tolerance(tolerance)
+        if not isinstance(wire, Wire) or tolerance is None:
             return None
         try:
-            if not wire.IsClosed():
+            if not wire.IsClosed(tolerance=tolerance):
                 return None
         except Exception:
             return None
 
         try:
-            shape = make_occ_face(wire)
+            shape = make_occ_face(wire, tolerance=tolerance)
         except Exception:
             shape = None
 
@@ -698,7 +699,8 @@ class Face(Topology):
                 original_area = area(shape)
                 copied = BRepBuilderAPI_Copy(shape, True, False).Shape()
                 fixer = ShapeFix_Face(topods.Face(copied))
-                fixer.SetPrecision(1.0e-7)
+                fixer.SetPrecision(tolerance)
+                fixer.SetMaxTolerance(tolerance)
                 fixer.Perform()
                 repaired = fixer.Face()
                 repaired_area = area(repaired)
@@ -708,6 +710,13 @@ class Face(Topology):
                     shape = repaired
         except Exception:
             pass
+
+        try:
+            from OCC.Core.BRepCheck import BRepCheck_Analyzer
+            if not BRepCheck_Analyzer(shape).IsValid():
+                return None
+        except Exception:
+            return None
 
         result = Face.ByOcctShape(shape)
         if not isinstance(result, Face):
@@ -720,24 +729,26 @@ class Face(Topology):
         return result
 
     @staticmethod
-    def ByWire(wire):
+    def ByWire(wire, tolerance=0.0001):
         """Alias for exact curved-safe Face.ByExternalBoundary."""
-        return Face.ByExternalBoundary(wire)
+        return Face.ByExternalBoundary(wire, tolerance=tolerance)
 
     @staticmethod
-    def ByWires(externalBoundary, internalBoundaries=None):
-        internalBoundaries = [w for w in (internalBoundaries or []) if isinstance(w, Wire)]
+    def ByWires(externalBoundary, internalBoundaries=None, tolerance=0.0001):
+        internalBoundaries = list(internalBoundaries or [])
+        if not all(isinstance(w, Wire) for w in internalBoundaries):
+            return None
         if not internalBoundaries:
-            return Face.ByExternalBoundary(externalBoundary)
+            return Face.ByExternalBoundary(externalBoundary, tolerance=tolerance)
         # Use ByExternalInternalBoundaries to properly add holes to OCCT shape
-        return Face.ByExternalInternalBoundaries(externalBoundary, internalBoundaries)
+        return Face.ByExternalInternalBoundaries(externalBoundary, internalBoundaries, tolerance=tolerance)
 
     @staticmethod
-    def ByVertices(vertices):
-        wire = Wire.ByVertices(vertices, close=True)
+    def ByVertices(vertices, tolerance=0.0001):
+        wire = Wire.ByVertices(vertices, close=True, tolerance=tolerance)
         if wire is None:
             return None
-        return Face.ByWire(wire)
+        return Face.ByWire(wire, tolerance=tolerance)
 
     @staticmethod
     def ByExternalInternalBoundaries(
@@ -769,6 +780,9 @@ class Face(Topology):
             The created Face, or None if construction fails.
         """
         from .wire import Wire
+        tolerance = _positive_tolerance(tolerance)
+        if tolerance is None:
+            return None
 
         try:
             from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakeFace
@@ -802,7 +816,7 @@ class Face(Topology):
             return None
 
         if not internalBoundaries:
-            return Face.ByExternalBoundary(externalBoundary)
+            return Face.ByExternalBoundary(externalBoundary, tolerance=tolerance)
 
         # ------------------------------------------------------------------
         # Retrieve native external Wire
@@ -837,16 +851,19 @@ class Face(Topology):
         # Create native Face from external boundary
         # ------------------------------------------------------------------
 
+        outer_shape = make_occ_face_from_wire(external_wire, tolerance, only_plane=True)
+        if outer_shape is None:
+            return None
+        from OCC.Core.BRepCheck import BRepCheck_Analyzer
+        if not BRepCheck_Analyzer(outer_shape).IsValid():
+            return None
+        def _new_builder():
+            return BRepBuilderAPI_MakeFace(outer_shape)
         try:
-            builder = BRepBuilderAPI_MakeFace(
-                external_wire,
-                True
-            )
+            builder = _new_builder()
         except Exception:
             return None
-
-        if not builder.IsDone():
-            return None
+        # The face-copy constructor is not marked done until Add() is called.
 
         # ------------------------------------------------------------------
         # Add internal boundaries.
@@ -867,7 +884,7 @@ class Face(Topology):
                 brepgprop.SurfaceProperties(occ_face, properties)
                 return abs(float(properties.Mass()))
 
-            outer_area = _face_area(builder.Face())
+            outer_area = _face_area(outer_shape)
         except Exception:
             outer_area = None
 
@@ -875,9 +892,7 @@ class Face(Topology):
         accumulated_hole_area = 0.0
 
         def _candidate_face(hole_wires):
-            candidate_builder = BRepBuilderAPI_MakeFace(external_wire, True)
-            if not candidate_builder.IsDone():
-                return None
+            candidate_builder = _new_builder()
             for candidate_hole in hole_wires:
                 candidate_builder.Add(candidate_hole)
             if not candidate_builder.IsDone():
@@ -897,7 +912,7 @@ class Face(Topology):
             except Exception:
                 return None
 
-            hole_area = _wire_area(internal_wire)
+            hole_area = _wire_area(internal_wire, tolerance=tolerance)
             if outer_area is not None and hole_area is not None:
                 target_area = outer_area - accumulated_hole_area - hole_area
                 choices = []
@@ -919,9 +934,7 @@ class Face(Topology):
             # Defensive fallback when mass properties are unavailable.
             selected_holes.append(reversed_wire)
 
-        builder = BRepBuilderAPI_MakeFace(external_wire, True)
-        if not builder.IsDone():
-            return None
+        builder = _new_builder()
         for internal_wire in selected_holes:
             try:
                 builder.Add(internal_wire)
@@ -947,6 +960,13 @@ class Face(Topology):
             except Exception:
                 pass
 
+        except Exception:
+            return None
+
+        try:
+            from OCC.Core.BRepCheck import BRepCheck_Analyzer
+            if not BRepCheck_Analyzer(face_shape).IsValid():
+                return None
         except Exception:
             return None
 

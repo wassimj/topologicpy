@@ -1334,7 +1334,7 @@ class Topology():
             if operation == "union":
                 merge_result = Topology.Merge(
                     topologyA,
-                    topologyB
+                    topologyB, tolerance=tolerance
                 )
 
                 if merge_result is None:
@@ -1368,7 +1368,7 @@ class Topology():
                         eb
                     ):
                         return Face.ByWire(
-                            eb
+                            eb, tolerance=tolerance
                         )
 
                     return eb
@@ -1381,7 +1381,7 @@ class Topology():
                         eb
                     ):
                         return Cell.ByShell(
-                            eb
+                            eb, tolerance=tolerance
                         )
 
                     return eb
@@ -3165,7 +3165,7 @@ class Topology():
         if abs(z_max - z_min) <= tolerance:
             box = baseFace
         else:
-            box = Cell.ByThickenedFace(baseFace, thickness=abs(z_max - z_min), bothSides=False, reverse=False)
+            box = Cell.ByThickenedFace(baseFace, thickness=abs(z_max - z_min), bothSides=False, reverse=False, tolerance=tolerance)
 
         box = Topology.Rotate(box, origin=origin, axis=[1, 0, 0], angle=-best_x)
         box = Topology.Rotate(box, origin=origin, axis=[0, 1, 0], angle=-best_y)
@@ -3664,6 +3664,8 @@ class Topology():
         vertex_threshold = max(1e-4, 10 ** (-(max(int(mantissa), 3) - 1)))
 
         def _find_vertex_index(coords):
+            if coords == [] or coords == None:
+                return -1
             for i, c in enumerate(vertices):
                 if (abs(c[0]-coords[0]) <= vertex_threshold and
                         abs(c[1]-coords[1]) <= vertex_threshold and
@@ -5071,7 +5073,7 @@ class Topology():
                 if not silent:
                     print("Topology.ShortestEdge - Error: The input topologies touch. Therefore the shortest edge degenerated into a vertex. Returning None.")
                 return None
-            return Edge.ByStartVertexEndVertex(vA, vB)
+            return Edge.ByStartVertexEndVertex(vA, vB, tolerance=tolerance)
 
         # 2. Vertex–edge (both directions), exhaustive
         def _vertex_edge_pass(vertices, edges, reverse=False):
@@ -5106,7 +5108,7 @@ class Topology():
                 if not silent:
                     print("Topology.ShortestEdge - Error: The input topologies touch. Therefore the shortest edge degenerated into a vertex. Returning None.")
                 return None
-            return Edge.ByStartVertexEndVertex(vA, vB)
+            return Edge.ByStartVertexEndVertex(vA, vB, tolerance=tolerance)
 
         # 3. Edge–edge
         #    If BVHs are available and you want, you can use them here to
@@ -5142,7 +5144,7 @@ class Topology():
                 if not silent:
                     print("Topology.ShortestEdge - Error: The input topologies touch. Therefore the shortest edge degenerated into a vertex. Returning None.")
                 return None
-            return Edge.ByStartVertexEndVertex(vA, vB)
+            return Edge.ByStartVertexEndVertex(vA, vB, tolerance=tolerance)
 
         # 4. Vertex–face (both directions), optionally BVH-accelerated
         def _vertex_face_pass(vertices, faces, reverse=False):
@@ -5193,7 +5195,7 @@ class Topology():
             if not silent:
                 print("Topology.ShortestEdge - Error: The input topologies touch. Therefore the shortest edge degenerated into a vertex. Returning None.")
             return None
-        return Edge.ByStartVertexEndVertex(vA, vB)
+        return Edge.ByStartVertexEndVertex(vA, vB, tolerance=tolerance)
 
     @staticmethod
     def _LegacyTriangulate_BackendV3(
@@ -7770,7 +7772,7 @@ class Topology():
                 ep = entity.dxf.end.xyz
                 sv = Vertex.ByCoordinates(sp[0], sp[1], sp[2])
                 ev = Vertex.ByCoordinates(ep[0], ep[1], ep[2])
-                e = Edge.ByVertices(sv,ev)
+                e = Edge.ByVertices(sv,ev, tolerance=tolerance)
                 e = Topology.SetDictionary(e, d)
         
             elif entity_type == 'POLYLINE':
@@ -7851,13 +7853,13 @@ class Topology():
             elif entity_type == 'MESH':
                 vertices = [list(v) for v in entity.vertices]
                 faces = [list(face) for face in entity.faces]
-                converted_entity = Topology.SelfMerge(Topology.ByGeometry(vertices=vertices, faces=faces))
+                converted_entity = Topology.SelfMerge(Topology.ByGeometry(vertices=vertices, faces=faces, tolerance=tolerance), tolerance=tolerance)
                 # Try Cell
-                temp = Cell.ByFaces(Topology.Faces(converted_entity), silent=True)
+                temp = Cell.ByFaces(Topology.Faces(converted_entity), silent=True, tolerance=tolerance)
                 if not Topology.IsInstance(temp, "Cell"):
-                    temp = CellComplex.ByFaces(Topology.Faces(converted_entity))
+                    temp = CellComplex.ByFaces(Topology.Faces(converted_entity), tolerance=tolerance)
                     if not Topology.IsInstance(temp, "CellComplex"):
-                        temp = Shell.ByFaces(Topology.Faces(converted_entity))
+                        temp = Shell.ByFaces(Topology.Faces(converted_entity), tolerance=tolerance)
                         if not Topology.IsInstance(temp, "Shell"):
                             temp = converted_entity
                 e = temp
@@ -8192,9 +8194,11 @@ class Topology():
         if faces:
             topFaces = []
 
-            for aFace in faces:
+            for face_number, aFace in enumerate(faces, 1):
                 if len(aFace) < 3:
-                    continue
+                    if not silent:
+                        print(f"Topology.ByGeometry - Error: Face {face_number} has fewer than three vertices. Returning None.")
+                    return None
 
                 # -----------------------------------------------------------------
                 # Fast path: Face.ByVertices, if available.
@@ -8244,7 +8248,7 @@ class Topology():
                         if e is not None:
                             faceEdges.append(e)
 
-                        if len(faceEdges) > 2:
+                        if len(faceEdges) == len(aFace):
                             faceWire = Wire_ByEdges(faceEdges, tolerance=tolerance)
                             topFace = Face_ByWire(faceWire, tolerance=tolerance, silent=True)
 
@@ -8257,10 +8261,12 @@ class Topology():
                 if Topology_IsInstance(topFace, "Face"):
                     topFaces.append(topFace)
 
-                elif isinstance(topFace, list):
-                    for f in topFace:
-                        if Topology_IsInstance(f, "Face"):
-                            topFaces.append(f)
+                elif isinstance(topFace, list) and topFace and all(Topology_IsInstance(f, "Face") for f in topFace):
+                    topFaces.extend(topFace)
+                else:
+                    if not silent:
+                        print(f"Topology.ByGeometry - Error: Cannot construct face {face_number} at tolerance {tolerance}. Returning None rather than incomplete geometry.")
+                    return None
 
             if topFaces:
                 return topologyByFaces(topFaces, topologyType=topologyType, tolerance=tolerance)
@@ -8713,13 +8719,13 @@ class Topology():
                 if len(cell_shells) > 1:
                     parent_entity = Cell.ByShells(cell_shells[0], cell_shells[1:], tolerance=tolerance, silent=silent)
                 else:
-                    parent_entity = Cell.ByShell(cell_shells[0])
+                    parent_entity = Cell.ByShell(cell_shells[0], tolerance=tolerance)
                 parent_entity = _set_dictionary(parent_entity, raw_dictionary)
                 cells[uuid] = parent_entity
 
             elif entity_type == "CellComplex":
                 complex_cells = [cells[cell_uuid] for cell_uuid in entity["cells"]]
-                parent_entity = CellComplex.ByCells(complex_cells)
+                parent_entity = CellComplex.ByCells(complex_cells, tolerance=tolerance)
                 parent_entity = _set_dictionary(parent_entity, raw_dictionary)
                 cell_complexes[uuid] = parent_entity
 
@@ -9348,12 +9354,15 @@ class Topology():
         except Exception:
             defaultOpacity = 1.0
 
+        import math
         try:
-            tol = abs(float(tolerance))
-        except Exception:
-            tol = 0.0001
-        if tol <= 0.0:
-            tol = 1.0e-9
+            tol = float(tolerance)
+        except (TypeError, ValueError, OverflowError):
+            tol = float("nan")
+        if not math.isfinite(tol) or tol <= 0.0:
+            if not silent:
+                print("Topology.ByOBJString - Error: Tolerance must be a finite positive number. Returning None.")
+            return None
 
         # ------------------------------------------------------------------
         # Local bindings for the hot path.
@@ -9512,6 +9521,8 @@ class Topology():
                 index = int(token)
             except Exception:
                 return None
+            if index == 0:
+                return None
             index = index - 1 if index > 0 else count + index
             if index < 0 or index >= count:
                 return None
@@ -9558,7 +9569,9 @@ class Topology():
             if c0 == "f" and len(line) > 1 and line[1].isspace():
                 tokens = line.split()[1:]
                 if len(tokens) < 3:
-                    continue
+                    if not silent:
+                        print("Topology.ByOBJString - Error: Face has fewer than three vertices. Returning None.")
+                    return None
                 count = len(vertices_xyz)
                 indices = []
                 valid = True
@@ -9575,6 +9588,10 @@ class Topology():
                     indices.pop()
                 if valid and len(indices) >= 3 and len(set(indices)) >= 3:
                     _record(current_group)["faces"].append((indices, current_material))
+                else:
+                    if not silent:
+                        print(f"Topology.ByOBJString - Error: Invalid face indices in group {current_group!r}. Returning None.")
+                    return None
                 continue
 
             if c0 == "l" and len(line) > 1 and line[1].isspace():
@@ -9680,7 +9697,7 @@ class Topology():
             # correctness fallback for problematic/non-planar OBJ polygons.
             face = None
             try:
-                face = Core.Face.ByExternalBoundary(wire)
+                face = Core.Face.ByExternalBoundary(wire, tolerance=tol)
             except Exception:
                 pass
 
@@ -9700,7 +9717,7 @@ class Topology():
             if Topology_IsInstance(face, "Face"):
                 return [face]
             if isinstance(face, list):
-                return [f for f in face if Topology_IsInstance(f, "Face")]
+                return face if all(Topology_IsInstance(f, "Face") for f in face) else []
             return []
 
         # ------------------------------------------------------------------
@@ -9719,10 +9736,12 @@ class Topology():
                 face_topologies = []
                 preserve_face_dictionaries = not (selfMerge or removeCoplanarFaces)
 
-                for indices, material_name in faces_rec:
+                for face_number, (indices, material_name) in enumerate(faces_rec, 1):
                     faces = _face(indices)
                     if not faces:
-                        continue
+                        if not silent:
+                            print(f"Topology.ByOBJString - Error: Cannot construct face {face_number} in group {group_name!r} at tolerance {tol}. Returning None rather than incomplete geometry.")
+                        return None
                     if preserve_face_dictionaries:
                         faces = [
                             _set_dictionary(face, group_name, material_name)
@@ -10241,11 +10260,11 @@ class Topology():
                         elif len(components) > 1:
                             tp_object = Cluster.ByTopologies(components)
                             if wires == True or faces == True:
-                                tp_object = Topology.SelfMerge(tp_object)
+                                tp_object = Topology.SelfMerge(tp_object, tolerance=tolerance)
                         if faces == True:
                             if Topology.IsInstance(tp_object, "wire"):
                                 if Wire.IsClosed(tp_object):
-                                    tp_object = Face.ByWire(tp_object, silent=True) or tp_object
+                                    tp_object = Face.ByWire(tp_object, silent=True, tolerance=tolerance) or tp_object
                         tp_object = Topology.SetDictionary(tp_object, dictionary)
                         edges = Topology.Edges(tp_object)
                         for edge in edges:
@@ -11842,7 +11861,7 @@ class Topology():
             # exclude inclusion/coverage
             if Topology.Covers(a, b, tolerance  = tolerance, silent = silent) or Topology.Covers(b, a, tolerance  = tolerance, silent = silent):
                 return False
-            return Topology.Intersect(a,b) is not None
+            return Topology.Intersect(a,b, tolerance=tolerance) is not None
 
         # Do NOT classify 0D–2D/3D as crosses (point-in-region/volume → within/coveredBy)
         # 0D–1D interior handled by other logic (if you support vertex-on-edge crosses)
@@ -16585,8 +16604,8 @@ class Topology():
             Topology.SelfMerge(
                 Cluster.ByTopologies(
                     results
-                )
-            )
+                ), tolerance=tolerance
+            ), tolerance=tolerance
         )
 
     @staticmethod
@@ -17619,7 +17638,7 @@ class Topology():
             return faces
         
         if removeCoplanarFaces == True:
-            simple_topology = Topology.RemoveCoplanarFaces(topology)
+            simple_topology = Topology.RemoveCoplanarFaces(topology, tolerance=tolerance)
             simple_topology = Topology.RemoveCollinearEdges(simple_topology)
             faces = Topology.Faces(simple_topology)
         face_areas = [Face.Area(face) for face in faces]
@@ -17723,7 +17742,7 @@ class Topology():
             return edges
         
         if removeCoplanarFaces == True:
-            simple_topology = Topology.RemoveCoplanarFaces(topology)
+            simple_topology = Topology.RemoveCoplanarFaces(topology, tolerance=tolerance)
             simple_topology = Topology.RemoveCollinearEdges(simple_topology)
 
             edges = Topology.Edges(simple_topology)
@@ -19355,7 +19374,7 @@ class Topology():
 
                 face = Face.ByShell(
                     merged,
-                    silent=True
+                    silent=True, tolerance=tolerance
                 )
 
                 if Topology.IsInstance(
@@ -19388,7 +19407,7 @@ class Topology():
 
                     face = Face.ByShell(
                         shell,
-                        silent=True
+                        silent=True, tolerance=tolerance
                     )
 
                     if Topology.IsInstance(
@@ -20356,16 +20375,6 @@ class Topology():
                         tolerance
                     )
 
-                except TypeError:
-                    try:
-                        new_face = Core.Face.ByExternalInternalBoundaries(
-                            new_external_boundary,
-                            new_internal_boundaries
-                        )
-
-                    except Exception:
-                        new_face = None
-
                 except Exception:
                     new_face = None
 
@@ -20590,14 +20599,6 @@ class Topology():
                 topologyType=rebuild_type,
                 tolerance=tolerance,
                 silent=True,
-            )
-
-        except TypeError:
-            new_topology = Topology.ByGeometry(
-                vertices=new_geometry_vertices,
-                edges=geometry_edges,
-                faces=geometry_faces,
-                topologyType=rebuild_type,
             )
 
         except Exception as error:
@@ -21928,12 +21929,15 @@ class Topology():
                 print("Topology.SelfMerge - Error: The input topology is not a valid topology. Returning None.")
             return None
 
+        import math
         try:
-            tol = abs(float(tolerance))
-        except Exception:
-            tol = 0.0001
-        if tol <= 0.0:
-            tol = 0.0001
+            tol = float(tolerance)
+        except (TypeError, ValueError, OverflowError):
+            tol = float("nan")
+        if not math.isfinite(tol) or tol <= 0.0:
+            if not silent:
+                print("Topology.SelfMerge - Error: Tolerance must be a finite positive number. Returning None.")
+            return None
 
         # A non-Cluster is already one logical topology. SelfMerge is a
         # normalization operation, not a general geometry healer.
@@ -21958,21 +21962,13 @@ class Topology():
             except Exception:
                 source_dictionary = None
 
-        # PythonOCC's backend accepts tolerance. TopologicCore historically exposes
-        # SelfMerge() without arguments, so retain the no-argument compatibility
-        # fallback.
+        # Never retry a failed merge with an implicit/default tolerance.
         try:
             result = Core.InstanceCall(topology, "SelfMerge", tol)
-        except TypeError:
-            try:
-                result = Core.InstanceCall(topology, "SelfMerge")
-            except Exception:
-                result = None
         except Exception:
-            try:
-                result = Core.InstanceCall(topology, "SelfMerge")
-            except Exception:
-                result = None
+            result = None
+            if not silent:
+                print("Topology.SelfMerge - Warning: Merge failed at the requested tolerance. Retaining input.")
 
         # A failed normalization must not destroy a valid input topology.
         if not Topology.IsInstance(result, "Topology"):
@@ -23682,7 +23678,7 @@ class Topology():
             return edges[0]
         
         if removeCoplanarFaces == True:
-            simple_topology = Topology.RemoveCoplanarFaces(topology)
+            simple_topology = Topology.RemoveCoplanarFaces(topology, tolerance=tolerance)
             simple_topology = Topology.RemoveCollinearEdges(simple_topology)
             edges = Topology.Edges(simple_topology)
         edge_lengths = [Edge.Length(edge) for edge in edges]
@@ -24563,7 +24559,7 @@ class Topology():
             return faces
         
         if removeCoplanarFaces == True:
-            simple_topology = Topology.RemoveCoplanarFaces(topology)
+            simple_topology = Topology.RemoveCoplanarFaces(topology, tolerance=tolerance)
             simple_topology = Topology.RemoveCollinearEdges(simple_topology)
             faces = Topology.Faces(simple_topology)
         face_areas = [Face.Area(face) for face in faces]
@@ -25028,7 +25024,7 @@ class Topology():
                 try:
                     returnTopology = Cell.ByWires(topologies, triangulate=triangulate, tolerance=tolerance, silent=True)
                     returnTopology = Cell.ExternalBoundary(returnTopology)
-                    returnTopology = Cell.ByShell(returnTopology)
+                    returnTopology = Cell.ByShell(returnTopology, tolerance=tolerance)
                 except:
                     try:
                         returnTopology = CellComplex.ByWires(topologies, tolerance=tolerance)
@@ -25073,7 +25069,7 @@ class Topology():
             return Cluster.ByTopologies(topologies)
         if Topology.Type(returnTopology) == Topology.TypeID("Shell"):
             try:
-                new_t = Cell.ByShell(returnTopology)
+                new_t = Cell.ByShell(returnTopology, tolerance=tolerance)
                 if new_t:
                     returnTopology = new_t
             except:
@@ -28946,19 +28942,12 @@ class Topology():
 
         elif topology_type == Topology.TypeID("CellComplex"):
             if not Topology._IsTopologicCoreBackend():
-                attempts = (
-                    lambda: Core.CellComplex.ByFaces(face_triangles, tolerance, False),
-                    lambda: Core.CellComplex.ByFaces(face_triangles, tolerance),
-                    lambda: Core.CellComplex.ByFaces(face_triangles),
-                )
-                for attempt in attempts:
-                    try:
-                        candidate = attempt()
-                    except Exception:
-                        continue
+                try:
+                    candidate = Core.CellComplex.ByFaces(face_triangles, tolerance=tolerance, copyAttributes=False)
                     if Topology.IsInstance(candidate, "CellComplex"):
                         result = candidate
-                        break
+                except Exception:
+                    result = None
             else:
                 try:
                     result = CellComplex.ByFaces(
@@ -30512,7 +30501,7 @@ class Topology():
 
                     return Face.ByWires(
                         external_boundary,
-                        internal_boundaries
+                        internal_boundaries, tolerance=tolerance
                     )
 
         # --------------------------------------------------------------
@@ -30535,7 +30524,7 @@ class Topology():
         ):
             union = Topology.Merge(
                 topologyA,
-                topologyB
+                topologyB, tolerance=tolerance
             )
 
             if Topology.IsInstance(
@@ -31031,7 +31020,8 @@ class Topology():
                                                     mode=mode,
                                                     meshSize=meshSize,
                                                     mantissa=mantissa,
-                                                    tolerance=tolerance)
+                                                       tolerance=tolerance,
+                                                   )
         
 
         file_contents = {}
