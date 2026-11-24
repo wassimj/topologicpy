@@ -15,7 +15,7 @@ class Shape:
     def Copy(self): return perform(self,'Copy')
     def DeepCopy(self): return perform(self,'Copy')
 
-state={'sink':None,'calls':0,'legacy':False,'emit':True,'children_only':False,'flags':[]}
+state={'sink':None,'calls':0,'emit':True,'children_only':False,'flags':[]}
 @contextlib.contextmanager
 def capture(operation_node,role_nodes,stage,sink):
     previous=state['sink']; state['sink']=sink
@@ -68,7 +68,6 @@ Topology=namespace['Topology']
 Topology.IsInstance=staticmethod(lambda o,k: isinstance(o,Shape) and (k=='Topology' or o.kind==k))
 Topology.IsSame=staticmethod(lambda a,b,**kw:a is b)
 Topology.TypeAsString=staticmethod(lambda o:o.kind)
-Topology._IsTopologicCoreBackend=staticmethod(lambda:state['legacy'])
 for name,kind in [('Vertices','Vertex'),('Edges','Edge'),('Wires','Wire'),('Faces','Face'),
                   ('Shells','Shell'),('Cells','Cell'),('CellComplexes','CellComplex')]:
     setattr(Topology,name,staticmethod(lambda o,silent=True,kind=kind:
@@ -81,7 +80,7 @@ Provenance=provmodule.Provenance
 
 class ContractChecks(unittest.TestCase):
     def setUp(self):
-        state.update(sink=None,calls=0,legacy=False,emit=True,children_only=False,flags=[])
+        state.update(sink=None,calls=0,emit=True,children_only=False,flags=[])
         self.source=Shape(children=[Shape('Face'),Shape('Vertex')])
 
     def test_all_public_operation_names_and_single_execution(self):
@@ -155,13 +154,6 @@ class ContractChecks(unittest.TestCase):
         self.assertIsInstance(result,Shape); self.assertFalse(p.supported)
         self.assertEqual(p.metadata['reason'],'native_history_empty'); self.assertEqual(state['calls'],1)
 
-    def test_unsupported_backend_runs_callback_once(self):
-        state['legacy']=True
-        calls=[]
-        def apply(): calls.append(1); return Shape()
-        result,p=Topology._WithModifierProvenance(self.source,'Translate',apply)
-        self.assertFalse(p.supported); self.assertEqual(calls,[1])
-        self.assertEqual(p.metadata['reason'],'backend_history_unavailable')
 
     def test_invalid_inputs_return_unsupported_pairs(self):
         for name in ['Translate','Scale','Rotate','Copy']:

@@ -44,7 +44,7 @@ class Shell():
 
         Parameters
         ----------
-        externalBoundary : topologic_core.Face
+        externalBoundary : Face
             The input external boundary of the faces. This resembles a ribbon (face with hole) where its interior boundary touches the edges of the input list of faces.
         faces : list
             The input list of faces.
@@ -67,7 +67,7 @@ class Shell():
 
         Returns
         -------
-        topologic_core.Shell
+        Shell
             The created Shell.
 
         """
@@ -265,7 +265,7 @@ class Shell():
 
         Returns
         -------
-        topologic_core.Shell
+        Shell
             The created Shell, or None if construction fails.
         """
         from topologicpy.Vertex import Vertex
@@ -344,7 +344,7 @@ class Shell():
 
         Parameters
         ----------
-        cluster : topologic_core.Cluster
+        cluster : Cluster
             The input cluster of faces.
         transferDictionaries : bool , optional
             If set to True, any dictionaries in the faces are transferred to the faces of the created Shell.
@@ -356,7 +356,7 @@ class Shell():
         
         Returns
         -------
-        topologic_core.Shell
+        Shell
             The created shell.
 
         """
@@ -376,7 +376,7 @@ class Shell():
 
         Parameters
         ----------
-        wire : topologic_core.Wire
+        wire : Wire
             The input wire to be thickened.
         offsetA : float , optional
             The desired offset to the exterior of the wire. Default is 1.0.
@@ -387,7 +387,7 @@ class Shell():
 
         Returns
         -------
-        topologic_core.Shell
+        Shell
             The created shell.
 
         """
@@ -453,7 +453,7 @@ class Shell():
 
         Returns
         -------
-        topologic_core.Shell
+        Shell
             The created Shell, or None when construction fails or exact lofting
             is requested on an unsupported backend.
         """
@@ -579,7 +579,7 @@ class Shell():
 
         Parameters
         ----------
-        cluster : topologic_core.Cluster
+        cluster : Cluster
             The input cluster of wires.
         triangulate : bool , optional
             If ``polyhedron`` is True, specifies whether the side faces are
@@ -595,7 +595,7 @@ class Shell():
 
         Returns
         -------
-        topologic_core.Shell
+        Shell
             The created shell.
         """
         from topologicpy.Cluster import Cluster
@@ -621,7 +621,7 @@ class Shell():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex , optional
+        origin : Vertex , optional
             The location of the origin of the circle. Default is None which results in the circle being placed at (0, 0, 0).
         radius : float , optional
             The  radius of the circle. Default is 0.5.
@@ -640,7 +640,7 @@ class Shell():
 
         Returns
         -------
-        topologic_core.Shell
+        Shell
             The created circle.
         """
         return Shell.Pie(origin=origin, radiusA=radius, radiusB=0, sides=sides, rings=1, fromAngle=fromAngle, toAngle=toAngle, direction=direction, placement=placement, tolerance=tolerance)
@@ -679,7 +679,7 @@ class Shell():
     #     ----------
     #     vertices : list
     #         The input list of site Vertices. At least three are required.
-    #     face : topologic_core.Face
+    #     face : Face
     #         The trimmed surface domain on which the intrinsic Delaunay partition is
     #         computed.
     #     deflection : float , optional
@@ -700,7 +700,7 @@ class Shell():
 
     #     Returns
     #     -------
-    #     topologic_core.Shell
+    #     Shell
     #         A Shell partitioning the exact input Face by intrinsic Delaunay geodesics,
     #         or None if the operation fails.
     #     """
@@ -902,7 +902,7 @@ class Shell():
 
         Parameters
         ----------
-        shell : topologic_core.Shell
+        shell : Shell
             The input shell.
 
         Returns
@@ -977,7 +977,7 @@ class Shell():
 
         Parameters
         ----------
-        shell : topologic_core.Shell
+        shell : Shell
             The input shell.
 
         Returns
@@ -1029,7 +1029,7 @@ class Shell():
             Notes: If you set sides to be equal to maxIterations, you get the diagonals.
             It is best if the number of sides is a multiple of maxIterations.
             Default is 96.
-        origin : topologic_core.Vertex, optional
+        origin : Vertex, optional
             The location of the origin of the rectangle. Default is None which results in the rectangle being placed at (0, 0, 0).
         direction : list , optional
             The vector representing the up direction of the rectangle. Default is [0, 0, 1].
@@ -1044,7 +1044,7 @@ class Shell():
 
         Returns
         -------
-        topologic_core.Shell
+        Shell
             A shell made from the faces of all subdivision squares (multiple loops).
         """
 
@@ -1209,15 +1209,15 @@ class Shell():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex , optional
+        origin : Vertex , optional
             The origin of the hyperbolic paraboloid. If set to None, it will be placed at the (0, 0, 0) origin. Default is None.
-        llVertex : topologic_core.Vertex , optional
+        llVertex : Vertex , optional
             The lower left corner of the hyperbolic paraboloid. If set to None, it will be set to (-0.5, -0.5, -0.5).
-        lrVertex : topologic_core.Vertex , optional
+        lrVertex : Vertex , optional
             The lower right corner of the hyperbolic paraboloid. If set to None, it will be set to (0.5, -0.5, 0.5).
-        ulVertex : topologic_core.Vertex , optional
+        ulVertex : Vertex , optional
             The upper left corner of the hyperbolic paraboloid. If set to None, it will be set to (-0.5, 0.5, 0.5).
-        urVertex : topologic_core.Vertex , optional
+        urVertex : Vertex , optional
             The upper right corner of the hyperbolic paraboloid. If set to None, it will be set to (0.5, 0.5, -0.5).
         uSides : int , optional
             The number of segments along the X axis. Default is 10.
@@ -1234,7 +1234,7 @@ class Shell():
         
         Returns
         -------
-        topologic_core.Shell
+        Shell
             The created hyperbolic paraboloid.
 
         """
@@ -1307,7 +1307,7 @@ class Shell():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex , optional
+        origin : Vertex , optional
             The origin of the hyperbolic parabolid. If set to None, it will be placed at the (0, 0, 0) origin. Default is None.
         radius : float , optional
             The desired radius of the hyperbolic paraboloid. Default is 0.5.
@@ -1330,7 +1330,7 @@ class Shell():
         
         Returns
         -------
-        topologic_core.Shell
+        Shell
             The created hyperbolic paraboloid.
 
         """
@@ -1470,7 +1470,7 @@ class Shell():
 
         Parameters
         ----------
-        shell : topologic_core.Shell
+        shell : Shell
             The input shell.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
@@ -1514,7 +1514,7 @@ class Shell():
 
         Parameters
         ----------
-        shell : topologic_core.Shell
+        shell : Shell
             The input shell.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
@@ -1665,7 +1665,7 @@ class Shell():
 
         Parameters
         ----------
-        shell : topologic_core.Shell
+        shell : Shell
             The input shell.
 
         Returns
@@ -1690,9 +1690,9 @@ class Shell():
 
         Parameters
         ----------
-        shell : topologic_core.Shell
+        shell : Shell
             The input shell.
-        vertex : topologic_core.Vertex
+        vertex : Vertex
             The input vertex.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
@@ -1737,7 +1737,7 @@ class Shell():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex , optional
+        origin : Vertex , optional
             The location of the origin of the Möbius strip. Default is None which results in the Möbius strip being placed at (0, 0, 0).
         radius : float , optional
             The radius of the Möbius strip. Default is 0.5.
@@ -1760,7 +1760,7 @@ class Shell():
 
         Returns
         -------
-        topologic_core.Cell
+        Cell
             The created cell.
 
         """
@@ -1865,7 +1865,7 @@ class Shell():
 
             Parameters
             ----------
-            origin : topologic_core.Vertex , optional
+            origin : Vertex , optional
                 The origin location of the parabolic surface. Default is None which results in the parabolic surface being placed at (0, 0, 0).
             focalLength : float , optional
                 The focal length of the parabola. Default is 1.
@@ -1890,7 +1890,7 @@ class Shell():
             
             Returns
             -------
-            topologic_core.Shell
+            Shell
                 The created paraboloid.
 
             """
@@ -1969,7 +1969,7 @@ class Shell():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex , optional
+        origin : Vertex , optional
             The location of the origin of the pie. Default is None which results in the pie being placed at (0, 0, 0).
         radiusA : float , optional
             The outer radius of the pie. Default is 0.5.
@@ -1992,7 +1992,7 @@ class Shell():
 
         Returns
         -------
-        topologic_core.Shell
+        Shell
             The created pie.
 
         """
@@ -2100,9 +2100,9 @@ class Shell():
 
         Parameters
         ----------
-        shell : topologic_core.Shell
+        shell : Shell
             The input Shell.
-        origin : topologic_core.Vertex , optional
+        origin : Vertex , optional
             The desired origin of the target plane. If None, the centroid of the
             input Shell is used. Default is None.
         mantissa : int , optional
@@ -2115,7 +2115,7 @@ class Shell():
 
         Returns
         -------
-        topologic_core.Shell
+        Shell
             The planarized Shell, or None if the operation cannot be completed
             without approximating curved geometry.
         """
@@ -2438,7 +2438,7 @@ class Shell():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex , optional
+        origin : Vertex , optional
             The location of the origin of the rectangle. Default is None which results in the rectangle being placed at (0, 0, 0).
         width : float , optional
             The width of the rectangle. Default is 1.0.
@@ -2457,7 +2457,7 @@ class Shell():
 
         Returns
         -------
-        topologic_core.Shell
+        Shell
             The created shell.
 
         """
@@ -2539,7 +2539,7 @@ class Shell():
 
         Parameters
         ----------
-        face : topologic_core.Face
+        face : Face
             The input face.
         angle : float , optioal
             The desired angle in degrees of the roof. Default is 45.
@@ -2552,7 +2552,7 @@ class Shell():
 
         Returns
         -------
-        topologic_core.Shell
+        Shell
             The created roof.
 
         """
@@ -2650,7 +2650,7 @@ class Shell():
 
         Parameters
         ----------
-        shell : topologic_core.Shell
+        shell : Shell
             The input shell.
         angTolerance : float , optional
             The desired angular tolerance. Default is 0.1.
@@ -2659,7 +2659,7 @@ class Shell():
 
         Returns
         -------
-        topologic_core.Face
+        Face
             The created face.
 
         """
@@ -2873,14 +2873,14 @@ class Shell():
 
         Parameters
         ----------
-        face : topologic_core.Face
+        face : Face
             The input face.
         tolerance : float , optional
             The desired tolerance. Default is 0.001. (This is set to a larger number as it was found to work better)
 
         Returns
         -------
-        topologic_core.Shell
+        Shell
             The created straight skeleton.
 
         """
@@ -2931,7 +2931,7 @@ class Shell():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex , optional
+        origin : Vertex , optional
             The location of the origin of the square. Default is None which results in the square being placed at (0, 0, 0).
         size : float , optional
             The size of the square. Default is 1.0.
@@ -2950,7 +2950,7 @@ class Shell():
 
         Returns
         -------
-        topologic_core.Shell
+        Shell
             The created shell square.
 
         """
@@ -2992,7 +2992,7 @@ class Shell():
 
         Parameters
         ----------
-        shell : topologic_core.Shell
+        shell : Shell
             The input shell.
 
         Returns
@@ -3089,7 +3089,7 @@ class Shell():
 
         Parameters
         ----------
-        shell : topologic_core.Shell
+        shell : Shell
             The input shell.
 
         Returns

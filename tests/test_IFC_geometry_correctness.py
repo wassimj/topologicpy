@@ -123,8 +123,7 @@ def test_native_boolean_failure_does_not_become_an_empty_success(monkeypatch):
     # Exercise the general-kernel failure contract, not a certified mesh fast path.
     monkeypatch.setattr(F, '_prismatic_difference', staticmethod(lambda *args: None))
     monkeypatch.setattr(F, '_column_difference', staticmethod(lambda *args: None))
-    if Topology._IsTopologicCoreBackend():
-        pytest.skip('PythonOCC status distinction')
+    pass
     from topologicpy.pythonocc_backend.topology import Topology as NativeTopology
     monkeypatch.setattr(NativeTopology, '_binary_boolean', lambda *args,**kwargs: None)
     e={1:E(1,'IFCCARTESIANPOINT',[[0,0,0]])}
@@ -238,24 +237,3 @@ def test_fully_contained_difference_is_empty():
     assert mesh == {'vertices': [], 'edges': [], 'faces': []}
 
 
-def test_native_core_boolean_exception_is_not_an_empty_result(monkeypatch):
-    # Exercise the general-kernel failure contract, not a certified mesh fast path.
-    monkeypatch.setattr(F, '_prismatic_difference', staticmethod(lambda *args: None))
-    monkeypatch.setattr(F, '_column_difference', staticmethod(lambda *args: None))
-    if not Topology._IsTopologicCoreBackend():
-        pytest.skip('TopologicCore native exception contract')
-    from topologicpy.Core import Core
-    original = Core.InstanceCall
-    failure = RuntimeError('Injected native Boolean failure')
-
-    def instance_call(obj, method, *args, **kwargs):
-        if method == 'Difference':
-            raise failure
-        return original(obj, method, *args, **kwargs)
-
-    monkeypatch.setattr(Core, 'InstanceCall', staticmethod(instance_call))
-    e = {1: E(1, 'IFCCARTESIANPOINT', [[0, 0, 0]])}
-    mesh = F._mesh_from_item(E(2, 'IFCBOUNDINGBOX', [R(1), 2, 2, 2]), e, I)
-    with pytest.raises(ValueError, match='Native IFC Boolean operation failed') as error:
-        F._boolean_mesh(mesh, mesh, 'DIFFERENCE')
-    assert error.value.__cause__ is failure

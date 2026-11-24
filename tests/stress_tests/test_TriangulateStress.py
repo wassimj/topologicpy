@@ -147,7 +147,7 @@ def _cellcomplex():
 
 #     Parameters
 #     ----------
-#     cluster : topologic_core.Cluster
+#     cluster : Cluster
 #         The input cluster.
 
 #     Returns

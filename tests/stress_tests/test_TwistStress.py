@@ -21,11 +21,7 @@ TOLERANCE = 0.0001
 POINT_TOLERANCE = 3.0e-5
 SEED = 20260815
 RANDOM_CASES = int(os.environ.get("TOPOLOGICPY_TWIST_STRESS_CASES", "100"))
-IS_TOPOLOGIC_CORE = type(Core.Backend()).__name__ == "TopologicCoreBackend"
-PYTHONOCC_DEFORMATION_ONLY = pytest.mark.skipif(
-    IS_TOPOLOGIC_CORE,
-    reason="NURBS control-geometry deformation is unsupported by topologic_core.",
-)
+PYTHONOCC_DEFORMATION_ONLY = pytest.mark.pythonocc_only
 
 
 def _vertex(x, y=0.0, z=0.0):

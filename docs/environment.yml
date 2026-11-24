@@ -1,0 +1,7 @@
+name: topologicpy-docs
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12
+  - pythonocc-core=8.0.1
+  - pip

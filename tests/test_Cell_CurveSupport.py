@@ -8,10 +8,6 @@ from topologicpy.Topology import Topology
 from topologicpy.Vertex import Vertex
 from topologicpy.Wire import Wire
 
-try:
-    IS_PYTHONOCC = not Topology._IsTopologicCoreBackend()
-except Exception:
-    IS_PYTHONOCC = False
 
 
 def _curved_face_exists(cell):
@@ -40,13 +36,6 @@ def test_cell_volume_none_returns_unrounded_float():
     assert value > 0.0
 
 
-@pytest.mark.topologiccore_only
-def test_topologiccore_exact_cell_paths_are_explicitly_unsupported():
-    assert Cell.Cylinder(radius=1.0, height=2.0, polyhedron=False, silent=True) is None
-    assert Cell.Sphere(radius=1.0, polyhedron=False, silent=True) is None
-    w0 = _circle_wire(0.0)
-    w1 = _circle_wire(2.0)
-    assert Cell.ByWires([w0,w1], polyhedron=False, silent=True) is None
 
 
 @pytest.mark.pythonocc_only

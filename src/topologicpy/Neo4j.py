@@ -930,7 +930,7 @@ class Neo4j:
         ----------
         manager
             The graph database manager/driver.
-        graph : topologic_core.Graph
+        graph : Graph
             The input TopologicPy graph.
         database : str , optional
             The Neo4j database name. Default is None.
@@ -2340,7 +2340,7 @@ class Neo4j:
 
         Returns
         -------
-        topologic_core.Graph
+        Graph
             The returned Topologic graph.
         """
         if driver is None or not hasattr(driver, "session"):

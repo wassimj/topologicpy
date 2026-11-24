@@ -5,65 +5,21 @@ It replaces both the former current and donor test trees.
 
 ## Principles
 
-1. **One suite, both backends.** The same tests are collected for PythonOCC and
-   TopologicCore. Backend-specific exact/native capabilities use centralized
-   markers rather than separate test trees.
-2. **Current API is authoritative.** Historical donor tests are retained only
-   when they still express a valid current contract.
-3. **No silent geometric approximation.** PythonOCC exact curve/NURBS tests
-   assert preservation of exact geometry. TopologicCore capability tests assert
-   explicit unsupported behavior where appropriate.
-4. **Public contracts first.** Tests should prefer TopologicPy public methods and
-   semantic/topological invariants over backend implementation details.
-5. **Regressions stay permanent.** The production-risk Slice, WireByPath,
-   shapeless-Cluster, periodic seam, native editing, STEP/TPY, and curved-grid
-   cases are retained explicitly.
+1. PythonOCC is the sole geometry kernel. Exact curve, NURBS and native topology contracts remain mandatory.
+2. Tests assert public API semantics and geometry invariants; do not silently approximate geometry or weaken assertions.
+3. Keep production-risk regression fixtures permanently.
 
-## Backend selection
+## Running the suite
 
-Plain pytest selects the first installed backend, preferring PythonOCC:
+Install PythonOCC in the active environment as described in the repository README, then install the test extras:
 
 ```bash
+python -m pip install -e ".[test]"
 python -m pytest tests
 ```
 
-Run every installed backend in isolated subprocesses:
-
-```bash
-python tests/run_backends.py
-```
-
-Explicit runs:
-
-```bash
-python -m pytest tests --backend pythonocc
-python -m pytest tests --backend topologic_core
-```
-
-`-n auto` may be added when pytest-xdist is installed.
-
-## Backend capability markers
-
-Use:
-
-```python
-@pytest.mark.pythonocc_only
-```
-
-for exact/native PythonOCC capability tests, and:
-
-```python
-@pytest.mark.topologiccore_only
-```
-
-for tests of an intentionally TopologicCore-specific fallback contract.
-
-Do not compute backend-specific `skipif` expressions at module import time.
-The root `conftest.py` applies these markers after backend selection, preventing
-collection-order/backend-environment errors.
-
-Known backend **defects**, as opposed to intentional capability differences,
-remain centralized in `backend_exceptions.json`.
+For sequential execution use `python -m pytest tests -o addopts="" -v`.
+The `pythonocc_only` marker identifies native contracts; it no longer selects a backend.
 
 ## Test layers
 

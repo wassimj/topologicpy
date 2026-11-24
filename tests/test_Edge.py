@@ -5,7 +5,7 @@
 Consolidated tests for topologicpy.Edge.
 
 The suite is backend-neutral unless a test is explicitly marked
-``pythonocc_only`` or ``topologiccore_only``. Tests are organized by API theme
+``pythonocc_only``. Tests are organized by API theme
 rather than by historical development tranche.
 """
 
@@ -1158,16 +1158,6 @@ def test_reverse_preserves_curved_geometry_and_orientation():
     assert _dot(ta, tr) < -0.999999
 
 
-@pytest.mark.topologiccore_only
-def test_topologiccore_unsupported_curve_operations_do_not_flatten():
-    arc = Edge.Arc(radius=2.0, fromAngle=0.0, toAngle=120.0, silent=True)
-    assert Topology.IsInstance(arc, "Edge")
-    assert Edge.IsLinear(arc, silent=True) is False
-    # TopologicCore exposes NURBS construction/evaluation but not an exact
-    # curve-reversal or curve-trim API. Returning None is safer than silently
-    # rebuilding the operation as a straight chord or sampled approximation.
-    assert Edge.Reverse(arc, silent=True) is None
-    assert Edge.Trim(arc, distance=0.5, bothSides=True, silent=True) is None
 
 
 # ============================================================================

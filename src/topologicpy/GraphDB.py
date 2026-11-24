@@ -796,7 +796,7 @@ class GraphDB:
         ----------
         graphdb : dict
             The graph database descriptor. See GraphDB.ByParameters(...).
-        graph : topologic_core.Graph or topologicpy.TGraph
+        graph : Graph or topologicpy.TGraph
             The graph to be upserted.
         graphIDKey : str , optional
             The dictionary key used to retrieve the graph id. Default is "graph_id".
@@ -906,7 +906,7 @@ class GraphDB:
 
         Returns
         -------
-        topologic_core.Graph or topologicpy.TGraph
+        Graph or topologicpy.TGraph
             A TopologicPy Graph or TGraph, or None on error.
         """
         result = GraphDB._call(graphdb, "GraphByID", graphID, silent=silent)

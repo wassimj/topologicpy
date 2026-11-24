@@ -47,7 +47,7 @@ class Vertex():
 
         Parameters
         ----------
-        vertex : topologic_core.Vertex
+        vertex : Vertex
             The input vertex.
         xList : list , optional
             The input numerical list of x-coordinates. Default is None.
@@ -71,7 +71,7 @@ class Vertex():
 
         Returns
         -------
-        topologic_core.Vertex
+        Vertex
             The created vertex aligned to the input coordinate lists.
 
         """
@@ -299,7 +299,7 @@ class Vertex():
         ----------
         vertices : list
             The input list of vertices.
-        face : topologic_core.Face
+        face : Face
             The input face
 
         Returns
@@ -354,9 +354,9 @@ class Vertex():
 
         Parameters
         ----------
-        cluster : topologic_core.Cluster
+        cluster : Cluster
             The input list of vertices.
-        face : topologic_core.Face
+        face : Face
             The input face
 
         Returns
@@ -381,7 +381,7 @@ class Vertex():
         ----------
         vertices : list
             The input list of vertices.
-        face : topologic_core.Face
+        face : Face
             The input face
 
         Returns
@@ -399,9 +399,9 @@ class Vertex():
 
         Parameters
         ----------
-        cluster : topologic_core.Cluster
+        cluster : Cluster
             The input list of vertices.
-        face : topologic_core.Face
+        face : Face
             The input face
 
         Returns
@@ -437,7 +437,7 @@ class Vertex():
 
         Returns
         -------
-        topologic_core.Vertex
+        Vertex
             The created vertex.
 
         """
@@ -520,9 +520,9 @@ class Vertex():
 
         Parameters
         ----------
-        vertex : topologic_core.Vertex
+        vertex : Vertex
             The vertex to offset.
-        edge : topologic_core.Edge
+        edge : Edge
             The reference edge used to compute the perpendicular direction.
         offset : float , optional
             The offset distance. Default is 1.0.
@@ -531,7 +531,7 @@ class Vertex():
 
         Returns
         -------
-        topologic_core.Vertex
+        Vertex
             The offset vertex.
         """
 
@@ -588,7 +588,7 @@ class Vertex():
 
         Returns
         -------
-        topologic_core.Vertex
+        Vertex
             The computed centroid of the input list of vertices
         
         """
@@ -634,7 +634,7 @@ class Vertex():
 
         Parameters
         ----------
-        vertex : topologic_core.Vertex
+        vertex : Vertex
             The input vertex.
         outputType : string, optional
             The desired output type. Could be any permutation or substring of "xyz" or the string "matrix". Default is "xyz". The input is case insensitive and the coordinates will be returned in the specified order.
@@ -719,9 +719,9 @@ class Vertex():
 
         Parameters
         ----------
-        vertex : topologic_core.Vertex
+        vertex : Vertex
             The input vertex.
-        hostTopology : topologic_core.Topology
+        hostTopology : Topology
             The input host topology in which to search for the connected super topologies.
         topologyType : str , optional
             The topology type to search for. This can be any of "edge", "wire", "face", "shell", "cell", "cellcomplex", "cluster". It is case insensitive. If set to None, the immediate supertopology type is searched for. Default is None.
@@ -748,9 +748,9 @@ class Vertex():
 
         Parameters
         ----------
-        vertex : topologic_core.Vertex
+        vertex : Vertex
             The input vertex.
-        topology : topologic_core.Topology
+        topology : Topology
             The input topology.
         includeCentroid : bool
             If set to True, the centroid of the input topology will be considered in finding the nearest subTopology to the input vertex. Default is True.
@@ -896,9 +896,9 @@ class Vertex():
 
         Parameters
         ----------
-        vertex : topologic_core.Vertex
+        vertex : Vertex
             The input vertex.
-        topology : topologic_core.Topology
+        topology : Topology
             The input topology.
         exclusive : bool , optional
             If set to True, return only the first found enclosing cell. Default is True.
@@ -950,9 +950,9 @@ class Vertex():
 
         Parameters
         ----------
-        vertex : topologic_core.Vertex
+        vertex : Vertex
             The input vertex.
-        topology : topologic_core.Topology
+        topology : Topology
             The input topology.
         exclusive : bool , optional
             If set to True, return only the first found enclosing face. Default is True.
@@ -1013,9 +1013,9 @@ class Vertex():
 
         Parameters
         ----------
-        vertex : topologic_core.Vertex
+        vertex : Vertex
             The input vertex.
-        topology : topologic_core.Topology
+        topology : Topology
             The input topology.
         exclusive : bool , optional
             If set to True, return only the first found enclosing face. Default is True.
@@ -1071,7 +1071,7 @@ class Vertex():
 
         Parameters
         ----------
-        vertex : topologic_core.Vertex
+        vertex : Vertex
             The input vertex.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
@@ -1080,7 +1080,7 @@ class Vertex():
 
         Returns
         -------
-        topologic_core.Vertex
+        Vertex
             The external boundary of the input vertex. This is the input vertex itself.
 
         """
@@ -1175,9 +1175,9 @@ class Vertex():
 
         Parameters
         ----------
-        vertex : topologic_core.Vertex
+        vertex : Vertex
             The input vertex.
-        hostTopology : topologic_core.Topology
+        hostTopology : Topology
             The input host topology to which the vertex belongs.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
@@ -1217,7 +1217,7 @@ class Vertex():
 
         Parameters
         ----------
-        vertex : topologic_core.Vertex
+        vertex : Vertex
             The input vertex.
         vertices : list
             The input list of vertices.
@@ -1300,13 +1300,13 @@ class Vertex():
         Interpolates the value of the input vertex based on the values of the n nearest vertices.
 
         The input vertex and the vertices in the input list can be either:
-        - topologic_core.Vertex objects, or
+        - Vertex objects, or
         - TGraph vertex records of the form:
         {"index": ..., "dictionary": {"x": ..., "y": ..., "z": ..., key: ...}, ...}
 
         Parameters
         ----------
-        vertex : topologic_core.Vertex or dict
+        vertex : Vertex or dict
             The input vertex. This can be a Topologic vertex or a TGraph vertex record.
         vertices : list
             The input list of vertices. The list can contain Topologic vertices, TGraph
@@ -1324,7 +1324,7 @@ class Vertex():
 
         Returns
         -------
-        topologic_core.Vertex or dict or None
+        Vertex or dict or None
             The input vertex with the interpolated value stored in its dictionary at
             the specified key. Other keys and values are preserved. If the input vertex
             is a TGraph vertex record, the record is updated in place and returned.
@@ -1540,9 +1540,9 @@ class Vertex():
 
         Parameters
         ----------
-        vertexA : topologic_core.Vertex
+        vertexA : Vertex
             The first input vertex.
-        vertexB : topologic_core.Vertex
+        vertexB : Vertex
             The second input vertex.
         tolerance : float , optional
             The tolerance for computing if the input vertexA is coincident with the input vertexB. Default is 0.0001.
@@ -1572,9 +1572,9 @@ class Vertex():
 
         Parameters
         ----------
-        vertex : topologic_core.Vertex
+        vertex : Vertex
             The input vertex.
-        topology : topologic_core.Topology
+        topology : Topology
             The input topology.
         tolerance : float , optional
             The tolerance for computing if the input vertex is external to the input topology. Default is 0.0001.
@@ -1613,9 +1613,9 @@ class Vertex():
 
     #     Parameters
     #     ----------
-    #     vertex : topologic_core.Vertex
+    #     vertex : Vertex
     #         The input vertex.
-    #     topology : topologic_core.Topology
+    #     topology : Topology
     #         The input topology.
     #     maxLeafSize: int , optional
     #         Retained for backward compatibility. This implementation avoids building
@@ -2114,9 +2114,9 @@ class Vertex():
 
         Parameters
         ----------
-        vertex : topologic_core.Vertex
+        vertex : Vertex
             The input vertex.
-        topology : topologic_core.Topology
+        topology : Topology
             The input topology.
         maxLeafSize: int , optional
             Retained for backward compatibility. This implementation avoids building
@@ -2513,21 +2513,20 @@ class Vertex():
             # PythonOCC FaceUtility.IsInside classifies the point in the
             # Face's actual trimmed UV domain, so use it first when available.
             # --------------------------------------------------------------
-            if not Topology._IsTopologicCoreBackend():
-                try:
-                    status = bool(
-                        Core.FaceUtility.IsInside(
-                            topology,
-                            vertex,
-                            tolerance
-                        )
+            try:
+                status = bool(
+                    Core.FaceUtility.IsInside(
+                        topology,
+                        vertex,
+                        tolerance
                     )
-                    return _return(
-                        status,
-                        topology if status else None
-                    )
-                except Exception:
-                    pass
+                )
+                return _return(
+                    status,
+                    topology if status else None
+                )
+            except Exception:
+                pass
 
             status = _point_in_face_fast(vertex, topology)
             return _return(status, topology if status else None)
@@ -2641,9 +2640,9 @@ class Vertex():
 
         Parameters
         ----------
-        vertex : topologic_core.Vertex
+        vertex : Vertex
             The input vertex.
-        topology : topologic_core.Topology
+        topology : Topology
             The input topology.
         maxLeafSize: int , optional
             The maximum number of primitives (topologies) that can be stored in a single leaf node of the BVH.
@@ -2943,9 +2942,9 @@ class Vertex():
 
         Parameters
         ----------
-        face : topologic_core.Face
+        face : Face
             Input face (may have holes). Assumes planar and evaluated in XY.
-        vertices : topologic_core.Vertex or list[topologic_core.Vertex]
+        vertices : Vertex or list[Vertex]
             Query vertex/vertices.
         includeBoundary : bool, optional
             If True, points on the *outer* boundary are counted as inside.
@@ -3158,9 +3157,9 @@ class Vertex():
 
         Parameters
         ----------
-        vertex : topologic_core.Vertex
+        vertex : Vertex
             The input vertex.
-        topology : topologic_core.Topology
+        topology : Topology
             The input topology.
         tolerance : float , optional
             The tolerance for computing if the input vertex is peripheral to the input topology. Default is 0.0001.
@@ -3259,9 +3258,9 @@ class Vertex():
 
         Parameters
         ----------
-        vertex : topologic_core.Vertex
+        vertex : Vertex
             The input vertex.
-        topology : topologic_core.Topology
+        topology : Topology
             The input topology to be searched for the nearest vertex.
         useKDTree : bool , optional
             if set to True, the algorithm will use a KDTree method to search for the nearest vertex. Default is True.
@@ -3270,7 +3269,7 @@ class Vertex():
         
         Returns
         -------
-        topologic_core.Vertex
+        Vertex
             The nearest vertex.
 
         """
@@ -3458,7 +3457,7 @@ class Vertex():
 
         Returns
         -------
-        topologic_core.Vertex
+        Vertex
         """
         return Vertex.ByCoordinates(0, 0, 0)
     
@@ -3470,9 +3469,9 @@ class Vertex():
 
         Parameters
         ----------
-        vertex : topologic_core.Vertex
+        vertex : Vertex
             The input vertex.
-        hostTopology : topologic_core.Topology
+        hostTopology : Topology
             The input host topology to which the vertex belongs.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
@@ -3508,9 +3507,9 @@ class Vertex():
 
         Parameters
         ----------
-        vertex : topologic_core.Vertex
+        vertex : Vertex
             The input vertex.
-        face : topologic_core.Face
+        face : Face
             The input face.
         mantissa: int , optional
             The number of decimal places to round the result to. Default is 6.
@@ -3647,7 +3646,7 @@ class Vertex():
 
         Returns
         -------
-        topologic_core.Vertex
+        Vertex
         """
         
         return Vertex.ByCoordinates(x, y, z)
@@ -3659,9 +3658,9 @@ class Vertex():
 
     #     Parameters
     #     ----------
-    #     vertex : topologic_core.Vertex
+    #     vertex : Vertex
     #         The input vertex to project unto the input face.
-    #     face : topologic_core.Face
+    #     face : Face
     #         The input face that receives the projection of the input vertex.
     #     direction : vector, optional
     #         The direction in which to project the input vertex unto the input face. If not specified, the direction of the projection is the normal of the input face. Default is None.
@@ -3670,7 +3669,7 @@ class Vertex():
 
     #     Returns
     #     -------
-    #     topologic_core.Vertex
+    #     Vertex
     #         The projected vertex.
 
     #     """
@@ -3728,9 +3727,9 @@ class Vertex():
 
         Parameters
         ----------
-        vertex : topologic_core.Vertex
+        vertex : Vertex
             The input vertex to project.
-        face : topologic_core.Face
+        face : Face
             The input face receiving the projection.
         direction : list , optional
             The projection direction. If None, normal/nearest-surface projection is
@@ -3745,7 +3744,7 @@ class Vertex():
 
         Returns
         -------
-        topologic_core.Vertex
+        Vertex
             The projected vertex, or None if the projection cannot be computed.
         """
         from topologicpy.Face import Face
@@ -3860,9 +3859,9 @@ class Vertex():
 
         Parameters
         ----------
-        vertex : topologic_core.Vertex
+        vertex : Vertex
             The input vertex.
-        topology : topologic_core.Topology
+        topology : Topology
             The input topology.
         includeCentroid : bool
             If set to True, the centroid of the input topology will be considered in finding
@@ -4019,7 +4018,7 @@ class Vertex():
         
         Returns
         -------
-        topologic_core.Vertex or None
+        Vertex or None
             A random vertex within the bounding box of the input vertices that is not
             coincident with any of them. Returns None on failure.
 
@@ -4201,7 +4200,7 @@ class Vertex():
 
         Parameters
         ----------
-        vertex : topologic_core.Vertex
+        vertex : Vertex
             The input vertex
         matrix : list
             The 4x4 transformation matrix.
@@ -4212,7 +4211,7 @@ class Vertex():
 
         Returns
         -------
-        topologic_core.Vertex
+        Vertex
             The transformed vertex.
         """
         from topologicpy.Topology import Topology
@@ -4281,7 +4280,7 @@ class Vertex():
 
         Parameters
         ----------
-        vertex : topologic_core.Vertex
+        vertex : Vertex
             The input vertex
         mantissa : int , optional
             The desired length of the mantissa for retrieving vertex coordinates. None means no rounding. Default is None.
@@ -4326,7 +4325,7 @@ class Vertex():
 
         Parameters
         ----------
-        vertex : topologic_core.Vertex
+        vertex : Vertex
             The input vertex
         mantissa : int , optional
             The desired length of the mantissa for retrieving vertex coordinates. None means no rounding. Default is None.
@@ -4371,7 +4370,7 @@ class Vertex():
 
         Parameters
         ----------
-        vertex : topologic_core.Vertex
+        vertex : Vertex
             The input vertex
         mantissa : int , optional
             The desired length of the mantissa for retrieving vertex coordinates. None means no rounding. Default is None.

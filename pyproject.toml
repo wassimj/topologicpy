@@ -16,6 +16,8 @@ classifiers = [
     "License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)",
     "Operating System :: OS Independent",
 ]
+# PythonOCC (pythonocc-core) is a native prerequisite installed separately
+# from conda-forge or built from source; it is not a PyPI dependency.
 dependencies = [
     "numpy>=1.18.0",
     "scipy>=1.4.1",

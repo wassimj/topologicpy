@@ -459,7 +459,7 @@ Allowed action values are only:
         ----------
         grag : _GraphRAGConfig
             The GraphRAG configuration object.
-        graph : topologic_core.Graph or topologicpy.TGraph
+        graph : Graph or topologicpy.TGraph
             The input graph to summarise.
         silent : bool , optional
             If True, suppress warnings. Default is False.

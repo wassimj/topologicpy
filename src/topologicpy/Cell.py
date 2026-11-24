@@ -21,14 +21,6 @@ from topologicpy.Core import Core
 class Cell():
     def _NativeCell(methodName: str, *args, silent: bool = False, **kwargs):
         """Call a PythonOCC-only native Cell constructor without silent approximation."""
-        from topologicpy.Topology import Topology
-        try:
-            if Topology._IsTopologicCoreBackend():
-                if not silent:
-                    print(f"Cell.{methodName[2:] if methodName.startswith('By') else methodName} - Error: polyhedron=False requires the PythonOCC backend. Returning None.")
-                return None
-        except Exception:
-            return None
         method = getattr(Core.Cell, methodName, None)
         if not callable(method):
             if not silent:
@@ -63,7 +55,7 @@ class Cell():
 
         Parameters
         ----------
-        cell : topologic_core.Cell
+        cell : Cell
             The cell.
         mantissa : int , optional
             The number of decimal places to round the result to. Default is 6.
@@ -100,7 +92,7 @@ class Cell():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex , optional
+        origin : Vertex , optional
             The origin location of the box. Default is None which results in the box being placed at (0, 0, 0).
         width : float , optional
             The width of the box. Default is 1.
@@ -125,7 +117,7 @@ class Cell():
         
         Returns
         -------
-        topologic_core.Cell
+        Cell
             The created box.
 
         """
@@ -159,7 +151,7 @@ class Cell():
 
     #     Returns
     #     -------
-    #     topologic_core.Cell
+    #     Cell
     #         The created cell.
 
     #     """
@@ -391,7 +383,7 @@ class Cell():
 
         Returns
         -------
-        topologic_core.Cell
+        Cell
             The created Cell, or None if construction fails.
         """
         import math
@@ -584,7 +576,7 @@ class Cell():
 
         Parameters
         ----------
-        cluster : topologic_core.Cluster
+        cluster : Cluster
             The input cluster of faces.
         planarize : bool, optional
             If set to True, the input faces are planarized before building the cell. Otherwise, they are not.
@@ -599,7 +591,7 @@ class Cell():
 
         Returns
         -------
-        topologic_core.Cell
+        Cell
             The created cell.
 
         """
@@ -634,7 +626,7 @@ class Cell():
 
         Parameters
         ----------
-        cell : topologic_core.Cell
+        cell : Cell
             The input Cell.
         offset : float , optional
             The desired offset distance. Positive and negative values are accepted.
@@ -649,7 +641,7 @@ class Cell():
 
         Returns
         -------
-        topologic_core.Topology
+        Topology
             The created offset topology. The result may fail to be a Cell if the
             offset produces degenerate or self-intersecting Faces.
         """
@@ -1074,7 +1066,7 @@ class Cell():
 
         Parameters
         ----------
-        shell : topologic_core.Shell
+        shell : Shell
             The input shell. The shell must be closed for this method to succeed.
         planarize : bool, optional
             If set to True, the input faces of the input shell are planarized before building the cell. Otherwise, they are not. Default is False.
@@ -1085,7 +1077,7 @@ class Cell():
 
         Returns
         -------
-        topologic_core.Cell
+        Cell
             The created cell.
 
         """
@@ -1106,7 +1098,7 @@ class Cell():
 
         Parameters
         ----------
-        externalBoundary : topologic_core.Shell
+        externalBoundary : Shell
             The input external boundary.
         internalBoundaries : list , optional
             The input list of internal boundaries (closed shells). Default is an empty list.
@@ -1117,7 +1109,7 @@ class Cell():
 
         Returns
         -------
-        topologic_core.Cell
+        Cell
             The created cell.
 
         """
@@ -1599,7 +1591,7 @@ class Cell():
 
         Parameters
         ----------
-        shell : topologic_core.Shell
+        shell : Shell
             The input shell to be thickened.
         thickness : float , optional
             The desired thickness. Default is 1.0.
@@ -1616,7 +1608,7 @@ class Cell():
 
         Returns
         -------
-        topologic_core.Cell
+        Cell
             The created cell.
 
         """
@@ -1693,7 +1685,7 @@ class Cell():
 
         Returns
         -------
-        topologic_core.Cell
+        Cell
             The created cell.
         """
         from topologicpy.Vertex import Vertex
@@ -2113,7 +2105,7 @@ class Cell():
 
         Returns
         -------
-        topologic_core.Cell
+        Cell
             The created cell.
 
         """
@@ -2143,7 +2135,7 @@ class Cell():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex , optional
+        origin : Vertex , optional
             The location of the origin of the capsule. Default is None which results
             in the capsule being placed at (0, 0, 0).
         radius : float , optional
@@ -2169,7 +2161,7 @@ class Cell():
 
         Returns
         -------
-        topologic_core.Cell
+        Cell
             The created cell.
         """
         from topologicpy.Topology import Topology
@@ -2286,7 +2278,7 @@ class Cell():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex, optional
+        origin : Vertex, optional
             The location of the origin of the CHS. Default is None which results in the CHS being placed at (0, 0, 0).
         radius : float , optional
             The outer radius of the CHS. Default is 1.0.
@@ -2307,7 +2299,7 @@ class Cell():
 
         Returns
         -------
-        topologic_core.Cell
+        Cell
             The created cell.
 
         """
@@ -2372,7 +2364,7 @@ class Cell():
 
         Parameters
         ----------
-        cell : topologic_core.Cell
+        cell : Cell
             The input cell.
         reference : str , optional
             The desired reference to which to compare this compactness. The options are "sphere" and "cube". It is case insensitive. Default is "sphere".
@@ -2414,7 +2406,7 @@ class Cell():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex , optional
+        origin : Vertex , optional
             The location of the origin of the cone. Default is None which results in the cone being placed at (0, 0, 0).
         baseRadius : float , optional
             The radius of the base circle of the cone. Default is 0.5.
@@ -2437,7 +2429,7 @@ class Cell():
 
         Returns
         -------
-        topologic_core.Cell
+        Cell
             The created cone.
 
         """
@@ -2558,9 +2550,9 @@ class Cell():
 
         Parameters
         ----------
-        cell : topologic_core.Cell
+        cell : Cell
             The input cell.
-        vertex : topologic_core.Vertex
+        vertex : Vertex
             The input vertex.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
@@ -2626,7 +2618,7 @@ class Cell():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex , optional
+        origin : Vertex , optional
             The location of the origin of the T-shape. Default is None which results in the Cross-shape being placed at (0, 0, 0).
         width : float , optional
             The overall width of the Cross-shape. Default is 1.0.
@@ -2653,7 +2645,7 @@ class Cell():
 
         Returns
         -------
-        topologic_core.Cell
+        Cell
             The created Cross-shape cell.
 
         """
@@ -2819,7 +2811,7 @@ class Cell():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex , optional
+        origin : Vertex , optional
             The location of the origin of the C-shape. Default is None which results in the C-shape being placed at (0, 0, 0).
         width : float , optional
             The overall width of the C-shape. Default is 1.0.
@@ -2852,7 +2844,7 @@ class Cell():
 
         Returns
         -------
-        topologic_core.Cell
+        Cell
             The created C-shape cell.
 
         """
@@ -2994,7 +2986,7 @@ class Cell():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex , optional
+        origin : Vertex , optional
             The origin location of the cube. Default is None which results in the cube being placed at (0, 0, 0).
         size : float , optional
             The size of the cube. Default is 1.
@@ -3015,7 +3007,7 @@ class Cell():
         
         Returns
         -------
-        topologic_core.Cell
+        Cell
             The created cube.
 
         """
@@ -3050,7 +3042,7 @@ class Cell():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex , optional
+        origin : Vertex , optional
             The location of the origin of the cylinder.
         radius : float , optional
             The radius of the cylinder. Default is 0.5.
@@ -3076,7 +3068,7 @@ class Cell():
 
         Returns
         -------
-        topologic_core.Cell
+        Cell
             The created Cell.
         """
         from topologicpy.Vertex import Vertex
@@ -3184,26 +3176,13 @@ class Cell():
             return None
 
         # PythonOCC: direct exact extrusion of the polygonal Face.
-        if not Topology._IsTopologicCoreBackend():
-            cylinder = Cell._NativeCell(
-                "ByPrism",
-                base_face,
-                vector=[0.0, 0.0, height],
-                tolerance=tolerance,
-                silent=True,
-            )
-
-        # TopologicCore: retain historical polyhedral construction.
-        else:
-            cylinder = Cell.ByThickenedFace(
-                face=base_face,
-                thickness=height,
-                bothSides=False,
-                reverse=False,
-                tolerance=tolerance,
-                silent=silent,
-                polyhedron=True,
-            )
+        cylinder = Cell._NativeCell(
+            "ByPrism",
+            base_face,
+            vector=[0.0, 0.0, height],
+            tolerance=tolerance,
+            silent=True,
+        )
 
         if not Topology.IsInstance(cylinder, "Cell"):
             return None
@@ -3271,7 +3250,7 @@ class Cell():
 
         Parameters
         ----------
-        cell : topologic_core.Cell
+        cell : Cell
             the input cell.
         tiltAngle : float , optional
             The threshold tilt angle in degrees to determine if a face is vertical, horizontal, or tilted. The tilt angle is measured from the nearest cardinal direction. Default is 10.
@@ -3380,7 +3359,7 @@ class Cell():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex , optional
+        origin : Vertex , optional
             The origin location of the dodecahedron. Default is None which results in the dodecahedron being placed at (0, 0, 0).
         radius : float , optional
             The radius of the dodecahedron's circumscribed sphere. Default is 0.5.
@@ -3395,7 +3374,7 @@ class Cell():
         
         Returns
         -------
-        topologic_core.Cell
+        Cell
             The created dodecahedron.
 
         """
@@ -3485,7 +3464,7 @@ class Cell():
 
         Parameters
         ----------
-        cell : topologic_core.Cell
+        cell : Cell
             The input cell.
 
         Returns
@@ -3516,7 +3495,7 @@ class Cell():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex , optional
+        origin : Vertex , optional
             The origin location of the sphere. Default is None which results in the egg-shaped cell being placed at (0, 0, 0).
         height : float , optional
             The desired height of of the egg-shaped cell. Default is 1.0.
@@ -3535,7 +3514,7 @@ class Cell():
 
         Returns
         -------
-        topologic_core.Cell
+        Cell
             The created egg-shaped cell.
 
         """
@@ -3615,7 +3594,7 @@ class Cell():
 
         Parameters
         ----------
-        cell : topologic_core.Cell
+        cell : Cell
             The input cell.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
@@ -3624,7 +3603,7 @@ class Cell():
 
         Returns
         -------
-        topologic_core.Shell
+        Shell
             The external boundary of the input cell.
 
         """
@@ -3659,7 +3638,7 @@ class Cell():
 
         Parameters
         ----------
-        cell : topologic_core.Cell
+        cell : Cell
             The input cell.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
@@ -3696,7 +3675,7 @@ class Cell():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex , optional
+        origin : Vertex , optional
             The location of the origin of the hyperboloid. Default is None which results in the hyperboloid being placed at (0, 0, 0).
         baseRadius : float , optional
             The radius of the base circle of the hyperboloid. Default is 0.5.
@@ -3721,7 +3700,7 @@ class Cell():
 
         Returns
         -------
-        topologic_core.Cell
+        Cell
             The created hyperboloid.
 
         """
@@ -3815,7 +3794,7 @@ class Cell():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex , optional
+        origin : Vertex , optional
             The origin location of the icosahedron. Default is None which results in the icosahedron being placed at (0, 0, 0).
         radius : float , optional
             The radius of the icosahedron's circumscribed sphere. Default is 0.5.
@@ -3830,7 +3809,7 @@ class Cell():
         
         Returns
         -------
-        topologic_core.Cell
+        Cell
             The created icosahedron.
 
         """
@@ -3942,7 +3921,7 @@ class Cell():
 
         Parameters
         ----------
-        cell : topologic_core.Cell
+        cell : Cell
             The input cell.
         faces : list
             The list of limiting analytical faces.
@@ -3966,7 +3945,7 @@ class Cell():
 
         Returns
         -------
-        topologic_core.Topology
+        Topology
             The inflated topology. This is normally a Cell, but it may be a Cluster
             when the rebuilt faces cannot be self-merged into a Cell.
 
@@ -5238,13 +5217,13 @@ class Cell():
 
         Parameters
         ----------
-        cell : topologic_core.Cell
+        cell : Cell
             The input cell.
 
         Returns
         -------
         list
-            The list of internal boundaries ([topologic_core.Shell]).
+            The list of internal boundaries ([Shell]).
 
         """
         shells = []
@@ -5262,7 +5241,7 @@ class Cell():
 
         Parameters
         ----------
-        cell : topologic_core.Cell
+        cell : Cell
             The input cell.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
@@ -5271,7 +5250,7 @@ class Cell():
 
         Returns
         -------
-        topologic_core.Vertex
+        Vertex
             The internal vertex.
 
         """
@@ -5309,7 +5288,7 @@ class Cell():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex , optional
+        origin : Vertex , optional
             The location of the origin of the I-shape. Default is None which results in the I-shape being placed at (0, 0, 0).
         width : float , optional
             The overall width of the I-shape. Default is 1.0.
@@ -5342,7 +5321,7 @@ class Cell():
 
         Returns
         -------
-        topologic_core.Cell
+        Cell
             The created I-shape cell.
 
         """
@@ -5465,9 +5444,9 @@ class Cell():
 
         Parameters
         ----------
-        cell : topologic_core.Cell
+        cell : Cell
             The input cell.
-        vertex : topologic_core.Vertex
+        vertex : Vertex
             The input vertex.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
@@ -5512,7 +5491,7 @@ class Cell():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex , optional
+        origin : Vertex , optional
             The location of the origin of the L-shape. Default is None which results in the L-shape being placed at (0, 0, 0).
         width : float , optional
             The overall width of the L-shape. Default is 1.0.
@@ -5543,7 +5522,7 @@ class Cell():
 
         Returns
         -------
-        topologic_core.Cell
+        Cell
             The created L-shape cell.
 
         """
@@ -5673,7 +5652,7 @@ class Cell():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex , optional
+        origin : Vertex , optional
             The origin location of the sphere. Default is None which results in the sphere being placed at (0, 0, 0).
         radius : float , optional
             The radius of the sphere. Default is 0.5.
@@ -5693,7 +5672,7 @@ class Cell():
 
         Returns
         -------
-        topologic_core.Cell
+        Cell
             The created Noperthedron polyhedron.
 
         """
@@ -5824,7 +5803,7 @@ class Cell():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex , optional
+        origin : Vertex , optional
             The origin location of the octahedron. Default is None which results in the octahedron being placed at (0, 0, 0).
         radius : float , optional
             The radius of the octahedron's circumscribed sphere. Default is 0.5.
@@ -5839,7 +5818,7 @@ class Cell():
         
         Returns
         -------
-        topologic_core.Cell
+        Cell
             The created octahedron.
 
         """
@@ -5900,7 +5879,7 @@ class Cell():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex , optional
+        origin : Vertex , optional
             The origin location of the parabolic surface. Default is None which results in the parabolic surface being placed at (0, 0, 0).
         focalLength : float , optional
             The focal length of the parabola. Default is 0.125.
@@ -5927,7 +5906,7 @@ class Cell():
         
         Returns
         -------
-        topologic_core.Shell
+        Shell
             The created paraboloid.
 
         """
@@ -6032,9 +6011,9 @@ class Cell():
 
         Parameters
         ----------
-        edge : topologic_core.Edge
+        edge : Edge
             The centerline of the pipe.
-        profile : topologic_core.Wire , optional
+        profile : Wire , optional
             The profile of the pipe. It is assumed that the profile is in the XY plane. If set to None, a circle of radius 0.5 will be used. Default is None.
         radius : float , optional
             The radius of the pipe. Default is 0.5.
@@ -6174,7 +6153,7 @@ class Cell():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex , optional
+        origin : Vertex , optional
             The origin location of the prism. Default is None which results in the prism being placed at (0, 0, 0).
         width : float , optional
             The width of the prism. Default is 1.
@@ -6201,7 +6180,7 @@ class Cell():
         
         Returns
         -------
-        topologic_core.Cell
+        Cell
             The created prism.
 
         """
@@ -6278,7 +6257,7 @@ class Cell():
 
         Parameters
         ----------
-        cell : topologic_core.Cell
+        cell : Cell
             The input cell.
         angTolerance : float , optional
             The desired angular tolerance. Default is 0.1.
@@ -6289,7 +6268,7 @@ class Cell():
 
         Returns
         -------
-        topologic_core.Cell
+        Cell
             The created cell without any collinear edges.
 
         """
@@ -6323,7 +6302,7 @@ class Cell():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex, optional
+        origin : Vertex, optional
             The location of the origin of the RHS. Default is None which results in the RHS being placed at (0, 0, 0).
         width : float , optional
             The width of the RHS. Default is 1.0.
@@ -6350,7 +6329,7 @@ class Cell():
 
         Returns
         -------
-        topologic_core.Cell
+        Cell
             The created cell.
 
         """
@@ -6425,7 +6404,7 @@ class Cell():
 
         Parameters
         ----------
-        face : topologic_core.Face
+        face : Face
             The input face.
         angle : float , optional
             The desired angle in degrees of the roof. Default is 45.
@@ -6522,7 +6501,7 @@ class Cell():
 
         Parameters
         ----------
-        cell : topologic_core.Cell
+        cell : Cell
             The input cell.
 
         Returns
@@ -6551,7 +6530,7 @@ class Cell():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex, optional
+        origin : Vertex, optional
             The location of the origin of the SHS. Default is None which results in the SHS being placed at (0, 0, 0).
         size : float , optional
             The size of the SHS. Default is 1.0.
@@ -6578,7 +6557,7 @@ class Cell():
 
         Returns
         -------
-        topologic_core.Cell
+        Cell
             The created cell.
 
         """
@@ -6622,7 +6601,7 @@ class Cell():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex , optional
+        origin : Vertex , optional
             The origin location of the sphere. Default is None which results in the sphere being placed at (0, 0, 0).
         radius : float , optional
             The radius of the sphere. Default is 0.5.
@@ -6642,7 +6621,7 @@ class Cell():
 
         Returns
         -------
-        topologic_core.Cell
+        Cell
             The created sphere.
 
         """
@@ -6764,7 +6743,7 @@ class Cell():
 
         Parameters
         ----------
-        cell : topologic_core.Cell
+        cell : Cell
             The cell.
         mantissa : int , optional
             The number of decimal places to round the result to. Default is 6.
@@ -6791,7 +6770,7 @@ class Cell():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex , optional
+        origin : Vertex , optional
             The origin location of the tetrahedron. Default is None which results in the tetrahedron being placed at (0, 0, 0).
         length : float , optional
             The length of the edge of the tetrahedron. Default is 1.
@@ -6810,7 +6789,7 @@ class Cell():
         
         Returns
         -------
-        topologic_core.CellComplex
+        CellComplex
             The created tetrahedron.
 
         """
@@ -6967,7 +6946,7 @@ class Cell():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex , optional
+        origin : Vertex , optional
             The origin location of the torus. Default is None which results in the torus being placed at (0, 0, 0).
         majorRadius : float , optional
             The major radius of the torus. Default is 0.5.
@@ -6992,7 +6971,7 @@ class Cell():
 
         Returns
         -------
-        topologic_core.Cell
+        Cell
             The created torus.
         """
         # --- Imports kept inside to avoid cyclic dependencies in TopologicPy ---
@@ -7243,7 +7222,7 @@ class Cell():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex , optional
+        origin : Vertex , optional
             The location of the origin of the T-shape. Default is None which results in the T-shape being placed at (0, 0, 0).
         width : float , optional
             The overall width of the T-shape. Default is 1.0.
@@ -7274,7 +7253,7 @@ class Cell():
 
         Returns
         -------
-        topologic_core.Face
+        Face
             The created T-shape.
 
         """
@@ -7397,7 +7376,7 @@ class Cell():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex, optional
+        origin : Vertex, optional
             The location of the origin of the CHS. Default is None which results in the CHS being placed at (0, 0, 0).
         radius : float , optional
             The outer radius of the CHS. Default is 1.0.
@@ -7418,7 +7397,7 @@ class Cell():
 
         Returns
         -------
-        topologic_core.Cell
+        Cell
             The created cell.
 
         """
@@ -7449,7 +7428,7 @@ class Cell():
 
         Parameters
         ----------
-        cell : topologic_core.Cell
+        cell : Cell
             The input cell.
 
         Returns
@@ -7478,7 +7457,7 @@ class Cell():
 
         Parameters
         ----------
-        cell : topologic_core.Cell
+        cell : Cell
             The input cell.
         manitssa: int , optional
             The number of decimal places to round the result to. Default is 6.
@@ -7523,7 +7502,7 @@ class Cell():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex , optional
+        origin : Vertex , optional
             The location of the origin of the Wedge. Default is None which results in the Wedge being placed at (0, 0, 0).
         width : float , optional
             The overall width of the Wedge. Default is 1.0.
@@ -7542,7 +7521,7 @@ class Cell():
 
         Returns
         -------
-        topologic_core.Cell
+        Cell
             The created Wedge.
 
         """
@@ -7636,7 +7615,7 @@ class Cell():
 
         Parameters
         ----------
-        cell : topologic_core.Cell
+        cell : Cell
             The input cell.
 
         Returns

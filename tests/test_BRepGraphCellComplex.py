@@ -4,8 +4,6 @@ import pytest
 
 pytest.importorskip("OCC.Core.BRepGraph")
 
-if os.environ.get("TOPOLOGICPY_CORE_BACKEND", "").strip().lower() != "pythonocc":
-    pytest.skip("BRepGraph Tranche 2 tests require the pythonocc backend", allow_module_level=True)
 
 from OCC.Core.BRepPrimAPI import BRepPrimAPI_MakeCylinder
 from OCC.Core.TopAbs import TopAbs_FACE, TopAbs_SOLID, TopAbs_SHELL

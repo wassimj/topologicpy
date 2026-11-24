@@ -380,7 +380,7 @@ class Graph:
         
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
         pad : float , optional
             An additional padding to add to the bounding box. Default is 0.0.
@@ -547,7 +547,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
         step : int, optional
             The length of the random walk (number of steps). Default is 2.
@@ -637,9 +637,9 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
-        edge : topologic_core.Edge
+        edge : Edge
             The input edge.
         transferVertexDictionaries : bool, optional
             If set to True, the dictionaries of the vertices are transferred to the graph.
@@ -652,7 +652,7 @@ class Graph:
 
         Returns
         -------
-        topologic_core.Graph
+        Graph
             The input graph with the input edge added to it.
         """
 
@@ -822,18 +822,18 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
         index : list or tuple
             The input list of vertex indices (e.g. [4, 6]).
-        dictionary : topologic_core.Dictionary , optional
+        dictionary : Dictionary , optional
             The input edge dictionary.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
-        topologic_core.Graph
+        Graph
             The input graph with the input edge added to it.
 
         """
@@ -891,9 +891,9 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
-        vertex : topologic_core.Vertex
+        vertex : Vertex
             The input vertex.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
@@ -902,7 +902,7 @@ class Graph:
 
         Returns
         -------
-        topologic_core.Graph
+        Graph
             The input graph with the input vertex added to it.
         """
         from topologicpy.Topology import Topology
@@ -1028,9 +1028,9 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
-        dictionary : topologic_core.Dictionary , optional
+        dictionary : Dictionary , optional
             The dictionary to be associated with this vertex. Default is None.
         x : float , optional
             The x-coordinate of the vertex. If not set, it will be randomly set between 0 and 100. Default is None.
@@ -1043,7 +1043,7 @@ class Graph:
 
         Returns
         -------
-        topologic_core.Graph
+        Graph
             The input graph with the input vertex added to it.
 
         """
@@ -1076,7 +1076,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
         vertices : list
             The input list of vertices.
@@ -1087,7 +1087,7 @@ class Graph:
 
         Returns
         -------
-        topologic_core.Graph
+        Graph
             The input graph with the input vertex added to it.
 
         """
@@ -1125,7 +1125,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
         vertexLabelKey : str , optional
             The returned vertices are labelled according to the dictionary values stored under this key.
@@ -1220,7 +1220,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
         vertexKey : str , optional
             If set, the returned list of vertices is sorted according to the dictionary values stored under this key. Default is None.
@@ -1399,7 +1399,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
         vertexKey : str , optional
             If set, the returned list of vertices is sorted according to the dictionary values stored under this key. Default is None.
@@ -1659,7 +1659,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
         vertexKey : str , optional
             If set, the returned list of vertices is sorted according to the dictionary values stored under this key. Default is None.
@@ -1712,9 +1712,9 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
-        edge : topologic_core.Edge
+        edge : Edge
             the input edge.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
@@ -1766,9 +1766,9 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
-        vertex : topologic_core.Vertex
+        vertex : Vertex
             the input vertex.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
@@ -1801,9 +1801,9 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
-        vertex : topologic_core.Vertex
+        vertex : Vertex
             the input vertex.
         compassDirection : str , optional
             The compass direction. See Vector.CompassDirections(). Default is "Up".
@@ -1859,9 +1859,9 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
-        vertex : topologic_core.Vertex
+        vertex : Vertex
             the input vertex.
         vector : list , optional
             The vector direction. Default is [0,0,1].
@@ -1913,11 +1913,11 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
-        vertexA : topologic_core.Vertex
+        vertexA : Vertex
             The first input vertex.
-        vertexB : topologic_core.Vertex
+        vertexB : Vertex
             The second input vertex.
         timeLimit : int , optional
             The time limit in second. Default is 10 seconds.
@@ -1965,7 +1965,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
         normalize : bool , optional
             If set to True, the values are normalized between 0 and 1. Default is False.
@@ -2018,7 +2018,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
         normalize : bool , optional
             If set to True, the values are normalized between 0 and 1. Default is False.
@@ -2076,7 +2076,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
         key : str , optional
             The dictionary key under which to store the computed angular connectivity value. Default is "angular_connectivity".
@@ -2099,7 +2099,7 @@ class Graph:
 
         Returns
         -------
-        topologic_core.Graph
+        Graph
             The input graph with updated edge dictionaries.
         """
 
@@ -2321,7 +2321,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
         normalize : bool , optional
             If set to True, the values are normalized between 0 and 1. Default is False.
@@ -2370,7 +2370,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
         mantissa : int , optional
             The number of decimal places to round the result to. Default is 6.
@@ -2435,7 +2435,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
         bidirectional : bool , optional
             If set to True, reverse relationships are created wherever possible. Default is False.
@@ -2789,7 +2789,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
         format : str , optional
             The desired output format, the options are listed below. Thde default is "turtle".
@@ -2922,7 +2922,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
         weightKey : str , optional
             If set to None, each edge is assumed to have a weight of 1. If set to "length" or "distance", the geometric length of each edge is used as its weight.
@@ -3431,7 +3431,7 @@ class Graph:
 
     #     Parameters
     #     ----------
-    #     graph : topologic_core.Graph
+    #     graph : Graph
     #         The input graph.
     #     weightKey : str, optional
     #         If set to None, each edge is assumed to have a weight of 1. If set to "length" or "distance", the geometric length of each edge
@@ -3818,7 +3818,7 @@ class Graph:
     #     - Optional NetworkX-compatible normalization or 0..1 rescale
     #     Parameters
     #     ----------
-    #     graph : topologic_core.Graph
+    #     graph : Graph
     #         The input graph.
     #     useEdges : bool , optional
     #         If set to True, the calculation uses the edges rather than the vertices. Default is False.
@@ -4094,7 +4094,7 @@ class Graph:
 
     #     Parameters
     #     ----------
-    #     graph : topologic_core.Graph
+    #     graph : Graph
     #         The input graph.
     #     method : str , optional
     #         The method of computing the betweenness centrality. The options are "vertex" or "edge". Default is "vertex".
@@ -4251,7 +4251,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
         key : str , optional
             The edge dictionary key under which to store the bridge status. 0 means the edge is NOT a bridge. 1 means that the edge IS a bridge. Default is "bridge".
@@ -4367,7 +4367,7 @@ class Graph:
         
         Returns
         -------
-        topologic_core.Graph
+        Graph
             The created graph.
         
         """
@@ -4415,7 +4415,7 @@ class Graph:
         
         Returns
         -------
-        topologic_core.Graph
+        Graph
             The created graph.
         
         """
@@ -4510,7 +4510,7 @@ class Graph:
 
         Returns
         -------
-        topologic_core.Graph
+        Graph
             The created TopologicPy graph.
 
         """
@@ -4833,7 +4833,7 @@ class Graph:
 
         Returns
         -------
-        topologic_core.Graph
+        Graph
             The created TopologicPy graph.
 
         """
@@ -5700,7 +5700,7 @@ class Graph:
 
         Returns
         -------
-        topologic_core.Graph
+        Graph
             The resulting graph
 
         """
@@ -5917,7 +5917,7 @@ class Graph:
 
     #     Returns
     #     -------
-    #     topologic_core.Graph
+    #     Graph
     #         The created graph.
     #     """
 
@@ -6988,7 +6988,7 @@ class Graph:
 
         Returns
         -------
-        topologic_core.Graph
+        Graph
             The created graph.
 
         Notes
@@ -8207,7 +8207,7 @@ class Graph:
         
         Returns
         -------
-        topologic_core.Graph
+        Graph
             The created graph.
         
         """
@@ -8315,7 +8315,7 @@ class Graph:
 
         Returns
         -------
-        topologic_core.Graph
+        Graph
         """
         # --- Imports kept local by request ---
         import json
@@ -8672,7 +8672,7 @@ class Graph:
 
         Returns
         -------
-        topologic_core.Graph
+        Graph
             The created graph
 
         """
@@ -9051,7 +9051,7 @@ class Graph:
         
         Returns
         -------
-        topologic_core.graph
+        graph
             The created graph.
 
         """
@@ -9147,7 +9147,7 @@ class Graph:
 
             Parameters
             ----------
-            topologies : list of topologic_core.Topology
+            topologies : list of Topology
                 The input topologies to be represented as vertices.
             ranges : list of float
                 A list of positive numeric thresholds (e.g. [1.0, 3.0, 5.0]).
@@ -9173,7 +9173,7 @@ class Graph:
 
             Returns
             -------
-            graph : topologic_core.Graph
+            graph : Graph
                 A graph whose vertices correspond to the input topologies
                 and whose edges connect topologies that fall within the
                 supplied distance ranges. Each edge dictionary contains:
@@ -9541,7 +9541,7 @@ class Graph:
 
     #     Parameters
     #     ----------
-    #     topology : topologic_core.Topology
+    #     topology : Topology
     #         The input topology.
     #     direct : bool , optional
     #         If set to True, connect the subtopologies directly with a single edge. Default is True.
@@ -9583,7 +9583,7 @@ class Graph:
 
     #     Returns
     #     -------
-    #     topologic_core.Graph
+    #     Graph
     #         The created graph.
     #     """
 
@@ -10488,7 +10488,7 @@ class Graph:
 
         Parameters
         ----------
-        topology : topologic_core.Topology
+        topology : Topology
             The input topology.
         direct : bool , optional
             If set to True, connect the subtopologies directly with a single edge. Default is True.
@@ -10530,7 +10530,7 @@ class Graph:
 
         Returns
         -------
-        topologic_core.Graph
+        Graph
             The created graph.
         """
 
@@ -11460,7 +11460,7 @@ class Graph:
 
         Returns
         -------
-        topologic_core.Graph
+        Graph
             A graph whose vertices represent unique subjects/objects and whose
             edges represent triples.
         """
@@ -11735,7 +11735,7 @@ class Graph:
 
         Returns
         -------
-        topologic_core.Graph
+        Graph
             The created graph.
 
         """
@@ -11800,7 +11800,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
         vertexKey : str , optional
             Vertex dictionary key used to identify each vertex. Default is "id".
@@ -12017,7 +12017,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
         method : str , optional
             The method of computing the betweenness centrality. The options are "vertex" or "edge". Default is "vertex".
@@ -12067,7 +12067,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
         maxColors : int , optional
             The desired maximum number of colors to test against. Default is 3.
@@ -12133,7 +12133,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
         oldKey : str , optional
             The existing dictionary key to use to read any pre-existing color information. Default is "color".
@@ -12146,7 +12146,7 @@ class Graph:
 
         Returns
         -------
-        topologic_core.Graph
+        Graph
             The input graph, but with its vertices colored.
 
         """
@@ -12769,7 +12769,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
         ontology : bool , optional
             If set to True, ontology metadata and semantic class annotations are added
@@ -12828,7 +12828,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
         key : str , optional
             The vertex and edge dictionary key under which to store the component number. Default is "component".
@@ -12917,9 +12917,9 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
-        edge : topologic_core.Edge
+        edge : Edge
             The input graph edge that needs to be contracted.
         vertex : topollogic.Vertex , optional
             The vertex to replace the contracted edge. If set to None, the centroid of the edge is chosen. Default is None.
@@ -12930,7 +12930,7 @@ class Graph:
 
         Returns
         -------
-        topologic_core.Graph
+        Graph
             The input graph, but with input edge contracted into a single vertex.
 
         """
@@ -13046,7 +13046,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
         weightKey : str, optional
             If set to None, each edge is assumed to have a weight of 1. If set to "length" or "distance", the geometric length of each edge
@@ -13466,7 +13466,7 @@ class Graph:
 
     #     Parameters
     #     ----------
-    #     graph : topologic_core.Graph
+    #     graph : Graph
     #         The input graph.
     #     weightKey : str, optional
     #         If set to None, each edge is assumed to have a weight of 1. If set to "length" or "distance", the geometric length of each edge
@@ -13795,7 +13795,7 @@ class Graph:
 
     #     Parameters
     #     ----------
-    #     graph : topologic_core.Graph
+    #     graph : Graph
     #         The input graph.
     #     weightKey : str , optional
     #         If specified, this edge attribute will be used as the distance weight when
@@ -13978,7 +13978,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
         key : str , optional
             The dictionary key under which to store the community partition number. Default is "community".
@@ -14175,18 +14175,18 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
         verticesA : list
             The first list of input vertices.
-        verticesB : topologic_core.Vertex
+        verticesB : Vertex
             The second list of input vertices.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
 
         Returns
         -------
-        topologic_core.Graph
+        Graph
             The input graph with the connected input vertices.
 
         """
@@ -14232,7 +14232,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
         vertices : list , optional
             The input list of vertices. Default is None which means all graph vertices are computed.
@@ -14280,9 +14280,9 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
-        edge : topologic_core.Edge
+        edge : Edge
             The input edge.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
@@ -14311,9 +14311,9 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
-        vertex : topologic_core.Vertex
+        vertex : Vertex
             The input Vertex.
         tolerance : float , optional
             Ther desired tolerance. Default is 0.0001.
@@ -14342,7 +14342,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
         key : str , optional
             The vertex dictionary key under which to store the cut status. 0 means the vertex is NOT a cut vertex. 1 means that the vertex IS a cut vertex. Default is "cut".
@@ -14406,7 +14406,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
         weightKey : str, optional
             If set to None, each edge is assumed to have a weight of 1. If set to "length" or "distance", the geometric length of each edge
@@ -14542,7 +14542,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
         weightKey : str, optional
             If set to None, each edge is assumed to have a weight of 1. If set to "length" or "distance", the geometric length of each edge
@@ -14872,7 +14872,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
 
         Returns
@@ -14894,7 +14894,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
 
         Returns
@@ -14920,7 +14920,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
 
         Returns
@@ -14944,9 +14944,9 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
-        vertex : topologic_core.Vertex , optional
+        vertex : Vertex , optional
             The input root vertex. If not set, the first vertex in the graph is set as the root vertex. Default is None.
         tolerance : float , optional
                 The desired tolerance. Default is 0.0001.
@@ -14998,7 +14998,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
         vertices : list , optional
             The input list of vertices. Default is None.
@@ -15054,16 +15054,16 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
-        vertices : *topologic_core.Vertex
+        vertices : *Vertex
             The input vertex or list of vertices.
         silent : bool, optional
             If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
-        topologic_core.Graph
+        Graph
             The input graph with the input vertex removed.
 
         """
@@ -15108,7 +15108,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
@@ -15178,12 +15178,12 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
 
         Returns
         -------
-        topologic_core.Dictionary
+        Dictionary
             The dictionary of the input graph.
 
         """
@@ -15201,11 +15201,11 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
-        vertexA : topologic_core.Vertex
+        vertexA : Vertex
             The first input vertex.
-        vertexB : topologic_core.Vertex
+        vertexB : Vertex
             The second input vertex.
         type : str , optional
             The type of depth distance to calculate. The options are "topological" or "metric". Default is "topological". See https://www.spacesyntax.online/overview-2/analysis-of-spatial-relations/.
@@ -15245,11 +15245,11 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
-        vertexA : topologic_core.Vertex
+        vertexA : Vertex
             The first input vertex.
-        vertexB : topologic_core.Vertex
+        vertexB : Vertex
             The second input Vertex.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
@@ -15258,7 +15258,7 @@ class Graph:
 
         Returns
         -------
-        topologic_core.Edge
+        Edge
             The edge in the input graph that connects the input vertices.
 
         """
@@ -15285,7 +15285,7 @@ class Graph:
         reverse: bool = False,
         tolerance: float = 0.0001,
         silent: bool = False
-    ) -> list:  # list[topologic_core.Edge]
+    ) -> list:  # list[Edge]
         """
         Returns the list of edges from `graph` whose endpoints match the given `vertices`
         according to the `strict` rule.
@@ -15313,7 +15313,7 @@ class Graph:
 
         Returns
         -------
-        list[topologic_core.Edge]
+        list[Edge]
             The list of matching edges from the original graph (not recreated).
 
         """
@@ -15385,7 +15385,7 @@ class Graph:
 
     #     Parameters
     #     ----------
-    #     graph : topologic_core.Graph
+    #     graph : Graph
     #         The input graph.
     #     vertices : list , optional
     #         An optional list of vertices to restrict the returned list of edges only to those connected to this list.
@@ -15425,7 +15425,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
         weightKey : str, optional
             Ignored in this implementation. Reserved for future use if weighted adjacency matrix is desired.
@@ -15569,7 +15569,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
         path : str
             The desired path to where the RDF/BOT file will be saved.
@@ -15771,7 +15771,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph or list of graphs.
+        graph : Graph or list of graphs.
             The input graph or graphs
         path : str
             The desired path to the output folder where the graphs, edges, and nodes CSV files will be saved.
@@ -15944,7 +15944,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph
         path : str
             The desired path to the output folder where the graphs, edges, and nodes CSV files will be saved.
@@ -16333,7 +16333,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph
         path : str
             The desired path to the output folder where the graphs, edges, and nodes CSV files will be saved.
@@ -16741,7 +16741,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph
         path : str
             The desired path to the output folder where the graphs, edges, and nodes CSV files will be saved.
@@ -17127,7 +17127,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
         path : str
             The path to the output file (e.g., "output.gv").
@@ -17329,7 +17329,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
         path : str
             The path to the JSON file.
@@ -17401,7 +17401,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph
         mantissa : int , optional
                 The number of decimal places to round the result to. Default is 6.
@@ -17526,7 +17526,7 @@ class Graph:
 
         Returns
         -------
-        list[topologic_core.Edge]
+        list[Edge]
             The list of matching edges from the original graph (not recreated).
 
         """
@@ -17557,7 +17557,7 @@ class Graph:
         
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
@@ -17585,9 +17585,9 @@ class Graph:
         
         Parameters
         ----------
-        graphA : topologic_core.Graph
+        graphA : Graph
             The first input graph.
-        graphB : topologic_core.Graph
+        graphB : Graph
             The second input graph.
         maxIterations : int , optional
             This number limits the number of iterations to prevent the function from running indefinitely, particularly for very large or complex graphs.
@@ -17691,7 +17691,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
         shape : str , optional
             The desired shape of the graph.
@@ -17712,7 +17712,7 @@ class Graph:
             The desired random seed to use. Default is None.
         iterations : int , optional
             The desired maximum number of iterations to solve the forces in the 'spring' mode. Default is 50.
-        rootVertex : topologic_core.Vertex , optional
+        rootVertex : Vertex , optional
             The desired vertex to use as the root of the tree and radial layouts.
         size : float , optional
             The desired overall size of the graph.
@@ -17729,7 +17729,7 @@ class Graph:
 
         Returns
         -------
-        topologic_core.Graph
+        Graph
             The reshaped graph.
 
         """
@@ -18687,7 +18687,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
         
         Returns
@@ -18775,7 +18775,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
         device : str, optional
             The output format device, such as 'svg_inline', 'pdf', or 'png'. Default is 'svg_inline'.
@@ -19027,7 +19027,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
         """
         from topologicpy.Topology import Topology
@@ -19046,7 +19046,7 @@ class Graph:
 
             Parameters
             ----------
-            topology : topologic_core.Topology
+            topology : Topology
                 The input topology
             types : optional, list
                 The list of topology types that you wish to encode in the Hasse diagram.
@@ -19077,7 +19077,7 @@ class Graph:
 
             Returns
             -------
-            topologic_core.Graph
+            Graph
                 The created Hesse diagram graph.
 
             """
@@ -19200,9 +19200,9 @@ class Graph:
 
         Parameters
         ----------
-        graphA : topologic_core.Graph
+        graphA : Graph
             The first input graph.
-        graphB : topologic_core.Graph
+        graphB : Graph
             The second input graph.
         key : str , optional
             The vertex dictionary key used to derive node features. If numeric for most vertices, a numeric
@@ -19462,9 +19462,9 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
-        vertex : topologic_core.Vertex
+        vertex : Vertex
             The input vertex.
         directed : bool , optional
             If set to True, the graph is considered to be directed. Otherwise, it will be considered as an unidrected graph. Default is False.
@@ -19506,9 +19506,9 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
-        vertex : topologic_core.Vertex
+        vertex : Vertex
             The input vertex.
         directed : bool , optional
             If set to True, the graph is considered to be directed. Otherwise, it will be considered as an unidrected graph. Default is False.
@@ -19560,7 +19560,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
         weightKey : str , optional
             If specified, this edge attribute will be used as the distance weight when
@@ -19611,7 +19611,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
@@ -19692,7 +19692,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
 
         Returns
@@ -19715,11 +19715,11 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
-        vertexA : topologic_core.Vertex
+        vertexA : Vertex
             The first input vertex.
-        vertexB : topologic_core.Vertex
+        vertexB : Vertex
             The second input vertex
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
@@ -19768,7 +19768,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
         sequence : list
             The input sequence.
@@ -19793,7 +19793,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
 
         Returns
@@ -19819,7 +19819,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
 
         Returns
@@ -19875,7 +19875,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The TopologicPy Graph object to export.
         context : dict, optional
             A JSON-LD context mapping TopologicPy keys to IRIs (e.g., schema.org, geo, etc.).
@@ -19985,7 +19985,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The TopologicPy Graph object to export.
         context : dict, optional
             A JSON-LD context mapping TopologicPy keys to IRIs (e.g., schema.org, geo, etc.)
@@ -20057,7 +20057,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
         path : str
             The path to the JSON file.
@@ -20149,7 +20149,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
         path : str
             The output file path. A .ttl extension is recommended.
@@ -20269,7 +20269,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
         path : str
             The folder path where markdown files will be written.
@@ -20569,7 +20569,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
         propertiesKey : str , optional
             The desired key name to call the graph properties. Default is "properties".
@@ -20690,7 +20690,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
         verticesKey : str , optional
             The desired key name to call vertices. Default is "vertices".
@@ -20744,9 +20744,9 @@ class Graph:
 
         Parameters
         ----------
-        graphA : topologic_core.Graph
+        graphA : Graph
             The first input graph.
-        graphB : topologic_core.Graph
+        graphB : Graph
             The second input graph.
         method : str , optional
             The kernel method to use. Supported values: "WL" (Weisfeiler–Lehman),
@@ -21066,7 +21066,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
@@ -21122,7 +21122,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
         weightKey : str , optional
             If specified, the value in the connected edges' dictionary specified by the weightKey string will be aggregated to calculate
@@ -21163,7 +21163,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
         transferVertexDictionaries : bool , optional
             If set to True, vertex dictionaries from the input graph are transferred
@@ -21181,7 +21181,7 @@ class Graph:
 
         Returns
         -------
-        topologic_core.Graph
+        Graph
             The resulting line graph.
 
         """
@@ -21350,7 +21350,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
         vertices : list , optional
             The input list of vertices. If set to None, the local clustering coefficient of all vertices will be computed. Default is None.
@@ -21432,11 +21432,11 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
-        vertexA : topologic_core.Vertex
+        vertexA : Vertex
             The first input vertex.
-        vertexB : topologic_core.Vertex
+        vertexB : Vertex
             The second input vertex.
         vertexKey : str , optional
             The vertex key to maximize. If set the vertices dictionaries will be searched for this key and the associated value will be used to compute the longest path that maximizes the total value. The value must be numeric. Default is None.
@@ -21451,7 +21451,7 @@ class Graph:
 
         Returns
         -------
-        topologic_core.Wire
+        Wire
             The longest path between the input vertices.
 
         """
@@ -21538,9 +21538,9 @@ class Graph:
 
         Parameters
         ----------
-        graphA : topologic_core.Graph
+        graphA : Graph
             The smaller graph (subgraph).
-        graphB : topologic_core.Graph
+        graphB : Graph
             The larger graph (supergraph).
         vertexKeys : str or list of str, optional
             Keys used to semantically compare vertices.
@@ -21676,9 +21676,9 @@ class Graph:
 
     #     Parameters
     #     ----------
-    #     graphA : topologic_core.Graph
+    #     graphA : Graph
     #         The smaller graph (subgraph).
-    #     graphB : topologic_core.Graph
+    #     graphB : Graph
     #         The larger graph (supergraph).
     #     vertexKeys : str or list of str, optional
     #         Keys used to semantically compare vertices.
@@ -21803,7 +21803,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             the input graph.
 
         Returns
@@ -21826,11 +21826,11 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph. This is assumed to be a directed graph
-        source : topologic_core.Vertex
+        source : Vertex
             The input source vertex.
-        sink : topologic_core.Vertex
+        sink : Vertex
             The input sink/target vertex.
         edgeKeyFwd : str , optional
             The edge dictionary key to use to find the value of the forward capacity of the edge. If not set, the length of the edge is used as its capacity. Default is None.
@@ -21941,11 +21941,11 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
-        *vertices : topologic_core.Vertex
-            Two or more instances of `topologic_core.Topology` to be processed.
-        targetVertex : topologic_core.Vertex, optional
+        *vertices : Vertex
+            Two or more instances of `Topology` to be processed.
+        targetVertex : Vertex, optional
             The target vertex to merge into. If None, a centroid is computed. Default is None.
         transferDictionaries : bool, optional
             If True, the dictionaries of all input vertices (including the target vertex if given) are merged. Default is True.
@@ -21956,7 +21956,7 @@ class Graph:
 
         Returns
         -------
-        topologic_core.Graph
+        Graph
             A new graph with the vertices merged and edges updated.
         """
         from topologicpy.Cluster import Cluster
@@ -22087,7 +22087,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
         mantissa : int , optional
             The number of decimal places to round the result to. Default is 6.
@@ -22141,11 +22141,11 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
-        vertexA : topologic_core.Vertex
+        vertexA : Vertex
             The first input vertex.
-        vertexB : topologic_core.Vertex
+        vertexB : Vertex
             The second input vertex.
         mantissa : int , optional
             The number of decimal places to round the result to. Default is 6.
@@ -22187,7 +22187,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
 
         Returns
@@ -22217,7 +22217,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
         edgeKey : str , optional
             If set, the value of the edgeKey will be used as the edge weight.
@@ -22231,7 +22231,7 @@ class Graph:
 
         Returns
         -------
-        topologic_core.Graph
+        Graph
             The minimum spanning tree.
         """
 
@@ -22458,7 +22458,7 @@ class Graph:
 
         Parameters
         ----------
-        face : topologic_core.Face
+        face : Face
             The input boundary. View edges will be clipped to this face. The holes in the face are used as the obstacles
         sources : list
             The first input list of sources (vertices). Navigation edges will connect these veritces to destinations.
@@ -22474,7 +22474,7 @@ class Graph:
 
         Returns
         -------
-        topologic_core.Graph
+        Graph
             The navigation graph.
 
         """
@@ -22571,14 +22571,14 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
-        vertex : topologic_core.Vertex
+        vertex : Vertex
             The input vertex.
 
         Returns
         -------
-        topologic_core.Vertex
+        Vertex
             The vertex in the input graph that is the nearest to the input vertex.
 
         """
@@ -22609,7 +22609,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
         xKey : str , optional
             The dictionary key under which to store the X-Coordinate of the vertex. Default is 'x'.
@@ -22685,7 +22685,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
 
         Returns
@@ -22709,9 +22709,9 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
-        vertex : topologic_core.Vertex
+        vertex : Vertex
             The input vertex.
         directed : bool , optional
             If set to True, the graph is considered to be directed. Otherwise, it will be considered as an unidrected graph. Default is False.
@@ -22753,9 +22753,9 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
-        vertex : topologic_core.Vertex
+        vertex : Vertex
             The input vertex.
         directed : bool , optional
             If set to True, the graph is considered to be directed. Otherwise, it will be considered as an unidrected graph. Default is False.
@@ -22905,7 +22905,7 @@ class Graph:
 
     #     Parameters
     #     ----------
-    #     graph : topologic_core.Graph
+    #     graph : Graph
     #         The input graph.
     #     alpha : float , optional
     #         The damping (dampening) factor. Default is 0.85. See https://en.wikipedia.org/wiki/PageRank.
@@ -23044,18 +23044,18 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
-        vertexA : topologic_core.Vertex
+        vertexA : Vertex
             The first input vertex.
-        vertexB : topologic_core.Vertex
+        vertexB : Vertex
             The second input vertex.
         tolerance : float, optional
             The desired tolerance. Default is 0.0001.
 
         Returns
         -------
-        topologic_core.Wire
+        Wire
             The path (wire) in the input graph that connects the input vertices.
 
         """
@@ -23100,7 +23100,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
         sourceVertexKey : str , optional
             Vertex dictionary key used to identify source vertices. Default is "id".
@@ -23139,7 +23139,7 @@ class Graph:
 
         Returns
         -------
-        topologic_core.Graph
+        Graph
             The input graph with propagated values written into vertex dictionaries.
         """
 
@@ -23345,7 +23345,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
         path : str
             The desired file path to the HTML file into which to save the pyvis graph.
@@ -23696,7 +23696,7 @@ class Graph:
 
     #     Parameters
     #     ----------
-    #     graph : topologic_core.Graph
+    #     graph : Graph
     #         The input graph.
     #     path : str
     #         The desired file path to the HTML file into which to save the pyvis graph.
@@ -23901,7 +23901,7 @@ class Graph:
 
         Parameters
         ----------
-        topology: topologic_core.Topology or topologic_core.Graph
+        topology: Topology or Graph
             The input topology or graph.
         topologyType: str , optional
             The type of subtopology for which to search. This can be one of "vertex", "edge", "face", "cell". It is case-insensitive. Default is "Vertex".
@@ -23925,7 +23925,7 @@ class Graph:
 
         Returns
         -------
-        topologic_core.Graph
+        Graph
         """
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
@@ -24147,7 +24147,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
         subjectKey : str , optional
             Vertex dictionary key used to identify RDF subjects. Default is "id".
@@ -24361,9 +24361,9 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
-        edges : topologic_core.Edge or list of edges
+        edges : Edge or list of edges
             The input edge.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
@@ -24372,7 +24372,7 @@ class Graph:
 
         Returns
         -------
-        topologic_core.Graph
+        Graph
             The input graph with the input edge removed.
 
         """
@@ -24410,7 +24410,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
         removeVertices : bool , optional
             If set to True, the end vertices of the edges are also removed. Default is True.
@@ -24421,7 +24421,7 @@ class Graph:
 
         Returns
         -------
-        topologic_core.Graph
+        Graph
             The input graph with all isolated vertices removed.
 
         """
@@ -24465,14 +24465,14 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
-        topologic_core.Graph
+        Graph
             The input graph with all isolated vertices removed.
 
         """
@@ -24506,16 +24506,16 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
-        vertex : topologic_core.Vertex or list of vertices
+        vertex : Vertex or list of vertices
             The input vertex or list of vertices.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
 
         Returns
         -------
-        topologic_core.Graph
+        Graph
             The input graph with the input vertex removed.
 
         """
@@ -24552,14 +24552,14 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
-        dictionary : topologic_core.Dictionary or dict
+        dictionary : Dictionary or dict
             The input dictionary.
 
         Returns
         -------
-        topologic_core.Graph
+        Graph
             The input graph with the input dictionary set in it.
 
         """
@@ -24596,7 +24596,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
         directed : bool , optional
             If set to True, edges are treated as directed. If set to False, edges are
@@ -24923,11 +24923,11 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph on which routing is performed.
-        vertexA : topologic_core.Vertex
+        vertexA : Vertex
             The start vertex. It is snapped to the nearest vertex in the graph.
-        vertexB : topologic_core.Vertex
+        vertexB : Vertex
             The end vertex. It is snapped to the nearest vertex in the graph.
         vertexKey : str, optional
             Name of a numeric key in each vertex dictionary whose value is added
@@ -24987,7 +24987,7 @@ class Graph:
 
         Returns
         -------
-        topologic_core.Wire
+        Wire
             A wire representing the shortest path between the two input vertices,
             optionally straightened and with transferred dictionaries.
 
@@ -25503,11 +25503,11 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
-        vertexA : topologic_core.Vertex
+        vertexA : Vertex
             The start vertex. It is snapped to the nearest vertex in the graph.
-        vertexB : topologic_core.Vertex
+        vertexB : Vertex
             The end vertex. It is snapped to the nearest vertex in the graph.
         vertexKey : str, optional
             Name of a numeric key in each vertex dictionary whose value is added
@@ -25575,7 +25575,7 @@ class Graph:
 
         Returns
         -------
-        topologic_core.Wire
+        Wire
             A wire representing the shortest path between the two input vertices,
             that passes through the vertices specified by their dictionary key and values.
 
@@ -25796,11 +25796,11 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
-        vertexA : topologic_core.Vertex
+        vertexA : Vertex
             The first input vertex.
-        vertexB : topologic_core.Vertex
+        vertexB : Vertex
             The second input vertex.
         vertexKey : string , optional
             The vertex key to minimise. If set the vertices dictionaries will be searched for this key and the associated value will be used to compute the shortest path that minimized the total value. The value must be numeric. Default is None.
@@ -25913,7 +25913,7 @@ class Graph:
 
         Parameters
         ----------
-        *graphs : topologic_core.Graph
+        *graphs : Graph
             One or more toplogic_core.graph objects.
         sagitta : float , optional
             The length of the sagitta. In mathematics, the sagitta is the line connecting the center of a chord to the apex (or highest point) of the arc subtended by that chord. Default is 0 which means a straight edge is drawn instead of an arc. Default is 0.
@@ -26090,7 +26090,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
 
         Returns
@@ -26113,7 +26113,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
         vertexKey : str , optional
             The dictionary key under which to store the cut vertex status of each vertex. See https://en.wikipedia.org/wiki/Cut_(graph_theory).
@@ -26128,7 +26128,7 @@ class Graph:
         
         Returns
         -------
-        topologic_core.Graph
+        Graph
             The created subgraph.
 
         """
@@ -26196,9 +26196,9 @@ class Graph:
 
         Parameters
         ----------
-        subGraph : topologic_core.Graph
+        subGraph : Graph
             The input subgraph.
-        superGraph : topologic_core.Graph
+        superGraph : Graph
             The input supergraph.
         strict : bool , optional
             If set to True, each subgraph edge must be represented by a single edge in the supergraph. Otherwise, an edge in the subgraph can be represented either with an edge or a path in the supergraph. Default is False.
@@ -26412,11 +26412,11 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
-        vertexA : topologic_core.Vertex
+        vertexA : Vertex
             The first input vertex.
-        vertexB : topologic_core.Vertex
+        vertexB : Vertex
             The second input vertex.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
@@ -26461,12 +26461,12 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
 
         Returns
         -------
-        topologic_core.Cluster
+        Cluster
             The topology of the input graph.
 
         """
@@ -26484,9 +26484,9 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
-        vertex : topologic_core.Vertex , optional
+        vertex : Vertex , optional
             The input root vertex. If not set, the first vertex in the graph is set as the root vertex. Default is None.
         ontology : bool , optional
             If set to True, ontology metadata and semantic class annotations are added
@@ -26496,7 +26496,7 @@ class Graph:
 
         Returns
         -------
-        topologic_core.Graph
+        Graph
             The tree graph version of the input graph.
 
         """
@@ -26571,7 +26571,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
         subjectKey : str , optional
             Vertex dictionary key used to identify the subject. Default is "id".
@@ -26730,7 +26730,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
         key : str , optional
             The dictionary key to search for. Default is None.
@@ -26741,7 +26741,7 @@ class Graph:
 
         Returns
         -------
-        topologic_core.Vertex
+        Vertex
             The matching vertex, or None if no match is found.
         """
         try:
@@ -26794,9 +26794,9 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
-        vertex : topologic_core.Vertex
+        vertex : Vertex
             The input vertex.
         weightKey : str , optional
             If specified, the value in the connected edges' dictionary specified by the weightKey string will be aggregated to calculate
@@ -26850,7 +26850,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
         sortBy : str , optional
             The dictionary key to use for sorting the returned edges. Special strings include "length" and "distance" to sort by the length of the edge. Default is "index".
@@ -26902,7 +26902,7 @@ class Graph:
 
         Parameters
         ----------
-        face : topologic_core.Face
+        face : Face
             The input boundary. View edges will be clipped to this face. The holes in the face are used as the obstacles
         viewpointsA : list , optional
             The first input list of viewpoints (vertices). Visibility edges will connect these veritces to viewpointsB. If set to None, this parameters will be set to all vertices of the input face. Default is None.
@@ -26916,7 +26916,7 @@ class Graph:
 
         Returns
         -------
-        topologic_core.Graph
+        Graph
             The visibility graph.
 
         """
@@ -26995,13 +26995,13 @@ class Graph:
 
         Parameters
         ----------
-        graphA : topologic_core.Graph
+        graphA : Graph
             The first graph
-        graphB : topologic_core.Graph
+        graphB : Graph
             The second graph (this can be the same as the first graph)
-        vertexA : topologic_core.Vertex
+        vertexA : Vertex
             The first vertex.
-        vertexB : topologic_core.Vertex
+        vertexB : Vertex
             The second vertex.
         vertexIDKey : str , optional
             The dictionary key under which to find the unique vertex ID. Default is "id".
@@ -27089,7 +27089,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The input graph.
         vertexKey : str , optional
             Vertex dictionary key used as the stable page identifier. Default is "id".
@@ -27354,9 +27354,9 @@ class Graph:
 
         Parameters
         ----------
-        graphA : topologic_core.Graph
+        graphA : Graph
             The first input graph.
-        graphB : topologic_core.Graph
+        graphB : Graph
             The second input graph.
         vertexKeys : list or str , optional
             The vertex dictionary key (str) or keys (list of str) to use to determine if two vertices are the same.
@@ -27372,7 +27372,7 @@ class Graph:
         
         Returns
         -------
-        topologic_core.Graph
+        Graph
             the resultant graph. Vertex and edge dictionaries are merged.
 
         """
@@ -27480,9 +27480,9 @@ class Graph:
 
         Parameters
         ----------
-        graphA : topologic_core.Graph
+        graphA : Graph
             The first input graph.
-        graphB : topologic_core.Graph
+        graphB : Graph
             The second input graph.
         vertexKeys : list or str , optional
             The vertex dictionary key (str) or keys (list of str) to use to determine if two vertices are the same.
@@ -27499,7 +27499,7 @@ class Graph:
 
         Returns
         -------
-        topologic_core.Graph
+        Graph
             the resultant graph. Vertex and edge dictionaries are merged.
 
         """
@@ -27603,9 +27603,9 @@ class Graph:
 
         Parameters
         ----------
-        graphA : topologic_core.Graph
+        graphA : Graph
             The first input graph.
-        graphB : topologic_core.Graph
+        graphB : Graph
             The second input graph.
         vertexKeys : list or str , optional
             The vertex dictionary key (str) or keys (list of str) to use to determine if two vertices are the same.
@@ -27621,7 +27621,7 @@ class Graph:
 
         Returns
         -------
-        topologic_core.Graph
+        Graph
             the resultant graph. Vertex and edge dictionaries are merged.
 
         """
@@ -27712,9 +27712,9 @@ class Graph:
 
         Parameters
         ----------
-        graphA : topologic_core.Graph
+        graphA : Graph
             The first input graph.
-        graphB : topologic_core.Graph
+        graphB : Graph
             The second input graph.
         vertexKeys : list or str , optional
             The vertex dictionary key (str) or keys (list of str) to use to determine if two vertices are the same.
@@ -27730,7 +27730,7 @@ class Graph:
 
         Returns
         -------
-        topologic_core.Graph
+        Graph
             the resultant graph. Vertex and edge dictionaries are merged.
 
         """
@@ -27821,9 +27821,9 @@ class Graph:
 
         Parameters
         ----------
-        graphA : topologic_core.Graph
+        graphA : Graph
             The first input graph.
-        graphB : topologic_core.Graph
+        graphB : Graph
             The second input graph.
         vertexKeys : list or str , optional
             The vertex dictionary key (str) or keys (list of str) to use to determine if two vertices are the same.
@@ -27838,7 +27838,7 @@ class Graph:
 
         Returns
         -------
-        topologic_core.Graph
+        Graph
             the resultant graph. Vertex and edge dictionaries are not merged.
 
         """
@@ -27900,9 +27900,9 @@ class Graph:
 
         Parameters
         ----------
-        graphA : topologic_core.Graph
+        graphA : Graph
             The first input graph.
-        graphB : topologic_core.Graph
+        graphB : Graph
             The second input graph.
         vertexKeys : list or str , optional
             The vertex dictionary key (str) or keys (list of str) to use to determine if two vertices are the same.
@@ -27920,7 +27920,7 @@ class Graph:
         
         Returns
         -------
-        topologic_core.Graph
+        Graph
             the resultant graph. Vertex and edge dictionaries are merged.
 
         """
@@ -27943,9 +27943,9 @@ class Graph:
 
         Parameters
         ----------
-        graphA : topologic_core.Graph
+        graphA : Graph
             The first input graph.
-        graphB : topologic_core.Graph
+        graphB : Graph
             The second input graph.
         vertexKeys : list or str , optional
             The vertex dictionary key (str) or keys (list of str) to use to determine if two vertices are the same.
@@ -27960,7 +27960,7 @@ class Graph:
 
         Returns
         -------
-        topologic_core.Graph
+        Graph
             the resultant graph. Vertex and edge dictionaries are not merged.
 
         """
@@ -27986,7 +27986,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : Graph
             The  input graph.
         key : str , optional
             The vertex key to use as an initial label. Default is None which means the vertex degree is used instead.
@@ -28101,9 +28101,9 @@ class Graph:
 
         Parameters
         ----------
-        graphA : topologic_core.Graph
+        graphA : Graph
             The first input graph.
-        graphB : topologic_core.Graph
+        graphB : Graph
             The second input graph.
         key : str , optional
             The vertex key to use as an initial label. Default is None which means the vertex degree is used instead.
@@ -28152,9 +28152,9 @@ class Graph:
 
         Parameters
         ----------
-        graphA : topologic_core.Graph
+        graphA : Graph
             The first input graph.
-        graphB : topologic_core.Graph
+        graphB : Graph
             The second input graph.
         vertexKeys : list or str , optional
             The vertex dictionary key (str) or keys (list of str) to use to determine if two vertices are the same.
@@ -28169,7 +28169,7 @@ class Graph:
 
         Returns
         -------
-        topologic_core.Graph
+        Graph
             the resultant graph. Vertex and edge dictionaries are not merged.
 
         """

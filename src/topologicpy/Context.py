@@ -26,7 +26,7 @@ class Context:
 
         Parameters
         ----------
-        topology : topologic_core.Topology
+        topology : Topology
             The input topology.
         u : float , optional
             The input *u* parameter. This defines the relative parameteric location of the content object along the *u* axis.
@@ -37,7 +37,7 @@ class Context:
 
         Returns
         -------
-        topologic_core.Context
+        Context
             The created context object. See Aperture.ByObjectContext.
 
         """
@@ -62,12 +62,12 @@ class Context:
         
         Parameters
         ----------
-        context : topologic_core.Context
+        context : Context
             The input context.
 
         Returns
         -------
-        topologic_core.Topology
+        Topology
             The topology of the input context.
 
         """

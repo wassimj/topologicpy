@@ -12,9 +12,6 @@ from topologicpy.Topology import Topology
 from topologicpy.Vertex import Vertex
 
 
-IS_PYTHONOCC = "pythonocc" in os.environ.get(
-    "TOPOLOGICPY_CORE_BACKEND", ""
-).lower()
 
 
 def _value(topology, key):

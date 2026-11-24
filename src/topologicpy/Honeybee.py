@@ -710,9 +710,9 @@ class Honeybee:
 
         Parameters
         ----------
-        tpBuilding : topologic_core.CellComplex or topologic_core.Cell
+        tpBuilding : CellComplex or Cell
             The input building topology.
-        tpShadingFaceCluster : topologic_core.Cluster , optional
+        tpShadingFaceCluster : Cluster , optional
             The input cluster for shading faces. Default is None.
         buildingName : str , optional
             The desired name of the building. Default is "Generic_Building".

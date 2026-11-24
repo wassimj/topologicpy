@@ -15311,7 +15311,7 @@ class TGraph:
 
         Parameters
         ----------
-        topology : topologic_core.Topology
+        topology : Topology
             The input Topologic topology.
         direct : bool, optional
             If True, direct topological relationships are included.
@@ -17312,7 +17312,7 @@ class TGraph:
 
     #     Parameters
     #     ----------
-    #     topology : topologic_core.Topology
+    #     topology : Topology
     #         The input Topologic topology.
     #     direct : bool , optional
     #         If set to True, direct topological relationships are included. Default is True.
@@ -26515,7 +26515,7 @@ class TGraph:
 
         Parameters
         ----------
-        topology : topologic_core.Topology
+        topology : Topology
             The input topology.
         types : list , optional
             Subtopology types to include. Default is vertex, edge, wire, face, shell,
@@ -29580,7 +29580,7 @@ class TGraph:
 
         Returns
         -------
-        dict or topologic_core.Vertex or None
+        dict or Vertex or None
             The nearest TGraph vertex record, or a Topologic vertex if asTopologic
             is True.
         """
@@ -35984,7 +35984,7 @@ class TGraph:
 
         Returns
         -------
-        topologic_core.Edge or None
+        Edge or None
             The converted Topologic edge.
         """
         if not isinstance(graph, TGraph):
@@ -36105,7 +36105,7 @@ class TGraph:
 
         Returns
         -------
-        topologic_core.Vertex or None
+        Vertex or None
             The converted Topologic vertex.
         """
         if not isinstance(graph, TGraph):
@@ -38789,7 +38789,7 @@ class TGraph:
 
         Returns
         -------
-        topologic_core.Wire or None
+        Wire or None
             The resulting directed Topologic Wire, or None if it cannot be created.
         """
         if not isinstance(graph, TGraph):

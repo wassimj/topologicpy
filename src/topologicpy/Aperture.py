@@ -48,7 +48,7 @@ class Aperture():
 
         Parameters
         ----------
-        topology : topologic_core.Topology
+        topology : Topology
             The input topology that represents the aperture.
         context : Context
             The context of the aperture. See Context class.

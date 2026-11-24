@@ -660,7 +660,7 @@ class Sun:
             The interval in minutes to compute the sun location for the date path. Default is 30.
         dayInterval : int , optional
             The interval in days for the hourly path to compute the sun location. Default is 15.
-        origin : topologic_core.Vertex , optional
+        origin : Vertex , optional
             The desired origin of the world. If set to None, the origin will be set to (0,0,0). Default is None.
         radius : float , optional
             The desired radius of the sun orbit. Default is 0.5.

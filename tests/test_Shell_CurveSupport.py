@@ -10,8 +10,6 @@ from topologicpy.Shell import Shell
 from topologicpy.Cluster import Cluster
 from topologicpy.Topology import Topology
 
-BACKEND = os.environ.get("TOPOLOGICPY_CORE_BACKEND", "topologic_core").lower()
-IS_PYTHONOCC = "pythonocc" in BACKEND
 
 
 def _square_wire(z=0.0, size=2.0):
@@ -41,7 +39,7 @@ def _faces(shell):
 
 def _pythonocc_surface_area(topology):
     """Return exact OCCT surface area for a PythonOCC topology."""
-    if not IS_PYTHONOCC or topology is None:
+    if topology is None:
         return None
     shape = getattr(topology, "shape", None)
     if shape is None:
@@ -86,12 +84,6 @@ def test_bywirescluster_preserves_existing_polyhedral_behavior():
     assert len(_faces(shell)) == 4
 
 
-def test_topologiccore_exact_curve_preserving_loft_is_explicitly_unsupported():
-    if IS_PYTHONOCC:
-        pytest.skip("TopologicCore-specific exact-loft capability guard.")
-    w0 = _circle_wire(z=0.0, radius=1.0)
-    w1 = _circle_wire(z=2.0, radius=1.0)
-    assert Shell.ByWires([w0, w1], polyhedron=False, silent=True) is None
 
 
 @pytest.mark.pythonocc_only

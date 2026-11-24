@@ -264,7 +264,7 @@ class Wire():
 
         Parameters
         ----------
-        wire : topologic_core.Wire
+        wire : Wire
             The input wire.
         offset : float , optional
             The desired offset distance. Default is 1.0.
@@ -295,7 +295,7 @@ class Wire():
         
         Returns
         -------
-        topologic_core.Wire
+        Wire
             The created wire.
 
         """
@@ -515,7 +515,7 @@ class Wire():
 
         Parameters
         ----------
-        topology : topologic_core.Topology
+        topology : Topology
             The input topology.
         optimize : int , optional
             If set to an integer from 1 (low optimization) to 10 (high optimization),
@@ -534,7 +534,7 @@ class Wire():
 
         Returns
         -------
-        topologic_core.Wire
+        Wire
             The bounding rectangle of the input topology.
         """
         from topologicpy.Vertex import Vertex
@@ -846,7 +846,7 @@ class Wire():
 
     #     Returns
     #     -------
-    #     topologic_core.Wire
+    #     Wire
     #         The created wire.
 
     #     """
@@ -1226,11 +1226,7 @@ class Wire():
                 result = Core.Wire.ByEdges(source_edges, tol)
             except TypeError:
                 result = None
-                if Topology._IsTopologicCoreBackend():
-                    try:
-                        result = Core.Wire.ByEdges(source_edges)
-                    except Exception:
-                        pass
+                pass
             except Exception:
                 result = None
             if Topology.IsInstance(result, "Wire"):
@@ -1403,14 +1399,14 @@ class Wire():
 
         Parameters
         ----------
-        cluster : topologic_core.Cluster
+        cluster : Cluster
             The input cluster of edges.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
 
         Returns
         -------
-        topologic_core.Wire
+        Wire
             The created wire.
 
         """
@@ -1473,12 +1469,9 @@ class Wire():
         If neither trimming nor tangent extension can resolve a joint, the existing
         step-transition semantics are used.
 
-        On TopologicCore, exact curved variable offsets remain unsupported and
-        return None rather than silently approximating the source curves.
-
         Parameters
         ----------
-        wire : topologic_core.Wire
+        wire : Wire
             The input Wire. It must be planar when it contains curved Edges.
         offset : float , optional
             Default signed offset distance. Default is 1.0.
@@ -1529,7 +1522,7 @@ class Wire():
 
         Returns
         -------
-        topologic_core.Wire
+        Wire
             The offset Wire, or None if the requested exact operation cannot be
             constructed.
         """
@@ -3285,7 +3278,7 @@ class Wire():
 
         Parameters
         ----------
-        wire : topologic_core.Wire
+        wire : Wire
             The input wire.
         area : float
             The desired area of the created wire.
@@ -3311,7 +3304,7 @@ class Wire():
         
         Returns
         -------
-        topologic_core.Wire
+        Wire
             The created wire.
 
         """
@@ -3457,7 +3450,7 @@ class Wire():
 
         Returns
         -------
-        topologic_core.Wire
+        Wire
             The created Wire. Returns None if the input is invalid or if the Wire
             cannot be constructed.
         """
@@ -3742,7 +3735,7 @@ class Wire():
 
         Returns
         -------
-        topologic_core.Wire
+        Wire
             The created wire.
 
         """
@@ -3879,7 +3872,7 @@ class Wire():
 
     #     Returns
     #     -------
-    #     topologic_core.Wire
+    #     Wire
     #         The created wire.
 
     #     """
@@ -3956,7 +3949,7 @@ class Wire():
 
         Parameters
         ----------
-        cluster : topologic_core.cluster
+        cluster : cluster
             the input cluster of vertices.
         close : bool , optional
             If True the last vertex will be connected to the first vertex to close the wire. Default is True.
@@ -3967,7 +3960,7 @@ class Wire():
         
         Returns
         -------
-        topologic_core.Wire
+        Wire
             The created wire.
 
         """
@@ -3994,7 +3987,7 @@ class Wire():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex , optional
+        origin : Vertex , optional
             The placement origin of the cage:
             - If placement == "center": the geometric center of the cage
             is placed at this origin.
@@ -4027,7 +4020,7 @@ class Wire():
 
         Returns
         -------
-        topologic_core.Wire or None
+        Wire or None
             The resulting cage Wire, or None if inputs are invalid.
         """
         from topologicpy.Vertex import Vertex
@@ -4181,7 +4174,7 @@ class Wire():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex , optional
+        origin : Vertex , optional
             Placement origin. If None, the global origin is used. Default is None.
         radius : float , optional
             Circle radius. Default is 0.5.
@@ -4214,7 +4207,7 @@ class Wire():
 
         Returns
         -------
-        topologic_core.Wire
+        Wire
             The created circular Wire.
         """
         import math
@@ -4625,7 +4618,7 @@ class Wire():
 
         Parameters
         ----------
-        wire : topologic_core.Wire
+        wire : Wire
             The input Wire.
         mantissa : int , optional
             Retained for backward compatibility. It is not used because no
@@ -4637,7 +4630,7 @@ class Wire():
 
         Returns
         -------
-        topologic_core.Wire
+        Wire
             The closed Wire.
 
         """
@@ -4817,7 +4810,7 @@ class Wire():
 
         Parameters
         ----------
-        topology : topologic_core.Topology
+        topology : Topology
             The input topology.
         k : int, optional
             The number of nearest neighbors to consider for each point when building the hull. 
@@ -4832,7 +4825,7 @@ class Wire():
                 
         Returns
         -------
-        topologic_core.Wire
+        Wire
             The concave hull of the input topology.
         """
 
@@ -5036,7 +5029,7 @@ class Wire():
 
         Parameters
         ----------
-        topology : topologic_core.Topology
+        topology : Topology
             The input topology.
         mantissa : int , optional
             The number of decimal places to round the result to. Default is 6.
@@ -5045,7 +5038,7 @@ class Wire():
                 
         Returns
         -------
-        topologic_core.Wire
+        Wire
             The convex hull of the input topology.
 
         """
@@ -5237,7 +5230,7 @@ class Wire():
 
         Parameters
         ----------
-        wire : topologic_core.Wire
+        wire : Wire
             The input wire.
         cornerType : str , optional
             The corner type to return. Options are "convex" and "concave".
@@ -5700,7 +5693,7 @@ class Wire():
 
         Parameters
         ----------
-        wire : topologic_core.Wire
+        wire : Wire
             The input wire.
         angTolerance : float , optional
             The angular tolerance in degrees. Default is 0.01.
@@ -5745,7 +5738,7 @@ class Wire():
 
         Parameters
         ----------
-        wire : topologic_core.Wire
+        wire : Wire
             The input wire.
         angTolerance : float , optional
             The angular tolerance in degrees. Default is 0.01.
@@ -5790,7 +5783,7 @@ class Wire():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex , optional
+        origin : Vertex , optional
             The location of the origin of the T-shape. Default is None which results in the Cross-shape being placed at (0, 0, 0).
         width : float , optional
             The overall width of the Cross-shape. Default is 1.0.
@@ -5815,7 +5808,7 @@ class Wire():
 
         Returns
         -------
-        topologic_core.Wire
+        Wire
             The created Cross-shape.
 
         """
@@ -5976,7 +5969,7 @@ class Wire():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex , optional
+        origin : Vertex , optional
             The location of the origin of the C-shape. Default is None which results in the C-shape being placed at (0, 0, 0).
         width : float , optional
             The overall width of the C-shape. Default is 1.0.
@@ -5999,7 +5992,7 @@ class Wire():
 
         Returns
         -------
-        topologic_core.Wire
+        Wire
             The created C-shape.
 
         """
@@ -6135,7 +6128,7 @@ class Wire():
 
         Parameters
         ----------
-        wire : topologic_core.Wire
+        wire : Wire
             The input Wire.
         maxVertices : int , optional
             The maximum number of vertices permitted in a returned cycle.
@@ -6778,7 +6771,7 @@ class Wire():
 
         Parameters
         ----------
-        wire : topologic_core.Wire
+        wire : Wire
             The input wire.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
@@ -6808,7 +6801,7 @@ class Wire():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex , optional
+        origin : Vertex , optional
             The location of the origin of the tile. Default is None which results in the tiles first vertex being placed at (0, 0, 0).
         radius : float , optional
             The radius of the hexagon determining the size of the tile. Default is 0.5.
@@ -6822,7 +6815,7 @@ class Wire():
             The desired tolerance. Default is 0.0001.
         Returns
         -------
-        topologic_core.Wire
+        Wire
             The created wire.
 
         """
@@ -6982,14 +6975,14 @@ class Wire():
 
         Parameters
         ----------
-        wire : topologic_core.Wire
+        wire : Wire
             The input wire
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
         
         Returns
         -------
-        topologic_core.Vertex
+        Vertex
             The end vertex of the input wire.
 
         """
@@ -7015,7 +7008,7 @@ class Wire():
         
         Parameters
         ----------
-        wire : topologic_core.Wire
+        wire : Wire
             The input wire.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
@@ -7049,7 +7042,7 @@ class Wire():
 
         Parameters
         ----------
-        wire : topologic_core.Wire
+        wire : Wire
             The input wire.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
@@ -7058,7 +7051,7 @@ class Wire():
 
         Returns
         -------
-        topologic_core.Cluster
+        Cluster
             The external boundary of the input wire. This is a cluster of vertices of degree == 1.
 
         """
@@ -7098,7 +7091,7 @@ class Wire():
 
         Parameters
         ----------
-        wire : topologic_core.Wire
+        wire : Wire
             The input Wire.
         radius : float , optional
             The default fillet radius. Default is 0.
@@ -7121,7 +7114,7 @@ class Wire():
 
         Returns
         -------
-        topologic_core.Wire
+        Wire
             The filleted Wire.
 
         """
@@ -7787,12 +7780,12 @@ class Wire():
 
         Parameters
         ----------
-        face : topologic_core.Face
+        face : Face
             The planar face on which navigation occurs. All vertices must lie
             on this face.
-        vertexA : topologic_core.Vertex
+        vertexA : Vertex
             The start point of the path.
-        vertexB : topologic_core.Vertex
+        vertexB : Vertex
             The end point of the path.
         portals : list of tuple(Vertex, Vertex)
             Ordered list of corridor edges. Each item is (leftVertex, rightVertex)
@@ -7806,7 +7799,7 @@ class Wire():
 
         Returns
         -------
-        wire : topologic_core.Wire
+        wire : Wire
             A Wire representing the smoothed path from startVertex to endVertex
             that stays inside the navigation corridor on the face.
         """
@@ -8039,7 +8032,7 @@ class Wire():
         clockwise : bool , optional
             Controls the square “peel” progression (affects which side each next square
             is taken from). Default is False.
-        origin : topologic_core.Vertex, optional
+        origin : Vertex, optional
             The location of the origin of the rectangle. Default is None which results in the rectangle being placed at (0, 0, 0).
         direction : list , optional
             The vector representing the up direction of the rectangle. Default is [0, 0, 1].
@@ -8054,7 +8047,7 @@ class Wire():
 
         Returns
         -------
-        topologic_core.Wire
+        Wire
             The created golden rectangle wire.
         """
 
@@ -8311,7 +8304,7 @@ class Wire():
 
         Parameters
         ----------
-        wire : topologic_core.Wire
+        wire : Wire
             The input wire.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
@@ -8614,7 +8607,7 @@ class Wire():
         
     #     Parameters
     #     ----------
-    #     wire : topologic_core.Wire
+    #     wire : Wire
     #         The input wire.
     #     tolerance : float , optional
     #         The desired tolerance. Default is 0.0001.
@@ -8705,7 +8698,7 @@ class Wire():
 
         Returns
         -------
-        topologic_core.Topology
+        Topology
             The interpolated contours and optional connecting ridges.
         """
         import math
@@ -9131,7 +9124,7 @@ class Wire():
 
         Parameters
         ----------
-        wire : topologic_core.Wire
+        wire : Wire
             The input Wire.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
@@ -9140,7 +9133,7 @@ class Wire():
 
         Returns
         -------
-        topologic_core.Wire
+        Wire
             The reversed Wire.
         """
         from topologicpy.Topology import Topology
@@ -9220,9 +9213,9 @@ class Wire():
 
         Parameters
         ----------
-        wireA : topologic_core.Wire
+        wireA : Wire
             The first input wire.
-        wireB : topologic_core.Wire
+        wireB : Wire
             The second input wire.
         angTolerance : float , optional
             The desired angular tolerance. Default is 0.1.
@@ -9330,7 +9323,7 @@ class Wire():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex , optional
+        origin : Vertex , optional
             The location of the origin of the I-shape. Default is None which results in the I-shape being placed at (0, 0, 0).
         width : float , optional
             The overall width of the I-shape. Default is 1.0.
@@ -9357,7 +9350,7 @@ class Wire():
 
         Returns
         -------
-        topologic_core.Wire
+        Wire
             The created I-shape.
 
         """
@@ -9483,7 +9476,7 @@ class Wire():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex , optional
+        origin : Vertex , optional
             Placement origin.
         width, length, height : float
             Lattice extents.
@@ -9500,7 +9493,7 @@ class Wire():
 
         Returns
         -------
-        topologic_core.Wire
+        Wire
         """
 
         from topologicpy.Vertex import Vertex
@@ -9694,7 +9687,7 @@ class Wire():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex , optional
+        origin : Vertex , optional
             The location of the origin of the L-shape. Default is None which results in the L-shape being placed at (0, 0, 0).
         width : float , optional
             The overall width of the L-shape. Default is 1.0.
@@ -9715,7 +9708,7 @@ class Wire():
 
         Returns
         -------
-        topologic_core.Wire
+        Wire
             The created L-shape.
 
         """
@@ -9834,7 +9827,7 @@ class Wire():
 
         Parameters
         ----------
-        wire : topologic_core.Wire
+        wire : Wire
             The input Wire.
         offset : float
             The desired trim distance along each adjacent Edge.
@@ -9848,7 +9841,7 @@ class Wire():
 
         Returns
         -------
-        topologic_core.Wire
+        Wire
             The mitered polyline Wire.
         """
         import math
@@ -10112,7 +10105,7 @@ class Wire():
 
         Parameters
         ----------
-        wire : topologic_core.Wire
+        wire : Wire
             The input wire.
         outputType : string , optional
             The string defining the desired output. This can be any subset or permutation of "xyz". It is case insensitive. Default is "xyz".
@@ -10248,9 +10241,9 @@ class Wire():
 
         Parameters
         ----------
-        wire : topologic_core.Wire
+        wire : Wire
             The input Wire.
-        origin : topologic_core.Vertex , optional
+        origin : Vertex , optional
             The origin of the receiving plane. If None, the centroid of the input
             Wire is used. Default is None.
         mantissa : int , optional
@@ -10263,7 +10256,7 @@ class Wire():
 
         Returns
         -------
-        topologic_core.Wire
+        Wire
             The planarized Wire, or None if exact curve preservation is unavailable.
 
         """
@@ -10449,9 +10442,9 @@ class Wire():
 
         Parameters
         ----------
-        wire : topologic_core.Wire
+        wire : Wire
             The input Wire.
-        face : topologic_core.Face
+        face : Face
             The receiving Face.
         direction : list , optional
             Projection direction. If None, the reverse of the receiving Face
@@ -10465,7 +10458,7 @@ class Wire():
 
         Returns
         -------
-        topologic_core.Wire
+        Wire
             The projected Wire, or None if an exact curve-preserving projection
             cannot be constructed.
         """
@@ -10594,7 +10587,7 @@ class Wire():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex , optional
+        origin : Vertex , optional
             The location of the origin of the rectangle. Default is None which results in the rectangle being placed at (0, 0, 0).
         width : float , optional
             The width of the rectangle. Default is 1.0.
@@ -10615,7 +10608,7 @@ class Wire():
 
         Returns
         -------
-        topologic_core.Wire
+        Wire
             The created rectangle.
 
         """
@@ -10691,7 +10684,7 @@ class Wire():
 
         Parameters
         ----------
-        wire : topologic_core.Wire or topologic_core.Cluster
+        wire : Wire or Cluster
             The input Wire, or a Cluster containing Wires.
         angTolerance : float , optional
             Maximum angular deviation in degrees for two consecutive linear Edges
@@ -10703,7 +10696,7 @@ class Wire():
 
         Returns
         -------
-        topologic_core.Topology
+        Topology
             The simplified Wire, or a merged topology if a Cluster/non-manifold
             input produces multiple components.
         """
@@ -10912,7 +10905,7 @@ class Wire():
 
         Parameters
         ----------
-        wire : topologic_core.Wire
+        wire : Wire
             The input wire.
         normalize : bool , optional
             If set to True, the edge lengths are normalized such that the shortest
@@ -11063,7 +11056,7 @@ class Wire():
 
         Parameters
         ----------
-        wire : topologic_core.Wire
+        wire : Wire
             The input planar manifold Wire.
         thickness : float , optional
             The ribbon width. Default is 1.0.
@@ -11102,7 +11095,7 @@ class Wire():
 
         Returns
         -------
-        topologic_core.Face or topologic_core.Shell
+        Face or Shell
             The created ribbon.
 
         """
@@ -11911,7 +11904,7 @@ class Wire():
 
         Parameters
         ----------
-        face : topologic_core.Face
+        face : Face
             The input face.
         angle : float , optioal
             The desired angle in degrees of the roof. Default is 45.
@@ -11922,7 +11915,7 @@ class Wire():
 
         Returns
         -------
-        topologic_core.Wire
+        Wire
             The created roof. This method returns the roof as a set of edges. No faces are created.
 
         """
@@ -12040,7 +12033,7 @@ class Wire():
 
         Parameters
         ----------
-        wire : topologic_core.Wire
+        wire : Wire
             The input Wire.
         method : str , optional
             The simplification method. Supported values are
@@ -12058,7 +12051,7 @@ class Wire():
 
         Returns
         -------
-        topologic_core.Wire
+        Wire
             The simplified Wire.
         """
         import math
@@ -12639,7 +12632,7 @@ class Wire():
 
         Parameters
         ----------
-        face : topologic_core.Face
+        face : Face
             The input face.
         boundary : bool , optional
             If set to True the original boundary is returned as part of the roof. Otherwise it is not. Default is True.
@@ -12648,7 +12641,7 @@ class Wire():
 
         Returns
         -------
-        topologic_core.Wire
+        Wire
             The created straight skeleton.
 
         """
@@ -12674,7 +12667,7 @@ class Wire():
 
         Parameters
         ----------
-        wire : topologic_core.Wire
+        wire : Wire
             The input wire.
 
         Returns
@@ -12752,7 +12745,7 @@ class Wire():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex , optional
+        origin : Vertex , optional
             The location of the origin of the square. Default is None which results in the square being placed at (0, 0, 0).
         size : float , optional
             The size of the square. Default is 1.0.
@@ -12767,7 +12760,7 @@ class Wire():
 
         Returns
         -------
-        topologic_core.Wire
+        Wire
             The created square.
 
         """
@@ -12791,7 +12784,7 @@ class Wire():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex , optional
+        origin : Vertex , optional
             The location of the origin of the star. Default is None which results in the star being placed at (0, 0, 0).
         radiusA : float , optional
             The outer radius of the star. Default is 1.0.
@@ -12808,7 +12801,7 @@ class Wire():
 
         Returns
         -------
-        topologic_core.Wire
+        Wire
             The created star.
 
         """
@@ -12886,7 +12879,7 @@ class Wire():
 
         Parameters
         ----------
-        wire : topologic_core.Wire
+        wire : Wire
             The input wire
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
@@ -12939,14 +12932,14 @@ class Wire():
 
         Parameters
         ----------
-        wire : topologic_core.Wire
+        wire : Wire
             The input wire
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
         
         Returns
         -------
-        topologic_core.Vertex
+        Vertex
             The start vertex of the input wire.
 
         """
@@ -12981,10 +12974,10 @@ class Wire():
 
         Parameters
         ----------
-        wire : topologic_core.Wire
+        wire : Wire
             The input path wire whose vertices define the route to be
             straightened.
-        host : topologic_core.Topology
+        host : Topology
             The host within which the straightened edges must lie.
         obstacles : list, optional
             The list of topologies with which the straightened edges must not intersect.
@@ -12998,7 +12991,7 @@ class Wire():
 
         Returns
         -------
-        wire : topologic_core.Wire
+        wire : Wire
             A new Wire whose vertices define the recursively straightened path.
         """
         from bisect import bisect_left, bisect_right
@@ -13388,7 +13381,7 @@ class Wire():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex , optional
+        origin : Vertex , optional
             The location of the origin of the trapezoid. Default is None which results in the trapezoid being placed at (0, 0, 0).
         widthA : float , optional
             The width of the bottom edge of the trapezoid. Default is 1.0.
@@ -13409,7 +13402,7 @@ class Wire():
 
         Returns
         -------
-        topologic_core.Wire
+        Wire
             The created trapezoid.
 
         """
@@ -13472,7 +13465,7 @@ class Wire():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex , optional
+        origin : Vertex , optional
             The location of the origin of the T-shape. Default is None which results in the T-shape being placed at (0, 0, 0).
         width : float , optional
             The overall width of the T-shape. Default is 1.0.
@@ -13493,7 +13486,7 @@ class Wire():
 
         Returns
         -------
-        topologic_core.Wire
+        Wire
             The created T-shape.
 
         """
@@ -13706,7 +13699,7 @@ class Wire():
 
         Parameters
         ----------
-        wire : topologic_core.Wire
+        wire : Wire
             The input wire.
 
         Returns

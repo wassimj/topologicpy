@@ -16,13 +16,7 @@ def _coordinates(vertices):
     return {tuple(round(x, 6) for x in Vertex.Coordinates(v)) for v in vertices}
 
 
-@pytest.fixture(params=[False, True], ids=["backend", "analytical"])
-def analytical(request, monkeypatch):
-    if request.param:
-        monkeypatch.setattr(Topology, "_IsTopologicCoreBackend", staticmethod(lambda: True))
-
-
-def test_unsplit_grid_endpoints_and_intersections(analytical):
+def test_unsplit_grid_endpoints_and_intersections():
     edges = [_edge((-3, y, 0), (3, y, 0)) for y in (-2, -1, 1, 2)]
     edges += [_edge((x, -3, 0), (x, 3, 0)) for x in (-2, -1, 1, 2)]
     result = Grid.Vertices(edges)
@@ -35,7 +29,7 @@ def test_unsplit_grid_endpoints_and_intersections(analytical):
     assert _coordinates(result) == expected
 
 
-def test_multiway_crossing_is_unique_in_3d(analytical):
+def test_multiway_crossing_is_unique_in_3d():
     edges = [_edge((-2, 0, -2), (2, 0, 2)),
              _edge((0, -2, -2), (0, 2, 2)),
              _edge((-2, -2, 0), (2, 2, 0))]
@@ -44,26 +38,26 @@ def test_multiway_crossing_is_unique_in_3d(analytical):
     assert (0, 0, 0) in _coordinates(result)
 
 
-def test_skew_edges_do_not_intersect(analytical):
+def test_skew_edges_do_not_intersect():
     result = Grid.Vertices([_edge((-2, 0, 0), (2, 0, 0)),
                             _edge((0, -2, 1), (0, 2, 1))])
     assert len(result) == 4
 
 
-def test_overlaps_and_duplicate_edges(analytical):
+def test_overlaps_and_duplicate_edges():
     edge = _edge((0, 0, 0), (4, 0, 0))
     result = Grid.Vertices([edge, edge, _edge((1, 0, 0), (3, 0, 0))])
     assert _coordinates(result) == {(0, 0, 0), (1, 0, 0), (3, 0, 0), (4, 0, 0)}
     assert len(result) == 4
 
 
-def test_tolerance_deduplicates_across_bucket_boundaries(analytical):
+def test_tolerance_deduplicates_across_bucket_boundaries():
     result = Grid.Vertices([_edge((0.000099, 0, 0), (1, 0, 0)),
                             _edge((0.000101, 0, 0), (0, 1, 0))])
     assert len(result) == 3
 
 
-def test_topology_and_single_edge_inputs(analytical):
+def test_topology_and_single_edge_inputs():
     from topologicpy.Cluster import Cluster
     edges = [_edge((-1, 0, 0), (1, 0, 0)), _edge((0, -1, 0), (0, 1, 0))]
     assert len(Grid.Vertices(Cluster.ByTopologies(edges))) == 5
@@ -74,8 +68,7 @@ def test_topology_and_single_edge_inputs(analytical):
     assert Grid.Vertices(edges, tolerance=math.inf, silent=True) is None
 
 
-@pytest.mark.skipif("pythonocc" not in os.environ.get("TOPOLOGICPY_CORE_BACKEND", ""),
-                    reason="Exact curved Edges require PythonOCC")
+@pytest.mark.pythonocc_only
 def test_exact_curved_edge_intersections_preserve_input():
     circle = Edge.Circle(radius=2, placement="center", silent=True)
     diameter = _edge((-3, 0, 0), (3, 0, 0))
@@ -88,8 +81,7 @@ def test_exact_curved_edge_intersections_preserve_input():
     assert Edge.Length(circle) == pytest.approx(4 * math.pi)
 
 
-@pytest.mark.skipif("pythonocc" not in os.environ.get("TOPOLOGICPY_CORE_BACKEND", ""),
-                    reason="Exact curved surface grids require PythonOCC")
+@pytest.mark.pythonocc_only
 def test_grid_on_curved_face_finds_unsplit_crossings():
     from topologicpy.Cell import Cell
     from topologicpy.Face import Face

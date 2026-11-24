@@ -10,8 +10,6 @@ from topologicpy.CellComplex import CellComplex
 from topologicpy.Face import Face
 from topologicpy.Topology import Topology
 
-BACKEND = os.environ.get("TOPOLOGICPY_CORE_BACKEND", "topologic_core").lower()
-IS_PYTHONOCC = "pythonocc" in BACKEND
 
 
 def _circle_wire(z=0.0, radius=1.0):
@@ -40,11 +38,6 @@ def test_existing_faceted_bywires_still_constructs():
     assert len(CellComplex.Cells(cc)) >= 1
 
 
-@pytest.mark.topologiccore_only
-def test_topologiccore_exact_cellcomplex_loft_is_explicitly_unsupported():
-    wires=[_circle_wire(z) for z in (0.0,1.0,2.0)]
-    assert CellComplex.ByWires(wires, polyhedron=False, silent=True) is None
-    assert CellComplex.Torus(majorRadius=2, minorRadius=0.5, uSides=8, polyhedron=False, silent=True) is None
 
 
 @pytest.mark.pythonocc_only

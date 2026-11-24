@@ -16,116 +16,32 @@
 
 from __future__ import annotations
 
-"""
-TopologicPy Core Facade
-=======================
+"""Thin namespace facade for the PythonOCC geometry and topology kernel.
 
-This module provides a thin, centralised facade over the active topology kernel backend.
-
-Purpose
--------
-TopologicPy should eventually avoid importing ``topologic_core`` directly from
-multiple files. Instead, all direct access to the geometry/topology kernel can be
-routed through this module:
-
-    from topologicpy.Core import Core
-
-    v = Core.Vertex.ByCoordinates(0, 0, 0)
-    e = Core.Edge.ByStartVertexEndVertex(v1, v2, tolerance)
-    _ = Core.Topology.Analyze(topology)
-
-The facade is intentionally thin. It mirrors the exposed ``topologic_core``
-classes and utility namespaces rather than redefining TopologicPy semantics.
-
-Backend replacement
--------------------
-The preferred backend is ``PythonOCCBackend``. If PythonOCC is unavailable,
-Core automatically falls back to ``TopologicCoreBackend``.
-
-The backend can be explicitly selected before the first ``Core.Backend()``
-access using the ``TOPOLOGICPY_CORE_BACKEND`` environment variable:
-
-    TOPOLOGICPY_CORE_BACKEND=pythonocc
-    TOPOLOGICPY_CORE_BACKEND=topologic_core
-    TOPOLOGICPY_CORE_BACKEND=auto
-
-A backend can also be supplied programmatically with:
-
-    Core.SetBackend(my_backend)
-
-The supplied backend should expose equivalent namespace attributes such as
-``Vertex``, ``Edge``, ``Wire``, ``TopologyUtility``, ``FaceUtility``, etc.
-
-Design note
------------
-This file does not wrap every instance method of every returned topology object.
-Core objects are still returned as backend-native objects. The goal is to
-centralise access to backend namespaces and static/factory/utility methods.
-Instance method calls can later be routed through additional helper methods if
-needed, but doing so exhaustively would require proxy objects and would be a
-larger architectural migration.
+Native objects are returned directly. The facade is lazy so importing modules
+that do not use geometry does not require loading the compiled kernel.
 """
 
-import os
 from typing import Any, List, Optional
-
-# Backend selection.
-#
-# By default, Core first attempts to use PythonOCCBackend and falls back to
-# TopologicCoreBackend if PythonOCC is unavailable.
-#
-# The TOPOLOGICPY_CORE_BACKEND environment variable can explicitly select:
-#
-#     "pythonocc"      -> force PythonOCCBackend
-#     "topologic_core" -> force TopologicCoreBackend
-#     "auto"           -> PythonOCCBackend first, then TopologicCoreBackend
-#
-# If the variable is unset or empty, "auto" behaviour is used.
-_BACKEND_ENV_VAR = "TOPOLOGICPY_CORE_BACKEND"
 
 
 def _CreateDefaultBackend() -> Any:
-    """
-    Creates the default Core backend according to the configured backend policy.
-
-    PythonOCCBackend is preferred. TopologicCoreBackend is used as the fallback
-    when automatic backend selection is active and PythonOCC is unavailable.
-    """
-    requested = os.environ.get(_BACKEND_ENV_VAR, "auto").strip().lower()
-
-    def _pythonocc_backend():
-        try:
-            import OCC  # noqa: F401
-        except ImportError as e:
-            raise ImportError(
-                "PythonOCCBackend was requested, but pythonocc-core is not available."
-            ) from e
-
+    """Load the sole supported geometry kernel; never fall back."""
+    try:
+        from OCC.Core import TopoDS  # noqa: F401
         from topologicpy.pythonocc_backend import PythonOCCBackend
-        return PythonOCCBackend()
-
-    if requested in ("", "auto"):
-        try:
-            return _pythonocc_backend()
-        except ImportError:
-            return TopologicCoreBackend()
-
-    if requested in ("pythonocc", "occ", "python_occ"):
-        return _pythonocc_backend()
-
-    if requested in ("topologic_core", "topologiccore", "core"):
-        return TopologicCoreBackend()
-
-    raise ValueError(
-        f"Unsupported {_BACKEND_ENV_VAR} value '{requested}'. "
-        "Expected 'auto', 'pythonocc', or 'topologic_core'."
-    )
+    except (ImportError, OSError) as exc:
+        raise ImportError(
+            "TopologicPy requires PythonOCC (pythonocc-core). Install it in "
+            "the active Python environment using the installation guide in README.md."
+        ) from exc
+    return PythonOCCBackend()
 
 
 class _MissingNamespace:
     """
     Placeholder namespace used when a backend does not expose a requested
-    topologic_core namespace.
+    kernel namespace.
     """
 
     def __init__(self, namespace_name: str):
@@ -179,87 +95,9 @@ class _NamespaceProxy:
         return f"<Core namespace proxy: {self._namespace_name}>"
 
 
-class TopologicCoreBackend:
-    """
-    Fallback backend that exposes the ``topologic_core`` namespaces directly.
-
-    This class deliberately mirrors ``topologic_core`` as closely as possible.
-    Any missing namespaces are set to ``None`` so that Core can fail gracefully
-    with a clear message when accessed.
-    """
-
-    def __init__(self):
-        try:
-            import topologic_core as topologic
-        except Exception as e:
-            raise ImportError(
-                "Could not import topologic_core. Install topologic_core or set "
-                "a different Core backend with Core.SetBackend(...)."
-            ) from e
-
-        self._topologic = topologic
-
-        # Primary topology namespaces.
-        self.Vertex = getattr(topologic, "Vertex", None)
-        self.Edge = getattr(topologic, "Edge", None)
-        self.Wire = getattr(topologic, "Wire", None)
-        self.Face = getattr(topologic, "Face", None)
-        self.Shell = getattr(topologic, "Shell", None)
-        self.Cell = getattr(topologic, "Cell", None)
-        self.CellComplex = getattr(topologic, "CellComplex", None)
-        self.Cluster = getattr(topologic, "Cluster", None)
-        self.Grid = getattr(topologic, "Grid", None)
-
-        # Attribute/data namespaces.
-        self.Dictionary = getattr(topologic, "Dictionary", None)
-        self.Aperture = getattr(topologic, "Aperture", None)
-        self.Context = getattr(topologic, "Context", None)
-        self.Topology = getattr(topologic, "Topology", None)
-
-        # Utility namespaces.
-        self.TopologyUtility = getattr(topologic, "TopologyUtility", None)
-        self.VertexUtility = getattr(topologic, "VertexUtility", None)
-        self.EdgeUtility = getattr(topologic, "EdgeUtility", None)
-        self.WireUtility = getattr(topologic, "WireUtility", None)
-        self.FaceUtility = getattr(topologic, "FaceUtility", None)
-        self.ShellUtility = getattr(topologic, "ShellUtility", None)
-        self.CellUtility = getattr(topologic, "CellUtility", None)
-        self.CellComplexUtility = getattr(topologic, "CellComplexUtility", None)
-        self.ClusterUtility = getattr(topologic, "ClusterUtility", None)
-
-        # Preserve all other public symbols exposed by topologic_core. This makes
-        # the backend more exhaustive without having to predict every future name.
-        for name in dir(topologic):
-            if name in ("Graph", "GraphUtility"):
-                continue
-            if name.startswith("_"):
-                continue
-            if not hasattr(self, name):
-                try:
-                    setattr(self, name, getattr(topologic, name))
-                except Exception:
-                    pass
-
-    def RawModule(self) -> Any:
-        """
-        Returns the raw imported ``topologic_core`` module.
-        """
-        return self._topologic
-
-    def Namespaces(self) -> List[str]:
-        """
-        Returns the public namespace names exposed by this backend.
-        """
-        return sorted([name for name in dir(self) if not name.startswith("_")])
-
-
 class Core:
     """
-    Thin facade over the active topology kernel backend.
-
-    The preferred backend is ``PythonOCCBackend``. If PythonOCC is unavailable,
-    Core falls back to ``TopologicCoreBackend``. Use ``Core.SetBackend`` to replace
-    it with another backend object that exposes the same namespace shape.
+    Thin facade over the PythonOCC topology kernel.
     """
 
     _backend: Optional[Any] = None
@@ -304,10 +142,7 @@ class Core:
         """
         Returns the active backend.
 
-        If no backend has been explicitly set, PythonOCCBackend is attempted
-        first. If PythonOCC is unavailable, TopologicCoreBackend is used as the
-        fallback. The TOPOLOGICPY_CORE_BACKEND environment variable can be used
-        to explicitly select a backend.
+        PythonOCC is loaded on first use.
         """
         if Core._backend is None:
             Core._backend = _CreateDefaultBackend()
@@ -342,12 +177,12 @@ class Core:
     @staticmethod
     def SetBackend(backend: Any) -> Any:
         """
-        Sets the active Core backend.
+        Injects a namespace provider for testing; PythonOCC is the only supported runtime.
 
         Parameters
         ----------
         backend : object
-            A backend object exposing topologic_core-like namespaces such as
+            A test double exposing the kernel namespaces such as
             ``Vertex``, ``Edge``, ``Wire``, ``Face``, ``TopologyUtility``, etc.
 
         Returns
@@ -363,10 +198,7 @@ class Core:
     @staticmethod
     def ResetBackend() -> Any:
         """
-        Resets the active backend according to the default backend policy.
-
-        PythonOCCBackend is preferred, with TopologicCoreBackend used as the
-        automatic fallback when PythonOCC is unavailable.
+        Resets the facade to PythonOCC.
         """
         Core._backend = None
         return Core.Backend()
@@ -439,4 +271,4 @@ class Core:
         return fn(*args, **kwargs)
 
 
-__all__ = ["Core", "TopologicCoreBackend"]
+__all__ = ["Core"]

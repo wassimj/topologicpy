@@ -213,9 +213,9 @@ class EnergyModel:
 
         Parameters
         ----------
-        building : topologic_core.CellComplex or topologic_core.Cell
+        building : CellComplex or Cell
             The input building topology.
-        shadingSurfaces : topologic_core.Topology , optional
+        shadingSurfaces : Topology , optional
             The input topology for shading surfaces. Default is None.
         osModelPath : str , optional
             The path to the template OSM file. Default is "./assets/EnergyModel/OSMTemplate-OfficeBuilding-3.10.0.osm".

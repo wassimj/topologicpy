@@ -67,7 +67,7 @@ class Cluster():
 
         Returns
         -------
-        topologic_core.Cluster
+        Cluster
             The created cluster of vertices.
         """
 
@@ -269,7 +269,7 @@ class Cluster():
 
         Parameters
         ----------
-        *topologies : topologic_core.Topology
+        *topologies : Topology
             One or more topologies, or a list of topologies, to be processed.
         transferDictionaries : bool , optional
             If set to True, the dictionaries from the input topologies are merged
@@ -280,7 +280,7 @@ class Cluster():
 
         Returns
         -------
-        topologic_core.Topology
+        Topology
             The created Cluster, or the original topology if a single topology
             was supplied directly. Returns None if no valid topologies are found.
 
@@ -409,7 +409,7 @@ class Cluster():
 
         Parameters
         ----------
-        cluster : topologic_core.Cluster
+        cluster : Cluster
             The input cluster.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
@@ -441,7 +441,7 @@ class Cluster():
 
         Parameters
         ----------
-        cluster : topologic_core.Cluster
+        cluster : Cluster
             The input cluster.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
@@ -586,14 +586,14 @@ class Cluster():
         if not isinstance(selectors, list):
             check_vertices = [t for t in topologyList if not Topology.IsInstance(t, "Vertex")]
             if len(check_vertices) > 0:
-                print("Cluster.DBSCAN - Error: The input selectors parameter is not a valid list and this is needed since the list of topologies contains objects of type other than a topologic_core.Vertex. Returning None.")
+                print("Cluster.DBSCAN - Error: The input selectors parameter is not a valid list and this is needed since the list of topologies contains objects of type other than a Vertex. Returning None.")
                 return None, None
         else:
             selectors = [s for s in selectors if Topology.IsInstance(s, "Vertex")]
             if len(selectors) < 1:
                 check_vertices = [t for t in topologyList if not Topology.IsInstance(t, "Vertex")]
                 if len(check_vertices) > 0:
-                    print("Cluster.DBSCAN - Error: The input selectors parameter does not contain any valid vertices and this is needed since the list of topologies contains objects of type other than a topologic_core.Vertex. Returning None.")
+                    print("Cluster.DBSCAN - Error: The input selectors parameter does not contain any valid vertices and this is needed since the list of topologies contains objects of type other than a Vertex. Returning None.")
                     return None, None
             if not len(selectors) == len(topologyList):
                 print("Cluster.DBSCAN - Error: The input topologies and selectors parameters do not have the same length. Returning None.")
@@ -656,7 +656,7 @@ class Cluster():
 
         Parameters
         ----------
-        cluster : topologic_core.Cluster
+        cluster : Cluster
             The input cluster.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
@@ -696,7 +696,7 @@ class Cluster():
 
         Returns
         -------
-        topologic_core.Cluster
+        Cluster
             The external boundary of the input cluster.
 
         """
@@ -747,7 +747,7 @@ class Cluster():
 
         Parameters
         ----------
-        cluster : topologic_core.Cluster
+        cluster : Cluster
             The input cluster.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
@@ -780,7 +780,7 @@ class Cluster():
 
         Parameters
         ----------
-        cluster : topologic_core.Cluster
+        cluster : Cluster
             The input cluster.
 
         Returns
@@ -896,7 +896,7 @@ class Cluster():
         Returns
         -------
         list
-            The created list of clusters (topologic_core.Cluster), each with centroidKey stored in its dictionary.
+            The created list of clusters (Cluster), each with centroidKey stored in its dictionary.
         """
         
         import math
@@ -1284,9 +1284,9 @@ class Cluster():
 
         Parameters
         ----------
-        wire : topologic_core.Wire , optional
+        wire : Wire , optional
             The input Wire. if set to None, a circle with the input parameters is created. Otherwise, the input parameters are ignored.
-        origin : topologic_core.Vertex , optional
+        origin : Vertex , optional
             The location of the origin of the circle. Default is None which results in the circle being placed at (0, 0, 0).
         radius : float , optional
             The radius of the mystic rose. Default is 1.
@@ -1305,7 +1305,7 @@ class Cluster():
 
         Returns
         -------
-        topologic_core.Cluster
+        Cluster
             The created mystic rose (cluster of edges).
 
         """
@@ -1338,7 +1338,7 @@ class Cluster():
 
         Parameters
         ----------
-        cluster : topologic_core.Cluster
+        cluster : Cluster
             The input cluster.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
@@ -1374,7 +1374,7 @@ class Cluster():
 
         Parameters
         ----------
-        cluster : topologic_core.Cluster
+        cluster : Cluster
             The input Cluster.
         tolerance : float, optional
             Reserved for backend-neutral hierarchy queries. Default is 0.0001.
@@ -1383,7 +1383,7 @@ class Cluster():
 
         Returns
         -------
-        topologic_core.Topology or None
+        Topology or None
             The sole constituent when there is exactly one; otherwise the input Cluster.
         """
         from topologicpy.Topology import Topology
@@ -1430,7 +1430,7 @@ class Cluster():
 
         Returns
         -------
-        topologic_core.Cluster
+        Cluster
             The created tripod
 
         """
@@ -1471,7 +1471,7 @@ class Cluster():
 
         Parameters
         ----------
-        cluster : topologic_core.Cluster
+        cluster : Cluster
             The input cluster.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
@@ -1504,7 +1504,7 @@ class Cluster():
 
         Parameters
         ----------
-        cluster : topologic_core.Cluster
+        cluster : Cluster
             The input cluster.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.

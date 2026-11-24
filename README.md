@@ -25,7 +25,7 @@ TopologicPy can be used interactively in Python and Jupyter environments, incorp
 
 ## Installation
 
-TopologicPy uses [PythonOCC](https://github.com/tpaviot/pythonocc-core) for geometry and topology. PythonOCC includes compiled bindings to Open CASCADE Technology (OCCT), so it must be installed in the same Python environment as TopologicPy.
+TopologicPy uses [PythonOCC](https://github.com/tpaviot/pythonocc-core) as its sole supported geometry and topology kernel. PythonOCC includes compiled bindings to Open CASCADE Technology (OCCT), so it must be installed in the same Python environment as TopologicPy.
 
 **Python 3.12 is recommended.** The examples below use the PythonOCC 8.0.1 release series. Choose one of the following installation routes:
 

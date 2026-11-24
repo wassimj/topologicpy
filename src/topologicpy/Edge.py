@@ -83,7 +83,7 @@ class Edge():
 
         Parameters
         ----------
-        edgeA : topologic_core.Edge
+        edgeA : Edge
             The first input edge.
         edgeB : topologic Edge
             The second input edge.
@@ -139,7 +139,7 @@ class Edge():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex , optional
+        origin : Vertex , optional
             The placement origin of the arc. If None, the global origin is used.
             The interpretation of the origin depends on the input placement
             parameter. Default is None.
@@ -170,7 +170,7 @@ class Edge():
 
         Returns
         -------
-        topologic_core.Edge
+        Edge
             The created open circular arc.
 
         """
@@ -364,11 +364,11 @@ class Edge():
 
         Parameters
         ----------
-        startVertex : topologic_core.Vertex
+        startVertex : Vertex
             The start vertex of the arc.
-        middleVertex : topologic_core.Vertex
+        middleVertex : Vertex
             A vertex that lies on the desired arc between start and end.
-        endVertex : topologic_core.Vertex
+        endVertex : Vertex
             The end vertex of the arc.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
@@ -377,7 +377,7 @@ class Edge():
 
         Returns
         -------
-        topologic_core.Edge
+        Edge
             The exact circular arc Edge, or None if the three vertices are invalid or collinear.
         """
         import math
@@ -545,7 +545,7 @@ class Edge():
 
         Returns
         -------
-        topologic_core.Edge
+        Edge
             The created open circular arc, or None if it cannot be created.
 
         """
@@ -663,7 +663,7 @@ class Edge():
 
         Returns
         -------
-        topologic_core.Edge
+        Edge
             The created Bezier Edge, or None if the curve cannot be created.
         """
         import math
@@ -744,7 +744,7 @@ class Edge():
 
         Parameters
         ----------
-        edgeA : topologic_core.Edge
+        edgeA : Edge
             The first topologic Edge.
         edgeB : topologic Edge
             The second topologic Edge.
@@ -763,7 +763,7 @@ class Edge():
 
         Returns
         -------
-        topologic_core.Edge
+        Edge
             The created bisecting edge.
 
         """
@@ -838,9 +838,9 @@ class Edge():
 
         Parameters
         ----------
-        face : topologic_core.Face
+        face : Face
             The input face
-        origin : topologic_core.Vertex , optional
+        origin : Vertex , optional
             The desired origin of the edge. If set to None, the centroid of the face is chosen as the origin of the edge. Default is None.
         length : float , optional
             The desired length of the edge. Default is 1.
@@ -849,7 +849,7 @@ class Edge():
         
         Returns
         -------
-        edge : topologic_core.Edge
+        edge : Edge
             The created edge.
 
         """
@@ -911,7 +911,7 @@ class Edge():
 
         Returns
         -------
-        topologic_core.Edge
+        Edge
             The created edge, or None on failure.
         """
         import math
@@ -1101,7 +1101,7 @@ class Edge():
 
         Parameters
         ----------
-        edge : topologic_core.Edge
+        edge : Edge
             The input Edge.
         offset : float , optional
             The desired signed offset distance. Positive values offset to the left
@@ -1114,7 +1114,7 @@ class Edge():
 
         Returns
         -------
-        topologic_core.Edge
+        Edge
             A single offset Edge.
 
         """
@@ -1302,9 +1302,9 @@ class Edge():
 
         Parameters
         ----------
-        vertexA : topologic_core.Vertex
+        vertexA : Vertex
             The first input vertex. This is considered the start vertex.
-        vertexB : topologic_core.Vertex
+        vertexB : Vertex
             The second input vertex. This is considered the end vertex.
         tolerance : float , optional
             The desired tolerance to decide if an Edge can be created. Default is 0.0001.
@@ -1313,7 +1313,7 @@ class Edge():
         
         Returns
         -------
-        edge : topologic_core.Edge
+        edge : Edge
             The created edge.
 
         """
@@ -1368,7 +1368,7 @@ class Edge():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex
+        origin : Vertex
             The origin (start vertex) of the edge.
         direction : list , optional
             The desired direction vector of the edge. Default is [0,0,1] (pointing up in the Z direction)
@@ -1381,7 +1381,7 @@ class Edge():
 
         Returns
         -------
-        topologic_core.Edge
+        Edge
             The created edge.
 
         """
@@ -1421,7 +1421,7 @@ class Edge():
 
         Returns
         -------
-        topologic_core.Edge
+        Edge
             The created edge.
 
         """
@@ -1462,14 +1462,14 @@ class Edge():
 
         Parameters
         ----------
-        cluster : topologic_core.Cluster
+        cluster : Cluster
             The input cluster of vertices. The first item is considered the start vertex and the last item is considered the end vertex.
         tolerance : float , optional
             The desired tolerance to decide if an edge can be created. Default is 0.0001.
 
         Returns
         -------
-        topologic_core.Edge
+        Edge
             The created edge.
 
         """
@@ -1507,7 +1507,7 @@ class Edge():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex , optional
+        origin : Vertex , optional
             The placement origin of the circle. If None, the global origin is
             used. The interpretation of this origin depends on the input
             placement parameter. Default is None.
@@ -1530,7 +1530,7 @@ class Edge():
 
         Returns
         -------
-        topologic_core.Edge
+        Edge
             The created closed circular Edge.
 
         """
@@ -1746,7 +1746,7 @@ class Edge():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex , optional
+        origin : Vertex , optional
             The placement origin. Default is the global origin.
         inputMode : int , optional
             1 = width/length, 2 = focalLength/eccentricity,
@@ -1779,7 +1779,7 @@ class Edge():
 
         Returns
         -------
-        topologic_core.Edge
+        Edge
             The exact elliptical Edge.
         """
         import math
@@ -1937,9 +1937,9 @@ class Edge():
 
         Parameters
         ----------
-        edgeA : topologic_core.Edge
+        edgeA : Edge
             The first input edge.
-        edgeB : topologic_core.Edge
+        edgeB : Edge
             The second input edge.
         tolerance : float , optional
             The desired tolerance. If the minimum separation is less than or equal
@@ -1950,7 +1950,7 @@ class Edge():
 
         Returns
         -------
-        topologic_core.Edge
+        Edge
             The shortest connecting Edge, or None if the input Edges intersect,
             touch within tolerance, or a connection cannot be created.
 
@@ -2026,7 +2026,7 @@ class Edge():
 
         Parameters
         ----------
-        edge : topologic_core.Edge
+        edge : Edge
             The input edge.
         mantissa : int , optional
             The number of decimal places to round the result to. If None, full
@@ -2090,14 +2090,14 @@ class Edge():
 
         Parameters
         ----------
-        edge : topologic_core.Edge
+        edge : Edge
             The input edge.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
-        topologic_core.Vertex
+        Vertex
             The end vertex of the input edge.
 
         """
@@ -2126,7 +2126,7 @@ class Edge():
 
         Parameters
         ----------
-        edge : topologic_core.Edge
+        edge : Edge
             The input edge.
         mantissa : int , optional
             The number of decimal places to round the result to. Default is 6.
@@ -2183,7 +2183,7 @@ class Edge():
 
         Parameters
         ----------
-        edge : topologic_core.Edge
+        edge : Edge
             The input edge.
         distance : float , optional
             The total distance by which to extend the edge. Default is 1.0.
@@ -2200,7 +2200,7 @@ class Edge():
 
         Returns
         -------
-        topologic_core.Edge
+        Edge
             The extended edge, or None if the operation cannot be completed.
         """
         import math
@@ -2302,9 +2302,9 @@ class Edge():
 
         Parameters
         ----------
-        edgeA : topologic_core.Edge
+        edgeA : Edge
             The Edge to extend.
-        edgeB : topologic_core.Edge
+        edgeB : Edge
             The target Edge.
         mantissa : int , optional
             Retained for backward API compatibility. Default is 6.
@@ -2317,7 +2317,7 @@ class Edge():
 
         Returns
         -------
-        topologic_core.Edge
+        Edge
             One extended Edge, or None if the operation cannot be completed.
 
         """
@@ -2512,7 +2512,7 @@ class Edge():
 
         Parameters
         ----------
-        edge : topologic_core.Edge
+        edge : Edge
             The input edge.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
@@ -2521,7 +2521,7 @@ class Edge():
 
         Returns
         -------
-        topologic_core.Cluster
+        Cluster
             The external boundary of the input edge. This is a cluster of the edge's end vertices.
 
         """
@@ -2753,7 +2753,7 @@ class Edge():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex , optional
+        origin : Vertex , optional
             The placement origin. If None, the global origin is used.
             Default is None.
         radius : float , optional
@@ -2787,7 +2787,7 @@ class Edge():
 
         Returns
         -------
-        topologic_core.Edge
+        Edge
             The created helical Edge, or None if it cannot be created.
 
         """
@@ -3112,7 +3112,7 @@ class Edge():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex , optional
+        origin : Vertex , optional
             The placement origin. If None, the global origin is used.
             Default is None.
         a : float , optional
@@ -3141,7 +3141,7 @@ class Edge():
 
         Returns
         -------
-        topologic_core.Edge
+        Edge
             The created exact hyperbolic Edge, or None if it cannot be created.
 
         """
@@ -3355,7 +3355,7 @@ class Edge():
 
         Parameters
         ----------
-        edge : topologic_core.Edge
+        edge : Edge
             The input edge.
         edges : list
             The input list of edges.
@@ -3410,9 +3410,9 @@ class Edge():
 
         Parameters
         ----------
-        edgeA : topologic_core.Edge
+        edgeA : Edge
             The first input edge.
-        edgeB : topologic_core.Edge
+        edgeB : Edge
             The second input edge.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
@@ -3421,7 +3421,7 @@ class Edge():
 
         Returns
         -------
-        topologic_core.Vertex
+        Vertex
             The intersection vertex or None if the edges are parallel or collinear.
 
         """
@@ -3478,7 +3478,7 @@ class Edge():
 
         Parameters
         ----------
-        edge : topologic_core.Edge
+        edge : Edge
             The input edge.
         tolerance : float , optional
             The desired tolerance used by the fallback closure test. Default is 0.0001.
@@ -3550,9 +3550,9 @@ class Edge():
 
         Parameters
         ----------
-        edgeA : topologic_core.Edge
+        edgeA : Edge
             The first input edge.
-        edgeB : topologic_core.Edge
+        edgeB : Edge
             The second input edge.
         mantissa : int , optional
             The number of decimal places to round the result to. Default is 6.
@@ -3631,9 +3631,9 @@ class Edge():
 
         Parameters
         ----------
-        edgeA : topologic_core.Edge
+        edgeA : Edge
             The first input edge.
-        edgeB : topologic_core.Edge
+        edgeB : Edge
             The second input edge.
         mantissa : int , optional
             The number of decimal places to round the result to. Default is 6.
@@ -3694,7 +3694,7 @@ class Edge():
 
         Parameters
         ----------
-        edge : topologic_core.Edge
+        edge : Edge
             The input edge.
         tolerance : float , optional
             The desired tolerance used to determine if the edge is geometrically
@@ -3831,9 +3831,9 @@ class Edge():
 
         Parameters
         ----------
-        edgeA : topologic_core.Edge
+        edgeA : Edge
             The first input edge.
-        edgeB : topologic_core.Edge
+        edgeB : Edge
             The second input edge.
         mantissa : int , optional
             The number of decimal places to round the result to. Default is 6.
@@ -3899,7 +3899,7 @@ class Edge():
 
         Parameters
         ----------
-        edge : topologic_core.Edge
+        edge : Edge
             The input edge.
         mantissa : int , optional
             The number of decimal places to round the result to. If None, full
@@ -3948,7 +3948,7 @@ class Edge():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex , optional
+        origin : Vertex , optional
             The origin location of the box. Default is None which results in the edge being placed at (0, 0, 0).
         length : float , optional
             The desired length of the edge. Default is 1.0.
@@ -3964,7 +3964,7 @@ class Edge():
             The desired tolerance. Default is 0.0001.
         Returns
         -------
-        topologic_core.Edge
+        Edge
             The created edge
         """
 
@@ -4115,7 +4115,7 @@ class Edge():
 
         Parameters
         ----------
-        edge : topologic_core.Edge
+        edge : Edge
             The input edge.
         useEndVertex : bool , optional
             If set to False, the start vertex remains fixed. If set to True, the
@@ -4128,7 +4128,7 @@ class Edge():
 
         Returns
         -------
-        topologic_core.Edge
+        Edge
             A unit-length edge, or None if the input edge is curved or the
             operation cannot be completed.
 
@@ -4194,7 +4194,7 @@ class Edge():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex , optional
+        origin : Vertex , optional
             The placement origin of the parabola. If None, the global origin is
             used. Default is None.
         focalLength : float , optional
@@ -4217,7 +4217,7 @@ class Edge():
 
         Returns
         -------
-        topologic_core.Edge
+        Edge
             The created exact parabolic Edge, or None if it cannot be created.
 
         """
@@ -4389,9 +4389,9 @@ class Edge():
 
         Parameters
         ----------
-        edge : topologic_core.Edge
+        edge : Edge
             The input edge.
-        vertex : topologic_core.Vertex
+        vertex : Vertex
             The input vertex.
         mantissa : int , optional
             The number of decimal places to round the result to. Default is 6.
@@ -4445,7 +4445,7 @@ class Edge():
 
         Parameters
         ----------
-        edge : topologic_core.Edge
+        edge : Edge
             The input edge.
         mantissa : int , optional
             The number of decimal places to round the result to. Default is 6.
@@ -4479,7 +4479,7 @@ class Edge():
 
         Parameters
         ----------
-        edge : topologic_core.Edge
+        edge : Edge
             The input edge.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
@@ -4488,7 +4488,7 @@ class Edge():
 
         Returns
         -------
-        topologic_core.Edge
+        Edge
             The reversed edge, or None if reversal cannot be performed without
             altering its geometry.
         """
@@ -4584,7 +4584,7 @@ class Edge():
 
         Parameters
         ----------
-        edge : topologic_core.Edge
+        edge : Edge
             The input edge.
         length : float , optional
             The desired length of the returned edge. Default is 1.0.
@@ -4600,7 +4600,7 @@ class Edge():
 
         Returns
         -------
-        topologic_core.Edge
+        Edge
             The resized edge, or None if the operation cannot be completed.
         """
         import math
@@ -4685,9 +4685,9 @@ class Edge():
 
         Parameters
         ----------
-        edgeA : topologic_core.Edge
+        edgeA : Edge
             The first input edge.
-        edgeB : topologic_core.Edge
+        edgeB : Edge
             The second input edge.
         mantissa : int , optional
             The number of decimal places to round the result to. Default is 6.
@@ -4982,14 +4982,14 @@ class Edge():
 
         Parameters
         ----------
-        edge : topologic_core.Edge
+        edge : Edge
             The input edge.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
-        topologic_core.Vertex
+        Vertex
             The start vertex of the input edge.
 
         """
@@ -5018,7 +5018,7 @@ class Edge():
 
         Parameters
         ----------
-        edge : topologic_core.Edge
+        edge : Edge
             The input edge.
         u : float , optional
             The normalized parameter along the edge. Default is 0.5.
@@ -5101,7 +5101,7 @@ class Edge():
 
         Parameters
         ----------
-        edge : topologic_core.Edge
+        edge : Edge
             The input edge.
         distance : float , optional
             The total geometric distance to remove from the edge. Negative values
@@ -5120,7 +5120,7 @@ class Edge():
 
         Returns
         -------
-        topologic_core.Edge
+        Edge
             The trimmed edge, or None if the operation cannot be completed without
             altering the curve geometry.
 
@@ -5307,9 +5307,9 @@ class Edge():
 
         Parameters
         ----------
-        edgeA : topologic_core.Edge
+        edgeA : Edge
             The Edge to trim.
-        edgeB : topologic_core.Edge
+        edgeB : Edge
             The Edge used as the trimming geometry.
         reverse : bool , optional
             If False, retains the portion of edgeA from its start to the first
@@ -5325,7 +5325,7 @@ class Edge():
 
         Returns
         -------
-        topologic_core.Edge
+        Edge
             The trimmed Edge. If no usable internal intersection exists, the
             original edgeA is returned.
 
@@ -5589,7 +5589,7 @@ class Edge():
 
         Parameters
         ----------
-        edge : topologic_core.Edge
+        edge : Edge
             The input edge.
         uA : float , optional
             The normalized parameter corresponding to the start of the returned
@@ -5604,7 +5604,7 @@ class Edge():
 
         Returns
         -------
-        topologic_core.Edge
+        Edge
             The trimmed edge, or None if the operation fails.
 
         """
@@ -5701,12 +5701,12 @@ class Edge():
 
         Parameters
         ----------
-        edge : topologic_core.Edge
+        edge : Edge
             The input edge.
         distance : float , optional
             Signed curvilinear distance measured in the orientation of the edge.
             Default is 0.0.
-        origin : topologic_core.Vertex , optional
+        origin : Vertex , optional
             A vertex lying on the edge from which distance is measured. If None,
             the start vertex is used. Default is None.
         mantissa : int , optional
@@ -5719,7 +5719,7 @@ class Edge():
 
         Returns
         -------
-        topologic_core.Vertex
+        Vertex
             The resulting vertex, or None if the requested position cannot be
             evaluated without extrapolating an open curved edge.
         """
@@ -5885,7 +5885,7 @@ class Edge():
 
         Parameters
         ----------
-        edge : topologic_core.Edge
+        edge : Edge
             The input edge.
         u : float , optional
             The normalized parameter along the edge. A parameter of 0 returns the start vertex and 1 returns the end vertex. Default is 0.
@@ -5896,7 +5896,7 @@ class Edge():
 
         Returns
         -------
-        topologic_core.Vertex
+        Vertex
             The created vertex, or None if the parameter cannot be evaluated.
 
         """
@@ -5960,7 +5960,7 @@ class Edge():
 
         Parameters
         ----------
-        edge : topologic_core.Edge
+        edge : Edge
             The input edge.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.

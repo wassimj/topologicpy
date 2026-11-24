@@ -38,13 +38,6 @@ Vertex = pytest.importorskip("topologicpy.Vertex").Vertex
 Wire = pytest.importorskip("topologicpy.Wire").Wire
 
 
-ACTIVE_BACKEND = os.environ.get("TOPOLOGICPY_CORE_BACKEND", "").strip().lower()
-if not ACTIVE_BACKEND:
-    _backend_name = type(Core.Backend()).__name__.lower()
-    ACTIVE_BACKEND = "pythonocc" if "pythonocc" in _backend_name else "topologic_core"
-
-IS_PYTHONOCC = ACTIVE_BACKEND == "pythonocc"
-IS_TOPOLOGIC_CORE = ACTIVE_BACKEND == "topologic_core"
 
 GEOMETRY_TOLERANCE = 1.0e-6
 RELATIONSHIP_TOLERANCE = 1.0e-3
@@ -506,10 +499,7 @@ def test_tessellate_planar_face_returns_canonical_triangle_mesh():
 
     assert len(mesh["faces"]) >= 2
 
-    assert mesh["metadata"]["source"] in (
-        "occt",
-        "topologic_core",
-    )
+    assert mesh["metadata"]["source"] == "occt"
 
 def test_tessellate_validation_is_non_throwing():
     assert (
@@ -1290,10 +1280,7 @@ def test_remove_collinear_coplanar_edges_faces_and_cleanup(square_face, simple_c
     cleaned = Topology.Cleanup(Topology.Copy(square_face))
 
     _assert_topology(cleaned_face)
-    if IS_TOPOLOGIC_CORE:
-        assert clean_cell is None
-    else:
-        _assert_topology(clean_cell)
+    _assert_topology(clean_cell)
     assert fixed is None or Topology.IsInstance(fixed, "Topology")
     assert cleaned is None or Topology.IsInstance(cleaned, "Topology")
 
@@ -1333,14 +1320,7 @@ def test_curve_safe_remove_collinear_edges_never_flattens_arc():
     curved = [edge for edge in after if Edge.IsLinear(edge, silent=True) is False]
     assert len(curved) == 1
 
-    if IS_PYTHONOCC:
-        # Native KeepShape protection allows only the split straight diameter
-        # to simplify while retaining the exact arc.
-        assert len(after) == 2
-    else:
-        # TopologicCore deliberately preserves the mixed topology unchanged
-        # rather than rebuilding and flattening the curve.
-        assert len(after) == 3
+    assert len(after) == 2
 
     assert math.isclose(
         Edge.Length(curved[0], mantissa=None, silent=True),
@@ -1361,9 +1341,7 @@ def test_remove_coplanar_faces_still_merges_adjacent_planar_faces():
         silent=True,
     )
 
-    if not IS_PYTHONOCC:
-        assert result is None
-        return
+    pass
 
     assert Topology.IsInstance(result, "Topology")
     faces = Topology.Faces(result) or []

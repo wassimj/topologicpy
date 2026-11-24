@@ -42,7 +42,7 @@ class CellComplex():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex , optional
+        origin : Vertex , optional
             The origin location of the box. Default is None which results in the box being placed at (0, 0, 0).
         width : float , optional
             The width of the box. Default is 1.
@@ -65,7 +65,7 @@ class CellComplex():
         
         Returns
         -------
-        topologic_core.CellComplex
+        CellComplex
             The created box.
 
         """
@@ -98,7 +98,7 @@ class CellComplex():
 
         Returns
         -------
-        topologic_core.CellComplex
+        CellComplex
             The created CellComplex, or None on failure.
         """
         from topologicpy.Vertex import Vertex
@@ -202,7 +202,7 @@ class CellComplex():
 
         Parameters
         ----------
-        cluster : topologic_core.Cluster
+        cluster : Cluster
             The input cluster of cells.
         transferDictionaries : bool , optional
             If set to True, any dictionaries in the faces are transferred to the faces of the created CellComplex.
@@ -214,7 +214,7 @@ class CellComplex():
 
         Returns
         -------
-        topologic_core.CellComplex
+        CellComplex
             The created cellcomplex.
 
         """
@@ -245,7 +245,7 @@ class CellComplex():
 
         Parameters
         ----------
-        faces : list of topologic_core.Face
+        faces : list of Face
             The linput ist of faces.
         minOffset : float , optional
             The minimum initial face offset to try. Default is 0.
@@ -270,7 +270,7 @@ class CellComplex():
         
         Returns
         -------
-        topologic_core.CellComplex
+        CellComplex
             The created CellComplex
 
         """
@@ -408,7 +408,7 @@ class CellComplex():
 
         Returns
         -------
-        topologic_core.CellComplex
+        CellComplex
             The created CellComplex, or None if construction fails.
 
         """
@@ -510,7 +510,7 @@ class CellComplex():
     #     Parameters
     #     ----------
     #     faces : list
-    #         The input list of topologic_core.Face objects.
+    #         The input list of Face objects.
     #     transferDictionaries : bool , optional
     #         If set to True, any dictionaries in the faces are transferred to the faces of the created CellComplex.
     #         Otherwise, they are not. Default is False.
@@ -521,7 +521,7 @@ class CellComplex():
 
     #     Returns
     #     -------
-    #     topologic_core.CellComplex or None
+    #     CellComplex or None
     #         The created CellComplex.
     #     """
 
@@ -1010,7 +1010,7 @@ class CellComplex():
 
         Returns
         -------
-        topologic_core.CellComplex
+        CellComplex
             The created CellComplex, or None if construction fails.
 
         """
@@ -1549,7 +1549,7 @@ class CellComplex():
 
         Parameters
         ----------
-        cluster : topologic_core.Cluster
+        cluster : Cluster
             The input cluster of faces.
         transferDictionaries : bool , optional
             If set to True, any dictionaries in the faces are transferred to the faces of the created CellComplex.
@@ -1561,7 +1561,7 @@ class CellComplex():
 
         Returns
         -------
-        topologic_core.CellComplex
+        CellComplex
             The created cellcomplex.
 
         """
@@ -1604,7 +1604,7 @@ class CellComplex():
 
         Returns
         -------
-        topologic_core.CellComplex
+        CellComplex
             The created CellComplex, or None on failure.
         """
         from topologicpy.Edge import Edge
@@ -1625,10 +1625,7 @@ class CellComplex():
         # Exact curve-preserving path. Leave the historical faceted path below untouched.
         if not polyhedron:
             try:
-                if Topology._IsTopologicCoreBackend():
-                    if not silent:
-                        print("CellComplex.ByWires - Error: polyhedron=False requires the PythonOCC backend. Returning None.")
-                    return None
+                pass
             except Exception:
                 return None
             method = getattr(Core.CellComplex, "ByWires", None)
@@ -1736,7 +1733,7 @@ class CellComplex():
 
         Parameters
         ----------
-        cellComplex : topologic_core.CellComplex
+        cellComplex : CellComplex
             The input cellComplex.
 
         Returns
@@ -1768,7 +1765,7 @@ class CellComplex():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex , optional
+        origin : Vertex , optional
             The origin location of the cube. Default is None which results in the cube being placed at (0, 0, 0).
         size : float , optional
             The size of the cube. Default is 1.
@@ -1787,7 +1784,7 @@ class CellComplex():
         
         Returns
         -------
-        topologic_core.CellComplex
+        CellComplex
             The created cube.
 
         """
@@ -1803,7 +1800,7 @@ class CellComplex():
 
         Parameters
         ----------
-        cellComplex : topologic_core.CellComplex
+        cellComplex : CellComplex
             the input cellComplex.
         tiltAngle : float , optional
             The threshold tilt angle in degrees to determine if a face is vertical, horizontal, or tilted. The tilt angle is measured from the nearest cardinal direction. Default is 10.
@@ -1855,7 +1852,7 @@ class CellComplex():
         
         Returns
         -------
-        topologic_core.CellComplex
+        CellComplex
             The created delaunay cellComplex.
 
         """
@@ -1913,7 +1910,7 @@ class CellComplex():
 
         Parameters
         ----------
-        cellComplex : topologic_core.CellComplex
+        cellComplex : CellComplex
             The input cellComplex.
         silent: bool , optional
             if set to True, no error or warning messages are printed. Default is False.
@@ -1947,14 +1944,14 @@ class CellComplex():
 
         Parameters
         ----------
-        cellComplex : topologic_core.CellComplex
+        cellComplex : CellComplex
             The input cellComplex.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
-        topologic_core.Cell
+        Cell
             The external boundary of the input cellComplex.
 
         """
@@ -1988,7 +1985,7 @@ class CellComplex():
 
         Parameters
         ----------
-        cellComplex : topologic_core.CellComplex
+        cellComplex : CellComplex
             The input cellComplex.
 
         Returns
@@ -2008,7 +2005,7 @@ class CellComplex():
 
         Parameters
         ----------
-        cellComplex : topologic_core.CellComplex
+        cellComplex : CellComplex
             The input cellComplex.
 
         Returns
@@ -2037,7 +2034,7 @@ class CellComplex():
 
         Parameters
         ----------
-        cellComplex : topologic_core.CellComplex
+        cellComplex : CellComplex
             The input cellComplex.
 
         Returns
@@ -2061,7 +2058,7 @@ class CellComplex():
 
         Parameters
         ----------
-        cellComplex : topologic_core.CellComplex
+        cellComplex : CellComplex
             The input cellComplex.
 
         Returns
@@ -2191,7 +2188,7 @@ class CellComplex():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex , optional
+        origin : Vertex , optional
             The origin location of the prism. Default is None which results in the prism being placed at (0, 0, 0).
         width : float , optional
             The width of the prism. Default is 1.
@@ -2218,7 +2215,7 @@ class CellComplex():
         
         Returns
         -------
-        topologic_core.CellComplex
+        CellComplex
             The created prism.
 
         """
@@ -2310,7 +2307,7 @@ class CellComplex():
 
         Parameters
         ----------
-        cellComplex : topologic_core.CellComplex
+        cellComplex : CellComplex
             The input cellComplex.
         angTolerance : float , optional
             The desired angular tolerance. Default is 0.1.
@@ -2321,7 +2318,7 @@ class CellComplex():
 
         Returns
         -------
-        topologic_core.CellComplex
+        CellComplex
             The created cellComplex without any collinear edges.
 
         """
@@ -2386,7 +2383,7 @@ class CellComplex():
 
         Parameters
         ----------
-        cellComplex : topologic_core.CellComplex
+        cellComplex : CellComplex
             The input cellComplex.
 
         Returns
@@ -2615,10 +2612,7 @@ class CellComplex():
 
         if not polyhedron:
             try:
-                if Topology._IsTopologicCoreBackend():
-                    if not silent:
-                        print("CellComplex.Torus - Error: polyhedron=False requires the PythonOCC backend. Returning None.")
-                    return None
+                pass
             except Exception:
                 return None
             method = getattr(Core.CellComplex, "ByTorus", None)
@@ -2698,7 +2692,7 @@ class CellComplex():
 
         Parameters
         ----------
-        cellComplex : topologic_core.CellComplex
+        cellComplex : CellComplex
             The input cellComplex.
 
         Returns
@@ -2762,7 +2756,7 @@ class CellComplex():
         vertices: list , optional 
             The input list of vertices to use for voronoi partitioning. If set to None, the algorithm uses the vertices of the input cell parameter.
             if both are set to none, a unit cube centered around the origin is used.
-        cell : topologic_core.Cell , optional
+        cell : Cell , optional
             The input bounding cell. If set to None, an axes-aligned bounding cell is created from the list of vertices. Default is None.
         tolerance : float , optional
             the desired tolerance. Default is 0.0001.
@@ -2770,7 +2764,7 @@ class CellComplex():
 
         Returns
         -------
-        topologic_core.CellComplex
+        CellComplex
             The created voronoi cellComplex.
 
         """
@@ -2842,7 +2836,7 @@ class CellComplex():
 
         Parameters
         ----------
-        cellComplex : topologic_core.CellComplex
+        cellComplex : CellComplex
             The input cellComplex.
 
         Returns

@@ -479,7 +479,7 @@ class BVH:
 
         Parameters
         ----------
-        *topologies : topologic_core.Topology
+        *topologies : Topology
             One or more topologies, or nested lists of topologies, to include in the BVH.
         maxLeafSize : int , optional
             The maximum number of primitives stored in a leaf node. Default is 4.
@@ -763,7 +763,7 @@ class BVH:
         ----------
         bvh : BVH
             The BVH tree.
-        origin : topologic_core.Vertex
+        origin : Vertex
             The origin of the ray.
         direction : list or tuple
             A three-component direction vector.

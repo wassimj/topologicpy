@@ -49,42 +49,34 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-24.04, ubuntu-26.04]
-    env:
-      TOPOLOGICPY_CORE_BACKEND: topologic_core
     steps:
       - uses: actions/checkout@v6
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v6
-        env:
-          # Reference: https://github.com/actions/setup-python/issues/862
-          # To solve: "A new release of pip is available: ... -> ..."
-          PIP_DISABLE_PIP_VERSION_CHECK: 1
+      - name: Create PythonOCC documentation environment
+        uses: mamba-org/setup-micromamba@v3
         with:
-          python-version: '3.12'
-          allow-prereleases: true
-          cache: pip
-          cache-dependency-path: |
-            **/pyproject.toml
-            **/requirements.txt
+          environment-name: topologicpy-docs
+          create-args: >-
+            python=3.12
+            pythonocc-core=8.0.1
+            pip
+          cache-environment: true
+          cache-environment-key: ${{ matrix.os }}-docs-pythonocc8.0.1
+          cache-downloads: true
       - name: Set project version from git tag/readable name
         run: echo "__version__ = '${{ needs.prepare-build-info.outputs.anyversion }}'" > src/topologicpy/version.py
       - name: Install pandoc
         run: |
           sudo apt-get update
           sudo apt-get install --yes --no-install-recommends pandoc
-          python -m pip install pandoc
+          micromamba run -n topologicpy-docs python -m pip install pandoc
       - name: Add sphinx requirements
-        run: python -m pip install -r ./docs/requirements.txt
+        run: micromamba run -n topologicpy-docs python -m pip install -r ./docs/requirements.txt
       - name: Build and install optional dependencies (required for use with autodoc of Sphinx)
-        run: python -m pip install --verbose ephem torch dgl dglgo scikit-learn
-      - name: Install TopologicCore backend for documentation
-        # TopologicCore is a CI-only backend here; it does not need to be a
-        # mandatory runtime dependency of TopologicPy.
-        run: python -m pip install "topologic-core==8.0.4"
+        run: micromamba run -n topologicpy-docs python -m pip install --verbose ephem torch dgl dglgo scikit-learn
       - name: Build and install the project
-        run: python -m pip install --verbose .
+        run: micromamba run -n topologicpy-docs python -m pip install --verbose .
       - name: Build docs
-        run: cd docs && make html
+        run: micromamba run -n topologicpy-docs sphinx-build -b html docs/source docs/build/html
       - name: Publish the canonical ontology with the documentation
         run: |
           test -f ontology/topologicpy.ttl
@@ -139,58 +131,12 @@ jobs:
           if-no-files-found: error
           retention-days: 60
 
-  test-topologiccore:
-    name: Test TopologicCore 8.0.4 with Python ${{ matrix.python-version }} on ${{ startsWith(matrix.os, 'macos-') && 'macOS' || startsWith(matrix.os, 'windows-') && 'Windows' || (matrix.os == 'ubuntu-26.04' && 'Ubuntu 26.04' || 'Linux') }}
-    runs-on: ${{ matrix.os }}
-    env:
-      TOPOLOGICPY_CORE_BACKEND: topologic_core
-    needs:
-      - prepare-build-info
-      - build
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.12"]
-        os: [ubuntu-24.04, ubuntu-26.04, windows-latest, macos-latest]
-    steps:
-      - uses: actions/checkout@v6
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v6
-        env:
-          # Reference: https://github.com/actions/setup-python/issues/862
-          # To solve: "A new release of pip is available: ... -> ..."
-          PIP_DISABLE_PIP_VERSION_CHECK: 1
-        with:
-          python-version: ${{ matrix.python-version }}
-          allow-prereleases: true
-          cache: pip
-          cache-dependency-path: '**/pyproject.toml'
-      - name: Ensure latest pip
-        run: python -m pip install --upgrade pip
-      - name: Set version from git tag/readable name (${{ needs.prepare-build-info.outputs.anyversion }})
-        run: echo "__version__ = '${{ needs.prepare-build-info.outputs.anyversion }}'" > src/topologicpy/version.py
-      - name: Install TopologicCore backend
-        # This job intentionally tests the legacy backend. Keeping the backend
-        # installation here allows topologic_core to remain optional in
-        # pyproject.toml.
-        run: python -m pip install "topologic-core==8.0.4"
-      - name: Install TopologicPy and test dependencies
-        run: python -m pip install -e '.[test]'
-      - name: Verify TopologicCore backend
-        run: |
-          python -c "import topologic_core; print('topologic_core import: OK')"
-          python -c "from topologicpy.Core import Core; backend = Core.Backend(); print('Active backend:', backend.__class__.__name__); assert backend.__class__.__name__ == 'TopologicCoreBackend'"
-      - name: Run tests
-        run: pytest
-
   test-pythonocc:
     name: Test PythonOCC 8.0.1 with Python ${{ matrix.python-version }} on ${{ startsWith(matrix.os, 'macos-') && 'macOS' || startsWith(matrix.os, 'windows-') && 'Windows' || (matrix.os == 'ubuntu-26.04' && 'Ubuntu 26.04' || 'Linux') }}
     runs-on: ${{ matrix.os }}
     needs:
       - prepare-build-info
       - build
-    env:
-      TOPOLOGICPY_CORE_BACKEND: pythonocc
     strategy:
       fail-fast: false
       matrix:
@@ -239,7 +185,6 @@ jobs:
     needs:
       - prepare-build-info
       - build
-      - test-topologiccore
       - test-pythonocc
     name: Publish PyPI Release
     permissions:

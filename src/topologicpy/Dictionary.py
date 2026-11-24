@@ -477,7 +477,7 @@ class Dictionary():
 
         Parameters
         ----------
-        topology : topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph
+        topology : Topology, Graph, or topologicpy.TGraph
             The input topology or graph.
         subTopologyType : str , optional
             The type of subTopology on which to base the adjacency dictionary.
@@ -806,7 +806,7 @@ class Dictionary():
 
         Returns
         -------
-        topologic_core.Dictionary
+        Dictionary
             The created dictionary.
 
         """
@@ -832,7 +832,7 @@ class Dictionary():
 
         Returns
         -------
-        topologic_core.Dictionary
+        Dictionary
             The created dictionary.
 
         """
@@ -890,7 +890,7 @@ class Dictionary():
 
         Returns
         -------
-        topologic_core.Dictionary
+        Dictionary
             The created dictionary.
         """
         from topologicpy.Helper import Helper
@@ -953,7 +953,7 @@ class Dictionary():
 
         Returns
         -------
-        topologic_core.Dictionary
+        Dictionary
             The created dictionary.
         """
         dictKeys = []
@@ -1041,7 +1041,7 @@ class Dictionary():
 
         Returns
         -------
-        topologic_core.Dictionary
+        Dictionary
             The dictionary equivalent to the input dictionary.
         """
         if Dictionary._IsTGraphDictionaryContainer(pythonDictionary):
@@ -1388,7 +1388,7 @@ class Dictionary():
 
         Parameters
         ----------
-        dictionary : dict, topologic_core.Dictionary, backend dictionary, topologicpy.TGraph, TGraph vertex record, or TGraph edge record
+        dictionary : dict, Dictionary, backend dictionary, topologicpy.TGraph, TGraph vertex record, or TGraph edge record
             The input dictionary or dictionary-bearing object.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.

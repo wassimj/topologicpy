@@ -747,15 +747,7 @@ class Grid:
             if output == "vertices":
                 if grid is None:
                     return []
-                if Topology._IsTopologicCoreBackend() and any(
-                        not Edge.IsLinear(edge, silent=True) for edge in clipped):
-                    # The core Grid.Vertices fast path is analytical for straight
-                    # segments. Split curves natively to retain ring/ray crossings.
-                    merged = Topology.SelfMerge(grid, tolerance=tolerance, silent=True)
-                    if merged is None:
-                        raise ValueError("Cannot split curved grid intersections.")
-                    vertices = Topology.Vertices(merged, silent=True) or []
-                    return vertices
+                pass
                 return Grid.Vertices(grid,tolerance=tolerance,silent=silent)
             faces=[]
             for region in regions:
@@ -796,7 +788,7 @@ class Grid:
             Default is "rectangular".
         output : str , optional
             "vertices", "edges", or "faces". Default is "edges".
-        origin : topologic_core.Vertex or list , optional
+        origin : Vertex or list , optional
             Centre of the clipping rectangle and grid origin, as a Vertex or
             three coordinates. Default is the world origin.
         direction : list , optional
@@ -816,7 +808,7 @@ class Grid:
         angularSpacing : float , optional
             Polar ray spacing in degrees, dividing 360 exactly, at most 180.
             Only complete circular patterns are supported. Default is 30.
-        centre : topologic_core.Vertex or list , optional
+        centre : Vertex or list , optional
             Polar centre. Defaults to origin.
         includeBoundary : bool , optional
             Include clipping boundary Edges. Default is False.
@@ -835,7 +827,7 @@ class Grid:
 
         Returns
         -------
-        topologic_core.Cluster or list
+        Cluster or list
             Cluster of Edges, list of unique Vertices, or list of Faces.
             Invalid input returns None. Empty grids return None for Edges
             and an empty list for Vertices/Faces.
@@ -1050,7 +1042,7 @@ class Grid:
         output : str , optional
             "edges" returns a Cluster, "vertices" a list of unique Vertices,
             and "faces" a list of partition Faces. Default is "edges".
-        origin : topologic_core.Vertex or list , optional
+        origin : Vertex or list , optional
             Pattern origin as a Vertex or three coordinates, projected onto the
             face plane. Defaults to the face parameter centre. The original
             origin is retained when applying clearance.
@@ -1071,7 +1063,7 @@ class Grid:
             Polar ray spacing in degrees, dividing 360 exactly, at most 180.
             Default is 30. Circles are exact when supported by the backend;
             approximate=True permits sampled rings otherwise.
-        centre : topologic_core.Vertex or list , optional
+        centre : Vertex or list , optional
             Polar centre, projected onto the face plane. Overrides origin
             for polar patterns. Default is None.
         projection : str , optional
@@ -1081,7 +1073,7 @@ class Grid:
 
         Returns
         -------
-        topologic_core.Cluster or list
+        Cluster or list
             Cluster of Edges, list of unique Vertices, or list of Faces.
             Invalid input returns None. Empty grids return None for Edges
             and an empty list for Vertices/Faces.
@@ -1359,7 +1351,7 @@ class Grid:
 
         Parameters
         ----------
-        grid : topologic_core.Topology or list
+        grid : Topology or list
             A grid topology (such as the Cluster returned by Grid.OnFace),
             or a list of Edges. Edges need not have been split at crossings.
         tolerance : float, optional
@@ -1378,8 +1370,7 @@ class Grid:
         Notes
         -----
         PythonOCC splits all Edges in one native operation, supporting exact
-        curved Edges as well as straight Edges. TopologicCore uses analytical
-        3D segment intersections with bounding-box pruning. Spatial hashing
+        curved Edges as well as straight Edges. Spatial hashing
         deduplicates the output without comparing every pair of Vertices.
         Overlapping Edges contribute their endpoints; an overlap is not
         sampled into an infinite set of intersection points. Input geometry
@@ -1408,8 +1399,7 @@ class Grid:
         if not edges:
             return []
 
-        analytical = Topology._IsTopologicCoreBackend()
-        vertices, buckets, segments = [], {}, []
+        vertices, buckets = [], {}
         tol2 = tol * tol
 
         def append(vertex, point=None):
@@ -1430,73 +1420,32 @@ class Grid:
                 return error("Could not extract an Edge's endpoints.")
             for vertex in ends:
                 append(vertex)
-            if analytical:
-                a, b = Grid._Coordinates(ends[0]), Grid._Coordinates(ends[-1])
-                segments.append((a, b, [min(a[i], b[i]) for i in range(3)],
-                                 [max(a[i], b[i]) for i in range(3)]))
 
-        if not analytical:
-            try:
-                from OCC.Core.BOPAlgo import BOPAlgo_Splitter
-                from OCC.Core.TopAbs import TopAbs_VERTEX
-                from topologicpy.pythonocc_backend.topology import _iter_occ_subshapes_unique
-                from topologicpy.pythonocc_backend.vertex import Vertex as NativeVertex
-                from OCC.Core.TopTools import TopTools_IndexedMapOfShape
-                seen = TopTools_IndexedMapOfShape()
-                splitter = BOPAlgo_Splitter()
-                splitter.SetNonDestructive(True)
-                splitter.SetToFillHistory(False)
-                splitter.SetFuzzyValue(tol)
-                edge_count = 0
-                for edge in edges:
-                    if not seen.Contains(edge.shape):
-                        seen.Add(edge.shape)
-                        splitter.AddArgument(edge.shape)
-                        edge_count += 1
-                if edge_count < 2:
-                    return vertices
-                splitter.Perform()
-                if splitter.HasErrors():
-                    return error("Native Edge intersection failed.")
-                for shape in _iter_occ_subshapes_unique(splitter.Shape(), TopAbs_VERTEX):
-                    append(NativeVertex.ByOcctShape(shape))
+        try:
+            from OCC.Core.BOPAlgo import BOPAlgo_Splitter
+            from OCC.Core.TopAbs import TopAbs_VERTEX
+            from topologicpy.pythonocc_backend.topology import _iter_occ_subshapes_unique
+            from topologicpy.pythonocc_backend.vertex import Vertex as NativeVertex
+            from OCC.Core.TopTools import TopTools_IndexedMapOfShape
+            seen = TopTools_IndexedMapOfShape()
+            splitter = BOPAlgo_Splitter()
+            splitter.SetNonDestructive(True)
+            splitter.SetToFillHistory(False)
+            splitter.SetFuzzyValue(tol)
+            edge_count = 0
+            for edge in edges:
+                if not seen.Contains(edge.shape):
+                    seen.Add(edge.shape)
+                    splitter.AddArgument(edge.shape)
+                    edge_count += 1
+            if edge_count < 2:
                 return vertices
-            except Exception as exc:
-                return error("Native Edge intersection failed: " + str(exc) + ".")
+            splitter.Perform()
+            if splitter.HasErrors():
+                return error("Native Edge intersection failed.")
+            for shape in _iter_occ_subshapes_unique(splitter.Shape(), TopAbs_VERTEX):
+                append(NativeVertex.ByOcctShape(shape))
+            return vertices
+        except Exception as exc:
+            return error("Native Edge intersection failed: " + str(exc) + ".")
 
-        # Sweep along the longest bounding-box axis; reject pairs whose 3D
-        # boxes cannot meet before computing their segment intersection.
-        axis = max(range(3), key=lambda i: max(s[3][i] for s in segments)-min(s[2][i] for s in segments))
-        segments.sort(key=lambda s: s[2][axis])
-        active = []
-
-        def cross(a, b):
-            return [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]]
-
-        for a, b, lower, upper in segments:
-            active = [s for s in active if s[3][axis] >= lower[axis]-tol]
-            r = Grid._Subtract(b, a)
-            rr = Grid._Dot(r, r)
-            for c, d, other_lower, other_upper in active:
-                if any(upper[i] < other_lower[i]-tol or other_upper[i] < lower[i]-tol for i in range(3)):
-                    continue
-                s = Grid._Subtract(d, c)
-                ss = Grid._Dot(s, s)
-                normal = cross(r, s)
-                denominator = Grid._Dot(normal, normal)
-                if rr == 0 or ss == 0 or denominator <= 1e-24*rr*ss:
-                    continue  # Parallel overlaps add no points beyond endpoints.
-                delta = Grid._Subtract(c, a)
-                t = Grid._Dot(cross(delta, s), normal) / denominator
-                u = Grid._Dot(cross(delta, r), normal) / denominator
-                if not (-tol/math.sqrt(rr) <= t <= 1+tol/math.sqrt(rr) and
-                        -tol/math.sqrt(ss) <= u <= 1+tol/math.sqrt(ss)):
-                    continue
-                t, u = max(0, min(1, t)), max(0, min(1, u))
-                p = Grid._Add(a, Grid._Scale(r, t))
-                q = Grid._Add(c, Grid._Scale(s, u))
-                if sum((p[i]-q[i])**2 for i in range(3)) <= tol2:
-                    point = [(p[i]+q[i])*0.5 for i in range(3)]
-                    append(Vertex.ByCoordinates(*point), point)
-            active.append((a, b, lower, upper))
-        return vertices

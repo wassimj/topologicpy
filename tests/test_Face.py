@@ -7,8 +7,7 @@
 Consolidated tests for TopologicPy.Face.
 
 The suite is organised by behaviour rather than by historical tranche/file.
-Backend-specific tests use the shared ``pythonocc_only`` and
-``topologiccore_only`` pytest markers defined by tests/conftest.py.
+Native geometry contracts use the ``pythonocc_only`` marker.
 """
 
 import math
@@ -718,13 +717,6 @@ def test_face_bywires_preserves_curved_outer_and_inner_boundaries():
     assert Face.Area(face, mantissa=None) == pytest.approx(expected, rel=1.0e-8, abs=1.0e-8)
 
 
-@pytest.mark.topologiccore_only
-def test_topologiccore_nurbs_surface_construction_is_explicitly_unsupported():
-    control_points = [
-        [_v(0, 0, 0), _v(0, 1, 0)],
-        [_v(1, 0, 0), _v(1, 1, 0)],
-    ]
-    assert Face.ByNurbsParameters(control_points, uDegree=1, vDegree=1, silent=True) is None
 
 
 @pytest.mark.pythonocc_only
@@ -1038,13 +1030,9 @@ def test_fillet_simplify_and_remove_collinear_edges_return_faces():
     _assert_face(simplified)
     assert Face.Area(simplified) > 0
 
-    if Topology._IsTopologicCoreBackend():
-        assert filleted is None
-        assert cleaned is None
-    else:
-        for face in [filleted, cleaned]:
-            _assert_face(face)
-            assert Face.Area(face) > 0
+    for face in [filleted, cleaned]:
+        _assert_face(face)
+        assert Face.Area(face) > 0
 
     assert Face.Fillet(None, silent=True) is None
     assert Face.Simplify(None, silent=True) is None

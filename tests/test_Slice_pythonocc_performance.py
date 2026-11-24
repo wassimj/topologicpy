@@ -2,10 +2,7 @@
 import os
 import pytest
 
-pytestmark = pytest.mark.skipif(
-    os.environ.get("TOPOLOGICPY_CORE_BACKEND", "").lower() != "pythonocc",
-    reason="Exercises PythonOCC's sewn-shell assembly",
-)
+pytestmark = pytest.mark.pythonocc_only
 
 
 @pytest.mark.parametrize("size", [6, 30])

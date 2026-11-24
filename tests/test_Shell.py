@@ -208,10 +208,9 @@ def test_delaunay_and_voronoi_return_partition_topologies():
     _assert_topology(delaunay)
     assert len(Topology.Faces(delaunay, silent=True)) > 0
 
-    if not Topology._IsTopologicCoreBackend():
-        voronoi = Shell.Voronoi(vertices, face=face, tolerance=0.0001)
-        _assert_topology(voronoi)
-        assert len(Topology.Faces(voronoi, silent=True)) > 0
+    voronoi = Shell.Voronoi(vertices, face=face, tolerance=0.0001)
+    _assert_topology(voronoi)
+    assert len(Topology.Faces(voronoi, silent=True)) > 0
 
     assert Shell.Delaunay(None) is None
     assert Shell.Delaunay([_v(0, 0, 0), _v(1, 0, 0)]) is None

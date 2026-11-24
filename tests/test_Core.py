@@ -249,3 +249,20 @@ def test_uploaded_core_file_syntax_is_valid_when_available():
     # Useful when the uploaded source is copied into /mnt/data during local triage.
     # Harmless in repository test runs because this only checks the installed file.
     assert callable(Core.SetBackend)
+
+
+def test_missing_pythonocc_reports_installation_error(monkeypatch):
+    import builtins
+    original = builtins.__import__
+    def missing_occ(name, *args, **kwargs):
+        if name == "OCC.Core":
+            raise ImportError("simulated missing native kernel")
+        return original(name, *args, **kwargs)
+    monkeypatch.setattr(builtins, "__import__", missing_occ)
+    with pytest.raises(ImportError, match="requires PythonOCC"):
+        core_module._CreateDefaultBackend()
+
+
+def test_default_kernel_is_pythonocc():
+    from topologicpy.pythonocc_backend import PythonOCCBackend
+    assert isinstance(Core.Backend(), PythonOCCBackend)

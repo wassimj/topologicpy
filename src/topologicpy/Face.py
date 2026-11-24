@@ -560,7 +560,7 @@ class Face():
 
         Parameters
         ----------
-        face : topologic_core.Face
+        face : Face
             The input Face.
         wires : list
             The input list of closed Wires to add as internal boundaries.
@@ -571,7 +571,7 @@ class Face():
 
         Returns
         -------
-        topologic_core.Face
+        Face
             The Face with the additional internal boundaries, or None if the
             active backend cannot perform the operation while preserving the
             original support surface.
@@ -697,14 +697,14 @@ class Face():
 
         Parameters
         ----------
-        face : topologic_core.Face
+        face : Face
             The input face.
-        cluster : topologic_core.Cluster
+        cluster : Cluster
             The input cluster of internal boundaries (topologic wires).
 
         Returns
         -------
-        topologic_core.Face
+        Face
             The created face with internal boundaries added to it.
 
         """
@@ -727,9 +727,9 @@ class Face():
 
         Parameters
         ----------
-        faceA : topologic_core.Face
+        faceA : Face
             The first input face.
-        faceB : topologic_core.Face
+        faceB : Face
             The second input face.
         mantissa : int , optional
             The number of decimal places to round the result to. Default is 6.
@@ -763,7 +763,7 @@ class Face():
 
         Parameters
         ----------
-        face : topologic_core.Face
+        face : Face
             The input face.
         mantissa : int , optional
             The number of decimal places to round the result to. If None, the
@@ -802,7 +802,7 @@ class Face():
 
         Parameters
         ----------
-        topology : topologic_core.Topology
+        topology : Topology
             The input topology.
         optimize : int , optional
             If set to an integer from 1 (low optimization) to 10 (high optimization), the method will attempt to optimize the bounding rectangle so that it reduces its surface area. Default is 0 which will result in an axis-aligned bounding rectangle. Default is 0.
@@ -814,7 +814,7 @@ class Face():
         
         Returns
         -------
-        topologic_core.Face
+        Face
             The bounding rectangle of the input topology.
 
         """
@@ -850,7 +850,7 @@ class Face():
 
         Returns
         -------
-        face : topologic_core.Face
+        face : Face
             The created face.
 
         """
@@ -885,7 +885,7 @@ class Face():
 
         Parameters
         ----------
-        cluster : topologic_core.Cluster
+        cluster : Cluster
             The input cluster of edges.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
@@ -894,7 +894,7 @@ class Face():
 
         Returns
         -------
-        face : topologic_core.Face
+        face : Face
             The created face.
 
         """
@@ -1245,7 +1245,7 @@ class Face():
 
         Returns
         -------
-        topologic_core.Face
+        Face
             The created NURBS/B-spline Face, or None if construction fails.
 
         """
@@ -1596,7 +1596,7 @@ class Face():
 
     #     Parameters
     #     ----------
-    #     face : topologic_core.Face
+    #     face : Face
     #         The input face.
     #     offset : float , optional
     #         The desired offset distance. Default is 1.0.
@@ -1628,7 +1628,7 @@ class Face():
         
     #     Returns
     #     -------
-    #     topologic_core.Face or topologic_core.Shell
+    #     Face or Shell
     #         The created face or shell.
 
     #     """
@@ -1758,7 +1758,7 @@ class Face():
 
         Parameters
         ----------
-        face : topologic_core.Face
+        face : Face
             The input Face. The Face must be planar.
         offset : float , optional
             The default signed offset distance. For the external boundary, positive
@@ -1803,7 +1803,7 @@ class Face():
 
         Returns
         -------
-        topologic_core.Face or topologic_core.Cluster or None
+        Face or Cluster or None
             One offset Face, a Cluster containing all surviving Faces, or None.
             Use Topology.Faces(result) to obtain regions from either return type.
 
@@ -3145,7 +3145,7 @@ class Face():
 
         Parameters
         ----------
-        face : topologic_core.Face
+        face : Face
             The input face.
         area : float
             The desired area of the created face.
@@ -3171,7 +3171,7 @@ class Face():
         
         Returns
         -------
-        topologic_core.Face or topologic_core.Cluster
+        Face or Cluster
             The created region(s). Multiple regions use their combined area and
             return a Cluster, following Face.ByOffset.
 
@@ -3379,9 +3379,9 @@ class Face():
 
         Parameters
         ----------
-        shell : topologic_core.Shell
+        shell : Shell
             The input Shell.
-        origin : topologic_core.Vertex , optional
+        origin : Vertex , optional
             Retained for backward compatibility. It is not used because this method
             does not flatten or planarize the input Shell.
         angTolerance : float , optional
@@ -3394,7 +3394,7 @@ class Face():
 
         Returns
         -------
-        topologic_core.Face
+        Face
             The unified Face, or None if the Shell cannot be represented as one
             Face without replacing its native geometry.
         """
@@ -3623,7 +3623,7 @@ class Face():
 
     #     Parameters
     #     ----------
-    #     wire : topologic_core.Wire
+    #     wire : Wire
     #         The input wire to be thickened.
     #     offsetA : float , optional
     #         The desired offset to the exterior of the wire. Default is 1.0.
@@ -3636,7 +3636,7 @@ class Face():
 
     #     Returns
     #     -------
-    #     topologic_core.Face
+    #     Face
     #         The created face.
 
     #     """
@@ -3704,7 +3704,7 @@ class Face():
 
         Parameters
         ----------
-        wire : topologic_core.Wire
+        wire : Wire
             The input manifold planar Wire.
         offsetA : float , optional
             The desired offset distance on one side of the Wire. For a closed
@@ -3721,7 +3721,7 @@ class Face():
 
         Returns
         -------
-        topologic_core.Face
+        Face
             The thickened Face, or None if the operation fails.
 
         """
@@ -4245,7 +4245,7 @@ class Face():
 
         Returns
         -------
-        topologic_core.Face or None
+        Face or None
             A Face with the exterior and every interior ring, or None if input
             validation or construction fails. Coordinates are not rounded.
             Ring closure coordinates are removed before building closed Wires.
@@ -4310,7 +4310,7 @@ class Face():
 
         Returns
         -------
-        topologic_core.Face
+        Face
             The created face.
 
         """
@@ -4350,7 +4350,7 @@ class Face():
 
         Parameters
         ----------
-        cluster : topologic_core.Cluster
+        cluster : Cluster
             The input cluster of vertices.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
@@ -4359,7 +4359,7 @@ class Face():
 
         Returns
         -------
-        topologic_core.Face
+        Face
             The created face.
 
         """
@@ -4392,7 +4392,7 @@ class Face():
 
         Parameters
         ----------
-        wire : topologic_core.Wire
+        wire : Wire
             The input Wire.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
@@ -4401,7 +4401,7 @@ class Face():
 
         Returns
         -------
-        topologic_core.Face
+        Face
             The created Face, or None if a valid Face cannot be constructed.
         """
         from topologicpy.Cluster import Cluster
@@ -4491,7 +4491,7 @@ class Face():
 
         Parameters
         ----------
-        externalBoundary : topologic_core.Wire
+        externalBoundary : Wire
             The external closed boundary Wire.
         internalBoundaries : list , optional
             Internal closed boundary Wires representing holes. Default is an empty list.
@@ -4502,7 +4502,7 @@ class Face():
 
         Returns
         -------
-        topologic_core.Face
+        Face
             The created Face, or None on failure.
         """
         from topologicpy.Topology import Topology
@@ -4608,9 +4608,9 @@ class Face():
 
         Parameters
         ----------
-        externalBoundary topologic_core.Wire
+        externalBoundary Wire
             The input external boundary (closed wire).
-        internalBoundariesCluster : topologic_core.Cluster
+        internalBoundariesCluster : Cluster
             The input cluster of internal boundaries (closed wires). Default is None.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
@@ -4619,7 +4619,7 @@ class Face():
         
         Returns
         -------
-        topologic_core.Face
+        Face
             The created face.
 
         """
@@ -4678,7 +4678,7 @@ class Face():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex, optional
+        origin : Vertex, optional
             The location of the origin of the CHS. Default is None which results in the CHS being placed at (0, 0, 0).
         radius : float , optional
             The outer radius of the CHS. Default is 0.5.
@@ -4695,7 +4695,7 @@ class Face():
 
         Returns
         -------
-        topologic_core.Face
+        Face
             The created face.
 
         """
@@ -4756,7 +4756,7 @@ class Face():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex, optional
+        origin : Vertex, optional
             The location of the origin of the circle. Default is None.
         radius : float , optional
             The radius of the circle. Default is 0.5.
@@ -4780,7 +4780,7 @@ class Face():
 
         Returns
         -------
-        topologic_core.Face
+        Face
             The created circular Face.
         """
         from topologicpy.Topology import Topology
@@ -4821,7 +4821,7 @@ class Face():
 
         Parameters
         ----------
-        face : topologic_core.Face
+        face : Face
             The input face.
         mantissa : int , optional
             The number of decimal places to round the result to. Default is 6.
@@ -4879,7 +4879,7 @@ class Face():
 
         Parameters
         ----------
-        face : topologic_core.Face
+        face : Face
             The input face.
         north : list , optional
             The second vector representing the north direction. Default is the positive YAxis ([0,1,0]).
@@ -5414,7 +5414,7 @@ class Face():
 
         Parameters
         ----------
-        face : topologic_core.Face
+        face : Face
             The input face.
         includeInternalBoundaries : bool , optional
             If set to True, internal boundary vertices are also checked using their
@@ -5468,7 +5468,7 @@ class Face():
 
         Parameters
         ----------
-        face : topologic_core.Face
+        face : Face
             The input face.
         includeInternalBoundaries : bool , optional
             If set to True, internal boundary vertices are also checked using their
@@ -5518,7 +5518,7 @@ class Face():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex , optional
+        origin : Vertex , optional
             The location of the origin of the T-shape. Default is None which results in the Cross-shape being placed at (0, 0, 0).
         width : float , optional
             The overall width of the Cross-shape. Default is 1.0.
@@ -5543,7 +5543,7 @@ class Face():
 
         Returns
         -------
-        topologic_core.Face
+        Face
             The created Cross-shape.
 
         """
@@ -5673,7 +5673,7 @@ class Face():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex , optional
+        origin : Vertex , optional
             The location of the origin of the C-shape. Default is None which results in the C-shape being placed at (0, 0, 0).
         width : float , optional
             The overall width of the C-shape. Default is 1.0.
@@ -5696,7 +5696,7 @@ class Face():
 
         Returns
         -------
-        topologic_core.Face
+        Face
             The created C-shape.
 
         """
@@ -5779,7 +5779,7 @@ class Face():
 
         Parameters
         ----------
-        face : topologic_core.Face
+        face : Face
             The input face.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
@@ -5823,7 +5823,7 @@ class Face():
 
         Parameters
         ----------
-        face : topologic_core.Face
+        face : Face
             The input face.
         u : float , optional
             The normalized U parameter. Default is 0.5.
@@ -6234,7 +6234,7 @@ class Face():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex , optional
+        origin : Vertex , optional
             The location of the origin of the tile. Default is None which results in the tiles first vertex being placed at (0, 0, 0).
         radius : float , optional
             The radius of the hexagon determining the size of the tile. Default is 0.5.
@@ -6247,7 +6247,7 @@ class Face():
         
         Returns
         -------
-            topologic_core.Face
+            Face
                 The created Einstein tile.
 
         """
@@ -6283,7 +6283,7 @@ class Face():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex , optional
+        origin : Vertex , optional
             The location of the origin of the ellipse. Default is None.
         inputMode : int , optional
             Ellipse definition mode. Default is 1.
@@ -6322,7 +6322,7 @@ class Face():
 
         Returns
         -------
-        topologic_core.Face
+        Face
             The created elliptical Face.
         """
         from topologicpy.Topology import Topology
@@ -6366,7 +6366,7 @@ class Face():
         
         Parameters
         ----------
-        face : topologic_core.Face
+        face : Face
             The input face.
         includeInternalBoundaries : bool , optional
             If set to True and if the face has internal boundaries (holes), the returned list will be a nested list where the first list is the list
@@ -6408,7 +6408,7 @@ class Face():
 
         Parameters
         ----------
-        face : topologic_core.Face
+        face : Face
             The input face.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
@@ -6417,7 +6417,7 @@ class Face():
 
         Returns
         -------
-        topologic_core.Wire
+        Wire
             The external boundary of the input face.
 
         """
@@ -6440,7 +6440,7 @@ class Face():
 
         Parameters
         ----------
-        face : topologic_core.Face
+        face : Face
             The input face.
         direction : list , optional
             The input direction. Default is [0,0,-1].
@@ -6480,7 +6480,7 @@ class Face():
 
     #     Parameters
     #     ----------
-    #     face : topologic_core.Face
+    #     face : Face
     #         The input face.
     #     radius : float , optional
     #         The desired radius of the fillet. Default is 0.
@@ -6495,7 +6495,7 @@ class Face():
 
     #     Returns
     #     -------
-    #     topologic_core.Face
+    #     Face
     #         The filleted face.
 
     #     """
@@ -6556,7 +6556,7 @@ class Face():
 
         Parameters
         ----------
-        face : topologic_core.Face
+        face : Face
             The input planar Face.
         radius : float , optional
             The default fillet radius. Default is 0.
@@ -6574,7 +6574,7 @@ class Face():
 
         Returns
         -------
-        topologic_core.Face
+        Face
             The filleted Face, or None if the operation fails.
 
         """
@@ -6822,7 +6822,7 @@ class Face():
         
         Parameters
         ----------
-        face : topologic_core.Face
+        face : Face
             The input face.
         includeInternalBoundaries : bool , optional
             If set to True and if the face has internal boundaries (holes), the returned list will be a nested list where the first list is the list
@@ -6863,7 +6863,7 @@ class Face():
 
         Parameters
         ----------
-        face : topologic_core.Face
+        face : Face
             The input face.
 
         Returns
@@ -6909,7 +6909,7 @@ class Face():
 
         Parameters
         ----------
-        face : topologic_core.Face
+        face : Face
             The input face.
         tolerance : float , optional
             The desired geometric tolerance. Default is 0.0001.
@@ -6973,33 +6973,6 @@ class Face():
         sampling_face = face
         distance_tolerance = tolerance
 
-        # TopologicCore's UV evaluator can fail or lose precision on small faces.
-        # Sample an exact, uniformly enlarged surface, not a reconstruction
-        # from coplanar boundary vertices. Scale the distance tolerance too so
-        # the planarity decision remains in the original model's units.
-        if Topology._IsTopologicCoreBackend():
-            try:
-                coordinates = [
-                    Vertex.Coordinates(vertex, mantissa=None)
-                    for vertex in Topology.Vertices(face, silent=True) or []
-                ]
-                extent = max(
-                    max(xyz[axis] for xyz in coordinates)
-                    - min(xyz[axis] for xyz in coordinates)
-                    for axis in range(3)
-                )
-                if math.isfinite(extent) and 0.0 < extent < 1.0:
-                    scale = 1.0 / extent
-                    scaled = Topology.Scale(
-                        face, origin=Topology.Centroid(face),
-                        x=scale, y=scale, z=scale,
-                        transferDictionaries=False, silent=True,
-                    )
-                    if Topology.IsInstance(scaled, "Face"):
-                        sampling_face = scaled
-                        distance_tolerance = tolerance * scale
-            except Exception:
-                pass
 
         center = Face.VertexByParameters(
             sampling_face,
@@ -7108,7 +7081,7 @@ class Face():
 
         Parameters
         ----------
-        face : topologic_core.Face
+        face : Face
             The input face.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
@@ -7117,7 +7090,7 @@ class Face():
 
         Returns
         -------
-        topologic_core.Vertex
+        Vertex
             The created vertex.
 
         """
@@ -7138,11 +7111,7 @@ class Face():
         # ------------------------------------------------------------------
         # 0. Native/core fast path.
         # ------------------------------------------------------------------
-        # If the underlying topologic_core binding exposes a native internal
-        # vertex method, it will almost always beat a Python-level algorithm.
-        #
-        # This section is deliberately defensive because different versions of
-        # topologic_core/topologic expose different APIs.
+        # Prefer a native internal-vertex operation when available.
         # ------------------------------------------------------------------
 
         try:
@@ -7167,28 +7136,6 @@ class Face():
         except Exception:
             pass
 
-        try:
-            import topologic_core as topologic
-
-            face_utility = getattr(topologic, "FaceUtility", None)
-
-            if face_utility is not None and hasattr(face_utility, "InternalVertex"):
-                try:
-                    v = face_utility.InternalVertex(face, tolerance)
-                except TypeError:
-                    v = face_utility.InternalVertex(face)
-
-                if v is not None:
-                    try:
-                        if Vertex.IsInternal(v, face, tolerance=tolerance):
-                            return v
-                    except TypeError:
-                        if Vertex.IsInternal(v, face):
-                            return v
-                    except Exception:
-                        return v
-        except Exception:
-            pass
 
         # ------------------------------------------------------------------
         # Original implementation starts here.
@@ -7433,7 +7380,7 @@ class Face():
 
         Parameters
         ----------
-        face : topologic_core.Face
+        face : Face
             The input Face.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
@@ -7442,7 +7389,7 @@ class Face():
 
         Returns
         -------
-        topologic_core.Face
+        Face
             The orientation-reversed Face, or None on failure.
         """
         from topologicpy.Wire import Wire
@@ -7574,7 +7521,7 @@ class Face():
 
         Parameters
         ----------
-        face : topologic_core.Face
+        face : Face
             The input face.
         mantissa : int , optional
             The length of the desired mantissa. Default is 6.
@@ -7630,9 +7577,9 @@ class Face():
 
         Parameters
         ----------
-        faceA : topologic_core.Face
+        faceA : Face
             The first input face.
-        faceB : topologic_core.Face
+        faceB : Face
             The second input face
         mantissa : int , optional
             The length of the desired mantissa. Default is 6.
@@ -7693,7 +7640,7 @@ class Face():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex , optional
+        origin : Vertex , optional
             The location of the origin of the I-shape. Default is None which results in the I-shape being placed at (0, 0, 0).
         width : float , optional
             The overall width of the I-shape. Default is 1.0.
@@ -7720,7 +7667,7 @@ class Face():
 
         Returns
         -------
-        topologic_core.Face
+        Face
             The created I-shape.
 
         """
@@ -7806,9 +7753,9 @@ class Face():
 
     #     Parameters
     #     ----------
-    #     face : topologic_core.Face
+    #     face : Face
     #         The face representing the boundary of the isovist.
-    #     vertex : topologic_core.Vertex
+    #     vertex : Vertex
     #         The vertex representing the location of the viewpoint of the isovist.
     #     obstacles : list , optional
     #         A list of wires representing the obstacles within the face. All obstacles are assumed to be within the
@@ -7861,7 +7808,7 @@ class Face():
 
     #     Returns
     #     -------
-    #     topologic_core.Face
+    #     Face
     #         The face representing the isovist projection from the input viewpoint.
 
     #     """
@@ -8491,9 +8438,9 @@ class Face():
 
         Parameters
         ----------
-        face : topologic_core.Face
+        face : Face
             The face representing the boundary of the isovist.
-        vertex : topologic_core.Vertex
+        vertex : Vertex
             The vertex representing the viewpoint.
         obstacles : list , optional
             Additional closed Wires representing opaque obstacles. Their interiors
@@ -8567,7 +8514,7 @@ class Face():
 
         Returns
         -------
-        topologic_core.Face
+        Face
             The face representing the isovist projection from the input viewpoint.
         """
 
@@ -9734,7 +9681,7 @@ class Face():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex , optional
+        origin : Vertex , optional
             The location of the origin of the L-shape. Default is None which results in the L-shape being placed at (0, 0, 0).
         width : float , optional
             The overall width of the L-shape. Default is 1.0.
@@ -9755,7 +9702,7 @@ class Face():
 
         Returns
         -------
-        topologic_core.Face
+        Face
             The created L-shape.
 
         """
@@ -9837,7 +9784,7 @@ class Face():
 
         Parameters
         ----------
-        face : topologic_core.Face
+        face : Face
             The input face.
         resolution : int , optional
             The desired resolution of the solution (range is 0: standard resolution to 10: high resolution). This determines the density of the sampling along each edge. Default is 0.
@@ -9856,7 +9803,7 @@ class Face():
         
         Returns
         -------
-        topologic_core.Wire
+        Wire
             The medial axis of the input face.
         """
 
@@ -10099,7 +10046,7 @@ class Face():
 
         Parameters
         ----------
-        face : topologic_core.Face
+        face : Face
             The input face.
         outputType : string , optional
             The string defining the desired output. This can be any subset or permutation of "xyz". It is case insensitive. Default is "xyz".
@@ -10201,7 +10148,7 @@ class Face():
 
         Parameters
         ----------
-        face : topologic_core.Face
+        face : Face
             The input face.
         u : float , optional
             The normalized U parameter in the range 0 to 1. Default is 0.5.
@@ -10367,7 +10314,7 @@ class Face():
 
         Parameters
         ----------
-        face : topologic_core.Face
+        face : Face
             The input face.
         length : float , optional
             The desired length of the normal edge. Default is 1.0.
@@ -10379,7 +10326,7 @@ class Face():
 
         Returns
         -------
-        topologic_core.Edge
+        Edge
             The created normal Edge, or None if it cannot be created.
 
         """
@@ -10486,7 +10433,7 @@ class Face():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex, optional
+        origin : Vertex, optional
             The location of the origin of the north arrow. Default is None.
         radius : float , optional
             The radius of the circular body. Default is 0.5.
@@ -10505,7 +10452,7 @@ class Face():
 
         Returns
         -------
-        topologic_core.Face
+        Face
             The created north-arrow Face, or None on failure.
         """
         from topologicpy.Topology import Topology
@@ -10700,7 +10647,7 @@ class Face():
         
         Parameters
         ----------
-        face : topologic_core.Face
+        face : Face
             The input face.
         
         Returns
@@ -10731,16 +10678,16 @@ class Face():
 
         Parameters
         ----------
-        face : topologic_core.Face
+        face : Face
             The input face.
-        origin : topologic_core.Vertex , optional
+        origin : Vertex , optional
             The desired vertex to use as the origin of the plane to project the face unto. If set to None, the centroidof the input face is used. Default is None.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         
         Returns
         -------
-        topologic_core.Face
+        Face
             The planarized face.
 
         """
@@ -10769,9 +10716,9 @@ class Face():
 
     #     Parameters
     #     ----------
-    #     faceA : topologic_core.Face
+    #     faceA : Face
     #         The face to be projected.
-    #     faceB : topologic_core.Face
+    #     faceB : Face
     #         The face unto which the first input face will be projected.
     #     direction : list, optional
     #         The vector direction of the projection. If None, the reverse vector of the receiving face normal will be used. Default is None.
@@ -10782,7 +10729,7 @@ class Face():
 
     #     Returns
     #     -------
-    #     topologic_core.Face
+    #     Face
     #         The projected Face.
 
     #     """
@@ -10823,9 +10770,9 @@ class Face():
 
         Parameters
         ----------
-        faceA : topologic_core.Face
+        faceA : Face
             The face to be projected.
-        faceB : topologic_core.Face
+        faceB : Face
             The face unto which the first input face will be projected.
         direction : list, optional
             The vector direction of the projection. If None, the reverse vector of the receiving face normal will be used. Default is None.
@@ -10839,7 +10786,7 @@ class Face():
 
         Returns
         -------
-        topologic_core.Face
+        Face
             The projected Face.
 
         """
@@ -10969,7 +10916,7 @@ class Face():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex, optional
+        origin : Vertex, optional
             The location of the origin of the rectangle. Default is None which results in the rectangle being placed at (0, 0, 0).
         width : float , optional
             The width of the rectangle. Default is 1.0.
@@ -10986,7 +10933,7 @@ class Face():
 
         Returns
         -------
-        topologic_core.Face
+        Face
             The created face.
 
         """
@@ -11007,7 +10954,7 @@ class Face():
 
     #     Parameters
     #     ----------
-    #     face : topologic_core.Face
+    #     face : Face
     #         The input face.
     #     angTolerance : float , optional
     #         The desired angular tolerance. Default is 0.1.
@@ -11018,7 +10965,7 @@ class Face():
 
     #     Returns
     #     -------
-    #     topologic_core.Face
+    #     Face
     #         The created face without any collinear edges.
 
     #     """
@@ -11055,7 +11002,7 @@ class Face():
 
         Parameters
         ----------
-        face : topologic_core.Face
+        face : Face
             The input Face.
         angTolerance : float , optional
             Maximum angular deviation in degrees for adjacent linear Edges to be
@@ -11067,7 +11014,7 @@ class Face():
 
         Returns
         -------
-        topologic_core.Face
+        Face
             The simplified Face, or None if the active backend cannot perform the
             operation while preserving the original support surface.
         """
@@ -11153,7 +11100,7 @@ class Face():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex, optional
+        origin : Vertex, optional
             The location of the origin of the RHS. Default is None.
         width : float , optional
             The width of the RHS. Default is 1.0.
@@ -11179,7 +11126,7 @@ class Face():
 
         Returns
         -------
-        topologic_core.Face
+        Face
             The created RHS Face, or None on failure.
         """
         from topologicpy.Vertex import Vertex
@@ -11390,7 +11337,7 @@ class Face():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex, optional
+        origin : Vertex, optional
             The location of the origin of the ring. Default is None which results in the ring being placed at (0, 0, 0).
         radius : float , optional
             The outer radius of the ring. Default is 0.5.
@@ -11407,7 +11354,7 @@ class Face():
 
         Returns
         -------
-        topologic_core.Face
+        Face
             The created face.
 
         """
@@ -11459,7 +11406,7 @@ class Face():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex, optional
+        origin : Vertex, optional
             The location of the origin of the SHS. Default is None which results in the SHS being placed at (0, 0, 0).
         size : float , optional
             The outer size of the SHS. Default is 1.0.
@@ -11482,7 +11429,7 @@ class Face():
 
         Returns
         -------
-        topologic_core.Face
+        Face
             The created face.
 
         """
@@ -11517,7 +11464,7 @@ class Face():
         
     #     Parameters
     #     ----------
-    #     face : topologic_core.Face
+    #     face : Face
     #         The input face.
     #     method : str, optional
     #         The simplification method to use: 'douglas-peucker' or 'visvalingam-whyatt' or 'reumann-witkam'.
@@ -11534,7 +11481,7 @@ class Face():
             
     #     Returns
     #     -------
-    #     topologic_core.Face
+    #     Face
     #         The simplified face.
         
     #     """
@@ -11575,7 +11522,7 @@ class Face():
 
         Parameters
         ----------
-        face : topologic_core.Face
+        face : Face
             The input Face.
         method : str , optional
             The simplification method. Supported values are
@@ -11591,7 +11538,7 @@ class Face():
 
         Returns
         -------
-        topologic_core.Face
+        Face
             The simplified Face.
         """
         import math
@@ -11782,7 +11729,7 @@ class Face():
 
         Parameters
         ----------
-        face : topologic_core.Face
+        face : Face
             The input face.
         boundary : bool , optional
             If set to True the original boundary is returned as part of the roof. Otherwise it is not. Default is True.
@@ -11791,7 +11738,7 @@ class Face():
 
         Returns
         -------
-        topologic_core.Wire
+        Wire
             The created straight skeleton.
 
         """
@@ -11810,7 +11757,7 @@ class Face():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex , optional
+        origin : Vertex , optional
             The location of the origin of the square. Default is None which results in the square being placed at (0, 0, 0).
         size : float , optional
             The size of the square. Default is 1.0.
@@ -11823,7 +11770,7 @@ class Face():
 
         Returns
         -------
-        topologic_core.Face
+        Face
             The created square.
 
         """
@@ -11837,7 +11784,7 @@ class Face():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex , optional
+        origin : Vertex , optional
             The location of the origin of the squircle. Default is None which results in the squircle being placed at (0, 0, 0).
         radius : float , optional
             The desired radius of the squircle. Default is 0.5.
@@ -11860,7 +11807,7 @@ class Face():
 
         Returns
         -------
-        topologic_core.Face
+        Face
             The created squircle.
         """
         from topologicpy.Wire import Wire
@@ -11874,7 +11821,7 @@ class Face():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex, optional
+        origin : Vertex, optional
             The location of the origin of the star. Default is None which results in the star being placed at (0, 0, 0).
         radiusA : float , optional
             The outer radius of the star. Default is 1.0.
@@ -11891,7 +11838,7 @@ class Face():
 
         Returns
         -------
-        topologic_core.Face
+        Face
             The created face.
 
         """
@@ -11912,7 +11859,7 @@ class Face():
 
         Parameters
         ----------
-        face : topologic_core.Face
+        face : Face
             The input face.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
@@ -11921,7 +11868,7 @@ class Face():
 
         Returns
         -------
-        topologic_core.Face
+        Face
             The created face.
 
         """
@@ -11966,7 +11913,7 @@ class Face():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex, optional
+        origin : Vertex, optional
             The location of the origin of the trapezoid. Default is None which results in the trapezoid being placed at (0, 0, 0).
         widthA : float , optional
             The width of the bottom edge of the trapezoid. Default is 1.0.
@@ -11987,7 +11934,7 @@ class Face():
 
         Returns
         -------
-        topologic_core.Face
+        Face
             The created trapezoid.
 
         """
@@ -12017,7 +11964,7 @@ class Face():
 
         Parameters
         ----------
-        face : topologic_core.Face
+        face : Face
             The input face.
         u : float , optional
             The normalized U parameter. Default is 0.5.
@@ -12093,7 +12040,7 @@ class Face():
 
         Parameters
         ----------
-        face : topologic_core.Face
+        face : Face
             The input face.
         u : float , optional
             The normalized U parameter. Default is 0.5.
@@ -12378,7 +12325,7 @@ class Face():
 
         Parameters
         ----------
-        face : topologic_core.Face
+        face : Face
             The input Face.
         mode : int , optional
             Deprecated compatibility parameter. It is ignored. Historical gmsh
@@ -12441,9 +12388,9 @@ class Face():
 
         Parameters
         ----------
-        face : topologic_core.Face
+        face : Face
             The input face.
-        wire : topologic_core.Wire
+        wire : Wire
             The trimming wire.
         reverse : bool , optional
             If True, the complementary part of the face is returned. Default is False.
@@ -12454,7 +12401,7 @@ class Face():
 
         Returns
         -------
-        topologic_core.Face
+        Face
             The resulting trimmed face.
         """
         from topologicpy.Topology import Topology
@@ -12505,7 +12452,7 @@ class Face():
 
         Parameters
         ----------
-        origin : topologic_core.Vertex , optional
+        origin : Vertex , optional
             The location of the origin of the T-shape. Default is None which results in the T-shape being placed at (0, 0, 0).
         width : float , optional
             The overall width of the T-shape. Default is 1.0.
@@ -12526,7 +12473,7 @@ class Face():
 
         Returns
         -------
-        topologic_core.Face
+        Face
             The created T-shape.
 
         """
@@ -12608,7 +12555,7 @@ class Face():
 
         Parameters
         ----------
-        face : topologic_core.Face
+        face : Face
             The input face.
         u : float , optional
             The normalized u parameter. Default is 0.5.
@@ -12621,7 +12568,7 @@ class Face():
 
         Returns
         -------
-        topologic_core.Vertex
+        Vertex
             The created vertex.
         """
         from topologicpy.Topology import Topology
@@ -12644,9 +12591,9 @@ class Face():
 
         Parameters
         ----------
-        face : topologic_core.Face
+        face : Face
             The input face.
-        vertex : topologic_core.Vertex
+        vertex : Vertex
             The input vertex.
         outputType : str , optional
             Any subset or permutation of "uv". Default is "uv".
@@ -12696,7 +12643,7 @@ class Face():
 
         Parameters
         ----------
-        face : topologic_core.Face
+        face : Face
             The input face.
 
         Returns
@@ -12724,12 +12671,12 @@ class Face():
 
         Parameters
         ----------
-        face : topologic_core.Face
+        face : Face
             The input face.
 
         Returns
         -------
-        topologic_core.Wire
+        Wire
             The external boundary of the input face.
 
         """
@@ -12742,7 +12689,7 @@ class Face():
 
         Parameters
         ----------
-        face : topologic_core.Face
+        face : Face
             The input face.
 
         Returns

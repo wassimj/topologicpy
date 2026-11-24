@@ -1611,20 +1611,7 @@ class IFCFastTopology:
         if operation not in methods:
             raise ValueError("Unsupported IFC Boolean operator: " + operation)
         certified_empty = object()
-        if Topology._IsTopologicCoreBackend():
-            # Use the compiled operation directly: TopologicCore represents a
-            # successful empty difference/intersection as None. Public wrapper
-            # repair paths do not retain that distinction. Native exceptions
-            # must still surface as failures, never as empty geometry.
-            from topologicpy.Core import Core
-            native_method = {"DIFFERENCE": "Difference", "UNION": "Union", "INTERSECTION": "Intersect"}[operation]
-            try:
-                result = Core.InstanceCall(solids[0], native_method, solids[1], False)
-            except Exception as exc:
-                raise ValueError("Native IFC Boolean operation failed: " + operation) from exc
-            if result is None and operation in ("DIFFERENCE", "INTERSECTION"):
-                return empty
-        elif operation in ("DIFFERENCE", "INTERSECTION"):
+        if operation in ("DIFFERENCE", "INTERSECTION"):
             # The backend's ordinary wrappers use None for both failure and
             # emptiness. Request its explicit empty sentinel to keep these distinct.
             from OCC.Core.BRepAlgoAPI import BRepAlgoAPI_Cut, BRepAlgoAPI_Common
@@ -11180,7 +11167,7 @@ class IFC:
         Returns
         -------
         list
-            A list of topologic_core.Face objects, or None if no analytical
+            A list of Face objects, or None if no analytical
             faces can be generated.
 
         Notes
@@ -11649,7 +11636,7 @@ class IFC:
 
         Returns
         -------
-        topologic_core.CellComplex
+        CellComplex
             The construction-derived thermal CellComplex, or None on failure.
 
         Notes

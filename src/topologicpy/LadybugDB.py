@@ -340,7 +340,7 @@ def _annotate_graph_for_ontology(graph, ontology: bool = True, generatedBy: str 
     """
     Best-effort ontology annotation before graph persistence.
 
-    Supports topologicpy.TGraph first and legacy topologic_core.Graph as a
+    Supports topologicpy.TGraph first and legacy Graph as a
     fallback. This intentionally fails silently so LadybugDB remains usable without
     Ontology.py.
     """

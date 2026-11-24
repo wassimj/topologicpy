@@ -10,8 +10,6 @@ from topologicpy.Topology import Topology
 from topologicpy.Vertex import Vertex
 from topologicpy.Wire import Wire
 
-BACKEND = os.environ.get("TOPOLOGICPY_CORE_BACKEND", "").lower()
-IS_PYTHONOCC = "pythonocc" in BACKEND
 
 
 def _xyz(vertex):
@@ -133,11 +131,6 @@ def test_reverse_mixed_curved_wire_preserves_geometry_pythonocc():
     assert Wire.IsPolyline(rev, silent=True) is False
 
 
-def test_topologiccore_curved_reverse_refuses_to_flatten():
-    if IS_PYTHONOCC:
-        pytest.skip("TopologicCore capability guard.")
-    wire, _, _ = _mixed_wire()
-    assert Wire.Reverse(wire, silent=True) is None
 
 
 def test_closed_circle_wire_classification_and_length():

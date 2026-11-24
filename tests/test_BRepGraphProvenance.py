@@ -4,8 +4,6 @@ import pytest
 
 pytest.importorskip("OCC.Core.BRepGraph")
 
-if os.environ.get("TOPOLOGICPY_CORE_BACKEND", "").strip().lower() != "pythonocc":
-    pytest.skip("BRepGraph Tranche 3 tests require the pythonocc backend", allow_module_level=True)
 
 from topologicpy.Cell import Cell
 from topologicpy.Dictionary import Dictionary
