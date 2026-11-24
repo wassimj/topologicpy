@@ -1,4 +1,4 @@
-"""Canonical IFC analytical reconstruction and the local BIMData corpus."""
+"""Simplified reconstruction contracts and the complete local BIMData corpus."""
 import os
 from pathlib import Path
 import pytest

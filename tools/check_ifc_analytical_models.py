@@ -66,10 +66,11 @@ def main():
                     process = subprocess.run(command, stdout=log, stderr=subprocess.STDOUT, timeout=args.timeout, check=False)
                 report = json.loads((folder/"report.json").read_text()) if (folder/"report.json").is_file() else {}
                 f, s = report.get("fidelity", {}), report.get("statistics", {})
-                valid = bool(process.returncode == 0 and report.get("valid")
-                    and s.get("geometry_verified")
-                    and all(b["statistics"].get("geometry_verified")
-                            for b in report.get("buildings", [])))
+                valid = process.returncode == 0 and report.get("valid") and s.get("native_roundtrip_verified")
+                valid = valid and f.get("source_space_coverage", 0) >= .8 and f.get("source_area_coverage", 0) >= .8 and f.get("native_cell_coverage", 0) >= .95
+                valid = valid and all(b["statistics"].get("topology_type") == "CellComplex" for b in report.get("buildings", []))
+                if entry["id"] == "bimdata-kit-institute":
+                    valid = valid and f.get("exterior_fit_applied") and f.get("roof_source_fit_rmse_m", 1) < .03
                 outcome.update(passed=bool(valid), status="passed" if valid else "failed", seconds=round(time.perf_counter()-start, 3),
                     cells=s.get("rooms"), footprint_iou=f.get("weighted_footprint_iou"), roof_rmse_m=f.get("roof_source_fit_rmse_m"),
                     report=str(folder/"report.json"), backend=s.get("backend"))
