@@ -63,10 +63,6 @@ class EnergyModel:
         """
         try:
             import openstudio
-            try:
-                openstudio.Logger.instance().standardOutLogger().setLogLevel(openstudio.Fatal)
-            except Exception:
-                pass
             return openstudio
         except Exception:
             if not silent:
@@ -108,6 +104,26 @@ class EnergyModel:
             except Exception:
                 pass
         return path_str
+
+    @staticmethod
+    def _SQLValue(value):
+        """Escape a value inside an SQLite single-quoted literal."""
+        value = str(value)
+        if '\x00' in value:
+            raise ValueError('SQL names cannot contain NUL characters.')
+        return value.replace("'", "''")
+
+    @staticmethod
+    def _FloorLevels(levels, tolerance):
+        """Cluster sorted elevations without transitive drift."""
+        values = sorted(float(z) for z in levels)
+        if not math.isfinite(tolerance) or tolerance <= 0 or not all(math.isfinite(z) for z in values):
+            raise ValueError('Floor elevations and tolerance must be finite; tolerance must be positive.')
+        result = []
+        for z in values:
+            if not result or z - result[-1] > tolerance:
+                result.append(z)
+        return result
 
     @staticmethod
     def _SQLFile(model):
@@ -289,14 +305,14 @@ class EnergyModel:
             if name is None:
                 return None
             name = str(name)
-            if number > 9999:
-                return name + "_9999"
-            if name not in nameList:
+            occupied = set(nameList)
+            if name not in occupied:
                 return name
-            candidate = name + "_" + "{:04d}".format(number)
-            if candidate not in nameList:
-                return candidate
-            return createUniqueName(name, nameList, number + 1)
+            while True:
+                candidate = name + "_" + f"{number:04d}"
+                if candidate not in occupied:
+                    return candidate
+                number += 1
 
         def getFloorLevels(building):
             from topologicpy.Vertex import Vertex
@@ -437,6 +453,7 @@ class EnergyModel:
 
         if not os.path.exists(osModelPath):
             raise FileNotFoundError(f"EnergyModel.ByTopology - OSM template not found: {osModelPath}")
+        weatherFilePath = os.path.abspath(weatherFilePath)
         if not os.path.exists(weatherFilePath):
             raise FileNotFoundError(f"EnergyModel.ByTopology - Weather file not found: {weatherFilePath}")
         if not os.path.exists(designDayFilePath):
@@ -491,7 +508,7 @@ class EnergyModel:
         if not floorLevels or len(floorLevels) < 2:
             raise RuntimeError("EnergyModel.ByTopology - Could not derive valid floor levels from the input topology.")
 
-        floorLevels = sorted(list(set(floorLevels)))
+        floorLevels = EnergyModel._FloorLevels(floorLevels, tolerance)
         numberOfStories = len(floorLevels) - 1
         if numberOfStories < 1:
             raise RuntimeError("EnergyModel.ByTopology - The derived number of stories is less than 1.")
@@ -540,7 +557,7 @@ class EnergyModel:
             osBuildingStory = openstudio.model.BuildingStory(osModel)
             osBuildingStory.setName("STORY_" + str(storyNumber))
             osBuildingStory.setNominalZCoordinate(floorLevels[storyNumber])
-            osBuildingStory.setNominalFloortoFloorHeight(floor_to_floor_height)
+            osBuildingStory.setNominalFloortoFloorHeight(floorLevels[storyNumber+1] - floorLevels[storyNumber])
 
         try:
             osBuilding.setNorthAxis(northAxis)
@@ -587,25 +604,20 @@ class EnergyModel:
 
         export_vertex_map, regularisation = EnergyModel._OSMVerticalSeams(
             [Vertex.Coordinates(v, mantissa=geometry_mantissa) for v in Topology.Vertices(building)], seamTolerance)
-        export_triangulations = {}
+        export_polygons = {}
         native_interfaces = {}
         for spaceNumber, buildingCell in enumerate(building_cells):
             osSpace = openstudio.model.Space(osModel)
             osSpaceZ = Vertex.Z(Topology.CenterOfMass(buildingCell), mantissa=geometry_mantissa)
 
-            selectedStory = osBuildingStorys[0]
-            for story in osBuildingStorys:
-                storyZ = safe_optional_get(story.nominalZCoordinate())
-                storyH = safe_optional_get(story.nominalFloortoFloorHeight())
-                if storyZ is None:
-                    continue
-                if storyH is None:
-                    storyH = floor_to_floor_height
-                if storyZ + storyH < osSpaceZ:
-                    continue
-                if storyZ <= osSpaceZ:
-                    selectedStory = story
-                break
+            # Assign by the room base rather than its centre (which can lie
+            # on an upper storey for double-height rooms).
+            from bisect import bisect_right
+            cell_zs = [Vertex.Z(v, mantissa=geometry_mantissa) for v in Topology.Vertices(buildingCell)]
+            base_z = min(cell_zs) if cell_zs else osSpaceZ
+            story_index = max(0, min(numberOfStories-1, bisect_right(floorLevels, base_z+tolerance)-1))
+            selectedStory = min(osBuildingStorys, key=lambda story: abs(
+                (safe_optional_get(story.nominalZCoordinate()) or 0.0)-floorLevels[story_index]))
 
             osSpace.setBuildingStory(selectedStory)
 
@@ -657,11 +669,11 @@ class EnergyModel:
                     reverse = [coords[(start-i)%len(coords)] for i in range(len(coords))]
                     coords = min(forward, reverse)
                 key = (tuple(sorted(coords)), tuple(sorted(tuple(sorted(h)) for h in hole_coords)), bool(source_apertures))
-                if key not in export_triangulations:
-                    export_triangulations[key] = EnergyModel._OSMExportLoops(
+                if key not in export_polygons:
+                    export_polygons[key] = EnergyModel._OSMExportLoops(
                         coords, hole_coords, export_vertex_map,
                         bool(source_apertures), can_triangulate)
-                loops, collapsed = export_triangulations[key]
+                loops, collapsed = export_polygons[key]
                 if collapsed:
                     regularisation['collapsed_surfaces'] = regularisation.get('collapsed_surfaces', 0) + 1
                 cellFaces.extend((sourceFace, loop) for loop in loops)
@@ -874,7 +886,7 @@ class EnergyModel:
         sql = EnergyModel._SQLFile(model)
         if sql is None:
             return []
-        query = "SELECT ColumnName FROM tabulardatawithstrings WHERE ReportName = '" + str(reportName) + "' AND TableName = '" + str(tableName) + "'"
+        query = "SELECT ColumnName FROM tabulardatawithstrings WHERE ReportName = '" + EnergyModel._SQLValue(reportName) + "' AND TableName = '" + EnergyModel._SQLValue(tableName) + "'"
         columnNames = EnergyModel._VectorOfString(sql.execAndReturnVectorOfString(query))
         return list(OrderedDict((x, 1) for x in columnNames).keys())
 
@@ -965,10 +977,6 @@ class EnergyModel:
             if changed and not has_apertures:
                 return [], True
             raise ValueError("EnergyModel.ByTopology - Export face has fewer than three distinct points.")
-        # Hosted apertures remain child surfaces of their original host.
-        if has_apertures and not holes:
-            return [ring], False
-
         xyz = np.asarray(ring, dtype=float)
         centre = xyz.mean(axis=0)
         _, _, axes = np.linalg.svd(xyz-centre, full_matrices=False)
@@ -994,8 +1002,16 @@ class EnergyModel:
         if not region.is_valid:
             raise ValueError("EnergyModel.ByTopology - Invalid export region with internal boundaries.")
         if has_apertures:
-            # Preserve the existing hosted-aperture path, including legacy
-            # inputs carrying both aperture metadata and interior wires.
+            # Hosted apertures must stay attached to one gross parent. Check
+            # renderability, but never cut the parent into opening panels.
+            if len(ring) > 3 and not can_triangulate(ring):
+                cleaned = EnergyModel._OSMCleanRing(ring, remove_collinear=True)
+                candidate = Polygon(project(cleaned)) if len(cleaned) >= 3 else Polygon()
+                if (len(cleaned) >= 3 and candidate.is_valid and
+                    candidate.symmetric_difference(outer).area <= max(1e-10, outer.area*1e-10) and
+                    can_triangulate(cleaned)):
+                    return [cleaned], False
+                raise ValueError('EnergyModel.ByTopology - Hosted aperture parent cannot be rendered by OpenStudio without subdivision.')
             return [ring], False
 
         # This is the OpenStudio triangulator's own point-coincidence
@@ -1007,16 +1023,14 @@ class EnergyModel:
             p = np.asarray(points, dtype=float)
             return bool(np.any(np.linalg.norm(np.roll(p, -1, axis=0)-p, axis=1) < sdk_tolerance))
         has_short_edges = any(short_edge(p) for p in [ring]+valid_holes)
-        convex_error = outer.symmetric_difference(outer.convex_hull).area
-        is_concave = convex_error > max(1e-9, outer.area*1e-8)
-        # Preserve regularised, simple end walls if the SDK accepts them;
-        # exact-mode concave boundaries retain the previous gbXML partition
-        # policy. Test the same cleaned coordinates that will be exported.
-        needs_triangles = bool(valid_holes)
-        if len(ring) > 3:
-            needs_triangles = (needs_triangles or has_short_edges or
-                               (is_concave and not changed) or not can_triangulate(ring))
-        if not needs_triangles:
+        # Concavity does not imply non-planarity. A simple polygon without
+        # unhosted holes is a single OpenStudio Surface whenever the SDK can
+        # render it. Keep the original vertices (including shared-edge
+        # constraints) rather than introducing artificial diagonal boundaries.
+        # Retain the existing exact-mode protection for sub-millimetre edges:
+        # the SDK can combine their endpoints and produce degenerate n-gons.
+        if not valid_holes and (len(ring) == 3 or
+                                (not has_short_edges and can_triangulate(ring))):
             return [ring], False
 
         # Constrained triangulation uses boundary vertices. Reuse the exact
@@ -1028,20 +1042,98 @@ class EnergyModel:
                 source_points[tuple(uv)] = tuple(p)
         def unproject(loop):
             return [source_points.get(tuple(uv), tuple(centre+np.asarray(uv)@axes[:2])) for uv in loop]
-        def partition(merge_small):
-            return [unproject(loop) for loop in EnergyModel._ExportTriangles2D(region, merge_small=merge_small)]
-        loops = partition(not has_short_edges)
-        # The former tiny-triangle merge could recreate a polygon that the
-        # SDK cannot triangulate. Fall back to the original exact subdivision
-        # instead of exporting that polygon or moving its vertices.
-        if any(len(loop)>3 and (short_edge(loop) or not can_triangulate(loop)) for loop in loops):
-            loops = partition(False)
+        # Subdivision is a last resort for actual holes or SDK-incompatible
+        # polygons, not a preferred surface representation. The short-edge
+        # path deliberately retains the proven exact triangulation fallback.
+        # Otherwise recombine adjacent pieces as far as the SDK allows. Only
+        # valid, hole-free unions are accepted, and each union is tested with
+        # the same coordinate cleaning used for the final OpenStudio surface.
+        triangles = EnergyModel._ExportTriangles2D(region, merge_small=False)
+        if has_short_edges:
+            loops = [unproject(loop) for loop in triangles]
+        else:
+            loops = EnergyModel._OSMMergeExportPatches(
+                triangles, unproject,
+                lambda points: not short_edge(points) and can_triangulate(points))
         patches = [Polygon(project(loop)) for loop in loops]
         merged = unary_union(patches)
         budget = max(1e-7, region.area*1e-7)
         if not loops or merged.symmetric_difference(region).area > budget or sum(p.area for p in patches)-merged.area > budget:
             raise ValueError("EnergyModel.ByTopology - Export subdivision changes the surface area or fills its holes.")
         return loops, False
+
+    @staticmethod
+    def _OSMMergeExportPatches(loops, unproject, accepts):
+        """Greedily remove artificial partition edges without changing coverage.
+
+        All polygons belong to one source face. No merge across source faces,
+        rooms, constructions or aperture hosts is performed here. Use exact
+        projected unions; retain the original 3D boundary coordinates through
+        the caller's unproject mapping. Rejected unions leave both patches
+        untouched. Deterministic longest-shared-edge priority favours large
+        contiguous polygons, with triangles retained only when necessary.
+        """
+        from shapely.geometry import Polygon
+        from shapely.strtree import STRtree
+        import heapq
+
+        # Operate directly in the original projection, avoiding numerical
+        # changes from a 3D round trip during boundary matching and merging.
+        patches = {i: Polygon(loop) for i, loop in enumerate(loops)}
+        # Preserve the unmodified triangle rings in case no merge is accepted.
+        rings = {i: unproject(loop) for i, loop in enumerate(loops)}
+        keys = list(patches)
+        tree = STRtree([patches[i] for i in keys])
+        neighbours = {i: set() for i in keys}
+        queue = []
+
+        def enqueue(i, j):
+            if i == j or j in neighbours[i]:
+                return
+            a, b = patches[i], patches[j]
+            shared = a.boundary.intersection(b.boundary).length
+            if shared <= 1e-9:
+                return
+            neighbours[i].add(j)
+            neighbours[j].add(i)
+            heapq.heappush(queue, (-shared, min(i, j), max(i, j)))
+
+        for i in keys:
+            for index in tree.query(patches[i], predicate='intersects'):
+                j = keys[int(index)]
+                if j > i:
+                    enqueue(i, j)
+
+        next_id = len(keys)
+        while queue:
+            _, i, j = heapq.heappop(queue)
+            if i not in patches or j not in patches:
+                continue
+            a, b = patches[i], patches[j]
+            union = a.union(b)
+            if (union.geom_type != 'Polygon' or not union.is_valid or
+                    union.interiors or abs(union.area-a.area-b.area) >
+                    max(1e-12, (a.area+b.area)*1e-10)):
+                continue
+            candidate = unproject(list(union.exterior.coords)[:-1])
+            if not accepts(candidate):
+                continue
+            # A previously rejected union may become admissible after a
+            # neighbouring polygon is merged. Reconsider its new adjacency.
+            adjacent = (neighbours[i] | neighbours[j]) - {i, j}
+            for k in adjacent:
+                neighbours[k].discard(i)
+                neighbours[k].discard(j)
+            for k in (i, j):
+                del patches[k], rings[k], neighbours[k]
+            k = next_id
+            next_id += 1
+            patches[k] = union
+            rings[k] = candidate
+            neighbours[k] = set()
+            for other in sorted(adjacent):
+                enqueue(k, other)
+        return [rings[i] for i in sorted(rings)]
 
     @staticmethod
     def _OSMVerticalSeams(coordinates, tolerance=0.001):
@@ -1150,6 +1242,17 @@ class EnergyModel:
                 if start:
                     keep = keep[start:] + keep[:start]
                     changed = True
+                # Guard the area and winding of every simplified loop.
+                import numpy as np
+                def area_vector(indices):
+                    p = np.asarray([points[i] for i in indices], dtype=float)
+                    p -= p.mean(axis=0)
+                    return np.cross(p, np.roll(p,-1,axis=0)).sum(axis=0)*0.5
+                original_area = area_vector(range(len(points)))
+                new_area = area_vector(keep)
+                if float(original_area @ new_area) <= 0 or np.linalg.norm(original_area-new_area) > max(1e-9, np.linalg.norm(original_area)*1e-7):
+                    keep = list(range(len(points)))
+                    start = 0
                 retained = set(keep)
                 for index, node in enumerate(nodes):
                     if index not in retained:
@@ -1162,65 +1265,77 @@ class EnergyModel:
             document.unlink()
 
     @staticmethod
-    def ExportToGBXML(model, path, overwrite=False):
-        """
-        Exports the input OSM model to a GBXML file.
-        """
-        openstudio = EnergyModel._ImportOpenStudio("EnergyModel.ExportToGBXML")
+    def _CommitExport(source, destination, overwrite):
+        """Publish a staged file; no-clobber mode also protects concurrent writers."""
+        if overwrite:
+            os.replace(source, destination)
+        else:
+            # Both files are on the same filesystem. A hard link is atomic
+            # and fails if the destination already exists.
+            os.link(source, destination)
+
+    @staticmethod
+    def _ExportStaged(model, path, overwrite, gbxml):
+        import tempfile
+        from pathlib import Path
+        from xml.etree import ElementTree
+        method = 'EnergyModel.ExportToGBXML' if gbxml else 'EnergyModel.ExportToOSM'
+        openstudio = EnergyModel._ImportOpenStudio(method)
         if openstudio is None:
             return None
         if not isinstance(path, str) or not path:
-            print("EnergyModel.ExportToGBXML - Error: The input path is not a valid string. Returning None.")
+            warnings.warn(method + ' - Invalid output path.')
             return None
-        if not path.lower().endswith(".xml"):
-            path = path + ".xml"
-        if not overwrite and exists(path):
-            print("EnergyModel.ExportToGBXML - Error: a file already exists at the specified path and overwrite is set to False. Returning None.")
-            return None
+        suffix = '.xml' if gbxml else '.osm'
+        if not path.lower().endswith(suffix):
+            path += suffix
+        target = Path(path)
         try:
-            os_path = EnergyModel._OSPath(path, openstudio)
-            try:
-                result = openstudio.gbxml.GbXMLForwardTranslator().modelToGbXML(model, os_path)
-            except TypeError:
-                result = openstudio.gbxml.GbXMLForwardTranslator().modelToGbXML(model, path)
-            if result:
-                with open(path, 'r', encoding='utf-8') as source:
-                    xml = source.read()
-                cleaned = EnergyModel._CleanGBXMLForModel(model, xml)
-                if cleaned != xml:
-                    with open(path, 'w', encoding='utf-8', newline='\n') as target:
-                        target.write(cleaned)
-            return result
-        except Exception as e:
-            warnings.warn(f"EnergyModel.ExportToGBXML - Error: Could not export GBXML ({e}). Returning None.")
+            if not overwrite and (target.exists() or target.is_symlink()):
+                raise FileExistsError(str(target))
+            # A private staging directory keeps all SDK writes away from the
+            # destination, including when the SDK returns False after writing.
+            with tempfile.TemporaryDirectory(dir=target.parent, prefix='.topologicpy-export-') as folder:
+                staged = Path(folder) / target.name
+                os_path = EnergyModel._OSPath(str(staged), openstudio)
+                if gbxml:
+                    translator = openstudio.gbxml.GbXMLForwardTranslator()
+                    try:
+                        result = translator.modelToGbXML(model, os_path)
+                    except TypeError:
+                        result = translator.modelToGbXML(model, str(staged))
+                else:
+                    try:
+                        result = model.save(os_path, True)
+                    except TypeError:
+                        result = model.save(str(staged), True)
+                if not result or not staged.is_file() or staged.stat().st_size == 0:
+                    raise IOError('OpenStudio did not produce a successful export.')
+                if gbxml:
+                    xml = EnergyModel._CleanGBXMLForModel(model, staged.read_text(encoding='utf-8'))
+                    if ElementTree.fromstring(xml).tag.rsplit('}', 1)[-1] != 'gbXML':
+                        raise ValueError('Invalid gbXML document root.')
+                    staged.write_text(xml, encoding='utf-8', newline='\n')
+                else:
+                    # Reopen using the SDK, not merely a filename/size check.
+                    if EnergyModel.ByOSMPath(str(staged)) is None:
+                        raise ValueError('OpenStudio could not reopen the staged OSM.')
+                EnergyModel._CommitExport(staged, target, overwrite)
+                return result
+        except Exception as error:
+            warnings.warn(f'{method} - Error: {error}. Returning None.')
             return None
 
     @staticmethod
+    def ExportToGBXML(model, path, overwrite=False):
+        """Export gbXML transactionally, preserving an existing file on failure."""
+        return EnergyModel._ExportStaged(model, path, overwrite, True)
+
+    @staticmethod
     def ExportToOSM(model, path, overwrite=False):
-        """
-        Exports the input OSM model to an OSM file.
-        """
-        openstudio = EnergyModel._ImportOpenStudio("EnergyModel.ExportToOSM")
-        if openstudio is None:
-            return None
-        if not isinstance(path, str) or not path:
-            print("EnergyModel.ExportToOSM - Error: The input path is not a valid string. Returning None.")
-            return None
-        if not path.lower().endswith(".osm"):
-            path = path + ".osm"
-        if not overwrite and exists(path):
-            print("EnergyModel.ExportToOSM - Error: a file already exists at the specified path and overwrite is set to False. Returning None.")
-            return None
-        try:
-            os_path = EnergyModel._OSPath(path, openstudio)
-            try:
-                return model.save(os_path, overwrite)
-            except TypeError:
-                return model.save(path, overwrite)
-        except Exception as e:
-            warnings.warn(f"EnergyModel.ExportToOSM - Error: Could not export OSM ({e}). Returning None.")
-            return None
-    
+        """Export OSM transactionally, preserving an existing file on failure."""
+        return EnergyModel._ExportStaged(model, path, overwrite, False)
+
     @staticmethod
     def GBXMLString(model):
         """
@@ -1259,12 +1374,12 @@ class EnergyModel:
         def doubleValueFromQuery(sqlFile, reportName, reportForString, tableName, columnName, rowName, units):
             query = (
                 "SELECT Value FROM tabulardatawithstrings WHERE "
-                "ReportName='" + str(reportName) + "' AND "
-                "ReportForString='" + str(reportForString) + "' AND "
-                "TableName = '" + str(tableName) + "' AND "
-                "RowName = '" + str(rowName) + "' AND "
-                "ColumnName= '" + str(columnName) + "' AND "
-                "Units='" + str(units) + "'"
+                "ReportName='" + EnergyModel._SQLValue(reportName) + "' AND "
+                "ReportForString='" + EnergyModel._SQLValue(reportForString) + "' AND "
+                "TableName = '" + EnergyModel._SQLValue(tableName) + "' AND "
+                "RowName = '" + EnergyModel._SQLValue(rowName) + "' AND "
+                "ColumnName= '" + EnergyModel._SQLValue(columnName) + "' AND "
+                "Units='" + EnergyModel._SQLValue(units) + "'"
             )
             try:
                 osOptionalDoubleValue = sqlFile.execAndReturnFirstDouble(query)
@@ -1295,7 +1410,7 @@ class EnergyModel:
         sql = EnergyModel._SQLFile(model)
         if sql is None:
             return []
-        query = "SELECT RowName FROM tabulardatawithstrings WHERE ReportName = '" + str(reportName) + "' AND TableName = '" + str(tableName) + "'"
+        query = "SELECT RowName FROM tabulardatawithstrings WHERE ReportName = '" + EnergyModel._SQLValue(reportName) + "' AND TableName = '" + EnergyModel._SQLValue(tableName) + "'"
         rowNames = EnergyModel._VectorOfString(sql.execAndReturnVectorOfString(query))
         return list(OrderedDict((x, 1) for x in rowNames).keys())
 
@@ -1315,19 +1430,7 @@ class EnergyModel:
             return None
 
         def deleteOldFiles(path):
-            if not path or not os.path.isdir(path):
-                return None
-            onemonth = time.time() - 30 * 86400
-            try:
-                for filename in os.listdir(path):
-                    full_path = os.path.join(path, filename)
-                    if os.path.getmtime(full_path) < onemonth:
-                        if os.path.isfile(full_path):
-                            os.remove(full_path)
-                        elif os.path.isdir(full_path):
-                            shutil.rmtree(full_path)
-            except Exception:
-                pass
+            EnergyModel._CleanupSimulationRuns(path)
 
         if not weatherFilePath:
             weatherFilePath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "assets", "EnergyModel", "GBR_London.Gatwick.037760_IWEC.epw")
@@ -1349,22 +1452,33 @@ class EnergyModel:
         if removeFiles:
             deleteOldFiles(outputFolder)
 
-        outputFolder = os.path.join(outputFolder, timestamp)
-        os.makedirs(outputFolder, exist_ok=True)
-
+        import tempfile
+        import re
+        run_directory = None
         try:
+            os.makedirs(outputFolder, exist_ok=True)
+            outputFolder = tempfile.mkdtemp(prefix='topologicpy-' + timestamp + '-', dir=os.path.abspath(outputFolder))
+            run_directory = outputFolder
+            with open(os.path.join(outputFolder, '.topologicpy-simulation'), 'x', encoding='utf-8') as marker:
+                marker.write('TopologicPy simulation v1\n')
             try:
                 building_name = model.getBuilding().name().get()
             except Exception:
                 building_name = "TopologicBuilding"
 
+            building_name = re.sub(r'[^A-Za-z0-9_.-]', '_', str(building_name)).strip(' .')[:120] or 'TopologicBuilding'
+            # Avoid Windows reserved names, traversal and ambiguous device paths.
+            if building_name.split('.')[0].upper() in {'CON','PRN','AUX','NUL',*(f'COM{i}' for i in range(1,10)),*(f'LPT{i}' for i in range(1,10))}:
+                building_name = 'building-' + building_name
             osmPath = os.path.join(outputFolder, building_name + ".osm")
             oswPath = os.path.join(outputFolder, building_name + ".osw")
 
             try:
-                model.save(EnergyModel._OSPath(osmPath, openstudio), True)
+                saved = model.save(EnergyModel._OSPath(osmPath, openstudio), True)
             except TypeError:
-                model.save(osmPath, True)
+                saved = model.save(osmPath, True)
+            if not saved or not os.path.isfile(osmPath) or not os.path.getsize(osmPath):
+                raise IOError('Could not save simulation seed OSM.')
 
             workflow = model.workflowJSON()
             try:
@@ -1378,14 +1492,16 @@ class EnergyModel:
                 workflow.setWeatherFile(weatherFilePath)
 
             try:
-                workflow.saveAs(EnergyModel._OSPath(oswPath, openstudio))
+                saved = workflow.saveAs(EnergyModel._OSPath(oswPath, openstudio))
             except TypeError:
-                workflow.saveAs(oswPath)
+                saved = workflow.saveAs(oswPath)
+            if saved is False or not os.path.isfile(oswPath) or not os.path.getsize(oswPath):
+                raise IOError('Could not save simulation workflow.')
 
             cmd = [osBinaryPath, "run", "-w", oswPath]
             result = subprocess.run(cmd, capture_output=True, text=True)
             if result.returncode != 0:
-                warnings.warn("EnergyModel.Run - Error: OpenStudio simulation failed. Returning None.")
+                warnings.warn("EnergyModel.Run - Error: OpenStudio simulation failed. " + (result.stderr or result.stdout or "")[-4000:])
                 return None
 
             sqlPath = os.path.join(outputFolder, "run", "eplusout.sql")
@@ -1399,9 +1515,53 @@ class EnergyModel:
                 osSqlFile = openstudio.SqlFile(sqlPath)
             model.setSqlFile(osSqlFile)
             return model
+        except Exception as error:
+            warnings.warn(f'EnergyModel.Run - Error: {error}. Returning None.')
+            return None
         finally:
-            pass
-    
+            if run_directory is not None:
+                try:
+                    with open(os.path.join(run_directory, '.topologicpy-completed'), 'x', encoding='utf-8') as marker:
+                        marker.write('TopologicPy simulation finished v1\n')
+                except OSError as error:
+                    warnings.warn(f'EnergyModel.Run - Could not mark run as finished: {error}')
+
+    @staticmethod
+    def _CleanupSimulationRuns(path):
+        """Only remove old, marked, non-linked runs created by this version."""
+        import time
+        import re
+        from pathlib import Path
+        root = Path(path)
+        if not root.is_dir() or root.is_symlink() or getattr(root, 'is_junction', lambda: False)():
+            return
+        cutoff = time.time() - 30 * 86400
+        try:
+            entries = list(root.iterdir())
+        except OSError as error:
+            warnings.warn(f'EnergyModel.Run - Could not enumerate simulation folder: {error}')
+            return
+        for entry in entries:
+            try:
+                if not re.fullmatch(r'topologicpy-UTC-\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}-[A-Za-z0-9_]+', entry.name):
+                    continue
+                if entry.is_symlink() or not entry.is_dir() or getattr(entry, 'is_junction', lambda: False)():
+                    continue
+                marker = entry / '.topologicpy-simulation'
+                if marker.is_symlink() or not marker.is_file() or marker.read_text(encoding='utf-8') != 'TopologicPy simulation v1\n':
+                    continue
+                finished = entry / '.topologicpy-completed'
+                if finished.is_symlink() or not finished.is_file() or finished.read_text(encoding='utf-8') != 'TopologicPy simulation finished v1\n':
+                    continue
+                if max(entry.stat().st_mtime, marker.stat().st_mtime, finished.stat().st_mtime) >= cutoff:
+                    continue
+                # Do not delete a run containing links or junctions.
+                if any(p.is_symlink() or getattr(p, 'is_junction', lambda: False)() for p in entry.rglob('*')):
+                    continue
+                shutil.rmtree(entry)
+            except (OSError, UnicodeError) as error:
+                warnings.warn(f'EnergyModel.Run - Cleanup skipped {entry}: {error}')
+
     @staticmethod
     def SpaceDictionaries(model):
         """
@@ -1465,7 +1625,7 @@ class EnergyModel:
         sql = EnergyModel._SQLFile(model)
         if sql is None:
             return []
-        query = "SELECT TableName FROM tabulardatawithstrings WHERE ReportName='" + str(reportName) + "'"
+        query = "SELECT TableName FROM tabulardatawithstrings WHERE ReportName='" + EnergyModel._SQLValue(reportName) + "'"
         tableNames = EnergyModel._VectorOfString(sql.execAndReturnVectorOfString(query))
         return list(OrderedDict((x, 1) for x in tableNames).keys())
 
@@ -1474,6 +1634,9 @@ class EnergyModel:
         """
         Returns the topologies found in the input OSM model.
         """
+        if model is None:
+            return {"cells": [], "apertures": [], "shadingFaces": []}
+
         from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
         from topologicpy.Wire import Wire
@@ -1568,9 +1731,6 @@ class EnergyModel:
                 if context is not None:
                     _ = Aperture.ByTopologyContext(aperture, context)
             return face
-
-        if model is None:
-            return {"cells": [], "apertures": [], "shadingFaces": []}
 
         try:
             spaces = list(model.getSpaces())
@@ -1682,7 +1842,7 @@ class EnergyModel:
         sql = EnergyModel._SQLFile(model)
         if sql is None:
             return None
-        query = "SELECT Units FROM tabulardatawithstrings WHERE ReportName = '" + str(reportName) + "' AND TableName = '" + str(tableName) + "' AND ColumnName = '" + str(columnName) + "'"
+        query = "SELECT Units FROM tabulardatawithstrings WHERE ReportName = '" + EnergyModel._SQLValue(reportName) + "' AND TableName = '" + EnergyModel._SQLValue(tableName) + "' AND ColumnName = '" + EnergyModel._SQLValue(columnName) + "'"
         try:
             units = sql.execAndReturnFirstString(query)
             if units.is_initialized():
@@ -1697,7 +1857,6 @@ class EnergyModel:
         """
         Returns the OpenStudio SDK version number.
         """
-        from topologicpy.Helper import Helper
         openstudio = EnergyModel._ImportOpenStudio("EnergyModel.Version", silent=silent)
         if openstudio is None:
             return None
@@ -1710,6 +1869,7 @@ class EnergyModel:
                 print("EnergyModel.Version - Error: Could not retrieve the OpenStudio SDK version number. Returning None.")
             return None
         if check is True:
+            from topologicpy.Helper import Helper
             result = Helper.CheckVersion("openstudio", result, silent=silent)
         return result
 
@@ -1814,12 +1974,14 @@ class EnergyModel:
 
     @staticmethod
     def _ConformExportEdges(model):
-        """Retain common edge subdivisions after planar triangulation."""
+        """Retain common edge subdivisions after planar polygon preparation."""
         import numpy as np
         from scipy.spatial import cKDTree
         openstudio = EnergyModel._ImportOpenStudio("EnergyModel._ConformExportEdges")
         tolerance = 1e-9
         surfaces = list(model.getSurfaces())
+        if not surfaces:
+            return
         points = np.unique(np.round(np.array([[v.x(),v.y(),v.z()] for s in surfaces for v in s.vertices()]),12),axis=0)
         tree = cKDTree(points)
         for surface in surfaces:
@@ -1910,7 +2072,7 @@ class EnergyModel:
                 for f in Topology.Faces(model):
                     fd=dictionary(f)
                     if fd.get('surface_role')=='exterior_shading':
-                        shadingSurfaces.append(dict(id=str(fd['shading_id']),vertices=ring(Face.ExternalBoundary(f)),holes=[ring(w) for w in Face.InternalBoundaries(f) or []],dictionary=fd))
+                        shadingSurfaces.append(dict(id=str(fd.get('shading_id') or 'shade-'+hashlib.sha256(repr(sorted(tuple(p) for p in ring(Face.ExternalBoundary(f)))).encode()).hexdigest()[:16]),vertices=ring(Face.ExternalBoundary(f)),holes=[ring(w) for w in Face.InternalBoundaries(f) or []],dictionary=fd))
             cells=[model] if Topology.IsInstance(model,'Cell') else Topology.Cells(model)
             for cell in cells:
                 d=dictionary(cell);faces=Topology.Faces(cell)
@@ -1980,18 +2142,45 @@ class EnergyModel:
         if not rooms:raise ValueError('GEM export contains no rooms.')
         if len({r['id'] for r in rooms})!=len(rooms):raise ValueError('GEM export has duplicate room identifiers.')
         if shadingSurfaces is not None:
-            if not isinstance(shadingSurfaces,(list,tuple)):
-                shade_faces=[shadingSurfaces] if Topology.IsInstance(shadingSurfaces,'Face') else Topology.Faces(shadingSurfaces)
-                shadingSurfaces=[dict(id=str(dictionary(f).get('shading_id') or 'shade-'+str(i)),vertices=ring(Face.ExternalBoundary(f)),holes=[ring(w) for w in Face.InternalBoundaries(f) or []],dictionary=dictionary(f)) for i,f in enumerate(shade_faces)]
-            for shade in shadingSurfaces:
-                data={**shade.get('dictionary',{}),'surface_role':'exterior_shading','is_external':True}
-                rooms.append(dict(id=shade['id'],name=shade['id'],dictionary=data,volume=0.,kind='shade',
-                    faces=[dict(id=shade['id'],vertices=shade['vertices'],holes=shade.get('holes',[]),openings=[],dictionary=data)]))
+            inputs = shadingSurfaces if isinstance(shadingSurfaces, (list, tuple)) else [shadingSurfaces]
+            normalized = []
+            for item in inputs:
+                if isinstance(item, dict):
+                    normalized.append(item)
+                    continue
+                if Topology.IsInstance(item, 'Face'):
+                    faces = [item]
+                elif Topology.IsInstance(item, 'Topology'):
+                    faces = Topology.Faces(item) or []
+                else:
+                    raise TypeError('GEM shading inputs must be faces, topologies or dictionaries.')
+                if not faces:
+                    raise ValueError('GEM shading topology contains no faces.')
+                for f in faces:
+                    fd = dictionary(f)
+                    normalized.append(dict(id=fd.get('shading_id'), vertices=ring(Face.ExternalBoundary(f)),
+                        holes=[ring(w) for w in Face.InternalBoundaries(f) or []], dictionary=fd))
+            for shade in normalized:
+                attributes = shade.get('dictionary', {})
+                if not isinstance(attributes, dict):
+                    raise ValueError('GEM shading dictionary must be a dictionary.')
+                points = shade.get('vertices')
+                EnergyModel._GEMFrame(points)
+                holes = shade.get('holes', [])
+                if not isinstance(holes, (list, tuple)):
+                    raise ValueError('GEM shading holes must be a sequence of polygons.')
+                for hole in holes:
+                    EnergyModel._GEMFrame(hole)
+                sid = str(shade.get('id') or attributes.get('shading_id') or 'shade-'+hashlib.sha256(
+                    repr(sorted(tuple(float(c) for c in p) for p in points)).encode()).hexdigest()[:16])
+                data = {**attributes, 'surface_role':'exterior_shading', 'is_external':True}
+                rooms.append(dict(id=sid,name=sid,dictionary=data,volume=0.,kind='shade',
+                    faces=[dict(id=sid,vertices=points,holes=holes,openings=[],dictionary=data)]))
         if len({r['id'] for r in rooms})!=len(rooms):raise ValueError('Duplicate GEM room/shading identity.')
         return sorted(rooms,key=lambda r:(r.get('kind')=='shade',r['id']))
 
     @staticmethod
-    def _GEMEncode(rooms,mantissa=12,tolerance=1e-7):
+    def _GEMEncode(rooms,mantissa=12,tolerance=1e-4):
         """Serialize gross GEM parent polygons with child window, door and hole loops."""
         import math
         import unicodedata
@@ -2001,10 +2190,6 @@ class EnergyModel:
         from shapely.ops import unary_union
         if not isinstance(mantissa,int) or not 9<=mantissa<=15 or not math.isfinite(tolerance) or tolerance<=0:
             raise ValueError('Use mantissa 9-15 and a finite positive GEM tolerance in metres.')
-        def parts(shape):
-            if shape.is_empty:return []
-            if shape.geom_type=='Polygon':return [shape]
-            return [p for child in getattr(shape,'geoms',[]) for p in parts(child)]
         def number(x):return f'{float(x):.{mantissa}f}'
         lines=['COM GEM data file exported by TopologicPy','ANT'];mapping=[];prepared=[]
         for index,room in enumerate(rooms,1):
@@ -2023,13 +2208,8 @@ class EnergyModel:
                     p=np.asarray(points,dtype=float)
                     return (origin+p[:,:1]*u+p[:,1:2]*v).tolist()
                 host=Polygon(project(face['vertices']),[project(h) for h in face.get('holes',[])])
-                if not host.is_valid and is_shade:
-                    from shapely import make_valid
-                    decomposed=unary_union(parts(make_valid(host)))
-                    if abs(decomposed.area-host.area)>max(1e-8,abs(host.area)*1e-8):raise ValueError('Invalid GEM shading linework: '+face['id'])
-                    host=decomposed
                 if not host.is_valid or host.area<=1e-13:raise ValueError('Invalid GEM host polygon: '+face['id'])
-                if 'area' in face and abs(host.area-face['area'])>max(1e-5,host.area*1e-7):
+                if 'area' in face and abs(host.area-face['area'])>max(1e-5,host.area*1e-7,tolerance*host.length):
                     raise ValueError('GEM requires polygonal planar faces; tessellate curves explicitly before export.')
                 # GEM stores the gross parent surface once. Windows, doors and
                 # holes are subordinate opening polygons, never cuts or panels.
@@ -2046,14 +2226,14 @@ class EnergyModel:
                     polygon=Polygon(project(opening['vertices']))
                     if not polygon.is_valid or polygon.area<=1e-13:
                         raise ValueError('Invalid GEM opening: '+opening['id'])
-                    if polygon.difference(gross).area>max(1e-8,polygon.area*1e-8):
+                    if not gross.buffer(tolerance).covers(polygon):
                         raise ValueError('GEM opening extends outside its parent face: '+opening['id'])
                     source_openings.append((opening,polygon))
                 for hole_number,hole in enumerate(face.get('holes',[])):
                     polygon=Polygon(project(hole))
                     if not polygon.is_valid or polygon.area<=1e-13:
                         raise ValueError('Invalid GEM internal boundary: '+face['id'])
-                    if polygon.difference(gross).area>max(1e-8,polygon.area*1e-8):
+                    if not gross.buffer(tolerance).covers(polygon):
                         raise ValueError('GEM hole extends outside its parent face: '+face['id'])
                     # When the same opening is represented both as an aperture
                     # and an internal wire, the aperture carries its type.
@@ -2091,7 +2271,13 @@ class EnergyModel:
             lines+=[' '.join(number(x) for x in p) for p in vertices]
             for panel,ids in zip(panels,indices):
                 lines+=[' '.join(map(str,[len(ids)]+ids)),str(len(panel['openings']))]
-                origin,u,v,n=EnergyModel._GEMFrame([vertices[i-1] for i in ids])
+                rounded_boundary=np.asarray([vertices[i-1] for i in ids])
+                origin,u,v,n=EnergyModel._GEMFrame(rounded_boundary)
+                if is_shade:
+                    original_boundary=np.asarray(panel['vertices'])
+                    original_polygon=Polygon(np.column_stack(((original_boundary-origin)@u,(original_boundary-origin)@v)))
+                    rounded_polygon=Polygon(np.column_stack(((rounded_boundary-origin)@u,(rounded_boundary-origin)@v)))
+                    precision_residual += original_polygon.symmetric_difference(rounded_polygon).area
                 for opening in panel['openings']:
                     p=np.asarray(opening['vertices'])-origin
                     xy=np.column_stack((p@u,p@v))
@@ -2104,53 +2290,107 @@ class EnergyModel:
 
     @staticmethod
     def _GEMRead(text):
-        """Read the polygonal GEM subset used by this exporter; no model reconstruction."""
+        """Read the supported polygonal GEM subset, rejecting incomplete records."""
         import numpy as np
-        lines=[line.strip() for line in text.splitlines() if line.strip()];i=0;rooms=[]
-        def numbers(line):
-            values=[float(x) for x in line.split()]
-            if not np.isfinite(values).all():raise ValueError('Non-finite GEM coordinate.')
-            return values
-        tags={'LAYER','COLOUR','CATEGORY','TYPE','SUBTYPE','COLOURRGB'}
-        while i<len(lines):
-            line=lines[i]
-            if line.startswith('COM ') or line in {'ANT','CAT'}:i+=1;continue
-            if line=='SITE':i+=2;continue
-            metadata={}
-            while i<len(lines) and lines[i] in tags:
-                metadata[lines[i]]=lines[i+1];i+=2
-            is_shade=metadata.get('TYPE')=='4'
-            if i==len(lines):break
-            if not lines[i].startswith('IES '):raise ValueError('Unsupported GEM record: '+lines[i])
-            name=lines[i][4:];i+=1
-            nv,nf=map(int,lines[i].split());i+=1
-            if nv<3 or nf<1 or (not is_shade and (nv<4 or nf<4)):raise ValueError('GEM room is not a volumetric shell.')
-            points=np.asarray([numbers(line) for line in lines[i:i+nv]]);i+=nv
-            if points.shape!=(nv,3):raise ValueError('Invalid GEM vertex table.')
-            faces=[]
+        records = [(n, line.strip()) for n, line in enumerate(text.splitlines(), 1) if line.strip()]
+        i = 0
+        rooms = []
+        tags = {'LAYER','COLOUR','CATEGORY','TYPE','SUBTYPE','COLOURRGB'}
+        def fail(message):
+            line = records[i-1][0] if i else 1
+            return ValueError(f'Invalid GEM at line {line}: {message}')
+        def take(context):
+            nonlocal i
+            if i >= len(records):
+                raise fail('Truncated record; expected '+context)
+            value = records[i][1]; i += 1
+            return value
+        def integers(context, count=None):
+            value = take(context)
+            try:
+                result = list(map(int, value.split()))
+            except ValueError as error:
+                raise fail('Expected integer '+context) from error
+            if not result or count is not None and len(result) != count:
+                raise fail('Invalid '+context)
+            return result
+        def coordinates(count, dimension, context):
+            if count > len(records)-i:
+                raise fail(f'{context} declares {count} vertices, but only {len(records)-i} records remain')
+            result = []
+            for _ in range(count):
+                value = take(context)
+                try:
+                    p = list(map(float, value.split()))
+                except ValueError as error:
+                    raise fail('Invalid '+context) from error
+                if len(p) != dimension or not np.isfinite(p).all():
+                    raise fail('Invalid or non-finite '+context)
+                result.append(p)
+            return np.asarray(result)
+        while i < len(records):
+            line = records[i][1]
+            if line.startswith('COM ') or line in {'ANT','CAT'}:
+                i += 1; continue
+            if line == 'SITE':
+                i += 1
+                value = take('SITE value')
+                if value in tags or value.startswith('IES ') or value in {'ANT','CAT','SITE'}:
+                    raise fail('Missing SITE value')
+                continue
+            metadata = {}
+            while i < len(records) and records[i][1] in tags:
+                tag = take('metadata tag')
+                if tag in metadata:
+                    raise fail('Duplicate metadata tag '+tag)
+                metadata[tag] = str(integers(tag+' value', 1)[0])
+            if metadata.get('TYPE','1') not in {'1','4'}:
+                raise fail('Unsupported GEM TYPE '+metadata['TYPE'])
+            shade = metadata.get('TYPE') == '4'
+            line = take('IES room or shading header')
+            if not line.startswith('IES ') or not line[4:].strip():
+                raise fail('Expected IES header')
+            name = line[4:]
+            nv,nf = integers('vertex and panel counts',2)
+            if nv < 3 or nf < 1 or (not shade and (nv < 4 or nf < 4)):
+                raise fail('Invalid vertex/panel counts')
+            points = coordinates(nv,3,'vertex table')
+            if nf > (len(records)-i)//2:
+                raise fail('Truncated panel table')
+            faces = []
             for _ in range(nf):
-                indices=list(map(int,lines[i].split()));i+=1
-                if indices[0]<3 or indices[0]!=len(indices)-1 or any(j<1 or j>nv for j in indices[1:]):raise ValueError('Invalid GEM panel indices.')
-                boundary=points[np.array(indices[1:])-1];origin,u,v,n=EnergyModel._GEMFrame(boundary)
-                count=int(lines[i]);i+=1;openings=[]
-                if count<0:raise ValueError('Invalid GEM opening count.')
+                indices = integers('panel indices')
+                if indices[0]<3 or indices[0]!=len(indices)-1 or any(j<1 or j>nv for j in indices[1:]) or len(set(indices[1:]))!=indices[0]:
+                    raise fail('Invalid panel indices')
+                boundary = points[np.array(indices[1:])-1]
+                try:
+                    origin,u,v,n = EnergyModel._GEMFrame(boundary)
+                except ValueError as error:
+                    raise fail(str(error)) from error
+                count = integers('opening count',1)[0]
+                if count<0 or count>(len(records)-i)//4:
+                    raise fail('Invalid or truncated opening count')
+                openings=[]
                 for _ in range(count):
-                    vertices,kind=map(int,lines[i].split());i+=1
-                    if vertices<3 or kind not in {0,1,2}:raise ValueError('Invalid GEM opening type or vertex count.')
-                    xy=np.asarray([numbers(line) for line in lines[i:i+vertices]]);i+=vertices
-                    if xy.shape!=(vertices,2):raise ValueError('Invalid GEM opening coordinates.')
+                    vertices,kind=integers('opening vertex count and type',2)
+                    if vertices<3 or kind not in {0,1,2}:
+                        raise fail('Invalid opening type or vertex count')
+                    xy=coordinates(vertices,2,'opening coordinates')
                     openings.append(dict(type=kind,vertices=(origin+xy[:,:1]*u+xy[:,1:2]*v).tolist()))
                 faces.append(dict(vertices=boundary.tolist(),openings=openings))
-            rooms.append(dict(kind='shade' if is_shade else 'room',name=name,faces=faces))
-        if not rooms:raise ValueError('No GEM rooms were found.')
+            rooms.append(dict(kind='shade' if shade else 'room',name=name,faces=faces))
+        if not any(r['kind']=='room' for r in rooms):
+            raise ValueError('No GEM rooms were found.')
         return rooms
 
     @staticmethod
-    def _GEMCheck(actual,expected=None,tolerance=1e-7):
+    def _GEMCheck(actual,expected=None,tolerance=1e-4):
         """Validate saved loops, closure, volumes, host coverage and opening geometry."""
         import numpy as np
         from shapely.geometry import Polygon
         from shapely.ops import unary_union
+        if not math.isfinite(tolerance) or tolerance <= 0:
+            raise ValueError('GEM tolerance must be finite and positive.')
         if expected is not None and len(actual)!=len(expected):raise ValueError('GEM room count changed.')
         maximum_volume_error=0.;maximum_opening_area_error=0.;maximum_opening_overlap=0.;open_count=0;face_count=0;volumes=[]
         shade_count=0
@@ -2161,10 +2401,20 @@ class EnergyModel:
                     if source.get('kind')!='shade' or source['name']!=room['name'] or len(source['faces'])!=len(room['faces']):raise ValueError('GEM changed shading identity or type.')
                 for fi,face in enumerate(room['faces']):
                     p=np.asarray(face['vertices']);o,u,v,n=EnergyModel._GEMFrame(p)
-                    if np.max(np.abs((p-o)@n))>tolerance or not Polygon(np.column_stack(((p-o)@u,(p-o)@v))).is_valid :raise ValueError('Invalid GEM shading polygon.')
+                    gross=Polygon(np.column_stack(((p-o)@u,(p-o)@v)))
+                    if np.max(np.abs((p-o)@n))>tolerance or not gross.is_valid or gross.area<=1e-13:
+                        raise ValueError('Invalid GEM shading polygon.')
+                    shade_openings=[]
                     for opening in face['openings']:
                         a=np.asarray(opening['vertices'])
-                        if opening['type']!=2 or np.max(np.abs((a-o)@n))>tolerance or Polygon(np.column_stack(((a-o)@u,(a-o)@v))).difference(Polygon(np.column_stack(((p-o)@u,(p-o)@v)))).area>1e-8:raise ValueError('Invalid GEM transparent shading opening.')
+                        sub=Polygon(np.column_stack(((a-o)@u,(a-o)@v)))
+                        if opening['type']!=2 or not sub.is_valid or sub.area<=1e-13 or np.max(np.abs((a-o)@n))>tolerance or not gross.buffer(tolerance).covers(sub):
+                            raise ValueError('Invalid GEM transparent shading opening.')
+                        shade_openings.append(sub)
+                    overlap=sum(sub.area for sub in shade_openings)-unary_union(shade_openings).area
+                    maximum_opening_overlap=max(maximum_opening_overlap,overlap)
+                    if overlap>max(1e-8,tolerance*sum(sub.length for sub in shade_openings)):
+                        raise ValueError('GEM shading openings overlap.')
                     if expected is not None:
                         originals=source['faces'][fi]['openings']
                         if len(originals)!=len(face['openings']):raise ValueError('GEM changed transparent shading.')
@@ -2175,29 +2425,54 @@ class EnergyModel:
                 continue
             if expected is not None and expected[ri].get('kind')=='shade':raise ValueError('GEM shading was converted to a room.')
             vertices=np.unique(np.round([p for f in room['faces'] for p in f['vertices']],12),axis=0)
-            centre=vertices.mean(axis=0);edges={};volume=0.
+            def shell_closed(edge_tolerance):
+                from scipy.spatial import cKDTree
+                tree = cKDTree(vertices)
+                representatives = {}
+                for vi, point in enumerate(vertices):
+                    if vi in representatives:
+                        continue
+                    for j in tree.query_ball_point(point, edge_tolerance):
+                        representatives.setdefault(j, vi)
+                def key(point):
+                    _, index = tree.query(point)
+                    return representatives[int(index)]
+                edges = {}
+                for face in room['faces']:
+                    p = np.asarray(face['vertices'])
+                    for a,b in zip(p,np.roll(p,-1,axis=0)):
+                        d=b-a; length2=float(d@d)
+                        if length2 < 1e-24:
+                            return False
+                        t=(vertices-a)@d/length2
+                        mask=(t>1e-10)&(t<1-1e-10)&(np.linalg.norm(vertices-a-t[:,None]*d,axis=1)<=edge_tolerance)
+                        chain=np.vstack((a,vertices[mask][np.argsort(t[mask])],b))
+                        if key(a)==key(b):
+                            # Never erase a real serialized edge to certify closure.
+                            return False
+                        for x,y in zip(chain,chain[1:]):
+                            x,y=key(x),key(y)
+                            if x==y:
+                                continue
+                            edges.setdefault(tuple(sorted((x,y))),[]).append(1 if x<y else -1)
+                return bool(edges) and all(len(values)==2 and sum(values)==0 for values in edges.values())
+            if not shell_closed(min(tolerance,1e-8)) and not shell_closed(tolerance):
+                raise ValueError('Saved GEM room shell is not closed and consistently oriented.')
+            centre=vertices.mean(axis=0);volume=0.;surface_area=0.
+            if expected is not None and (room['name']!=expected[ri]['name'] or len(room['faces'])!=len(expected[ri]['faces'])):
+                raise ValueError('GEM room identity or face count changed.')
             for fi,face in enumerate(room['faces']):
                 p=np.asarray(face['vertices']);o,u,v,n=EnergyModel._GEMFrame(p)
                 if np.max(np.abs((p-o)@n))>tolerance:raise ValueError('Saved GEM panel is non-planar.')
                 polygon=Polygon(np.column_stack(((p-o)@u,(p-o)@v)))
                 if not polygon.is_valid or polygon.area<1e-13:raise ValueError('Saved GEM panel is invalid.')
-                # Split edge incidences at existing collinear vertices, without moving geometry.
-                for a,b in zip(p,np.roll(p,-1,axis=0)):
-                    direction=b-a;length=float(direction@direction)
-                    if length<1e-24:raise ValueError('Saved GEM panel has a collapsed edge.')
-                    t=(vertices-a)@direction/length
-                    mask=(t>=-1e-10)&(t<=1+1e-10)&(np.linalg.norm(vertices-a-t[:,None]*direction,axis=1)<=min(tolerance,1e-8))
-                    chain=vertices[mask][np.argsort(t[mask])]
-                    for x,y in zip(chain,chain[1:]):
-                        x=tuple(np.round(x,9));y=tuple(np.round(y,9))
-                        if x==y:continue
-                        edges.setdefault(tuple(sorted((x,y))),[]).append(1 if x<y else -1)
+                surface_area += polygon.area
                 q=p-centre
                 volume+=sum(float(q[0]@np.cross(q[j],q[j+1])) for j in range(1,len(q)-1))/6
                 subpolygons=[]
                 for opening in face['openings']:
                     a=np.asarray(opening['vertices']);sub=Polygon(np.column_stack(((a-o)@u,(a-o)@v)))
-                    if not sub.is_valid or sub.area<1e-13 or np.max(np.abs((a-o)@n))>tolerance or sub.difference(polygon).area>max(1e-8,sub.area*1e-8):
+                    if not sub.is_valid or sub.area<1e-13 or np.max(np.abs((a-o)@n))>tolerance or not polygon.buffer(tolerance).covers(sub):
                         raise ValueError('Saved GEM opening is invalid or outside its host.')
                     subpolygons.append(sub)
                 overlap=sum(s.area for s in subpolygons)-unary_union(subpolygons).area
@@ -2217,14 +2492,13 @@ class EnergyModel:
                         delivered=Polygon(np.column_stack((delivered@u,delivered@v)))
                         error=original.symmetric_difference(delivered).area
                         maximum_opening_area_error=max(maximum_opening_area_error,error)
-                        if error>max(1e-8,original.area*1e-8):raise ValueError('GEM changed an opening area.')
-            if any(len(values)!=2 or sum(values)!=0 for values in edges.values()):raise ValueError('Saved GEM room shell is not closed and consistently oriented.')
+                        if error>max(1e-8,original.area*1e-8,tolerance*original.length):raise ValueError('GEM changed an opening area.')
             if volume<=1e-10:raise ValueError('Saved GEM room has non-positive volume.')
             if expected is not None:
                 if room['name']!=expected[ri]['name'] or len(room['faces'])!=len(expected[ri]['faces']):raise ValueError('GEM room identity or face count changed.')
                 error=abs(volume-expected[ri]['volume'])
                 maximum_volume_error=max(maximum_volume_error,error)
-                if error>max(1e-5,expected[ri]['volume']*1e-8):raise ValueError('GEM changed the source room volume.')
+                if error>max(1e-5,abs(expected[ri]['volume'])*1e-8,tolerance*surface_area):raise ValueError('GEM changed the source room volume.')
             volumes.append(volume)
         return dict(passed=True,validator='TopologicPy direct GEM loop validation',spaces=sum(r.get('kind')!='shade' for r in actual),shading_surfaces=shade_count,
             surfaces=face_count,openings=open_count,volume_m3=sum(volumes),maximum_volume_error_m3=maximum_volume_error,
@@ -2233,7 +2507,7 @@ class EnergyModel:
             tolerance_m=tolerance,maximum_opening_overlap_area_m2=maximum_opening_overlap,source_compared=expected is not None,ies_import_verified=False,scope='Serialized geometry, shell closure, volumes, hosted openings and source coverage; no IES simulation certification.')
 
     @staticmethod
-    def GEMString(model,roomNameKey='TOPOLOGIC_name',roomIdKey='bim2bem_space_id',apertureTypeKey='kind',mantissa=12,tolerance=1e-7,shadingSurfaces=None):
+    def GEMString(model,roomNameKey='TOPOLOGIC_name',roomIdKey='bim2bem_space_id',apertureTypeKey='kind',mantissa=12,tolerance=1e-4,shadingSurfaces=None):
         """Return IES GEM geometry from native cells or an OpenStudio model.
 
         Coordinates must be in metres. Requires polygonal planar faces and closed
@@ -2243,16 +2517,15 @@ class EnergyModel:
         geometry. No constructions, schedules, HVAC or simulation settings are transferred.
         """
         rooms=EnergyModel._GEMRooms(model,roomNameKey,roomIdKey,apertureTypeKey,shadingSurfaces)
-        text,_,_=EnergyModel._GEMEncode(rooms,mantissa,tolerance)
-        # Readback is also performed by ExportToGEM on the actual saved bytes.
-        EnergyModel.ValidateGEM(text,model,roomNameKey,roomIdKey,apertureTypeKey,mantissa,tolerance,shadingSurfaces)
+        text,_,expected=EnergyModel._GEMEncode(rooms,mantissa,tolerance)
+        EnergyModel._GEMCheck(EnergyModel._GEMRead(text),expected,tolerance)
         return text
 
     @staticmethod
-    def ValidateGEM(data,model=None,roomNameKey='TOPOLOGIC_name',roomIdKey='bim2bem_space_id',apertureTypeKey='kind',mantissa=12,tolerance=1e-7,shadingSurfaces=None):
+    def ValidateGEM(data,model=None,roomNameKey='TOPOLOGIC_name',roomIdKey='bim2bem_space_id',apertureTypeKey='kind',mantissa=12,tolerance=1e-4,shadingSurfaces=None):
         """Validate a GEM path or string; optionally compare with its source model."""
         from pathlib import Path
-        text=Path(data).read_text(encoding='utf-8') if isinstance(data,Path) or isinstance(data,str) and '\n' not in data else data
+        text=Path(data).read_text(encoding='utf-8') if isinstance(data,Path) or isinstance(data,str) and '\n' not in data and '\r' not in data and not data.startswith(('COM ', 'IES ', 'ANT', 'CAT', 'SITE', 'LAYER', 'TYPE')) else data
         actual=EnergyModel._GEMRead(text)
         expected=None
         if model is not None:
@@ -2261,7 +2534,7 @@ class EnergyModel:
         return EnergyModel._GEMCheck(actual,expected,tolerance)
 
     @staticmethod
-    def ExportToGEM(model,path,overwrite=False,roomNameKey='TOPOLOGIC_name',roomIdKey='bim2bem_space_id',apertureTypeKey='kind',mantissa=12,tolerance=1e-7,writeMapping=True,silent=False,raiseErrors=False,shadingSurfaces=None):
+    def ExportToGEM(model,path,overwrite=False,roomNameKey='TOPOLOGIC_name',roomIdKey='bim2bem_space_id',apertureTypeKey='kind',mantissa=12,tolerance=1e-4,writeMapping=True,silent=False,raiseErrors=False,shadingSurfaces=None):
         """Write validated IES geometry and an optional .gem.json provenance map.
 
         Accepts native cells/CellComplexes or an OpenStudio model. Returns True
@@ -2279,7 +2552,7 @@ class EnergyModel:
             if not str(path):raise ValueError('Provide a GEM output path.')
             if target.suffix.lower()!='.gem':target=Path(str(target)+'.gem')
             sidecar=Path(str(target)+'.json');targets=[target]+([sidecar] if writeMapping else [])
-            if not overwrite and any(p.exists() for p in targets):raise FileExistsError('GEM or mapping file already exists; use overwrite=True.')
+            if not overwrite and any(p.exists() or p.is_symlink() for p in targets):raise FileExistsError('GEM or mapping file already exists; use overwrite=True.')
             rooms=EnergyModel._GEMRooms(model,roomNameKey,roomIdKey,apertureTypeKey,shadingSurfaces)
             text,mapping,expected=EnergyModel._GEMEncode(rooms,mantissa,tolerance)
             with tempfile.NamedTemporaryFile(mode='w',encoding='utf-8',dir=target.parent,suffix='.gem',delete=False) as stream:
@@ -2292,20 +2565,38 @@ class EnergyModel:
                     units='metres',validation=validation,rooms=[r for r in mapping if r['kind']=='room'],shading_surfaces=[r for r in mapping if r['kind']=='shade'])
                 with tempfile.NamedTemporaryFile(mode='w',encoding='utf-8',dir=target.parent,suffix='.json',delete=False) as stream:
                     pending.append(Path(stream.name));json.dump(data,stream,ensure_ascii=False,indent=2)
-            for p in targets:backups[p]=p.read_bytes() if p.exists() else None
+            for p in targets:
+                if p.is_symlink():
+                    raise ValueError('GEM export does not overwrite symbolic links.')
+                backups[p]=p.read_bytes() if p.exists() else None
             for source,destination in zip(pending,targets):
                 if not overwrite and destination.exists():raise FileExistsError('GEM output appeared during export.')
-                source.replace(destination);committed.append(destination)
+                EnergyModel._CommitExport(source,destination,overwrite);committed.append(destination)
             return True
         except Exception as error:
             for destination in reversed(committed):
-                if backups[destination] is None:destination.unlink(missing_ok=True)
-                else:destination.write_bytes(backups[destination])
+                try:
+                    if backups[destination] is None:
+                        destination.unlink(missing_ok=True)
+                    else:
+                        with tempfile.NamedTemporaryFile(dir=destination.parent,delete=False) as restore:
+                            restore_path=Path(restore.name)
+                            restore.write(backups[destination])
+                        try:
+                            os.replace(restore_path,destination)
+                        finally:
+                            restore_path.unlink(missing_ok=True)
+                except OSError as rollback_error:
+                    warnings.warn(f'GEM rollback failed for {destination}: {rollback_error}')
             if raiseErrors:raise
             if not silent:warnings.warn('EnergyModel.ExportToGEM - '+str(error))
             return None
         finally:
-            for temporary in pending:temporary.unlink(missing_ok=True)
+            for temporary in pending:
+                try:
+                    temporary.unlink(missing_ok=True)
+                except OSError as cleanup_error:
+                    warnings.warn(f'GEM temporary cleanup failed: {cleanup_error}')
 
 
 
