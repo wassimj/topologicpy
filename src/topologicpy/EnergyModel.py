@@ -1930,7 +1930,7 @@ class EnergyModel:
 
     @staticmethod
     def _GEMEncode(rooms,mantissa=12,tolerance=1e-7):
-        """Serialize polygonal rooms without geometry repair or AGPL dependencies."""
+        """Serialize gross GEM parent polygons with child window, door and hole loops."""
         import math
         import unicodedata
         import numpy as np
@@ -1969,53 +1969,54 @@ class EnergyModel:
                 if not host.is_valid or host.area<=1e-13:raise ValueError('Invalid GEM host polygon: '+face['id'])
                 if 'area' in face and abs(host.area-face['area'])>max(1e-5,host.area*1e-7):
                     raise ValueError('GEM requires polygonal planar faces; tessellate curves explicitly before export.')
-                pieces=[piece for part in parts(host) for piece in ([Polygon(p) for p in EnergyModel._ExportTriangles2D(part)] if part.interiors else [part])]
-                if is_shade:
-                    retained=[];residual=0.
-                    queue=list(pieces)
-                    while queue:
-                        piece=queue.pop(0)
-                        rounded=np.asarray([[round(float(x),mantissa) for x in point] for point in lift(list(piece.exterior.coords)[:-1])])
-                        try:
-                            ro,ru,rv,rn=EnergyModel._GEMFrame(rounded)
-                            stable=Polygon(np.column_stack(((rounded-ro)@ru,(rounded-ro)@rv))).is_valid
-                        except ValueError:stable=False
-                        if stable:retained.append(piece)
-                        elif len(piece.exterior.coords)>4:
-                            queue[:0]=[Polygon(p) for p in EnergyModel._ExportTriangles2D(piece)]
-                        else:residual+=piece.area
-                    if residual>max(1e-8,host.area*1e-8) or not retained:raise ValueError('GEM shading tessellation lost source area: '+face['id'])
-                    precision_residual+=residual;pieces=retained
-                pieces=[orient(p,sign=1) for p in pieces]
+                # GEM stores the gross parent surface once. Windows, doors and
+                # holes are subordinate opening polygons, never cuts or panels.
+                # In particular, preserve true internal Face boundaries as
+                # type-2 (hole) child records instead of triangulating the host.
+                gross=Polygon(project(face['vertices']))
+                if not gross.is_valid or gross.area<=1e-13:
+                    raise ValueError('Invalid GEM parent boundary: '+face['id'])
+                if not host.is_valid or host.area<=1e-13:
+                    raise ValueError('Invalid GEM parent with holes: '+face['id'])
+                fd=face['dictionary']
                 source_openings=[]
                 for opening in face['openings']:
                     polygon=Polygon(project(opening['vertices']))
-                    if not polygon.is_valid or polygon.area<=1e-13:raise ValueError('Invalid GEM opening: '+opening['id'])
-                    if polygon.difference(host).area>max(1e-8,polygon.area*1e-8):
+                    if not polygon.is_valid or polygon.area<=1e-13:
+                        raise ValueError('Invalid GEM opening: '+opening['id'])
+                    if polygon.difference(gross).area>max(1e-8,polygon.area*1e-8):
                         raise ValueError('GEM opening extends outside its parent face: '+opening['id'])
                     source_openings.append((opening,polygon))
-                if sum(p.area for _,p in source_openings)-unary_union([p for _,p in source_openings]).area>max(1e-8,tolerance*sum(p.length for _,p in source_openings)):
-                    raise ValueError('GEM parent has overlapping openings: '+face['id'])
-                assigned={i:[] for i in range(len(source_openings))}
-                for piece in pieces:
-                    boundary=lift(list(piece.exterior.coords)[:-1]);subfaces=[];submap=[]
-                    for i,(opening,polygon) in enumerate(source_openings):
-                        for fragment in parts(polygon.intersection(piece)):
-                            if fragment.area<=1e-14:continue
-                            if fragment.interiors:raise ValueError('GEM opening fragment contains a hole.')
-                            fragment=orient(fragment,sign=1);vertices=lift(list(fragment.exterior.coords)[:-1])
-                            subfaces.append(dict(type=opening['type'],vertices=vertices))
-                            submap.append(dict(id=opening['id'],dictionary=opening['dictionary'],area_m2=fragment.area))
-                            assigned[i].append(fragment)
-                    # Virtual partitions retain a closed gross boundary and an air opening.
-                    fd=face['dictionary']
-                    if not subfaces and (str(fd.get('physical_or_virtual','')).upper()=='VIRTUAL' or is_shade and fd.get('glazing_geometry')):
-                        subfaces.append(dict(type=2,vertices=boundary));submap.append(dict(id=face['id']+':air',dictionary=fd,area_m2=piece.area))
-                    panels.append(dict(vertices=boundary,openings=subfaces))
-                    panel_map.append(dict(id=face['id'],dictionary=fd,area_m2=piece.area,openings=submap))
-                for i,(opening,polygon) in enumerate(source_openings):
-                    if polygon.symmetric_difference(unary_union(assigned[i])).area>max(1e-8,polygon.area*1e-8):
-                        raise ValueError('GEM decomposition lost aperture area: '+opening['id'])
+                for hole_number,hole in enumerate(face.get('holes',[])):
+                    polygon=Polygon(project(hole))
+                    if not polygon.is_valid or polygon.area<=1e-13:
+                        raise ValueError('Invalid GEM internal boundary: '+face['id'])
+                    if polygon.difference(gross).area>max(1e-8,polygon.area*1e-8):
+                        raise ValueError('GEM hole extends outside its parent face: '+face['id'])
+                    # When the same opening is represented both as an aperture
+                    # and an internal wire, the aperture carries its type.
+                    if any(polygon.symmetric_difference(existing).area<=max(1e-8,polygon.area*1e-8)
+                           for _,existing in source_openings):
+                        continue
+                    source_openings.append((dict(id=f"{face['id']}:hole{hole_number}",
+                        type=2,vertices=hole,dictionary=fd),polygon))
+                if source_openings:
+                    polygons=[polygon for _,polygon in source_openings]
+                    overlap=sum(p.area for p in polygons)-unary_union(polygons).area
+                    if overlap>max(1e-8,tolerance*sum(p.length for p in polygons)):
+                        raise ValueError('GEM parent has overlapping openings: '+face['id'])
+                subfaces=[dict(type=opening['type'],vertices=opening['vertices'])
+                          for opening,_ in source_openings]
+                submap=[dict(id=opening['id'],dictionary=opening['dictionary'],area_m2=polygon.area)
+                        for opening,polygon in source_openings]
+                boundary=face['vertices']
+                if not subfaces and (str(fd.get('physical_or_virtual','')).upper()=='VIRTUAL'
+                                     or is_shade and fd.get('glazing_geometry')):
+                    subfaces.append(dict(type=2,vertices=boundary))
+                    submap.append(dict(id=face['id']+':air',dictionary=fd,area_m2=gross.area))
+                panels.append(dict(vertices=boundary,openings=subfaces))
+                panel_map.append(dict(id=face['id'],dictionary=fd,area_m2=gross.area,
+                                      openings=submap))
             vertices=[];lookup={};indices=[]
             for face in panels:
                 ids=[]

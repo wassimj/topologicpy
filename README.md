@@ -250,21 +250,18 @@ IDS 1.0 without IfcOpenShell or IfcTester. Install the optional XML packages wit
 
 ## Analytical spatial models from IFC
 
-`IFC.AnalyticalModel` reconstructs reviewable room-only spatial geometry from IFC
-evidence, including independent CellComplexes for separate buildings. The engine
-is included in `IFC.py`; no external reconstruction package or IfcOpenShell is
-needed. World coordinates are the default. Curved/stepped roofs, boundary evidence,
-editable plans, fidelity reports and verified save/load are supported.
+`IFC.AnalyticalModel` redraws occupiable rooms from IFC building and storey
+evidence as shared, verified CellComplexes. The implementation prioritises
+clean spatial partitions over exact source geometry; it can simplify room
+boundaries and may omit inaccessible spaces. Separate buildings remain
+independent. World coordinates are the default.
 
 ```python
 from topologicpy.IFC import IFC
 
-result = IFC.AnalyticalModel("building.ifc")
-complexes = result.cell_complexes
-IFC.AnalyticalModelSave(result, "analytical-model")
+result = IFC.AnalyticalModel("building.ifc", coordinateFrame="local")
+print(result.report())
 ```
 
-This feature is experimental: verified geometry does not certify simulation
-readiness or full IFC second-level-boundary compliance. See the
-[analytical IFC guide](docs/IFC-AnalyticalModel.md) for settings, coordinates,
-building separation, limitations and validation.
+See [the analytical IFC guide](docs/IFC-AnalyticalModel.md) for options,
+limitations, editable plans, and persistence.

@@ -1,314 +1,210 @@
-"""Release tests: analytical reconstruction must work without any external engine."""
-from copy import deepcopy
-from pathlib import Path
-import builtins
-import json
+"""Canonical IFC analytical reconstruction and the local BIMData corpus."""
 import os
-import subprocess
-import sys
-
+from pathlib import Path
 import pytest
-from shapely import set_precision
-from shapely.geometry import box, Point, mapping
-
+from shapely.geometry import box, Polygon, shape
 from topologicpy.IFC import IFC, IFCFastEntity
 from topologicpy.Topology import Topology
-from topologicpy.Vertex import Vertex
-from topologicpy.Cell import Cell
 
-DATA = Path(__file__).with_name("data")
-SOURCE = DATA/"analytical-three-rooms.ifc"
+SETTINGS = dict(minimum_clear_width=0.6, minimum_clear_height=1.8,
+                simplification=0.1, drafting_grid=0.05, tolerance=1e-5, role_overrides={})
+DATA = Path(os.environ.get('TOPOLOGICPY_BIMDATA', Path(__file__).parent/'data'/'bimdata'))
+FILES = sorted(DATA.rglob('*.ifc'))
 
+def record(i, polygon, bottom=0., top=3., name='Room'):
+    return dict(id=i, source=str(i), type='IFCSPACE', footprint=polygon,
+                z0=bottom, z1=top, name=name, long_name='', building=1, storey=2)
 
-def _bounds(topology):
-    p = [Vertex.Coordinates(v) for v in Topology.Vertices(topology)]
-    return [[min(v[i] for v in p) for i in range(3)], [max(v[i] for v in p) for i in range(3)]]
+def test_actual_clearance_not_area_or_bounding_box():
+    assert not IFC._Simplified_occupiable(box(0, 0, 100, .3), 3, SETTINGS)
+    assert not IFC._Simplified_occupiable(box(0, 0, 10, 10), .5, SETTINGS)
+    assert IFC._Simplified_occupiable(box(0, 0, 1, 1), 2, SETTINGS)
 
-
-def _site(offset=40., declared=True):
-    model = IFC.Model(str(SOURCE), silent=True)
-    e = deepcopy(model.entities)
-    shift = max(e)+1
-    def remap(v):
-        if isinstance(v, tuple) and len(v) == 2 and v[0] == "REF":
-            return ("REF", v[1]+shift)
-        if isinstance(v, list):
-            return [remap(x) for x in v]
-        if isinstance(v, tuple):
-            return tuple(remap(x) for x in v)
-        return v
-    for i, entity in model.entities.items():
-        args = remap(deepcopy(entity.args))
-        if entity.type == "IFCCARTESIANPOINT":
-            args[0][0] += offset
-        if len(args) > 4 and isinstance(args[0], str):
-            args[0] = "second:"+args[0]
-        e[i+shift] = IFCFastEntity(i+shift, entity.type, args)
-    if declared:
-        for n, ids in enumerate((list(model.entities), [i+shift for i in model.entities])):
-            i = max(e)+1
-            e[i] = IFCFastEntity(i, "IFCBUILDING", [f"building-{n}", None, f"Building {n}", None, None, None, None, None, "ELEMENT", 0., 0., None])
-            children = [("REF", j) for j in ids if e[j].type in {"IFCSPACE", "IFCWALL", "IFCSLAB", "IFCOPENINGELEMENT", "IFCWINDOW"}]
-            e[i+1] = IFCFastEntity(i+1, "IFCRELAGGREGATES", [f"aggregate-{n}", None, None, None, ("REF", i), children])
-    return IFC.ModelByEntities(e, silent=True)
-
-
-def _plan(outlines=None):
-    source = IFC.AnalyticalModel(str(SOURCE), coordinateFrame="local", verify=False)
-    plan = deepcopy(source.editable_plan)
-    outlines = outlines or [box(0, 0, 5, 8), box(5, 0, 10, 8)]
-    template = plan["rooms"][0]
-    plan["rooms"] = []
-    for i, polygon in enumerate(outlines):
-        plan["rooms"].append({**deepcopy(template), "id": f"room-{i}", "source_space_id": f"room-{i}", "name": f"Room {i}",
-            "footprint": mapping(polygon), "reference_footprint": mapping(polygon), "reference_area": polygon.area,
-            "area": polygon.area, "bottom": 0., "top": 4., "reference_bottom": 0., "reference_top": 4., "air_top": 4.,
-            "exterior_cap": True, "storey": 0})
-    plan.update(origin=[0., 0., 0.], reference_openings=[], source_boundaries=[], construction_evidence=[], fill_types={})
-    plan["fidelity"].update(reference_spaces=2, eligible_source_space_records=2, coincident_source_aliases={})
-    return plan
-
+def test_hierarchy_requires_storey_under_building_and_accepts_nested_spaces():
+    e = {i: IFCFastEntity(i, kind, []) for i,kind in
+         [(1,'IFCBUILDING'),(2,'IFCBUILDINGSTOREY'),(3,'IFCSPACE'),(4,'IFCWALL'),(5,'IFCWALL'),(6,'IFCBUILDINGSTOREY'),(7,'IFCWALL')]}
+    for i,parent,children in [(10,1,[2,5]),(11,2,[3]),(12,3,[4]),(13,6,[7])]:
+        e[i] = IFCFastEntity(i, 'IFCRELAGGREGATES', [None]*4+[('REF',parent), [('REF',c) for c in children]])
+    m = IFC._Simplified_membership(e)
+    assert m[4] == (1,2) and m[3] == (1,2)
+    assert 5 not in m and 7 not in m
 
 @pytest.mark.pythonocc_only
-def test_self_contained_reconstruction_and_readiness(tmp_path, monkeypatch):
-    original = builtins.__import__
-    def guard(name, *args, **kwargs):
-        if name == "bim2bem" or name.startswith("bim2bem.") or name == "ifcopenshell" or name.startswith("ifcopenshell."):
-            raise AssertionError("Standalone analytical reconstruction imported an external engine")
-        return original(name, *args, **kwargs)
-    monkeypatch.setattr(builtins, "__import__", guard)
-    monkeypatch.setenv("TOPOLOGICPY_ANALYTICAL_ENGINE", str(tmp_path/"does-not-exist"))
-    monkeypatch.chdir(tmp_path)
-    model = IFC.Model(str(SOURCE), silent=True)
-    before = repr(model.entities)
-    result = IFC.AnalyticalModel(model)
-    assert result.valid and len(result.spaces) == 3
-    assert len(result.cell_complexes) == 1
-    assert sum(s["analytical_volume"] for s in result.spaces) == pytest.approx(192.)
-    assert result.readiness["geometry_verified"] and not result.readiness["simulation_ready"]
-    assert repr(model.entities) == before
-    assert type(result).__module__ == "topologicpy.IFC"
-    assert _bounds(result.topology)[0] == pytest.approx([0., 0., 0.])
-    assert _bounds(result.topology)[1] == pytest.approx([10., 6., 3.2])
-
+def test_shared_partition_reassigns_sliver_and_excludes_plenum():
+    records = [record(1,box(0,0,4,4)), record(2,box(4.02,0,8,4)),
+               record(3,box(4,0,4.02,4)), record(4,box(0,0,8,4),3,3.5,'Plenum')]
+    result = IFC._Simplified_building(records, {}, SETTINGS)
+    assert result.valid and Topology.IsInstance(result.topology,'CellComplex')
+    assert len(result.spaces)==2
+    assert result.statistics['verified_shared_faces'] >= 1
+    assert all(IFC._Simplified_occupiable(shape(r['footprint']),r['top']-r['bottom'],SETTINGS) for r in result.spaces)
+    assert {'3','4'} <= set(result.fidelity['excluded_source_spaces'])
 
 @pytest.mark.pythonocc_only
-@pytest.mark.parametrize("offset,declared", [(40., True), (10., True), (40., False)])
-def test_independent_buildings_even_when_touching(tmp_path, offset, declared):
-    result = IFC.AnalyticalModel(_site(offset, declared))
-    assert len(result.building_models) == 2 and len(result.cell_complexes) == 2
-    assert all(Topology.IsInstance(c, "CellComplex") for c in result.cell_complexes)
-    assert [len(Topology.Cells(c)) for c in result.cell_complexes] == [3, 3]
-    assert IFC.AnalyticalModelSave(result, tmp_path)
-    restored = IFC.AnalyticalModelLoad(tmp_path)
-    assert len(restored.cell_complexes) == 2
-    assert len(Topology.Cells(restored.topology)) == 6
-    local = IFC.AnalyticalModelLoad(tmp_path, coordinateFrame="local")
-    assert local.origin == pytest.approx(result.editable_plan["origin"] if any(result.origin) else result.building_models[0].editable_plan["origin"])
-
-
-@pytest.mark.pythonocc_only
-def test_saved_world_geometry_and_local_editing_frame(tmp_path):
-    result = IFC.AnalyticalModel(str(SOURCE))
-    IFC.AnalyticalModelSave(result, tmp_path)
-    world = IFC.AnalyticalModelLoad(tmp_path)
-    local = IFC.AnalyticalModelLoad(tmp_path, coordinateFrame="local")
-    assert _bounds(world.topology)[0] == pytest.approx([0., 0., 0.])
-    origin = result.editable_plan["origin"]
-    assert local.origin == pytest.approx(origin)
-    assert _bounds(local.topology)[0] == pytest.approx([-v for v in origin])
-    assert len(world.openings) == len(result.openings)
-    assert IFC.AnalyticalModelSave(local, tmp_path/"resaved")
-    reread = IFC.AnalyticalModelLoad(tmp_path/"resaved")
-    assert _bounds(reread.topology)[0] == pytest.approx([0., 0., 0.])
-
+def test_grid_retry_preserves_room_count(monkeypatch):
+    original = IFC._Analytical_redraw_sew_cells
+    attempts=[]
+    def fail_partition(cells, *args, **kwargs):
+        attempts.append(len(cells))
+        if len(attempts)==1:
+            raise ValueError('Injected first assembly failure')
+        return original(cells,*args,**kwargs)
+    monkeypatch.setattr(IFC,'_Analytical_redraw_sew_cells',fail_partition)
+    result=IFC._Simplified_building([record(1,box(0,0,4,4)),record(2,box(4,0,8,4))],{},SETTINGS)
+    assert len(result.spaces)==2 and attempts==[2,2]
+    assert not result.fidelity['simplified_storeys']
+    assert Topology.IsInstance(result.topology,'CellComplex')
+    assert result.statistics['geometry_verified']
 
 @pytest.mark.pythonocc_only
-def test_rotated_placements_and_millimetres():
-    model = IFC.Model(str(DATA/"analytical-three-rooms-mm.ifc"), silent=True)
-    e, i = model.entities, max(model.entities)+1
-    e[i] = IFCFastEntity(i, "IFCCARTESIANPOINT", [[100000., 200000., 3000.]])
-    e[i+1] = IFCFastEntity(i+1, "IFCDIRECTION", [[0., 0., 1.]])
-    e[i+2] = IFCFastEntity(i+2, "IFCDIRECTION", [[0., 1., 0.]])
-    e[i+3] = IFCFastEntity(i+3, "IFCAXIS2PLACEMENT3D", [("REF", i), ("REF", i+1), ("REF", i+2)])
-    e[i+4] = IFCFastEntity(i+4, "IFCLOCALPLACEMENT", [None, ("REF", i+3)])
-    for product in e.values():
-        if product.type in {"IFCSPACE", "IFCWALL", "IFCSLAB", "IFCOPENINGELEMENT", "IFCWINDOW"}:
-            product.args[5] = ("REF", i+4)
-    result = IFC.AnalyticalModel(model)
-    assert result.valid
-    assert _bounds(result.topology)[0] == pytest.approx([94., 200., 3.], abs=.02)
-    assert _bounds(result.topology)[1] == pytest.approx([100., 210., 6.2], abs=.02)
+def test_assembly_failure_never_collapses_source_rooms(monkeypatch):
+    attempts=[]
+    def fail_detailed(cells, *args, **kwargs):
+        attempts.append(len(cells))
+        raise ValueError('Injected assembly failure')
+    monkeypatch.setattr(IFC,'_Analytical_redraw_sew_cells',fail_detailed)
+    lower=record(1,box(0,0,4,4))
+    upper=dict(record(2,box(0,0,4,4),3,6),storey=3)
+    with pytest.raises(ValueError,match='exhausted'):
+        IFC._Simplified_building([lower,upper],{},SETTINGS)
+    assert attempts==[2,2,2,2]
 
-
-@pytest.mark.pythonocc_only
-@pytest.mark.parametrize("curved", [False, True])
-def test_mansard_and_curved_facade_preserve_spatial_volume(curved):
-    outlines = [box(0, 0, 5, 8), box(5, 0, 10, 8)]
-    if curved:
-        outlines[1] = set_precision(outlines[1].union(Point(10, 4).buffer(1, resolution=12)), .01)
-    plan = _plan(outlines)
-    patches = [(box(0, 0, 11, 2), [0, 1, 3]), (box(0, 2, 11, 4), [0, .5, 4]),
-               (box(0, 4, 11, 6), [0, -.5, 8]), (box(0, 6, 11, 8), [0, -1, 11])]
-    plan["exterior_envelope"] = {"facets": [{"footprint": mapping(p), "plane": c} for p, c in patches]}
-    result = IFC.AnalyticalModelByPlan(plan)
-    assert result.fidelity["exterior_fit_applied"]
-    expected = []
-    for outline in outlines:
-        volume = 0.
-        for patch, (a, b, c) in patches:
-            r = set_precision(outline, 0).intersection(patch)
-            volume += r.area*(a*r.centroid.x+b*r.centroid.y+c)
-        expected.append(volume)
-    assert len(result.spaces) == 2
-    assert sorted(s["analytical_volume"] for s in result.spaces) == pytest.approx(sorted(expected), abs=.001)
-
+def test_overlapping_area_record_does_not_swallow_rooms():
+    rooms,_=IFC._Simplified_layout([record(1,box(0,0,4,4)),record(2,box(4,0,8,4)),
+                                    record(3,box(0,0,8,4),name='Gross area')],{},SETTINGS,1)
+    assert {r['source_space_id'] for r in rooms}=={'1','2'}
 
 @pytest.mark.pythonocc_only
-def test_step_is_not_blended_or_split_into_extra_cells():
-    plan = _plan()
-    plan["exterior_envelope"] = {"facets": [{"footprint": mapping(box(0, 0, 5, 8)), "plane": [0, 0, 3]},
-                                            {"footprint": mapping(box(5, 0, 10, 8)), "plane": [0, 0, 5]}]}
-    result = IFC.AnalyticalModelByPlan(plan)
-    assert result.fidelity["exterior_fit_applied"]
-    assert len(result.spaces) == 2
-    assert sorted(s["analytical_volume"] for s in result.spaces) == pytest.approx([120., 200.])
+@pytest.mark.parametrize('path', FILES, ids=lambda p:p.name)
+def test_bimdata_all_files(path):
+    result=IFC.AnalyticalModel(str(path),coordinateFrame='local')
+    if os.environ.get('TOPOLOGICPY_SIMPLIFIED_REPORTS'):
+        import json
+        destination=Path(os.environ['TOPOLOGICPY_SIMPLIFIED_REPORTS'])
+        destination.mkdir(parents=True,exist_ok=True)
+        summary=dict(file=str(path),valid=result.valid,statistics=result.statistics,
+                     buildings=[dict(id=b.building_id,statistics=b.statistics,fidelity=b.fidelity,
+                                     diagnostics=[dict(code=d.code,message=d.message) for d in b.diagnostics])
+                                for b in result.building_models])
+        (destination/(path.stem+'.json')).write_text(json.dumps(summary,indent=2),encoding='utf-8')
+    assert result.valid, result.report()
+    assert result.building_models
+    for building in result.building_models:
+        assert Topology.IsInstance(building.topology,'CellComplex'), building.report()
+        assert building.statistics['geometry_verified']
+        assert building.statistics['building_membership']=='strict_ifc_hierarchy'
+        assert len(Topology.Cells(building.topology))==len(building.spaces)
+        assert building.statistics['minimum_edge_length'] >= .001-1e-5
+        assert building.statistics['minimum_face_area'] >= .001**2
+        assert all(IFC._Simplified_occupiable(shape(r['footprint']),r['top']-r['bottom'],SETTINGS) for r in building.spaces)
+    minimum_rooms={'Medical_Clinic':240,'Munkerud_House':54,'SRP_1045':65}
+    if path.stem in minimum_rooms:
+        assert result.statistics['rooms'] >= minimum_rooms[path.stem]
+        assert all(not b.fidelity.get('simplified_storeys') for b in result.building_models)
+    if path.stem=='Munkerud_House':
+        from collections import Counter
+        assert result.statistics['rooms'] == 54
+        assert sorted(Counter(r['storey'] for r in result.spaces).values()) == [18,18,18]
+        assert len({r['source_space_id'] for r in result.spaces}) == 54
+        assert not any(r.get('inferred') for r in result.spaces)
+    if path.stem=='SRP_1433':
+        assert result.statistics['analytical_volume'] < 50000
 
-
-@pytest.mark.pythonocc_only
-def test_leaning_facade_preserves_full_cells():
-    plan = _plan([box(0, 0, 5, 8), box(5, 0, 11, 8)])
-    for r in plan["rooms"]:
-        r.pop("exterior_cap", None)
-    plan["facade_envelope"] = {"walls": [{"points": [[10, 0, 0], [10, 8, 0], [11, 8, 4], [11, 0, 4]], "faces": [[0, 1, 2, 3]]}], "maximum_displacement_m": 1.5}
-    result = IFC.AnalyticalModelByPlan(plan)
-    assert result.fidelity["exterior_fit_applied"]
-    assert sorted(s["analytical_volume"] for s in result.spaces) == pytest.approx([160., 176.], abs=.001)
-
-
-def test_invalid_inputs_are_explicit():
-    assert not IFC.AnalyticalModel("nonexistent-ifc-file.ifc").valid
-    with pytest.raises(ValueError):
-        IFC.AnalyticalModel(str(SOURCE), coordinateFrame="unknown")
-    with pytest.raises(ValueError):
-        IFC.AnalyticalModel(str(SOURCE), options={"role_overrides": {"X": "invalid-role"}})
-    with pytest.raises(TypeError):
-        IFC.AnalyticalModelByPlan(42)
-
-
-@pytest.mark.pythonocc_only
-def test_shared_boundary_has_common_physical_and_virtual_patches():
-    plan = _plan()
-    plan["source_boundaries"] = []
-    for owner in ["room-0", "room-1"]:
-        for kind, low, high in [("physical", 0, 2), ("virtual", 2, 4)]:
-            plan["source_boundaries"].append({"id": owner+kind, "space": owner,
-                "element": "wall" if kind == "physical" else None, "physical_or_virtual": kind,
-                "internal_or_external": "internal", "points": [[5, 0, low], [5, 8, low], [5, 8, high], [5, 0, high]]})
-    result = IFC.AnalyticalModelByPlan(plan)
-    patches = [p for p in result.boundary_patches if len(p["owners"]) == 2]
-    assert len(patches) == 2
-    assert {p["physical_or_virtual"] for p in patches} == {"physical", "virtual"}
-    assert sum(p["area"] for p in patches) == pytest.approx(32.)
-    assert all(p["semantics_verified"] for p in patches)
-
+def test_bimdata_corpus_present():
+    assert FILES, 'Set TOPOLOGICPY_BIMDATA to the BIMData IFC fixture directory'
 
 @pytest.mark.pythonocc_only
-def test_partial_building_failure_preserves_the_usable_building(monkeypatch, tmp_path):
-    original = IFC._Analytical_redraw_generate_building
-    def partial(evidence, *args, **kwargs):
-        if evidence.statistics["building_id"] == "building-1":
-            raise ValueError("Unsupported building fixture")
-        return original(evidence, *args, **kwargs)
-    monkeypatch.setattr(IFC, "_Analytical_redraw_generate_building", staticmethod(partial))
-    result = IFC.AnalyticalModel(_site())
-    assert result.valid and len(result.building_models) == 2
-    assert len(result.cell_complexes) == 1
-    assert not result.readiness["geometry_verified"]
-    IFC.AnalyticalModelSave(result, tmp_path)
-    restored = IFC.AnalyticalModelLoad(tmp_path)
-    assert restored.valid and len(restored.building_models) == 2
-    assert len(restored.cell_complexes) == 1
+@pytest.mark.parametrize('two_rooms',[False,True])
+def test_public_world_coordinates_and_hierarchy_filter(monkeypatch,two_rooms):
+    from types import SimpleNamespace
+    from topologicpy.Vertex import Vertex
+    entities={i:IFCFastEntity(i,kind,[str(i)]) for i,kind in
+              [(1,'IFCBUILDING'),(2,'IFCBUILDINGSTOREY'),(3,'IFCSPACE'),(4,'IFCSPACE')]}
+    entities[10]=IFCFastEntity(10,'IFCRELAGGREGATES',[None]*4+[('REF',1),[('REF',2)]])
+    entities[11]=IFCFastEntity(11,'IFCRELAGGREGATES',[None]*4+[('REF',2),[('REF',3)]])
+    evidence=SimpleNamespace(entities=entities,records=[record(3,box(0,0,4,4)),record(4,box(100,100,200,200))],
+                             context={},origin=[1000.,2000.,30.])
+    if two_rooms:
+        entities[5]=IFCFastEntity(5,'IFCSPACE',['5'])
+        entities[11].args[5].append(('REF',5))
+        evidence.records.append(record(5,box(4,0,8,4)))
+    monkeypatch.setattr(IFC,'_Analytical_evidence_read_evidence',lambda *args:evidence)
+    result=IFC.AnalyticalModel('mock')
+    assert result.valid, result.report()
+    assert result.statistics['ignored_nonhierarchical_products']==1
+    assert Topology.IsInstance(result.topology,'CellComplex')
+    assert len(result.spaces)==(2 if two_rooms else 1)
+    coordinates=[Vertex.Coordinates(v) for v in Topology.Vertices(result.topology)]
+    assert min(p[0] for p in coordinates)==pytest.approx(1000.)
+    assert max(p[0] for p in coordinates)==pytest.approx(1008. if two_rooms else 1004.)
+    assert shape(result.spaces[0]['footprint']).bounds==pytest.approx((1000.,2000.,1004.,2004.))
+    assert result.spaces[0]['bottom']==pytest.approx(30.)
+    assert result.editable_plan['rooms'][0]['bottom']==pytest.approx(0.)
+    assert result.editable_plan['origin']==[1000.,2000.,30.]
+    signature=IFC._Analytical_persistence_geometry_signature(result.topology)
+    assert signature[2]==(1 if two_rooms else 0)
 
 
-def test_native_ifc_import_remains_lazy():
-    import topologicpy
-    package_parent = str(Path(topologicpy.__file__).resolve().parent.parent)
-    script = '''import builtins
-original=builtins.__import__
-def guard(name,*args,**kwargs):
-    if name.split('.')[0] in {'bim2bem','numpy','shapely','scipy','ifcopenshell'}:
-        raise AssertionError('Eager optional import: '+name)
-    return original(name,*args,**kwargs)
-builtins.__import__=guard
-from topologicpy.IFC import IFC
-assert callable(IFC.AnalyticalModel)
-'''
-    env = {**os.environ, "PYTHONPATH": package_parent}
-    result = subprocess.run([sys.executable, "-c", script], env=env, capture_output=True, text=True, timeout=30)
-    assert result.returncode == 0, result.stderr
+def test_wide_pocket_does_not_legitimise_wall_appendage():
+    wall_with_pocket=box(0,0,1,1).union(box(1,.4,30,.6))
+    assert not IFC._Simplified_occupiable(wall_with_pocket,3,SETTINGS)
 
 
-@pytest.mark.pythonocc_only
-def test_missing_space_records_produce_an_explicitly_inferred_draft():
-    model = IFC.Model(str(SOURCE), silent=True)
-    model.entities = {i: e for i, e in model.entities.items() if e.type != "IFCSPACE"}
-    result = IFC.AnalyticalModel(model)
-    assert result.valid and len(result.spaces) >= 2
-    assert any(d.code == "ROOMS_INFERRED" for d in result.diagnostics)
-    assert not result.readiness["simulation_ready"]
+def test_partial_aggregate_leaves_no_wall_room_or_exterior_fragments():
+    from shapely.ops import unary_union
+    refs=[record(1,box(0,0,4,4)),record(2,box(4.2,0,8.2,4)),
+          record(3,box(0,4.2,4,8.2)),record(4,box(-.1,-.1,8.3,8.3),name='Area summary')]
+    # Three rooms account for more than 70% of the summary envelope.
+    refs[3]['footprint']=unary_union([r['footprint'] for r in refs[:3]]).buffer(.2,join_style=2)
+    rooms,excluded=IFC._Simplified_layout(refs,{},SETTINGS,1)
+    assert {r['source_space_id'] for r in rooms}=={'1','2','3'}
+    assert len(rooms)==3 and '4' in excluded
+    assert not unary_union([shape(r['footprint']) for r in rooms]).contains(box(5,5,7,7))
+    for room in rooms:
+        p=shape(room['footprint']);source=next(r for r in refs if r['source']==room['source_space_id'])
+        assert p.intersection(source['footprint']).area > .9*source['footprint'].area
+        assert IFC._Simplified_occupiable(p,room['top']-room['bottom'],SETTINGS)
 
 
-@pytest.mark.pythonocc_only
-def test_missing_construction_does_not_discard_rooms(monkeypatch):
-    from topologicpy.IFC import IFCFastTopology
-    original = IFCFastTopology.MeshDataByProduct
-    def partial(product, *args, **kwargs):
-        if product.type == "IFCWALL" and product.args[2] == "west":
-            return None
-        return original(product, *args, **kwargs)
-    monkeypatch.setattr(IFCFastTopology, "MeshDataByProduct", staticmethod(partial))
-    result = IFC.AnalyticalModel(str(SOURCE))
-    assert result.valid and len(result.spaces) == 3
-    assert any(d.code == "PARTIAL_REFERENCE_EVIDENCE" for d in result.diagnostics)
+def test_roomless_roof_not_invented_in_building_with_explicit_rooms():
+    refs=[record(1,box(0,0,4,4)),dict(record(2,box(0,0,4,4),3,3.3),type='IFCSLAB',storey=3,predefined_type='FLOOR'),
+          dict(record(3,box(0,0,.2,4),3,6),type='IFCWALL',storey=3)]
+    rooms,_=IFC._Simplified_layout(refs,{'storeys':{3:{'elevation':3}}},SETTINGS,1)
+    assert len(rooms)==1 and rooms[0]['source_space_id']=='1'
 
 
-@pytest.mark.pythonocc_only
-def test_literal_step_semicolon_and_role_override(tmp_path):
-    text = SOURCE.read_text()
-    position = text.rfind("ENDSEC;")
-    text = text[:position]+"#99999=IFCPROPERTYSINGLEVALUE('Finish',$,IFCTEXT('tile; finish'),$);\n"+text[position:]
-    path = tmp_path/"literal.ifc"
-    path.write_text(text)
-    result = IFC.AnalyticalModel(str(path), options={"role_overrides": {"A": "void"}})
-    assert result.valid
-    assert "A" not in {s["source_space_id"] for s in result.spaces}
-    assert any(e["source"] == "A" and e["role"] == "void" for e in result.fidelity["excluded_source_spaces"])
-
-def test_exterior_wall_gap_is_partitioned_between_adjacent_rooms():
-    from shapely.geometry import box
-    from shapely.ops import polygonize, unary_union
-    from shapely.strtree import STRtree
-    domain = box(0, 0, 6, 3)
-    members = [{'footprint': box(0, .15, 3, 3)}, {'footprint': box(3, .15, 6, 3)}]
-    lines = [domain.boundary] + [m['footprint'].boundary for m in members]
-    lines += IFC._Analytical_redraw_partition_wall_gaps(members, domain)
-    tree = STRtree([m['footprint'] for m in members])
-    owned = [[], []]
-    for region in polygonize(unary_union(lines)):
-        scores = [region.intersection(m['footprint']).area for m in members]
-        owner = max(range(2), key=lambda i: scores[i]) if max(scores) > 1e-8 else int(tree.nearest(region.representative_point()))
-        owned[owner].append(region)
-    fitted = [unary_union(pieces) for pieces in owned]
-    assert fitted[0].equals(box(0, 0, 3, 3))
-    assert fitted[1].equals(box(3, 0, 6, 3))
-    assert fitted[0].intersection(fitted[1]).area == 0
-    assert unary_union(fitted).equals(domain)
+def test_convex_cleanup_preserves_central_room_and_assigns_thin_extension():
+    from shapely.ops import unary_union
+    domain=box(0,0,9,3)
+    central=box(0,0,3,3).union(box(3,1.4,9,1.6))
+    neighbour=domain.difference(central)
+    result=IFC._Simplified_convex_reassign([[record(1,central),central],[record(2,neighbour),neighbour]],3,SETTINGS)
+    actual=unary_union([p for _,p in result])
+    assert actual.symmetric_difference(domain).area < 1e-8
+    own=unary_union([p for r,p in result if r['source']=='1'])
+    assert own.symmetric_difference(box(0,0,3,3)).area < 1e-8
+    assert len(result)==2
+    assert not actual.interiors
 
 
-def test_wall_gap_partitioning_accepts_disconnected_room_evidence():
-    from shapely.geometry import box, MultiPolygon
-    domain = box(0, 0, 6, 3)
-    rooms = [{'footprint': MultiPolygon([box(0, .15, 2, 3), box(4, .15, 6, 3)])}]
-    assert IFC._Analytical_redraw_partition_wall_gaps(rooms, domain)
-    assert not IFC._Analytical_redraw_partition_wall_gaps([{'footprint': domain}], domain)
+def test_straight_wall_becomes_shared_centreline_without_empty_strip():
+    from shapely.ops import unary_union
+    records=[record(1,box(0,0,4,4)),record(2,box(4.2,0,8.2,4)),
+             dict(record(3,box(4,0,4.2,4)),type='IFCWALL')]
+    rooms,_=IFC._Simplified_layout(records,{},SETTINGS,1)
+    polygons=[shape(r['footprint']) for r in rooms]
+    assert len(polygons)==2
+    assert unary_union(polygons).symmetric_difference(box(0,0,8.2,4)).area < 1e-8
+    shared=polygons[0].boundary.intersection(polygons[1].boundary)
+    assert shared.length==pytest.approx(4)
+    assert shared.bounds[0]==pytest.approx(4.1)
+    assert shared.bounds[2]==pytest.approx(4.1)
+
+
+def test_convex_cleanup_preserves_existing_courtyard():
+    from shapely.ops import unary_union
+    footprint=box(0,0,10,10).difference(box(3,3,7,7))
+    result=IFC._Simplified_convex_reassign([[record(1,footprint),footprint]],3,SETTINGS)
+    actual=unary_union([p for _,p in result])
+    assert actual.symmetric_difference(footprint).area < 1e-8
+    assert len(actual.interiors)==1

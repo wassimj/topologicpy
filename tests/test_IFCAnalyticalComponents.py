@@ -48,21 +48,6 @@ def test_triangulation_preserves_concavity_and_holes(region,legacy,monkeypatch):
     assert all(len(t.exterior.coords)==4 for t in triangles)
 
 
-@pytest.mark.pythonocc_only
-def test_failed_exterior_and_shared_assembly_retain_native_rooms(monkeypatch):
-    source=IFC.AnalyticalModel(str(SOURCE),coordinateFrame='local',verify=False)
-    assert source.spaces
-    plan=deepcopy(source.editable_plan)
-    if plan.get('buildings'):plan=plan['buildings'][0]['plan']
-    plan['exterior_envelope']={'facets':[]}
-    def fail_exterior(*args,**kwargs):raise ValueError('Exterior fit failed')
-    def fail_shared(*args,**kwargs):raise ValueError('Shared face assembly failed')
-    monkeypatch.setattr(IFC,'_Analytical_envelope_shaped_complex',fail_exterior)
-    monkeypatch.setattr(IFC,'_Analytical_cellular_shared_complex',fail_shared)
-    result=IFC._Analytical_redraw_assemble(plan)
-    assert len(result.spaces)==len(plan['rooms'])
-    assert len(Topology.Cells(result.topology))==len(plan['rooms'])
-    assert {'EXTERIOR_FIT_REQUIRES_REVIEW','SHARED_ASSEMBLY_REQUIRES_REVIEW'} <= {d.code for d in result.diagnostics}
 
 
 @pytest.mark.pythonocc_only
@@ -130,42 +115,8 @@ def test_native_cleanup_removes_empty_wire_without_filling_real_hole():
     assert all(Topology.Edges(w) for w in holes)
 
 
-@pytest.mark.parametrize('bad_datum',[False,True])
-def test_inferred_floor_layers_do_not_create_overlapping_storeys(bad_datum):
-    import numpy as np
-    from shapely.geometry import shape
-    records=[]
-    for identity,z,storey,kind in [(1,0.,'lower','FLOOR'),(2,3.,'upper','FLOOR'),(3,3.2,'upper','FLOOR'),(4,6.,'roof','ROOF')]:
-        polygon=box(0,0,5,4)
-        points=np.array([[x,y,height] for height in [z,z+.15] for x,y in list(polygon.exterior.coords)[:-1]])
-        records.append(dict(id=identity,source=str(identity),name='floor',type='IFCSLAB',predefined_type=kind,storey=storey,footprint=polygon,z0=z,z1=z+.15,points=points,faces=[],method='projected_faces'))
-    evidence=IFC._Analytical_evidence_Evidence(records=records,context={'storeys':{'lower':{'elevation':0.},'upper':{'elevation':3.},'roof':{'elevation':6.}},'children':{},'materials':{}})
-    if bad_datum:evidence.context['storeys']['upper']['elevation']=-30.
-    plan=IFC._Analytical_redraw_fit_layout(evidence)
-    rooms=plan['rooms']
-    assert rooms
-    assert plan['fidelity']['source_space_coverage_applicable'] is False
-    assert plan['fidelity']['source_space_coverage']==1.
-    assert 'inferred_reference_coverage' in plan['fidelity']
-    IFC._Analytical_redraw_refresh_fidelity(plan)
-    assert plan['fidelity']['source_space_coverage']==1.
-    assert min(r['bottom'] for r in rooms)>=0
-    assert len({(r['bottom'],r['top']) for r in rooms})==2
-    assert max(r['top'] for r in rooms)<6.3
-    for i,room in enumerate(rooms):
-        for other in rooms[i+1:]:
-            height=min(room['top'],other['top'])-max(room['bottom'],other['bottom'])
-            assert height<=1e-8 or shape(room['footprint']).intersection(shape(other['footprint'])).area<1e-8
 
 
-def test_coincident_inferred_bands_are_combined_without_discarding_references():
-    warnings=[]
-    bands=[dict(level=z,bottom=z,members=[{'source':str(i)}],domain=box(i,0,i+1,1),walls=[]) for i,z in enumerate([0.,.2,3.])]
-    result=IFC._Analytical_redraw_normalise_inferred_bands(bands,warnings,.4)
-    assert len(result)==2
-    assert len(result[0]['members'])==2
-    assert result[0]['domain'].area==pytest.approx(2.)
-    assert warnings[0]['code']=='INFERRED_FLOOR_LAYERS_COMBINED'
 
 
 @pytest.mark.pythonocc_only
@@ -199,25 +150,6 @@ def test_native_incidence_does_not_merge_nearby_edges_by_coordinate_rounding():
     assert shared==0
 
 
-@pytest.mark.pythonocc_only
-def test_point_contact_repair_preserves_neighbours_and_manifold_shells():
-    from shapely.geometry import mapping,shape
-    from shapely.ops import unary_union
-    outside=box(0,0,4,4)
-    diamond=Polygon([(2,4),(3,3),(2,2),(1,3)])
-    rooms=[dict(id='surrounding',source_space_id='surrounding',footprint=mapping(outside.difference(diamond)),bottom=0.,top=3.),
-           dict(id='inner',source_space_id='inner',footprint=mapping(diamond),bottom=0.,top=3.)]
-    warnings=[]
-    IFC._Analytical_redraw_regularise_point_contacts(rooms,warnings)
-    polygons=[shape(r['footprint']) for r in rooms]
-    assert polygons[0].intersection(polygons[1]).area<1e-12
-    assert unary_union(polygons).symmetric_difference(outside).area<1e-12
-    assert polygons[0].exterior.distance(polygons[0].interiors[0])>0
-    assert warnings[0]['changed_area_m2']<1e-8
-    for room,polygon in zip(rooms,polygons):
-        cell=IFC._Analytical_redraw_prism(polygon,0.,3.,1e-5)
-        Topology.SetDictionary(cell,{'bim2bem_space_id':room['id']})
-        assert IFC._Analytical_persistence_geometry_signature(cell)[0]
 
 
 @pytest.mark.pythonocc_only
@@ -249,12 +181,6 @@ def test_persistence_preserves_aperture_host_on_nearby_distinct_faces():
     assert all(abs(Vertex.X(v)-.5)<1e-9 for v in Topology.Vertices(hosts[0]))
 
 
-@pytest.mark.pythonocc_only
-def test_real_ifc_space_coverage_keeps_its_authoritative_meaning():
-    result=IFC.AnalyticalModel(str(SOURCE),coordinateFrame='local',verify=False)
-    assert result.fidelity['source_space_coverage_applicable'] is True
-    assert result.fidelity['source_space_coverage']==pytest.approx(1.)
-    assert 'inferred_reference_coverage' not in result.fidelity
 
 
 def test_exterior_ledge_alignment_preserves_rooms_and_internal_partition():
@@ -285,15 +211,3 @@ def test_exterior_ledge_alignment_retains_large_setback_and_shaft():
     assert warnings==[]
 
 
-@pytest.mark.pythonocc_only
-def test_unsafe_ledge_cleanup_rolls_back_without_losing_rooms(monkeypatch):
-    def propose(rooms,warnings,tolerance):
-        warnings.append(dict(code='EXTERIOR_LEDGES_REMOVED',message='Proposed test correction'))
-    def reject(topology):
-        raise ValueError('Test closure rejection')
-    monkeypatch.setattr(IFC,'_Analytical_redraw_remove_exterior_ledges',staticmethod(propose))
-    monkeypatch.setattr(IFC,'_Analytical_persistence_geometry_signature',staticmethod(reject))
-    result=IFC.AnalyticalModel(str(SOURCE),coordinateFrame='local',verify=False)
-    assert result.topology is not None
-    assert len(result.spaces)==3
-    assert any(d.code=='EXTERIOR_LEDGE_CLEANUP_REQUIRES_REVIEW' for d in result.diagnostics)
