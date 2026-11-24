@@ -399,8 +399,7 @@
 <dd><p>Creates a Cell from the input list of Faces.</p>
 <p>The supplied Faces are passed directly to the active backend so their
 supporting surfaces and boundary curves are preserved. If construction
-fails, the method may retry sewing with a slightly larger tolerance and
-may self-merge the original Faces. It never reconstructs Faces from their
+fails, the method may self-merge the original Faces at the supplied tolerance. It never reconstructs Faces from their
 Wires, Edges, or Vertices.</p>
 <p>If <code class="docutils literal notranslate"><span class="pre">planarize</span></code> is True, the Faces are explicitly planarized before Cell
 construction. This intentionally replaces their original support surfaces.</p>
