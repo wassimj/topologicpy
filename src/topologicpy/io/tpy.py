@@ -1665,6 +1665,7 @@ class TPYCodec:
         from topologicpy.TGraph import TGraph
         by_id = TPYCodec._ValidateGraphManifest(manifest, archive.namelist())
         loaded = {}
+        locator_cache = {}
         natives = [record for record in by_id.values() if 'geometry' in record]
         if natives:
             native_manifest = dict(manifest, formatVersion=1, objects=natives, rootObject=natives[0]['id'])
@@ -1672,11 +1673,10 @@ class TPYCodec:
                 path = Path(directory)/'native.tpy'
                 geometry = {record['geometry']['path']: archive.read(record['geometry']['path']) for record in natives}
                 TPYCodec._WriteGraphArchive(path, native_manifest, geometry)
-                if TPYCodec.load(path, tolerance=tolerance, silent=silent, _loaded=loaded) is None: raise ValueError('Native objects could not be restored.')
+                if TPYCodec.load(path, tolerance=tolerance, silent=silent, _loaded=loaded, _locator_cache=locator_cache) is None: raise ValueError('Native objects could not be restored.')
         for identifier, record in by_id.items():
             if record['type'] == 'TGraph': loaded[identifier] = TGraph()
         resolved_refs = {}
-        locator_cache = {}
         def reference(item):
             identifier = item['object']
             if identifier not in loaded: raise ValueError('Unresolved TPY object reference.')
@@ -2002,13 +2002,14 @@ class TPYCodec:
         tolerance=0.0001,
         silent=False,
         _loaded=None,
+        _locator_cache=None,
     ):
         from topologicpy.Aperture import Aperture
         from topologicpy.Context import Context
         from topologicpy.Core import Core
         from topologicpy.Topology import Topology
 
-        locator_cache = {}
+        locator_cache = {} if _locator_cache is None else _locator_cache
 
         try:
             tolerance = abs(
@@ -2229,6 +2230,23 @@ class TPYCodec:
                         from topologicpy.pythonocc_backend.topology import _shape_from_brep_text
                         topology=compound_wrapper(_shape_from_brep_text(brep_text))
                         if isinstance(expected_hash,str):locator_cache[('verified_native_hierarchy',id(topology))]=topology
+                    elif (type(Core.Backend()).__module__.startswith('topologicpy.pythonocc_backend')
+                          and manifest.get('producer', {}).get('backend') == 'PythonOCCBackend'):
+                        # Native paths were recorded against the original OCCT
+                        # hierarchy. Load the checksummed BREP without general
+                        # importer promotion/sewing, and verify the wrapper
+                        # retains that exact native root before trusting paths.
+                        from topologicpy.pythonocc_backend.topology import _shape_from_brep_text
+                        shape = _shape_from_brep_text(brep_text)
+                        topology = Topology.ByOCCTShape(shape, silent=True)
+                        wrapped_shape = (Topology.OCCTShape(topology, silent=True)
+                                         if topology is not None else None)
+                        if (wrapped_shape is not None and wrapped_shape.IsSame(shape)
+                                and Topology.TypeAsString(topology, silent=True) == record.get('type')):
+                            if isinstance(expected_hash, str):
+                                locator_cache[('verified_native_hierarchy', id(topology))] = topology
+                        else:
+                            topology = Topology.ByBREPString(brep_text, silent=True)
                     else:
                         topology=Topology.ByBREPString(brep_text,silent=True)
 
@@ -2284,6 +2302,8 @@ class TPYCodec:
                         target = _resolve_locator(topology, item.get('locator'), cache=locator_cache)
 
                         if target is None:
+                            import warnings
+                            warnings.warn(f"TPYCodec.load: unresolved dictionary locator for {object_id}: {item.get('locator')}", RuntimeWarning, stacklevel=2)
                             continue
 
                         _apply_dictionary(

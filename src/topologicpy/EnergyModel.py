@@ -57,6 +57,67 @@ class EnergyModel:
     '''
 
     @staticmethod
+    def _ExportDictionary(topology):
+        """Read the topology dictionary without interpreting thermal values."""
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+        d = Topology.Dictionary(topology, silent=True)
+        return d if isinstance(d, dict) else (Dictionary.PythonDictionary(d, silent=True) or {} if d is not None else {})
+
+    @staticmethod
+    def _ExportMetadata(dictionary, idKey='tpy_id', nameKey='TOPOLOGIC_name'):
+        """Return only lightweight analytical references and operational labels.
+
+        No IFC source property sets or complete topology dictionaries are copied.
+        Source IDs are not inferred from names or IFC GlobalIds.
+        """
+        d = dictionary or {}
+        result = {key: d[key] for key in ('bim2bem_space_id', 'bim2bem_boundary_id',
+                    'opening_id', 'host_boundary_id', 'shading_id', 'building_id',
+                    'kind', 'physical_or_virtual', 'glazing_geometry', 'surface_role',
+                    'source_shading_id', 'tpy_parent_id', 'tpy_ids', 'tpy_building_id', 'tpy_cellcomplex_id') if d.get(key) is not None}
+        if 'tpy_ids' in result:
+            raw = result['tpy_ids']
+            if isinstance(raw, str):
+                import json
+                try: raw = json.loads(raw)
+                except (ValueError, TypeError): raw = [raw]
+            if not isinstance(raw, (list, tuple, set)): raw = [raw]
+            result['tpy_ids'] = sorted({str(v) for v in raw if v is not None and str(v).strip()})
+        uid = d.get(idKey) if idKey else None
+        if isinstance(uid, (str, int)) and not isinstance(uid, bool) and str(uid).strip():
+            result['tpy_id'] = str(uid)
+        elif idKey and not result.get('tpy_parent_id') and not result.get('tpy_ids'):
+            warnings.warn('Energy export: input topology has no valid source ID for '+str(idKey)+'. Unresolved references are omitted.', RuntimeWarning, stacklevel=2)
+        name = d.get(nameKey) if nameKey else None
+        if name is not None and str(name).strip():
+            result['tpy_name'] = str(name)
+        return result
+
+    @staticmethod
+    def _SetOSMetadata(obj, dictionary, parent=None, idKey='tpy_id', nameKey='TOPOLOGIC_name'):
+        import json
+        metadata = EnergyModel._ExportMetadata(dictionary, idKey, nameKey)
+        if parent is not None:
+            uid = parent.get(idKey)
+            if uid is not None and str(uid).strip():
+                metadata['tpy_parent_id'] = str(uid)
+        properties = obj.additionalProperties()
+        for key, value in metadata.items():
+            if not isinstance(value, (str, bool, int, float)):
+                value = json.dumps(value, ensure_ascii=False, sort_keys=True)
+            if properties.setFeature(key, value) is False:
+                raise ValueError('OpenStudio rejected identity feature: ' + key)
+        # OpenStudio's native gbXML translator recognises its CAD object ID
+        # property. Keep tpy_id independently so that split/paired objects can
+        # have separate native handles but still trace to one analytical face.
+        cad_id = metadata.get('tpy_id') or metadata.get('tpy_parent_id')
+        setter = getattr(obj, 'setCadObjectId', None)
+        if cad_id and callable(setter) and setter(str(cad_id)) is False:
+            raise ValueError('OpenStudio rejected CAD source reference: ' + str(cad_id))
+
+
+    @staticmethod
     def _ImportOpenStudio(methodName: str = "EnergyModel", silent: bool = False):
         """
         Imports OpenStudio without attempting to install it. Returns None if unavailable.
@@ -223,7 +284,9 @@ class EnergyModel:
                 spaceTypeKey : str = "TOPOLOGIC_type",
                 mantissa : int = 6,
                 tolerance : float = 0.0001,
-                seamTolerance : float = 0.0):
+                seamTolerance : float = 0.0,
+                idKey: str = "tpy_id",
+                nameKey: str = "TOPOLOGIC_name"):
         """
             Creates an EnergyModel from the input topology and parameters.
 
@@ -277,6 +340,8 @@ class EnergyModel:
 
         """
         geometry_mantissa = max(12, int(mantissa))
+        if spaceNameKey == "TOPOLOGIC_name":
+            spaceNameKey = nameKey
         import math
         import os
         import warnings
@@ -424,7 +489,7 @@ class EnergyModel:
             identity for an exported gbXML sub-surface.
             """
             unique = []
-            seen = set()
+            seen = {}
             for aperture in Topology.Apertures(face) or []:
                 boundary = Face.ExternalBoundary(aperture)
                 vertices = Wire.Vertices(boundary) if boundary is not None else []
@@ -432,9 +497,20 @@ class EnergyModel:
                     tuple(round(value, 9) for value in Vertex.Coordinates(vertex, mantissa=9))
                     for vertex in (vertices or [])
                 ))
-                if len(coordinates) < 3 or coordinates in seen:
+                if len(coordinates) < 3:
                     continue
-                seen.add(coordinates)
+                if coordinates in seen:
+                    index = seen[coordinates]
+                    previous = EnergyModel._ExportDictionary(unique[index])
+                    current = EnergyModel._ExportDictionary(aperture)
+                    # Prefer the wrapper with an explicit ID; never silently
+                    # discard different identified openings at the same geometry.
+                    if previous.get(idKey) and current.get(idKey) and str(previous[idKey]) != str(current[idKey]):
+                        raise ValueError('Coincident source apertures have different analytical IDs.')
+                    if not previous.get(idKey) and current.get(idKey):
+                        unique[index] = aperture
+                    continue
+                seen[coordinates] = len(unique)
                 unique.append(aperture)
             return unique
 
@@ -530,6 +606,7 @@ class EnergyModel:
             raise RuntimeError("EnergyModel.ByTopology - No DefaultScheduleSet found in OSM template.")
         osBuilding.setDefaultScheduleSet(defaultScheduleSets[0])
 
+        EnergyModel._SetOSMetadata(osBuilding, EnergyModel._ExportDictionary(building), idKey=idKey, nameKey=nameKey)
         osBuilding.setName(buildingName)
         try:
             osBuilding.setStandardsBuildingType(buildingType)
@@ -606,6 +683,8 @@ class EnergyModel:
             [Vertex.Coordinates(v, mantissa=geometry_mantissa) for v in Topology.Vertices(building)], seamTolerance)
         export_polygons = {}
         native_interfaces = {}
+        air_surfaces = []
+        void_approximations = []
         for spaceNumber, buildingCell in enumerate(building_cells):
             osSpace = openstudio.model.Space(osModel)
             osSpaceZ = Vertex.Z(Topology.CenterOfMass(buildingCell), mantissa=geometry_mantissa)
@@ -646,6 +725,7 @@ class EnergyModel:
             if cellDictionary is not None:
                 source_id=Dictionary.ValueAtKey(cellDictionary,'bim2bem_space_id',silent=True)
                 if source_id:osSpace.additionalProperties().setFeature('bim2bem_space_id',str(source_id))
+            EnergyModel._SetOSMetadata(osSpace, EnergyModel._ExportDictionary(buildingCell), idKey=idKey, nameKey=nameKey)
             osSpace.setName(osSpaceName)
             spaceNames.append(osSpaceName)
 
@@ -658,7 +738,14 @@ class EnergyModel:
             for sourceFace in sourceFaces:
                 ring = Wire.Vertices(Face.ExternalBoundary(sourceFace)) or []
                 holes = Face.InternalBoundaries(sourceFace) or []
-                source_apertures = Topology.Apertures(sourceFace) or []
+                source_apertures = unique_apertures(sourceFace)
+                aperture_records = []
+                for aperture in source_apertures:
+                    ad = Topology.Dictionary(aperture)
+                    ad = ad if isinstance(ad, dict) else Dictionary.PythonDictionary(ad) or {}
+                    ap = vertex_coordinates(Wire.Vertices(Face.ExternalBoundary(aperture)) or [])
+                    aperture_records.append((aperture, ap, ad))
+                voids = [(ap, ad) for _, ap, ad in aperture_records if EnergyModel._IsUnfilledOpening(ad.get('kind'))]
                 coords = vertex_coordinates(ring)
                 hole_coords = [vertex_coordinates(Wire.Vertices(w) or []) for w in holes]
                 # Canonicalize the outer boundary so the two owners of an
@@ -668,6 +755,17 @@ class EnergyModel:
                     forward = [coords[(start+i)%len(coords)] for i in range(len(coords))]
                     reverse = [coords[(start-i)%len(coords)] for i in range(len(coords))]
                     coords = min(forward, reverse)
+                if voids:
+                    def mapped(points): return [(x,y,export_vertex_map.get((x,y,z),z)) for x,y,z in points]
+                    patches = EnergyModel._ExportAirBoundaryPatches(mapped(coords), [mapped(h) for h in hole_coords],
+                        [(mapped(ap), ad) for ap, ad in voids], tolerance=max(1e-7, min(tolerance, 1e-5)))
+                    assigned = [[] for _ in patches]
+                    for aperture, ap, ad in aperture_records:
+                        if not EnergyModel._IsUnfilledOpening(ad.get('kind')):
+                            projected, _ = EnergyModel._ProjectOpeningToHost(mapped(ap), mapped(coords), tolerance)
+                            assigned[EnergyModel._OpeningPatchIndex(projected, patches, tolerance=tolerance)].append(aperture)
+                    cellFaces.extend((sourceFace, loop, data, assigned[i]) for i,(loop,data) in enumerate(patches))
+                    continue
                 key = (tuple(sorted(coords)), tuple(sorted(tuple(sorted(h)) for h in hole_coords)), bool(source_apertures))
                 if key not in export_polygons:
                     export_polygons[key] = EnergyModel._OSMExportLoops(
@@ -676,9 +774,9 @@ class EnergyModel:
                 loops, collapsed = export_polygons[key]
                 if collapsed:
                     regularisation['collapsed_surfaces'] = regularisation.get('collapsed_surfaces', 0) + 1
-                cellFaces.extend((sourceFace, loop) for loop in loops)
+                cellFaces.extend((sourceFace, loop, None, source_apertures) for loop in loops)
             if cellFaces:
-                for faceNumber, (buildingFace, export_ring) in enumerate(cellFaces):
+                for faceNumber, (buildingFace, export_ring, air_data, hosted_apertures) in enumerate(cellFaces):
                     osFacePoints = coordinates_to_point3d_list(export_ring, openstudio)
                     if len(osFacePoints) < 3 or EnergyModel._OptionalGet(openstudio.getArea(osFacePoints), 0.0) <= 1e-10:
                         raise ValueError("EnergyModel.ByTopology - Degenerate non-collapsed export surface.")
@@ -690,6 +788,7 @@ class EnergyModel:
 
                     fd = Topology.Dictionary(buildingFace)
                     fd = fd if isinstance(fd, dict) else Dictionary.PythonDictionary(fd) or {}
+                    EnergyModel._SetOSMetadata(osSurface, air_data if air_data is not None else fd, parent=fd if air_data is not None else None, idKey=idKey, nameKey=nameKey)
                     if fd.get('bim2bem_boundary_id'):osSurface.additionalProperties().setFeature('bim2bem_boundary_id',str(fd['bim2bem_boundary_id']))
                     owners = fd.get('owners')
                     if isinstance(owners, (list, tuple)) and len(owners) in (1, 2):
@@ -774,22 +873,33 @@ class EnergyModel:
                             osSurface.setSurfaceType("Wall")
                             osSurface.setName(space_name + "_InternalVerticalFace_" + str(faceNumber))
 
-                    # Use the standard TopologicPy aperture path.  Keep the
-                    # source face as the host and attach each aperture directly
-                    # as an OpenStudio sub-surface.  Do not project or clip the
-                    # aperture through custom planar geometry here.
-                    for apertureFace in unique_apertures(buildingFace):
+                    if air_data is not None:
+                        properties = osSurface.additionalProperties()
+                        properties.setFeature('topologicpy_opening_kind', 'void')
+                        if air_data.get('opening_id') is not None:
+                            properties.setFeature('bim2bem_opening_id', str(air_data['opening_id']))
+                        air_surfaces.append(osSurface)
+
+                    # Keep the source host and project only export coordinates
+                    # within the modelling tolerance before SDK construction.
+                    for apertureFace in hosted_apertures:
                         aperture_boundary = Face.ExternalBoundary(apertureFace)
                         aperture_vertices = Topology.SubTopologies(aperture_boundary, "Vertex") if aperture_boundary is not None else []
                         if not aperture_vertices or len(aperture_vertices) < 3:
                             continue
-                        osSubSurfacePoints = vertices_to_point3d_list(aperture_vertices, openstudio)
+                        original_points = vertices_to_point3d_list(aperture_vertices, openstudio)
+                        projected, correction = EnergyModel._ProjectOpeningToHost(
+                            [(p.x(), p.y(), p.z()) for p in original_points],
+                            [(p.x(), p.y(), p.z()) for p in osSurface.vertices()], tolerance)
+                        osSubSurfacePoints = coordinates_to_point3d_list(projected, openstudio)
                         osSubSurface = openstudio.model.SubSurface(osSubSurfacePoints, osModel)
                         host_normal = osSurface.outwardNormal()
                         orient_surface_vertices(osSubSurfacePoints, [host_normal.x(), host_normal.y(), host_normal.z()], osSubSurface, openstudio)
                         ad = Topology.Dictionary(apertureFace)
                         ad = ad if isinstance(ad, dict) else Dictionary.PythonDictionary(ad) or {}
-                        kind = ad.get('kind')
+                        kind = str(ad.get('kind') or '').lower()
+                        if EnergyModel._IsUnfilledOpening(kind):
+                            raise ValueError('Unfilled opening must be exported as an air-boundary surface.')
                         if kind == 'door':
                             subtype = 'Door'
                         elif kind == 'window':
@@ -800,7 +910,10 @@ class EnergyModel:
                         if not osSubSurface.setSurface(osSurface):
                             raise ValueError('OpenStudio rejected a hosted aperture.')
                         properties = osSubSurface.additionalProperties()
-                        properties.setFeature('topologicpy_dictionary', json.dumps(ad, ensure_ascii=False, sort_keys=True))
+                        EnergyModel._SetOSMetadata(osSubSurface, ad, parent=fd, idKey=idKey, nameKey=nameKey)
+                        if correction:
+                            import json
+                            properties.setFeature('topologicpy_geometry_correction', json.dumps(correction, sort_keys=True))
                         if ad.get('opening_id'):
                             properties.setFeature('bim2bem_opening_id', str(ad['opening_id']))
                         if fd.get('bim2bem_boundary_id'):
@@ -841,6 +954,36 @@ class EnergyModel:
                 if other is None or not sub.setAdjacentSubSurface(other):
                     raise ValueError("Could not preserve a native internal opening pair.")
 
+        if air_surfaces:
+            air_construction = openstudio.model.ConstructionAirBoundary(osModel)
+            air_construction.setName('TopologicPy Unfilled Opening Air Boundary')
+            # No invented airflow rate. The simulation author must specify
+            # inter-zone mixing or airflow network parameters as appropriate.
+            if not air_construction.setAirExchangeMethod('None'):
+                raise ValueError('OpenStudio rejected the air-boundary exchange method.')
+            air_handles = {str(s.handle()) for s in air_surfaces}
+            paired_count = 0
+            for surface in air_surfaces:
+                adjacent = EnergyModel._OptionalGet(surface.adjacentSurface())
+                reverse = EnergyModel._OptionalGet(adjacent.adjacentSurface()) if adjacent is not None else None
+                props = surface.additionalProperties()
+                if (surface.outsideBoundaryCondition() == 'Surface' and adjacent is not None and
+                        str(adjacent.handle()) in air_handles and reverse is not None and
+                        str(reverse.handle()) == str(surface.handle())):
+                    if not surface.setConstruction(air_construction):
+                        raise ValueError('OpenStudio rejected the air-boundary construction.')
+                    props.setFeature('topologicpy_void_treatment', 'paired_air_boundary')
+                    paired_count += 1
+                else:
+                    props.setFeature('topologicpy_void_treatment', 'opaque_approximation')
+                    data = {key: EnergyModel._OptionalGet(props.getFeatureAsString(key))
+                            for key in ('tpy_id','tpy_parent_id','bim2bem_opening_id')}
+                    void_approximations.append(EnergyModel._VoidApproximation(data, surface.nameString(), surface.outsideBoundaryCondition(), surface.grossArea()))
+            if paired_count:
+                warnings.warn('Paired interior voids use air boundaries; specify inter-zone airflow before simulation.', RuntimeWarning)
+            if void_approximations:
+                warnings.warn(EnergyModel._VoidApproximationWarning(void_approximations), RuntimeWarning)
+
         if shadingSurfaces:
             osShadingGroup = openstudio.model.ShadingSurfaceGroup(osModel)
             for faceIndex, shadingFace in enumerate(Topology.SubTopologies(shadingSurfaces, "Face")):
@@ -853,6 +996,7 @@ class EnergyModel:
 
                 facePoints = vertices_to_point3d_list(shadingVertices, openstudio)
                 aShadingSurface = openstudio.model.ShadingSurface(facePoints, osModel)
+                EnergyModel._SetOSMetadata(aShadingSurface, EnergyModel._ExportDictionary(shadingFace), idKey=idKey, nameKey=nameKey)
 
                 faceNormal = Face.Normal(shadingFace, mantissa=geometry_mantissa)
                 try:
@@ -874,7 +1018,17 @@ class EnergyModel:
                 if sub_surface.outwardNormal().dot(surface.outwardNormal()) < 0:
                     if not sub_surface.setVertices(list(reversed(sub_surface.vertices()))):
                         raise ValueError("EnergyModel.ByTopology - Could not align an opening with its host surface.")
+        for surface in osModel.getSurfaces():
+            parent = surface.additionalProperties().getFeatureAsString('tpy_id')
+            for opening in surface.subSurfaces():
+                props = opening.additionalProperties()
+                if not props.getFeatureAsString('tpy_id').is_initialized() and parent.is_initialized():
+                    props.setFeature('tpy_parent_id', parent.get())
+                    setter = getattr(opening, 'setCadObjectId', None)
+                    if callable(setter): setter(parent.get())
         osModel.getBuilding().additionalProperties().setFeature('topologicpy_export_regularisation', json.dumps(regularisation))
+        if void_approximations:
+            osModel.getBuilding().additionalProperties().setFeature('topologicpy_void_approximations', json.dumps(void_approximations, ensure_ascii=False))
         osModel.purgeUnusedResourceObjects()
         return osModel
 
@@ -1027,11 +1181,24 @@ class EnergyModel:
         # unhosted holes is a single OpenStudio Surface whenever the SDK can
         # render it. Keep the original vertices (including shared-edge
         # constraints) rather than introducing artificial diagonal boundaries.
-        # Retain the existing exact-mode protection for sub-millimetre edges:
-        # the SDK can combine their endpoints and produce degenerate n-gons.
-        if not valid_holes and (len(ring) == 3 or
-                                (not has_short_edges and can_triangulate(ring))):
-            return [ring], False
+        # Preserve genuine sub-millimetre steps, even when the preview
+        # triangulator cannot render the exact polygon.
+        planar = float(np.max(np.abs((xyz-centre) @ axes[-1]))) <= 1e-7
+        if not valid_holes and planar:
+            if len(ring) == 3 or can_triangulate(ring):
+                return [ring], False
+            cleaned = EnergyModel._OSMCleanRing(ring)
+            candidate = Polygon(project(cleaned)) if len(cleaned) >= 3 else Polygon()
+            if (candidate.is_valid and candidate.symmetric_difference(outer).area <=
+                    max(1e-10, outer.area*1e-10) and can_triangulate(cleaned)):
+                return [cleaned], False
+            if has_short_edges:
+                # The SDK's visualization triangulator may collapse genuine
+                # sub-millimetre steps. Its failure is not non-planarity.
+                # Preserve the exact source polygon in the OSM, rather than
+                # forcing a diagonal subdivision or losing enclosure geometry.
+                warnings.warn('OpenStudio preview triangulator rejected a planar short-edge polygon; preserving the exact polygon in OSM. Review its rendering and simulation translation.', RuntimeWarning)
+                return [ring], False
 
         # Constrained triangulation uses boundary vertices. Reuse the exact
         # original (or explicitly snapped) 3D points rather than round-trip
@@ -1043,8 +1210,7 @@ class EnergyModel:
         def unproject(loop):
             return [source_points.get(tuple(uv), tuple(centre+np.asarray(uv)@axes[:2])) for uv in loop]
         # Subdivision is a last resort for actual holes or SDK-incompatible
-        # polygons, not a preferred surface representation. The short-edge
-        # path deliberately retains the proven exact triangulation fallback.
+        # polygons, not a preferred surface representation.
         # Otherwise recombine adjacent pieces as far as the SDK allows. Only
         # valid, hole-free unions are accepted, and each union is tested with
         # the same coordinate cleaning used for the final OpenStudio surface.
@@ -1061,6 +1227,162 @@ class EnergyModel:
         if not loops or merged.symmetric_difference(region).area > budget or sum(p.area for p in patches)-merged.area > budget:
             raise ValueError("EnergyModel.ByTopology - Export subdivision changes the surface area or fills its holes.")
         return loops, False
+
+    @staticmethod
+    def _VoidApproximation(data, identifier, boundary_condition, area):
+        # Record a geometrically retained void closed by an opaque thermal patch.
+        return dict(export_surface=str(identifier), tpy_id=data.get('tpy_id'),
+                    tpy_parent_id=data.get('tpy_parent_id'), opening_id=data.get('bim2bem_opening_id'),
+                    boundary_condition=str(boundary_condition), area_m2=float(area),
+                    treatment='opaque_approximation', airflow_modelled=False)
+
+    @staticmethod
+    def _VoidApproximationWarning(records):
+        ids = {r.get('tpy_id') or r.get('opening_id') or r['export_surface'] for r in records}
+        return (f'{len(ids)} unfilled opening source(s) retained as opaque thermal patches '
+                f'({len(records)} exported surface references). No exterior/unresolved airflow is modelled; '
+                'review these approximations before simulation.')
+
+    @staticmethod
+    def _IsUnfilledOpening(kind):
+        """Explicit unfilled opening semantics; generic apertures remain glazing."""
+        return str(kind or '').strip().lower().replace('_', '').replace(' ', '').replace('-', '') in {
+            'void', 'hole', 'opening', 'air', 'airboundary', 'unfilled', 'unfilledopening'}
+
+    @staticmethod
+    def _ExportAirBoundaryPatches(coordinates, holes, openings, tolerance=1e-7):
+        """Partition a gross planar host into opaque and air-boundary polygons.
+
+        openings is a list of (3D ring, metadata) pairs, one per explicit void.
+        The partition is independent of host winding, uses exact source points,
+        and retains the entire original enclosure (no change of room volume).
+        This is an export-only operation. The caller pairs both room sides and
+        assigns an air construction, not a door/window, to the void patches.
+        """
+        import numpy as np
+        from shapely.geometry import Polygon
+        from shapely.ops import unary_union
+        def canonical(points):
+            points = [tuple(round(float(v), 12) for v in p) for p in points]
+            if len(points) > 1 and points[0] == points[-1]: points.pop()
+            k = min(range(len(points)), key=points.__getitem__)
+            return min(points[k:]+points[:k], [points[(k-i)%len(points)] for i in range(len(points))])
+        outer = canonical(coordinates)
+        if len(outer) < 3: raise ValueError('Air-boundary host has fewer than three vertices.')
+        xyz = np.array(outer); centre = xyz.mean(axis=0)
+        _, _, axes = np.linalg.svd(xyz-centre, full_matrices=False)
+        normal = axes[-1]
+        if max(abs((xyz-centre)@normal)) > tolerance:
+            raise ValueError('Air-boundary host is not planar.')
+        # Use the two remaining Cartesian axes, avoiding a lossy 3D rotation.
+        drop = int(np.argmax(abs(normal))); keep = [i for i in range(3) if i != drop]
+        def project(points): return [tuple(float(p[i]) for i in keep) for p in points]
+        source = {}
+        def remember(points):
+            for p, uv in zip(points, project(points)): source.setdefault(uv, tuple(p))
+        def lift(loop):
+            result = []
+            for uv in loop:
+                if tuple(uv) in source: result.append(source[tuple(uv)]); continue
+                p = centre.copy(); p[keep] = uv
+                p[drop] = centre[drop] - ((p[keep]-centre[keep])@normal[keep])/normal[drop]
+                result.append(tuple(round(float(v), 12) for v in p))
+            return canonical(result)
+        remember(outer)
+        holes = [canonical(h) for h in holes]
+        for h in holes: remember(h)
+        host = Polygon(project(outer), [project(h) for h in holes])
+        if not host.is_valid or host.area <= 1e-12: raise ValueError('Invalid air-boundary host polygon.')
+        patches, air = [], []
+        budget = max(1e-10, host.area*1e-10)
+        for points, data in openings:
+            ring = canonical(points)
+            if len(ring)<3 or max(abs((np.array(ring)-centre)@normal)) > tolerance:
+                raise ValueError('Unfilled opening is not coplanar with its host.')
+            poly = Polygon(project(ring))
+            if not poly.is_valid or poly.area <= 1e-12 or poly.difference(host).area > budget:
+                raise ValueError('Invalid or out-of-host unfilled opening.')
+            if any(poly.intersection(p).area > budget for p in patches):
+                raise ValueError('Overlapping unfilled openings.')
+            # Duplicate native references are removed by callers; distinct
+            # source openings must not silently become one air boundary.
+            remember(ring); patches.append(poly); air.append((ring, data))
+        remainder = host.difference(unary_union(patches))
+        opaque = []
+        parts = [remainder] if remainder.geom_type == 'Polygon' else list(getattr(remainder, 'geoms', []))
+        for part in parts:
+            if part.is_empty: continue
+            if part.geom_type != 'Polygon' or not part.is_valid: raise ValueError('Invalid opaque remainder around an unfilled opening.')
+            if not part.interiors:
+                opaque.append(lift(list(part.exterior.coords)[:-1]))
+            else:
+                loops = EnergyModel._ExportTriangles2D(part, merge_small=False)
+                opaque.extend(EnergyModel._OSMMergeExportPatches(loops, lift, lambda p: True))
+        result = [(p, None) for p in opaque] + air
+        polygons = [Polygon(project(p)) for p, _ in result]
+        union = unary_union(polygons)
+        if (not result or any(not p.is_valid for p in polygons) or
+                union.symmetric_difference(host).area > budget or
+                sum(p.area for p in polygons)-union.area > budget):
+            raise ValueError('Air-boundary partition changed enclosure coverage.')
+        return sorted(result, key=lambda item: (item[1] is not None, item[0]))
+
+    @staticmethod
+    def _ProjectOpeningToHost(points, host_points, tolerance=1e-5):
+        """Project export-only opening coordinates onto a planar host, within tolerance.
+
+        Reject degenerate or genuinely non-coplanar geometry; retain vertex order.
+        Returns coordinates and optional auditable numerical correction metadata.
+        """
+        import numpy as np
+        tolerance = float(tolerance)
+        if not np.isfinite(tolerance) or tolerance <= 0:
+            raise ValueError('Opening projection requires a positive finite tolerance.')
+        p = np.asarray(points, dtype=float)
+        h = np.asarray(host_points, dtype=float)
+        if (p.ndim != 2 or h.ndim != 2 or p.shape[1:] != (3,) or h.shape[1:] != (3,)
+                or len(p) < 3 or len(h) < 3 or not np.isfinite(p).all() or not np.isfinite(h).all()):
+            raise ValueError('Invalid opening or host coordinates.')
+        centre = h.mean(axis=0)
+        _, singular, axes = np.linalg.svd(h-centre, full_matrices=False)
+        if singular[1] <= 1e-12:
+            raise ValueError('Degenerate opening host plane.')
+        normal = axes[-1]
+        if np.max(np.abs((h-centre) @ normal)) > tolerance:
+            raise ValueError('Opening host is non-planar beyond modelling tolerance.')
+        offsets = (p-centre) @ normal
+        distance = float(np.max(np.abs(offsets)))
+        if distance > tolerance:
+            raise ValueError(f'Opening deviates from its host by {distance:.9g} m, exceeding {tolerance:.9g} m.')
+        projected = p-offsets[:, None]*normal
+        from shapely.geometry import Polygon
+        polygon = Polygon((projected-centre) @ axes[:2].T)
+        if not polygon.is_valid or polygon.area <= 1e-12:
+            raise ValueError('Opening projection produced a degenerate or invalid polygon.')
+        correction = None
+        if distance > 1e-10:
+            correction = {'method': 'orthogonal_host_plane_projection',
+                          'max_displacement_m': distance, 'tolerance_m': tolerance,
+                          'export_area_m2': float(polygon.area)}
+        return [tuple(float(v) for v in row) for row in projected], correction
+
+    @staticmethod
+    def _OpeningPatchIndex(points, patches, tolerance=1e-7):
+        """Find a single opaque patch containing an ordinary hosted opening."""
+        import numpy as np
+        from shapely.geometry import Polygon
+        p = np.asarray(points, dtype=float)
+        centre = p.mean(axis=0)
+        _, _, axes = np.linalg.svd(p-centre, full_matrices=False)
+        def polygon(ring): return Polygon((np.asarray(ring)-centre)@axes[:2].T)
+        opening = polygon(p)
+        if not opening.is_valid or opening.area <= 0: raise ValueError('Invalid hosted opening.')
+        candidates = [i for i, (ring, data) in enumerate(patches) if data is None and
+                      max(abs((np.asarray(ring)-centre)@axes[-1])) <= tolerance and
+                      polygon(ring).buffer(tolerance).covers(opening)]
+        if len(candidates) != 1:
+            raise ValueError('Ordinary opening crosses the subdivision around an unfilled opening; cannot preserve its host unambiguously.')
+        return candidates[0]
 
     @staticmethod
     def _OSMMergeExportPatches(loops, unproject, accepts):
@@ -2010,6 +2332,117 @@ class EnergyModel:
         model.getBuilding().additionalProperties().setFeature('topologicpy_conforming_export', True)
 
     @staticmethod
+    def _GBXMLIdentityForModel(model, xml):
+        """Transfer lightweight OSM source references into native gbXML elements.
+
+        OpenStudio translates its own names/gbXML IDs, not TopologicPy keys.
+        Resolve the corresponding SDK object by that exact exported identifier,
+        then read the source ID from its properties. For an interior surface or
+        opening, retain the source references of both SDK sides. XML object IDs
+        remain unique even when several panels reference the same topology.
+        """
+        from xml.etree import ElementTree as ET
+        from collections import defaultdict
+        import json
+        root = ET.fromstring(xml)
+        ns = root.tag.split('}')[0] + '}' if root.tag.startswith('{') else ''
+        if ns:
+            ET.register_namespace('', ns[1:-1])
+        ET.register_namespace('xsi', 'http://www.w3.org/2001/XMLSchema-instance')
+        def tag(name): return ns + name
+        def value(obj, key):
+            if hasattr(obj, 'hasAdditionalProperties') and not obj.hasAdditionalProperties():
+                return None
+            return EnergyModel._OptionalGet(obj.additionalProperties().getFeatureAsString(key))
+        def refs(obj):
+            ids = {value(obj, 'tpy_id') or value(obj, 'tpy_parent_id')}
+            raw = value(obj, 'tpy_ids')
+            if raw:
+                try: parsed = json.loads(raw)
+                except (ValueError, TypeError): parsed = raw
+                if isinstance(parsed, list): ids.update(parsed)
+                elif isinstance(parsed, (str, int)): ids.add(parsed)
+            return {str(v) for v in ids if v is not None and str(v).strip()}
+        def escaped(name):
+            name = str(name)
+            if name and name[0].isdigit(): name = 'id_' + name
+            return name.translate(str.maketrans({c:'_' for c in ' ()[]{}/\\:;'}))
+        def set_name(el, name):
+            if name is None: return
+            node = el.find(tag('Name'))
+            if node is None: node = ET.SubElement(el, tag('Name'))
+            node.text = str(name)
+        def transfer(elements, objects, adjacent=None):
+            objects = list(objects)
+            expected = {str(o.handle()) for o in objects if refs(o) or value(o, 'tpy_name')}
+            if not expected:
+                return
+            index = defaultdict(dict)
+            names = defaultdict(dict)
+            for obj in objects:
+                getter = getattr(obj, 'gbXMLId', None)
+                sdk_id = EnergyModel._OptionalGet(getter()) if callable(getter) else None
+                key = escaped(sdk_id or obj.nameString())
+                handle = str(obj.handle())
+                index[key][handle] = obj
+                names[obj.nameString()][handle] = obj
+                getter = getattr(obj, 'displayName', None)
+                display = EnergyModel._OptionalGet(getter()) if callable(getter) else None
+                if display: names[str(display)][handle] = obj
+            seen = set()
+            for el in elements:
+                matches = index.get(el.get('id'), {})
+                if not matches:
+                    matches = names.get(el.findtext(tag('Name')), {})
+                if len(matches) > 1:
+                    if expected.intersection(matches):
+                        raise ValueError('Ambiguous gbXML SDK object: ' + str(el.get('id')))
+                    continue
+                if not matches: continue
+                obj = next(iter(matches.values()))
+                sides = [obj]
+                if adjacent:
+                    getter = getattr(obj, adjacent, None)
+                    other = EnergyModel._OptionalGet(getter()) if callable(getter) else None
+                    if other is not None: sides.append(other)
+                ids = set()
+                for side in sides:
+                    seen.add(str(side.handle())); ids.update(refs(side))
+                if ids:
+                    for child in list(el.findall(tag('CADObjectId'))): el.remove(child)
+                    primary = value(obj, 'tpy_id') or value(obj, 'tpy_parent_id')
+                    ordered = ([str(primary)] if primary else []) + sorted(ids - ({str(primary)} if primary else set()))
+                    for uid in ordered:
+                        ET.SubElement(el, tag('CADObjectId')).text = uid
+                set_name(el, value(obj, 'tpy_name'))
+            missing = expected - seen
+            if missing:
+                labels = [o.nameString() for o in objects if str(o.handle()) in missing]
+                raise ValueError('gbXML lost SDK source identities: ' + ', '.join(labels[:8]))
+        transfer(root.findall('.//' + tag('Space')), model.getSpaces())
+        surfaces = root.findall('.//' + tag('Surface'))
+        transfer([s for s in surfaces if s.get('surfaceType') != 'Shade'], model.getSurfaces(), 'adjacentSurface')
+        transfer([s for s in surfaces if s.get('surfaceType') == 'Shade'], model.getShadingSurfaces())
+        transfer(root.findall('.//' + tag('Opening')), model.getSubSurfaces(), 'adjacentSubSurface')
+        # The gbXML 7.03 Building element does not allow CADObjectId. Put its
+        # exact source references in a schema-permitted Description instead of
+        # overloading the IFC GlobalId attribute or changing the SDK ID graph.
+        buildings = root.findall('.//' + tag('Building'))
+        building = model.getBuilding()
+        ids = refs(building)
+        if ids and len(buildings) != 1:
+            raise ValueError('Cannot resolve OpenStudio building identity in gbXML.')
+        if len(buildings) == 1:
+            el = buildings[0]
+            set_name(el, value(building, 'tpy_name'))
+            if ids:
+                desc = el.find(tag('Description'))
+                if desc is None: desc = ET.SubElement(el, tag('Description'))
+                text = 'TopologicPy source IDs: ' + json.dumps(sorted(ids), ensure_ascii=False)
+                desc.text = '\n'.join(v for v in (desc.text, text) if v)
+        return ET.tostring(root, encoding='unicode')
+
+    @staticmethod
     def _CleanGBXMLForModel(model, xml):
         """Remove sub-millimetre seam vertices from every exported PolyLoop.
 
@@ -2019,7 +2452,28 @@ class EnergyModel:
         loops preserves the geometry and aperture elements while preventing
         that viewer-side triangulation.
         """
-        return EnergyModel._CleanGBXMLPolyLoops(xml, tolerance=0.001)
+        # Ensure an SDK translator does not silently turn an air construction
+        # into an opaque floor/wall in the direct OpenStudio gbXML path.
+        from xml.etree import ElementTree as ET
+        from collections import Counter
+        air = [s for s in model.getSurfaces() if hasattr(s, 'isAirWall') and s.isAirWall()]
+        if air:
+            root = ET.fromstring(xml)
+            ns = {'g': 'http://www.gbxml.org/schema'}
+            def key(points): return tuple(sorted(tuple(round(float(v), 5) for v in p) for p in points))
+            source = Counter(key([(v.x(),v.y(),v.z()) for v in s.vertices()]) for s in air)
+            found = Counter()
+            for surface in root.findall('.//g:Campus/g:Surface', ns):
+                points = [[float(c.text) for c in p.findall('g:Coordinate',ns)] for p in surface.findall('g:PlanarGeometry/g:PolyLoop/g:CartesianPoint',ns)]
+                k = key(points)
+                if k in source:
+                    if len(surface.findall('g:AdjacentSpaceId',ns)) != 2:
+                        raise ValueError('gbXML air boundary lost its two adjacent spaces.')
+                    surface.set('surfaceType','Air'); found[k] += 1
+            if set(found) != set(source) or any(n != 1 for n in found.values()):
+                raise ValueError('OpenStudio gbXML translator did not preserve all air-boundary polygons.')
+            xml = ET.tostring(root, encoding='unicode')
+        return EnergyModel._CleanGBXMLPolyLoops(EnergyModel._GBXMLIdentityForModel(model, xml), tolerance=0.001)
 
     @staticmethod
     def _GEMFrame(points):
@@ -2047,7 +2501,7 @@ class EnergyModel:
         return origin,u,v,n
 
     @staticmethod
-    def _GEMRooms(model,roomNameKey='TOPOLOGIC_name',roomIdKey='bim2bem_space_id',apertureTypeKey='kind',shadingSurfaces=None):
+    def _GEMRooms(model,roomNameKey='TOPOLOGIC_name',roomIdKey='bim2bem_space_id',apertureTypeKey='kind',shadingSurfaces=None,idKey='tpy_id',nameKey='TOPOLOGIC_name'):
         """Extract native cells directly, or spaces from an existing OpenStudio model."""
         import hashlib
         import numpy as np
@@ -2060,9 +2514,10 @@ class EnergyModel:
         def dictionary(t):
             d=Topology.Dictionary(t,silent=True)
             return d if isinstance(d,dict) else Dictionary.PythonDictionary(d,silent=True) or {}
+        if roomNameKey == 'TOPOLOGIC_name': roomNameKey = nameKey
         def ring(w):return [Vertex.Coordinates(v,mantissa=12) for v in Wire.Vertices(w)]
         def identity(d,points):
-            return str(d.get(roomIdKey) or d.get('source_space_id') or 'space-'+hashlib.sha256(repr(sorted(tuple(p) for p in points)).encode()).hexdigest()[:16])
+            return str((d.get(roomIdKey) if roomIdKey != 'bim2bem_space_id' else None) or d.get(idKey) or d.get(roomIdKey) or d.get('source_space_id') or 'space-'+hashlib.sha256(repr(sorted(tuple(p) for p in points)).encode()).hexdigest()[:16])
         rooms=[]
         if Topology.IsInstance(model,'Cell') or Topology.IsInstance(model,'CellComplex') or Topology.IsInstance(model,'Cluster'):
             if not type(Core.Backend()).__module__.startswith('topologicpy.pythonocc_backend'):
@@ -2108,24 +2563,43 @@ class EnergyModel:
                 rooms.append(dict(id=rid,name=str(d.get(roomNameKey) or rid),dictionary=d,
                     volume=Cell.Volume(cell,mantissa=12),faces=panels))
         elif hasattr(model,'getSpaces'):
+            def coordinates(vertices,transform):
+                return [[p.x(),p.y(),p.z()] for p in (transform*v for v in vertices)]
+            def properties(item):
+                prop=item.additionalProperties();value=prop.getFeatureAsString('topologicpy_dictionary')
+                import json
+                legacy = json.loads(value.get()) if value.is_initialized() else {}
+                result = {}
+                for key in ('tpy_id','tpy_name','tpy_parent_id','tpy_ids','kind','physical_or_virtual','glazing_geometry','surface_role',
+                            'bim2bem_space_id','bim2bem_boundary_id','opening_id','host_boundary_id','shading_id','building_id','source_shading_id','tpy_building_id','tpy_cellcomplex_id'):
+
+                    v=prop.getFeatureAsString(key)
+                    if key == 'glazing_geometry' and hasattr(prop, 'getFeatureAsBoolean'):
+                        flag = EnergyModel._OptionalGet(prop.getFeatureAsBoolean(key))
+                        if flag is not None:
+                            result[key] = bool(flag)
+                            continue
+                    if v.is_initialized():
+                        result[key] = v.get()
+                        if key == 'tpy_ids':
+                            try: result[key] = json.loads(result[key])
+                            except (ValueError, TypeError): result[key] = [result[key]]
+                    elif key in legacy: result[key]=legacy[key]
+                if idKey in legacy and 'tpy_id' not in result: result['tpy_id']=legacy[idKey]
+                if nameKey in legacy and 'tpy_name' not in result: result['tpy_name']=legacy[nameKey]
+                if idKey != 'tpy_id' and 'tpy_id' in result: result[idKey]=result['tpy_id']
+                if nameKey != 'tpy_name' and 'tpy_name' in result: result[nameKey]=result['tpy_name']
+                return result
             if shadingSurfaces is None:
                 shadingSurfaces=[]
                 for shade in model.getShadingSurfaces():
                     group=shade.shadingSurfaceGroup()
                     transform=group.get().transformation() if group.is_initialized() else None
                     pts=shade.vertices() if transform is None else [transform*p for p in shade.vertices()]
-                    shadingSurfaces.append(dict(id=shade.nameString(),vertices=[[p.x(),p.y(),p.z()] for p in pts],holes=[],dictionary={'surface_role':'exterior_shading'}))
-            def coordinates(vertices,transform):
-                return [[p.x(),p.y(),p.z()] for p in (transform*v for v in vertices)]
-            def properties(item):
-                prop=item.additionalProperties();value=prop.getFeatureAsString('topologicpy_dictionary')
-                if value.is_initialized():
-                    import json
-                    return json.loads(value.get())
-                return {}
+                    shadingSurfaces.append(dict(id=shade.nameString(),vertices=[[p.x(),p.y(),p.z()] for p in pts],holes=[],dictionary={'surface_role':'exterior_shading', **properties(shade)}))
             for space in model.getSpaces():
                 d=properties(space);sid=space.additionalProperties().getFeatureAsString(roomIdKey)
-                rid=sid.get() if sid.is_initialized() else str(space.handle())
+                rid=str((sid.get() if sid.is_initialized() and roomIdKey != 'bim2bem_space_id' else None) or d.get(idKey) or (sid.get() if sid.is_initialized() else str(space.handle())))
                 transform=space.transformation();panels=[]
                 for surface in space.surfaces():
                     sd=properties(surface);bid=surface.additionalProperties().getFeatureAsString('bim2bem_boundary_id')
@@ -2137,7 +2611,7 @@ class EnergyModel:
                             vertices=coordinates(opening.vertices(),transform),dictionary=ad))
                     panels.append(dict(id=bid.get() if bid.is_initialized() else str(surface.handle()),
                         vertices=coordinates(surface.vertices(),transform),holes=[],openings=openings,dictionary=sd))
-                rooms.append(dict(id=rid,name=space.nameString(),dictionary=d,volume=float(space.volume()),faces=panels))
+                rooms.append(dict(id=rid,name=str(d.get(nameKey) or space.nameString()),dictionary=d,volume=float(space.volume()),faces=panels))
         else:raise TypeError('GEM export expects a Cell, CellComplex, Cluster of cells, or OpenStudio model.')
         if not rooms:raise ValueError('GEM export contains no rooms.')
         if len({r['id'] for r in rooms})!=len(rooms):raise ValueError('GEM export has duplicate room identifiers.')
@@ -2173,10 +2647,20 @@ class EnergyModel:
                     EnergyModel._GEMFrame(hole)
                 sid = str(shade.get('id') or attributes.get('shading_id') or 'shade-'+hashlib.sha256(
                     repr(sorted(tuple(float(c) for c in p) for p in points)).encode()).hexdigest()[:16])
-                data = {**attributes, 'surface_role':'exterior_shading', 'is_external':True}
-                rooms.append(dict(id=sid,name=sid,dictionary=data,volume=0.,kind='shade',
+                # Keep only metadata consumed by the encoder, not full IFC dictionaries.
+                data = EnergyModel._ExportMetadata(attributes, idKey, nameKey)
+                if idKey and data.get('tpy_id'): data[idKey] = data['tpy_id']
+                if nameKey and data.get('tpy_name'): data[nameKey] = data['tpy_name']
+                data.update(surface_role='exterior_shading', is_external=True)
+                rooms.append(dict(id=sid,name=str(data.get('tpy_name') or sid),dictionary=data,volume=0.,kind='shade',
                     faces=[dict(id=sid,vertices=points,holes=holes,openings=[],dictionary=data)]))
         if len({r['id'] for r in rooms})!=len(rooms):raise ValueError('Duplicate GEM room/shading identity.')
+        for room in rooms:
+            room['dictionary'] = EnergyModel._ExportMetadata(room['dictionary'], idKey, nameKey)
+            for face in room['faces']:
+                face['dictionary'] = EnergyModel._ExportMetadata(face['dictionary'], idKey, nameKey)
+                for opening in face['openings']:
+                    opening['dictionary'] = EnergyModel._ExportMetadata(opening['dictionary'], idKey, nameKey)
         return sorted(rooms,key=lambda r:(r.get('kind')=='shade',r['id']))
 
     @staticmethod
@@ -2241,7 +2725,7 @@ class EnergyModel:
                            for _,existing in source_openings):
                         continue
                     source_openings.append((dict(id=f"{face['id']}:hole{hole_number}",
-                        type=2,vertices=hole,dictionary=fd),polygon))
+                        type=2,vertices=hole,dictionary={'tpy_parent_id':fd.get('tpy_id')}),polygon))
                 if source_openings:
                     polygons=[polygon for _,polygon in source_openings]
                     overlap=sum(p.area for p in polygons)-unary_union(polygons).area
@@ -2255,9 +2739,11 @@ class EnergyModel:
                 if not subfaces and (str(fd.get('physical_or_virtual','')).upper()=='VIRTUAL'
                                      or is_shade and fd.get('glazing_geometry')):
                     subfaces.append(dict(type=2,vertices=boundary))
-                    submap.append(dict(id=face['id']+':air',dictionary=fd,area_m2=gross.area))
+                    submap.append(dict(id=face['id']+':air',dictionary={'tpy_parent_id':fd.get('tpy_id')},area_m2=gross.area))
                 panels.append(dict(vertices=boundary,openings=subfaces))
-                panel_map.append(dict(id=face['id'],dictionary=fd,area_m2=gross.area,
+                for opening_index, row in enumerate(submap, 1):
+                    row['opening_index'] = opening_index
+                panel_map.append(dict(id=face['id'],surface_index=len(panels),dictionary=fd,area_m2=gross.area,
                                       openings=submap))
             vertices=[];lookup={};indices=[]
             for face in panels:
@@ -2283,7 +2769,7 @@ class EnergyModel:
                     xy=np.column_stack((p@u,p@v))
                     lines.append(f"{len(xy)} {opening['type']}")
                     lines+=[' '.join(number(x) for x in q) for q in xy]
-            mapping.append(dict(kind='shade' if is_shade else 'room',id=room['id'],gem_id=gid,gem_name=label,name=room['name'],
+            mapping.append(dict(kind='shade' if is_shade else 'room',record_index=index,id=room['id'],gem_id=gid,gem_name=label,name=room['name'],
                 dictionary=room['dictionary'],volume_m3=room['volume'],faces=panel_map,precision_residual_area_m2=precision_residual))
             prepared.append(dict(kind='shade' if is_shade else 'room',name=label,faces=panels,volume=room['volume'],source_opening_sides=sum(len(f['openings']) for f in room['faces']),precision_residual_area_m2=precision_residual))
         return '\n'.join(lines)+'\n',mapping,prepared
@@ -2507,7 +2993,7 @@ class EnergyModel:
             tolerance_m=tolerance,maximum_opening_overlap_area_m2=maximum_opening_overlap,source_compared=expected is not None,ies_import_verified=False,scope='Serialized geometry, shell closure, volumes, hosted openings and source coverage; no IES simulation certification.')
 
     @staticmethod
-    def GEMString(model,roomNameKey='TOPOLOGIC_name',roomIdKey='bim2bem_space_id',apertureTypeKey='kind',mantissa=12,tolerance=1e-4,shadingSurfaces=None):
+    def GEMString(model,roomNameKey='TOPOLOGIC_name',roomIdKey='bim2bem_space_id',apertureTypeKey='kind',mantissa=12,tolerance=1e-4,shadingSurfaces=None,idKey='tpy_id',nameKey='TOPOLOGIC_name'):
         """Return IES GEM geometry from native cells or an OpenStudio model.
 
         Coordinates must be in metres. Requires polygonal planar faces and closed
@@ -2516,25 +3002,25 @@ class EnergyModel:
         Tagged free exterior-shading faces, or shadingSurfaces, become TYPE 4
         geometry. No constructions, schedules, HVAC or simulation settings are transferred.
         """
-        rooms=EnergyModel._GEMRooms(model,roomNameKey,roomIdKey,apertureTypeKey,shadingSurfaces)
+        rooms=EnergyModel._GEMRooms(model,roomNameKey,roomIdKey,apertureTypeKey,shadingSurfaces,idKey,nameKey)
         text,_,expected=EnergyModel._GEMEncode(rooms,mantissa,tolerance)
         EnergyModel._GEMCheck(EnergyModel._GEMRead(text),expected,tolerance)
         return text
 
     @staticmethod
-    def ValidateGEM(data,model=None,roomNameKey='TOPOLOGIC_name',roomIdKey='bim2bem_space_id',apertureTypeKey='kind',mantissa=12,tolerance=1e-4,shadingSurfaces=None):
+    def ValidateGEM(data,model=None,roomNameKey='TOPOLOGIC_name',roomIdKey='bim2bem_space_id',apertureTypeKey='kind',mantissa=12,tolerance=1e-4,shadingSurfaces=None,idKey='tpy_id',nameKey='TOPOLOGIC_name'):
         """Validate a GEM path or string; optionally compare with its source model."""
         from pathlib import Path
         text=Path(data).read_text(encoding='utf-8') if isinstance(data,Path) or isinstance(data,str) and '\n' not in data and '\r' not in data and not data.startswith(('COM ', 'IES ', 'ANT', 'CAT', 'SITE', 'LAYER', 'TYPE')) else data
         actual=EnergyModel._GEMRead(text)
         expected=None
         if model is not None:
-            rooms=EnergyModel._GEMRooms(model,roomNameKey,roomIdKey,apertureTypeKey,shadingSurfaces)
+            rooms=EnergyModel._GEMRooms(model,roomNameKey,roomIdKey,apertureTypeKey,shadingSurfaces,idKey,nameKey)
             original,mapping,expected=EnergyModel._GEMEncode(rooms,mantissa,tolerance)
         return EnergyModel._GEMCheck(actual,expected,tolerance)
 
     @staticmethod
-    def ExportToGEM(model,path,overwrite=False,roomNameKey='TOPOLOGIC_name',roomIdKey='bim2bem_space_id',apertureTypeKey='kind',mantissa=12,tolerance=1e-4,writeMapping=True,silent=False,raiseErrors=False,shadingSurfaces=None):
+    def ExportToGEM(model,path,overwrite=False,roomNameKey='TOPOLOGIC_name',roomIdKey='bim2bem_space_id',apertureTypeKey='kind',mantissa=12,tolerance=1e-4,writeMapping=True,silent=False,raiseErrors=False,shadingSurfaces=None,idKey='tpy_id',nameKey='TOPOLOGIC_name'):
         """Write validated IES geometry and an optional .gem.json provenance map.
 
         Accepts native cells/CellComplexes or an OpenStudio model. Returns True
@@ -2553,7 +3039,7 @@ class EnergyModel:
             if target.suffix.lower()!='.gem':target=Path(str(target)+'.gem')
             sidecar=Path(str(target)+'.json');targets=[target]+([sidecar] if writeMapping else [])
             if not overwrite and any(p.exists() or p.is_symlink() for p in targets):raise FileExistsError('GEM or mapping file already exists; use overwrite=True.')
-            rooms=EnergyModel._GEMRooms(model,roomNameKey,roomIdKey,apertureTypeKey,shadingSurfaces)
+            rooms=EnergyModel._GEMRooms(model,roomNameKey,roomIdKey,apertureTypeKey,shadingSurfaces,idKey,nameKey)
             text,mapping,expected=EnergyModel._GEMEncode(rooms,mantissa,tolerance)
             with tempfile.NamedTemporaryFile(mode='w',encoding='utf-8',dir=target.parent,suffix='.gem',delete=False) as stream:
                 pending.append(Path(stream.name));stream.write(text)
@@ -2561,8 +3047,34 @@ class EnergyModel:
             validation=EnergyModel._GEMCheck(reopened,expected,tolerance)
             validation.update(reopened=True,source_geometry_preserved=True)
             if writeMapping:
-                data=dict(format='TopologicPy GEM mapping',version=1,geometry_only=True,
-                    units='metres',validation=validation,rooms=[r for r in mapping if r['kind']=='room'],shading_surfaces=[r for r in mapping if r['kind']=='shade'])
+                if hasattr(model, 'getBuilding'):
+                    prop = model.getBuilding().additionalProperties()
+                    building_meta = {}
+                    for key in ('tpy_id', 'tpy_name', 'tpy_ids'):
+                        v = EnergyModel._OptionalGet(prop.getFeatureAsString(key))
+                        if v is not None:
+                            if key == 'tpy_ids':
+                                try: v = json.loads(v)
+                                except (ValueError, TypeError): v = [v]
+                            building_meta[key] = v
+                else:
+                    building_meta = EnergyModel._ExportMetadata(EnergyModel._ExportDictionary(model),idKey,nameKey)
+                building_id = building_meta.get('tpy_id')
+                def refs(record):
+                    d=record.get('dictionary') or {}
+                    return {k:v for k,v in d.items() if k in ('tpy_id','tpy_parent_id','tpy_ids','tpy_name','tpy_building_id','tpy_cellcomplex_id')}
+                def compact(record, parent=None):
+                    row={k:v for k,v in record.items() if k not in ('dictionary','faces','openings')}
+                    row.update(refs(record))
+                    if parent is not None and parent.get('tpy_id'):
+                        row.setdefault('tpy_parent_id',parent['tpy_id'])
+                    for key in ('faces','openings'):
+                        if key in record: row[key]=[compact(child,row) for child in record[key]]
+                    return row
+                data=dict(format='TopologicPy GEM mapping',version=3,position_index_base=1,geometry_only=True,
+                    tpy_id=building_id, tpy_name=building_meta.get('tpy_name'), tpy_ids=building_meta.get('tpy_ids', []), units='metres',validation=validation,
+                    rooms=[compact(r) for r in mapping if r['kind']=='room'],
+                    shading_surfaces=[compact(r) for r in mapping if r['kind']=='shade'])
                 with tempfile.NamedTemporaryFile(mode='w',encoding='utf-8',dir=target.parent,suffix='.json',delete=False) as stream:
                     pending.append(Path(stream.name));json.dump(data,stream,ensure_ascii=False,indent=2)
             for p in targets:
