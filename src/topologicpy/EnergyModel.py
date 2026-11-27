@@ -2456,6 +2456,14 @@ class EnergyModel:
         # into an opaque floor/wall in the direct OpenStudio gbXML path.
         from xml.etree import ElementTree as ET
         from collections import Counter
+        # A translator may accept a lightweight model without the SDK's
+        # inspection methods (for example, an external translator adapter).
+        # Preserve geometric cleanup in that case. Native OpenStudio models
+        # still receive the full air-boundary and identity checks below.
+        if not all(callable(getattr(model, name, None)) for name in
+                   ('getSurfaces', 'getSpaces', 'getShadingSurfaces',
+                    'getSubSurfaces', 'getBuilding')):
+            return EnergyModel._CleanGBXMLPolyLoops(xml, tolerance=0.001)
         air = [s for s in model.getSurfaces() if hasattr(s, 'isAirWall') and s.isAirWall()]
         if air:
             root = ET.fromstring(xml)
