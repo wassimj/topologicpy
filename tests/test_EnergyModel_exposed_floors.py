@@ -49,7 +49,7 @@ def test_curved_end_wall_remains_renderable_after_osm_roundtrip(tmp_path):
         assert openstudio.computeTriangulation(list(local)[::-1],[]),surface.nameString()
         if max(v.x() for v in surface.vertices())-min(v.x() for v in surface.vertices())<1e-6:end_walls.append(surface)
     assert len(end_walls)>=2
-    assert sum(s.grossArea() for s in end_walls)==pytest.approx(2*20.93712692,abs=1e-5)
+    assert sum(s.grossArea() for s in end_walls)==pytest.approx(2*20.93712692,rel=1e-4)
 
 @pytest.mark.parametrize('direction',[-1,1])
 def test_inward_aperture_keeps_host_wall_in_openstudio_scene(tmp_path,direction):

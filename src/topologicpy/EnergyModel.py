@@ -284,7 +284,7 @@ class EnergyModel:
                 spaceTypeKey : str = "TOPOLOGIC_type",
                 mantissa : int = 6,
                 tolerance : float = 0.0001,
-                seamTolerance : float = 0.0,
+                seamTolerance : float = 0.001,
                 idKey: str = "tpy_id",
                 nameKey: str = "TOPOLOGIC_name"):
         """
