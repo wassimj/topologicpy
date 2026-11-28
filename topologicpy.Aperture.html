@@ -157,6 +157,7 @@
 <dt class="sig sig-object py" id="topologicpy.Aperture.Aperture">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">topologicpy.Aperture.</span></span><span class="sig-name descname"><span class="pre">Aperture</span></span><a class="headerlink" href="#topologicpy.Aperture.Aperture" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Semantic aperture API. An aperture is a native topology tagged as content.</p>
 <p class="rubric">Methods</p>
 <table class="autosummary longtable docutils align-default">
 <colgroup>
@@ -165,53 +166,25 @@
 </colgroup>
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Aperture.Aperture.ByTopologyContext" title="topologicpy.Aperture.Aperture.ByTopologyContext"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByTopologyContext</span></code></a>(topology, context)</p></td>
-<td><p>Creates an aperture object represented by the input topology and one that belongs to the input context.</p></td>
+<td><p>Tag and attach the supplied topology to the explicit context host.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Aperture.Aperture.Topology" title="topologicpy.Aperture.Aperture.Topology"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Topology</span></code></a>(aperture)</p></td>
-<td><p>Returns the topology of the input aperture.</p></td>
+<td><p>Return the tagged native topology, without creating another object.</p></td>
 </tr>
 </tbody>
 </table>
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Aperture.Aperture.ByTopologyContext">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByTopologyContext</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Aperture.Aperture.ByTopologyContext" title="Permalink to this definition"></a></dt>
-<dd><p>Creates an aperture object represented by the input topology and one that belongs to the input context.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>topology</strong><span class="classifier">Topology</span></dt><dd><p>The input topology that represents the aperture.</p>
-</dd>
-<dt><strong>context</strong><span class="classifier">Context</span></dt><dd><p>The context of the aperture. See Context class.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>Aperture</dt><dd><p>The created aperture.</p>
-</dd>
-</dl>
-</dd>
-</dl>
+<dd><p>Tag and attach the supplied topology to the explicit context host.</p>
+<p>The supplied topology is returned, not a separate aperture wrapper.
+Its dictionary and geometric type are retained.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Aperture.Aperture.Topology">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Topology</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">aperture</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Aperture.Aperture.Topology" title="Permalink to this definition"></a></dt>
-<dd><p>Returns the topology of the input aperture.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>aperture</strong><span class="classifier">Aperture</span></dt><dd><p>The input aperture.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>Topology</dt><dd><p>The topology of the input aperture.</p>
-</dd>
-</dl>
-</dd>
-</dl>
+<dd><p>Return the tagged native topology, without creating another object.</p>
 </dd></dl>
 
 </dd></dl>

@@ -345,10 +345,10 @@
 <td><p>Returns an analysis string that describes the input topology.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ApertureTopologies" title="topologicpy.Topology.Topology.ApertureTopologies"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ApertureTopologies</span></code></a>(topology[, ...])</p></td>
-<td><p>Returns the aperture topologies of the input topology.</p></td>
+<td><p>Return the underlying aperture topologies (already native geometry).</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Apertures" title="topologicpy.Topology.Topology.Apertures"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Apertures</span></code></a>(topology[, subTopologyType, silent])</p></td>
-<td><p>Returns the apertures of the input topology.</p></td>
+<td><p>Return aperture-tagged contents of the specified host(s), once per native identity.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.BREPString" title="topologicpy.Topology.Topology.BREPString"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BREPString</span></code></a>(topology[, version, silent])</p></td>
 <td><p>Returns the BRep string of the input topology.</p></td>
@@ -558,7 +558,7 @@
 <td><p>Exports a topology to neutral STEP BREP geometry.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ExportToTPY" title="topologicpy.Topology.Topology.ExportToTPY"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExportToTPY</span></code></a>(topology, path[, overwrite, ...])</p></td>
-<td><p>Exports a topology, TGraph or mixed collection to native TPY v2.</p></td>
+<td><p>Exports a topology, TGraph or mixed collection to native TPY v3.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ExternalBoundary" title="topologicpy.Topology.Topology.ExternalBoundary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExternalBoundary</span></code></a>(topology[, silent])</p></td>
 <td><p>Returns the external boundary of the input topology.</p></td>
@@ -1011,49 +1011,13 @@ It is case-insensitive. If it is set to None, the type will be inferred from the
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Topology.Topology.ApertureTopologies">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ApertureTopologies</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subTopologyType</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.ApertureTopologies" title="Permalink to this definition"></a></dt>
-<dd><p>Returns the aperture topologies of the input topology.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>topology</strong><span class="classifier">Topology</span></dt><dd><p>The input topology.</p>
-</dd>
-<dt><strong>subTopologyType</strong><span class="classifier">string , optional</span></dt><dd><p>The subtopology type from which to retrieve the apertures. This can be “cell”, “face”, “edge”, or “vertex” or “all”. It is case insensitive. If set to “all”, then all apertures will be returned. If set to None, the apertures will be retrieved only from the input topology. Default is None.</p>
-</dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>list</dt><dd><p>The list of aperture topologies found in the input topology.</p>
-</dd>
-</dl>
-</dd>
-</dl>
+<dd><p>Return the underlying aperture topologies (already native geometry).</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Topology.Topology.Apertures">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Apertures</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subTopologyType</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.Apertures" title="Permalink to this definition"></a></dt>
-<dd><p>Returns the apertures of the input topology.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>topology</strong><span class="classifier">Topology</span></dt><dd><p>The input topology.</p>
-</dd>
-<dt><strong>subTopologyType</strong><span class="classifier">string , optional</span></dt><dd><p>The subtopology type from which to retrieve the apertures. This can be “cell”, “face”, “edge”, or “vertex” or “all”. It is case insensitive. If set to “all”, then all apertures will be returned. If set to None, the apertures will be retrieved only from the input topology. Default is None.</p>
-</dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>list</dt><dd><p>The list of apertures belonging to the input topology.</p>
-</dd>
-</dl>
-</dd>
-</dl>
+<dd><p>Return aperture-tagged contents of the specified host(s), once per native identity.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -3240,7 +3204,7 @@ Default is False.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Topology.Topology.ExportToTPY">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ExportToTPY</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeSubtopologyDictionaries</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeContents</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeApertures</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#topologicpy.Topology.Topology.ExportToTPY" title="Permalink to this definition"></a></dt>
-<dd><p>Exports a topology, TGraph or mixed collection to native TPY v2.</p>
+<dd><p>Exports a topology, TGraph or mixed collection to native TPY v3.</p>
 <p>TPY preserves exact BREP geometry together with TopologicPy dictionaries
 and, by default, dictionaries on constituent subtopologies, Contents,
 Apertures, and Context parameters. The archive is a versioned ZIP/JSON
@@ -4804,7 +4768,7 @@ provenance.supported=False. Default is False.</p>
 <dt class="sig sig-object py" id="topologicpy.Topology.Topology.Save">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#topologicpy.Topology.Topology.Save" title="Permalink to this definition"></a></dt>
 <dd><p>Saves geometry, a TGraph or a mixed TPY collection using its extension.</p>
-<p>TPY v2 preserves graphs and native geometry; STEP/STP supports native BREP geometry.</p>
+<p>TPY v3 preserves graphs and native geometry; STEP/STP supports native BREP geometry.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
