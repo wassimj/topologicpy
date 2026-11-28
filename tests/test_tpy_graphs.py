@@ -142,25 +142,25 @@ class GraphArchiveTests(unittest.TestCase):
         self.assertTrue(Topology.ExportToTPY(graph,self.path,overwrite=True))
         self.assertFalse(Topology.Save(graph,Path(self.temp.name)/'graph.step',silent=True))
 
-    def test_native_topology_and_version_one_compatibility(self):
+    def test_native_topology_v3_and_legacy_version_rejection(self):
         model=Cell.Prism(width=2,length=3,height=4)
         restored=self.roundtrip(model);self.assertEqual(Cell.Volume(restored),24)
         with zipfile.ZipFile(self.path) as archive:
             contents={name:archive.read(name) for name in archive.namelist()}
-        manifest=json.loads(contents['manifest.json']);self.assertEqual(manifest['formatVersion'],2)
-        manifest['formatVersion']=1
-        contents['manifest.json']=json.dumps(manifest).encode()
-        with zipfile.ZipFile(self.path,'w') as archive:
-            for name,data in contents.items():archive.writestr(name,data)
-        self.assertEqual(Cell.Volume(Topology.Load(self.path)),24)
+        manifest=json.loads(contents['manifest.json']);self.assertEqual(manifest['formatVersion'],3)
+        for version in (1, 2):
+            with self.subTest(version=version):
+                manifest['formatVersion']=version
+                contents['manifest.json']=json.dumps(manifest).encode()
+                with zipfile.ZipFile(self.path,'w') as archive:
+                    for name,data in contents.items():archive.writestr(name,data)
+                self.assertIsNone(Topology.Load(self.path,silent=True))
 
-    def test_original_version_one_fixture(self):
+    def test_original_version_one_fixture_is_rejected(self):
         fixture=Path(__file__).parent/'fixtures/tpy_v1_rooms.tpy'
         with zipfile.ZipFile(fixture) as archive:
             self.assertEqual(json.loads(archive.read('manifest.json'))['formatVersion'],1)
-        restored=Topology.Load(fixture)
-        self.assertIsNotNone(restored)
-        self.assertEqual(len(Topology.Cells(restored)),4)
+        self.assertIsNone(Topology.Load(fixture,silent=True))
 
     def mutate(self,change):
         self.roundtrip(self.graph())

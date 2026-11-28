@@ -75,12 +75,12 @@ def test_verified_metadata_reads_detect_changes_and_unexpected_dictionaries(tmp_
     path=tmp_path/'metadata.tpy'
     assert Topology.Save(cell,path,overwrite=True,silent=True)
     with zipfile.ZipFile(path) as archive:manifest=json.loads(archive.read('manifest.json'))
-    assert manifest['formatVersion'] in (1,2)
+    assert manifest['formatVersion'] == 3
     loaded={}
     restored=tpy.TPYCodec.load(path,silent=True,_loaded=loaded)
     assert restored is not None
     snapshot=tpy.TPYCodec._ReadMetadataManifest(manifest,loaded)
-    fingerprint=lambda value:tpy.TPYCodec._MetadataFingerprint(value,include_geometry_signatures=manifest['formatVersion']==2)
+    fingerprint=lambda value:tpy.TPYCodec._MetadataFingerprint(value,include_geometry_signatures=True)
     assert fingerprint(snapshot)==fingerprint(manifest)
     edge=Topology.Edges(restored)[0]
     Topology.SetDictionary(edge,Dictionary.ByPythonDictionary({'unexpected':True}))

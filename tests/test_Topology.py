@@ -3711,7 +3711,7 @@ def test_tpy_aperture_relationship_roundtrip(tmp_path):
             silent=True,
         )
         or []
-    ) >= 1
+    ) == 1
 
     path = tmp_path / "aperture.tpy"
 
@@ -3732,7 +3732,7 @@ def test_tpy_aperture_relationship_roundtrip(tmp_path):
         silent=True,
     ) or []
 
-    assert len(apertures) >= 1
+    assert len(apertures) == 1
 
     assert any(
         _python_dictionary(aperture).get(

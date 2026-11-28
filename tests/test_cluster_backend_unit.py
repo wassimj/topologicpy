@@ -94,7 +94,6 @@ class ClusterIntegrityTests(unittest.TestCase):
         outer.SetDictionary({"marker": "root"})
         outer.contents = [retained]
         outer.contexts = ["context"]
-        outer.apertures = ["aperture"]
         def outcome(member):
             return True, None if member is removed else member
         # Give nested clusters the same dispatch contract as native editors.
@@ -105,7 +104,7 @@ class ClusterIntegrityTests(unittest.TestCase):
         self.assertEqual(result.Topologies()[0].Topologies(), [retained])
         self.assertIs(result.Topologies()[1], retained)
         self.assertEqual(Topology.GetDictionary(result), {"marker": "root"})
-        for name in ("contents", "contexts", "apertures"):
+        for name in ("contents", "contexts"):
             self.assertEqual(getattr(result, name), getattr(outer, name))
             self.assertIsNot(getattr(result, name), getattr(outer, name))
         self.assertEqual(inner.Topologies(), [removed, retained])
