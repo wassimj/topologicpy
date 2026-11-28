@@ -18,59 +18,27 @@ from __future__ import annotations
 
 from topologicpy.Core import Core
 
-class Aperture():
+class Aperture:
+    """Semantic aperture API. An aperture is a native topology tagged as content."""
+
     @staticmethod
     def Topology(aperture):
-        """
-        Returns the topology of the input aperture.
-        
-        Parameters
-        ----------
-        aperture : Aperture
-            The input aperture.
-
-        Returns
-        -------
-        Topology
-            The topology of the input aperture.
-
-        """
-        from topologicpy.Topology import Topology
-        if not Topology.IsInstance(aperture, "aperture"):
-            print("Aperture.Topology - Error: The input aperture parameter is not a valid topologic aperture. Returning None.")
-            return None
+        """Return the tagged native topology, without creating another object."""
         return Core.Aperture.Topology(aperture)
 
     @staticmethod
     def ByTopologyContext(topology, context):
-        """
-        Creates an aperture object represented by the input topology and one that belongs to the input context.
+        """Tag and attach the supplied topology to the explicit context host.
 
-        Parameters
-        ----------
-        topology : Topology
-            The input topology that represents the aperture.
-        context : Context
-            The context of the aperture. See Context class.
-
-        Returns
-        -------
-        Aperture
-            The created aperture.
-
+        The supplied topology is returned, not a separate aperture wrapper.
+        Its dictionary and geometric type are retained.
         """
         from topologicpy.Topology import Topology
-        if not Topology.IsInstance(topology, "Topology"):
-            print("Aperture.ByTopologyContext - Error: The input topology parameter is not a valid topologic topology. Returning None.")
+        if not Topology.IsInstance(topology, "Topology") or not Topology.IsInstance(context, "Context"):
+            print("Aperture.ByTopologyContext - Error: Invalid topology or context.")
             return None
-        if not Topology.IsInstance(context, "Context"):
-            print("Aperture.ByTopologyContext - Error: The input context parameter is not a valid topologic context. Returning None.")
-            return None
-        aperture = None
         try:
-            aperture = Core.Aperture.ByTopologyContext(topology, context)
-        except:
-            print("Aperture.ByTopologyContext - Error: The operation failed. Returning None.")
-            aperture = None
-        return aperture
-    
+            return Core.Aperture.ByTopologyContext(topology, context)
+        except Exception as exc:
+            print(f"Aperture.ByTopologyContext - Error: {exc}")
+            return None

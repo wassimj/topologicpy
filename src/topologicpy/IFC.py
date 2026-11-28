@@ -4266,14 +4266,15 @@ class IFC:
                     if opening is not None and fill is not None:
                         fill_entity = evidence.entities.get(fill)
                         if fill_entity is not None:
-                            kind = {'IFCWINDOW': 'window', 'IFCDOOR': 'door'}.get(fill_entity.type)
+                            kind = IFC._Simplified_filling_kind(fill_entity.type)
                             if kind:
                                 opening_fills[opening] = (kind, fill)
             for record in evidence.records:
                 parent = membership.get(record['id'])
-                if parent is None and record['type'] == 'IFCOPENINGELEMENT':
+                if record['type'] == 'IFCOPENINGELEMENT':
                     host = opening_hosts.get(record['id'])
-                    parent = membership.get(host) if host is not None else None
+                    if parent is None:
+                        parent = membership.get(host) if host is not None else None
                     if parent is not None:
                         fill = opening_fills.get(record['id'])
                         record = {**record, 'host_id': host,
@@ -4291,7 +4292,18 @@ class IFC:
                     progress('simplified_building', building=building, products=len(records))
                 name = str(evidence.entities[building].args[0])
                 try:
-                    result = IFC._Simplified_building(records, evidence.context, settings, progress)
+                    opening_records, opening_review = IFC._Simplified_resolve_openings(
+                        records, evidence.entities, evidence.context, membership)
+                    result = IFC._Simplified_building(records, evidence.context, settings, progress,
+                                                      opening_records=opening_records)
+                    if opening_review:
+                        result.statistics['opening_classification_review'] = opening_review
+                        unresolved = [r for r in opening_review if r['action'] == 'review']
+                        if unresolved:
+                            result.diagnostics.append(IFC._Analytical_model_Diagnostic(
+                                'OPENING_CLASSIFICATION_REVIEW',
+                                f'{len(unresolved)} source openings have unresolved filling evidence; review before energy simulation',
+                                'warning', [str(r['source']) for r in unresolved]))
                 except (ValueError, RuntimeError) as exc:
                     result = IFC._Analytical_model_Result(diagnostics=[
                         IFC._Analytical_model_Diagnostic('SIMPLIFIED_BUILDING_FAILED', str(exc), 'error')])
@@ -4591,6 +4603,11 @@ class IFC:
                 links.append(('opening' if entities[ref].type == 'IFCOPENINGELEMENT' else 'filling', ref))
             if element in entities and element != ref:
                 links.append(('filling' if entities[element].type != 'IFCOPENINGELEMENT' else 'opening', element))
+            for source in opening.get('sources', []):
+                source_id = resolve(source)
+                if source_id in entities and source_id != ref and entities[source_id].type == 'IFCOPENINGELEMENT':
+                    links.append(('opening', source_id))
+                    links.extend(('source_opening_host', i) for i in hosts.get(source_id, ()) if i in entities)
             if ref is not None:
                 links.extend(('filling', i) for i in fills[ref] if i in entities)
                 links.extend(('source_opening_host', i) for i in hosts[ref] if i in entities)
@@ -5704,14 +5721,175 @@ class IFC:
                            'minimum_fragment_area': 0.0001}}
 
     @staticmethod
+    def _Simplified_filling_kind(ifc_type):
+        if str(ifc_type).upper() in {'IFCWINDOW', 'IFCWINDOWSTANDARDCASE'}:
+            return 'window'
+        if str(ifc_type).upper() in {'IFCDOOR', 'IFCDOORSTANDARDCASE'}:
+            return 'door'
+        return None
+
+    @staticmethod
+    def _Simplified_resolve_openings(records, entities, context, membership):
+        """Resolve missing filling links without altering room/host geometry.
+
+        Use formal relationships, unique source element tags, and strong spatial
+        correspondence. Curtain walls contribute only evidenced glazed panels;
+        solid/spandrel panels remain opaque. Unfilled recesses are not through
+        openings. Retain unresolved ordinary openings and expose review records.
+        """
+        from collections import defaultdict
+        import numpy as np
+        from shapely.geometry import MultiPoint
+        by_id = {r['id']: r for r in records}
+        scope = {r.get('building') for r in records}
+        children = context.get('children', {})
+        tags = defaultdict(list)
+        def text(e, i):
+            return str(e.args[i] or '').strip() if e and len(e.args) > i else ''
+        def tag(e):
+            return text(e, 7).casefold()
+        def scoped(i):
+            parent = membership.get(i)
+            return i in by_id or (parent is not None and parent[0] in scope)
+        for e in entities.values():
+            if (IFC._Simplified_filling_kind(e.type) or e.type == 'IFCCURTAINWALL') and tag(e):
+                tags[tag(e)].append(e)
+        def descendants(i):
+            pending, seen = list(children.get(i, [])), {i}
+            while pending:
+                j = pending.pop()
+                if j in seen:
+                    continue
+                seen.add(j)
+                yield j
+                pending.extend(children.get(j, []))
+        def glazed(e):
+            if IFC._Simplified_filling_kind(e.type) == 'window':
+                return True
+            if e.type not in {'IFCPLATE', 'IFCPLATESTANDARDCASE', 'IFCBUILDINGELEMENTPROXY'}:
+                return False
+            # Instance object type is more specific than the description (some
+            # exporters label opaque infill as a generic glazed panel).
+            specific = text(e, 4).casefold()
+            general = ' '.join(text(e, i) for i in (2, 3)).casefold()
+            materials = ' '.join(str(m.get('name', '')) for m in context.get('materials', {}).get(e.id, [])).casefold()
+            if re.search(r'\b(?:solid|opaque|spandrel|insulated|blank)(?:\b|_)', specific.replace('_', ' ')):
+                return False
+            return bool(re.search(r'\b(?:glass|glaz\w*|window)\b', (specific+' '+materials+' '+general).replace('_', ' ')))
+        def projected_pair(opening, candidate):
+            # Compare areas in the opening's own plane, and reject remote
+            # parallel elements. XY-only overlap would confuse stacked windows.
+            a, b = np.asarray(opening['points'], float), np.asarray(candidate['points'], float)
+            if len(a) < 3 or len(b) < 3:
+                return None
+            centre = a.mean(axis=0)
+            _, _, axes = np.linalg.svd(a-centre, full_matrices=False)
+            if len(axes) < 3:
+                return None
+            normal = axes[-1]
+            da, db = (a-centre) @ normal, (b-centre) @ normal
+            gap = max(0., float(da.min()-db.max()), float(db.min()-da.max()))
+            if gap > 0.15:
+                return None
+            pa = MultiPoint((a-centre) @ axes[:2].T).convex_hull
+            pb = MultiPoint((b-centre) @ axes[:2].T).convex_hull
+            if min(pa.area, pb.area) <= 1e-8:
+                return None
+            area = pa.intersection(pb).area
+            return area/pa.area, area/pb.area
+        def note(r, action, **kwargs):
+            review.append(dict(source=r['source'], step_id=r['id'], action=action, **kwargs))
+        review, resolved, consumed = [], [], set()
+        # Explicit fillings are authoritative and must not be inferred again.
+        explicit = {r.get('fill_source') for r in records if r.get('fill_source') is not None}
+        standalone = [r for r in records if IFC._Simplified_filling_kind(r['type']) and r['id'] not in explicit]
+        for r in records:
+            if r['type'] != 'IFCOPENINGELEMENT':
+                continue
+            e = entities.get(r['id'])
+            if r.get('fill_type') in {'window', 'door'}:
+                resolved.append(r)
+                continue
+            if any(text(e, i).upper() == 'RECESS' for i in (4, 8)):
+                note(r, 'suppressed_recess')
+                continue
+            matches = [f for f in tags.get(tag(e), []) if scoped(f.id) or (membership.get(f.id) is None and text(e, 2) and text(e, 2).casefold() == text(f, 2).casefold())] if tag(e) else []
+            # Tags can recur on multiple instances. A unique tag is accepted
+            # only if names agree or the placed geometry corroborates the link.
+            if len(matches) == 1:
+                f = matches[0]
+                pair = projected_pair(r, by_id[f.id]) if f.id in by_id else None
+                same_name = bool(text(e, 2)) and text(e, 2).casefold() == text(f, 2).casefold()
+                if not same_name and not (pair and pair[0] >= .7 and pair[1] >= .7):
+                    matches = []
+            if len(matches) == 1 and IFC._Simplified_filling_kind(matches[0].type):
+                f = matches[0]
+                kind = IFC._Simplified_filling_kind(f.type)
+                resolved.append({**r, 'fill_type': kind, 'fill_source': f.id})
+                consumed.add(f.id)
+                note(r, 'matched_tag', kind=kind, filling_step_id=f.id)
+                continue
+            if len(matches) == 1 and matches[0].type == 'IFCCURTAINWALL':
+                f = matches[0]
+                panels = []
+                for i in descendants(f.id):
+                    panel, entity = by_id.get(i), entities.get(i)
+                    if panel is None or entity is None or not glazed(entity):
+                        continue
+                    pair = projected_pair(r, panel)
+                    # Do not introduce a panel extending substantially beyond
+                    # this source opening; such cases need explicit review.
+                    if pair and pair[1] >= .90 and pair[0] > 0.001:
+                        panels.append(panel)
+                if panels:
+                    for panel in panels:
+                        if panel['id'] not in consumed:
+                            resolved.append({**panel, 'fill_type': 'window', 'fill_source': panel['id'],
+                                             'reference_opening_source': r['source']})
+                            consumed.add(panel['id'])
+                    note(r, 'curtain_glazing_panels', curtain_step_id=f.id,
+                         panel_step_ids=[p['id'] for p in panels])
+                    continue
+                # No proof of glazing: a curtain-wall label alone is not a
+                # licence to turn the whole assembly into a transparent hole.
+                note(r, 'review', reason='curtain_wall_without_matching_glazed_panel_geometry')
+                continue
+            candidates = []
+            for candidate in standalone:
+                if candidate.get('storey') != r.get('storey'):
+                    continue
+                if candidate['footprint'].distance(r['footprint']) > .15:
+                    continue
+                if min(candidate['z1'], r['z1']) <= max(candidate['z0'], r['z0']):
+                    continue
+                pair = projected_pair(r, candidate)
+                if pair and min(pair) >= .80:
+                    candidates.append(candidate)
+            if len(candidates) == 1:
+                f = candidates[0]
+                kind = IFC._Simplified_filling_kind(f['type'])
+                resolved.append({**r, 'fill_type': kind, 'fill_source': f['id']})
+                consumed.add(f['id'])
+                note(r, 'matched_geometry', kind=kind, filling_step_id=f['id'])
+                continue
+            description = ' '.join(text(e, i) for i in (2, 3)).casefold()
+            if re.search(r'\b(?:door|window|curtain wall|glazing)\b', description) or candidates or matches:
+                note(r, 'review', reason='unresolved_or_ambiguous_filling')
+                # Do not export a known-ambiguous filled opening as an air
+                # boundary. Preserve its source reference in the review report.
+                continue
+            resolved.append(r)
+        resolved.extend(r for r in standalone if r['id'] not in consumed)
+        return resolved, review
+
+    @staticmethod
     def _Simplified_opening_evidence(records):
         """Return explicit opening/fill records for the simplified model."""
         from shapely.geometry import mapping
         openings, fill_types = [], {}
         for record in records:
-            kind = {'IFCWINDOW': 'window', 'IFCDOOR': 'door'}.get(
-                record.get('type'), record.get('fill_type', 'void'))
-            if record.get('type') not in {'IFCOPENINGELEMENT', 'IFCWINDOW', 'IFCDOOR'}:
+            kind = IFC._Simplified_filling_kind(record.get('type')) or record.get('fill_type') or 'void'
+            if record.get('type') != 'IFCOPENINGELEMENT' and not IFC._Simplified_filling_kind(record.get('type')) and kind not in {'window', 'door'}:
                 continue
             points = record.get('points', [])
             if hasattr(points, 'tolist'):
@@ -5719,7 +5897,8 @@ class IFC:
             openings.append({'id': record['id'], 'source': record['source'],
                              'footprint': mapping(record['footprint']),
                              'points': points, 'bottom': record['z0'], 'top': record['z1'],
-                             'evidence_method': 'simplified_source_geometry'})
+                             'evidence_method': 'simplified_source_geometry',
+                             'source_parent_opening': record.get('reference_opening_source')})
             fill_types[str(record['id'])] = {
                 'kind': kind,
                 'source': record.get('fill_source') or record['source']}
@@ -6371,7 +6550,7 @@ class IFC:
         return parts[0] if len(parts)==1 else Cluster.ByTopologies(parts)
 
     @staticmethod
-    def _Simplified_building(records, context, settings, progress=None):
+    def _Simplified_building(records, context, settings, progress=None, opening_records=None):
         from shapely.geometry import shape, mapping, box
         from shapely.ops import unary_union
         from shapely.errors import GEOSException
@@ -6664,7 +6843,7 @@ class IFC:
                 kind='internal' if len(owners)==2 else 'external', semantics_verified=False))
             native_faces[boundary_id] = face
             Topology.SetDictionary(face, {'bim2bem_boundary_id': boundary_id, 'owners': owners})
-        reference_openings, fill_types = IFC._Simplified_opening_evidence(records)
+        reference_openings, fill_types = IFC._Simplified_opening_evidence(records if opening_records is None else opening_records)
         if reference_openings:
             opening_plan = dict(rooms=rooms, reference_openings=reference_openings,
                                 fill_types=fill_types, removed_orphan_doors=[],
@@ -7290,7 +7469,7 @@ class IFC:
             if current is not None and current is not entity and (current.type not in {'IFCBOOLEANRESULT', 'IFCBOOLEANCLIPPINGRESULT'}):
                 gross[i] = IFCFastEntity(i, current.type, list(current.args))
                 approximated.add(i)
-        products = [e for e in model.entities.values() if e.type in IFC._AnalyticalRelevantTypes | {'IFCCOVERING', 'IFCPLATE', 'IFCCOLUMN', 'IFCCOLUMNSTANDARDCASE'}]
+        products = [e for e in model.entities.values() if e.type in IFC._AnalyticalRelevantTypes | {'IFCCOVERING', 'IFCPLATE', 'IFCPLATESTANDARDCASE', 'IFCWINDOWSTANDARDCASE', 'IFCDOORSTANDARDCASE', 'IFCCOLUMN', 'IFCCOLUMNSTANDARDCASE'}]
         # Component bodies may be the only solid geometry of a semantic parent.
         children = {}
         for relation in model.entities.values():
@@ -7328,7 +7507,7 @@ class IFC:
         for index, entity in enumerate(products):
             if progress and index % 25 == 0:
                 progress('collect_reference_evidence', products=index, total=len(products))
-            if entity.type in {'IFCWINDOW', 'IFCDOOR'} and entity.id in filled:
+            if IFC._Simplified_filling_kind(entity.type) and entity.id in filled:
                 omitted_details.append(entity.id)
                 continue
             try:
@@ -7576,14 +7755,6 @@ class IFC:
         from topologicpy.Topology import Topology
         valid = [r for r in results if r.topology is not None]
         combined_topology = Cluster.ByTopologies([r.topology for r in valid]) if valid else None
-        if combined_topology is not None:
-            apertures = [a for r in valid for a in
-                         (Topology.Apertures(r.topology,
-                                             subTopologyType='face') or [])]
-            if apertures and not all(r.statistics.get('tpy_id') for r in valid):
-                combined_topology = Topology.AddApertures(
-                    combined_topology, apertures, subTopologyType='face',
-                    silent=True)
         result = IFC._Analytical_model_Result(topology=combined_topology, origin=origin, buildings=results, spaces=[s for r in results for s in r.spaces], boundaries=[b for r in results for b in r.boundaries], boundary_patches=[b for r in results for b in r.boundary_patches], openings=[o for r in results for o in r.openings], diagnostics=[d for r in results for d in r.diagnostics])
         result.statistics = {'method': 'generative_redraw', 'topology_type': 'Cluster', 'building_count': len(results), 'rooms': sum((r.statistics.get('rooms', 0) for r in results)), 'analytical_volume': sum((r.statistics.get('analytical_volume', 0) for r in results))}
         child_ids = [r.statistics.get('tpy_id') for r in valid]
@@ -10032,7 +10203,6 @@ class IFC:
         suppressed_bottom_openings = []
         occupied = defaultdict(list)
         written_apertures = []
-        aperture_contents = []
         for opening in plan.get('reference_openings', []):
             foot = shape(opening['footprint'])
             fill = plan.get('fill_types', {}).get(str(opening['id']), {'kind': 'void', 'source': opening['source']})
@@ -10124,16 +10294,11 @@ class IFC:
                         fill = plan.get('fill_types', {}).get(str(opening['id']), {'kind': 'void', 'source': opening['source']})
                         for offset_face in offset_faces:
                             offset_vertices = [Vertex.Coordinates(v) for v in Wire.Vertices(Face.ExternalBoundary(offset_face))]
-                            context = Context.ByTopologyParameters(native_faces[boundary['id']], 0.5, 0.5, 0.5)
-                            aperture = Aperture.ByTopologyContext(offset_face, context)
-                            if aperture is None:
+                            if native_faces.get(boundary['id']) is None:
                                 continue
                             Topology.SetDictionary(offset_face, {'opening_id': fill['source'] or opening['source'], 'kind': fill['kind'], 'host_boundary_id': boundary['id'], 'projection_offset_m': 0.001})
-                            result.openings.append({'id': fill['source'] or opening['source'], 'reference_opening_id': opening['source'], 'boundary_id': boundary['id'], 'vertices': offset_vertices, 'area': Face.Area(offset_face), 'kind': fill['kind'], 'owners': boundary['owners'], 'sources': [opening['source']], 'projection_distance_m': distance, 'projection_offset_m': 0.001, 'area_retention': min(1.0, Face.Area(offset_face) / reference_area)})
+                            result.openings.append({'id': fill['source'] or opening['source'], 'reference_opening_id': opening['source'], 'boundary_id': boundary['id'], 'vertices': offset_vertices, 'area': Face.Area(offset_face), 'kind': fill['kind'], 'owners': boundary['owners'], 'sources': [opening['source']] + ([opening['source_parent_opening']] if opening.get('source_parent_opening') else []), 'projection_distance_m': distance, 'projection_offset_m': 0.001, 'area_retention': min(1.0, Face.Area(offset_face) / reference_area)})
                             written_apertures.append((result.openings[-1], offset_face))
-                            # TPY stores aperture geometry as Face content; the
-                            # Aperture wrapper above validates its host context.
-                            aperture_contents.append(offset_face)
                             boundary['net_opaque_area'] -= Face.Area(offset_face)
                             occupied[boundary['id']].append(polygon)
                             mapped.add(opening['source'])
@@ -10167,13 +10332,13 @@ class IFC:
         plan['fidelity']['suppressed_absolute_bottom_openings'] = sorted(set(suppressed_bottom_openings))
         plan['fidelity']['split_reference_openings'] = sum(
             len(entries) > 1 for entries in by_identity.values())
-        if aperture_contents:
-            attached = Topology.AddApertures(result.topology, aperture_contents,
-                                             subTopologyType='face',
-                                             tolerance=config.tolerance, silent=True)
-            if attached is not None:
-                result.topology = attached
-            plan['fidelity']['aperture_faces_attached'] = len(aperture_contents)
+        attached_count = 0
+        for record, face in written_apertures:
+            host = native_faces[record['boundary_id']]
+            if Aperture.ByTopologyContext(face, Context.ByTopologyParameters(host)) is None:
+                raise ValueError(f"Could not attach analytical aperture {record['id']}")
+            attached_count += 1
+        plan['fidelity']['aperture_faces_attached'] = attached_count
         if missing:
             result.diagnostics.append(IFC._Analytical_model_Diagnostic('OPENINGS_REQUIRE_REVIEW', f'{len(set(missing))} reference openings could not be placed confidently; retained in editable plan', 'warning', sorted(set(missing))))
 
@@ -10303,9 +10468,9 @@ class IFC:
                 raise ValueError('An aperture host was lost in native persistence')
             face = Face.ByVertices([Vertex.ByCoordinates(*p) for p in opening['vertices']], tolerance=tolerance, silent=True)
             context = Context.ByTopologyParameters(host, 0.5, 0.5, 0.5)
+            Topology.SetDictionary(face, {'opening_id': opening['id'], 'kind': opening['kind'], 'host_boundary_id': opening['boundary_id'], **{k:opening[k] for k in ('source_element_id','projection_offset_m') if k in opening}, **opening.get('ifc_provenance', {}), **{k:opening[k] for k in ('tpy_id','tpy_parent_id','tpy_building_id') if k in opening}})
             if Aperture.ByTopologyContext(face, context) is None:
                 raise ValueError('An aperture could not be restored')
-            Topology.SetDictionary(face, {'opening_id': opening['id'], 'kind': opening['kind'], 'host_boundary_id': opening['boundary_id'], **{k:opening[k] for k in ('source_element_id','projection_offset_m') if k in opening}, **opening.get('ifc_provenance', {}), **{k:opening[k] for k in ('tpy_id','tpy_parent_id','tpy_building_id') if k in opening}})
             restored_openings += 1
         root_ids = ({'tpy_id': metadata['tpy_id']} if metadata.get('tpy_id') else {})
         component_ids = sorted({room['tpy_cellcomplex_id'] for room in metadata['spaces'] if room.get('tpy_cellcomplex_id')})

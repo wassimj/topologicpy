@@ -1281,38 +1281,6 @@ class Topology():
             return []
 
         # ------------------------------------------------------------------
-        # Aperture
-        # ------------------------------------------------------------------
-
-        if Topology.IsInstance(
-            topology,
-            "Aperture"
-        ):
-            try:
-                aperture_topology = Aperture.Topology(
-                    topology
-                )
-            except Exception:
-                aperture_topology = None
-
-            if not Topology.IsInstance(
-                aperture_topology,
-                "Topology"
-            ):
-                if not silent:
-                    print(
-                        "Topology.InternalVertex - Error: Could not retrieve the "
-                        "topology of the input Aperture. Returning None."
-                    )
-                return None
-
-            return Topology._InternalVertex(
-                aperture_topology,
-                tolerance=tolerance,
-                silent=silent
-            )
-
-        # ------------------------------------------------------------------
         # Validate input
         # ------------------------------------------------------------------
 
@@ -4245,7 +4213,6 @@ class Topology():
             The input topology with the apertures added to it.
         """
         from topologicpy.Vertex import Vertex
-        from topologicpy.Dictionary import Dictionary
         from topologicpy.BVH import BVH
 
         def best_candidate(aperture, candidates):
@@ -4344,31 +4311,22 @@ class Topology():
                 )
             return None
 
-        cleaned_apertures = []
+        from topologicpy.Aperture import Aperture
 
-        for aperture in apertures:
-            dictionary = Topology.Dictionary(aperture)
-            dictionary = Dictionary.SetValueAtKey(
-                dictionary,
-                "type",
-                "Aperture"
-            )
-            aperture = Topology.SetDictionary(
-                aperture,
-                dictionary
-            )
-            cleaned_apertures.append(aperture)
+        def attach(host, source):
+            if exclusive and Topology.Apertures(host, silent=True):
+                return None
+            copied = Topology.Copy(source, silent=silent)
+            if copied is None:
+                return None
+            return Aperture.ByTopologyContext(copied, Context.ByTopologyParameters(host))
 
-        apertures = cleaned_apertures
-
+        from topologicpy.Context import Context
         if subTopologyType == "self":
-            return Topology.AddContent(
-                topology,
-                apertures,
-                subTopologyType="self",
-                tolerance=tolerance,
-                silent=silent
-            )
+            for aperture in apertures:
+                if attach(topology, aperture) is None and not silent:
+                    print("Topology.AddApertures - Warning: Could not attach aperture.")
+            return topology
 
         subTopologies = Topology.SubTopologies(
             topology,
@@ -4407,6 +4365,7 @@ class Topology():
                 candidates = list(subTopologies)
 
             if not isinstance(candidates, list) or len(candidates) == 0:
+                if not silent: print("Topology.AddApertures - Warning: No host candidate found.")
                 continue
 
             if len(candidates) == 1:
@@ -4418,6 +4377,7 @@ class Topology():
                 )
 
             if not Topology.IsInstance(subTopology, "Topology"):
+                if not silent: print("Topology.AddApertures - Warning: No valid host found.")
                 continue
 
             if exclusive:
@@ -4438,19 +4398,12 @@ class Topology():
                 if already_used:
                     continue
 
-            result = Topology.AddContent(
-                subTopology,
-                [aperture],
-                subTopologyType="self",
-                tolerance=tolerance,
-                silent=silent
-            )
-
-            if not Topology.IsInstance(result, "Topology"):
+            result = attach(subTopology, aperture)
+            if result is None:
+                if not silent: print("Topology.AddApertures - Warning: Could not attach aperture.")
                 continue
-
             if exclusive:
-                used.append(result)
+                used.append(subTopology)
 
         return topology
     
@@ -4488,7 +4441,6 @@ class Topology():
             The input topology with the contents added to it.
         """
         from topologicpy.Vertex import Vertex
-        from topologicpy.Context import Context
 
         if not Topology.IsInstance(topology, "Topology"):
             if not silent:
@@ -4589,22 +4541,8 @@ class Topology():
             return topology
 
         if subTopologyType == "self":
-            context = Context.ByTopologyParameters(topology)
-
             for content in copy_contents:
-                if context is not None:
-                    Core.InstanceCall(
-                        content,
-                        "AddContext",
-                        context
-                    )
-
-                Core.InstanceCall(
-                    topology,
-                    "AddContent",
-                    content
-                )
-
+                Core.InstanceCall(topology, "AddContent", content)
             return topology
 
         if subTopologyType == "cellcomplex":
@@ -4682,22 +4620,7 @@ class Topology():
                     continue
 
                 try:
-                    context = Context.ByTopologyParameters(
-                        subtopology
-                    )
-
-                    if context is not None:
-                        Core.InstanceCall(
-                            content,
-                            "AddContext",
-                            context
-                        )
-
-                    Core.InstanceCall(
-                        subtopology,
-                        "AddContent",
-                        content
-                    )
+                    Core.InstanceCall(subtopology, "AddContent", content)
 
                 except Exception as error:
                     if not silent:
@@ -5446,104 +5369,36 @@ class Topology():
     
     @staticmethod
     def Apertures(topology, subTopologyType=None, silent: bool = False):
-        """
-        Returns the apertures of the input topology.
-        
-        Parameters
-        ----------
-        topology : Topology
-            The input topology.
-        subTopologyType : string , optional
-            The subtopology type from which to retrieve the apertures. This can be "cell", "face", "edge", or "vertex" or "all". It is case insensitive. If set to "all", then all apertures will be returned. If set to None, the apertures will be retrieved only from the input topology. Default is None.
-        silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
-        
-        Returns
-        -------
-        list
-            The list of apertures belonging to the input topology.
-
-        """
-
-        from topologicpy.Dictionary import Dictionary
-        from topologicpy.Aperture import Aperture
-        import inspect
-
+        """Return aperture-tagged contents of the specified host(s), once per native identity."""
         if not Topology.IsInstance(topology, "Topology"):
-            if not silent:
-                print("Topology.Apertures - Error: the input topology parameter is not a valid topology. Returning None.")
-                curframe = inspect.currentframe()
-                calframe = inspect.getouterframes(curframe, 2)
-                print('caller name:', calframe[1][3])
+            if not silent: print("Topology.Apertures - Error: Invalid topology.")
             return None
-        
-        apertures = []
-        subTopologies = []
-        if not subTopologyType:
-            # _ = topology.Apertures(apertures) # H to Core
-            _ = Core.InstanceCall(topology, 'Apertures', apertures)
-            apertures = [Aperture.Topology(x) for x in apertures]
-            contents = Topology.Contents(topology)
-            for content in contents:
-                d = Topology.Dictionary(content)
-                if len(Dictionary.Keys(d)) > 0:
-                    type = Dictionary.ValueAtKey(d,"type", "unknown")
-                    if "aperture" in type.lower():
-                        apertures.append(content)
-        elif subTopologyType.lower() == "vertex":
-            subTopologies = Topology.Vertices(topology, silent=True)
-        elif subTopologyType.lower() == "edge":
-            subTopologies = Topology.Edges(topology, silent=True)
-        elif subTopologyType.lower() == "face":
-            subTopologies = Topology.Faces(topology, silent=True)
-        elif subTopologyType.lower() == "cell":
-            subTopologies = Topology.Cells(topology, silent=True)
-        elif subTopologyType.lower() == "all":
-            # _ = topology.Apertures(apertures) # H to Core
-            _ = Core.InstanceCall(topology, 'Apertures', apertures)
-            apertures = [Aperture.Topology(x) for x in apertures]
-            subTopologies = Topology.Vertices(topology, silent=True)
-            subTopologies += Topology.Edges(topology, silent=True)
-            subTopologies += Topology.Faces(topology, silent=True)
-            subTopologies += Topology.Cells(topology, silent=True)
-        else:
-            if not silent:
-                print("Topology.Apertures - Error: the input subtopologyType parameter is not a recognized type. Returning None.")
+        kinds = ("cellcomplex", "cell", "shell", "face", "wire", "edge", "vertex", "cluster")
+        kind = "self" if subTopologyType is None else str(subTopologyType).lower()
+        if kind not in (*kinds, "self", "all"):
+            if not silent: print("Topology.Apertures - Error: Invalid subtopology type.")
             return None
-        for subTopology in subTopologies:
-            apertures += Topology.Apertures(subTopology, subTopologyType=None, silent=silent)
-        return apertures
+        hosts = [topology] if kind in ("self", "all") else []
+        for name in kinds if kind == "all" else (() if kind == "self" else (kind,)):
+            hosts.extend(Topology.SubTopologies(topology, name, silent=True) or [])
+        # Bucket by native hash, resolve collisions by exact identity.
+        def unique(items):
+            buckets = {}
+            for item in items:
+                native = Topology.OCCTShape(item, silent=True)
+                key = hash(native) if native is not None else None
+                bucket = buckets.setdefault(key, [])
+                if not any(Core.Topology.IsSame(item, old) for old in bucket):
+                    bucket.append(item)
+                    yield item
+        return list(unique(a for host in unique(hosts)
+                           for a in (Topology.Contents(host, silent=True) or [])
+                           if Core.Aperture.IsAperture(a)))
 
     @staticmethod
     def ApertureTopologies(topology, subTopologyType: str = None, silent: bool = False):
-        """
-        Returns the aperture topologies of the input topology.
-
-        Parameters
-        ----------
-        topology : Topology
-            The input topology.
-        subTopologyType : string , optional
-            The subtopology type from which to retrieve the apertures. This can be "cell", "face", "edge", or "vertex" or "all". It is case insensitive. If set to "all", then all apertures will be returned. If set to None, the apertures will be retrieved only from the input topology. Default is None.
-        silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
-        
-        Returns
-        -------
-        list
-            The list of aperture topologies found in the input topology.
-
-        """
-        from topologicpy.Aperture import Aperture
-        if not Topology.IsInstance(topology, "Topology"):
-            if not silent:
-                print("Topology.ApertureTopologies - Error: the input topology parameter is not a valid topology. Returning None.")
-            return None
-        apertures = Topology.Apertures(topology=topology, subTopologyType=subTopologyType)
-        apTopologies = []
-        for aperture in apertures:
-            apTopologies.append(Aperture.Topology(aperture))
-        return apTopologies
+        """Return the underlying aperture topologies (already native geometry)."""
+        return Topology.Apertures(topology, subTopologyType=subTopologyType, silent=silent)
 
     @staticmethod
     def Bend(
@@ -13438,7 +13293,7 @@ class Topology():
         silent: bool = False,
     ) -> bool:
         """
-        Exports a topology, TGraph or mixed collection to native TPY v2.
+        Exports a topology, TGraph or mixed collection to native TPY v3.
 
         TPY preserves exact BREP geometry together with TopologicPy dictionaries
         and, by default, dictionaries on constituent subtopologies, Contents,
@@ -15091,7 +14946,7 @@ class Topology():
         elif "topology" in t:
             return isinstance(topology, Core.Namespace("Topology"))
         elif "aperture" in t:
-            return isinstance(topology, Core.Namespace("Aperture"))
+            return Core.Aperture.IsAperture(topology)
         elif "dictionary" in t:
             return isinstance(topology, Core.Namespace("Dictionary"))
         elif "context" in t:
@@ -19052,7 +18907,7 @@ class Topology():
         """
         Saves geometry, a TGraph or a mixed TPY collection using its extension.
 
-        TPY v2 preserves graphs and native geometry; STEP/STP supports native BREP geometry.
+        TPY v3 preserves graphs and native geometry; STEP/STP supports native BREP geometry.
 
         Parameters
         ----------
@@ -22873,7 +22728,7 @@ class Topology():
                 Core.InstanceCall(topology, "Clusters", None, subTopologies)
 
             elif subTopologyType == "aperture":
-                Core.InstanceCall(topology, "Apertures", None, subTopologies)
+                return Topology.Apertures(topology, subTopologyType="all", silent=silent)
 
         if not subTopologies:
             return []

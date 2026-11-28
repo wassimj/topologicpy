@@ -122,7 +122,7 @@ class AttributeManager:
     """
     Stores topology metadata against OCCT shape identity.
 
-    Dictionaries, contents, contexts, and apertures belong to the underlying
+    Dictionaries, contents and contexts belong to the underlying
     OCCT topology rather than to a transient Python wrapper. This allows a
     freshly reconstructed wrapper for the same TopoDS_Shape to recover the
     relationships previously attached to that topology.
@@ -138,7 +138,6 @@ class AttributeManager:
         self._dictionaries = {}
         self._contents = {}
         self._contexts = {}
-        self._apertures = {}
 
     @classmethod
     def GetInstance(cls):
@@ -292,18 +291,12 @@ class AttributeManager:
     # Apertures
     # ------------------------------------------------------------------
 
-    def SetApertures(self, shape: Any, apertures: Any):
-        self._set_value(
-            self._apertures,
-            shape,
-            _deduplicate_relationships(apertures),
-        )
-
     def GetApertures(self, shape: Any) -> list:
-        return self._get_value(self._apertures, shape, [])
+        from .aperture import Aperture
+        return [item for item in self.GetContents(shape) if Aperture.IsAperture(item)]
 
     def HasApertures(self, shape: Any) -> bool:
-        return self._has_value(self._apertures, shape)
+        return bool(self.GetApertures(shape))
 
     # ------------------------------------------------------------------
     # Clearing / copying
@@ -313,13 +306,11 @@ class AttributeManager:
         self._clear_value(self._dictionaries, shape)
         self._clear_value(self._contents, shape)
         self._clear_value(self._contexts, shape)
-        self._clear_value(self._apertures, shape)
 
     def ClearAll(self):
         self._dictionaries.clear()
         self._contents.clear()
         self._contexts.clear()
-        self._apertures.clear()
 
     def CopyDictionary(self, source_shape: Any, target_shape: Any):
         if self.HasDictionary(source_shape):
@@ -339,12 +330,6 @@ class AttributeManager:
             self.SetContexts(
                 target_shape,
                 self.GetContexts(source_shape),
-            )
-
-        if self.HasApertures(source_shape):
-            self.SetApertures(
-                target_shape,
-                self.GetApertures(source_shape),
             )
 
     def CopyAttributes(self, source_shape: Any, target_shape: Any):

@@ -39,7 +39,7 @@ from typing import Any, Iterable, Optional
 
 from .helpers import new_uuid as _new_uuid, distance3, vertex_key
 
-from .attribute_manager import AttributeManager
+from .attribute_manager import AttributeManager, _deduplicate_relationships
 from ._csg_lineage import capture_modifier_if_active as _capture_modifier_only
 from ._provenance import (
     transfer_by_history as _provenance_transfer_history,
@@ -1808,6 +1808,8 @@ class Topology:
     dictionary: Any = None
     contents: list = field(default_factory=list)
     contexts: list = field(default_factory=list)
+    # Inert constructor slot for internal wrapper compatibility. Apertures()
+    # derives its result from contents; no aperture registry is maintained.
     apertures: list = field(default_factory=list)
     _uuid: str = field(default_factory=_new_uuid)
 
@@ -1831,6 +1833,9 @@ class Topology:
             return False
 
         requested = str(typeName).strip().lower()
+        if requested == "aperture":
+            from .aperture import Aperture
+            return Aperture.IsAperture(topology)
         actual = _topology_type_name(topology)
 
         if requested == "topology":
@@ -1933,7 +1938,6 @@ class Topology:
         dictionary_known = dictionary is not None or manager.HasDictionary(shape)
         contents_known = contents is not None or manager.HasContents(shape)
         contexts_known = contexts is not None or manager.HasContexts(shape)
-        apertures_known = apertures is not None or manager.HasApertures(shape)
 
         if dictionary is None:
             dictionary = manager.GetDictionary(shape) if manager.HasDictionary(shape) else {}
@@ -1953,11 +1957,7 @@ class Topology:
             manager.SetContexts(shape, _safe_list(contexts))
             contexts = manager.GetContexts(shape)
 
-        if apertures is None:
-            apertures = manager.GetApertures(shape) if manager.HasApertures(shape) else []
-        else:
-            manager.SetApertures(shape, _safe_list(apertures))
-            apertures = manager.GetApertures(shape)
+        apertures = []  # apertures are derived from contents
 
         def _finalize(result):
             if result is None:
@@ -1972,8 +1972,6 @@ class Topology:
                     manager.SetContents(actual_shape, contents)
                 if contexts_known:
                     manager.SetContexts(actual_shape, contexts)
-                if apertures_known:
-                    manager.SetApertures(actual_shape, apertures)
 
             try:
                 result.dictionary = dictionary
@@ -2459,38 +2457,12 @@ class Topology:
         return result
 
     def Apertures(self, output=None):
-        """
-        Returns the apertures attached to this topology.
-
-        The signature intentionally matches topologic_core's output-list calling
-        convention: topology.Apertures(output_list).
-        """
-        if self is None:
-            result = []
-        else:
-            shape = _shape_from_topology(self)
-            local = _safe_list(getattr(self, "apertures", []))
-
-            if not _is_null_shape(shape):
-                manager = AttributeManager.GetInstance()
-                if manager.HasApertures(shape):
-                    result = manager.GetApertures(shape)
-                else:
-                    result = _deduplicate_by_identity(local)
-                    if result:
-                        manager.SetApertures(shape, result)
-            else:
-                result = _deduplicate_by_identity(local)
-
-            try:
-                self.apertures = list(result)
-            except Exception:
-                pass
-
+        """Derived view of tagged contents; no independent aperture storage."""
+        from .aperture import Aperture
+        result = [item for item in self.Contents() if Aperture.IsAperture(item)]
         if output is not None:
             output.extend(result)
             return 0
-
         return result
 
     def Contents(self, output=None):
@@ -2506,11 +2478,11 @@ class Topology:
                 if manager.HasContents(shape):
                     result = manager.GetContents(shape)
                 else:
-                    result = _deduplicate_by_identity(local)
+                    result = _deduplicate_relationships(local)
                     if result:
                         manager.SetContents(shape, result)
             else:
-                result = _deduplicate_by_identity(local)
+                result = _deduplicate_relationships(local)
 
             try:
                 self.contents = list(result)
@@ -2536,11 +2508,11 @@ class Topology:
                 if manager.HasContexts(shape):
                     result = manager.GetContexts(shape)
                 else:
-                    result = _deduplicate_by_identity(local)
+                    result = _deduplicate_relationships(local)
                     if result:
                         manager.SetContexts(shape, result)
             else:
-                result = _deduplicate_by_identity(local)
+                result = _deduplicate_relationships(local)
 
             try:
                 self.contexts = list(result)
@@ -2553,11 +2525,22 @@ class Topology:
 
         return result
 
-    def AddContent(self, content: Any):
-        """Adds one content topology and persists the relationship by OCCT shape identity."""
+    def AddContent(self, content: Any, context=None):
+        """Attach content and its reverse context by exact native shape identity."""
         if self is None or content is None:
             return self
 
+        if not isinstance(content, Topology) or Topology.IsSame(self, content):
+            return self
+        from .context import Context
+        if context is not None:
+            if not isinstance(context, Context) or not Topology.IsSame(self, context.Topology()):
+                raise ValueError("Content context must identify its actual host.")
+            if not all(math.isfinite(float(v)) for v in (context.x, context.y, context.z)):
+                raise ValueError("Content context parameters must be finite.")
+            content.AddContext(context)
+        elif not any(Topology.IsSame(self, ctx.Topology()) for ctx in content.Contexts() if isinstance(ctx, Context)):
+            content.AddContext(Context.ByTopologyParameters(self))
         shape = _shape_from_topology(self)
 
         if not _is_null_shape(shape):
@@ -2567,11 +2550,11 @@ class Topology:
             else:
                 current = _safe_list(getattr(self, "contents", []))
 
-            current = _deduplicate_by_identity(current + [content])
+            current = _deduplicate_relationships(current + [content])
             manager.SetContents(shape, current)
             self.contents = manager.GetContents(shape)
         else:
-            self.contents = _deduplicate_by_identity(
+            self.contents = _deduplicate_relationships(
                 _safe_list(getattr(self, "contents", [])) + [content]
             )
 
@@ -2589,6 +2572,11 @@ class Topology:
         if self is None or context is None:
             return self
 
+        from .context import Context
+        if isinstance(context, Context):
+            for old in self.Contexts():
+                if isinstance(old, Context) and Topology.IsSame(old.Topology(), context.Topology()) and (old.x, old.y, old.z) == (context.x, context.y, context.z):
+                    return self
         shape = _shape_from_topology(self)
 
         if not _is_null_shape(shape):
@@ -2598,11 +2586,11 @@ class Topology:
             else:
                 current = _safe_list(getattr(self, "contexts", []))
 
-            current = _deduplicate_by_identity(current + [context])
+            current = _deduplicate_relationships(current + [context])
             manager.SetContexts(shape, current)
             self.contexts = manager.GetContexts(shape)
         else:
-            self.contexts = _deduplicate_by_identity(
+            self.contexts = _deduplicate_relationships(
                 _safe_list(getattr(self, "contexts", [])) + [context]
             )
 
@@ -2635,8 +2623,16 @@ class Topology:
 
             if not remove:
                 kept.append(item)
+            else:
+                from .context import Context
+                remaining = [ctx for ctx in item.Contexts()
+                             if not (isinstance(ctx, Context) and Topology.IsSame(ctx.Topology(), self))]
+                child_shape = _shape_from_topology(item)
+                item.contexts = remaining
+                if not _is_null_shape(child_shape):
+                    AttributeManager.GetInstance().SetContexts(child_shape, remaining)
 
-        kept = _deduplicate_by_identity(kept)
+        kept = _deduplicate_relationships(kept)
         self.contents = kept
 
         if not _is_null_shape(shape):

@@ -18,7 +18,7 @@ A ``.tpy`` file is a ZIP container containing:
 
 The BREP payloads preserve exact backend geometry. The manifest stores
 TopologicPy dictionaries, dictionary-bearing subtopologies, Contents,
-Apertures, and Context parameters separately from the geometry.
+and Context parameters separately from the geometry. Apertures are tagged Contents.
 
 No pickle or executable serialization is used.
 """
@@ -36,7 +36,8 @@ import zipfile
 
 
 _FORMAT = "topologicpy.tpy"
-_VERSION = 2
+_VERSION = 3
+_MAX_MANIFEST_BYTES = 256 * 1024 * 1024
 _MANIFEST_NAME = "manifest.json"
 
 _SUBTOPOLOGY_TYPES = (
@@ -49,6 +50,14 @@ _SUBTOPOLOGY_TYPES = (
     "vertex",
     "cluster",
 )
+
+
+def _manifest_bytes(manifest):
+    payload = json.dumps(manifest, ensure_ascii=False, sort_keys=True,
+                         separators=(",", ":"), allow_nan=False).encode("utf-8")
+    if len(payload) > _MAX_MANIFEST_BYTES:
+        raise ValueError(f"Manifest size {len(payload):,} bytes exceeds limit {_MAX_MANIFEST_BYTES:,} bytes.")
+    return payload
 
 
 def _sha256_text(text):
@@ -839,76 +848,6 @@ def _context_parameters(
     ]
 
 
-def _raw_apertures(host):
-    """
-    Return (aperture-wrapper, aperture-topology, contexts) triples.
-
-    This intentionally uses the backend aperture collection rather than the
-    public Topology.Apertures convenience function. Content topologies tagged
-    with dictionary type="Aperture" are already preserved as Contents.
-    """
-    from topologicpy.Aperture import Aperture
-    from topologicpy.Core import Core
-    from topologicpy.Topology import Topology
-
-    raw = []
-
-    try:
-        value = Core.InstanceCall(
-            host,
-            "Apertures",
-            raw,
-        )
-
-        if isinstance(value, list):
-            raw.extend(value)
-
-    except Exception:
-        try:
-            value = Core.InstanceCall(
-                host,
-                "Apertures",
-            )
-
-            if isinstance(value, list):
-                raw.extend(value)
-
-        except Exception:
-            pass
-
-    result = []
-
-    for wrapper in raw:
-        aperture_topology = None
-
-        try:
-            aperture_topology = (
-                Aperture.Topology(
-                    wrapper
-                )
-            )
-        except Exception:
-            aperture_topology = None
-
-        if not Topology.IsInstance(
-            aperture_topology,
-            "Topology",
-        ):
-            continue
-
-        result.append(
-            (
-                wrapper,
-                aperture_topology,
-                _raw_contexts(
-                    wrapper
-                ),
-            )
-        )
-
-    return result
-
-
 class _ArchiveBuilder:
     def __init__(
         self,
@@ -932,7 +871,14 @@ class _ArchiveBuilder:
 
         self._object_by_python_id = {}
         self._object_references = {}
-        self._active_geometry = {}
+        self._native_objects = {}
+
+    def _contents(self, host):
+        from topologicpy.Topology import Topology
+        if not (self.include_contents or self.include_apertures):
+            return []
+        return [child for child in (Topology.Contents(host, silent=True) or [])
+                if (self.include_apertures if Topology.IsInstance(child, "aperture") else self.include_contents)]
 
     def _next_id(self):
         return (
@@ -960,23 +906,22 @@ class _ArchiveBuilder:
                 python_id
             ]
 
-        brep, brep_hash = _brep_data(
-            topology
-        )
-
+        key = TPYCodec._IdentityBucket(topology)
+        # Preserve orientation where it differs, even when IsSame is true.
+        native = Topology.OCCTShape(topology, silent=True)
+        try:
+            orientation = int(native.Orientation())
+        except Exception:
+            orientation = None
+        key = (key, orientation)
+        bucket = self._native_objects.setdefault(key, [])
+        for old, identifier in bucket:
+            if _same_topology(topology, old):
+                return identifier
+        brep, brep_hash = _brep_data(topology)
         if brep is None:
-            return None
-
-        ancestry = dict(
-            ancestry or {}
-        )
-
-        # Prevent recursive Content cycles even when the backend returns a new
-        # Python wrapper for the same underlying topology.
-        if brep_hash in ancestry:
-            return ancestry[
-                brep_hash
-            ]
+            raise ValueError("Could not serialize native content geometry.")
+        ancestry = dict(ancestry or {})
 
         object_id = self._next_id()
 
@@ -984,13 +929,11 @@ class _ArchiveBuilder:
             python_id
         ] = object_id
         # Keep wrappers alive while their Python ids are used as cache keys.
-        # Otherwise temporary aperture wrappers can be collected and their ids
-        # reused for an unrelated opening later in the archive.
+        # Otherwise transient native wrappers can be collected and their IDs
+        # reused for an unrelated topology later in the archive.
         self._object_references[python_id] = topology
 
-        ancestry[
-            brep_hash
-        ] = object_id
+        bucket.append((topology, object_id))
 
         geometry_path = (
             f"geometry/{object_id}.brep"
@@ -1035,18 +978,16 @@ class _ArchiveBuilder:
         ]
 
         native_paths = TPYCodec._NativePaths(topology)
-        cached_contents={};cached_apertures={}
+        cached_contents={}
         for (
             sub_type,
             index,
             subtopology,
         ) in _subtopologies(topology):
             dictionary=_python_dictionary(subtopology) if self.include_subtopology_dictionaries else {}
-            try:contents=Topology.Contents(subtopology,silent=True) or [] if self.include_contents else []
-            except Exception:contents=[]
-            apertures=_raw_apertures(subtopology) if self.include_apertures else []
-            if not dictionary and not contents and not apertures:continue
-            cached_contents[id(subtopology)]=contents;cached_apertures[id(subtopology)]=apertures
+            contents = self._contents(subtopology)
+            if not dictionary and not contents:continue
+            cached_contents[id(subtopology)] = contents
             native = Topology.OCCTShape(subtopology, silent=True)
             paths = [path for shape, path in native_paths.get(hash(native), []) if shape.IsSame(native)] if native is not None else []
             locator = _make_locator(
@@ -1080,20 +1021,12 @@ class _ArchiveBuilder:
                     )
 
         for host_locator, host in hosts:
-            if self.include_contents:
-                try:
-                    contents = cached_contents[id(host)] if id(host) in cached_contents else Topology.Contents(host,silent=True) or []
-                except Exception:
-                    contents = []
+            if self.include_contents or self.include_apertures:
+                contents = cached_contents[id(host)] if id(host) in cached_contents else self._contents(host)
 
                 relation_seen = set()
 
                 for content in contents:
-                    # TopologicCore includes Aperture wrappers in Contents.
-                    # Persist their underlying geometry through the aperture
-                    # relation below, rather than a non-geometric object type.
-                    if Topology.IsInstance(content, "Aperture"):
-                        continue
                     if not Topology.IsInstance(
                         content,
                         "Topology",
@@ -1108,81 +1041,21 @@ class _ArchiveBuilder:
                     if child_id is None:
                         continue
 
-                    key = (
-                        "content",
-                        child_id,
-                    )
-
-                    if key in relation_seen:
-                        continue
-
-                    relation_seen.add(key)
-
-                    self.relations.append(
-                        {
-                            "kind": "content",
-                            "hostObject": object_id,
-                            "hostLocator": host_locator,
-                            "childObject": child_id,
-                            "context": (
-                                _context_parameters(
-                                    content,
-                                    host,
-                                )
-                            ),
-                        }
-                    )
-
-            if self.include_apertures:
-                aperture_seen = set()
-
-                for (
-                    wrapper,
-                    aperture_topology,
-                    contexts,
-                ) in (cached_apertures[id(host)] if id(host) in cached_apertures else _raw_apertures(host)):
-                    child_id = self.register(
-                        aperture_topology,
-                        ancestry=ancestry,
-                    )
-
-                    if child_id is None:
-                        continue
-
-                    key = (
-                        child_id,
-                        _sha256_text(
-                            json.dumps(
-                                _context_parameters(
-                                    wrapper,
-                                    host,
-                                    explicit_contexts=contexts,
-                                ),
-                                separators=(",", ":"),
-                            )
-                        ),
-                    )
-
-                    if key in aperture_seen:
-                        continue
-
-                    aperture_seen.add(key)
-
-                    self.relations.append(
-                        {
-                            "kind": "aperture",
-                            "hostObject": object_id,
-                            "hostLocator": host_locator,
-                            "childObject": child_id,
-                            "context": (
-                                _context_parameters(
-                                    wrapper,
-                                    host,
-                                    explicit_contexts=contexts,
-                                )
-                            ),
-                        }
-                    )
+                    # Preserve each distinct context on this host without creating
+                    # another geometry record for the same content object.
+                    contexts = [ctx for ctx in _raw_contexts(content)
+                                if _same_topology(_context_host(ctx), host)]
+                    params_list = [_context_parameters(content, host, [ctx]) for ctx in contexts]
+                    if not params_list:
+                        params_list = [[0.5, 0.5, 0.5]]
+                    for params in params_list:
+                        key = (child_id, tuple(params))
+                        if key in relation_seen:
+                            continue
+                        relation_seen.add(key)
+                        self.relations.append({"kind": "content", "hostObject": object_id,
+                                               "hostLocator": host_locator, "childObject": child_id,
+                                               "context": params})
 
         return object_id
 
@@ -1257,7 +1130,7 @@ class TPYCodec:
 
     @staticmethod
     def _CanReadMetadataManifest(manifest):
-        if manifest.get('formatVersion') not in (1, 2) or manifest.get('relations'):
+        if manifest.get('formatVersion') != _VERSION or manifest.get('relations'):
             return False
         objects = manifest.get('objects', [])
         if any(record.get('type') in ('TGraph', 'Collection') for record in objects):
@@ -1589,7 +1462,7 @@ class TPYCodec:
             else:
                 root = builder._next_id();record = {'id': root, 'type': 'Collection'};builder.records[root] = record
                 record['value'] = TPYCodec._EncodeValue(value, reference)
-            manifest = {'format': _FORMAT, 'formatVersion': 2, 'rootObject': root,
+            manifest = {'format': _FORMAT, 'formatVersion': _VERSION, 'rootObject': root,
                         'options': {'includeSubtopologyDictionaries': builder.include_subtopology_dictionaries,
                                     'includeContents': builder.include_contents, 'includeApertures': builder.include_apertures,
                                     'tolerance': float(options.get('tolerance', .0001))},
@@ -1604,7 +1477,7 @@ class TPYCodec:
         output.parent.mkdir(parents=True, exist_ok=True)
         pending = None
         try:
-            text = json.dumps(manifest, ensure_ascii=False, sort_keys=True, indent=2, allow_nan=False)
+            text = _manifest_bytes(manifest)
             with tempfile.NamedTemporaryFile(dir=output.parent, prefix=output.name+'.', suffix='.tmp', delete=False) as handle: pending = Path(handle.name)
             with zipfile.ZipFile(pending, 'w', compression=zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
                 archive.writestr(_MANIFEST_NAME, text)
@@ -1648,16 +1521,20 @@ class TPYCodec:
                             loc = item['locator']
                             if not isinstance(loc, dict) or loc.get('type') not in _SUBTOPOLOGY_TYPES or type(loc.get('index')) is not int or loc['index'] < 0: raise ValueError('Invalid native subshape locator.')
                             if 'nativePath' in loc and (not isinstance(loc['nativePath'], list) or len(loc['nativePath']) > 100 or any(type(index) is not int or index < 0 for index in loc['nativePath'])): raise ValueError('Invalid native subshape path.')
-                    if item.get('__tpy_type__') == 'repr': raise ValueError('Text-only object encoding is not supported by TPY v2.')
+                    if item.get('__tpy_type__') == 'repr': raise ValueError('Text-only object encoding is not supported by TPY v3.')
                     for child in item.values(): visit(child, depth+1)
                 elif isinstance(item, list):
                     for child in item: visit(child, depth+1)
             visit(record)
         if used != set(names): raise ValueError('Unreferenced or unexpected TPY archive members.')
-        for relation in manifest.get('relations', []):
-            if not isinstance(relation, dict) or relation.get('kind') not in ('content','aperture') or relation.get('hostObject') not in by_id or relation.get('childObject') not in by_id:
+        relations = manifest.get('relations', [])
+        if not isinstance(relations, list): raise ValueError('Invalid TPY relation table.')
+        for relation in relations:
+            if not isinstance(relation, dict) or relation.get('kind') != 'content' or relation.get('hostObject') not in by_id or relation.get('childObject') not in by_id:
                 raise ValueError('Invalid native TPY relationship.')
             if any(by_id[relation[key]]['type'] not in native_types for key in ('hostObject','childObject')): raise ValueError('Native relationships require native topology objects.')
+            params = relation.get('context')
+            if not isinstance(params, list) or len(params) != 3 or any(type(v) not in (int, float) or not math.isfinite(v) for v in params): raise ValueError('Invalid TPY context parameters.')
         return by_id
 
     @staticmethod
@@ -1668,7 +1545,7 @@ class TPYCodec:
         locator_cache = {}
         natives = [record for record in by_id.values() if 'geometry' in record]
         if natives:
-            native_manifest = dict(manifest, formatVersion=1, objects=natives, rootObject=natives[0]['id'])
+            native_manifest = dict(manifest, formatVersion=_VERSION, objects=natives, rootObject=natives[0]['id'])
             with tempfile.TemporaryDirectory(prefix='topologicpy-tpy-native-') as directory:
                 path = Path(directory)/'native.tpy'
                 geometry = {record['geometry']['path']: archive.read(record['geometry']['path']) for record in natives}
@@ -1918,13 +1795,7 @@ class TPYCodec:
         }
 
         try:
-            manifest_text = json.dumps(
-                manifest,
-                ensure_ascii=False,
-                sort_keys=True,
-                indent=2,
-                allow_nan=False,
-            )
+            manifest_text = _manifest_bytes(manifest)
         except Exception as exc:
             if not silent:
                 print(
@@ -2004,7 +1875,6 @@ class TPYCodec:
         _loaded=None,
         _locator_cache=None,
     ):
-        from topologicpy.Aperture import Aperture
         from topologicpy.Context import Context
         from topologicpy.Core import Core
         from topologicpy.Topology import Topology
@@ -2070,19 +1940,15 @@ class TPYCodec:
                             )
                         return None
 
-                manifest_bytes = archive.read(
-                    _MANIFEST_NAME
-                )
-
-                if len(manifest_bytes) > (
-                    64 * 1024 * 1024
-                ):
-                    if not silent:
-                        print(
-                            "TPYCodec.load - Error: Manifest is unreasonably "
-                            "large. Returning None."
-                        )
-                    return None
+                if len(archive.namelist()) != len(names):
+                    raise ValueError("Duplicate TPY archive members.")
+                size = archive.getinfo(_MANIFEST_NAME).file_size
+                if size > _MAX_MANIFEST_BYTES:
+                    raise ValueError(f"Manifest size {size:,} bytes exceeds limit {_MAX_MANIFEST_BYTES:,} bytes.")
+                with archive.open(_MANIFEST_NAME) as stream:
+                    manifest_bytes = stream.read(_MAX_MANIFEST_BYTES + 1)
+                if len(manifest_bytes) > _MAX_MANIFEST_BYTES:
+                    raise ValueError(f"Manifest exceeds limit {_MAX_MANIFEST_BYTES:,} bytes.")
 
                 manifest = json.loads(
                     manifest_bytes.decode(
@@ -2100,7 +1966,7 @@ class TPYCodec:
                     or manifest.get(
                         "formatVersion"
                     )
-                    not in (1, 2)
+                    != _VERSION
                 ):
                     if not silent:
                         print(
@@ -2109,9 +1975,8 @@ class TPYCodec:
                         )
                     return None
 
-                if manifest['formatVersion'] == 2:
-                    if len(archive.namelist()) != len(names):
-                        raise ValueError("Duplicate TPY archive members.")
+                TPYCodec._ValidateGraphManifest(manifest, names)
+                if any(record['type'] in ('TGraph', 'Collection') for record in manifest['objects']):
                     return TPYCodec._LoadGraphArchive(archive, manifest, tolerance, silent, _loaded=_loaded)
 
                 object_records = manifest.get(
@@ -2315,7 +2180,7 @@ class TPYCodec:
                         )
 
                 # ----------------------------------------------------------
-                # 3. Restore Content and Aperture relationships.
+                # 3. Restore content relationships (including tagged apertures).
                 # ----------------------------------------------------------
 
                 relations = manifest.get(
@@ -2357,7 +2222,7 @@ class TPYCodec:
                     host = _resolve_locator(host_object, relation.get('hostLocator'), cache=locator_cache)
 
                     if host is None:
-                        continue
+                        raise ValueError("Unresolved TPY content host locator.")
 
                     parameters = relation.get(
                         "context",
@@ -2391,44 +2256,9 @@ class TPYCodec:
                         )
                     ).lower()
 
-                    if kind == "content":
-                        try:
-                            if context is not None:
-                                Core.InstanceCall(
-                                    child,
-                                    "AddContext",
-                                    context,
-                                )
-
-                            Core.InstanceCall(
-                                host,
-                                "AddContent",
-                                child,
-                            )
-
-                        except Exception:
-                            # Public fallback. It may copy the content, but
-                            # keeps compatibility with unusual backend builds.
-                            try:
-                                Topology.AddContent(
-                                    host,
-                                    [child],
-                                    subTopologyType="self",
-                                    tolerance=tolerance,
-                                    silent=True,
-                                )
-                            except Exception:
-                                pass
-
-                    elif kind == "aperture":
-                        try:
-                            if context is not None:
-                                Aperture.ByTopologyContext(
-                                    child,
-                                    context,
-                                )
-                        except Exception:
-                            pass
+                    if kind != "content" or context is None:
+                        raise ValueError("Invalid TPY content relationship.")
+                    Core.InstanceCall(host, "AddContent", child, context)
 
                 root_id = manifest.get(
                     "rootObject"
